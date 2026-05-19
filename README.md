@@ -5,6 +5,7 @@ A professional, multi-role business discovery and civic engagement platform buil
 ## Overview
 
 This is a production-grade SaaS platform designed to serve four distinct user roles:
+
 - **Public Users**: Browse businesses, read reviews, discover offers
 - **Business Owners**: Manage business profile, analytics, customers, and offerings
 - **Admin Moderators**: Review approvals, handle reports, manage content
@@ -13,6 +14,7 @@ This is a production-grade SaaS platform designed to serve four distinct user ro
 ## Features
 
 ### Public Platform
+
 - Business discovery with advanced search and filtering
 - Location-based nearby business finder
 - Real-time reviews and ratings system
@@ -22,6 +24,7 @@ This is a production-grade SaaS platform designed to serve four distinct user ro
 - Favorites/bookmarks system
 
 ### Business Dashboard
+
 - Comprehensive analytics and reporting
 - Customer insights and engagement metrics
 - Offer and product management
@@ -31,6 +34,7 @@ This is a production-grade SaaS platform designed to serve four distinct user ro
 - Bill verification queue
 
 ### Admin Panel
+
 - Business approval workflow
 - User moderation and conduct management
 - Report handling and investigation
@@ -40,6 +44,7 @@ This is a production-grade SaaS platform designed to serve four distinct user ro
 - Fraud monitoring tools
 
 ### Super Admin Portal
+
 - Tenant management and oversight
 - Security monitoring and controls
 - System health dashboard
@@ -110,6 +115,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 ## Key Pages
 
 ### Public Routes
+
 - `/` - Homepage with feature showcase
 - `/search` - Advanced business search
 - `/category` - Browse by category
@@ -122,6 +128,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 - `/business/[id]` - Detailed business view
 
 ### Dashboard Routes
+
 - `/dashboard` - Business overview and metrics
 - `/dashboard/analytics` - Detailed analytics
 - `/dashboard/customers` - Customer management
@@ -132,16 +139,19 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 - `/dashboard/analytics` - Performance tracking
 
 ### Admin Routes
+
 - `/admin/approvals` - Business approval queue
 - `/admin/reports` - User/content reports
 - `/admin/moderation` - User conduct management
 
 ### Super Admin Routes
+
 - `/super-admin/tenants` - Tenant management
 
 ## Design System
 
 ### Color Palette
+
 - **Primary**: Purple (#7C3AED - violet-600)
 - **Secondary**: Gray scale (light/dark mode)
 - **Accent**: Purple variants
@@ -149,18 +159,21 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 - **Chart Colors**: 5-color palette for data visualization
 
 ### Typography
+
 - **Font Family**: Geist (sans) + Geist Mono
 - **Heading Styles**: Balanced, professional hierarchy
 - **Body Text**: 14px minimum, 1.5 line height
 - **Letter Spacing**: Default system defaults
 
 ### Spacing
+
 - **Grid**: 4px base unit
 - **Border Radius**: 1rem (rounded-2xl) for cards
 - **Shadows**: Soft, professional elevation
 - **Gaps**: Consistent spacing utilities
 
 ### Responsive Design
+
 - Mobile-first approach
 - Breakpoints: sm, md, lg, xl, 2xl
 - Hidden sidebars on mobile
@@ -170,28 +183,33 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 ## Service Layer
 
 ### Authentication
+
 - Placeholder auth service (ready for Supabase, Auth.js, etc.)
 - Role-based access control
 - User session management
 
 ### API Service
+
 - Generic HTTP client with error handling
 - Request/response interceptors ready
 - Pagination and filtering support
 - Type-safe responses
 
 ### Notifications
+
 - Toast notification system
 - Multiple notification types (success, error, info, warning)
 - Integrated with Sonner (ready for implementation)
 
 ### Analytics
+
 - Event tracking system
 - User identification
 - Page view tracking
 - Conversion monitoring
 
 ### File Service
+
 - File upload handling (ready for Vercel Blob, S3, etc.)
 - File validation and sizing
 - Thumbnail generation support
@@ -207,6 +225,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 ## Utilities
 
 ### Formatting
+
 - Currency formatting
 - Date/time formatting (short, long, relative)
 - Phone number formatting
@@ -215,6 +234,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 - File size formatting
 
 ### Validation
+
 - Email validation
 - Password strength checking
 - Username validation
@@ -237,6 +257,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 ## Integration Points
 
 All services include TODO comments for integration with:
+
 - **Authentication**: Supabase Auth, Auth.js, NextAuth
 - **Database**: Supabase, Neon, AWS Aurora
 - **File Storage**: Vercel Blob, AWS S3, Cloudinary
@@ -274,18 +295,21 @@ All services include TODO comments for integration with:
 ## Development Workflow
 
 ### Adding New Pages
+
 1. Create page in appropriate route directory
 2. Import layout component (PublicLayout, BusinessLayout, AdminLayout)
 3. Add navigation link to sidebar
 4. Update constants if adding new routes
 
 ### Adding New Components
+
 1. Create component in `/components`
 2. Add TypeScript interfaces for props
 3. Use shadcn/ui components as base
 4. Export from component barrel files
 
 ### Adding New Services
+
 1. Create service in `/lib/services`
 2. Add TypeScript types/interfaces
 3. Implement placeholder methods with TODO comments
