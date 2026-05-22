@@ -1,6 +1,17 @@
-// Bills Module — Bill upload, verification, and management
 import { Module } from '@nestjs/common';
-import { BillsService } from './bills.service';
+import { BullModule } from '@nestjs/bullmq';
 import { BillsController } from './bills.controller';
-@Module({ controllers: [BillsController], providers: [BillsService], exports: [BillsService] })
+import { BillsService } from './bills.service';
+import { AuditModule } from '../audit/audit.module';
+
+@Module({
+  imports: [
+    BullModule.registerQueue({
+      name: 'ocr-queue',
+    }),
+    AuditModule,
+  ],
+  controllers: [BillsController],
+  providers: [BillsService],
+})
 export class BillsModule {}

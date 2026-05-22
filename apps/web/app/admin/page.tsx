@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,8 @@ import {
   ArrowUpRight,
   TrendingUp,
   Activity,
+  Sparkles,
+  Receipt,
 } from 'lucide-react';
 import {
   BarChart,
@@ -66,6 +69,32 @@ const recentLogs = [
 ];
 
 export default function AdminDashboardPage() {
+  const [claimedCount, setClaimedCount] = useState(0);
+  const [convertedSales, setConvertedSales] = useState(0);
+
+  useEffect(() => {
+    const syncClaimed = () => {
+      try {
+        const ids: number[] = JSON.parse(localStorage.getItem('claimed_offers') || '[]');
+        setClaimedCount(ids.length);
+      } catch (_) {}
+    };
+    const syncSales = () => {
+      try {
+        const count = parseInt(localStorage.getItem('converted_sales_count') || '0', 10);
+        setConvertedSales(count);
+      } catch (_) {}
+    };
+    syncClaimed();
+    syncSales();
+    window.addEventListener('claimedOffersUpdated', syncClaimed);
+    window.addEventListener('billsUpdated', syncSales);
+    return () => {
+      window.removeEventListener('claimedOffersUpdated', syncClaimed);
+      window.removeEventListener('billsUpdated', syncSales);
+    };
+  }, []);
+
   const stats = [
     {
       label: 'Pending Approvals',
@@ -95,6 +124,20 @@ export default function AdminDashboardPage() {
       icon: ShieldAlert,
       color: 'text-rose-500 bg-rose-500/10',
     },
+    {
+      label: 'Claimed Offers',
+      value: (4821 + claimedCount).toLocaleString(),
+      change: claimedCount > 0 ? `+${claimedCount} new` : '+6.2% this week',
+      icon: Sparkles,
+      color: 'text-emerald-500 bg-emerald-500/10',
+    },
+    {
+      label: 'Converted Sales',
+      value: (12480 + convertedSales).toLocaleString(),
+      change: convertedSales > 0 ? `+${convertedSales} via bills` : 'Bills verified',
+      icon: Receipt,
+      color: 'text-cyan-500 bg-cyan-500/10',
+    },
   ];
 
   return (
@@ -115,7 +158,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (

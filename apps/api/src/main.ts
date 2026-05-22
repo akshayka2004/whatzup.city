@@ -8,18 +8,40 @@ import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as compression from 'compression';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { JsonLoggerService } from './common/logger/json-logger.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log', 'debug'],
+    bufferLogs: true,
   });
+
+  const logger = app.get(JsonLoggerService);
+  app.useLogger(logger);
 
   const configService = app.get(ConfigService);
 
   // ── Security ────────────────────────────────────────────
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+          fontSrc: ["'self'", 'fonts.gstatic.com'],
+          imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+          connectSrc: ["'self'", 'https:', 'wss:', 'ws:'],
+          frameAncestors: ["'none'"],
+        },
+      },
+      frameguard: { action: 'deny' },
+      referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    }),
+  );
   app.use(compression());
+  app.use(cookieParser());
 
   // ── CORS ────────────────────────────────────────────────
   const corsOrigins = configService.get<string>('CORS_ORIGINS', 'http://localhost:3000');

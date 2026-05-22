@@ -10,7 +10,7 @@ import { UserRole } from '@saas/types';
 @ApiTags('Audit Logs')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+@Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
 @Controller('audit-logs')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}

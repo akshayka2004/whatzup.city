@@ -1,80 +1,113 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../../common/database/database.service';
+import { OfferRepository } from '../../common/database/repositories/offer.repository';
 import { RedisService } from '../../common/redis/redis.service';
+import { AuditService } from '../audit/audit.service';
+import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 
 @Injectable()
 export class OffersService {
   constructor(
-    private readonly db: DatabaseService,
+    private readonly offerRepo: OfferRepository,
     private readonly redis: RedisService,
+    private readonly auditService: AuditService,
   ) {}
 
-  async create(businessId: string, data: any) {
-    const offer = await this.db.offer.create({ data: { businessId, ...data } });
-    await this.redis.delPattern('offers:*');
+  async create(tenantId: string, userId: string, businessId: string, data: any) {
+    const offer = await this.offerRepo.create(tenantId, { businessId, ...data });
+    await this.redis.delPattern(`offers:${tenantId}:*`);
+
+    await this.auditService.log({
+      tenantId,
+      userId,
+      action: 'CREATE_OFFER',
+      resource: 'OFFER',
+      resourceId: offer.id,
+      newData: offer,
+    });
+
     return offer;
   }
 
   async findActive(tenantId: string, page = 1, limit = 20) {
-    const now = new Date();
-    const where = {
-      status: 'ACTIVE' as const,
-      startDate: { lte: now },
-      endDate: { gte: now },
-      deletedAt: null,
-      business: { tenantId, status: 'APPROVED' as const },
-    };
-    const [data, total] = await Promise.all([
-      this.db.offer.findMany({
-        where,
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: { business: { select: { id: true, name: true, slug: true, logo: true } } },
-      }),
-      this.db.offer.count({ where }),
-    ]);
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page * limit < total,
-        hasPrev: page > 1,
-      },
-    };
-  }
+    const pagination = new PaginationParamsDto();
+    pagination.page = page;
+    pagination.limit = limit;
+    pagination.sortBy = 'endDate';
+    pagination.sortOrder = SortOrder.ASC;
 
-  async findByBusiness(businessId: string) {
-    return this.db.offer.findMany({
-      where: { businessId, deletedAt: null },
-      orderBy: { createdAt: 'desc' },
+    const criteria: any = {
+      status: 'ACTIVE',
+      startDate: { lte: new Date() },
+      endDate: { gte: new Date() },
+    };
+
+    return this.offerRepo.findMany(tenantId, criteria, pagination, {
+      include: { business: { select: { id: true, name: true, slug: true, logo: true } } },
     });
   }
 
-  async findById(id: string) {
-    const offer = await this.db.offer.findUnique({
-      where: { id, deletedAt: null },
+  async findByBusiness(tenantId: string, businessId: string) {
+    const pagination = new PaginationParamsDto();
+    pagination.page = 1;
+    pagination.limit = 100;
+    return this.offerRepo.findMany(tenantId, { businessId }, pagination);
+  }
+
+  async findById(tenantId: string, id: string) {
+    const offer = await this.offerRepo.findOne(tenantId, id, {
       include: { business: { select: { id: true, name: true, slug: true } } },
     });
     if (!offer) throw new NotFoundException('Offer not found');
     return offer;
   }
 
-  async update(id: string, data: any) {
-    const offer = await this.db.offer.update({ where: { id }, data });
-    await this.redis.delPattern('offers:*');
+  async update(tenantId: string, id: string, userId: string, data: any) {
+    const existing = await this.offerRepo.findOne(tenantId, id);
+    if (!existing) throw new NotFoundException('Offer not found');
+
+    const offer = await this.offerRepo.update(tenantId, id, data);
+    await this.redis.delPattern(`offers:${tenantId}:*`);
+
+    await this.auditService.log({
+      tenantId,
+      userId,
+      action: 'UPDATE_OFFER',
+      resource: 'OFFER',
+      resourceId: id,
+      oldData: existing,
+      newData: offer,
+    });
+
     return offer;
   }
 
-  async redeem(id: string) {
-    return this.db.offer.update({ where: { id }, data: { currentRedemptions: { increment: 1 } } });
+  async redeem(tenantId: string, id: string, userId: string) {
+    const redeemed = await this.offerRepo.incrementRedemptions(tenantId, id);
+
+    await this.auditService.log({
+      tenantId,
+      userId,
+      action: 'REDEEM_OFFER',
+      resource: 'OFFER',
+      resourceId: id,
+    });
+
+    return redeemed;
   }
 
-  async softDelete(id: string) {
-    await this.db.offer.update({ where: { id }, data: { deletedAt: new Date() } });
-    await this.redis.delPattern('offers:*');
+  async softDelete(tenantId: string, id: string, userId: string) {
+    const existing = await this.offerRepo.findOne(tenantId, id);
+    if (!existing) throw new NotFoundException('Offer not found');
+
+    await this.offerRepo.softDelete(tenantId, id);
+    await this.redis.delPattern(`offers:${tenantId}:*`);
+
+    await this.auditService.log({
+      tenantId,
+      userId,
+      action: 'DELETE_OFFER',
+      resource: 'OFFER',
+      resourceId: id,
+    });
   }
 }

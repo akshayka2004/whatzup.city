@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
+import { VerifiedPurchaseRepository } from '../../common/database/repositories/verified-purchase.repository';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly verifiedPurchaseRepo: VerifiedPurchaseRepository,
+  ) {}
 
   async create(
     userId: string,
@@ -15,14 +19,38 @@ export class ReviewsService {
       images?: string[];
     },
   ) {
+    const business = await this.db.business.findUnique({
+      where: { id: data.businessId },
+      select: { tenantId: true },
+    });
+    const tenantId = business?.tenantId || 'default';
+
+    // Verify Purchase Status automatically
+    const isVerifiedPurchase = await this.verifiedPurchaseRepo.checkEligibility(
+      tenantId,
+      userId,
+      data.businessId,
+    );
+
     const review = await this.db.review.create({
       data: {
+        tenantId,
         userId,
         businessId: data.businessId,
         rating: data.rating,
         title: data.title,
         comment: data.comment,
-        images: data.images || [],
+        isVerifiedPurchase, // Tag as verified if eligible
+        media:
+          data.images && data.images.length > 0
+            ? {
+                create: data.images.map((url: string) => ({
+                  tenantId,
+                  url,
+                  type: 'IMAGE',
+                })),
+              }
+            : undefined,
       },
     });
     // Recalculate business average rating

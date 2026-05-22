@@ -22,8 +22,8 @@ export default [
       '**/*.jpeg',
       '**/*.gif',
       '**/*.svg',
-      '**/*.ico'
-    ]
+      '**/*.ico',
+    ],
   },
   // Config for TypeScript/JavaScript files
   {
@@ -32,20 +32,20 @@ export default [
       parser: tsParser,
       parserOptions: {
         ecmaVersion: 'latest',
-        sourceType: 'module'
-      }
+        sourceType: 'module',
+      },
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-      'prettier': prettierPlugin
+      prettier: prettierPlugin,
     },
     rules: {
       ...tsPlugin.configs.recommended.rules,
       ...prettierConfig.rules,
       'prettier/prettier': 'error',
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', { 'argsIgnorePattern': '^_' }],
-      'no-console': 'off'
-    }
-  }
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-console': 'off',
+    },
+  },
 ];

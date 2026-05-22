@@ -2,7 +2,7 @@
 // Database Seed — Initial platform data for development
 // ============================================================
 
-import { PrismaClient, UserRole, BusinessStatus, OfferStatus } from '@prisma/client';
+import { PrismaClient, UserRoleEnum, BusinessStatus, OfferStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -22,260 +22,521 @@ async function main() {
   });
   console.log('✅ Tenant created:', tenant.name);
 
+  // ── Seeding Roles ───────────────────────────────────────
+  const roleCodes = [
+    { code: 'USER', name: 'Public User', description: 'Standard platform visitor' },
+    {
+      code: 'BUSINESS_OWNER',
+      name: 'Business Owner',
+      description: 'Business listings owner',
+    },
+    {
+      code: 'BUSINESS_MODERATOR',
+      name: 'Business Moderator',
+      description: 'Business staff with moderating capabilities',
+    },
+    {
+      code: 'BUSINESS_STAFF',
+      name: 'Business Staff',
+      description: 'Business branch or operational staff',
+    },
+    {
+      code: 'GOVERNMENT_ADMIN',
+      name: 'Government Admin',
+      description: 'Government official publishing public notifications',
+    },
+    {
+      code: 'MASTER_ADMIN',
+      name: 'Master Admin',
+      description: 'Operations admin with full data access',
+    },
+    { code: 'SUPER_ADMIN', name: 'Super Admin', description: 'Platform super-user' },
+    {
+      code: 'INFLUENCER',
+      name: 'Influencer',
+      description: 'Content creator / Influencer profile owner',
+    },
+    {
+      code: 'PROFESSIONAL',
+      name: 'Professional Service',
+      description: 'Freelancer / Professional service provider',
+    },
+    {
+      code: 'EVENT_ORGANIZER',
+      name: 'Event Organizer',
+      description: 'Event organizer publishing events',
+    },
+    {
+      code: 'ORGANIZATION_ADMIN',
+      name: 'NGO Admin',
+      description: 'NGO or community organization admin',
+    },
+  ];
+
+  const rolesMap: Record<string, any> = {};
+  for (const roleData of roleCodes) {
+    const role = await prisma.role.upsert({
+      where: {
+        tenantId_code: {
+          tenantId: tenant.id,
+          code: roleData.code,
+        },
+      },
+      update: {},
+      create: {
+        ...roleData,
+        tenantId: tenant.id,
+      },
+    });
+    rolesMap[roleData.code] = role;
+  }
+  console.log('✅ RBAC Roles seeded');
+
+  // ── Seeding Permissions ─────────────────────────────────
+  const permissionsData = [
+    {
+      name: 'read:listings',
+      resource: 'listings',
+      action: 'read',
+      description: 'Read business listings',
+    },
+    {
+      name: 'write:listings',
+      resource: 'listings',
+      action: 'write',
+      description: 'Create and update business listings',
+    },
+    {
+      name: 'verify:listings',
+      resource: 'listings',
+      action: 'verify',
+      description: 'Verify businesses',
+    },
+    {
+      name: 'write:announcements',
+      resource: 'announcements',
+      action: 'write',
+      description: 'Write civic alerts',
+    },
+    {
+      name: 'verify:bills',
+      resource: 'bills',
+      action: 'verify',
+      description: 'Verify transaction bills',
+    },
+    {
+      name: 'manage:users',
+      resource: 'users',
+      action: 'manage',
+      description: 'Manage users platform-wide',
+    },
+    {
+      name: 'business.analytics.view',
+      resource: 'analytics',
+      action: 'read',
+      description: 'View business analytics',
+    },
+    {
+      name: 'business.bills.verify',
+      resource: 'business-bills',
+      action: 'verify',
+      description: 'Verify business bills',
+    },
+    {
+      name: 'business.team.manage',
+      resource: 'team',
+      action: 'manage',
+      description: 'Manage business team members',
+    },
+    {
+      name: 'business.bills.override',
+      resource: 'bills',
+      action: 'override',
+      description: 'Override bill verification decisions',
+    },
+  ];
+
+  const permissionsMap: Record<string, any> = {};
+  for (const permData of permissionsData) {
+    const perm = await prisma.permission.upsert({
+      where: {
+        tenantId_name: {
+          tenantId: tenant.id,
+          name: permData.name,
+        },
+      },
+      update: {},
+      create: {
+        ...permData,
+        tenantId: tenant.id,
+      },
+    });
+    permissionsMap[permData.name] = perm;
+  }
+  console.log('✅ RBAC Permissions seeded');
+
+  // ── Mapping Permissions to Roles ───────────────────────
+  const rolePermissionsMap: Record<string, string[]> = {
+    USER: ['read:listings'],
+    BUSINESS_OWNER: [
+      'read:listings',
+      'write:listings',
+      'business.analytics.view',
+      'business.bills.verify',
+      'business.team.manage',
+      'business.bills.override',
+    ],
+    BUSINESS_MODERATOR: [
+      'read:listings',
+      'business.bills.verify',
+    ],
+    BUSINESS_STAFF: ['read:listings'],
+    GOVERNMENT_ADMIN: ['read:listings', 'write:announcements'],
+    MASTER_ADMIN: [
+      'read:listings',
+      'write:listings',
+      'verify:listings',
+      'verify:bills',
+    ],
+    SUPER_ADMIN: [
+      'read:listings',
+      'write:listings',
+      'verify:listings',
+      'write:announcements',
+      'verify:bills',
+      'manage:users',
+      'business.analytics.view',
+      'business.bills.verify',
+      'business.team.manage',
+      'business.bills.override',
+    ],
+  };
+
+  for (const [roleCode, permNames] of Object.entries(rolePermissionsMap)) {
+    const role = rolesMap[roleCode];
+    for (const name of permNames) {
+      const perm = permissionsMap[name];
+      await prisma.rolePermission.upsert({
+        where: {
+          tenantId_roleId_permissionId: {
+            tenantId: tenant.id,
+            roleId: role.id,
+            permissionId: perm.id,
+          },
+        },
+        update: {},
+        create: {
+          tenantId: tenant.id,
+          roleId: role.id,
+          permissionId: perm.id,
+        },
+      });
+    }
+  }
+  console.log('✅ Role-Permission mappings seeded');
+
+  // ── Seeding Plans ───────────────────────────────────────
+  console.log('🌱 Seeding plans...');
+  const plansData = [
+    {
+      name: 'Business Basic',
+      code: 'BUSINESS_BASIC',
+      description: 'Basic business listing plan',
+      entityType: 'BUSINESS',
+      price: 4999.00,
+      billingCycle: 'YEARLY',
+      features: { listing: true, branches: 1, reviews: true, support: 'standard' },
+      limits: { branches: 1, campaigns: 0, offers: 0, analytics: 'basic' },
+    },
+    {
+      name: 'Business Standard',
+      code: 'BUSINESS_STANDARD',
+      description: 'Standard business listing plan with promotions',
+      entityType: 'BUSINESS',
+      price: 7999.00,
+      billingCycle: 'YEARLY',
+      features: { listing: true, branches: 3, reviews: true, support: 'standard', offers: true, highlights: true },
+      limits: { branches: 3, campaigns: 3, offers: 5, analytics: 'standard' },
+    },
+    {
+      name: 'Business Premium',
+      code: 'BUSINESS_PREMIUM',
+      description: 'Premium business listing plan with advanced features',
+      entityType: 'BUSINESS',
+      price: 14999.00,
+      billingCycle: 'YEARLY',
+      features: { listing: true, branches: 9999, reviews: true, support: 'priority', offers: true, highlights: true, campaigns: true, videoCampaigns: true, apiAccess: true },
+      limits: { branches: 9999, campaigns: 9999, offers: 9999, analytics: 'premium' },
+    },
+    {
+      name: 'Influencer Free',
+      code: 'INFLUENCER_FREE',
+      description: 'Free influencer profile',
+      entityType: 'INFLUENCER',
+      price: 0.00,
+      billingCycle: 'FREE',
+      features: { profile: true, campaigns: true },
+      limits: { campaigns: 2 },
+    },
+    {
+      name: 'Influencer Pro',
+      code: 'INFLUENCER_PRO',
+      description: 'Pro influencer profile with verification badge',
+      entityType: 'INFLUENCER',
+      price: 2999.00,
+      billingCycle: 'YEARLY',
+      features: { profile: true, campaigns: true, verificationBadge: true },
+      limits: { campaigns: 9999 },
+    },
+    {
+      name: 'NGO Free',
+      code: 'NGO_FREE',
+      description: 'Free NGO / Community profile',
+      entityType: 'ORGANIZATION',
+      price: 0.00,
+      billingCycle: 'FREE',
+      features: { profile: true, volunteers: true, donations: true },
+      limits: { campaigns: 9999 },
+    },
+    {
+      name: 'Gov Portal',
+      code: 'GOVT_FREE',
+      description: 'Official Government notification portal',
+      entityType: 'GOVERNMENT',
+      price: 0.00,
+      billingCycle: 'FREE',
+      features: { alerts: true, emergencyBroadcasts: true },
+      limits: { campaigns: 9999 },
+    },
+  ];
+
+  for (const plan of plansData) {
+    await prisma.plan.upsert({
+      where: {
+        tenantId_code: {
+          tenantId: tenant.id,
+          code: plan.code,
+        },
+      },
+      update: {
+        name: plan.name,
+        description: plan.description,
+        price: plan.price,
+        billingCycle: plan.billingCycle,
+        features: plan.features,
+        limits: plan.limits,
+      },
+      create: {
+        ...plan,
+        tenantId: tenant.id,
+        entityType: plan.entityType as any,
+      },
+    });
+  }
+  console.log('✅ Plans seeded');
+
   // ── Users ───────────────────────────────────────────────
   const passwordHash = await bcrypt.hash('password123', 12);
 
-  const users = await Promise.all([
-    prisma.user.upsert({
-      where: { tenantId_email: { tenantId: tenant.id, email: 'user@platform.com' } },
+  const coreUsers = [
+    { email: 'user@platform.com', name: 'John Public', role: UserRoleEnum.USER },
+    { email: 'business@platform.com', name: 'Jane Business', role: UserRoleEnum.BUSINESS_OWNER },
+    { email: 'moderator@platform.com', name: 'Joe Moderator', role: UserRoleEnum.BUSINESS_MODERATOR },
+    { email: 'gov@platform.com', name: 'Gov Agency', role: UserRoleEnum.GOVERNMENT_ADMIN },
+    { email: 'admin@platform.com', name: 'Admin User', role: UserRoleEnum.MASTER_ADMIN },
+    { email: 'superadmin@platform.com', name: 'Super Admin', role: UserRoleEnum.SUPER_ADMIN },
+  ];
+
+  const seededUsers: any[] = [];
+  for (const u of coreUsers) {
+    const user = await prisma.user.upsert({
+      where: { tenantId_email: { tenantId: tenant.id, email: u.email } },
       update: {},
       create: {
         tenantId: tenant.id,
-        email: 'user@platform.com',
+        email: u.email,
         passwordHash,
-        name: 'John Public',
-        phone: '+1234567890',
-        role: UserRole.PUBLIC_USER,
+        name: u.name,
+        role: u.role,
+        isActive: true,
+        emailVerified: true,
       },
-    }),
-    prisma.user.upsert({
-      where: { tenantId_email: { tenantId: tenant.id, email: 'business@platform.com' } },
+    });
+
+    // Map to dynamic RBAC Role table
+    const targetRoleCode = u.role.toString();
+
+    const dbRole = rolesMap[targetRoleCode];
+    await prisma.userRole.upsert({
+      where: {
+        tenantId_userId_roleId: {
+          tenantId: tenant.id,
+          userId: user.id,
+          roleId: dbRole.id,
+        },
+      },
       update: {},
       create: {
         tenantId: tenant.id,
-        email: 'business@platform.com',
-        passwordHash,
-        name: 'Jane Business',
-        phone: '+1234567891',
-        role: UserRole.BUSINESS_OWNER,
+        userId: user.id,
+        roleId: dbRole.id,
       },
-    }),
-    prisma.user.upsert({
-      where: { tenantId_email: { tenantId: tenant.id, email: 'gov@platform.com' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        email: 'gov@platform.com',
-        passwordHash,
-        name: 'Gov Agency',
-        role: UserRole.GOVERNMENT_AGENCY,
-      },
-    }),
-    prisma.user.upsert({
-      where: { tenantId_email: { tenantId: tenant.id, email: 'admin@platform.com' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        email: 'admin@platform.com',
-        passwordHash,
-        name: 'Admin User',
-        role: UserRole.ADMIN,
-      },
-    }),
-    prisma.user.upsert({
-      where: { tenantId_email: { tenantId: tenant.id, email: 'superadmin@platform.com' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        email: 'superadmin@platform.com',
-        passwordHash,
-        name: 'Super Admin',
-        role: UserRole.SUPER_ADMIN,
-      },
-    }),
-  ]);
-  console.log(`✅ ${users.length} users created`);
+    });
+
+    seededUsers.push(user);
+  }
+  console.log(`✅ ${seededUsers.length} core users created with RBAC mapping`);
+
+  // ── Seeding 1,000 Customers ─────────────────────────────
+  console.log('🌱 Seeding 1,000 customers...');
+  const customersData = [];
+  for (let i = 1; i <= 1000; i++) {
+    customersData.push({
+      tenantId: tenant.id,
+      email: `customer${i}@platform.com`,
+      passwordHash,
+      name: `Customer ${i}`,
+      phone: `+91-99999${String(i).padStart(5, '0')}`,
+      role: UserRoleEnum.USER,
+      isActive: true,
+      emailVerified: true,
+    });
+  }
+  await prisma.user.createMany({
+    data: customersData,
+    skipDuplicates: true,
+  });
+  console.log('✅ 1,000 customers seeded');
 
   // ── Categories ──────────────────────────────────────────
-  const categories = await Promise.all([
-    prisma.category.upsert({
-      where: { tenantId_slug: { tenantId: tenant.id, slug: 'restaurants' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        name: 'Restaurants',
-        slug: 'restaurants',
-        description: 'Dining & Food Services',
-        icon: 'UtensilsCrossed',
-        sortOrder: 1,
-      },
-    }),
-    prisma.category.upsert({
-      where: { tenantId_slug: { tenantId: tenant.id, slug: 'healthcare' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        name: 'Healthcare',
-        slug: 'healthcare',
-        description: 'Medical & Health Services',
-        icon: 'Heart',
-        sortOrder: 2,
-      },
-    }),
-    prisma.category.upsert({
-      where: { tenantId_slug: { tenantId: tenant.id, slug: 'retail' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        name: 'Retail',
-        slug: 'retail',
-        description: 'Shopping & Retail Stores',
-        icon: 'ShoppingBag',
-        sortOrder: 3,
-      },
-    }),
-    prisma.category.upsert({
-      where: { tenantId_slug: { tenantId: tenant.id, slug: 'services' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        name: 'Services',
-        slug: 'services',
-        description: 'Professional & Personal Services',
-        icon: 'Wrench',
-        sortOrder: 4,
-      },
-    }),
-    prisma.category.upsert({
-      where: { tenantId_slug: { tenantId: tenant.id, slug: 'technology' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        name: 'Technology',
-        slug: 'technology',
-        description: 'Tech Companies & Startups',
-        icon: 'Cpu',
-        sortOrder: 5,
-      },
-    }),
-    prisma.category.upsert({
-      where: { tenantId_slug: { tenantId: tenant.id, slug: 'education' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        name: 'Education',
-        slug: 'education',
-        description: 'Schools, Training & Tutoring',
-        icon: 'GraduationCap',
-        sortOrder: 6,
-      },
-    }),
-    prisma.category.upsert({
-      where: { tenantId_slug: { tenantId: tenant.id, slug: 'entertainment' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        name: 'Entertainment',
-        slug: 'entertainment',
-        description: 'Entertainment & Recreation',
-        icon: 'Music',
-        sortOrder: 7,
-      },
-    }),
-    prisma.category.upsert({
-      where: { tenantId_slug: { tenantId: tenant.id, slug: 'finance' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        name: 'Finance',
-        slug: 'finance',
-        description: 'Banking & Financial Services',
-        icon: 'Landmark',
-        sortOrder: 8,
-      },
-    }),
-  ]);
-  console.log(`✅ ${categories.length} categories created`);
+  const categoriesData = [
+    {
+      name: 'Restaurants',
+      slug: 'restaurants',
+      description: 'Dining & Food Services',
+      icon: 'UtensilsCrossed',
+      sortOrder: 1,
+    },
+    {
+      name: 'Healthcare',
+      slug: 'healthcare',
+      description: 'Medical & Health Services',
+      icon: 'Heart',
+      sortOrder: 2,
+    },
+    {
+      name: 'Retail',
+      slug: 'retail',
+      description: 'Shopping & Retail Stores',
+      icon: 'ShoppingBag',
+      sortOrder: 3,
+    },
+    {
+      name: 'Services',
+      slug: 'services',
+      description: 'Professional & Personal Services',
+      icon: 'Wrench',
+      sortOrder: 4,
+    },
+    {
+      name: 'Technology',
+      slug: 'technology',
+      description: 'Tech Companies & Startups',
+      icon: 'Cpu',
+      sortOrder: 5,
+    },
+    {
+      name: 'Education',
+      slug: 'education',
+      description: 'Schools, Training & Tutoring',
+      icon: 'GraduationCap',
+      sortOrder: 6,
+    },
+    {
+      name: 'Entertainment',
+      slug: 'entertainment',
+      description: 'Entertainment & Recreation',
+      icon: 'Music',
+      sortOrder: 7,
+    },
+    {
+      name: 'Finance',
+      slug: 'finance',
+      description: 'Banking & Financial Services',
+      icon: 'Landmark',
+      sortOrder: 8,
+    },
+  ];
 
-  // ── Businesses ──────────────────────────────────────────
-  const businessOwner = users[1]; // Jane Business
-  const businesses = await Promise.all([
-    prisma.business.upsert({
-      where: { tenantId_slug: { tenantId: tenant.id, slug: 'sunrise-cafe' } },
+  const categories = [];
+  for (const cat of categoriesData) {
+    const category = await prisma.category.upsert({
+      where: { tenantId_slug: { tenantId: tenant.id, slug: cat.slug } },
       update: {},
       create: {
         tenantId: tenant.id,
-        ownerId: businessOwner.id,
-        categoryId: categories[0].id,
-        name: 'Sunrise Café',
-        slug: 'sunrise-cafe',
-        description: 'Artisan coffee and fresh pastries in a cozy atmosphere.',
-        status: BusinessStatus.APPROVED,
-        address: '123 Main St',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        zipCode: '400001',
-        latitude: 19.076,
-        longitude: 72.8777,
-        phone: '+91-22-12345678',
-        email: 'hello@sunrisecafe.com',
-        website: 'https://sunrisecafe.com',
-        averageRating: 4.5,
-        totalReviews: 128,
-        isVerified: true,
-        verifiedAt: new Date(),
+        name: cat.name,
+        slug: cat.slug,
+        description: cat.description,
+        icon: cat.icon,
+        sortOrder: cat.sortOrder,
       },
-    }),
-    prisma.business.upsert({
-      where: { tenantId_slug: { tenantId: tenant.id, slug: 'metro-health-clinic' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        ownerId: businessOwner.id,
-        categoryId: categories[1].id,
-        name: 'Metro Health Clinic',
-        slug: 'metro-health-clinic',
-        description: 'Comprehensive healthcare services for the whole family.',
-        status: BusinessStatus.APPROVED,
-        address: '456 Park Ave',
-        city: 'Delhi',
-        state: 'Delhi',
-        zipCode: '110001',
-        latitude: 28.6139,
-        longitude: 77.209,
-        phone: '+91-11-98765432',
-        email: 'info@metrohealth.com',
-        averageRating: 4.2,
-        totalReviews: 89,
-        isVerified: true,
-        verifiedAt: new Date(),
-      },
-    }),
-    prisma.business.upsert({
-      where: { tenantId_slug: { tenantId: tenant.id, slug: 'techmart-electronics' } },
-      update: {},
-      create: {
-        tenantId: tenant.id,
-        ownerId: businessOwner.id,
-        categoryId: categories[2].id,
-        name: 'TechMart Electronics',
-        slug: 'techmart-electronics',
-        description: 'Latest gadgets and electronics at competitive prices.',
-        status: BusinessStatus.PENDING,
-        address: '789 Tech Blvd',
-        city: 'Bangalore',
-        state: 'Karnataka',
-        zipCode: '560001',
-        latitude: 12.9716,
-        longitude: 77.5946,
-        phone: '+91-80-11223344',
-        email: 'sales@techmart.com',
-        averageRating: 0,
-        totalReviews: 0,
-      },
-    }),
-  ]);
-  console.log(`✅ ${businesses.length} businesses created`);
+    });
+    categories.push(category);
+  }
+  console.log(`✅ ${categories.length} categories upserted`);
+
+  // ── Seeding 100 Businesses ──────────────────────────────
+  console.log('🌱 Seeding 100 businesses...');
+  const businessOwner = seededUsers.find((u) => u.email === 'business@platform.com');
+  const businessesData = [];
+
+  for (let i = 1; i <= 100; i++) {
+    const cat = categories[i % categories.length];
+    businessesData.push({
+      tenantId: tenant.id,
+      ownerId: businessOwner.id,
+      categoryId: cat.id,
+      name: `Enterprise Company ${i}`,
+      slug: `enterprise-company-${i}`,
+      description: `Premium listings and services from Enterprise Company ${i}. We offer top-tier facilities.`,
+      status: BusinessStatus.APPROVED,
+      address: `${100 + i} Commercial Way, Suite ${i}`,
+      city: ['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Chennai'][i % 5],
+      state: ['Maharashtra', 'Delhi', 'Karnataka', 'Maharashtra', 'Tamil Nadu'][i % 5],
+      zipCode: `4000${String(i).padStart(2, '0')}`,
+      phone: `+91-22-8888${String(i).padStart(4, '0')}`,
+      email: `info@company${i}.com`,
+      website: `https://company${i}.com`,
+      averageRating: 3.5 + (i % 2) * 1.2,
+      totalReviews: 10 + i * 2,
+      isVerified: i % 3 !== 0,
+      verifiedAt: i % 3 !== 0 ? new Date() : null,
+    });
+  }
+
+  await prisma.business.createMany({
+    data: businessesData,
+    skipDuplicates: true,
+  });
+  console.log('✅ 100 businesses seeded');
+
+  // Load created businesses to link other elements
+  const createdBusinesses = await prisma.business.findMany({
+    where: { tenantId: tenant.id },
+    take: 10,
+  });
 
   // ── Offers ──────────────────────────────────────────────
   const now = new Date();
   const nextMonth = new Date(now);
   nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-  await Promise.all([
-    prisma.offer.create({
+  if (createdBusinesses.length >= 2) {
+    await prisma.offer.create({
       data: {
-        businessId: businesses[0].id,
+        tenantId: tenant.id,
+        businessId: createdBusinesses[0].id,
         title: '20% Off Breakfast',
         description: 'Start your day right with 20% off all breakfast items',
         discountPercent: 20,
@@ -285,70 +546,87 @@ async function main() {
         code: 'MORNING20',
         maxRedemptions: 500,
       },
-    }),
-    prisma.offer.create({
+    });
+
+    await prisma.offer.create({
       data: {
-        businessId: businesses[1].id,
-        title: 'Free Health Checkup',
-        description: 'Get a free basic health checkup with any consultation',
+        tenantId: tenant.id,
+        businessId: createdBusinesses[1].id,
+        title: 'Free Consultation Session',
+        description: 'Get a free basic consultation with any appointment booking',
         status: OfferStatus.ACTIVE,
         startDate: now,
         endDate: nextMonth,
         maxRedemptions: 200,
       },
-    }),
-  ]);
-  console.log('✅ Offers created');
+    });
+    console.log('✅ Core active offers created');
+  }
+
+  // ── Sample Notifications ─────────────────────────────────
+  const customer = seededUsers.find((u) => u.email === 'user@platform.com');
+  if (customer) {
+    await prisma.notification.create({
+      data: {
+        tenantId: tenant.id,
+        userId: customer.id,
+        title: 'Welcome to the Platform!',
+        body: 'Start exploring verified businesses and uploads bills to earn rewards.',
+        type: 'SYSTEM',
+        channel: 'IN_APP',
+        isRead: false,
+      },
+    });
+    console.log('✅ Sample notification seeded');
+  }
 
   // ── Feature Flags ───────────────────────────────────────
-  await Promise.all([
-    prisma.featureFlag.upsert({
-      where: { key: 'enable_bill_upload' },
+  const flags = [
+    {
+      key: 'enable_bill_upload',
+      name: 'Bill Upload',
+      description: 'Allow users to upload bills for verification',
+      isEnabled: true,
+    },
+    {
+      key: 'enable_nearby_search',
+      name: 'Nearby Search',
+      description: 'Enable geo-based nearby business search',
+      isEnabled: true,
+    },
+    {
+      key: 'enable_push_notifications',
+      name: 'Push Notifications',
+      description: 'Enable FCM push notifications',
+      isEnabled: false,
+    },
+    {
+      key: 'enable_ai_fraud_detection',
+      name: 'AI Fraud Detection',
+      description: 'Enable AI-powered fraud detection on reviews',
+      isEnabled: false,
+    },
+  ];
+
+  for (const flag of flags) {
+    await prisma.featureFlag.upsert({
+      where: { key: flag.key },
       update: {},
       create: {
-        key: 'enable_bill_upload',
-        name: 'Bill Upload',
-        description: 'Allow users to upload bills for verification',
-        isEnabled: true,
+        key: flag.key,
+        name: flag.name,
+        description: flag.description,
+        isEnabled: flag.isEnabled,
       },
-    }),
-    prisma.featureFlag.upsert({
-      where: { key: 'enable_nearby_search' },
-      update: {},
-      create: {
-        key: 'enable_nearby_search',
-        name: 'Nearby Search',
-        description: 'Enable geo-based nearby business search',
-        isEnabled: true,
-      },
-    }),
-    prisma.featureFlag.upsert({
-      where: { key: 'enable_push_notifications' },
-      update: {},
-      create: {
-        key: 'enable_push_notifications',
-        name: 'Push Notifications',
-        description: 'Enable FCM push notifications',
-        isEnabled: false,
-      },
-    }),
-    prisma.featureFlag.upsert({
-      where: { key: 'enable_ai_fraud_detection' },
-      update: {},
-      create: {
-        key: 'enable_ai_fraud_detection',
-        name: 'AI Fraud Detection',
-        description: 'Enable AI-powered fraud detection on reviews',
-        isEnabled: false,
-      },
-    }),
-  ]);
+    });
+  }
   console.log('✅ Feature flags created');
 
   console.log('\n🎉 Database seeded successfully!\n');
   console.log('📧 Test Credentials:');
   console.log('  Public User:     user@platform.com / password123');
   console.log('  Business Owner:  business@platform.com / password123');
+  console.log('  Business Mod:    moderator@platform.com / password123');
   console.log('  Government:      gov@platform.com / password123');
   console.log('  Admin:           admin@platform.com / password123');
   console.log('  Super Admin:     superadmin@platform.com / password123');

@@ -1,85 +1,344 @@
 'use client';
 
+import { useState } from 'react';
+import Link from 'next/link';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Edit, MapPin, Phone } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import {
+  Plus, Edit, Trash2, MapPin, Phone, X, AlertTriangle,
+  BarChart3, User, Mail, Clock, Navigation, CheckCircle2,
+} from 'lucide-react';
 
-const branches = [
+interface Branch {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+  status: 'Active' | 'Inactive';
+  managerName: string;
+  managerPhone: string;
+  managerEmail: string;
+  hours: string;
+  geoCoords: string;
+}
+
+const initialBranches: Branch[] = [
   {
     id: 1,
     name: 'Downtown Branch',
-    address: '123 Main St, City',
-    phone: '(555) 123-4567',
+    address: '123 Main St, Downtown, City 400001',
+    phone: '+91 98765 43210',
     status: 'Active',
+    managerName: 'Ravi Kumar',
+    managerPhone: '+91 91234 56789',
+    managerEmail: 'ravi@sunrise.com',
+    hours: 'Mon–Sat 9AM–9PM',
+    geoCoords: '19.0760, 72.8777',
   },
   {
     id: 2,
     name: 'Airport Branch',
-    address: '456 Airport Ave, City',
-    phone: '(555) 987-6543',
+    address: '456 Airport Ave, Terminal 2, City',
+    phone: '+91 87654 32109',
     status: 'Active',
+    managerName: 'Priya Sharma',
+    managerPhone: '+91 99887 76655',
+    managerEmail: 'priya@sunrise.com',
+    hours: 'Daily 6AM–11PM',
+    geoCoords: '19.0896, 72.8656',
   },
   {
     id: 3,
     name: 'Mall Branch',
-    address: '789 Mall Rd, City',
-    phone: '(555) 456-7890',
+    address: '789 Mall Rd, Level 2, City',
+    phone: '+91 76543 21098',
     status: 'Inactive',
+    managerName: 'Ankit Verma',
+    managerPhone: '+91 88776 65544',
+    managerEmail: 'ankit@sunrise.com',
+    hours: 'Mon–Sun 10AM–10PM',
+    geoCoords: '19.1020, 72.8600',
   },
 ];
 
+const EMPTY_FORM: Omit<Branch, 'id' | 'status'> = {
+  name: '', address: '', phone: '',
+  managerName: '', managerPhone: '', managerEmail: '',
+  hours: '', geoCoords: '',
+};
+
 export default function BranchesPage() {
+  const [branches, setBranches] = useState<Branch[]>(initialBranches);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
+  const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+
+  const setField = (key: keyof typeof EMPTY_FORM, val: string) =>
+    setForm((f) => ({ ...f, [key]: val }));
+
+  const handleOpenAdd = () => {
+    setForm(EMPTY_FORM);
+    setIsAddOpen(true);
+  };
+
+  const handleAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name) return;
+    setBranches([...branches, { id: Date.now(), ...form, status: 'Active' }]);
+    setIsAddOpen(false);
+  };
+
+  const handleOpenEdit = (branch: Branch) => {
+    setEditingBranch(branch);
+    setForm({
+      name: branch.name, address: branch.address, phone: branch.phone,
+      managerName: branch.managerName, managerPhone: branch.managerPhone,
+      managerEmail: branch.managerEmail, hours: branch.hours, geoCoords: branch.geoCoords,
+    });
+  };
+
+  const handleEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !editingBranch) return;
+    setBranches(branches.map((b) => b.id === editingBranch.id ? { ...editingBranch, ...form } : b));
+    setEditingBranch(null);
+  };
+
+  const handleDelete = () => {
+    if (!deletingBranch) return;
+    setBranches(branches.filter((b) => b.id !== deletingBranch.id));
+    setDeletingBranch(null);
+  };
+
+  const toggleStatus = (id: number) =>
+    setBranches(branches.map((b) =>
+      b.id === id ? { ...b, status: b.status === 'Active' ? 'Inactive' : 'Active' } : b,
+    ));
+
+  // Reusable form fields component
+  const FormFields = () => (
+    <>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-xs font-medium text-slate-300 block mb-1.5">Branch Name *</label>
+          <Input value={form.name} onChange={(e) => setField('name', e.target.value)} placeholder="Downtown Branch" required className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-300 block mb-1.5">Phone Number *</label>
+          <Input value={form.phone} onChange={(e) => setField('phone', e.target.value)} placeholder="+91 98765 43210" required className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+        </div>
+      </div>
+      <div>
+        <label className="text-xs font-medium text-slate-300 block mb-1.5">Address *</label>
+        <Input value={form.address} onChange={(e) => setField('address', e.target.value)} placeholder="123 Main St, City 400001" required className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+      </div>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-xs font-medium text-slate-300 block mb-1.5">Operating Hours</label>
+          <Input value={form.hours} onChange={(e) => setField('hours', e.target.value)} placeholder="Mon–Sat 9AM–9PM" className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-slate-300 block mb-1.5">Geo Coordinates</label>
+          <Input value={form.geoCoords} onChange={(e) => setField('geoCoords', e.target.value)} placeholder="19.0760, 72.8777" className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+        </div>
+      </div>
+      <div className="pt-2 border-t border-white/5">
+        <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Branch Manager</p>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-medium text-slate-300 block mb-1.5">Manager Name</label>
+            <Input value={form.managerName} onChange={(e) => setField('managerName', e.target.value)} placeholder="Ravi Kumar" className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-slate-300 block mb-1.5">Manager Phone</label>
+            <Input value={form.managerPhone} onChange={(e) => setField('managerPhone', e.target.value)} placeholder="+91 91234 56789" className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-xs font-medium text-slate-300 block mb-1.5">Manager Email</label>
+            <Input type="email" value={form.managerEmail} onChange={(e) => setField('managerEmail', e.target.value)} placeholder="manager@business.com" className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <BusinessLayout>
-      <div>
-        <div className="flex items-center justify-between mb-8">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Branches</h1>
-            <p className="text-muted-foreground">Manage your business locations</p>
+            <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Branches</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Manage all your business locations.</p>
           </div>
-          <Button className="rounded-lg gap-2">
+          <Button
+            onClick={handleOpenAdd}
+            className="rounded-xl gap-2 font-semibold bg-gradient-to-r from-primary to-accent text-primary-foreground cursor-pointer"
+          >
             <Plus className="h-4 w-4" />
             Add Branch
           </Button>
         </div>
 
-        <div className="grid gap-6">
+        <div className="grid gap-4">
           {branches.map((branch) => (
-            <Card key={branch.id} className="p-6 rounded-2xl">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">{branch.name}</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      <span>{branch.address}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Phone className="h-4 w-4" />
-                      <span>{branch.phone}</span>
-                    </div>
+            <Card
+              key={branch.id}
+              className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:shadow-md transition-all group relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+                {/* Left — branch info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-3 flex-wrap">
+                    <h3 className="text-lg font-bold text-foreground">{branch.name}</h3>
+                    <button
+                      onClick={() => toggleStatus(branch.id)}
+                      className={`px-2 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-opacity hover:opacity-75 ${
+                        branch.status === 'Active'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : 'bg-white/5 text-muted-foreground border border-white/10'
+                      }`}
+                    >
+                      {branch.status === 'Active' && <CheckCircle2 className="h-3 w-3 inline mr-0.5" />}
+                      {branch.status}
+                    </button>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-y-1.5 gap-x-6 text-sm">
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <MapPin className="h-3.5 w-3.5 text-violet-400 shrink-0" />
+                      <span className="truncate">{branch.address}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <Phone className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+                      {branch.phone}
+                    </span>
+                    {branch.hours && (
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                        {branch.hours}
+                      </span>
+                    )}
+                    {branch.managerName && (
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
+                        <User className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        {branch.managerName}
+                      </span>
+                    )}
+                    {branch.managerPhone && (
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
+                        <Phone className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        {branch.managerPhone}
+                      </span>
+                    )}
+                    {branch.geoCoords && (
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
+                        <Navigation className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+                        {branch.geoCoords}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      branch.status === 'Active'
-                        ? 'bg-green-500/10 text-green-700'
-                        : 'bg-gray-500/10 text-gray-700'
-                    }`}
+
+                {/* Actions */}
+                <div className="flex gap-2 flex-wrap shrink-0">
+                  <Link href={`/dashboard/branches/${branch.id}/performance`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl border-primary/30 text-primary hover:bg-primary/10 gap-1.5 cursor-pointer"
+                    >
+                      <BarChart3 className="h-3.5 w-3.5" />
+                      Performance
+                    </Button>
+                  </Link>
+                  <Button
+                    onClick={() => handleOpenEdit(branch)}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 gap-1.5 cursor-pointer"
                   >
-                    {branch.status}
-                  </span>
-                  <Button variant="outline" className="w-full rounded-lg mt-4" size="sm">
-                    <Edit className="h-4 w-4 mr-2" />
+                    <Edit className="h-3.5 w-3.5" />
                     Edit
+                  </Button>
+                  <Button
+                    onClick={() => setDeletingBranch(branch)}
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
             </Card>
           ))}
         </div>
+
+        {/* ── ADD MODAL ─────────────────────────────────────────── */}
+        {isAddOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <Card className="w-full max-w-xl p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold text-foreground">Add Branch Location</h3>
+                <button onClick={() => setIsAddOpen(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <form onSubmit={handleAdd} className="space-y-4">
+                <FormFields />
+                <div className="flex gap-3 pt-2">
+                  <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">Cancel</Button>
+                  <Button type="submit" className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">Add Branch</Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )}
+
+        {/* ── EDIT MODAL ────────────────────────────────────────── */}
+        {editingBranch && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <Card className="w-full max-w-xl p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold text-foreground">Edit Branch</h3>
+                <button onClick={() => setEditingBranch(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <form onSubmit={handleEdit} className="space-y-4">
+                <FormFields />
+                <div className="flex gap-3 pt-2">
+                  <Button type="button" variant="outline" onClick={() => setEditingBranch(null)} className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">Cancel</Button>
+                  <Button type="submit" className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">Save Changes</Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )}
+
+        {/* ── DELETE CONFIRM ────────────────────────────────────── */}
+        {deletingBranch && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <h3 className="text-base font-bold text-foreground mb-2">Delete Branch?</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Permanently delete <span className="font-bold text-foreground">"{deletingBranch.name}"</span>?
+              </p>
+              <div className="flex gap-3">
+                <Button onClick={() => setDeletingBranch(null)} variant="outline" className="flex-1 rounded-xl border-white/10 text-slate-300 cursor-pointer hover:bg-white/5">Cancel</Button>
+                <Button onClick={handleDelete} className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white cursor-pointer">Delete</Button>
+              </div>
+            </Card>
+          </div>
+        )}
       </div>
     </BusinessLayout>
   );

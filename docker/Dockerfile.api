@@ -27,9 +27,16 @@ RUN cd apps/api && pnpm build
 # ── Production ───────────────────────────────────────────────
 FROM base AS runner
 ENV NODE_ENV=production
-COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages/database/node_modules/.prisma ./node_modules/.prisma
+
+# Set ownership of the working directory to node user
+RUN chown -R node:node /app
+
+# Switch to the node user
+USER node
+
+COPY --chown=node:node --from=builder /app/apps/api/dist ./dist
+COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /app/packages/database/node_modules/.prisma ./node_modules/.prisma
 
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

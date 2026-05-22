@@ -3,8 +3,12 @@
 // ============================================================
 
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { BullModule } from '@nestjs/bullmq';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { validateEnv } from './common/config/env.validation';
+import { SecurityExceptionFilter } from './common/filters/security-exception.filter';
 
 // Infrastructure modules
 import { DatabaseModule } from './common/database/database.module';
@@ -27,6 +31,37 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { MediaModule } from './modules/media/media.module';
 import { SearchModule } from './modules/search/search.module';
 import { HealthModule } from './modules/health/health.module';
+import { VerificationModule } from './modules/verification/verification.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { OcrModule } from './modules/ocr/ocr.module';
+import { FraudModule } from './modules/fraud/fraud.module';
+import { BillVerificationsModule } from './modules/bill-verifications/bill-verifications.module';
+import { VerifiedPurchasesModule } from './modules/verified-purchases/verified-purchases.module';
+import { TypesenseModule } from './modules/typesense/typesense.module';
+import { DiscoveryModule } from './modules/discovery/discovery.module';
+import { TrendingModule } from './modules/trending/trending.module';
+import { SearchAnalyticsModule } from './modules/search-analytics/search-analytics.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
+import { CampaignsModule } from './modules/campaigns/campaigns.module';
+import { GovernmentAlertsModule } from './modules/government-alerts/government-alerts.module';
+import { PreferencesModule } from './modules/preferences/preferences.module';
+import { MetricsModule } from './modules/metrics/metrics.module';
+import { SegmentationModule } from './modules/segmentation/segmentation.module';
+import { BusinessIntelligenceModule } from './modules/business-intelligence/bi.module';
+import { LoggerModule } from './common/logger/logger.module';
+import { CorrelationIdMiddleware } from './common/logger/correlation-id.middleware';
+import { NestModule, MiddlewareConsumer } from '@nestjs/common';
+
+import { CustomersModule } from './modules/customers/customers.module';
+import { CustomerOnboardingModule } from './modules/customer-onboarding/customer-onboarding.module';
+import { BusinessOnboardingModule } from './modules/business-onboarding/business-onboarding.module';
+import { BusinessDocumentsModule } from './modules/business-documents/business-documents.module';
+import { BusinessMediaModule } from './modules/business-media/business-media.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { OnboardingVerificationModule } from './modules/onboarding-verification/onboarding-verification.module';
+import { OnboardingAnalyticsModule } from './modules/onboarding-analytics/onboarding-analytics.module';
+import { EntityOnboardingModule } from './modules/entity-onboarding/entity-onboarding.module';
 
 @Module({
   imports: [
@@ -34,6 +69,7 @@ import { HealthModule } from './modules/health/health.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
+      validate: validateEnv,
     }),
 
     // ── Rate Limiting ───────────────────────────────────────
@@ -58,6 +94,17 @@ import { HealthModule } from './modules/health/health.module';
     // ── Infrastructure ──────────────────────────────────────
     DatabaseModule,
     RedisModule,
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          host: config.get('REDIS_HOST', 'localhost'),
+          port: config.get('REDIS_PORT', 6379),
+          password: config.get('REDIS_PASSWORD'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
 
     // ── Domain Modules ──────────────────────────────────────
     AuthModule,
@@ -76,6 +123,48 @@ import { HealthModule } from './modules/health/health.module';
     MediaModule,
     SearchModule,
     HealthModule,
+    VerificationModule,
+    DashboardModule,
+    OcrModule,
+    FraudModule,
+    BillVerificationsModule,
+    VerifiedPurchasesModule,
+    TypesenseModule,
+    DiscoveryModule,
+    TrendingModule,
+    SearchAnalyticsModule,
+    RealtimeModule,
+    CampaignsModule,
+    GovernmentAlertsModule,
+    PreferencesModule,
+    MetricsModule,
+    SegmentationModule,
+    BusinessIntelligenceModule,
+    LoggerModule,
+    CustomersModule,
+    CustomerOnboardingModule,
+    BusinessOnboardingModule,
+    BusinessDocumentsModule,
+    BusinessMediaModule,
+    SubscriptionsModule,
+    PaymentsModule,
+    OnboardingVerificationModule,
+    OnboardingAnalyticsModule,
+    EntityOnboardingModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: SecurityExceptionFilter,
+    },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+  }
+}

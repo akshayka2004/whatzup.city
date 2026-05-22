@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   MapPin,
   Search,
@@ -26,13 +26,25 @@ const menuItems = [
   { label: 'Notifications', href: '/notifications', icon: Bell },
 ];
 
-const bottomItems = [
-  { label: 'Settings', href: '/profile', icon: Settings },
-  { label: 'Sign Out', href: '#', icon: LogOut, action: true },
-];
-
 export function PublicSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const isItemActive = (href: string) => {
+    if (href === '/') return pathname === '/';
+    return pathname === href || pathname.startsWith(href + '/');
+  };
+
+  const handleSignOut = () => {
+    // Clear auth tokens
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('user_session');
+    }
+    router.push('/login');
+  };
 
   return (
     <aside className="w-64 border-r border-border bg-sidebar text-sidebar-foreground flex flex-col">
@@ -46,14 +58,14 @@ export function PublicSidebar() {
       <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          const active = isItemActive(item.href);
           return (
             <Link key={item.href} href={item.href}>
               <Button
-                variant={isActive ? 'default' : 'ghost'}
+                variant={active ? 'default' : 'ghost'}
                 className={cn(
                   'w-full justify-start gap-3 rounded-xl',
-                  isActive && 'bg-sidebar-primary text-sidebar-primary-foreground',
+                  active && 'bg-sidebar-primary text-sidebar-primary-foreground',
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -66,24 +78,26 @@ export function PublicSidebar() {
 
       {/* Bottom items */}
       <div className="border-t border-sidebar-border space-y-2 px-4 py-4">
-        {bottomItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href;
-          return (
-            <Link key={item.label} href={item.href}>
-              <Button
-                variant={isActive ? 'default' : 'ghost'}
-                className={cn(
-                  'w-full justify-start gap-3 rounded-xl',
-                  isActive && 'bg-sidebar-primary text-sidebar-primary-foreground',
-                )}
-              >
-                <Icon className="h-5 w-5" />
-                <span>{item.label}</span>
-              </Button>
-            </Link>
-          );
-        })}
+        <Link href="/profile">
+          <Button
+            variant={pathname === '/profile' ? 'default' : 'ghost'}
+            className={cn(
+              'w-full justify-start gap-3 rounded-xl',
+              pathname === '/profile' && 'bg-sidebar-primary text-sidebar-primary-foreground',
+            )}
+          >
+            <Settings className="h-5 w-5" />
+            <span>Settings</span>
+          </Button>
+        </Link>
+        <Button
+          variant="ghost"
+          onClick={handleSignOut}
+          className="w-full justify-start gap-3 rounded-xl text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+        >
+          <LogOut className="h-5 w-5" />
+          <span>Sign Out</span>
+        </Button>
       </div>
     </aside>
   );

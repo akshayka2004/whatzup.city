@@ -2,91 +2,147 @@
 // Auth Controller — Registration, Login, Token Refresh, Logout
 // ============================================================
 
-import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { IsEmail, IsString, MinLength, MaxLength, IsOptional, IsEnum } from 'class-validator';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { UserRole } from '@saas/types';
-
-// ── DTOs ────────────────────────────────────────────────────
-
-class RegisterDto {
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  @MinLength(8)
-  @MaxLength(128)
-  password: string;
-
-  @IsString()
-  @MinLength(2)
-  @MaxLength(100)
-  name: string;
-
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @IsOptional()
-  @IsString()
-  tenantId?: string;
-}
-
-class LoginDto {
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  password: string;
-
-  @IsOptional()
-  @IsString()
-  tenantId?: string;
-}
-
-class RefreshTokenDto {
-  @IsString()
-  refreshToken: string;
-}
-
-// ── Controller ──────────────────────────────────────────────
+import { SignupDto } from './dto/signup.dto';
+import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { BusinessSignupDto } from './dto/business-signup.dto';
+import { SelectRoleDto } from './dto/select-role.dto';
+import { ConfigService } from '@nestjs/config';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  private setCookies(res: Response, accessToken: string, refreshToken: string) {
+    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      path: '/',
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+    });
+  }
+
+  private clearCookies(res: Response) {
+    res.clearCookie('access_token', { path: '/' });
+    res.clearCookie('refresh_token', { path: '/' });
+  }
 
   @Public()
-  @Post('register')
+  @Post('signup')
   @ApiOperation({ summary: 'Register a new user account' })
-  async register(@Body() dto: RegisterDto) {
-    return this.authService.register({
-      email: dto.email,
-      password: dto.password,
-      name: dto.name,
-      phone: dto.phone,
-      tenantId: dto.tenantId || 'default',
-    });
+  async signup(@Body() dto: SignupDto) {
+    return this.authService.signup(dto);
+  }
+
+  @Public()
+  @Post('business/signup')
+  @ApiOperation({ summary: 'Register a new business tenant and owner account' })
+  async businessSignup(
+    @Body() dto: BusinessSignupDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.businessSignup(dto);
+    this.setCookies(res, result.accessToken, result.refreshToken);
+
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      expiresIn: result.expiresIn,
+      user: result.user,
+      businessId: result.businessId,
+    };
+  }
+
+  @Public()
+  @Get('tenant/:slug')
+  @ApiOperation({ summary: 'Resolve tenant UUID by its slug' })
+  async getTenantBySlug(@Param('slug') slug: string) {
+    return this.authService.getTenantBySlug(slug);
   }
 
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login with email and password' })
-  async login(@Body() dto: LoginDto) {
-    return this.authService.login(dto.email, dto.password, dto.tenantId || 'default');
+  async login(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const ip = req.ip || req.socket.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+
+    const result = await this.authService.login(dto, ip, userAgent);
+    this.setCookies(res, result.accessToken, result.refreshToken);
+
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      expiresIn: result.expiresIn,
+      user: result.user,
+    };
   }
 
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
-  async refreshTokens(@Body() dto: RefreshTokenDto) {
-    return this.authService.refreshTokens(dto.refreshToken);
+  async refreshTokens(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Body() body: { refreshToken?: string },
+  ) {
+    // Extract refresh token from cookies first, then fallback to request body
+    const refreshToken = req.cookies?.['refresh_token'] || body.refreshToken;
+
+    const ip = req.ip || req.socket.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+
+    const result = await this.authService.refreshTokens(refreshToken, ip, userAgent);
+    this.setCookies(res, result.accessToken, result.refreshToken);
+
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      expiresIn: result.expiresIn,
+      user: result.user,
+    };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -94,16 +150,72 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Logout and invalidate tokens' })
-  async logout(@CurrentUser('id') userId: string, @Body() body: { refreshToken?: string }) {
-    await this.authService.logout(userId, body.refreshToken);
+  async logout(
+    @CurrentUser('id') userId: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Body() body: { refreshToken?: string },
+  ) {
+    const refreshToken = req.cookies?.['refresh_token'] || body.refreshToken;
+    await this.authService.logout(userId, refreshToken);
+    this.clearCookies(res);
     return { message: 'Logged out successfully' };
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('me')
+  @Post('logout-all')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current authenticated user' })
+  @ApiOperation({ summary: 'Logout all devices and invalidate all tokens' })
+  async logoutAll(@CurrentUser('id') userId: string, @Res({ passthrough: true }) res: Response) {
+    await this.authService.logoutAll(userId);
+    this.clearCookies(res);
+    return { message: 'Logged out from all devices successfully' };
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request password reset email' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password with reset token' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  @Public()
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify email address with verification token' })
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('select-role')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Select entity type and dynamic role after initial registration' })
+  async selectRole(
+    @CurrentUser('id') userId: string,
+    @Body() dto: SelectRoleDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.selectRole(userId, dto);
+    this.setCookies(res, result.accessToken, result.refreshToken);
+    return result;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current authenticated user details' })
   async me(@CurrentUser() user: any) {
     return user;
   }

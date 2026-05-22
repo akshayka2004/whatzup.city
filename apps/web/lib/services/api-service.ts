@@ -27,6 +27,7 @@ class ApiService {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -59,6 +60,7 @@ class ApiService {
           'Content-Type': 'application/json',
         },
         body: body ? JSON.stringify(body) : undefined,
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -91,6 +93,7 @@ class ApiService {
           'Content-Type': 'application/json',
         },
         body: body ? JSON.stringify(body) : undefined,
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -122,6 +125,7 @@ class ApiService {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (!response.ok) {

@@ -8,64 +8,143 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ── TENANTS ─────────────────────────────────────────────────
 
 model Tenant {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @db.VarChar(255)
-  slug        String   @unique @db.VarChar(255)
-  domain      String?  @db.VarChar(255)
-  logo        String?  @db.Text
-  settings    Json?
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @db.VarChar(255)
+  slug      String    @unique @db.VarChar(255)
+  domain    String?   @db.VarChar(255)
+  logo      String?   @db.Text
+  settings  Json?
+  isActive  Boolean   @default(true) @map("is_active")
+  
+  // Core Audit Fields
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
 
   // Relations
-  users         User[]
-  businesses    Business[]
-  categories    Category[]
-  announcements Announcement[]
-  auditLogs     AuditLog[]
+  users                   User[]
+  roles                   Role[]
+  permissions             Permission[]
+  userRoles               UserRole[]
+  rolePermissions         RolePermission[]
+  sessions                Session[]
+  refreshTokens           RefreshToken[]
+  deviceLogins            DeviceLogin[]
+  businesses              Business[]
+  businessBranches        BusinessBranch[]
+  categories              Category[]
+  businessDocuments       BusinessDocument[]
+  businessStaff           BusinessStaff[]
+  businessVerifications   BusinessVerification[]
+  productCategories       ProductCategory[]
+  products                Product[]
+  offers                  Offer[]
+  offerRedemptions        OfferRedemption[]
+  coupons                 Coupon[]
+  reviews                 Review[]
+  reviewMedia             ReviewMedia[]
+  reviewVotes             ReviewVote[]
+  bookmarks               Bookmark[]
+  favorites               Favorite[]
+  userFollows             UserFollow[]
+  bills                   Bill[]
+  billItems               BillItem[]
+  billVerifications       BillVerification[]
+  verifiedPurchases       VerifiedPurchase[]
+  notifications           Notification[]
+  notificationRecipients  NotificationRecipient[]
+  notificationPreferences NotificationPreference[]
+  announcements           GovernmentAnnouncement[]
+  media                   Media[]
+  analyticsEvents         AnalyticsEvent[]
+  businessMetrics         BusinessMetric[]
+  userActivities          UserActivity[]
+  searchHistories         SearchHistory[]
+  moderationReports       ModerationReport[]
+  auditLogs               AuditLog[]
+  adminActions            AdminAction[]
+  fraudFlags              FraudFlag[]
+  featureFlags            FeatureFlag[]
+  customers               Customer[]
+  subscriptions           Subscription[]
+  payments                Payment[]
+  onboardingProgress      OnboardingProgress[]
+  onboardingEvents        OnboardingEvent[]
+  entities                Entity[]
+  uploadedDocuments       UploadedDocument[]
+  verificationRequests    VerificationRequest[]
+  plans                   Plan[]
 
+  @@index([deletedAt])
   @@map("tenants")
 }
 
-// ── USERS ───────────────────────────────────────────────────
+// ── USERS & AUTHENTICATION ──────────────────────────────────
 
 model User {
-  id             String    @id @default(uuid()) @db.Uuid
-  tenantId       String    @map("tenant_id") @db.Uuid
-  email          String    @db.VarChar(255)
-  passwordHash   String    @map("password_hash") @db.Text
-  name           String    @db.VarChar(255)
-  phone          String?   @db.VarChar(50)
-  avatar         String?   @db.Text
-  role           UserRole  @default(PUBLIC_USER)
-  isActive       Boolean   @default(true) @map("is_active")
-  emailVerified  Boolean   @default(false) @map("email_verified")
-  lastLoginAt    DateTime? @map("last_login_at")
-  deletedAt      DateTime? @map("deleted_at")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  id            String       @id @default(uuid()) @db.Uuid
+  tenantId      String       @map("tenant_id") @db.Uuid
+  email         String       @db.VarChar(255)
+  passwordHash  String       @map("password_hash") @db.Text
+  name          String       @db.VarChar(255)
+  phone         String?      @db.VarChar(50)
+  avatar        String?      @db.Text
+  role          UserRoleEnum @default(USER)
+  isActive      Boolean      @default(true) @map("is_active")
+  emailVerified Boolean      @default(false) @map("email_verified")
+  lastLoginAt   DateTime?    @map("last_login_at")
+  
+  // Core Audit Fields
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at")
+  createdBy     String?      @map("created_by") @db.Uuid
+  updatedBy     String?      @map("updated_by") @db.Uuid
 
   // Relations
-  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  businesses      Business[]      @relation("BusinessOwner")
-  reviews         Review[]
-  bills           Bill[]          @relation("BillUploader")
-  billsVerified   Bill[]          @relation("BillVerifier")
-  notifications   Notification[]
-  bookmarks       Bookmark[]
-  sessions        Session[]
-  reports         Report[]        @relation("ReportAuthor")
-  reportsResolved Report[]        @relation("ReportResolver")
-  auditLogs       AuditLog[]
-  userRoles       UserPermission[]
+  tenant                 Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userRoles              UserRole[]
+  sessions               Session[]
+  refreshTokens          RefreshToken[]
+  deviceLogins           DeviceLogin[]
+  businesses             Business[]               @relation("BusinessOwner")
+  businessStaff          BusinessStaff[]
+  offerRedemptions       OfferRedemption[]
+  reviews                Review[]
+  reviewVotes            ReviewVote[]
+  bookmarks              Bookmark[]
+  favorites              Favorite[]
+  followsAsFollower      UserFollow[]             @relation("UserFollower")
+  followsAsFollowing     UserFollow[]             @relation("UserFollowing")
+  billsUploaded          Bill[]                   @relation("BillUploader")
+  billsVerified          Bill[]                   @relation("BillVerifier")
+  billVerifications      BillVerification[]
+  verifiedPurchases      VerifiedPurchase[]
+  notifications          Notification[]
+  notificationRecipients NotificationRecipient[]
+  notificationPreferences NotificationPreference[]
+  userActivities         UserActivity[]
+  searchHistories        SearchHistory[]
+  moderationReports      ModerationReport[]       @relation("ReportAuthor")
+  resolvedReports        ModerationReport[]       @relation("ReportResolver")
+  adminActions           AdminAction[]
+  resolvedFrauds         FraudFlag[]
+  auditLogs              AuditLog[]
+  businessVerifications  BusinessVerification[]
+  customerProfile        Customer?
+  entities               Entity[]
+  entityVerifications    VerificationRequest[]    @relation("EntityVerifier")
+
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -75,80 +154,295 @@ model User {
   @@map("users")
 }
 
-enum UserRole {
-  PUBLIC_USER
-  BUSINESS_OWNER
-  BUSINESS_STAFF
-  GOVERNMENT_AGENCY
-  ADMIN
-  SUPER_ADMIN
+model Customer {
+  id            String         @id @default(uuid()) @db.Uuid
+  tenantId      String         @map("tenant_id") @db.Uuid
+  userId        String         @unique @map("user_id") @db.Uuid
+  firstName     String         @map("first_name") @db.VarChar(100)
+  lastName      String         @map("last_name") @db.VarChar(100)
+  email         String         @db.VarChar(255)
+  phone         String?        @db.VarChar(50)
+  phoneVerified Boolean        @default(false) @map("phone_verified")
+  avatar        String?        @db.Text
+  city          String?        @db.VarChar(100)
+  district      String?        @db.VarChar(100)
+  state         String?        @db.VarChar(100)
+  preferences   Json           @default("{}")
+  status        CustomerStatus @default(PENDING)
+
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  deletedAt     DateTime?      @map("deleted_at")
+  createdBy     String?        @map("created_by") @db.Uuid
+  updatedBy     String?        @map("updated_by") @db.Uuid
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, email])
+  @@unique([tenantId, phone])
+  @@index([tenantId, status])
+  @@index([tenantId, city, state])
+  @@index([deletedAt])
+  @@map("customers")
 }
 
-// ── SESSIONS ────────────────────────────────────────────────
+enum CustomerStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
 
-model Session {
-  id           String   @id @default(uuid()) @db.Uuid
-  userId       String   @map("user_id") @db.Uuid
-  refreshToken String   @unique @map("refresh_token") @db.Text
-  userAgent    String?  @map("user_agent") @db.Text
-  ipAddress    String?  @map("ip_address") @db.VarChar(45)
-  expiresAt    DateTime @map("expires_at")
-  createdAt    DateTime @default(now()) @map("created_at")
+enum UserRoleEnum {
+  USER
+  BUSINESS_OWNER
+  BUSINESS_MODERATOR
+  BUSINESS_STAFF
+  MASTER_ADMIN
+  SUPER_ADMIN
+  GOVERNMENT_ADMIN
+  INFLUENCER
+  PROFESSIONAL
+  EVENT_ORGANIZER
+  ORGANIZATION_ADMIN
+  // Legacy value kept for migration compatibility
+  BUSINESS_ADMIN
+}
+
+enum BusinessMemberRole {
+  OWNER
+  MODERATOR
+  STAFF
+}
+
+enum EntityType {
+  CUSTOMER
+  BUSINESS
+  INFLUENCER
+  PROFESSIONAL
+  EVENT_ORGANIZER
+  ORGANIZATION
+  GOVERNMENT
+}
+
+enum EntityStatus {
+  DRAFT
+  PENDING_VERIFICATION
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+
+// ── RBAC MODELS ─────────────────────────────────────────────
+
+model Role {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  code        String    @db.VarChar(50)
+  name        String    @db.VarChar(100)
+  description String?   @db.Text
+  
+  // Core Audit Fields
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by") @db.Uuid
+  updatedBy   String?   @map("updated_by") @db.Uuid
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
 
-  @@index([userId])
-  @@index([refreshToken])
-  @@index([expiresAt])
-  @@map("sessions")
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([deletedAt])
+  @@map("roles")
 }
-
-// ── PERMISSIONS ─────────────────────────────────────────────
 
 model Permission {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @unique @db.VarChar(100)
-  description String?  @db.Text
-  resource    String   @db.VarChar(100)
-  action      String   @db.VarChar(50)
-  createdAt   DateTime @default(now()) @map("created_at")
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  name        String    @db.VarChar(100)
+  description String?   @db.Text
+  resource    String    @db.VarChar(100)
+  action      String    @db.VarChar(50)
+  
+  // Core Audit Fields
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by") @db.Uuid
+  updatedBy   String?   @map("updated_by") @db.Uuid
 
   // Relations
-  userPermissions UserPermission[]
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rolePermissions RolePermission[]
 
-  @@unique([resource, action])
+  @@unique([tenantId, resource, action])
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([deletedAt])
   @@map("permissions")
 }
 
-model UserPermission {
-  id           String   @id @default(uuid()) @db.Uuid
-  userId       String   @map("user_id") @db.Uuid
-  permissionId String   @map("permission_id") @db.Uuid
-  grantedAt    DateTime @default(now()) @map("granted_at")
+model UserRole {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  roleId    String    @map("role_id") @db.Uuid
+  
+  // Core Audit Fields
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
 
   // Relations
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, permissionId])
-  @@map("user_permissions")
+  @@unique([tenantId, userId, roleId])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([deletedAt])
+  @@map("user_roles")
 }
 
-// ── CATEGORIES ──────────────────────────────────────────────
+model RolePermission {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  roleId       String    @map("role_id") @db.Uuid
+  permissionId String    @map("permission_id") @db.Uuid
+  
+  // Core Audit Fields
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+  createdBy    String?   @map("created_by") @db.Uuid
+  updatedBy    String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, roleId, permissionId])
+  @@index([tenantId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@index([deletedAt])
+  @@map("role_permissions")
+}
+
+// ── SESSIONS & DEVICES ──────────────────────────────────────
+
+model Session {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  refreshToken String    @unique @map("refresh_token") @db.Text
+  userAgent    String?   @map("user_agent") @db.Text
+  ipAddress    String?   @map("ip_address") @db.VarChar(45)
+  expiresAt    DateTime  @map("expires_at")
+  
+  // Core Audit Fields
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+  createdBy    String?   @map("created_by") @db.Uuid
+  updatedBy    String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([refreshToken])
+  @@index([expiresAt])
+  @@index([deletedAt])
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  token     String    @unique @db.Text
+  isRevoked Boolean   @default(false) @map("is_revoked")
+  expiresAt DateTime  @map("expires_at")
+  
+  // Core Audit Fields
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([token])
+  @@index([deletedAt])
+  @@map("refresh_tokens")
+}
+
+model DeviceLogin {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  deviceType  String    @map("device_type") @db.VarChar(100)
+  deviceToken String?   @map("device_token") @db.Text
+  os          String?   @db.VarChar(50)
+  browser     String?   @db.VarChar(50)
+  ipAddress   String?   @map("ip_address") @db.VarChar(45)
+  lastLoginAt DateTime  @default(now()) @map("last_login_at")
+  
+  // Core Audit Fields
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by") @db.Uuid
+  updatedBy   String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([deletedAt])
+  @@map("device_logins")
+}
+
+// ── BUSINESS MODULE ─────────────────────────────────────────
 
 model Category {
-  id          String   @id @default(uuid()) @db.Uuid
-  tenantId    String   @map("tenant_id") @db.Uuid
-  name        String   @db.VarChar(100)
-  slug        String   @db.VarChar(100)
-  description String?  @db.Text
-  icon        String?  @db.VarChar(50)
-  parentId    String?  @map("parent_id") @db.Uuid
-  sortOrder   Int      @default(0) @map("sort_order")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  name        String    @db.VarChar(100)
+  slug        String    @db.VarChar(100)
+  description String?   @db.Text
+  icon        String?   @db.VarChar(50)
+  parentId    String?   @map("parent_id") @db.Uuid
+  sortOrder   Int       @default(0) @map("sort_order")
+  isActive    Boolean   @default(true) @map("is_active")
+  
+  // Core Audit Fields
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by") @db.Uuid
+  updatedBy   String?   @map("updated_by") @db.Uuid
 
   // Relations
   tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -159,125 +453,288 @@ model Category {
   @@unique([tenantId, slug])
   @@index([tenantId])
   @@index([parentId])
-  @@map("categories")
+  @@index([deletedAt])
+  @@map("business_categories")
 }
 
-// ── BUSINESSES ──────────────────────────────────────────────
-
 model Business {
-  id              String         @id @default(uuid()) @db.Uuid
-  tenantId        String         @map("tenant_id") @db.Uuid
-  ownerId         String         @map("owner_id") @db.Uuid
-  categoryId      String         @map("category_id") @db.Uuid
-  name            String         @db.VarChar(255)
-  slug            String         @db.VarChar(255)
-  description     String         @db.Text
-  status          BusinessStatus @default(PENDING)
-  address         String         @db.Text
-  city            String         @db.VarChar(100)
-  state           String         @db.VarChar(100)
-  zipCode         String         @map("zip_code") @db.VarChar(20)
-  latitude        Decimal?       @db.Decimal(10, 8)
-  longitude       Decimal?       @db.Decimal(11, 8)
-  phone           String         @db.VarChar(50)
-  email           String         @db.VarChar(255)
-  website         String?        @db.Text
-  logo            String?        @db.Text
-  coverImage      String?        @map("cover_image") @db.Text
-  operatingHours  Json?          @map("operating_hours")
-  averageRating   Decimal        @default(0) @map("average_rating") @db.Decimal(3, 2)
-  totalReviews    Int            @default(0) @map("total_reviews")
-  isVerified      Boolean        @default(false) @map("is_verified")
-  verifiedAt      DateTime?      @map("verified_at")
-  featuredUntil   DateTime?      @map("featured_until")
-  deletedAt       DateTime?      @map("deleted_at")
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
+  id             String         @id @default(uuid()) @db.Uuid
+  tenantId       String         @map("tenant_id") @db.Uuid
+  ownerId        String         @map("owner_id") @db.Uuid
+  categoryId     String         @map("category_id") @db.Uuid
+  entityId       String?        @unique @map("entity_id") @db.Uuid
+  name           String         @db.VarChar(255)
+  slug           String         @db.VarChar(255)
+  description    String         @db.Text
+  status         BusinessStatus @default(DRAFT)
+  address        String         @db.Text
+  city           String         @db.VarChar(100)
+  state          String         @db.VarChar(100)
+  zipCode        String         @map("zip_code") @db.VarChar(20)
+  latitude       Decimal?       @db.Decimal(10, 8)
+  longitude      Decimal?       @db.Decimal(11, 8)
+  phone          String         @db.VarChar(50)
+  email          String         @db.VarChar(255)
+  website        String?        @db.Text
+  ownerName      String?        @map("owner_name") @db.VarChar(255)
+  district       String?        @db.VarChar(100)
+  googleMapsUrl  String?        @map("google_maps_url") @db.Text
+  socialLinks    Json           @default("{}") @map("social_links")
+  tags           Json           @default("[]")
+  subcategoryIds Json           @default("[]") @map("subcategory_ids")
+  profileType    BusinessProfileType @default(OWNER) @map("profile_type")
+  logo           String?        @db.Text
+  coverImage     String?        @map("cover_image") @db.Text
+  operatingHours Json?          @map("operating_hours")
+  averageRating  Decimal        @default(0) @map("average_rating") @db.Decimal(3, 2)
+  totalReviews   Int            @default(0) @map("total_reviews")
+  isVerified     Boolean        @default(false) @map("is_verified")
+  verifiedAt     DateTime?      @map("verified_at")
+  featuredUntil  DateTime?      @map("featured_until")
+  
+  // Core Audit Fields
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  deletedAt      DateTime?      @map("deleted_at")
+  createdBy      String?        @map("created_by") @db.Uuid
+  updatedBy      String?        @map("updated_by") @db.Uuid
 
   // Relations
-  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  owner     User      @relation("BusinessOwner", fields: [ownerId], references: [id])
-  category  Category  @relation(fields: [categoryId], references: [id])
-  branches  Branch[]
-  products  Product[]
-  offers    Offer[]
-  reviews   Review[]
-  bills     Bill[]
-  media     Media[]
-  bookmarks Bookmark[]
+  tenant            Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner             User                   @relation("BusinessOwner", fields: [ownerId], references: [id])
+  category          Category               @relation(fields: [categoryId], references: [id])
+  entity            Entity?                @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  branches          BusinessBranch[]
+  documents         BusinessDocument[]
+  staff             BusinessStaff[]
+  verifications     BusinessVerification[]
+  productCategories ProductCategory[]
+  products          Product[]
+  offers            Offer[]
+  coupons           Coupon[]
+  reviews           Review[]
+  bookmarks         Bookmark[]
+  favorites         Favorite[]
+  media             Media[]
+  metrics           BusinessMetric[]
+  analyticsEvents   AnalyticsEvent[]
+  verifiedPurchases VerifiedPurchase[]
+  bills             Bill[]
+  subscriptions     Subscription[]
+  payments          Payment[]
 
   @@unique([tenantId, slug])
+  @@unique([tenantId, email])
+  @@unique([tenantId, phone])
   @@index([tenantId])
   @@index([ownerId])
   @@index([categoryId])
   @@index([status])
   @@index([city, state])
+  @@index([district])
   @@index([averageRating])
   @@index([deletedAt])
   @@map("businesses")
 }
 
 enum BusinessStatus {
-  PENDING
+  DRAFT
+  PENDING_VERIFICATION
+  UNDER_REVIEW
   APPROVED
   REJECTED
   SUSPENDED
   ARCHIVED
 }
 
-// ── BRANCHES ────────────────────────────────────────────────
-
-model Branch {
-  id         String   @id @default(uuid()) @db.Uuid
-  businessId String   @map("business_id") @db.Uuid
-  name       String   @db.VarChar(255)
-  address    String   @db.Text
-  city       String   @db.VarChar(100)
-  state      String   @db.VarChar(100)
-  zipCode    String   @map("zip_code") @db.VarChar(20)
-  latitude   Decimal? @db.Decimal(10, 8)
-  longitude  Decimal? @db.Decimal(11, 8)
-  phone      String?  @db.VarChar(50)
-  email      String?  @db.VarChar(255)
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  @@index([businessId])
-  @@map("branches")
+enum BusinessProfileType {
+  OWNER
+  AGENCY
+  STAFF
 }
 
-// ── PRODUCTS ────────────────────────────────────────────────
-
-model Product {
-  id          String   @id @default(uuid()) @db.Uuid
-  businessId  String   @map("business_id") @db.Uuid
-  name        String   @db.VarChar(255)
-  description String   @db.Text
-  price       Decimal  @db.Decimal(12, 2)
-  images      Json     @default("[]")
-  isAvailable Boolean  @default(true) @map("is_available")
-  sortOrder   Int      @default(0) @map("sort_order")
-  deletedAt   DateTime? @map("deleted_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+model BusinessBranch {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  businessId String    @map("business_id") @db.Uuid
+  name       String    @db.VarChar(255)
+  address    String    @db.Text
+  city       String    @db.VarChar(100)
+  state      String    @db.VarChar(100)
+  zipCode    String    @map("zip_code") @db.VarChar(20)
+  latitude   Decimal?  @db.Decimal(10, 8)
+  longitude  Decimal?  @db.Decimal(11, 8)
+  phone      String?   @db.VarChar(50)
+  email      String?   @db.VarChar(255)
+  isActive   Boolean   @default(true) @map("is_active")
+  
+  // Core Audit Fields
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+  createdBy  String?   @map("created_by") @db.Uuid
+  updatedBy  String?   @map("updated_by") @db.Uuid
 
   // Relations
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([businessId])
-  @@index([isAvailable])
+  @@index([deletedAt])
+  @@map("business_branches")
+}
+
+model BusinessDocument {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  businessId      String    @map("business_id") @db.Uuid
+  documentType    String    @map("document_type") @db.VarChar(100)
+  fileUrl         String    @map("file_url") @db.Text
+  status          String    @default("PENDING") @db.VarChar(50)
+  rejectionReason String?   @map("rejection_reason") @db.Text
+  documentNumber  String?   @map("document_number") @db.VarChar(100)
+  issuedAuthority String?   @map("issued_authority") @db.VarChar(255)
+  expiryDate      DateTime? @map("expiry_date")
+  
+  // Core Audit Fields
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+  createdBy       String?   @map("created_by") @db.Uuid
+  updatedBy       String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([status])
+  @@unique([tenantId, businessId, documentType, documentNumber])
+  @@index([deletedAt])
+  @@map("business_documents")
+}
+
+model BusinessStaff {
+  id         String             @id @default(uuid()) @db.Uuid
+  tenantId   String             @map("tenant_id") @db.Uuid
+  businessId String             @map("business_id") @db.Uuid
+  userId     String             @map("user_id") @db.Uuid
+  role       BusinessMemberRole @default(STAFF)
+  isActive   Boolean            @default(true) @map("is_active")
+  
+  // Core Audit Fields
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+  createdBy  String?   @map("created_by") @db.Uuid
+  updatedBy  String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, businessId, userId])
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([userId])
+  @@index([deletedAt])
+  @@map("business_staff")
+}
+
+model BusinessVerification {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  businessId      String    @map("business_id") @db.Uuid
+  status          String    @default("PENDING") @db.VarChar(50)
+  rejectionReason String?   @map("rejection_reason") @db.Text
+  verifiedBy      String?   @map("verified_by") @db.Uuid
+  verifiedAt      DateTime? @map("verified_at")
+  
+  // Core Audit Fields
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+  createdBy       String?   @map("created_by") @db.Uuid
+  updatedBy       String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  verifier User?    @relation(fields: [verifiedBy], references: [id])
+
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("verification_requests")
+}
+
+// ── PRODUCTS & OFFERS ───────────────────────────────────────
+
+model ProductCategory {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  businessId  String    @map("business_id") @db.Uuid
+  name        String    @db.VarChar(100)
+  slug        String    @db.VarChar(100)
+  description String?   @db.Text
+  
+  // Core Audit Fields
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by") @db.Uuid
+  updatedBy   String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([tenantId, businessId, slug])
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([deletedAt])
+  @@map("product_categories")
+}
+
+model Product {
+  id          String           @id @default(uuid()) @db.Uuid
+  tenantId    String           @map("tenant_id") @db.Uuid
+  businessId  String           @map("business_id") @db.Uuid
+  categoryId  String?          @map("category_id") @db.Uuid
+  name        String           @db.VarChar(255)
+  description String           @db.Text
+  price       Decimal          @db.Decimal(12, 2)
+  images      Json             @default("[]")
+  isAvailable Boolean          @default(true) @map("is_available")
+  sortOrder   Int              @default(0) @map("sort_order")
+  
+  // Core Audit Fields
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  deletedAt   DateTime?        @map("deleted_at")
+  createdBy   String?          @map("created_by") @db.Uuid
+  updatedBy   String?          @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category ProductCategory? @relation(fields: [categoryId], references: [id])
+
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([categoryId])
   @@index([deletedAt])
   @@map("products")
 }
 
-// ── OFFERS ──────────────────────────────────────────────────
-
 model Offer {
   id                 String      @id @default(uuid()) @db.Uuid
+  tenantId           String      @map("tenant_id") @db.Uuid
   businessId         String      @map("business_id") @db.Uuid
   title              String      @db.VarChar(255)
   description        String      @db.Text
@@ -290,13 +747,20 @@ model Offer {
   maxRedemptions     Int?        @map("max_redemptions")
   currentRedemptions Int         @default(0) @map("current_redemptions")
   terms              String?     @db.Text
-  deletedAt          DateTime?   @map("deleted_at")
+  
+  // Core Audit Fields
   createdAt          DateTime    @default(now()) @map("created_at")
   updatedAt          DateTime    @updatedAt @map("updated_at")
+  deletedAt          DateTime?   @map("deleted_at")
+  createdBy          String?     @map("created_by") @db.Uuid
+  updatedBy          String?     @map("updated_by") @db.Uuid
 
   // Relations
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  redemptions OfferRedemption[]
 
+  @@index([tenantId])
   @@index([businessId])
   @@index([status])
   @@index([startDate, endDate])
@@ -312,27 +776,92 @@ enum OfferStatus {
   ARCHIVED
 }
 
-// ── REVIEWS ─────────────────────────────────────────────────
+model OfferRedemption {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  offerId   String    @map("offer_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  code      String    @db.VarChar(50)
+  status    String    @default("REDEEMED") @db.VarChar(50)
+  
+  // Core Audit Fields
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  offer  Offer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([offerId])
+  @@index([userId])
+  @@index([deletedAt])
+  @@map("offer_redemptions")
+}
+
+model Coupon {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  businessId    String    @map("business_id") @db.Uuid
+  code          String    @db.VarChar(50)
+  description   String?   @db.Text
+  discountValue Decimal   @map("discount_value") @db.Decimal(12, 2)
+  discountType  String    @map("discount_type") @db.VarChar(20)
+  isActive      Boolean   @default(true) @map("is_active")
+  expiresAt     DateTime  @map("expires_at")
+  
+  // Core Audit Fields
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+  createdBy     String?   @map("created_by") @db.Uuid
+  updatedBy     String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, businessId, code])
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([code])
+  @@index([deletedAt])
+  @@map("coupons")
+}
+
+// ── REVIEWS & ENGAGEMENT ────────────────────────────────────
 
 model Review {
   id                 String       @id @default(uuid()) @db.Uuid
+  tenantId           String       @map("tenant_id") @db.Uuid
   userId             String       @map("user_id") @db.Uuid
   businessId         String       @map("business_id") @db.Uuid
   rating             Int          @db.SmallInt
   title              String?      @db.VarChar(255)
   comment            String       @db.Text
-  images             Json         @default("[]")
   status             ReviewStatus @default(PENDING)
   isVerifiedPurchase Boolean      @default(false) @map("is_verified_purchase")
   helpfulCount       Int          @default(0) @map("helpful_count")
-  deletedAt          DateTime?    @map("deleted_at")
+  
+  // Core Audit Fields
   createdAt          DateTime     @default(now()) @map("created_at")
   updatedAt          DateTime     @updatedAt @map("updated_at")
+  deletedAt          DateTime?    @map("deleted_at")
+  createdBy          String?      @map("created_by") @db.Uuid
+  updatedBy          String?      @map("updated_by") @db.Uuid
 
   // Relations
-  user     User     @relation(fields: [userId], references: [id])
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id])
+  business Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  media    ReviewMedia[]
+  votes    ReviewVote[]
 
+  @@index([tenantId])
   @@index([userId])
   @@index([businessId])
   @@index([status])
@@ -348,29 +877,167 @@ enum ReviewStatus {
   REMOVED
 }
 
-// ── BILLS ───────────────────────────────────────────────────
-
-model Bill {
-  id          String     @id @default(uuid()) @db.Uuid
-  userId      String     @map("user_id") @db.Uuid
-  businessId  String     @map("business_id") @db.Uuid
-  amount      Decimal    @db.Decimal(12, 2)
-  billDate    DateTime   @map("bill_date")
-  billImage   String     @map("bill_image") @db.Text
-  status      BillStatus @default(UPLOADED)
-  description String?    @db.Text
-  verifiedAt  DateTime?  @map("verified_at")
-  verifiedBy  String?    @map("verified_by") @db.Uuid
-  rejectionReason String? @map("rejection_reason") @db.Text
-  deletedAt   DateTime?  @map("deleted_at")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+model ReviewMedia {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  reviewId  String    @map("review_id") @db.Uuid
+  url       String    @db.Text
+  type      String    @db.VarChar(20)
+  
+  // Core Audit Fields
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
 
   // Relations
-  user     User      @relation("BillUploader", fields: [userId], references: [id])
-  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  verifier User?     @relation("BillVerifier", fields: [verifiedBy], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
+  @@index([reviewId])
+  @@index([deletedAt])
+  @@map("review_media")
+}
+
+model ReviewVote {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  reviewId  String    @map("review_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  voteType  String    @map("vote_type") @db.VarChar(20)
+  
+  // Core Audit Fields
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, reviewId, userId])
+  @@index([tenantId])
+  @@index([reviewId])
+  @@index([userId])
+  @@index([deletedAt])
+  @@map("review_votes")
+}
+
+model Bookmark {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  businessId String    @map("business_id") @db.Uuid
+  
+  // Core Audit Fields
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+  createdBy  String?   @map("created_by") @db.Uuid
+  updatedBy  String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, businessId])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([businessId])
+  @@index([deletedAt])
+  @@map("bookmarks")
+}
+
+model Favorite {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  businessId String    @map("business_id") @db.Uuid
+  
+  // Core Audit Fields
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+  createdBy  String?   @map("created_by") @db.Uuid
+  updatedBy  String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, businessId])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([deletedAt])
+  @@map("favorites")
+}
+
+model UserFollow {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  followerId  String    @map("follower_id") @db.Uuid
+  followingId String    @map("following_id") @db.Uuid
+  
+  // Core Audit Fields
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by") @db.Uuid
+  updatedBy   String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  follower  User   @relation("UserFollower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User   @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, followerId, followingId])
+  @@index([tenantId])
+  @@index([followerId])
+  @@index([followingId])
+  @@index([deletedAt])
+  @@map("user_follows")
+}
+
+// ── BILL VERIFICATION & VERIFIED PURCHASE ───────────────────
+
+model Bill {
+  id              String     @id @default(uuid()) @db.Uuid
+  tenantId        String     @map("tenant_id") @db.Uuid
+  userId          String     @map("user_id") @db.Uuid
+  businessId      String     @map("business_id") @db.Uuid
+  amount          Decimal    @db.Decimal(12, 2)
+  billDate        DateTime   @map("bill_date")
+  billImage       String     @map("bill_image") @db.Text
+  status          BillStatus @default(UPLOADED)
+  description     String?    @db.Text
+  verifiedAt      DateTime?  @map("verified_at")
+  verifiedBy      String?    @map("verified_by") @db.Uuid
+  rejectionReason String?    @map("rejection_reason") @db.Text
+  
+  // Core Audit Fields
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  deletedAt       DateTime?  @map("deleted_at")
+  createdBy       String?    @map("created_by") @db.Uuid
+  updatedBy       String?    @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant           Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user             User               @relation("BillUploader", fields: [userId], references: [id])
+  business         Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  verifier         User?              @relation("BillVerifier", fields: [verifiedBy], references: [id])
+  items            BillItem[]
+  verifications    BillVerification[]
+  verifiedPurchase VerifiedPurchase?
+
+  @@index([tenantId])
   @@index([userId])
   @@index([businessId])
   @@index([status])
@@ -386,47 +1053,216 @@ enum BillStatus {
   EXPIRED
 }
 
-// ── NOTIFICATIONS ───────────────────────────────────────────
-
-model Notification {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  title     String   @db.VarChar(255)
-  body      String   @db.Text
-  type      String   @db.VarChar(50)
-  channel   String   @db.VarChar(50)
-  isRead    Boolean  @default(false) @map("is_read")
-  metadata  Json?
-  readAt    DateTime? @map("read_at")
-  createdAt DateTime @default(now()) @map("created_at")
+model BillItem {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  billId     String    @map("bill_id") @db.Uuid
+  name       String    @db.VarChar(255)
+  quantity   Decimal   @db.Decimal(10, 2)
+  unitPrice  Decimal   @map("unit_price") @db.Decimal(12, 2)
+  totalPrice Decimal   @map("total_price") @db.Decimal(12, 2)
+  
+  // Core Audit Fields
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+  createdBy  String?   @map("created_by") @db.Uuid
+  updatedBy  String?   @map("updated_by") @db.Uuid
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bill   Bill   @relation(fields: [billId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
+  @@index([billId])
+  @@index([deletedAt])
+  @@map("bill_items")
+}
+
+model BillVerification {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  tenantId              String                 @map("tenant_id") @db.Uuid
+  billId                String                 @map("bill_id") @db.Uuid
+  businessId            String?                @map("business_id") @db.Uuid
+  status                BillVerificationStatus @default(PENDING)
+  rejectionReason       String?                @map("rejection_reason") @db.Text
+  verifiedBy            String?                @map("verified_by") @db.Uuid
+  verifiedAt            DateTime?              @map("verified_at")
+  moderatorId           String?                @map("moderator_id") @db.Uuid
+  ownerOverrideBy       String?                @map("owner_override_by") @db.Uuid
+  ownerOverrideAt       DateTime?              @map("owner_override_at")
+  reUploadRequestedAt   DateTime?              @map("re_upload_requested_at")
+  escalationLevel       String                 @default("NONE") @map("escalation_level") @db.VarChar(20)
+  ocrMetadata           Json?                  @map("ocr_metadata")
+  fraudScore            Decimal?               @map("fraud_score") @db.Decimal(3, 2)
+  
+  // Core Audit Fields
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  deletedAt             DateTime?              @map("deleted_at")
+  createdBy             String?                @map("created_by") @db.Uuid
+  updatedBy             String?                @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  bill        Bill      @relation(fields: [billId], references: [id], onDelete: Cascade)
+  verifier    User?     @relation(fields: [verifiedBy], references: [id])
+
+  @@index([tenantId])
+  @@index([billId])
+  @@index([businessId])
+  @@index([status])
+  @@index([escalationLevel])
+  @@index([deletedAt])
+  @@map("bill_verifications")
+}
+
+enum BillVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+  RE_UPLOAD_REQUESTED
+  ESCALATED
+}
+
+model VerifiedPurchase {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  businessId   String    @map("business_id") @db.Uuid
+  billId       String    @unique @map("bill_id") @db.Uuid
+  amount       Decimal   @db.Decimal(12, 2)
+  purchaseDate DateTime  @map("purchase_date")
+  
+  // Core Audit Fields
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+  createdBy    String?   @map("created_by") @db.Uuid
+  updatedBy    String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  bill     Bill     @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([businessId])
+  @@index([deletedAt])
+  @@map("verified_purchases")
+}
+
+// ── NOTIFICATIONS & GOVERNMENT ANNOUNCEMENTS ────────────────
+
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  title     String    @db.VarChar(255)
+  body      String    @db.Text
+  type      String    @db.VarChar(50)
+  channel   String    @db.VarChar(50)
+  isRead    Boolean   @default(false) @map("is_read")
+  metadata  Json?
+  readAt    DateTime? @map("read_at")
+  
+  // Core Audit Fields
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant     Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipients NotificationRecipient[]
+
+  @@index([tenantId])
   @@index([userId, isRead])
   @@index([createdAt])
+  @@index([deletedAt])
   @@map("notifications")
 }
 
-// ── ANNOUNCEMENTS (Government) ──────────────────────────────
+model NotificationRecipient {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  notificationId String    @map("notification_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  isRead         Boolean   @default(false) @map("is_read")
+  readAt         DateTime? @map("read_at")
+  
+  // Core Audit Fields
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+  createdBy      String?   @map("created_by") @db.Uuid
+  updatedBy      String?   @map("updated_by") @db.Uuid
 
-model Announcement {
-  id             String   @id @default(uuid()) @db.Uuid
-  tenantId       String   @map("tenant_id") @db.Uuid
-  agencyId       String   @map("agency_id") @db.Uuid
-  title          String   @db.VarChar(500)
-  body           String   @db.Text
-  category       String   @db.VarChar(100)
-  priority       String   @default("MEDIUM") @db.VarChar(20)
-  isPublished    Boolean  @default(false) @map("is_published")
+  // Relations
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, notificationId, userId])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([notificationId])
+  @@index([deletedAt])
+  @@map("notification_recipients")
+}
+
+model NotificationPreference {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  channel   String    @db.VarChar(50)
+  type      String    @db.VarChar(50)
+  isEnabled Boolean   @default(true) @map("is_enabled")
+  
+  // Core Audit Fields
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, channel, type])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([deletedAt])
+  @@map("notification_preferences")
+}
+
+model GovernmentAnnouncement {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  agencyId       String    @map("agency_id") @db.Uuid
+  title          String    @db.VarChar(500)
+  body           String    @db.Text
+  category       String    @db.VarChar(100)
+  priority       String    @default("MEDIUM") @db.VarChar(20)
+  isPublished    Boolean   @default(false) @map("is_published")
   publishAt      DateTime? @map("publish_at")
   expiresAt      DateTime? @map("expires_at")
-  targetAudience Json?    @map("target_audience")
-  attachments    Json     @default("[]")
-  viewCount      Int      @default(0) @map("view_count")
+  targetAudience Json?     @map("target_audience")
+  attachments    Json      @default("[]")
+  viewCount      Int       @default(0) @map("view_count")
+  
+  // Core Audit Fields
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
   deletedAt      DateTime? @map("deleted_at")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      String?   @map("created_by") @db.Uuid
+  updatedBy      String?   @map("updated_by") @db.Uuid
 
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -435,94 +1271,187 @@ model Announcement {
   @@index([isPublished, publishAt])
   @@index([category])
   @@index([deletedAt])
-  @@map("announcements")
-}
-
-// ── BOOKMARKS / FAVORITES ───────────────────────────────────
-
-model Bookmark {
-  id         String   @id @default(uuid()) @db.Uuid
-  userId     String   @map("user_id") @db.Uuid
-  businessId String   @map("business_id") @db.Uuid
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  // Relations
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, businessId])
-  @@index([userId])
-  @@map("bookmarks")
+  @@map("government_announcements")
 }
 
 // ── MEDIA ───────────────────────────────────────────────────
 
 model Media {
-  id         String   @id @default(uuid()) @db.Uuid
-  businessId String   @map("business_id") @db.Uuid
-  url        String   @db.Text
-  type       String   @db.VarChar(20)
-  filename   String   @db.VarChar(255)
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  businessId String    @map("business_id") @db.Uuid
+  url        String    @db.Text
+  type       String    @db.VarChar(20)
+  filename   String    @db.VarChar(255)
   size       Int
-  mimeType   String   @map("mime_type") @db.VarChar(100)
-  sortOrder  Int      @default(0) @map("sort_order")
-  createdAt  DateTime @default(now()) @map("created_at")
+  mimeType   String    @map("mime_type") @db.VarChar(100)
+  sortOrder  Int       @default(0) @map("sort_order")
+  
+  // Core Audit Fields
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+  createdBy  String?   @map("created_by") @db.Uuid
+  updatedBy  String?   @map("updated_by") @db.Uuid
 
   // Relations
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId])
   @@index([businessId])
+  @@index([deletedAt])
   @@map("media")
 }
 
-// ── REPORTS ─────────────────────────────────────────────────
-
-model Report {
-  id          String   @id @default(uuid()) @db.Uuid
-  reporterId  String   @map("reporter_id") @db.Uuid
-  targetType  String   @map("target_type") @db.VarChar(50)
-  targetId    String   @map("target_id") @db.Uuid
-  type        String   @db.VarChar(50)
-  status      String   @default("PENDING") @db.VarChar(50)
-  description String   @db.Text
-  evidence    Json     @default("[]")
-  resolution  String?  @db.Text
-  resolvedBy  String?  @map("resolved_by") @db.Uuid
-  resolvedAt  DateTime? @map("resolved_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  reporter User  @relation("ReportAuthor", fields: [reporterId], references: [id])
-  resolver User? @relation("ReportResolver", fields: [resolvedBy], references: [id])
-
-  @@index([reporterId])
-  @@index([targetType, targetId])
-  @@index([status])
-  @@map("reports")
-}
-
-// ── ANALYTICS EVENTS ────────────────────────────────────────
+// ── ANALYTICS SYSTEM ────────────────────────────────────────
 
 model AnalyticsEvent {
-  id         String   @id @default(uuid()) @db.Uuid
-  userId     String?  @map("user_id") @db.Uuid
-  businessId String?  @map("business_id") @db.Uuid
-  event      String   @db.VarChar(100)
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  userId     String?   @map("user_id") @db.Uuid
+  businessId String?   @map("business_id") @db.Uuid
+  event      String    @db.VarChar(100)
   metadata   Json?
-  ipAddress  String?  @map("ip_address") @db.VarChar(45)
-  userAgent  String?  @map("user_agent") @db.Text
-  sessionId  String?  @map("session_id") @db.VarChar(255)
-  createdAt  DateTime @default(now()) @map("created_at")
+  ipAddress  String?   @map("ip_address") @db.VarChar(45)
+  userAgent  String?   @map("user_agent") @db.Text
+  sessionId  String?   @map("session_id") @db.VarChar(255)
+  
+  // Core Audit Fields
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+  createdBy  String?   @map("created_by") @db.Uuid
+  updatedBy  String?   @map("updated_by") @db.Uuid
 
+  // Relations
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business? @relation(fields: [businessId], references: [id])
+
+  @@index([tenantId])
   @@index([userId])
   @@index([businessId])
   @@index([event])
   @@index([createdAt])
+  @@index([deletedAt])
   @@map("analytics_events")
 }
 
-// ── AUDIT LOGS ──────────────────────────────────────────────
+model BusinessMetric {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  businessId      String    @map("business_id") @db.Uuid
+  date            DateTime  @db.Date
+  viewCount       Int       @default(0) @map("view_count")
+  clickCount      Int       @default(0) @map("click_count")
+  redemptionCount Int       @default(0) @map("redemption_count")
+  reviewCount     Int       @default(0) @map("review_count")
+  averageRating   Decimal   @default(0) @map("average_rating") @db.Decimal(3, 2)
+  
+  // Core Audit Fields
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+  createdBy       String?   @map("created_by") @db.Uuid
+  updatedBy       String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, businessId, date])
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([deletedAt])
+  @@map("business_metrics")
+}
+
+model UserActivity {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  activityType String    @map("activity_type") @db.VarChar(100)
+  metadata     Json?
+  
+  // Core Audit Fields
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+  createdBy    String?   @map("created_by") @db.Uuid
+  updatedBy    String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([activityType])
+  @@index([deletedAt])
+  @@map("user_activities")
+}
+
+model SearchHistory {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  userId       String?   @map("user_id") @db.Uuid
+  query        String    @db.VarChar(255)
+  filters      Json?
+  resultsCount Int       @default(0) @map("results_count")
+  
+  // Core Audit Fields
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+  createdBy    String?   @map("created_by") @db.Uuid
+  updatedBy    String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([query])
+  @@index([deletedAt])
+  @@map("search_histories")
+}
+
+// ── ADMIN & MODERATION ──────────────────────────────────────
+
+model ModerationReport {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  reporterId  String    @map("reporter_id") @db.Uuid
+  targetType  String    @map("target_type") @db.VarChar(50)
+  targetId    String    @map("target_id") @db.Uuid
+  type        String    @db.VarChar(50)
+  status      String    @default("PENDING") @db.VarChar(50)
+  description String    @db.Text
+  evidence    Json      @default("[]")
+  resolution  String?   @db.Text
+  resolvedBy  String?   @map("resolved_by") @db.Uuid
+  resolvedAt  DateTime? @map("resolved_at")
+  
+  // Core Audit Fields
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by") @db.Uuid
+  updatedBy   String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reporter User   @relation("ReportAuthor", fields: [reporterId], references: [id])
+  resolver User?  @relation("ReportResolver", fields: [resolvedBy], references: [id])
+
+  @@index([tenantId])
+  @@index([reporterId])
+  @@index([targetType, targetId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("moderation_reports")
+}
 
 model AuditLog {
   id         String   @id @default(uuid()) @db.Uuid
@@ -550,17 +1479,398 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model AdminAction {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  adminId    String    @map("admin_id") @db.Uuid
+  actionType String    @map("action_type") @db.VarChar(100)
+  targetType String    @map("target_type") @db.VarChar(100)
+  targetId   String    @map("target_id") @db.Uuid
+  reason     String    @db.Text
+  metadata   Json?
+  
+  // Core Audit Fields
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+  createdBy  String?   @map("created_by") @db.Uuid
+  updatedBy  String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  admin  User   @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([adminId])
+  @@index([targetType, targetId])
+  @@index([deletedAt])
+  @@map("admin_actions")
+}
+
+model FraudFlag {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  targetType      String    @map("target_type") @db.VarChar(100)
+  targetId        String    @map("target_id") @db.Uuid
+  reason          String    @db.Text
+  severity        String    @default("LOW") @db.VarChar(20)
+  status          String    @default("OPEN") @db.VarChar(50)
+  resolvedBy      String?   @map("resolved_by") @db.Uuid
+  resolvedAt      DateTime? @map("resolved_at")
+  
+  // Core Audit Fields
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+  createdBy       String?   @map("created_by") @db.Uuid
+  updatedBy       String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  resolver User?  @relation(fields: [resolvedBy], references: [id])
+
+  @@index([tenantId])
+  @@index([targetType, targetId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("fraud_flags")
+}
+
 // ── FEATURE FLAGS ───────────────────────────────────────────
 
 model FeatureFlag {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String?   @map("tenant_id") @db.Uuid
+  key         String    @unique @db.VarChar(100)
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  isEnabled   Boolean   @default(false) @map("is_enabled")
+  metadata    Json?
+  
+  // Core Audit Fields
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+  createdBy   String?   @map("created_by") @db.Uuid
+  updatedBy   String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([deletedAt])
+  @@map("feature_flags")
+}
+
+// ── ONBOARDING & SUBSCRIPTIONS ──────────────────────────────
+
+model Subscription {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  businessId     String?   @map("business_id") @db.Uuid
+  entityId       String?   @map("entity_id") @db.Uuid
+  planId         String?   @map("plan_id") @db.Uuid
+  packageName    String    @db.VarChar(100)
+  pricing        Decimal   @db.Decimal(12, 2)
+  duration       Int
+  featureFlags   Json      @default("{}")
+  postingLimits  Int       @default(0)
+  categoryLimits Int       @default(0)
+  status         String    @default("ACTIVE") @db.VarChar(20)
+  startDate      DateTime  @default(now()) @map("start_date")
+  endDate        DateTime  @map("end_date")
+  
+  // Core Audit Fields
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+  createdBy      String?   @map("created_by") @db.Uuid
+  updatedBy      String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  entity   Entity?   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  plan     Plan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
+  payments Payment[]
+
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([status, endDate])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  businessId     String    @map("business_id") @db.Uuid
+  subscriptionId String?   @map("subscription_id") @db.Uuid
+  amount         Decimal   @db.Decimal(12, 2)
+  method         String    @db.VarChar(50)
+  status         String    @default("PENDING") @db.VarChar(50)
+  transactionRef String?   @map("transaction_ref") @db.VarChar(255)
+  invoiceMetadata Json?    @map("invoice_metadata")
+  
+  // Core Audit Fields
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+  createdBy      String?   @map("created_by") @db.Uuid
+  updatedBy      String?   @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([method])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("payments")
+}
+
+model OnboardingProgress {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  entityType     String    @map("entity_type") @db.VarChar(20)
+  entityId       String    @map("entity_id") @db.Uuid
+  currentStep    Int       @default(1) @map("current_step")
+  status         String    @default("DRAFT") @db.VarChar(50)
+  stepsCompleted Json      @default("[]") @map("steps_completed")
+  metadata       Json      @default("{}")
+  
+  // Core Audit Fields
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, entityType, entityId])
+  @@index([tenantId])
+  @@index([entityType, currentStep])
+  @@index([status])
+  @@map("onboarding_progress")
+}
+
+model OnboardingEvent {
   id          String   @id @default(uuid()) @db.Uuid
-  key         String   @unique @db.VarChar(100)
-  name        String   @db.VarChar(255)
-  description String?  @db.Text
-  isEnabled   Boolean  @default(false) @map("is_enabled")
+  tenantId    String   @map("tenant_id") @db.Uuid
+  entityType  String   @map("entity_type") @db.VarChar(20)
+  entityId    String   @map("entity_id") @db.Uuid
+  event       String   @db.VarChar(100)
   metadata    Json?
   createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  @@map("feature_flags")
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([entityType, entityId])
+  @@index([event])
+  @@map("onboarding_events")
+}
+
+// ── ENTITY ONBOARDING & PROFILES ─────────────────────────────
+
+model Entity {
+  id           String        @id @default(uuid()) @db.Uuid
+  tenantId     String        @map("tenant_id") @db.Uuid
+  userId       String        @map("user_id") @db.Uuid
+  type         EntityType
+  status       EntityStatus  @default(DRAFT)
+  name         String        @db.VarChar(255)
+  email        String?       @db.VarChar(255)
+  phone        String?       @db.VarChar(50)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  deletedAt    DateTime?     @map("deleted_at")
+  createdBy    String?       @map("created_by") @db.Uuid
+  updatedBy    String?       @map("updated_by") @db.Uuid
+
+  // Relations
+  tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents            UploadedDocument[]
+  verificationRequests VerificationRequest[]
+  subscriptions        Subscription[]
+  business             Business?
+  influencerProfile    InfluencerProfile?
+  professionalProfile  ProfessionalProfile?
+  eventOrganizerProfile EventOrganizerProfile?
+  organizationProfile  OrganizationProfile?
+  governmentProfile    GovernmentProfile?
+  onboardingProgress   OnboardingProgress[]
+  onboardingEvents     OnboardingEvent[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("entities")
+}
+
+model Plan {
+  id             String         @id @default(uuid()) @db.Uuid
+  tenantId       String         @map("tenant_id") @db.Uuid
+  name           String         @db.VarChar(100)
+  code           String         @db.VarChar(50)
+  description    String?        @db.Text
+  entityType     EntityType     @default(BUSINESS) @map("entity_type")
+  price          Decimal        @db.Decimal(12, 2)
+  billingCycle   String         @default("YEARLY") @map("billing_cycle")
+  features       Json           @default("{}")
+  limits         Json           @default("{}")
+  isActive       Boolean        @default(true) @map("is_active")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  deletedAt      DateTime?      @map("deleted_at")
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscriptions Subscription[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([deletedAt])
+  @@map("plans")
+}
+
+model UploadedDocument {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  entityId        String    @map("entity_id") @db.Uuid
+  documentType    String    @map("document_type") @db.VarChar(100)
+  fileUrl         String    @map("file_url") @db.Text
+  status          String    @default("PENDING") @db.VarChar(50)
+  rejectionReason String?   @map("rejection_reason") @db.Text
+  documentNumber  String?   @map("document_number") @db.VarChar(100)
+  issuedAuthority String?   @map("issued_authority") @db.VarChar(255)
+  expiryDate      DateTime? @map("expiry_date")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entity          Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([entityId])
+  @@index([status])
+  @@map("uploaded_documents")
+}
+
+model VerificationRequest {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  entityId        String    @map("entity_id") @db.Uuid
+  status          String    @default("PENDING") @db.VarChar(50)
+  rejectionReason String?   @map("rejection_reason") @db.Text
+  moderationNotes String?   @map("moderation_notes") @db.Text
+  verifiedBy      String?   @map("verified_by") @db.Uuid
+  verifiedAt      DateTime? @map("verified_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entity          Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  verifier        User?     @relation("EntityVerifier", fields: [verifiedBy], references: [id])
+
+  @@index([tenantId])
+  @@index([entityId])
+  @@index([status])
+  @@map("entity_verification_requests")
+}
+
+model InfluencerProfile {
+  id             String    @id @default(uuid()) @db.Uuid
+  entityId       String    @unique @map("entity_id") @db.Uuid
+  niche          String    @db.VarChar(100)
+  instagram      String?   @db.VarChar(255)
+  youtube        String?   @db.VarChar(255)
+  facebook       String?   @db.VarChar(255)
+  linkedin       String?   @db.VarChar(255)
+  followersCount Int       @default(0) @map("followers_count")
+  engagementRate Decimal?  @map("engagement_rate") @db.Decimal(5, 2)
+  portfolioUrl   String?   @map("portfolio_url") @db.Text
+  mediaKitUrl    String?   @map("media_kit_url") @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  entity         Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@map("influencer_profiles")
+}
+
+model ProfessionalProfile {
+  id              String    @id @default(uuid()) @db.Uuid
+  entityId        String    @unique @map("entity_id") @db.Uuid
+  category        String    @db.VarChar(100)
+  experienceYears Int       @default(0) @map("experience_years")
+  certifications  Json      @default("[]")
+  serviceAreas    Json      @default("[]")
+  pricingMin      Decimal?  @map("pricing_min") @db.Decimal(12, 2)
+  pricingMax      Decimal?  @map("pricing_max") @db.Decimal(12, 2)
+  availability    Json      @default("{}")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  entity          Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@map("professional_profiles")
+}
+
+model EventOrganizerProfile {
+  id               String    @id @default(uuid()) @db.Uuid
+  entityId         String    @unique @map("entity_id") @db.Uuid
+  organizationName String    @map("organization_name") @db.VarChar(255)
+  eventCategories  Json      @default("[]") @map("event_categories")
+  venuePartnerships Json     @default("[]") @map("venue_partnerships")
+  ticketingSupport Boolean   @default(false) @map("ticketing_support")
+  website          String?   @db.Text
+  socialLinks      Json      @default("{}") @map("social_links")
+  previousEvents   Json      @default("[]") @map("previous_events")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  entity           Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@map("event_organizer_profiles")
+}
+
+model OrganizationProfile {
+  id                 String    @id @default(uuid()) @db.Uuid
+  entityId           String    @unique @map("entity_id") @db.Uuid
+  ngoName            String    @map("ngo_name") @db.VarChar(255)
+  registrationNumber String    @map("registration_number") @db.VarChar(100)
+  causeCategory      String    @map("cause_category") @db.VarChar(100)
+  operationalAreas   Json      @default("[]") @map("operational_areas")
+  website            String?   @db.Text
+  socialLinks        Json      @default("{}") @map("social_links")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  entity             Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@map("organization_profiles")
+}
+
+model GovernmentProfile {
+  id             String    @id @default(uuid()) @db.Uuid
+  entityId       String    @unique @map("entity_id") @db.Uuid
+  departmentName String    @map("department_name") @db.VarChar(255)
+  officialEmail  String    @map("official_email") @db.VarChar(255)
+  departmentType String    @map("department_type") @db.VarChar(100)
+  district       String    @db.VarChar(100)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  entity         Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@map("government_profiles")
 }

@@ -37,13 +37,20 @@ export function verifyToken(token: string, secret: string): SessionUser | null {
  * Helper to check if a user role matches or exceeds required role in hierarchy
  */
 export function hasRequiredRole(userRole: UserRole, requiredRole: UserRole): boolean {
-  const roleHierarchy: Record<UserRole, number> = {
+  const roleHierarchy: Record<string, number> = {
     [UserRole.SUPER_ADMIN]: 100,
-    [UserRole.ADMIN]: 80,
-    [UserRole.GOVERNMENT_AGENCY]: 60,
+    [UserRole.MASTER_ADMIN]: 80,
+    [UserRole.GOVERNMENT_ADMIN]: 60,
     [UserRole.BUSINESS_OWNER]: 40,
-    [UserRole.BUSINESS_STAFF]: 30,
-    [UserRole.PUBLIC_USER]: 20,
+    [UserRole.BUSINESS_MODERATOR]: 35,
+    [UserRole.INFLUENCER]: 30,
+    [UserRole.PROFESSIONAL]: 30,
+    [UserRole.EVENT_ORGANIZER]: 30,
+    [UserRole.ORGANIZATION_ADMIN]: 30,
+    [UserRole.BUSINESS_STAFF]: 25,
+    // Legacy alias
+    [UserRole.BUSINESS_ADMIN]: 40,
+    [UserRole.USER]: 10,
   };
 
   const userWeight = roleHierarchy[userRole] || 0;

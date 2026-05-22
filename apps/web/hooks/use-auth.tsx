@@ -1,8 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authService, User, UserRole, MOCK_USERS } from '@/lib/services/auth-service';
+import { authService, User, UserRole } from '@/lib/services/auth-service';
 import { useRouter } from 'next/navigation';
+import { initMockDb } from '@/lib/mock-db';
 
 interface AuthContextType {
   user: User | null;
@@ -10,7 +11,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<boolean>;
   signUp: (email: string, password: string, name: string) => Promise<boolean>;
   signOut: () => Promise<void>;
-  switchRole: (role: UserRole) => void;
+  switchRole: (role: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +22,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    // Boot mock DB first (wipes stale data if version changed)
+    initMockDb();
+
     async function initAuth() {
       try {
         const currentUser = await authService.getCurrentUser();
@@ -34,22 +38,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, []);
 
+  const resolveRedirect = (u: User) => {
+    if (u.role === 'super-admin' || u.rbacRole === 'SUPER_ADMIN') {
+      return '/super-admin/tenants';
+    }
+    if (u.role === 'admin' || u.rbacRole === 'MASTER_ADMIN') {
+      return '/admin';
+    }
+    if (u.role === 'government' || u.rbacRole === 'GOVERNMENT_ADMIN') {
+      return '/government/dashboard';
+    }
+    if (u.role === 'business' || u.rbacRole === 'BUSINESS_OWNER' || u.rbacRole === 'BUSINESS_ADMIN' || u.rbacRole === 'BUSINESS_MODERATOR') {
+      if (u.entity?.status === 'DRAFT') {
+        return `/register/business?id=${u.entity.id}`;
+      }
+      return '/dashboard';
+    }
+    return '/';
+  };
+
   const signIn = async (email: string, password: string): Promise<boolean> => {
     setLoading(true);
     try {
       const loggedInUser = await authService.signIn(email, password);
       if (loggedInUser) {
-        setUser(loggedInUser);
-        // Redirect to appropriate dashboard based on role
-        if (loggedInUser.role === 'business') {
-          router.push('/dashboard');
-        } else if (loggedInUser.role === 'admin') {
-          router.push('/admin/approvals');
-        } else if (loggedInUser.role === 'super-admin') {
-          router.push('/super-admin/tenants');
-        } else {
-          router.push('/');
-        }
+        // Try to fetch full profile; fall back to signIn result
+        const activeUser = (await authService.fetchCurrentUser()) || loggedInUser;
+        setUser(activeUser);
+        router.push(resolveRedirect(activeUser));
         return true;
       }
       return false;
@@ -61,13 +77,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const switchRole = (role: string) => {
+    // Dev helper — swap mock user in localStorage and reload
+    const mockMap: Record<string, string> = {
+      user: 'user@platform.com',
+      business: 'business@platform.com',
+      moderator: 'moderator@platform.com',
+      admin: 'admin@platform.com',
+      'super-admin': 'superadmin@platform.com',
+      government: 'government@platform.com',
+    };
+    const email = mockMap[role];
+    if (!email) return;
+    // Trigger a mock signIn via authService and reload
+    authService.signIn(email, 'password123').then((u) => {
+      if (u) {
+        setUser(u);
+        router.push(resolveRedirect(u));
+      }
+    });
+  };
+
   const signUp = async (email: string, password: string, name: string): Promise<boolean> => {
     setLoading(true);
     try {
       const newUser = await authService.signUp(email, password, name);
       if (newUser) {
-        setUser(newUser);
-        router.push('/');
+        const activeUser = (await authService.fetchCurrentUser()) || newUser;
+        setUser(activeUser);
+        router.push('/register/select-role');
         return true;
       }
       return false;
@@ -92,26 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const switchRole = (role: UserRole) => {
-    setLoading(true);
-    const selectedUser = MOCK_USERS[role];
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('user_session', JSON.stringify(selectedUser));
-      setUser(selectedUser);
 
-      // Redirect based on the chosen role
-      if (role === 'business') {
-        router.push('/dashboard');
-      } else if (role === 'admin') {
-        router.push('/admin/approvals');
-      } else if (role === 'super-admin') {
-        router.push('/super-admin/tenants');
-      } else {
-        router.push('/');
-      }
-    }
-    setLoading(false);
-  };
 
   return (
     <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, switchRole }}>

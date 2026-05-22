@@ -38,6 +38,7 @@ We follow the **Conventional Commits** specification:
 ```
 
 ### Allowed Types:
+
 - `feat`: A new feature
 - `fix`: A bug fix
 - `docs`: Documentation changes
@@ -54,7 +55,9 @@ We follow the **Conventional Commits** specification:
 Code quality checks are run on every pull request. Run them locally to ensure your code passes CI:
 
 ### 1. Formatting with Prettier
+
 Enforce styling consistency:
+
 ```bash
 # Check formatting
 pnpm format
@@ -64,7 +67,9 @@ pnpm format:fix
 ```
 
 ### 2. Linting with ESLint
+
 Check for syntax, typing, and quality issues:
+
 ```bash
 # Run lint checks
 pnpm lint
@@ -74,7 +79,9 @@ pnpm lint:fix
 ```
 
 ### 3. Build Validation
+
 Ensure the entire monorepo builds cleanly:
+
 ```bash
 pnpm build
 ```

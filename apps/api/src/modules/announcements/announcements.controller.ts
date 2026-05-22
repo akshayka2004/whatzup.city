@@ -29,7 +29,7 @@ export class AnnouncementsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.GOVERNMENT_AGENCY, UserRole.ADMIN)
+  @Roles(UserRole.GOVERNMENT_ADMIN, UserRole.MASTER_ADMIN)
   @Post()
   @ApiBearerAuth()
   async create(@CurrentUser() user: any, @Body() data: any): Promise<any> {
@@ -37,7 +37,7 @@ export class AnnouncementsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.GOVERNMENT_AGENCY, UserRole.ADMIN)
+  @Roles(UserRole.GOVERNMENT_ADMIN, UserRole.MASTER_ADMIN)
   @Patch(':id')
   @ApiBearerAuth()
   async update(@Param('id') id: string, @Body() data: any): Promise<any> {
@@ -45,7 +45,7 @@ export class AnnouncementsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.GOVERNMENT_AGENCY, UserRole.ADMIN)
+  @Roles(UserRole.GOVERNMENT_ADMIN, UserRole.MASTER_ADMIN)
   @Patch(':id/publish')
   @ApiBearerAuth()
   async publish(@Param('id') id: string): Promise<any> {

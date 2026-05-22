@@ -21,7 +21,7 @@ export class UsersController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'List all users (admin only)' })
   async findAll(
     @CurrentUser('tenantId') tenantId: string,
@@ -33,7 +33,7 @@ export class UsersController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get user by ID (admin only)' })
   async findOne(@Param('id') id: string) {
     return this.usersService.findById(id);
@@ -49,7 +49,7 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'Soft-delete a user (admin only)' })
   async remove(@Param('id') id: string) {
     await this.usersService.softDelete(id);

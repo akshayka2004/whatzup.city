@@ -1,48 +1,79 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../../common/database/database.service';
+import { ProductRepository } from '../../common/database/repositories/product.repository';
+import { AuditService } from '../audit/audit.service';
+import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly productRepo: ProductRepository,
+    private readonly auditService: AuditService,
+  ) {}
 
-  async create(businessId: string, data: any) {
-    return this.db.product.create({ data: { businessId, ...data } });
+  async create(tenantId: string, userId: string, businessId: string, data: any) {
+    const product = await this.productRepo.create(tenantId, { businessId, ...data });
+
+    await this.auditService.log({
+      tenantId,
+      userId,
+      action: 'CREATE_PRODUCT',
+      resource: 'PRODUCT',
+      resourceId: product.id,
+      newData: product,
+    });
+
+    return product;
   }
 
-  async findByBusiness(businessId: string, page = 1, limit = 20) {
-    const [data, total] = await Promise.all([
-      this.db.product.findMany({
-        where: { businessId, deletedAt: null },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { sortOrder: 'asc' },
-      }),
-      this.db.product.count({ where: { businessId, deletedAt: null } }),
-    ]);
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page * limit < total,
-        hasPrev: page > 1,
-      },
-    };
+  async findByBusiness(tenantId: string, businessId: string, page = 1, limit = 20) {
+    const pagination = new PaginationParamsDto();
+    pagination.page = page;
+    pagination.limit = limit;
+    pagination.sortBy = 'sortOrder';
+    pagination.sortOrder = SortOrder.ASC;
+
+    return this.productRepo.findMany(tenantId, { businessId }, pagination);
   }
 
-  async findById(id: string) {
-    const product = await this.db.product.findUnique({ where: { id, deletedAt: null } });
+  async findById(tenantId: string, id: string) {
+    const product = await this.productRepo.findOne(tenantId, id);
     if (!product) throw new NotFoundException('Product not found');
     return product;
   }
 
-  async update(id: string, data: any) {
-    return this.db.product.update({ where: { id }, data });
+  async update(tenantId: string, id: string, userId: string, data: any) {
+    const existing = await this.productRepo.findOne(tenantId, id);
+    if (!existing) throw new NotFoundException('Product not found');
+
+    const updated = await this.productRepo.update(tenantId, id, data);
+
+    await this.auditService.log({
+      tenantId,
+      userId,
+      action: 'UPDATE_PRODUCT',
+      resource: 'PRODUCT',
+      resourceId: id,
+      oldData: existing,
+      newData: updated,
+    });
+
+    return updated;
   }
 
-  async softDelete(id: string) {
-    return this.db.product.update({ where: { id }, data: { deletedAt: new Date() } });
+  async softDelete(tenantId: string, id: string, userId: string) {
+    const existing = await this.productRepo.findOne(tenantId, id);
+    if (!existing) throw new NotFoundException('Product not found');
+
+    const deleted = await this.productRepo.softDelete(tenantId, id);
+
+    await this.auditService.log({
+      tenantId,
+      userId,
+      action: 'DELETE_PRODUCT',
+      resource: 'PRODUCT',
+      resourceId: id,
+    });
+
+    return deleted;
   }
 }

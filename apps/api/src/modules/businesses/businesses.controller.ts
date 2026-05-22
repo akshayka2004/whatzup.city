@@ -56,11 +56,22 @@ export class BusinessesController {
     return this.businessesService.getNearby(tenantId, lat, lng, radius);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('owner/mine')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get my businesses' })
+  async getMyBusinesses(
+    @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.businessesService.getOwnerBusinesses(tenantId, userId);
+  }
+
   @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get business by ID (public)' })
-  async findOne(@Param('id') id: string) {
-    return this.businessesService.findById(id);
+  async findOne(@Query('tenantId') tenantId: string = 'default', @Param('id') id: string) {
+    return this.businessesService.findById(tenantId, id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -72,36 +83,40 @@ export class BusinessesController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('owner/mine')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get my businesses' })
-  async getMyBusinesses(@CurrentUser('id') userId: string) {
-    return this.businessesService.getOwnerBusinesses(userId);
-  }
-
-  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update business details' })
-  async update(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() data: any) {
-    return this.businessesService.update(id, userId, data);
+  async update(
+    @Param('id') id: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Body() data: any,
+  ) {
+    return this.businessesService.update(tenantId, id, userId, data);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @Patch(':id/status')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update business status (admin)' })
-  async updateStatus(@Param('id') id: string, @Body('status') status: BusinessStatus) {
-    return this.businessesService.updateStatus(id, status);
+  async updateStatus(
+    @Param('id') id: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('id') adminId: string,
+    @Body('status') status: BusinessStatus,
+  ) {
+    return this.businessesService.updateStatus(tenantId, id, status, adminId);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @Get('admin/pending')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List pending approvals (admin)' })
   async getPending(@CurrentUser('tenantId') tenantId: string) {
-    return this.businessesService.findAll(tenantId, { status: 'PENDING' });
+    return this.businessesService.findAll(tenantId, {
+      status: BusinessStatus.PENDING_VERIFICATION,
+    });
   }
 }

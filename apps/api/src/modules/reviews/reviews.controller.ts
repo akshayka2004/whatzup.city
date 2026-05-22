@@ -8,6 +8,8 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { UserRole } from '@saas/types';
 
+import { CreateReviewDto } from './dto/create-review.dto';
+
 @ApiTags('Reviews')
 @Controller('reviews')
 export class ReviewsController {
@@ -22,7 +24,7 @@ export class ReviewsController {
   @UseGuards(JwtAuthGuard)
   @Post()
   @ApiBearerAuth()
-  async create(@CurrentUser('id') userId: string, @Body() data: any) {
+  async create(@CurrentUser('id') userId: string, @Body() data: CreateReviewDto) {
     return this.reviewsService.create(userId, data);
   }
 
@@ -34,7 +36,7 @@ export class ReviewsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.MASTER_ADMIN)
   @Patch(':id/status')
   @ApiBearerAuth()
   async updateStatus(@Param('id') id: string, @Body('status') status: string) {

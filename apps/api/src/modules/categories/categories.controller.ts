@@ -20,7 +20,7 @@ export class CategoriesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.MASTER_ADMIN)
   @Post()
   @ApiBearerAuth()
   async create(@CurrentUser('tenantId') tenantId: string, @Body() data: any) {
@@ -28,7 +28,7 @@ export class CategoriesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.MASTER_ADMIN)
   @Patch(':id')
   @ApiBearerAuth()
   async update(

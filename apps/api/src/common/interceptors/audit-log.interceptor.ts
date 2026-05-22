@@ -3,33 +3,47 @@
 // ============================================================
 
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable, tap } from 'rxjs';
 import { DatabaseService } from '../database/database.service';
+import { AUDIT_METADATA_KEY, AuditOptions } from '../decorators/audit.decorator';
 
 @Injectable()
 export class AuditLogInterceptor implements NestInterceptor {
   private readonly logger = new Logger(AuditLogInterceptor.name);
 
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly reflector: Reflector,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
     const { method, url, user, ip, headers } = request;
     const startTime = Date.now();
 
+    const auditMeta = this.reflector.getAllAndOverride<AuditOptions>(AUDIT_METADATA_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
     return next.handle().pipe(
       tap({
         next: async () => {
-          // Only audit mutating operations
-          if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && user) {
+          // Only audit mutating operations or routes explicitly decorated with @Audit
+          if ((['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) || auditMeta) && user) {
             try {
+              const action = auditMeta?.action || this.methodToAction(method);
+              const resource = auditMeta?.resource || this.extractResource(url);
+              const resourceId = this.extractResourceId(url);
+
               await this.db.auditLog.create({
                 data: {
                   tenantId: user.tenantId,
                   userId: user.id,
-                  action: this.methodToAction(method),
-                  resource: this.extractResource(url),
-                  resourceId: this.extractResourceId(url),
+                  action,
+                  resource,
+                  resourceId: resourceId || undefined,
                   metadata: {
                     method,
                     url,

@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Moon,
   Sun,
@@ -8,10 +10,6 @@ import {
   Settings,
   LogIn,
   Sparkles,
-  User as UserIcon,
-  Building2,
-  ShieldAlert,
-  ShieldCheck,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -28,8 +26,18 @@ import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
 
 export function Header() {
-  const { theme, setTheme } = useTheme();
-  const { user, signOut, switchRole } = useAuth();
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
+  const router = useRouter();
+  const [searchVal, setSearchVal] = useState('');
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchVal.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchVal)}`);
+    }
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -40,26 +48,47 @@ export function Header() {
       .substring(0, 2);
   };
 
-  const roleColors = {
+  const roleColors: Record<string, string> = {
     user: 'bg-blue-600/20 text-blue-400 border-blue-500/20',
     business: 'bg-purple-600/20 text-purple-400 border-purple-500/20',
     admin: 'bg-amber-600/20 text-amber-400 border-amber-500/20',
     'super-admin': 'bg-rose-600/20 text-rose-400 border-rose-500/20',
+    government: 'bg-emerald-600/20 text-emerald-400 border-emerald-500/20',
   };
 
-  const roleLabels = {
+  const roleLabels: Record<string, string> = {
     user: 'Public User',
     business: 'Business Owner',
     admin: 'Admin Moderator',
     'super-admin': 'Super Admin',
+    government: 'Government',
   };
+
+  // Profile destination based on role
+  const getProfileHref = () => {
+    if (!user) return '/login';
+    switch (user.role) {
+      case 'business': return '/dashboard/settings';
+      case 'admin': return '/admin';
+      case 'super-admin': return '/super-admin/tenants';
+      case 'government': return '/government/dashboard';
+      default: return '/profile';
+    }
+  };
+  const profileHref = getProfileHref();
 
   return (
     <header className="border-b border-border bg-card px-6 py-4 shadow-sm flex items-center justify-between">
       <div className="flex items-center gap-4 flex-1 max-w-lg">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search..." className="pl-10 rounded-lg border-input bg-secondary" />
+          <Input
+            placeholder="Search..."
+            className="pl-10 rounded-lg border-input bg-secondary"
+            value={searchVal}
+            onChange={(e) => setSearchVal(e.target.value)}
+            onKeyDown={handleSearchSubmit}
+          />
         </div>
       </div>
 
@@ -74,14 +103,15 @@ export function Header() {
           </div>
         )}
 
-        {/* Theme toggle */}
+        {/* Theme toggle — mounted guard prevents hydration mismatch */}
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
           className="rounded-lg"
+          suppressHydrationWarning
         >
-          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          {mounted && resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
 
         {/* Notifications */}
@@ -100,46 +130,14 @@ export function Header() {
             align="end"
             className="w-56 rounded-xl border-white/5 bg-card/95 backdrop-blur-xl"
           >
-            <DropdownMenuLabel className="font-semibold text-xs text-muted-foreground">
-              Demo Role Switcher
-            </DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => switchRole('user')}
-              className="gap-2 cursor-pointer rounded-lg"
-            >
-              <UserIcon className="h-4 w-4 text-blue-400" />
-              <span>Log in as Public</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => switchRole('business')}
-              className="gap-2 cursor-pointer rounded-lg"
-            >
-              <Building2 className="h-4 w-4 text-purple-400" />
-              <span>Log in as Business</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => switchRole('admin')}
-              className="gap-2 cursor-pointer rounded-lg"
-            >
-              <ShieldAlert className="h-4 w-4 text-amber-400" />
-              <span>Log in as Admin</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => switchRole('super-admin')}
-              className="gap-2 cursor-pointer rounded-lg"
-            >
-              <ShieldCheck className="h-4 w-4 text-rose-400" />
-              <span>Log in as Super Admin</span>
-            </DropdownMenuItem>
 
-            <DropdownMenuSeparator className="bg-white/5" />
 
             <DropdownMenuLabel className="font-semibold text-xs text-muted-foreground">
               Account Actions
             </DropdownMenuLabel>
             {user ? (
               <>
-                <Link href="/profile">
+                <Link href={profileHref}>
                   <DropdownMenuItem className="cursor-pointer rounded-lg">
                     Profile Settings
                   </DropdownMenuItem>
@@ -164,9 +162,11 @@ export function Header() {
 
         {/* User avatar */}
         {user ? (
-          <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-md">
-            {getInitials(user.name)}
-          </div>
+          <Link href={profileHref}>
+            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-md cursor-pointer hover:opacity-80 transition-opacity">
+              {getInitials(user.name)}
+            </div>
+          </Link>
         ) : (
           <Link href="/login">
             <Button

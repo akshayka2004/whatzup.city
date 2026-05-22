@@ -1,11 +1,24 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../../common/database/database.service';
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { BillRepository } from '../../common/database/repositories/bill.repository';
+import { BillVerificationRepository } from '../../common/database/repositories/bill-verification.repository';
+import { AuditService } from '../audit/audit.service';
+import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 
 @Injectable()
 export class BillsService {
-  constructor(private readonly db: DatabaseService) {}
+  private readonly logger = new Logger(BillsService.name);
+
+  constructor(
+    private readonly billRepo: BillRepository,
+    private readonly verificationRepo: BillVerificationRepository,
+    private readonly auditService: AuditService,
+    @InjectQueue('ocr-queue') private readonly ocrQueue: Queue,
+  ) {}
 
   async upload(
+    tenantId: string,
     userId: string,
     data: {
       businessId: string;
@@ -15,80 +28,52 @@ export class BillsService {
       description?: string;
     },
   ) {
-    return this.db.bill.create({
-      data: {
-        userId,
-        businessId: data.businessId,
-        amount: data.amount,
-        billDate: new Date(data.billDate),
-        billImage: data.billImage,
-        description: data.description,
-      },
+    // 1. Create the Bill Record
+    const bill = await this.billRepo.create(tenantId, {
+      userId,
+      businessId: data.businessId,
+      amount: data.amount,
+      billDate: new Date(data.billDate),
+      billImage: data.billImage,
+      description: data.description,
+      status: 'UPLOADED',
     });
-  }
 
-  async findByUser(userId: string, page = 1, limit = 20) {
-    const [data, total] = await Promise.all([
-      this.db.bill.findMany({
-        where: { userId, deletedAt: null },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: { business: { select: { id: true, name: true, logo: true } } },
-      }),
-      this.db.bill.count({ where: { userId, deletedAt: null } }),
-    ]);
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page * limit < total,
-        hasPrev: page > 1,
-      },
-    };
-  }
-
-  async findPendingVerification(page = 1, limit = 20) {
-    const [data, total] = await Promise.all([
-      this.db.bill.findMany({
-        where: { status: 'UPLOADED', deletedAt: null },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'asc' },
-        include: {
-          user: { select: { id: true, name: true } },
-          business: { select: { id: true, name: true } },
-        },
-      }),
-      this.db.bill.count({ where: { status: 'UPLOADED', deletedAt: null } }),
-    ]);
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page * limit < total,
-        hasPrev: page > 1,
-      },
-    };
-  }
-
-  async verify(id: string, verifiedBy: string) {
-    return this.db.bill.update({
-      where: { id },
-      data: { status: 'VERIFIED', verifiedAt: new Date(), verifiedBy },
+    // 2. Automatically create a Pending Verification tracker
+    await this.verificationRepo.create(tenantId, {
+      billId: bill.id,
+      status: 'PENDING',
     });
+
+    // 3. Dispatch to OCR Background Worker
+    await this.ocrQueue.add('extract-text', {
+      tenantId,
+      billId: bill.id,
+      imageUrl: data.billImage,
+      userId,
+    });
+    this.logger.debug(`Dispatched OCR job for bill: ${bill.id}`);
+
+    // 4. Log Audit
+    await this.auditService.log({
+      tenantId,
+      userId,
+      action: 'UPLOAD_BILL',
+      resource: 'BILL',
+      resourceId: bill.id,
+      metadata: { businessId: data.businessId, amount: data.amount },
+    });
+
+    return bill;
   }
 
-  async reject(id: string, verifiedBy: string, reason: string) {
-    return this.db.bill.update({
-      where: { id },
-      data: { status: 'REJECTED', verifiedBy, rejectionReason: reason },
-    });
+  async findByUser(tenantId: string, userId: string, page = 1, limit = 20) {
+    const pagination = new PaginationParamsDto();
+    pagination.page = page;
+    pagination.limit = limit;
+    pagination.sortBy = 'createdAt';
+    pagination.sortOrder = SortOrder.DESC;
+
+    return this.billRepo.findUserBills(tenantId, userId, pagination);
   }
 }

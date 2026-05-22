@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotenv -e .env -- pnpm --filter @saas/database db:reset)",
+      "Bash(npx dotenv *)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

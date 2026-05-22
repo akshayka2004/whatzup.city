@@ -61,7 +61,7 @@ services:
       - '4000:4000'
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/saas_platform?schema=public
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
       JWT_SECRET: dev-jwt-secret-change-in-production
       JWT_REFRESH_SECRET: dev-refresh-secret-change-in-production

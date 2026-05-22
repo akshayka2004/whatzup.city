@@ -6,7 +6,7 @@ export class AnnouncementsService {
   constructor(private readonly db: DatabaseService) {}
 
   async create(tenantId: string, agencyId: string, data: any) {
-    return this.db.announcement.create({ data: { tenantId, agencyId, ...data } });
+    return this.db.governmentAnnouncement.create({ data: { tenantId, agencyId, ...data } });
   }
 
   async findPublished(tenantId: string, page = 1, limit = 20) {
@@ -18,13 +18,13 @@ export class AnnouncementsService {
       OR: [{ publishAt: null }, { publishAt: { lte: now } }],
     };
     const [data, total] = await Promise.all([
-      this.db.announcement.findMany({
+      this.db.governmentAnnouncement.findMany({
         where,
         skip: (page - 1) * limit,
         take: limit,
         orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
       }),
-      this.db.announcement.count({ where }),
+      this.db.governmentAnnouncement.count({ where }),
     ]);
     return {
       data,
@@ -40,17 +40,20 @@ export class AnnouncementsService {
   }
 
   async findById(id: string) {
-    const ann = await this.db.announcement.findUnique({ where: { id, deletedAt: null } });
+    const ann = await this.db.governmentAnnouncement.findUnique({ where: { id, deletedAt: null } });
     if (!ann) throw new NotFoundException('Announcement not found');
-    await this.db.announcement.update({ where: { id }, data: { viewCount: { increment: 1 } } });
+    await this.db.governmentAnnouncement.update({
+      where: { id },
+      data: { viewCount: { increment: 1 } },
+    });
     return ann;
   }
 
   async update(id: string, data: any) {
-    return this.db.announcement.update({ where: { id }, data });
+    return this.db.governmentAnnouncement.update({ where: { id }, data });
   }
   async publish(id: string) {
-    return this.db.announcement.update({
+    return this.db.governmentAnnouncement.update({
       where: { id },
       data: { isPublished: true, publishAt: new Date() },
     });
