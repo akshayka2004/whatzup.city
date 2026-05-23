@@ -2,8 +2,8 @@
  * Application constants and configuration
  */
 
-// API
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+// API — Always same-origin via Next.js /api proxy rewrite (bare-metal HTTP requirement)
+export const API_BASE_URL = '/api';
 export const API_TIMEOUT = 30000; // 30 seconds
 
 // User roles

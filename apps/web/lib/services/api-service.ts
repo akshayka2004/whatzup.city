@@ -15,7 +15,11 @@ export interface PaginatedResponse<T> {
 }
 
 class ApiService {
-  private baseURL = process.env.NEXT_PUBLIC_API_URL || '/api';
+  // IMPORTANT: Always route through Next.js proxy (/api → server-side rewrite to API host).
+  // Using a direct API URL from the browser causes (1) CORS preflight failure,
+  // (2) missing /api global prefix → 404, and (3) cookie issues across origins.
+  // Bare-metal HTTP deployment REQUIRES same-origin requests.
+  private baseURL = '/api';
 
   /**
    * Generic GET request

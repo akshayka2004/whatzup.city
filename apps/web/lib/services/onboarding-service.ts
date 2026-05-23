@@ -158,9 +158,8 @@ class OnboardingService {
     try {
       // Mock URLs skip real upload
       if (uploadUrl.startsWith('/mock-upload/')) return true;
-      const targetUrl = uploadUrl.startsWith('/')
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${uploadUrl}`
-        : uploadUrl;
+      // Relative upload URLs proxy through Next.js (same-origin); absolute URLs (R2/S3) used as-is.
+      const targetUrl = uploadUrl;
       const response = await fetch(targetUrl, {
         method: 'PUT',
         headers: { 'Content-Type': file.type },
