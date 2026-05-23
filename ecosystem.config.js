@@ -3,8 +3,7 @@ module.exports = {
     {
       name: 'saas-api',
       cwd: './apps/api',
-      script: 'node',
-      args: 'dist/main.js',
+      script: 'dist/main.js',
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
@@ -16,8 +15,7 @@ module.exports = {
     {
       name: 'saas-worker',
       cwd: './apps/worker',
-      script: 'node',
-      args: 'dist/main.js',
+      script: 'dist/main.js',
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
@@ -29,7 +27,7 @@ module.exports = {
       name: 'saas-web',
       cwd: './apps/web',
       script: 'node_modules/next/dist/bin/next',
-      args: 'start --port 3000',
+      args: 'start',
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
