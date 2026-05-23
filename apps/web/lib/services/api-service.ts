@@ -31,9 +31,14 @@ class ApiService {
       });
 
       if (!response.ok) {
+        let errorMsg = `HTTP ${response.status}`;
+        try {
+          const errBody = await response.json();
+          errorMsg = errBody.message || errBody.error || errorMsg;
+        } catch {}
         return {
           data: null as unknown as T,
-          error: `HTTP ${response.status}`,
+          error: errorMsg,
           status: response.status,
         };
       }
@@ -64,9 +69,14 @@ class ApiService {
       });
 
       if (!response.ok) {
+        let errorMsg = `HTTP ${response.status}`;
+        try {
+          const errBody = await response.json();
+          errorMsg = errBody.message || errBody.error || errorMsg;
+        } catch {}
         return {
           data: null as unknown as T,
-          error: `HTTP ${response.status}`,
+          error: errorMsg,
           status: response.status,
         };
       }
@@ -97,9 +107,14 @@ class ApiService {
       });
 
       if (!response.ok) {
+        let errorMsg = `HTTP ${response.status}`;
+        try {
+          const errBody = await response.json();
+          errorMsg = errBody.message || errBody.error || errorMsg;
+        } catch {}
         return {
           data: null as unknown as T,
-          error: `HTTP ${response.status}`,
+          error: errorMsg,
           status: response.status,
         };
       }
@@ -129,9 +144,14 @@ class ApiService {
       });
 
       if (!response.ok) {
+        let errorMsg = `HTTP ${response.status}`;
+        try {
+          const errBody = await response.json();
+          errorMsg = errBody.message || errBody.error || errorMsg;
+        } catch {}
         return {
           data: null as unknown as T,
-          error: `HTTP ${response.status}`,
+          error: errorMsg,
           status: response.status,
         };
       }

@@ -10,8 +10,8 @@ export class PasswordService {
   async hash(password: string): Promise<string> {
     return argon2.hash(password, {
       type: argon2.argon2id,
-      memoryCost: 65536, // 64 MB
-      timeCost: 3,
+      memoryCost: 32768, // 32 MB — faster on VPS, still OWASP-compliant
+      timeCost: 2,
       parallelism: 4,
     });
   }

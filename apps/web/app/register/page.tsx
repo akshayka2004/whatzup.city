@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { addUser, addBusiness } from '@/lib/mock-db';
+// mock-db removed — all registration flows through real API
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,7 +118,7 @@ export default function UnifiedRegisterPage() {
   // Email Validation Helper
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  // Step 2 Submission (Registers user / business draft)
+  // Step 2 Submission — real API only, no mock fallback
   const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -151,104 +151,68 @@ export default function UnifiedRegisterPage() {
           return;
         }
 
-        // Call Business Signup API; fall back to mock on any error (incl. 409 conflict)
-        let apiBizId = '';
-        try {
-          const res = await apiService.post<any>('/v1/auth/business/signup', {
-            ownerName: name, email, phone, password,
-            businessName: companyName, categorySlug, profileType: 'OWNER',
-          });
-          if (res.data && !res.error) {
-            setTenantId(res.data.user?.tenantId || 'mock-tenant');
-            apiBizId = res.data.businessId || '';
-          }
-        } catch (_) {}
+        const res = await apiService.post<any>('/v1/auth/business/signup', {
+          ownerName: name, email, phone, password,
+          businessName: companyName, categorySlug, profileType: 'OWNER',
+        });
 
-        // Mock fallback — create local draft if API failed or returned 409
-        if (!apiBizId) {
-          apiBizId = `mock-biz-${Date.now()}`;
-          const userId = `mock-u-${Date.now()}`;
-          // Persist to mock-db so signIn can find this user
-          addUser({
-            id: userId, email, name, phone,
-            password,
-            role: 'business', rbacRole: 'BUSINESS_OWNER',
-            businessId: apiBizId,
-            entity: { id: apiBizId, type: 'BUSINESS', status: 'DRAFT', name: companyName },
-            createdAt: new Date().toISOString(),
-          });
-          addBusiness({
-            id: apiBizId,
-            name: companyName,
-            slug: companyName.toLowerCase().replace(/\s+/g, '-'),
-            description: '',
-            address: '', city: '', state: '', zipCode: '',
-            phone, email,
-            category: categorySlug,
-            status: 'DRAFT',
-            ownerId: userId,
-            ownerName: name,
-            createdAt: new Date().toISOString(),
-          });
-          const mockUser = {
-            id: userId, email, name, phone,
-            role: 'business', rbacRole: 'BUSINESS_OWNER',
-            businessId: apiBizId,
-            entity: { id: apiBizId, type: 'BUSINESS', status: 'DRAFT', name: companyName },
-            createdAt: new Date().toISOString(),
-          };
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('user_session', JSON.stringify(mockUser));
-            localStorage.setItem('user', JSON.stringify(mockUser));
-            localStorage.setItem('reg_password', password);
-          }
+        if (res.error || !res.data) {
+          setError(res.error || 'Registration failed. Please try again.');
+          return;
         }
-        setBusinessId(apiBizId);
-        setTenantId('mock-tenant');
-        setSuccess('Business account created. Verify your email to continue.');
-        setCurrentStep(3);
+
+        setBusinessId(res.data.businessId || '');
+        setTenantId(res.data.user?.tenantId || '');
+
+        // Auto sign in with the newly created credentials
+        const signed = await signIn(email, password);
+        if (!signed) {
+          setError('Account created but auto-login failed. Please login manually.');
+          setTimeout(() => router.push('/login'), 2000);
+          return;
+        }
+
+        setSuccess('Business account created! Complete your profile below to submit for verification.');
+        setCurrentStep(4);
       } else {
         // Customer / Government signup
-        let apiOk = false;
-        try {
-          const tenantRes = await apiService.get<any>('/v1/auth/tenant/default');
-          const resolvedTenantId = tenantRes.data?.id || 'mock-tenant';
-          setTenantId(resolvedTenantId);
-
-          const res = await apiService.post<any>('/v1/auth/signup', {
-            email, password, name, phone, tenantId: resolvedTenantId,
-            role: role === 'GOVERNMENT' ? 'GOVERNMENT_ADMIN' : 'USER',
-          });
-          if (res.data && !res.error) apiOk = true;
-        } catch (_) {}
-
-        // Mock fallback — save to mock-db so signIn works
-        if (!apiOk) {
-          const userId = `mock-u-${Date.now()}`;
-          const userRole = role === 'GOVERNMENT' ? 'government' : 'user';
-          const rbacRole = role === 'GOVERNMENT' ? 'GOVERNMENT_ADMIN' : 'USER';
-          addUser({
-            id: userId, email, name, phone, password,
-            role: userRole as any, rbacRole: rbacRole as any,
-            createdAt: new Date().toISOString(),
-          });
-          const mockUser = {
-            id: userId, email, name, phone,
-            role: userRole, rbacRole,
-            createdAt: new Date().toISOString(),
-          };
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('user_session', JSON.stringify(mockUser));
-            localStorage.setItem('user', JSON.stringify(mockUser));
-            localStorage.setItem('reg_password', password);
-          }
-          setTenantId('mock-tenant');
+        const tenantRes = await apiService.get<any>('/v1/auth/tenant/default');
+        if (tenantRes.error || !tenantRes.data?.id) {
+          setError(tenantRes.error || 'Service unavailable. Please try again later.');
+          return;
         }
-        setSuccess('Account created successfully. Verify your email to continue.');
-        setCurrentStep(3);
+
+        const resolvedTenantId = tenantRes.data.id;
+        setTenantId(resolvedTenantId);
+
+        const res = await apiService.post<any>('/v1/auth/signup', {
+          email, password, name, phone, tenantId: resolvedTenantId,
+          role: role === 'GOVERNMENT' ? 'GOVERNMENT_ADMIN' : 'USER',
+        });
+
+        if (res.error || !res.data) {
+          setError(res.error || 'Registration failed. Please try again.');
+          return;
+        }
+
+        // Auto sign in with the newly created credentials
+        const signed = await signIn(email, password);
+        if (!signed) {
+          setError('Account created but auto-login failed. Please login manually.');
+          setTimeout(() => router.push('/login'), 2000);
+          return;
+        }
+
+        if (role === 'CUSTOMER') {
+          setSuccess('Account created successfully! Redirecting...');
+          setTimeout(() => router.push('/'), 1500);
+        } else {
+          setSuccess('Account created! Complete your department profile below.');
+          setCurrentStep(4);
+        }
       }
     } catch (err: any) {
-      setError(err?.message || 'Failed to initialize registration.');
+      setError(err?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -38,11 +38,13 @@ export class AuthController {
   ) {}
 
   private setCookies(res: Response, accessToken: string, refreshToken: string) {
-    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
+    // COOKIE_SECURE=true only when the site is served over HTTPS.
+    // On raw-IP HTTP deployments set COOKIE_SECURE=false in env.
+    const isSecure = this.configService.get<string>('COOKIE_SECURE') === 'true';
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
-      secure: isProd,
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: 15 * 60 * 1000, // 15 minutes
       path: '/',
@@ -50,7 +52,7 @@ export class AuthController {
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
-      secure: isProd,
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
@@ -65,8 +67,16 @@ export class AuthController {
   @Public()
   @Post('signup')
   @ApiOperation({ summary: 'Register a new user account' })
-  async signup(@Body() dto: SignupDto) {
-    return this.authService.signup(dto);
+  async signup(
+    @Body() dto: SignupDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.signup(dto);
+    // Set auth cookies so the user is immediately authenticated
+    if (result.accessToken) {
+      this.setCookies(res, result.accessToken, result.refreshToken);
+    }
+    return result;
   }
 
   @Public()

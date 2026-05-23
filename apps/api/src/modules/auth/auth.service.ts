@@ -98,7 +98,8 @@ export class AuthService {
         name: dto.name,
         phone: dto.phone,
         role,
-        emailVerified: false,
+        emailVerified: true,
+        isActive: true,
         ...(role === UserRoleEnum.USER
           ? {
               customerProfile: {
@@ -108,7 +109,7 @@ export class AuthService {
                   lastName: nameParts.slice(1).join(' '),
                   email: emailNormalized,
                   phone: dto.phone,
-                  status: 'PENDING',
+                  status: 'ACTIVE',
                 },
               },
             }
@@ -134,9 +135,9 @@ export class AuthService {
           tenantId: user.tenantId,
           entityType: 'CUSTOMER',
           entityId: entity.id,
-          currentStep: 1,
-          status: 'PENDING',
-          stepsCompleted: ['SIGNUP'],
+          currentStep: 2,
+          status: 'ACTIVE',
+          stepsCompleted: ['SIGNUP', 'EMAIL_VERIFIED'],
           metadata: { phone: dto.phone },
         },
       });
@@ -151,19 +152,20 @@ export class AuthService {
       });
     }
 
-    // Generate Email Verification Token and save to Redis (24 hour TTL)
-    const verificationToken = uuidv4();
-    await this.redisService.set(
-      `email-verification:${verificationToken}`,
-      {
-        email: user.email,
-        tenantId: user.tenantId,
-      },
-      86400,
-    );
-
-    // Send verification email
-    await this.mailService.sendVerificationEmail(user.email, verificationToken, user.tenantId);
+    // Fire-and-forget: store token + send email without blocking the signup response
+    (async () => {
+      try {
+        const verificationToken = uuidv4();
+        await this.redisService.set(
+          `email-verification:${verificationToken}`,
+          { email: user.email, tenantId: user.tenantId },
+          86400,
+        );
+        await this.mailService.sendVerificationEmail(user.email, verificationToken, user.tenantId);
+      } catch (err: any) {
+        this.logger.warn(`Verification email failed for ${user.email}: ${err.message}`);
+      }
+    })();
 
     // Track Audit Log
     await this.db.auditLog.create({
@@ -177,9 +179,11 @@ export class AuthService {
       },
     });
 
+    // Generate tokens — user is active immediately, no email gate
+    const tokens = await this.generateTokens(user);
     return {
-      message: 'Signup successful. Please verify your email address to continue.',
-      userId: user.id,
+      ...tokens,
+      message: 'Account created successfully. You are now logged in.',
     };
   }
 

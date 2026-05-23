@@ -59,6 +59,9 @@ services:
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET:-saas-uploads}
+      # Raw-IP HTTP deployment — cookies must NOT require HTTPS
+      COOKIE_SECURE: 'false'
+      ENFORCE_EMAIL_VERIFICATION: 'false'
     depends_on:
       redis:
         condition: service_healthy
