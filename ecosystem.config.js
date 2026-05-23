@@ -9,7 +9,10 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 4001
+        PORT: 4001,
+        // HTTP bare-metal deployment — cookies must NOT require HTTPS
+        COOKIE_SECURE: 'false',
+        ENFORCE_EMAIL_VERIFICATION: 'false',
       }
     },
     {
@@ -33,7 +36,9 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 3000,
+        // Proxy target for /api/* rewrites — bare-metal API on port 4001
+        API_URL: 'http://localhost:4001',
       }
     }
   ]
