@@ -145,7 +145,7 @@ export default function HomePage() {
             {/* Animated Badge */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold select-none shadow-sm shadow-primary/5">
               <Sparkles className="h-3.5 w-3.5 animate-pulse text-indigo-400" />
-              <span>India's #1 Business Discovery Platform</span>
+              <span>Kerala's Local Business & Civic Platform</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-black text-foreground leading-tight tracking-tight">
@@ -423,7 +423,7 @@ export default function HomePage() {
           <Globe className="h-12 w-12 mx-auto mb-4 opacity-90 text-indigo-200 animate-pulse" />
           <h2 className="text-2xl md:text-3xl font-black mb-3 text-white tracking-tight">Expand Your Local Reach Today</h2>
           <p className="text-white/80 mb-8 max-w-md mx-auto text-sm leading-relaxed">
-            Join thousands of local users discovering, claiming, reviewing, and communicating on India's premier neighborhood SaaS listing network.
+            Join thousands of local users discovering businesses, claiming deals, verifying invoices, and staying informed on Whtzup.city — Kerala's trusted local directory.
           </p>
           <div className="flex gap-4 justify-center flex-wrap">
             <Link href="/search">

@@ -478,7 +478,7 @@ export default function UnifiedRegisterPage() {
               <div className="text-center md:text-left">
                 <h2 className="text-xl font-bold text-slate-100">Select Account Class</h2>
                 <p className="text-xs text-slate-400 mt-1">
-                  Choose how you plan to use our SaaS ecosystem. Select from standard roles:
+                  Choose how you plan to use Whtzup.city. Select from standard roles:
                 </p>
               </div>
 

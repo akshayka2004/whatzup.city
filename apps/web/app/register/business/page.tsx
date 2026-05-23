@@ -381,7 +381,7 @@ function RegisterBusinessWizardContent() {
             Business Partner Setup
           </h1>
           <p className="text-sm text-slate-400 max-w-md mx-auto">
-            {businessDraft ? `Registering ${businessDraft.name}` : 'Setup your SaaS Workspace'}
+            {businessDraft ? `Registering ${businessDraft.name}` : 'Setup your Whtzup.city Business Profile'}
           </p>
         </div>
 
