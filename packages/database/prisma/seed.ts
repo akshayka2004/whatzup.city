@@ -387,27 +387,6 @@ async function main() {
   }
   console.log(`✅ ${seededUsers.length} core users created with RBAC mapping`);
 
-  // ── Seeding 1,000 Customers ─────────────────────────────
-  console.log('🌱 Seeding 1,000 customers...');
-  const customersData = [];
-  for (let i = 1; i <= 1000; i++) {
-    customersData.push({
-      tenantId: tenant.id,
-      email: `customer${i}@platform.com`,
-      passwordHash,
-      name: `Customer ${i}`,
-      phone: `+91-99999${String(i).padStart(5, '0')}`,
-      role: UserRoleEnum.USER,
-      isActive: true,
-      emailVerified: true,
-    });
-  }
-  await prisma.user.createMany({
-    data: customersData,
-    skipDuplicates: true,
-  });
-  console.log('✅ 1,000 customers seeded');
-
   // ── Categories ──────────────────────────────────────────
   const categoriesData = [
     {
@@ -485,100 +464,6 @@ async function main() {
     categories.push(category);
   }
   console.log(`✅ ${categories.length} categories upserted`);
-
-  // ── Seeding 100 Businesses ──────────────────────────────
-  console.log('🌱 Seeding 100 businesses...');
-  const businessOwner = seededUsers.find((u) => u.email === 'business@platform.com');
-  const businessesData = [];
-
-  for (let i = 1; i <= 100; i++) {
-    const cat = categories[i % categories.length];
-    businessesData.push({
-      tenantId: tenant.id,
-      ownerId: businessOwner.id,
-      categoryId: cat.id,
-      name: `Enterprise Company ${i}`,
-      slug: `enterprise-company-${i}`,
-      description: `Premium listings and services from Enterprise Company ${i}. We offer top-tier facilities.`,
-      status: BusinessStatus.APPROVED,
-      address: `${100 + i} Commercial Way, Suite ${i}`,
-      city: ['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Chennai'][i % 5],
-      state: ['Maharashtra', 'Delhi', 'Karnataka', 'Maharashtra', 'Tamil Nadu'][i % 5],
-      zipCode: `4000${String(i).padStart(2, '0')}`,
-      phone: `+91-22-8888${String(i).padStart(4, '0')}`,
-      email: `info@company${i}.com`,
-      website: `https://company${i}.com`,
-      averageRating: 3.5 + (i % 2) * 1.2,
-      totalReviews: 10 + i * 2,
-      isVerified: i % 3 !== 0,
-      verifiedAt: i % 3 !== 0 ? new Date() : null,
-    });
-  }
-
-  await prisma.business.createMany({
-    data: businessesData,
-    skipDuplicates: true,
-  });
-  console.log('✅ 100 businesses seeded');
-
-  // Load created businesses to link other elements
-  const createdBusinesses = await prisma.business.findMany({
-    where: { tenantId: tenant.id },
-    take: 10,
-  });
-
-  // ── Offers ──────────────────────────────────────────────
-  const now = new Date();
-  const nextMonth = new Date(now);
-  nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-  if (createdBusinesses.length >= 2) {
-    await prisma.offer.create({
-      data: {
-        tenantId: tenant.id,
-        businessId: createdBusinesses[0].id,
-        title: '20% Off Breakfast',
-        description: 'Start your day right with 20% off all breakfast items',
-        discountPercent: 20,
-        status: OfferStatus.ACTIVE,
-        startDate: now,
-        endDate: nextMonth,
-        code: 'MORNING20',
-        maxRedemptions: 500,
-      },
-    });
-
-    await prisma.offer.create({
-      data: {
-        tenantId: tenant.id,
-        businessId: createdBusinesses[1].id,
-        title: 'Free Consultation Session',
-        description: 'Get a free basic consultation with any appointment booking',
-        status: OfferStatus.ACTIVE,
-        startDate: now,
-        endDate: nextMonth,
-        maxRedemptions: 200,
-      },
-    });
-    console.log('✅ Core active offers created');
-  }
-
-  // ── Sample Notifications ─────────────────────────────────
-  const customer = seededUsers.find((u) => u.email === 'user@platform.com');
-  if (customer) {
-    await prisma.notification.create({
-      data: {
-        tenantId: tenant.id,
-        userId: customer.id,
-        title: 'Welcome to the Platform!',
-        body: 'Start exploring verified businesses and uploads bills to earn rewards.',
-        type: 'SYSTEM',
-        channel: 'IN_APP',
-        isRead: false,
-      },
-    });
-    console.log('✅ Sample notification seeded');
-  }
 
   // ── Feature Flags ───────────────────────────────────────
   const flags = [
