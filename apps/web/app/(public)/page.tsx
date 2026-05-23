@@ -133,22 +133,22 @@ export default function HomePage() {
   return (
     <PublicLayout>
       {/* ── Hero Split Layout ─────────────────────────────────────────── */}
-      <div className="relative mb-16 rounded-3xl overflow-hidden border border-white/5 bg-card/25 backdrop-blur-xl">
+      <div className="relative mb-10 md:mb-16 rounded-3xl overflow-hidden border border-white/5 bg-card/25 backdrop-blur-xl">
         {/* Decorative background blurs */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent pointer-events-none" />
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/25 rounded-full blur-3xl pointer-events-none animate-pulse" style={{ animationDuration: '8s' }} />
         <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl pointer-events-none animate-pulse" style={{ animationDuration: '10s' }} />
 
-        <div className="relative grid lg:grid-cols-12 gap-12 items-center px-6 py-16 md:py-24 max-w-7xl mx-auto z-10">
+        <div className="relative grid lg:grid-cols-12 gap-8 lg:gap-12 items-center px-4 sm:px-6 py-10 md:py-16 lg:py-24 max-w-7xl mx-auto z-10">
           {/* Left Column: Headline and Search */}
-          <div className="lg:col-span-7 text-left space-y-6">
+          <div className="lg:col-span-7 text-left space-y-5 lg:space-y-6">
             {/* Animated Badge */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold select-none shadow-sm shadow-primary/5">
               <Sparkles className="h-3.5 w-3.5 animate-pulse text-indigo-400" />
               <span>India's #1 Business Discovery Platform</span>
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-black text-foreground leading-tight tracking-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl font-black text-foreground leading-tight tracking-tight">
               Discover Local <br />
               <span className="bg-gradient-to-r from-primary via-indigo-400 to-accent bg-clip-text text-transparent">
                 Businesses & Offers
@@ -194,8 +194,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right Column: Floating Glassmorphic Cards (Visual Showcase) */}
-          <div className="lg:col-span-5 relative w-full h-[400px] lg:h-[450px] flex items-center justify-center">
+          {/* Right Column: Floating Glassmorphic Cards — hidden on mobile */}
+          <div className="hidden lg:flex lg:col-span-5 relative w-full h-[450px] items-center justify-center">
             {/* Main Listing Preview Card */}
             <Card className="absolute top-4 left-4 w-72 p-4 rounded-2xl border-white/10 bg-card/75 backdrop-blur-xl shadow-2xl transition-all hover:-translate-y-1 hover:scale-[1.02] duration-300 z-20 group">
               <div className="relative w-full h-32 rounded-xl overflow-hidden mb-3">
@@ -262,7 +262,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Stats Bar ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-10 md:mb-16">
         {STATS.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -280,7 +280,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Categories ───────────────────────────────────────────── */}
-      <div className="mb-16">
+      <div className="mb-10 md:mb-16">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-black text-foreground">Browse Categories</h2>
@@ -310,7 +310,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Featured Businesses ───────────────────────────────────── */}
-      <div className="mb-16">
+      <div className="mb-10 md:mb-16">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-black text-foreground">Featured Businesses</h2>
@@ -358,14 +358,14 @@ export default function HomePage() {
       </div>
 
       {/* ── Features ─────────────────────────────────────────────── */}
-      <div className="mb-16">
+      <div className="mb-10 md:mb-16">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-black text-foreground mb-2">Platform Capabilities</h2>
           <p className="text-muted-foreground text-sm max-w-lg mx-auto leading-relaxed">
             A complete trust-oriented software suite serving local customers, verified sellers, and local administrators.
           </p>
         </div>
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
           {FEATURES.map((feature) => {
             const Icon = feature.icon;
             return (
@@ -385,12 +385,12 @@ export default function HomePage() {
       </div>
 
       {/* ── Testimonials ─────────────────────────────────────────── */}
-      <div className="mb-16">
+      <div className="mb-10 md:mb-16">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-black text-foreground mb-2">Community Voices</h2>
           <p className="text-muted-foreground text-sm">Read insights from members utilizing our ecosystem daily</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
           {TESTIMONIALS.map((t) => (
             <Card key={t.name} className="p-6 rounded-2xl border-white/5 bg-card/30 backdrop-blur-md relative hover:border-white/10 transition-all duration-300">
               <Quote className="absolute top-6 right-6 h-8 w-8 text-white/5 pointer-events-none" />
@@ -419,9 +419,9 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-accent/80 backdrop-blur-sm pointer-events-none" />
         <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative px-8 py-16 text-center text-primary-foreground">
+        <div className="relative px-5 py-10 md:px-8 md:py-14 text-center text-primary-foreground">
           <Globe className="h-12 w-12 mx-auto mb-4 opacity-90 text-indigo-200 animate-pulse" />
-          <h2 className="text-3xl font-black mb-3 text-white tracking-tight">Expand Your Local Reach Today</h2>
+          <h2 className="text-2xl md:text-3xl font-black mb-3 text-white tracking-tight">Expand Your Local Reach Today</h2>
           <p className="text-white/80 mb-8 max-w-md mx-auto text-sm leading-relaxed">
             Join thousands of local users discovering, claiming, reviewing, and communicating on India's premier neighborhood SaaS listing network.
           </p>

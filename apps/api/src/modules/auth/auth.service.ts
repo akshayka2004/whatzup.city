@@ -56,6 +56,13 @@ export class AuthService {
   }
 
   async signup(dto: SignupDto) {
+    // Auto-resolve to first tenant when caller omits tenantId (single-tenant bare-metal deployments)
+    if (!dto.tenantId) {
+      const defaultTenant = await this.db.tenant.findFirst({ select: { id: true } });
+      if (!defaultTenant) throw new BadRequestException('No tenant configured. Contact support.');
+      dto.tenantId = defaultTenant.id;
+    }
+
     if (!this.passwordService.isStrongPassword(dto.password)) {
       throw new BadRequestException(
         'Password is too weak. Must contain uppercase, lowercase, numbers, and special characters.',

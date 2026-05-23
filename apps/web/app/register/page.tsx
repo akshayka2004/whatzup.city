@@ -28,7 +28,6 @@ import {
   ArrowRight,
   ArrowLeft,
   AlertCircle,
-  ShieldCheck,
   FileCheck,
   MapPin,
   Layers,
@@ -81,9 +80,6 @@ export default function UnifiedRegisterPage() {
   const [companyName, setCompanyName] = useState('');
   const [categorySlug, setCategorySlug] = useState('restaurants');
 
-  // Form states: Email verification (Step 3)
-  const [verificationCode, setVerificationCode] = useState('');
-  const [emailVerified, setEmailVerified] = useState(false);
   const [tenantId, setTenantId] = useState('');
   const [businessId, setBusinessId] = useState('');
 
@@ -173,20 +169,11 @@ export default function UnifiedRegisterPage() {
         }
 
         setSuccess('Business account created! Complete your profile below to submit for verification.');
-        setCurrentStep(4);
+        setCurrentStep(3);
       } else {
-        // Customer / Government signup
-        const tenantRes = await apiService.get<any>('/v1/auth/tenant/default');
-        if (tenantRes.error || !tenantRes.data?.id) {
-          setError(tenantRes.error || 'Service unavailable. Please try again later.');
-          return;
-        }
-
-        const resolvedTenantId = tenantRes.data.id;
-        setTenantId(resolvedTenantId);
-
+        // Customer / Government signup — tenantId auto-resolved by API
         const res = await apiService.post<any>('/v1/auth/signup', {
-          email, password, name, phone, tenantId: resolvedTenantId,
+          email, password, name, phone,
           role: role === 'GOVERNMENT' ? 'GOVERNMENT_ADMIN' : 'USER',
         });
 
@@ -194,6 +181,8 @@ export default function UnifiedRegisterPage() {
           setError(res.error || 'Registration failed. Please try again.');
           return;
         }
+
+        if (res.data.user?.tenantId) setTenantId(res.data.user.tenantId);
 
         // Auto sign in with the newly created credentials
         const signed = await signIn(email, password);
@@ -208,101 +197,11 @@ export default function UnifiedRegisterPage() {
           setTimeout(() => router.push('/'), 1500);
         } else {
           setSuccess('Account created! Complete your department profile below.');
-          setCurrentStep(4);
+          setCurrentStep(3);
         }
       }
     } catch (err: any) {
       setError(err?.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Step 3 Submission (Verifies email OTP & automatically signs in)
-  const handleVerifyEmail = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    if (!verificationCode && !emailVerified) {
-      setError('Please enter a verification code.');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      let verified = false;
-      // Try real API first
-      try {
-        const res = await apiService.post<any>('/v1/auth/verify-email', {
-          token: verificationCode, tenantId,
-        });
-        if (res.data && !res.error) verified = true;
-      } catch (_) {}
-
-      // Mock fallback — accept any non-empty code when API unreachable
-      if (!verified) verified = true;
-
-      setEmailVerified(true);
-      setSuccess('Email address verified successfully!');
-      const regPassword = (typeof window !== 'undefined' && localStorage.getItem('reg_password')) || password;
-      const successSignIn = await signIn(email, regPassword);
-      if (typeof window !== 'undefined') localStorage.removeItem('reg_password');
-
-      if (role === 'CUSTOMER') {
-        setTimeout(() => router.push('/'), 1500);
-      } else if (role === 'GOVERNMENT') {
-        if (successSignIn) {
-          // resolveRedirect in useAuth handles routing
-        } else {
-          setTimeout(() => router.push('/government/dashboard'), 1500);
-        }
-      } else {
-        setTimeout(() => { setCurrentStep(4); setSuccess(''); }, 1500);
-      }
-    } catch (err: any) {
-      setError(err?.message || 'Email verification request rejected.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Helper function to bypass email verification in dev/mock mode
-  const simulateVerification = async () => {
-    setError('');
-    setSuccess('');
-    setLoading(true);
-    try {
-      // Skip API — mark verified locally and sign in with stored credentials
-      setEmailVerified(true);
-      setSuccess('Email verified (mock bypass).');
-      // Try signIn; if mock user exists in localStorage it will succeed
-      const regPassword = (typeof window !== 'undefined' && localStorage.getItem('reg_password')) || password;
-      const signed = await signIn(email, regPassword);
-      if (!signed) {
-        // signIn failed (no backend) — manually set user from localStorage draft
-        // and redirect based on role
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('reg_password');
-        }
-        if (role === 'CUSTOMER') {
-          setTimeout(() => router.push('/'), 800);
-        } else if (role === 'GOVERNMENT') {
-          setTimeout(() => router.push('/government/dashboard'), 800);
-        } else {
-          setTimeout(() => { setCurrentStep(4); setSuccess(''); }, 800);
-        }
-      } else {
-        if (typeof window !== 'undefined') localStorage.removeItem('reg_password');
-        if (role === 'CUSTOMER') {
-          setTimeout(() => router.push('/'), 800);
-        } else {
-          setTimeout(() => { setCurrentStep(4); setSuccess(''); }, 800);
-        }
-      }
-    } catch (err: any) {
-      setError(err?.message || 'Verification failed.');
     } finally {
       setLoading(false);
     }
@@ -529,17 +428,16 @@ export default function UnifiedRegisterPage() {
           <div className="flex justify-between items-center text-xs font-semibold text-slate-400 mb-3 px-1">
             <span>Progress Status</span>
             <span className="text-zinc-300">
-              Step {currentStep} of 4: {
+              Step {currentStep} of 3: {
                 currentStep === 1 ? 'Choose Account Type' :
                 currentStep === 2 ? 'Credentials & Setup' :
-                currentStep === 3 ? 'Verify Email Address' :
-                'Kerala Profile & Documents'
+                'Profile & Documents'
               }
             </span>
           </div>
-          <Progress value={(currentStep / 4) * 100} className="h-2 bg-white/5" />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-[10px] text-center font-mono">
-            {['Account Type', 'Credentials', 'Verification', 'Profile Setup'].map((title, i) => (
+          <Progress value={(currentStep / 3) * 100} className="h-2 bg-white/5" />
+          <div className="grid grid-cols-3 gap-2 mt-4 text-[10px] text-center font-mono">
+            {['Account Type', 'Credentials', 'Profile Setup'].map((title, i) => (
               <span
                 key={i}
                 className={
@@ -835,73 +733,8 @@ export default function UnifiedRegisterPage() {
             </form>
           )}
 
-          {/* STEP 3: Interactive OTP & Email Verification */}
+          {/* STEP 3: Kerala Entity Profile Setup & Document Upload */}
           {currentStep === 3 && (
-            <form onSubmit={handleVerifyEmail} className="space-y-6">
-              <div>
-                <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-zinc-400" />
-                  Email Verification
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  We have dispatched a verification email to <span className="text-zinc-300 font-semibold">{email}</span>. Please input the validation code below.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">Verification Token / Code</label>
-                  <Input
-                    type="text"
-                    placeholder="Enter verification code"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value)}
-                    className="h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
-                    required
-                  />
-                </div>
-
-                <div className="p-4 rounded-2xl bg-zinc-700/10 border border-zinc-600/20 space-y-2">
-                  <p className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5" /> Testing & Development Simulation
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    Bypass SMTP verification checks and verify your email directly using a mock verification token format.
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={simulateVerification}
-                    disabled={loading || emailVerified}
-                    className="w-full bg-zinc-700/20 hover:bg-zinc-700/30 text-zinc-300 border border-zinc-600/30 text-xs font-semibold h-9 rounded-xl transition cursor-pointer"
-                  >
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
-                    Simulate & Auto Verify Email
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-6 border-t border-white/5 gap-3">
-                <Button
-                  type="submit"
-                  disabled={loading || emailVerified}
-                  className="bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Verifying...
-                    </>
-                  ) : (
-                    <>
-                      Verify Code <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {/* STEP 4: Kerala Entity Profile Setup & Document Upload */}
-          {currentStep === 4 && (
             <form onSubmit={handleStep4Submit} className="space-y-6">
               <div>
                 <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">

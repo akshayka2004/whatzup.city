@@ -21,9 +21,10 @@ export class SignupDto {
   @IsString()
   phone?: string;
 
-  @ApiProperty({ description: 'Tenant UUID association' })
+  @ApiProperty({ description: 'Tenant UUID association (auto-resolved to default if omitted)', required: false })
+  @IsOptional()
   @IsUUID()
-  tenantId!: string;
+  tenantId?: string;
 
   @ApiProperty({ enum: UserRoleEnum, default: UserRoleEnum.USER, required: false })
   @IsOptional()
