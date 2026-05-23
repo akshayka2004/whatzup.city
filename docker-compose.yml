@@ -59,6 +59,9 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-production}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001}
       PORT: 4000
+      SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_STORAGE_BUCKET: ${NEXT_PUBLIC_SUPABASE_BUCKET:-saas-uploads}
     depends_on:
       redis:
         condition: service_healthy
@@ -81,6 +84,9 @@ services:
       TYPESENSE_PORT: 8108
       TYPESENSE_PROTOCOL: http
       TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-dev-typesense-key}
+      SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_STORAGE_BUCKET: ${NEXT_PUBLIC_SUPABASE_BUCKET:-saas-uploads}
     depends_on:
       redis:
         condition: service_healthy
@@ -92,6 +98,10 @@ services:
       dockerfile: docker/Dockerfile.frontend
       args:
         APP_NAME: web
+        NEXT_PUBLIC_API_URL: http://localhost:4000
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_SUPABASE_BUCKET: ${NEXT_PUBLIC_SUPABASE_BUCKET:-saas-uploads}
     container_name: saas-web-local
     restart: unless-stopped
     ports:
@@ -103,23 +113,6 @@ services:
     depends_on:
       - api
 
-  # ── Next.js Admin/Merchant Dashboard ────────────────────────
-  admin:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.frontend
-      args:
-        APP_NAME: admin
-    container_name: saas-admin-local
-    restart: unless-stopped
-    ports:
-      - '3001:3001'
-    environment:
-      NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://localhost:4000
-      PORT: 3001
-    depends_on:
-      - api
 
 volumes:
   redis_local_data:

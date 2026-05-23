@@ -1,0 +1,128 @@
+# ============================================================
+# Docker Compose — Hostinger VPS (Raw IP, No SSL)
+# ============================================================
+# Web:   http://72.61.238.98       (port 80)
+# API:   http://72.61.238.98:4000  (port 4000)
+# Admin: http://72.61.238.98:3001  (port 3001)
+# ============================================================
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: saas-redis
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  typesense:
+    image: typesense/typesense:27.1
+    container_name: saas-typesense
+    restart: always
+    environment:
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
+      TYPESENSE_DATA_DIR: /data
+    volumes:
+      - typesense_data:/data
+    networks:
+      - internal
+
+  api:
+    image: akshayka2004/saas-api:latest
+    container_name: saas-api
+    restart: always
+    ports:
+      - '4000:4000'
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      DIRECT_URL: ${DIRECT_URL}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      TYPESENSE_HOST: typesense
+      TYPESENSE_PORT: 8108
+      TYPESENSE_PROTOCOL: http
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      PORT: 4000
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET:-saas-uploads}
+    depends_on:
+      redis:
+        condition: service_healthy
+      typesense:
+        condition: service_started
+    networks:
+      - internal
+
+  worker:
+    image: akshayka2004/saas-worker:latest
+    container_name: saas-worker
+    restart: always
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      DIRECT_URL: ${DIRECT_URL}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      TYPESENSE_HOST: typesense
+      TYPESENSE_PORT: 8108
+      TYPESENSE_PROTOCOL: http
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET:-saas-uploads}
+    depends_on:
+      redis:
+        condition: service_healthy
+      typesense:
+        condition: service_started
+    networks:
+      - internal
+
+  web:
+    image: akshayka2004/saas-web:latest
+    container_name: saas-web
+    restart: always
+    ports:
+      - '80:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    depends_on:
+      - api
+    networks:
+      - internal
+
+  admin:
+    image: akshayka2004/saas-admin:latest
+    container_name: saas-admin
+    restart: always
+    ports:
+      - '3001:3000'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    depends_on:
+      - api
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  redis_data:
+  typesense_data:

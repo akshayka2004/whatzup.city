@@ -40,6 +40,18 @@ class EnvironmentVariables {
   @IsNumber()
   @IsOptional()
   PORT?: number;
+
+  @IsString()
+  @IsOptional()
+  SUPABASE_URL?: string;
+
+  @IsString()
+  @IsOptional()
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+
+  @IsString()
+  @IsOptional()
+  SUPABASE_STORAGE_BUCKET?: string;
 }
 
 export function validateEnv(config: Record<string, any>) {
@@ -56,6 +68,22 @@ export function validateEnv(config: Record<string, any>) {
 
   // Enterprise security check: Enforce strong secrets in production
   if (validatedConfig.NODE_ENV === Environment.Production) {
+    if (
+      !validatedConfig.SUPABASE_URL ||
+      !validatedConfig.SUPABASE_SERVICE_ROLE_KEY
+    ) {
+      throw new Error(
+        'CRITICAL CONFIGURATION ERROR: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required in production mode.',
+      );
+    }
+    if (
+      validatedConfig.SUPABASE_URL.includes('localhost') ||
+      validatedConfig.SUPABASE_URL.includes('127.0.0.1')
+    ) {
+      throw new Error(
+        'CRITICAL CONFIGURATION ERROR: SUPABASE_URL cannot point to localhost or loopback addresses in production mode.',
+      );
+    }
     if (
       validatedConfig.JWT_SECRET.toLowerCase().includes('change') ||
       validatedConfig.JWT_SECRET.toLowerCase().includes('secret') ||

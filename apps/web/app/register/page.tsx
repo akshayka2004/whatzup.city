@@ -377,7 +377,7 @@ export default function UnifiedRegisterPage() {
     // Build URL to represent the saved item in DB
     const finalUrl = uploadUrl.startsWith('/')
       ? uploadUrl.split('?')[0] // local mock URL
-      : `https://pub-cdn.saasplatform.com/${fileKey}`; // external bucket CDN URL
+      : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'saas-uploads'}/${fileKey}`;
 
     setUploadProgress(100);
     return { fileUrl: finalUrl, fileKey };
@@ -450,6 +450,21 @@ export default function UnifiedRegisterPage() {
         // 5. Submit business verification request
         await onboardingService.submitForVerification(businessId);
 
+        // Update local session status
+        if (typeof window !== 'undefined') {
+          const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
+          if (stored) {
+            try {
+              const u = JSON.parse(stored);
+              if (u.entity && u.entity.id === businessId) {
+                u.entity.status = 'PENDING_VERIFICATION';
+                localStorage.setItem('user_session', JSON.stringify(u));
+                localStorage.setItem('user', JSON.stringify(u));
+              }
+            } catch (_) {}
+          }
+        }
+
         setSuccess('Company onboarding application successfully submitted!');
         setTimeout(() => {
           router.push('/dashboard');
@@ -496,9 +511,24 @@ export default function UnifiedRegisterPage() {
         // 5. Submit application for validation
         await universalOnboardingService.submitForVerification(entityId);
 
+        // Update local session status
+        if (typeof window !== 'undefined') {
+          const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
+          if (stored) {
+            try {
+              const u = JSON.parse(stored);
+              if (u.entity && u.entity.id === entityId) {
+                u.entity.status = 'PENDING_VERIFICATION';
+                localStorage.setItem('user_session', JSON.stringify(u));
+                localStorage.setItem('user', JSON.stringify(u));
+              }
+            } catch (_) {}
+          }
+        }
+
         setSuccess('Government department onboarding details successfully registered!');
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push('/government/dashboard');
         }, 2000);
       }
     } catch (err: any) {

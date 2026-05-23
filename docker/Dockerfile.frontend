@@ -1,5 +1,5 @@
 # ============================================================
-# Dockerfile — Next.js Frontend (Multi-stage build)
+# Dockerfile — Next.js Frontend (Multi-stage, Standalone build)
 # ============================================================
 
 FROM node:22-alpine AS base
@@ -23,31 +23,53 @@ RUN pnpm install --frozen-lockfile
 FROM base AS builder
 ARG APP_NAME
 ENV APP_NAME=${APP_NAME}
+
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
+ARG NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+
+ARG NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
+
+ARG NEXT_PUBLIC_SUPABASE_BUCKET
+ENV NEXT_PUBLIC_SUPABASE_BUCKET=${NEXT_PUBLIC_SUPABASE_BUCKET}
+
 COPY --from=deps /app /app
 COPY . .
+
 RUN pnpm --filter @saas/types build
 RUN pnpm --filter @saas/auth build
 RUN pnpm --filter @saas/ui build
 RUN pnpm --filter @saas/database db:generate
 RUN pnpm --filter @saas/database build
+# Ensure public dir exists so the COPY in runner never fails
+RUN mkdir -p /app/apps/${APP_NAME}/public
 RUN pnpm --filter @saas/${APP_NAME} build
 
-# ── Production Runner ─────────────────────────────────────────
-FROM base AS runner
+# ── Production Runner (Next.js Standalone) ───────────────────
+FROM node:22-alpine AS runner
 ARG APP_NAME
 ENV APP_NAME=${APP_NAME}
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/${APP_NAME} ./apps/${APP_NAME}
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/package.json /app/pnpm-workspace.yaml ./
+WORKDIR /app
+
+# Standalone bundle — self-contained, includes only the minimal node_modules needed
+COPY --from=builder /app/apps/${APP_NAME}/.next/standalone ./
+
+# Static assets (JS/CSS chunks, images) served by Next.js
+COPY --from=builder /app/apps/${APP_NAME}/.next/static ./apps/${APP_NAME}/.next/static
+
+# Public folder (favicons, robots.txt, etc.)
+COPY --from=builder /app/apps/${APP_NAME}/public ./apps/${APP_NAME}/public
 
 EXPOSE 3000
 
-# Health check verifies Next.js returns HTTP 200
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-3000} || exit 1
 
-CMD pnpm --filter @saas/${APP_NAME} start
+CMD node apps/${APP_NAME}/server.js

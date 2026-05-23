@@ -239,7 +239,7 @@ function RegisterBusinessWizardContent() {
     // Build URL to represent the saved item in DB
     const finalUrl = uploadUrl.startsWith('/')
       ? uploadUrl.split('?')[0] // local mock URL
-      : `https://pub-cdn.saasplatform.com/${fileKey}`; // external bucket CDN URL
+      : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'saas-uploads'}/${fileKey}`;
 
     // 3. Register with backend DB
     let regRes;
@@ -320,6 +320,22 @@ function RegisterBusinessWizardContent() {
       const response = await onboardingService.submitForVerification(businessId);
       if (response.data && !response.error) {
         setSuccess('Application successfully submitted! Redirecting to Restricted Dashboard...');
+        
+        // Update local session status
+        if (typeof window !== 'undefined') {
+          const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
+          if (stored) {
+            try {
+              const u = JSON.parse(stored);
+              if (u.entity && u.entity.id === businessId) {
+                u.entity.status = 'PENDING_VERIFICATION';
+                localStorage.setItem('user_session', JSON.stringify(u));
+                localStorage.setItem('user', JSON.stringify(u));
+              }
+            } catch (_) {}
+          }
+        }
+
         setTimeout(() => {
           router.push('/dashboard');
         }, 2000);

@@ -30,7 +30,7 @@ describe('Security and Hardening Tests', () => {
       mockConfigService = {
         get: jest.fn((key: string, defaultValue?: any) => {
           if (key === 'NODE_ENV') return 'production';
-          if (key === 'R2_ENDPOINT') return 'https://my-bucket.r2.cloudflarestorage.com';
+          if (key === 'SUPABASE_URL') return 'https://my-project.supabase.co';
           return defaultValue;
         }),
       };
@@ -65,13 +65,13 @@ describe('Security and Hardening Tests', () => {
       expect(() => processor['validateImageUrl']('http://127.0.0.1/image.png')).not.toThrow();
     });
 
-    it('should restrict host to configured Cloudflare R2 bucket in production', () => {
+    it('should restrict host to configured Supabase Storage domain in production', () => {
       expect(() =>
-        processor['validateImageUrl']('https://my-bucket.r2.cloudflarestorage.com/tenant/image.png'),
+        processor['validateImageUrl']('https://my-project.supabase.co/tenant/image.png'),
       ).not.toThrow();
       expect(() =>
         processor['validateImageUrl']('https://malicious-domain.com/tenant/image.png'),
-      ).toThrow('Access is restricted to the configured storage bucket domain');
+      ).toThrow('Access is restricted to the configured Supabase Storage domain');
     });
   });
 

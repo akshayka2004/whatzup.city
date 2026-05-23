@@ -371,7 +371,7 @@ export default function RoleOnboardingWizard() {
       // Build url
       const finalUrl = uploadUrl.startsWith('/')
         ? uploadUrl.split('?')[0]
-        : `https://pub-cdn.saasplatform.com/${fileKey}`;
+        : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'saas-uploads'}/${fileKey}`;
 
       // 3. Save to database
       const saveRes = await universalOnboardingService.registerDocument(entityId, {
@@ -435,8 +435,28 @@ export default function RoleOnboardingWizard() {
       const response = await universalOnboardingService.submitForVerification(entityId);
       if (response.data && !response.error) {
         setSuccess('Application successfully submitted! Redirecting to Restricted Dashboard...');
+        
+        // Update local session status
+        if (typeof window !== 'undefined') {
+          const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
+          if (stored) {
+            try {
+              const u = JSON.parse(stored);
+              if (u.entity && u.entity.id === entityId) {
+                u.entity.status = 'PENDING_VERIFICATION';
+                localStorage.setItem('user_session', JSON.stringify(u));
+                localStorage.setItem('user', JSON.stringify(u));
+              }
+            } catch (_) {}
+          }
+        }
+
         setTimeout(() => {
-          router.push('/dashboard');
+          if (role === 'government') {
+            router.push('/government/dashboard');
+          } else {
+            router.push('/dashboard');
+          }
         }, 2000);
       } else {
         setError(response.error || 'Failed to submit onboarding application.');

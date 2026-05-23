@@ -3,7 +3,13 @@
     "allow": [
       "Bash(dotenv -e .env -- pnpm --filter @saas/database db:reset)",
       "Bash(npx dotenv *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "PowerShell(Get-Process -Id 17308, 18148 -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Projects\\\\Saas Listing Platform\" -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "PowerShell(docker info --format \"{{.RegistryConfig.IndexConfigs}}\" 2>&1; docker system info --format \"{{json .RegistryConfig}}\" 2>$null | Out-Null; cat \"$env:USERPROFILE\\\\.docker\\\\config.json\" 2>$null | Select-String \"auths\" -A 5)",
+      "PowerShell(docker login --help 2>$null | Out-Null; \\(Get-Content \"$env:USERPROFILE\\\\.docker\\\\config.json\" | ConvertFrom-Json\\).auths | ConvertTo-Json)",
+      "Bash(tail -30 \"C:\\\\Users\\\\AJ\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--Projects-Saas-Listing-Platform\\\\5f00e93f-bc72-4ffa-ad9c-bd344452fb58\\\\tasks\\\\b5gkvbk6a.output\" 2>/dev/null || tail -30 /mnt/c/Users/AJ/AppData/Local/Temp/claude/D--Projects-Saas-Listing-Platform/5f00e93f-bc72-4ffa-ad9c-bd344452fb58/tasks/b5gkvbk6a.output)"
     ]
   }
 }

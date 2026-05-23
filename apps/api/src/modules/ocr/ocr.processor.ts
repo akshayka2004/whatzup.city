@@ -78,18 +78,18 @@ export class OcrProcessor extends WorkerHost {
       }
     }
 
-    // Restrict production hosts to the configured Cloudflare R2 bucket
+    // Restrict production hosts to the configured Supabase Storage domain
     if (nodeEnv === 'production') {
-      const r2Endpoint = this.configService.get<string>('R2_ENDPOINT');
-      if (r2Endpoint) {
+      const supabaseUrl = this.configService.get<string>('SUPABASE_URL');
+      if (supabaseUrl) {
         try {
-          const r2Url = new URL(r2Endpoint);
-          const isR2Host = hostname === r2Url.hostname || hostname.endsWith('.r2.cloudflarestorage.com');
-          if (!isR2Host) {
-            throw new Error('Access is restricted to the configured storage bucket domain');
+          const supUrl = new URL(supabaseUrl);
+          const isSupabaseHost = hostname === supUrl.hostname || hostname.endsWith('.supabase.co');
+          if (!isSupabaseHost) {
+            throw new Error('Access is restricted to the configured Supabase Storage domain');
           }
         } catch (e) {
-          throw new Error(`R2 endpoint configuration parsing failed: ${e.message}`);
+          throw new Error(`Supabase URL configuration parsing failed: ${e.message}`);
         }
       }
     }

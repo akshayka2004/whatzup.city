@@ -30,6 +30,15 @@ export class AnalyticsController {
     return this.analyticsService.getOverview(tenantId);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Get('detailed')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get detailed analytics audit trends (Admin only)' })
+  async getDetailedAnalytics(@CurrentUser('tenantId') tenantId: string) {
+    return this.analyticsService.getDetailedAnalytics(tenantId);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('business/:businessId')
   @ApiBearerAuth()

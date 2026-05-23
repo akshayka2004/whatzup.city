@@ -128,4 +128,216 @@ export class AnalyticsService {
     await this.redis.set(cacheKey, result, 300);
     return result;
   }
+
+  /**
+   * Fetch advanced, multi-dimensional detailed analytics for administrative audits.
+   */
+  async getDetailedAnalytics(tenantId: string) {
+    const startOfPeriod = new Date();
+    startOfPeriod.setDate(startOfPeriod.getDate() - 30);
+
+    const [
+      payments,
+      redemptions,
+      engagement,
+      subscriptions,
+      businessStatus,
+      reports,
+      escalatedBills,
+      fraudFlags,
+      customerGrowth,
+      regional,
+      branches,
+    ] = await Promise.all([
+      this.db.payment.findMany({
+        where: { tenantId, status: 'SUCCESS', createdAt: { gte: startOfPeriod } },
+        select: { amount: true, createdAt: true },
+      }),
+      this.db.offerRedemption.findMany({
+        where: { tenantId, createdAt: { gte: startOfPeriod } },
+        select: { createdAt: true },
+      }),
+      this.db.analyticsEvent.groupBy({
+        by: ['event'],
+        where: { tenantId, createdAt: { gte: startOfPeriod } },
+        _count: true,
+      }),
+      this.db.subscription.groupBy({
+        by: ['packageName', 'status'],
+        where: { tenantId },
+        _count: true,
+      }),
+      this.db.business.groupBy({
+        by: ['status'],
+        where: { tenantId, deletedAt: null },
+        _count: true,
+      }),
+      this.db.moderationReport.groupBy({
+        by: ['status', 'type'],
+        where: { tenantId },
+        _count: true,
+      }),
+      this.db.billVerification.count({
+        where: { tenantId, escalationLevel: { not: 'NONE' } },
+      }),
+      this.db.fraudFlag.groupBy({
+        by: ['severity', 'status'],
+        where: { tenantId },
+        _count: true,
+      }),
+      this.db.user.findMany({
+        where: { tenantId, deletedAt: null, createdAt: { gte: startOfPeriod } },
+        select: { createdAt: true },
+      }),
+      this.db.business.groupBy({
+        by: ['city', 'state'],
+        where: { tenantId, deletedAt: null },
+        _count: true,
+      }),
+      this.db.businessBranch.findMany({
+        where: { tenantId, deletedAt: null },
+        include: {
+          business: {
+            select: {
+              name: true,
+              averageRating: true,
+            },
+          },
+        },
+        take: 10,
+      }),
+    ]);
+
+    // 1. Revenue trends
+    const revenueTrendsMap: Record<string, number> = {};
+    for (let i = 0; i < 30; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      revenueTrendsMap[dateStr] = 0;
+    }
+    for (const pay of payments) {
+      const dateStr = pay.createdAt.toISOString().split('T')[0];
+      if (revenueTrendsMap[dateStr] !== undefined) {
+        revenueTrendsMap[dateStr] += Number(pay.amount || 0);
+      }
+    }
+    const revenueTrends = Object.entries(revenueTrendsMap)
+      .map(([date, amount]) => ({ date, amount }))
+      .reverse();
+
+    // 2. Offer redemption trends
+    const redemptionTrendsMap: Record<string, number> = {};
+    for (let i = 0; i < 30; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      redemptionTrendsMap[dateStr] = 0;
+    }
+    for (const red of redemptions) {
+      const dateStr = red.createdAt.toISOString().split('T')[0];
+      if (redemptionTrendsMap[dateStr] !== undefined) {
+        redemptionTrendsMap[dateStr] += 1;
+      }
+    }
+    const redemptionTrends = Object.entries(redemptionTrendsMap)
+      .map(([date, count]) => ({ date, count }))
+      .reverse();
+
+    // 3. Customer growth trends
+    const growthTrendsMap: Record<string, number> = {};
+    for (let i = 0; i < 30; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      growthTrendsMap[dateStr] = 0;
+    }
+    for (const user of customerGrowth) {
+      const dateStr = user.createdAt.toISOString().split('T')[0];
+      if (growthTrendsMap[dateStr] !== undefined) {
+        growthTrendsMap[dateStr] += 1;
+      }
+    }
+    const userGrowthTrends = Object.entries(growthTrendsMap)
+      .map(([date, count]) => ({ date, count }))
+      .reverse();
+
+    // 4. Customer Engagement
+    const engagementStats = engagement.map((e) => ({ event: e.event, count: e._count }));
+
+    // 5. Subscription metrics
+    const subscriptionStats = subscriptions.map((s) => ({
+      package: s.packageName,
+      status: s.status,
+      count: s._count,
+    }));
+
+    // 6. Active/Inactive Businesses
+    const businessStatusStats = businessStatus.map((b) => ({ status: b.status, count: b._count }));
+
+    // 7. Support issue metrics
+    const supportIssueStats = reports.map((r) => ({ type: r.type, status: r.status, count: r._count }));
+
+    // 8. Issue escalation trends
+    const escalatedBillCount = escalatedBills;
+
+    // 9. Fraud indicators
+    const fraudIndicatorsStats = fraudFlags.map((f) => ({
+      severity: f.severity,
+      status: f.status,
+      count: f._count,
+    }));
+
+    // 10. Regional analytics
+    const regionalStats = regional.map((r) => ({ city: r.city, state: r.state, count: r._count }));
+
+    // 11. Branch performance
+    const branchPerformance = branches.map((b) => ({
+      branchId: b.id,
+      branchName: b.name,
+      businessName: b.business.name,
+      rating: Number(b.business.averageRating),
+    }));
+
+    // 12. Offer conversion metrics
+    const pageViews = engagement.find((e) => e.event === 'PAGE_VIEW')?._count || 0;
+    const linkClicks = engagement.find((e) => e.event === 'CLICK_LINK')?._count || 0;
+    const totalRedemptions = redemptions.length;
+    const offerConversion = {
+      views: pageViews,
+      clicks: linkClicks,
+      redemptions: totalRedemptions,
+      clickThroughRate: pageViews > 0 ? (linkClicks / pageViews) * 100 : 0,
+      conversionRate: pageViews > 0 ? (totalRedemptions / pageViews) * 100 : 0,
+    };
+
+    // 13. Moderation trends
+    const resolvedCount = reports
+      .filter((r) => r.status === 'RESOLVED')
+      .reduce((acc, curr) => acc + curr._count, 0);
+    const pendingCount = reports
+      .filter((r) => r.status === 'PENDING')
+      .reduce((acc, curr) => acc + curr._count, 0);
+    const moderationTrends = {
+      resolved: resolvedCount,
+      pending: pendingCount,
+      total: resolvedCount + pendingCount,
+    };
+
+    return {
+      revenueTrends,
+      redemptionTrends,
+      userGrowthTrends,
+      engagementStats,
+      subscriptionStats,
+      businessStatusStats,
+      supportIssueStats,
+      escalatedBillCount,
+      fraudIndicatorsStats,
+      regionalStats,
+      branchPerformance,
+      offerConversion,
+      moderationTrends,
+    };
+  }
 }

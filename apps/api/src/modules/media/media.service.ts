@@ -5,11 +5,11 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../../common/database/database.service';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const ALLOWED_MIME_TYPES: Record<string, string[]> = {
   'image/jpeg': ['jpg', 'jpeg'],
@@ -23,29 +23,139 @@ const ALLOWED_MIME_TYPES: Record<string, string[]> = {
 };
 
 @Injectable()
-export class MediaService {
+export class MediaService implements OnModuleInit {
   private readonly logger = new Logger(MediaService.name);
-  private s3Client: S3Client;
+  private supabaseClient: SupabaseClient | null = null;
   private readonly bucket: string;
+  private readonly maxUploadSize: number;
 
   constructor(
     private readonly db: DatabaseService,
     private readonly config: ConfigService,
   ) {
-    const endpoint = this.config.get<string>('R2_ENDPOINT');
-    const accessKeyId = this.config.get<string>('R2_ACCESS_KEY_ID');
-    const secretAccessKey = this.config.get<string>('R2_SECRET_ACCESS_KEY');
-    this.bucket = this.config.get<string>('R2_BUCKET_NAME') || 'saas-media';
+    const supabaseUrl = this.config.get<string>('SUPABASE_URL');
+    const serviceRoleKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
+    this.bucket = this.config.get<string>('SUPABASE_STORAGE_BUCKET') || 'saas-uploads';
+    const sizeLimit = this.config.get<number>('MAX_UPLOAD_SIZE');
+    this.maxUploadSize = sizeLimit ? Number(sizeLimit) : 10 * 1024 * 1024; // 10MB default
 
-    if (endpoint && accessKeyId && secretAccessKey) {
-      this.s3Client = new S3Client({
-        region: 'auto',
-        endpoint,
-        credentials: { accessKeyId, secretAccessKey },
+    if (supabaseUrl && serviceRoleKey) {
+      this.supabaseClient = createClient(supabaseUrl, serviceRoleKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
       });
     } else {
-      this.logger.warn('Cloudflare R2 configuration missing, Media uploads will fail.');
+      this.logger.warn('Supabase Storage configuration missing, Media uploads will fail.');
     }
+  }
+
+  onModuleInit() {
+    // Run cleanup job every 24 hours (86400000 ms)
+    setInterval(() => {
+      this.cleanOrphanedFiles().catch((err) =>
+        this.logger.error(`Error running interval cleanup job: ${err.message}`),
+      );
+    }, 24 * 60 * 60 * 1000);
+
+    // Also run it 5 minutes after startup to clean up immediately
+    setTimeout(() => {
+      this.cleanOrphanedFiles().catch((err) =>
+        this.logger.error(`Error running startup cleanup job: ${err.message}`),
+      );
+    }, 5 * 60 * 1000);
+  }
+
+  /**
+   * Scans Supabase Storage for orphaned files and removes them.
+   */
+  async cleanOrphanedFiles() {
+    if (!this.supabaseClient) return;
+
+    this.logger.log('Starting orphaned files cleanup job...');
+    try {
+      const { data: files, error } = await this.supabaseClient.storage
+        .from(this.bucket)
+        .list('', { limit: 1000 });
+
+      if (error || !files) {
+        throw new Error(error?.message || 'Failed to list files');
+      }
+
+      const now = new Date();
+      const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
+
+      for (const file of files) {
+        // Skip files created within 24 hours
+        if (!file.created_at || new Date(file.created_at) > cutoff) {
+          continue;
+        }
+
+        const fileKey = file.name;
+
+        // Check if fileKey is referenced in DB
+        const isReferenced = await this.checkFileReferenceInDb(fileKey);
+        if (!isReferenced) {
+          this.logger.log(`Deleting orphaned storage file: ${fileKey}`);
+          await this.supabaseClient.storage.from(this.bucket).remove([fileKey]);
+        }
+      }
+    } catch (err: any) {
+      this.logger.error(`Error in file cleanup job: ${err.message}`);
+    }
+  }
+
+  private async checkFileReferenceInDb(fileKey: string): Promise<boolean> {
+    // Check Media
+    const mediaCount = await this.db.media.count({
+      where: { url: { contains: fileKey } },
+    });
+    if (mediaCount > 0) return true;
+
+    // Check BusinessDocument
+    const docCount = await this.db.businessDocument.count({
+      where: { fileUrl: { contains: fileKey } },
+    });
+    if (docCount > 0) return true;
+
+    // Check Business Logo/Cover
+    const bizCount = await this.db.business.count({
+      where: {
+        OR: [
+          { logo: { contains: fileKey } },
+          { coverImage: { contains: fileKey } },
+        ],
+      },
+    });
+    if (bizCount > 0) return true;
+
+    // Check User Avatar
+    const userCount = await this.db.user.count({
+      where: { avatar: { contains: fileKey } },
+    });
+    if (userCount > 0) return true;
+
+    // Check Bill Image
+    const billCount = await this.db.bill.count({
+      where: { billImage: { contains: fileKey } },
+    });
+    if (billCount > 0) return true;
+
+    return false;
+  }
+
+  private getFileKeyFromUrl(url: string): string | null {
+    if (url.startsWith('/')) {
+      // Mock local URL
+      return null;
+    }
+    const bucketPart = `/public/${this.bucket}/`;
+    const index = url.indexOf(bucketPart);
+    if (index !== -1) {
+      return url.substring(index + bucketPart.length);
+    }
+    return null;
   }
 
   /**
@@ -108,7 +218,7 @@ export class MediaService {
   }
 
   /**
-   * Generates a short-lived signed URL for direct uploading to Cloudflare R2
+   * Generates a short-lived signed URL for direct uploading to Supabase Storage
    */
   async getSignedUploadUrl(
     tenantId: string,
@@ -128,24 +238,28 @@ export class MediaService {
     const uniqueId = Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 7);
     const fileKey = `${tenantId}/businesses/${businessId}/${uniqueId}-${filename.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
 
-    if (!this.s3Client) {
+    if (!this.supabaseClient) {
       this.logger.warn(
-        `Cloudflare R2 is not configured. Generating mock upload URL for key: ${fileKey}`,
+        `Supabase Storage is not configured. Generating mock upload URL for key: ${fileKey}`,
       );
       const uploadUrl = `/api/media/mock-upload?key=${fileKey}`;
       return { uploadUrl, fileKey };
     }
 
-    const command = new PutObjectCommand({
-      Bucket: this.bucket,
-      Key: fileKey,
-      ContentType: mimeType,
-    });
+    try {
+      const { data, error } = await this.supabaseClient.storage
+        .from(this.bucket)
+        .createSignedUploadUrl(fileKey);
 
-    // Generate URL valid for 5 minutes
-    const uploadUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 300 });
+      if (error || !data) {
+        throw new Error(error?.message || 'Failed to generate signed URL');
+      }
 
-    return { uploadUrl, fileKey };
+      return { uploadUrl: data.signedUrl, fileKey };
+    } catch (err: any) {
+      this.logger.error(`Error generating signed upload URL: ${err.message}`);
+      throw new InternalServerErrorException(`Storage service unavailable: ${err.message}`);
+    }
   }
 
   async createRecord(
@@ -159,6 +273,12 @@ export class MediaService {
       await this.validateBusinessAccess(tenantId, businessId, userContext.userId, userContext.role);
     }
     this.validateFileExtension(data.filename, data.mimeType);
+
+    if (data.size > this.maxUploadSize) {
+      throw new BadRequestException(
+        `File size exceeds maximum upload limit of ${this.maxUploadSize / (1024 * 1024)}MB`,
+      );
+    }
 
     return this.db.media.create({ data: { tenantId, businessId, ...data } });
   }
@@ -185,6 +305,15 @@ export class MediaService {
 
     // Enforce BOLA checks on delete
     await this.validateBusinessAccess(tenantId, media.businessId, userId, role);
+
+    const fileKey = this.getFileKeyFromUrl(media.url);
+    if (fileKey && this.supabaseClient) {
+      try {
+        await this.supabaseClient.storage.from(this.bucket).remove([fileKey]);
+      } catch (err: any) {
+        this.logger.error(`Failed to remove file from Supabase Storage: ${err.message}`);
+      }
+    }
 
     return this.db.media.delete({ where: { tenantId, id } });
   }
