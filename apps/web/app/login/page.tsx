@@ -22,7 +22,6 @@ export default function LoginPage() {
   const { signIn } = useAuth();
   const router = useRouter();
 
-  // Form states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -56,26 +55,34 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#070709] text-slate-100 flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
-      {/* Dynamic ambient backgrounds */}
-      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-violet-600/10 rounded-full blur-[160px] pointer-events-none"></div>
-      <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none"></div>
+    <div className="min-h-screen w-full bg-[#0a0a0b] text-slate-100 flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
+      {/* Subtle ambient blobs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-zinc-500/5 rounded-full blur-[160px] pointer-events-none"></div>
+      <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] bg-zinc-600/5 rounded-full blur-[140px] pointer-events-none"></div>
 
-      <div className="w-full max-w-5xl grid lg:grid-cols-12 gap-8 items-stretch relative z-10">
-        {/* Left Side: Brand Panel */}
-        <div className="lg:col-span-6 flex flex-col justify-between p-8 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-md relative overflow-hidden">
-          <div className="absolute -right-16 -top-16 w-48 h-48 bg-gradient-to-br from-violet-600 to-cyan-500 opacity-20 rounded-full blur-3xl"></div>
+      {/* Mobile-only brand badge */}
+      <div className="absolute top-6 left-0 right-0 flex justify-center lg:hidden z-20">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-700/30 border border-zinc-600/30 text-zinc-300 text-xs font-semibold tracking-wide">
+          <Sparkles className="h-3.5 w-3.5" />
+          Whtzup.city
+        </div>
+      </div>
+
+      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch relative z-10">
+        {/* Left Side: Brand Panel — hidden on mobile */}
+        <div className="hidden lg:flex lg:col-span-6 flex-col justify-between p-8 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-md relative overflow-hidden">
+          <div className="absolute -right-16 -top-16 w-48 h-48 bg-zinc-500/10 rounded-full blur-3xl"></div>
 
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-semibold tracking-wide">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-700/30 border border-zinc-600/30 text-zinc-300 text-xs font-semibold tracking-wide">
               <Sparkles className="h-3.5 w-3.5" />
-              SaaS Directory Portal
+              Whtzup.city
             </div>
 
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
                 One Platform, <br />
-                <span className="bg-gradient-to-r from-violet-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-slate-300 via-zinc-200 to-slate-400 bg-clip-text text-transparent">
                   Connected.
                 </span>
               </h1>
@@ -87,7 +94,7 @@ export default function LoginPage() {
             {/* Features list */}
             <div className="space-y-4 pt-4">
               <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-400 mt-0.5">
+                <div className="p-1.5 rounded-lg bg-zinc-700/30 border border-zinc-600/30 text-zinc-400 mt-0.5">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
                 <div>
@@ -99,7 +106,7 @@ export default function LoginPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 mt-0.5">
+                <div className="p-1.5 rounded-lg bg-zinc-700/30 border border-zinc-600/30 text-zinc-400 mt-0.5">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
                 <div>
@@ -111,7 +118,7 @@ export default function LoginPage() {
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mt-0.5">
+                <div className="p-1.5 rounded-lg bg-zinc-700/30 border border-zinc-600/30 text-zinc-400 mt-0.5">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
                 <div>
@@ -124,15 +131,15 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Professional Brand Footer */}
+          {/* Brand Footer */}
           <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between text-xs text-slate-500">
-            <span>© {new Date().getFullYear()} SaaS Directory Portal.</span>
+            <span>© {new Date().getFullYear()} Whtzup.city.</span>
             <span>All rights reserved.</span>
           </div>
         </div>
 
         {/* Right Side: Login Card */}
-        <div className="lg:col-span-6 flex flex-col justify-center">
+        <div className="lg:col-span-6 flex flex-col justify-center pt-16 lg:pt-0">
           <Card className="p-8 bg-[#0d0d11]/70 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl relative overflow-hidden">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-slate-100">Welcome Back</h2>
@@ -163,7 +170,7 @@ export default function LoginPage() {
                     placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl focus:border-violet-500/50"
+                    className="pl-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl focus:border-zinc-500/50"
                   />
                 </div>
               </div>
@@ -179,7 +186,7 @@ export default function LoginPage() {
                     placeholder="••••••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl focus:border-violet-500/50"
+                    className="pl-10 pr-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl focus:border-zinc-500/50"
                   />
                   <button
                     type="button"
@@ -194,7 +201,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-11 font-semibold rounded-xl text-sm transition-all duration-300 cursor-pointer bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-90 flex items-center justify-center gap-2"
+                className="w-full h-11 font-semibold rounded-xl text-sm transition-all duration-300 cursor-pointer bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
@@ -212,7 +219,7 @@ export default function LoginPage() {
 
             <div className="mt-8 text-center text-sm text-slate-400">
               Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-violet-400 hover:text-violet-300 font-semibold hover:underline">
+              <Link href="/register" className="text-zinc-300 hover:text-zinc-100 font-semibold hover:underline">
                 Register here
               </Link>
             </div>

@@ -133,6 +133,10 @@ export class AnalyticsService {
    * Fetch advanced, multi-dimensional detailed analytics for administrative audits.
    */
   async getDetailedAnalytics(tenantId: string) {
+    const cacheKey = `analytics:detailed:${tenantId}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) return cached;
+
     const startOfPeriod = new Date();
     startOfPeriod.setDate(startOfPeriod.getDate() - 30);
 
@@ -324,7 +328,7 @@ export class AnalyticsService {
       total: resolvedCount + pendingCount,
     };
 
-    return {
+    const result = {
       revenueTrends,
       redemptionTrends,
       userGrowthTrends,
@@ -339,5 +343,8 @@ export class AnalyticsService {
       offerConversion,
       moderationTrends,
     };
+
+    await this.redis.set(cacheKey, result, 1800); // 30-min cache
+    return result;
   }
 }

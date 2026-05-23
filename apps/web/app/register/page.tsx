@@ -506,15 +506,15 @@ export default function UnifiedRegisterPage() {
   return (
     <div className="min-h-screen w-full bg-[#070709] text-slate-100 flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
       {/* Ambient background decoration */}
-      <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-violet-600/10 rounded-full blur-[160px] pointer-events-none" />
-      <div className="absolute bottom-[-15%] left-[-10%] w-[50%] h-[50%] bg-cyan-500/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-zinc-500/5 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute bottom-[-15%] left-[-10%] w-[50%] h-[50%] bg-zinc-600/5 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="w-full max-w-4xl relative z-10 space-y-6">
         {/* Top Header */}
         <div className="text-center space-y-2 mb-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-semibold tracking-wide">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-700/30 border border-zinc-600/30 text-zinc-300 text-xs font-semibold tracking-wide">
             <Sparkles className="h-3.5 w-3.5" />
-            Unified Onboarding Platform
+            Whtzup.city
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
             Create Your Account
@@ -528,7 +528,7 @@ export default function UnifiedRegisterPage() {
         <div className="w-full bg-[#0d0d12]/80 border border-white/5 p-4 rounded-2xl backdrop-blur-xl">
           <div className="flex justify-between items-center text-xs font-semibold text-slate-400 mb-3 px-1">
             <span>Progress Status</span>
-            <span className="text-cyan-400">
+            <span className="text-zinc-300">
               Step {currentStep} of 4: {
                 currentStep === 1 ? 'Choose Account Type' :
                 currentStep === 2 ? 'Credentials & Setup' :
@@ -538,7 +538,7 @@ export default function UnifiedRegisterPage() {
             </span>
           </div>
           <Progress value={(currentStep / 4) * 100} className="h-2 bg-white/5" />
-          <div className="grid grid-cols-4 gap-2 mt-4 text-[10px] text-center font-mono">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-[10px] text-center font-mono">
             {['Account Type', 'Credentials', 'Verification', 'Profile Setup'].map((title, i) => (
               <span
                 key={i}
@@ -546,7 +546,7 @@ export default function UnifiedRegisterPage() {
                   i + 1 < currentStep
                     ? 'text-emerald-400 font-bold'
                     : i + 1 === currentStep
-                      ? 'text-cyan-400 font-bold border-b border-cyan-500 pb-1'
+                      ? 'text-zinc-300 font-bold border-b border-zinc-500 pb-1'
                       : 'text-slate-600'
                 }
               >
@@ -591,7 +591,7 @@ export default function UnifiedRegisterPage() {
                     title: 'Customer',
                     description: 'Explore verified business catalogs, post public ratings, claim offer coupons.',
                     icon: UserIcon,
-                    color: 'from-violet-600/20 to-violet-500/5 hover:border-violet-500/50',
+                    color: 'from-violet-600/20 to-violet-500/5 hover:border-zinc-500/50',
                     iconColor: 'text-violet-400',
                   },
                   {
@@ -648,7 +648,7 @@ export default function UnifiedRegisterPage() {
 
                 <Button
                   onClick={() => setCurrentStep(2)}
-                  className="bg-violet-600 hover:bg-violet-500 text-white rounded-xl h-11 px-6 font-semibold"
+                  className="bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl h-11 px-6 font-semibold"
                 >
                   Continue <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Button>
@@ -792,7 +792,7 @@ export default function UnifiedRegisterPage() {
                         <select
                           value={categorySlug}
                           onChange={(e) => setCategorySlug(e.target.value)}
-                          className="w-full h-11 pl-10 pr-4 bg-[#0d0d11] border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:ring-violet-500 focus:outline-none appearance-none cursor-pointer"
+                          className="w-full h-11 pl-10 pr-4 bg-[#0d0d11] border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:ring-zinc-500 focus:outline-none appearance-none cursor-pointer"
                         >
                           {CATEGORIES.map((cat) => (
                             <option key={cat.slug} value={cat.slug} className="bg-[#0d0d11]">
@@ -819,7 +819,7 @@ export default function UnifiedRegisterPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="bg-violet-600 hover:bg-violet-500 text-white rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5"
+                  className="bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5"
                 >
                   {loading ? (
                     <>
@@ -840,11 +840,11 @@ export default function UnifiedRegisterPage() {
             <form onSubmit={handleVerifyEmail} className="space-y-6">
               <div>
                 <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-violet-400" />
+                  <Mail className="h-5 w-5 text-zinc-400" />
                   Email Verification
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">
-                  We have dispatched a verification email to <span className="text-violet-300 font-semibold">{email}</span>. Please input the validation code below.
+                  We have dispatched a verification email to <span className="text-zinc-300 font-semibold">{email}</span>. Please input the validation code below.
                 </p>
               </div>
 
@@ -861,8 +861,8 @@ export default function UnifiedRegisterPage() {
                   />
                 </div>
 
-                <div className="p-4 rounded-2xl bg-violet-600/5 border border-violet-500/10 space-y-2">
-                  <p className="text-xs font-semibold text-violet-300 flex items-center gap-1.5">
+                <div className="p-4 rounded-2xl bg-zinc-700/10 border border-zinc-600/20 space-y-2">
+                  <p className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5" /> Testing & Development Simulation
                   </p>
                   <p className="text-[11px] text-slate-400">
@@ -872,7 +872,7 @@ export default function UnifiedRegisterPage() {
                     type="button"
                     onClick={simulateVerification}
                     disabled={loading || emailVerified}
-                    className="w-full bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/20 text-xs font-semibold h-9 rounded-xl transition cursor-pointer"
+                    className="w-full bg-zinc-700/20 hover:bg-zinc-700/30 text-zinc-300 border border-zinc-600/30 text-xs font-semibold h-9 rounded-xl transition cursor-pointer"
                   >
                     {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : null}
                     Simulate & Auto Verify Email
@@ -884,7 +884,7 @@ export default function UnifiedRegisterPage() {
                 <Button
                   type="submit"
                   disabled={loading || emailVerified}
-                  className="bg-violet-600 hover:bg-violet-500 text-white rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer"
+                  className="bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer"
                 >
                   {loading ? (
                     <>
@@ -905,7 +905,7 @@ export default function UnifiedRegisterPage() {
             <form onSubmit={handleStep4Submit} className="space-y-6">
               <div>
                 <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-cyan-400" />
+                  <Building2 className="h-5 w-5 text-zinc-400" />
                   Kerala Regional Profile Setup
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">
@@ -922,7 +922,7 @@ export default function UnifiedRegisterPage() {
                       <select
                         value={district}
                         onChange={(e) => setDistrict(e.target.value)}
-                        className="w-full h-11 pl-10 pr-4 bg-[#0d0d11] border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:ring-violet-500 focus:outline-none appearance-none cursor-pointer"
+                        className="w-full h-11 pl-10 pr-4 bg-[#0d0d11] border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:ring-zinc-500 focus:outline-none appearance-none cursor-pointer"
                       >
                         {KERALA_DISTRICTS.map((dist) => (
                           <option key={dist} value={dist} className="bg-[#0d0d11]">
@@ -981,7 +981,7 @@ export default function UnifiedRegisterPage() {
                         <FileCheck className="h-4 w-4 text-cyan-400" />
                         1. Registration Certificate (PDF/Image)
                       </label>
-                      <div className="p-4 rounded-xl border border-dashed border-white/10 hover:border-violet-500/50 bg-white/[0.01] text-center cursor-pointer relative">
+                      <div className="p-4 rounded-xl border border-dashed border-white/10 hover:border-zinc-500/50 bg-white/[0.01] text-center cursor-pointer relative">
                         <input
                           type="file"
                           accept="application/pdf,image/png,image/jpeg,image/webp"
@@ -990,7 +990,7 @@ export default function UnifiedRegisterPage() {
                         />
                         <UploadCloud className="h-6 w-6 text-slate-400 mx-auto mb-1.5" />
                         {certFile ? (
-                          <p className="text-[11px] font-semibold text-violet-400 truncate">{certFile.name}</p>
+                          <p className="text-[11px] font-semibold text-zinc-300 truncate">{certFile.name}</p>
                         ) : (
                           <p className="text-[10px] text-slate-500">Click to select registration file (Max 10MB)</p>
                         )}
@@ -1002,7 +1002,7 @@ export default function UnifiedRegisterPage() {
                         <Layers className="h-4 w-4 text-cyan-400" />
                         2. Company Brand Logo (Image)
                       </label>
-                      <div className="p-4 rounded-xl border border-dashed border-white/10 hover:border-violet-500/50 bg-white/[0.01] text-center cursor-pointer relative">
+                      <div className="p-4 rounded-xl border border-dashed border-white/10 hover:border-zinc-500/50 bg-white/[0.01] text-center cursor-pointer relative">
                         <input
                           type="file"
                           accept="image/png,image/jpeg,image/webp"
@@ -1011,7 +1011,7 @@ export default function UnifiedRegisterPage() {
                         />
                         <UploadCloud className="h-6 w-6 text-slate-400 mx-auto mb-1.5" />
                         {logoFile ? (
-                          <p className="text-[11px] font-semibold text-violet-400 truncate">{logoFile.name}</p>
+                          <p className="text-[11px] font-semibold text-zinc-300 truncate">{logoFile.name}</p>
                         ) : (
                           <p className="text-[10px] text-slate-500">Click to select company logo (Max 10MB)</p>
                         )}
@@ -1027,7 +1027,7 @@ export default function UnifiedRegisterPage() {
                       <FileCheck className="h-4 w-4 text-amber-400" />
                       Official ID Proof / Gazette Certificate (PDF/Image)
                     </label>
-                    <div className="p-5 rounded-xl border border-dashed border-white/10 hover:border-violet-500/50 bg-white/[0.01] text-center cursor-pointer relative">
+                    <div className="p-5 rounded-xl border border-dashed border-white/10 hover:border-zinc-500/50 bg-white/[0.01] text-center cursor-pointer relative">
                       <input
                         type="file"
                         accept="application/pdf,image/png,image/jpeg,image/webp"
@@ -1060,7 +1060,7 @@ export default function UnifiedRegisterPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="bg-gradient-to-r from-emerald-600 to-cyan-500 text-white rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/10 hover:opacity-90 transition"
+                  className="bg-gradient-to-r from-zinc-600 to-zinc-500 text-white rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-zinc-500/10 hover:opacity-90 transition"
                 >
                   {loading ? (
                     <>

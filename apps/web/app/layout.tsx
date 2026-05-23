@@ -8,8 +8,8 @@ const _geist = Geist({ subsets: ['latin'] });
 const _geistMono = Geist_Mono({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Enterprise SaaS Platform',
-  description: 'Professional business discovery and civic engagement platform',
+  title: 'Whtzup.city',
+  description: 'Discover local businesses, services, and civic updates in your city',
   generator: 'v0.app',
   icons: {
     icon: [
