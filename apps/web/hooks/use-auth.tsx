@@ -12,6 +12,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, name: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   switchRole: (role: string) => void;
+  refreshUser: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,6 +78,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshUser = async (): Promise<User | null> => {
+    try {
+      const currentUser = await authService.fetchCurrentUser();
+      if (currentUser) setUser(currentUser);
+      return currentUser || null;
+    } catch {
+      return null;
+    }
+  };
+
   const switchRole = (role: string) => {
     // Dev helper — swap mock user in localStorage and reload
     const mockMap: Record<string, string> = {
@@ -133,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, switchRole }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, switchRole, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

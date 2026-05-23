@@ -63,7 +63,7 @@ const CATEGORIES = [
 
 export default function UnifiedRegisterPage() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { refreshUser } = useAuth();
 
   // Wizard Navigation
   const [currentStep, setCurrentStep] = useState(1);
@@ -160,10 +160,10 @@ export default function UnifiedRegisterPage() {
         setBusinessId(res.data.businessId || '');
         setTenantId(res.data.user?.tenantId || '');
 
-        // Auto sign in with the newly created credentials
-        const signed = await signIn(email, password);
-        if (!signed) {
-          setError('Account created but auto-login failed. Please login manually.');
+        // Cookies set by signup API — refresh user state without redirecting
+        const refreshedUser = await refreshUser();
+        if (!refreshedUser) {
+          setError('Account created but session could not be established. Please log in manually.');
           setTimeout(() => router.push('/login'), 2000);
           return;
         }
@@ -184,10 +184,10 @@ export default function UnifiedRegisterPage() {
 
         if (res.data.user?.tenantId) setTenantId(res.data.user.tenantId);
 
-        // Auto sign in with the newly created credentials
-        const signed = await signIn(email, password);
-        if (!signed) {
-          setError('Account created but auto-login failed. Please login manually.');
+        // Cookies set by signup API — refresh user state without redirecting
+        const refreshedUser = await refreshUser();
+        if (!refreshedUser) {
+          setError('Account created but session could not be established. Please log in manually.');
           setTimeout(() => router.push('/login'), 2000);
           return;
         }
@@ -403,7 +403,7 @@ export default function UnifiedRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#070709] text-slate-100 flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
+    <div className="min-h-screen w-full bg-[#0e1016] text-slate-100 flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
       {/* Ambient background decoration */}
       <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-zinc-500/5 rounded-full blur-[160px] pointer-events-none" />
       <div className="absolute bottom-[-15%] left-[-10%] w-[50%] h-[50%] bg-zinc-600/5 rounded-full blur-[140px] pointer-events-none" />
@@ -470,7 +470,7 @@ export default function UnifiedRegisterPage() {
         )}
 
         {/* Form Card */}
-        <Card className="bg-[#0d0d11]/70 backdrop-blur-xl border border-white/5 p-6 md:p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+        <Card className="bg-[#141820]/80 backdrop-blur-xl border border-white/5 p-6 md:p-8 rounded-3xl shadow-2xl relative overflow-hidden">
           
           {/* STEP 1: Account Type Selection */}
           {currentStep === 1 && (
@@ -690,10 +690,10 @@ export default function UnifiedRegisterPage() {
                         <select
                           value={categorySlug}
                           onChange={(e) => setCategorySlug(e.target.value)}
-                          className="w-full h-11 pl-10 pr-4 bg-[#0d0d11] border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:ring-zinc-500 focus:outline-none appearance-none cursor-pointer"
+                          className="w-full h-11 pl-10 pr-4 bg-[#141820] border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:ring-zinc-500 focus:outline-none appearance-none cursor-pointer"
                         >
                           {CATEGORIES.map((cat) => (
-                            <option key={cat.slug} value={cat.slug} className="bg-[#0d0d11]">
+                            <option key={cat.slug} value={cat.slug} className="bg-[#141820]">
                               {cat.label}
                             </option>
                           ))}
@@ -755,10 +755,10 @@ export default function UnifiedRegisterPage() {
                       <select
                         value={district}
                         onChange={(e) => setDistrict(e.target.value)}
-                        className="w-full h-11 pl-10 pr-4 bg-[#0d0d11] border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:ring-zinc-500 focus:outline-none appearance-none cursor-pointer"
+                        className="w-full h-11 pl-10 pr-4 bg-[#141820] border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:ring-zinc-500 focus:outline-none appearance-none cursor-pointer"
                       >
                         {KERALA_DISTRICTS.map((dist) => (
-                          <option key={dist} value={dist} className="bg-[#0d0d11]">
+                          <option key={dist} value={dist} className="bg-[#141820]">
                             {dist}
                           </option>
                         ))}
@@ -797,11 +797,11 @@ export default function UnifiedRegisterPage() {
                     <select
                       value={deptType}
                       onChange={(e) => setDeptType(e.target.value)}
-                      className="w-full h-11 px-3 bg-[#0d0d11] border border-white/10 text-slate-300 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="w-full h-11 px-3 bg-[#141820] border border-white/10 text-slate-300 rounded-xl text-sm focus:outline-none cursor-pointer"
                     >
-                      <option value="Local" className="bg-[#0d0d11]">Local Civic Body / Municipality</option>
-                      <option value="District" className="bg-[#0d0d11]">District Administration / Collectorate</option>
-                      <option value="State" className="bg-[#0d0d11]">Kerala State Department</option>
+                      <option value="Local" className="bg-[#141820]">Local Civic Body / Municipality</option>
+                      <option value="District" className="bg-[#141820]">District Administration / Collectorate</option>
+                      <option value="State" className="bg-[#141820]">Kerala State Department</option>
                     </select>
                   </div>
                 )}

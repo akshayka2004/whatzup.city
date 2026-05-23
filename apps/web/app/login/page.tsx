@@ -55,7 +55,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0a0a0b] text-slate-100 flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
+    <div className="min-h-screen w-full bg-[#0e1016] text-slate-100 flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
       {/* Subtle ambient blobs */}
       <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-zinc-500/5 rounded-full blur-[160px] pointer-events-none"></div>
       <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] bg-zinc-600/5 rounded-full blur-[140px] pointer-events-none"></div>
@@ -140,7 +140,7 @@ export default function LoginPage() {
 
         {/* Right Side: Login Card */}
         <div className="lg:col-span-6 flex flex-col justify-center pt-16 lg:pt-0">
-          <Card className="p-8 bg-[#0d0d11]/70 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl relative overflow-hidden">
+          <Card className="p-8 bg-[#141820]/80 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl relative overflow-hidden">
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-slate-100">Welcome Back</h2>
               <p className="text-sm text-slate-400 mt-1">
@@ -170,7 +170,7 @@ export default function LoginPage() {
                     placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl focus:border-zinc-500/50"
+                    className="pl-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl focus:border-blue-500/40"
                   />
                 </div>
               </div>
@@ -186,7 +186,7 @@ export default function LoginPage() {
                     placeholder="••••••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl focus:border-zinc-500/50"
+                    className="pl-10 pr-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl focus:border-blue-500/40"
                   />
                   <button
                     type="button"
@@ -201,7 +201,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-11 font-semibold rounded-xl text-sm transition-all duration-300 cursor-pointer bg-zinc-700 hover:bg-zinc-600 text-white flex items-center justify-center gap-2"
+                className="w-full h-11 font-semibold rounded-xl text-sm transition-all duration-300 cursor-pointer bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
