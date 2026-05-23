@@ -10,16 +10,17 @@ import {
   ArrowRight, CheckCircle2,
   Receipt, Tag, ChevronRight, Sparkles, Globe,
   ShoppingBag, Stethoscope, Laptop, GraduationCap,
-  Utensils, Plane, Dumbbell, Quote
+  Utensils, Plane, Dumbbell, Quote, Building2, Bell
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+/* ────────────── DATA ────────────── */
 const STATS = [
-  { label: 'Registered Businesses', value: '1,420+', icon: CheckCircle2, color: 'text-emerald-400 bg-emerald-500/10' },
-  { label: 'Active Promotions', value: '340+', icon: Tag, color: 'text-amber-400 bg-amber-500/10' },
-  { label: 'Verified Invoices', value: '12K+', icon: Receipt, color: 'text-cyan-400 bg-cyan-500/10' },
-  { label: 'Local Communities', value: '25+', icon: Globe, color: 'text-violet-400 bg-violet-500/10' },
+  { label: 'Registered Businesses', value: '1,420+', icon: Building2 },
+  { label: 'Active Promotions',      value: '340+',   icon: Tag },
+  { label: 'Verified Invoices',      value: '12K+',   icon: Receipt },
+  { label: 'Local Communities',      value: '25+',    icon: Globe },
 ];
 
 const FEATURES = [
@@ -27,166 +28,132 @@ const FEATURES = [
     icon: Search,
     title: 'Precision Directory',
     description: 'Find local providers instantly using refined search criteria, tags, and proximity mapping.',
-    gradient: 'from-violet-600/15 via-purple-600/5 to-transparent',
-    iconColor: 'text-violet-400',
-    bg: 'bg-violet-500/10 border border-violet-500/20',
   },
   {
     icon: Tag,
     title: 'Direct Consumer Offers',
-    description: 'Claim geo-targeted discounts, limited-time flash sales, and rewards from neighborhood shops.',
-    gradient: 'from-emerald-600/15 via-green-600/5 to-transparent',
-    iconColor: 'text-emerald-400',
-    bg: 'bg-emerald-500/10 border border-emerald-500/20',
+    description: 'Claim geo-targeted discounts, limited-time flash sales, and rewards from neighbourhood shops.',
   },
   {
     icon: Shield,
     title: 'Trust & Verification',
-    description: 'Avoid spam. Every merchant undergoes rigorous regulatory and business-license verification.',
-    gradient: 'from-blue-600/15 via-indigo-600/5 to-transparent',
-    iconColor: 'text-blue-400',
-    bg: 'bg-blue-500/10 border border-blue-500/20',
+    description: 'Every merchant undergoes rigorous regulatory and business-licence verification.',
   },
   {
     icon: MapPin,
     title: 'Geographic Discovery',
-    description: 'Discover verified utility services, artisan spots, and essential shops closest to your coordinates.',
-    gradient: 'from-cyan-600/15 via-blue-600/5 to-transparent',
-    iconColor: 'text-cyan-400',
-    bg: 'bg-cyan-500/10 border border-cyan-500/20',
+    description: 'Discover verified utility services, artisan spots, and essential shops closest to you.',
   },
   {
     icon: Megaphone,
     title: 'Civic Alert Broadcasts',
     description: 'Keep tabs on administrative notices, utility updates, roadworks, and townhall briefs.',
-    gradient: 'from-rose-600/15 via-pink-600/5 to-transparent',
-    iconColor: 'text-rose-400',
-    bg: 'bg-rose-500/10 border border-rose-500/20',
   },
   {
     icon: Star,
     title: 'Invoice-Verified Reviews',
-    description: 'Read reviews backed by actual transaction bill uploads, guaranteeing 100% credible feedback.',
-    gradient: 'from-amber-600/15 via-yellow-600/5 to-transparent',
-    iconColor: 'text-amber-400',
-    bg: 'bg-amber-500/10 border border-amber-500/20',
+    description: 'Reviews backed by actual transaction bill uploads — 100% credible feedback guaranteed.',
   },
 ];
 
 const CATEGORIES = [
-  { label: 'Restaurants', icon: Utensils, color: 'text-orange-400', bg: 'bg-orange-500/10 hover:border-orange-500/30', slug: 'restaurants' },
-  { label: 'Shopping & Retail', icon: ShoppingBag, color: 'text-pink-400', bg: 'bg-pink-500/10 hover:border-pink-500/30', slug: 'shopping' },
-  { label: 'Professional Services', icon: Sparkles, color: 'text-violet-400', bg: 'bg-violet-500/10 hover:border-violet-500/30', slug: 'services' },
-  { label: 'Medical & Health', icon: Stethoscope, color: 'text-emerald-400', bg: 'bg-emerald-500/10 hover:border-emerald-500/30', slug: 'healthcare' },
-  { label: 'Education Hubs', icon: GraduationCap, color: 'text-cyan-400', bg: 'bg-cyan-500/10 hover:border-cyan-500/30', slug: 'education' },
-  { label: 'Tech & Agency', icon: Laptop, color: 'text-blue-400', bg: 'bg-blue-500/10 hover:border-blue-500/30', slug: 'technology' },
-  { label: 'Logistics & Travel', icon: Plane, color: 'text-amber-400', bg: 'bg-amber-500/10 hover:border-amber-500/30', slug: 'travel' },
-  { label: 'Health & Fitness', icon: Dumbbell, color: 'text-rose-400', bg: 'bg-rose-500/10 hover:border-rose-500/30', slug: 'fitness' },
-];
-
-const FEATURED_BUSINESSES = [
-  { id: 1, name: 'Bella Restaurant', category: 'Restaurants', rating: 4.8, reviews: 234, verified: true, tag: 'Trending', image: '/bella_restaurant.png' },
-  { id: 2, name: 'Health Plus Clinic', category: 'Healthcare', rating: 4.9, reviews: 342, verified: true, tag: 'Top Rated', image: '/health_plus_clinic.png' },
-  { id: 3, name: 'Fashion Hub Boutique', category: 'Shopping & Retail', rating: 4.5, reviews: 89, verified: true, tag: 'Popular', image: '/fashion_hub.png' },
-  { id: 4, name: 'Tech Solutions Ltd.', category: 'Professional Services', rating: 4.6, reviews: 156, verified: true, tag: 'Verified Agency', image: '/tech_solutions.png' },
+  { label: 'Restaurants',          icon: Utensils,       slug: 'restaurants' },
+  { label: 'Shopping & Retail',    icon: ShoppingBag,    slug: 'shopping' },
+  { label: 'Professional Services',icon: Sparkles,       slug: 'services' },
+  { label: 'Medical & Health',     icon: Stethoscope,    slug: 'healthcare' },
+  { label: 'Education Hubs',       icon: GraduationCap,  slug: 'education' },
+  { label: 'Tech & Agency',        icon: Laptop,         slug: 'technology' },
+  { label: 'Logistics & Travel',   icon: Plane,          slug: 'travel' },
+  { label: 'Health & Fitness',     icon: Dumbbell,       slug: 'fitness' },
 ];
 
 const TESTIMONIALS = [
   {
     name: 'Priya Sharma',
     role: 'Local Resident',
-    text: 'I discovered multiple verified organic bakeries near me that I didn\'t know existed. Knowing the reviews are backed by actual bill submissions makes all the difference!',
+    text: "I discovered multiple verified organic bakeries near me I didn't know existed. Reviews backed by real bills make all the difference.",
     avatar: 'PS',
-    rating: 5,
-    gradient: 'from-violet-500 to-indigo-500',
   },
   {
     name: 'Rajan Mehta',
     role: 'Café Owner',
-    text: 'Listing our coffee shop here was exceptionally straightforward. We gained massive foot traffic in our first month simply by offering a claimed coupon.',
+    text: 'Listing our coffee shop here was straightforward. We gained significant foot traffic in the first month simply by offering a claimed coupon.',
     avatar: 'RM',
-    rating: 5,
-    gradient: 'from-emerald-500 to-teal-500',
   },
   {
     name: 'Anita Verma',
     role: 'Ward Moderator',
-    text: 'The dashboard makes alerting our neighborhood about street repairs and utility outages extremely simple. Residents stay informed instantly.',
+    text: 'The dashboard makes alerting residents about street repairs and utility outages extremely simple. People stay informed instantly.',
     avatar: 'AV',
-    rating: 5,
-    gradient: 'from-pink-500 to-rose-500',
   },
 ];
 
+/* ────────────── COMPONENT ────────────── */
 export default function HomePage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = () => {
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
-    } else {
-      router.push('/search');
-    }
+    router.push(searchQuery.trim() ? `/search?q=${encodeURIComponent(searchQuery)}` : '/search');
   };
 
   return (
     <PublicLayout>
-      {/* ── Hero Split Layout ─────────────────────────────────────────── */}
-      <div className="relative mb-10 md:mb-16 rounded-3xl overflow-hidden border border-white/5 bg-card/25 backdrop-blur-xl">
-        {/* Decorative background blurs */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent pointer-events-none" />
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/25 rounded-full blur-3xl pointer-events-none animate-pulse" style={{ animationDuration: '8s' }} />
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-accent/15 rounded-full blur-3xl pointer-events-none animate-pulse" style={{ animationDuration: '10s' }} />
 
-        <div className="relative grid lg:grid-cols-12 gap-8 lg:gap-12 items-center px-4 sm:px-6 py-10 md:py-16 lg:py-24 max-w-7xl mx-auto z-10">
-          {/* Left Column: Headline and Search */}
-          <div className="lg:col-span-7 text-left space-y-5 lg:space-y-6">
-            {/* Animated Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold select-none shadow-sm shadow-primary/5">
-              <Sparkles className="h-3.5 w-3.5 animate-pulse text-indigo-400" />
-              <span>Kerala's Local Business & Civic Platform</span>
+      {/* ── HERO ─────────────────────────────────────────────────────── */}
+      <section className="relative mb-10 md:mb-14 rounded-2xl overflow-hidden border border-border bg-card">
+        {/* Subtle gradient wash */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent pointer-events-none" />
+
+        <div className="relative grid lg:grid-cols-12 gap-6 lg:gap-0 items-stretch min-h-[440px]">
+
+          {/* Left content */}
+          <div className="lg:col-span-7 flex flex-col justify-center px-6 py-10 lg:px-10 lg:py-14 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold w-fit">
+              <Sparkles className="h-3.5 w-3.5" />
+              Kerala's Local Business & Civic Platform
             </div>
 
-            <h1 className="text-3xl sm:text-4xl md:text-6xl font-black text-foreground leading-tight tracking-tight">
-              Discover Local <br />
-              <span className="bg-gradient-to-r from-primary via-indigo-400 to-accent bg-clip-text text-transparent">
-                Businesses & Offers
-              </span>
-            </h1>
-            
-            <p className="text-base md:text-lg text-muted-foreground max-w-xl leading-relaxed">
-              Find verified local businesses, claim exclusive deals, verify bills, and stay informed with real-time official civic updates in your neighborhood.
-            </p>
+            <div className="space-y-3">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground leading-tight tracking-tight">
+                Discover Local<br />
+                <span className="text-primary">Businesses & Offers</span>
+              </h1>
+              <p className="text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
+                Find verified local businesses, claim exclusive deals, verify bills, and stay informed with real-time official civic updates in your neighbourhood.
+              </p>
+            </div>
 
-            {/* Stylized Search Bar */}
-            <div className="flex flex-col sm:flex-row gap-3 max-w-xl">
-              <div className="relative flex-1 group">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            {/* Search */}
+            <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="Search restaurants, doctors, shops..."
-                  className="pl-11 pr-4 py-3 rounded-xl border-white/10 bg-white/5 text-base focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all h-12 shadow-inner"
+                  placeholder="Restaurants, doctors, shops…"
+                  className="pl-10 h-11 text-sm rounded-xl border-border bg-background focus:border-primary"
                 />
               </div>
               <Button
                 onClick={handleSearch}
-                className="rounded-xl px-6 h-12 font-bold bg-gradient-to-r from-primary to-accent hover:brightness-110 active:scale-95 text-primary-foreground shrink-0 shadow-lg shadow-primary/20 transition-all cursor-pointer"
+                className="h-11 px-5 rounded-xl font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 cursor-pointer"
               >
-                Search Directory
+                Search
               </Button>
             </div>
 
             {/* Trending tags */}
-            <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground pt-2">
-              <span className="font-semibold text-xs uppercase tracking-wider text-muted-foreground/60">Trending:</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                Trending:
+              </span>
               {['Restaurants', 'Healthcare', 'Shopping', 'Services'].map((cat) => (
                 <Link
                   key={cat}
                   href={`/category?type=${cat.toLowerCase()}`}
-                  className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-foreground hover:bg-primary/5 transition-all"
+                  className="px-3 py-1 rounded-lg bg-secondary border border-border text-xs font-medium text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
                 >
                   {cat}
                 </Link>
@@ -194,252 +161,201 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right Column: Floating Glassmorphic Cards — hidden on mobile */}
-          <div className="hidden lg:flex lg:col-span-5 relative w-full h-[450px] items-center justify-center">
-            {/* Main Listing Preview Card */}
-            <Card className="absolute top-4 left-4 w-72 p-4 rounded-2xl border-white/10 bg-card/75 backdrop-blur-xl shadow-2xl transition-all hover:-translate-y-1 hover:scale-[1.02] duration-300 z-20 group">
-              <div className="relative w-full h-32 rounded-xl overflow-hidden mb-3">
-                <img
-                  src="/bella_restaurant.png"
-                  alt="Bella Restaurant Preview"
-                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[9px] font-bold text-amber-400 border border-white/10">
-                  ★ 4.8
-                </div>
-                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-500/90 text-[9px] font-bold text-white shadow-md">
-                  Active Deal
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5">
-                  <h4 className="font-bold text-foreground text-sm">Bella Restaurant</h4>
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400 fill-emerald-950/20 shrink-0" />
-                </div>
-                <p className="text-xs text-muted-foreground">Authentic Italian Cuisine</p>
-                <div className="pt-2 flex items-center justify-between text-[11px] border-t border-white/5">
-                  <span className="text-muted-foreground">Colaba, Mumbai</span>
-                  <span className="font-semibold text-primary">Open Now</span>
-                </div>
-              </div>
-            </Card>
+          {/* Right panel — hidden on mobile */}
+          <div className="hidden lg:flex lg:col-span-5 bg-secondary/60 border-l border-border items-center justify-center relative p-8 overflow-hidden">
+            <div className="absolute -top-16 -right-16 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-primary/8 rounded-full blur-2xl" />
 
-            {/* Overlapping Offer Card */}
-            <Card className="absolute bottom-6 right-4 w-60 p-4 rounded-2xl border-white/10 bg-gradient-to-br from-emerald-500/10 to-teal-500/5 backdrop-blur-xl shadow-2xl transition-all hover:translate-y-[-2px] hover:scale-[1.02] duration-300 z-30">
-              <div className="flex items-start justify-between mb-2">
-                <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
-                  <Tag className="h-4 w-4" />
+            <div className="relative space-y-4 w-full max-w-xs">
+              {/* Business preview card */}
+              <Card className="p-4 rounded-xl border-border bg-card shadow-md">
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
+                    <Utensils className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <h4 className="font-bold text-foreground text-sm truncate">Bella Restaurant</h4>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Authentic Italian Cuisine</p>
+                    <div className="flex items-center gap-1 mt-2">
+                      <Star className="h-3.5 w-3.5 fill-primary text-primary" />
+                      <span className="text-xs font-bold text-foreground">4.8</span>
+                      <span className="text-xs text-muted-foreground">(234 reviews)</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20 shrink-0">
+                    Open
+                  </span>
                 </div>
-                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/20">
-                  OFFER CLAIMED
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground">Fashion Hub boutique</p>
-              <h5 className="font-bold text-foreground text-sm mt-0.5">Flat 20% Off Storewide</h5>
-              <div className="mt-3 flex items-center justify-between gap-2">
-                <div className="bg-black/20 border border-white/5 rounded-lg px-2 py-1 text-[10px] font-mono text-emerald-400 font-bold tracking-wider">
-                  FASHION20
-                </div>
-                <button className="text-[10px] font-extrabold text-white bg-emerald-500 hover:bg-emerald-600 px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
-                  Claim
-                </button>
-              </div>
-            </Card>
+              </Card>
 
-            {/* Overlapping Civic Notice Badge */}
-            <Card className="absolute top-12 right-2 p-3 rounded-xl border-white/10 bg-amber-500/10 backdrop-blur-md shadow-xl flex items-center gap-3 z-10 transition-all hover:scale-[1.02] duration-300 animate-bounce">
-              <div className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
-              </div>
-              <div className="text-left">
-                <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Civic Notice</p>
-                <p className="text-xs text-foreground font-semibold">MG Road Maintenance: Alternate Route</p>
-              </div>
-            </Card>
+              {/* Offer card */}
+              <Card className="p-4 rounded-xl border-border bg-card shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/15 border border-primary/20">
+                    <Tag className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Fashion Hub Boutique</p>
+                    <p className="text-sm font-bold text-foreground">Flat 20% Off Storewide</p>
+                  </div>
+                  <span className="text-[10px] font-extrabold text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded-lg font-mono">
+                    FASHION20
+                  </span>
+                </div>
+              </Card>
+
+              {/* Civic notice */}
+              <Card className="p-3 rounded-xl border-border bg-card shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="relative flex h-2.5 w-2.5 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Civic Notice</p>
+                    <p className="text-xs text-foreground font-semibold">MG Road Maintenance: Alternate Route</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* ── Stats Bar ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-10 md:mb-16">
+        </div>
+      </section>
+
+      {/* ── STATS ────────────────────────────────────────────────────── */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10 md:mb-14">
         {STATS.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.label} className="p-5 rounded-2xl border-white/5 bg-card/40 backdrop-blur-md text-center hover:border-white/10 transition-all hover:-translate-y-0.5 duration-300">
+            <Card key={stat.label} className="p-5 rounded-xl border-border bg-card text-center hover:border-primary/30 transition-colors">
               <div className="flex justify-center mb-2">
-                <div className={`p-2 rounded-xl ${stat.color}`}>
-                  <Icon className="h-5 w-5" />
+                <div className="p-2 rounded-lg bg-primary/12 border border-primary/20">
+                  <Icon className="h-4 w-4 text-primary" />
                 </div>
               </div>
               <span className="text-2xl font-black text-foreground block">{stat.value}</span>
-              <p className="text-xs text-muted-foreground font-semibold mt-1">{stat.label}</p>
+              <p className="text-xs text-muted-foreground font-medium mt-1">{stat.label}</p>
             </Card>
           );
         })}
-      </div>
+      </section>
 
-      {/* ── Categories ───────────────────────────────────────────── */}
-      <div className="mb-10 md:mb-16">
-        <div className="flex items-center justify-between mb-6">
+      {/* ── CATEGORIES ───────────────────────────────────────────────── */}
+      <section className="mb-10 md:mb-14">
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-2xl font-black text-foreground">Browse Categories</h2>
+            <h2 className="text-xl font-black text-foreground">Browse Categories</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Explore services and listings filtered by sector</p>
           </div>
-          <Link href="/category" className="flex items-center gap-1 text-sm font-semibold text-primary hover:text-indigo-400 transition-colors">
+          <Link href="/category" className="flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
             View all <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {CATEGORIES.map(({ label, icon: Icon, color, bg, slug }) => (
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {CATEGORIES.map(({ label, icon: Icon, slug }) => (
             <Link key={label} href={`/category?type=${slug}`}>
-              <Card className="p-5 rounded-2xl border-white/5 bg-card/30 hover:bg-card/65 hover:border-primary/30 hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between h-36">
-                <div className={`w-11 h-11 rounded-xl ${bg} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className={`h-5 w-5 ${color}`} />
+              <Card className="p-4 rounded-xl border-border bg-card hover:border-primary/30 hover:bg-secondary/50 transition-all cursor-pointer group h-[120px] flex flex-col justify-between">
+                <div className="w-10 h-10 rounded-lg bg-primary/12 border border-primary/20 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <Icon className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p className="font-bold text-foreground text-sm leading-tight">{label}</p>
-                  <p className="text-[11px] text-muted-foreground mt-1 flex items-center gap-1 group-hover:text-primary transition-colors">
-                    Explore Directory <ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
+                  <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-0.5 group-hover:text-primary transition-colors">
+                    Explore <ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
                   </p>
                 </div>
               </Card>
             </Link>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* ── Featured Businesses ───────────────────────────────────── */}
-      <div className="mb-10 md:mb-16">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-black text-foreground">Featured Businesses</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Handpicked premium and verified services</p>
-          </div>
-          <Link href="/search" className="flex items-center gap-1 text-sm font-semibold text-primary hover:text-indigo-400 transition-colors">
-            View all <ChevronRight className="h-4 w-4" />
-          </Link>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {FEATURED_BUSINESSES.map((biz) => (
-            <Link key={biz.id} href={`/business/${biz.id}`}>
-              <Card className="p-4 rounded-2xl border-white/5 bg-card/30 hover:bg-card/65 hover:border-primary/20 hover:shadow-xl transition-all cursor-pointer group relative overflow-hidden flex flex-col h-full justify-between">
-                <div>
-                  {/* Image Cover */}
-                  <div className="relative w-full h-40 rounded-xl overflow-hidden mb-4 border border-white/5 bg-muted">
-                    <img
-                      src={biz.image}
-                      alt={biz.name}
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    {/* Tag */}
-                    <span className="absolute top-2.5 right-2.5 text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-primary border border-primary/20">
-                      {biz.tag}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-foreground text-sm mb-0.5 truncate group-hover:text-primary transition-colors">{biz.name}</h3>
-                  <p className="text-xs text-muted-foreground mb-3">{biz.category}</p>
-                </div>
-                <div className="flex items-center gap-1 text-xs pt-3 border-t border-white/5 mt-auto">
-                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-                  <span className="font-bold text-foreground">{biz.rating}</span>
-                  <span className="text-muted-foreground">({biz.reviews})</span>
-                  {biz.verified && (
-                    <span className="ml-auto flex items-center gap-1 text-[11px] font-bold text-emerald-400">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Verified
-                    </span>
-                  )}
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Features ─────────────────────────────────────────────── */}
-      <div className="mb-10 md:mb-16">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-black text-foreground mb-2">Platform Capabilities</h2>
+      {/* ── FEATURES ─────────────────────────────────────────────────── */}
+      <section className="mb-10 md:mb-14">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-black text-foreground mb-2">Platform Capabilities</h2>
           <p className="text-muted-foreground text-sm max-w-lg mx-auto leading-relaxed">
-            A complete trust-oriented software suite serving local customers, verified sellers, and local administrators.
+            A complete trust-oriented suite serving local customers, verified sellers, and civic administrators.
           </p>
         </div>
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
           {FEATURES.map((feature) => {
             const Icon = feature.icon;
             return (
-              <Card
-                key={feature.title}
-                className={`p-6 rounded-2xl border-white/5 bg-gradient-to-br ${feature.gradient} backdrop-blur-xl group hover:border-white/10 transition-all hover:shadow-lg`}
-              >
-                <div className={`w-12 h-12 rounded-xl ${feature.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className={`h-6 w-6 ${feature.iconColor}`} />
+              <Card key={feature.title} className="p-6 rounded-xl border-border bg-card hover:border-primary/30 transition-all group">
+                <div className="w-11 h-11 rounded-xl bg-primary/12 border border-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                  <Icon className="h-5 w-5 text-primary" />
                 </div>
-                <h3 className="font-bold text-foreground mb-2 text-base">{feature.title}</h3>
+                <h3 className="font-bold text-foreground mb-2 text-sm">{feature.title}</h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
               </Card>
             );
           })}
         </div>
-      </div>
+      </section>
 
-      {/* ── Testimonials ─────────────────────────────────────────── */}
-      <div className="mb-10 md:mb-16">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-black text-foreground mb-2">Community Voices</h2>
-          <p className="text-muted-foreground text-sm">Read insights from members utilizing our ecosystem daily</p>
+      {/* ── TESTIMONIALS ─────────────────────────────────────────────── */}
+      <section className="mb-10 md:mb-14">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-black text-foreground mb-2">Community Voices</h2>
+          <p className="text-muted-foreground text-sm">Insights from members utilising our ecosystem daily</p>
         </div>
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
           {TESTIMONIALS.map((t) => (
-            <Card key={t.name} className="p-6 rounded-2xl border-white/5 bg-card/30 backdrop-blur-md relative hover:border-white/10 transition-all duration-300">
-              <Quote className="absolute top-6 right-6 h-8 w-8 text-white/5 pointer-events-none" />
-              <div className="flex items-center gap-1 mb-4">
-                {Array.from({ length: t.rating }).map((_, i) => (
-                  <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            <Card key={t.name} className="p-6 rounded-xl border-border bg-card relative hover:border-primary/30 transition-all">
+              <Quote className="absolute top-5 right-5 h-7 w-7 text-border pointer-events-none" />
+              <div className="flex items-center gap-1 mb-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="h-3.5 w-3.5 fill-primary text-primary" />
                 ))}
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed mb-6 italic">"{t.text}"</p>
-              <div className="flex items-center gap-3 pt-4 border-t border-white/5">
-                <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${t.gradient} flex items-center justify-center text-white text-xs font-black shadow-sm`}>
+              <p className="text-xs text-muted-foreground leading-relaxed mb-5 italic">"{t.text}"</p>
+              <div className="flex items-center gap-3 pt-4 border-t border-border">
+                <div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary text-xs font-black shrink-0">
                   {t.avatar}
                 </div>
                 <div>
                   <p className="text-xs font-bold text-foreground">{t.name}</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold">{t.role}</p>
+                  <p className="text-[11px] text-muted-foreground">{t.role}</p>
                 </div>
               </div>
             </Card>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* ── Final CTA ────────────────────────────────────────────── */}
-      <div className="relative rounded-3xl overflow-hidden border border-white/5 mb-6">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-accent/80 backdrop-blur-sm pointer-events-none" />
-        <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+      {/* ── CTA ──────────────────────────────────────────────────────── */}
+      <section className="relative rounded-2xl overflow-hidden border border-primary/20 bg-primary/8 mb-6">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative px-5 py-10 md:px-8 md:py-14 text-center text-primary-foreground">
-          <Globe className="h-12 w-12 mx-auto mb-4 opacity-90 text-indigo-200 animate-pulse" />
-          <h2 className="text-2xl md:text-3xl font-black mb-3 text-white tracking-tight">Expand Your Local Reach Today</h2>
-          <p className="text-white/80 mb-8 max-w-md mx-auto text-sm leading-relaxed">
-            Join thousands of local users discovering businesses, claiming deals, verifying invoices, and staying informed on Whtzup.city — Kerala's trusted local directory.
+        <div className="relative px-6 py-10 md:px-10 md:py-14 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/15 border border-primary/25 mb-4">
+            <Globe className="h-6 w-6 text-primary" />
+          </div>
+          <h2 className="text-2xl md:text-3xl font-black text-foreground mb-3">
+            Expand Your Local Reach Today
+          </h2>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto text-sm leading-relaxed">
+            Join thousands discovering businesses, claiming deals, verifying invoices, and staying informed on Whtzup.city — Kerala's trusted local directory.
           </p>
-          <div className="flex gap-4 justify-center flex-wrap">
+          <div className="flex gap-3 justify-center flex-wrap">
             <Link href="/search">
-              <Button
-                className="rounded-xl bg-white text-primary hover:bg-white/95 hover:shadow-lg font-bold px-6 py-2.5 transition-all cursor-pointer"
-                size="lg"
-              >
+              <Button className="rounded-xl h-11 px-6 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer">
                 <Search className="h-4 w-4 mr-2" />
                 Explore Listings
               </Button>
             </Link>
-            <Link href="/login">
+            <Link href="/register">
               <Button
                 variant="outline"
-                className="rounded-xl border-white/30 text-white hover:bg-white/10 font-bold px-6 py-2.5 transition-all cursor-pointer"
-                size="lg"
+                className="rounded-xl h-11 px-6 font-semibold border-primary/30 text-foreground hover:bg-primary/10 cursor-pointer"
               >
                 Get Started Free
                 <ArrowRight className="h-4 w-4 ml-2" />
@@ -447,7 +363,8 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-      </div>
+      </section>
+
     </PublicLayout>
   );
 }

@@ -403,10 +403,13 @@ export default function UnifiedRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0e1016] text-slate-100 flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
+    <div className="min-h-screen w-full text-slate-100 flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans"
+         style={{ backgroundColor: '#37353E' }}>
       {/* Ambient background decoration */}
-      <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-zinc-500/5 rounded-full blur-[160px] pointer-events-none" />
-      <div className="absolute bottom-[-15%] left-[-10%] w-[50%] h-[50%] bg-zinc-600/5 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[160px] pointer-events-none"
+           style={{ background: 'rgba(113,90,90,0.08)' }} />
+      <div className="absolute bottom-[-15%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[140px] pointer-events-none"
+           style={{ background: 'rgba(113,90,90,0.06)' }} />
 
       <div className="w-full max-w-4xl relative z-10 space-y-6">
         {/* Top Header */}
@@ -424,7 +427,8 @@ export default function UnifiedRegisterPage() {
         </div>
 
         {/* Stepper bar */}
-        <div className="w-full bg-[#0d0d12]/80 border border-white/5 p-4 rounded-2xl backdrop-blur-xl">
+        <div className="w-full p-4 rounded-2xl backdrop-blur-xl"
+             style={{ background: 'rgba(68,68,78,0.70)', border: '1px solid rgba(211,218,217,0.07)' }}>
           <div className="flex justify-between items-center text-xs font-semibold text-slate-400 mb-3 px-1">
             <span>Progress Status</span>
             <span className="text-zinc-300">
@@ -470,7 +474,8 @@ export default function UnifiedRegisterPage() {
         )}
 
         {/* Form Card */}
-        <Card className="bg-[#141820]/80 backdrop-blur-xl border border-white/5 p-6 md:p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+        <Card className="backdrop-blur-xl p-6 md:p-8 rounded-2xl shadow-2xl relative overflow-hidden"
+              style={{ background: 'rgba(68,68,78,0.85)', border: '1px solid rgba(211,218,217,0.07)' }}>
           
           {/* STEP 1: Account Type Selection */}
           {currentStep === 1 && (
@@ -546,7 +551,7 @@ export default function UnifiedRegisterPage() {
 
                 <Button
                   onClick={() => setCurrentStep(2)}
-                  className="bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl h-11 px-6 font-semibold"
+                  className="rounded-xl h-11 px-6 font-semibold text-[#D3DAD9] hover:opacity-90 transition-opacity" style={{ background: '#715A5A' }}
                 >
                   Continue <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Button>
@@ -690,10 +695,10 @@ export default function UnifiedRegisterPage() {
                         <select
                           value={categorySlug}
                           onChange={(e) => setCategorySlug(e.target.value)}
-                          className="w-full h-11 pl-10 pr-4 bg-[#141820] border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:ring-zinc-500 focus:outline-none appearance-none cursor-pointer"
+                          className="w-full h-11 pl-10 pr-4 border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer" style={{ background: '#37353E' }}
                         >
                           {CATEGORIES.map((cat) => (
-                            <option key={cat.slug} value={cat.slug} className="bg-[#141820]">
+                            <option key={cat.slug} value={cat.slug} style={{ background: '#37353E' }}>
                               {cat.label}
                             </option>
                           ))}
@@ -717,7 +722,7 @@ export default function UnifiedRegisterPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="bg-zinc-700 hover:bg-zinc-600 text-white rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5"
+                  className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 text-[#D3DAD9] hover:opacity-90 transition-opacity" style={{ background: '#715A5A' }}
                 >
                   {loading ? (
                     <>
@@ -755,10 +760,10 @@ export default function UnifiedRegisterPage() {
                       <select
                         value={district}
                         onChange={(e) => setDistrict(e.target.value)}
-                        className="w-full h-11 pl-10 pr-4 bg-[#141820] border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:ring-zinc-500 focus:outline-none appearance-none cursor-pointer"
+                        className="w-full h-11 pl-10 pr-4 border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer" style={{ background: '#37353E' }}
                       >
                         {KERALA_DISTRICTS.map((dist) => (
-                          <option key={dist} value={dist} className="bg-[#141820]">
+                          <option key={dist} value={dist} style={{ background: '#37353E' }}>
                             {dist}
                           </option>
                         ))}
@@ -797,11 +802,11 @@ export default function UnifiedRegisterPage() {
                     <select
                       value={deptType}
                       onChange={(e) => setDeptType(e.target.value)}
-                      className="w-full h-11 px-3 bg-[#141820] border border-white/10 text-slate-300 rounded-xl text-sm focus:outline-none cursor-pointer"
+                      className="w-full h-11 px-3 border border-white/10 text-slate-300 rounded-xl text-sm focus:outline-none cursor-pointer" style={{ background: '#37353E' }}
                     >
-                      <option value="Local" className="bg-[#141820]">Local Civic Body / Municipality</option>
-                      <option value="District" className="bg-[#141820]">District Administration / Collectorate</option>
-                      <option value="State" className="bg-[#141820]">Kerala State Department</option>
+                      <option value="Local" style={{ background: '#37353E' }}>Local Civic Body / Municipality</option>
+                      <option value="District" style={{ background: '#37353E' }}>District Administration / Collectorate</option>
+                      <option value="State" style={{ background: '#37353E' }}>Kerala State Department</option>
                     </select>
                   </div>
                 )}
@@ -893,7 +898,7 @@ export default function UnifiedRegisterPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="bg-gradient-to-r from-zinc-600 to-zinc-500 text-white rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer shadow-lg shadow-zinc-500/10 hover:opacity-90 transition"
+                  className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition text-[#D3DAD9]" style={{ background: '#715A5A' }}
                 >
                   {loading ? (
                     <>

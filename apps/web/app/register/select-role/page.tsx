@@ -125,9 +125,9 @@ export default function SelectRolePage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#070709] text-slate-100 flex items-center justify-center py-12 px-4 relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-violet-600/5 rounded-full blur-[160px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-500/5 rounded-full blur-[140px] pointer-events-none" />
+    <div className="min-h-screen w-full bg-[#37353E] text-slate-100 flex items-center justify-center py-12 px-4 relative overflow-hidden">
+      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full blur-[160px] pointer-events-none" style={{ background: 'rgba(113,90,90,0.08)' }} />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[140px] pointer-events-none" style={{ background: 'rgba(113,90,90,0.06)' }} />
 
       <div className="max-w-3xl w-full space-y-8 relative z-10">
         {/* Header */}

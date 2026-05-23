@@ -16,7 +16,29 @@ import {
   Sparkles,
   CheckCircle2,
   ArrowRight,
+  MapPin,
+  Tag,
+  Bell,
 } from 'lucide-react';
+
+/* Brand panel feature list */
+const BRAND_FEATURES = [
+  {
+    icon: CheckCircle2,
+    title: 'Integrated Services',
+    desc: 'Unified space for reviews, business listings, and government notifications.',
+  },
+  {
+    icon: MapPin,
+    title: 'Kerala District-wide Reach',
+    desc: 'Tailored administrative coverage for businesses and government sectors.',
+  },
+  {
+    icon: Tag,
+    title: 'Verified Credentials',
+    desc: 'Certificate verification and official department status checks.',
+  },
+];
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -55,158 +77,178 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0e1016] text-slate-100 flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
-      {/* Subtle ambient blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-zinc-500/5 rounded-full blur-[160px] pointer-events-none"></div>
-      <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] bg-zinc-600/5 rounded-full blur-[140px] pointer-events-none"></div>
+    <div
+      className="min-h-screen w-full flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans"
+      style={{ backgroundColor: '#37353E' }}
+    >
+      {/* Ambient blobs */}
+      <div className="absolute top-[-10%] left-[-5%] w-[50%] h-[50%] rounded-full blur-[140px] pointer-events-none"
+           style={{ background: 'rgba(113,90,90,0.08)' }} />
+      <div className="absolute bottom-[-15%] right-[-5%] w-[45%] h-[45%] rounded-full blur-[120px] pointer-events-none"
+           style={{ background: 'rgba(113,90,90,0.06)' }} />
 
-      {/* Mobile-only brand badge */}
-      <div className="absolute top-6 left-0 right-0 flex justify-center lg:hidden z-20">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-700/30 border border-zinc-600/30 text-zinc-300 text-xs font-semibold tracking-wide">
-          <Sparkles className="h-3.5 w-3.5" />
+      {/* Mobile brand badge */}
+      <div className="absolute top-5 left-0 right-0 flex justify-center lg:hidden z-20">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold tracking-wide"
+             style={{ background: 'rgba(68,68,78,0.6)', borderColor: 'rgba(113,90,90,0.25)', color: '#D3DAD9' }}>
+          <Sparkles className="h-3.5 w-3.5" style={{ color: '#715A5A' }} />
           Whtzup.city
         </div>
       </div>
 
-      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch relative z-10">
-        {/* Left Side: Brand Panel — hidden on mobile */}
-        <div className="hidden lg:flex lg:col-span-6 flex-col justify-between p-8 rounded-3xl bg-white/[0.02] border border-white/5 backdrop-blur-md relative overflow-hidden">
-          <div className="absolute -right-16 -top-16 w-48 h-48 bg-zinc-500/10 rounded-full blur-3xl"></div>
+      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch relative z-10">
 
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-700/30 border border-zinc-600/30 text-zinc-300 text-xs font-semibold tracking-wide">
-              <Sparkles className="h-3.5 w-3.5" />
+        {/* ── Brand Panel (desktop only) ── */}
+        <div
+          className="hidden lg:flex lg:col-span-6 flex-col justify-between p-9 rounded-2xl relative overflow-hidden"
+          style={{ background: '#44444E', border: '1px solid rgba(211,218,217,0.08)' }}
+        >
+          {/* Decorative blob */}
+          <div className="absolute -right-12 -top-12 w-40 h-40 rounded-full blur-3xl pointer-events-none"
+               style={{ background: 'rgba(113,90,90,0.15)' }} />
+
+          <div className="space-y-7 relative">
+            {/* Brand badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold tracking-wide w-fit"
+                 style={{ background: 'rgba(113,90,90,0.15)', borderColor: 'rgba(113,90,90,0.30)', color: '#D3DAD9' }}>
+              <Sparkles className="h-3.5 w-3.5" style={{ color: '#715A5A' }} />
               Whtzup.city
             </div>
 
-            <div className="space-y-4">
-              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
-                One Platform, <br />
-                <span className="bg-gradient-to-r from-slate-300 via-zinc-200 to-slate-400 bg-clip-text text-transparent">
-                  Connected.
-                </span>
+            <div className="space-y-3">
+              <h1 className="text-4xl xl:text-5xl font-extrabold tracking-tight leading-tight"
+                  style={{ color: '#D3DAD9' }}>
+                One Platform,<br />
+                <span style={{ color: '#715A5A' }}>Connected.</span>
               </h1>
-              <p className="text-slate-400 max-w-md text-base leading-relaxed">
+              <p className="text-sm leading-relaxed max-w-xs" style={{ color: 'rgba(211,218,217,0.65)' }}>
                 Log in to discover local services, claim exclusive offers, and publish civic updates with verified credentials.
               </p>
             </div>
 
-            {/* Features list */}
-            <div className="space-y-4 pt-4">
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-lg bg-zinc-700/30 border border-zinc-600/30 text-zinc-400 mt-0.5">
-                  <CheckCircle2 className="h-4 w-4" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-slate-200">Integrated Services</h4>
-                  <p className="text-xs text-slate-400">
-                    A single unified space for customer reviews, business listings, and government notifications.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-lg bg-zinc-700/30 border border-zinc-600/30 text-zinc-400 mt-0.5">
-                  <CheckCircle2 className="h-4 w-4" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-slate-200">Kerala District-wide Reach</h4>
-                  <p className="text-xs text-slate-400">
-                    Specifically tailored administrative coverages for businesses and government sectors.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-lg bg-zinc-700/30 border border-zinc-600/30 text-zinc-400 mt-0.5">
-                  <CheckCircle2 className="h-4 w-4" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-slate-200">Verified Credentials</h4>
-                  <p className="text-xs text-slate-400">
-                    Enhanced legitimacy with certificate verification and official department status checks.
-                  </p>
-                </div>
-              </div>
+            {/* Features */}
+            <div className="space-y-4">
+              {BRAND_FEATURES.map((f) => {
+                const Icon = f.icon;
+                return (
+                  <div key={f.title} className="flex items-start gap-3">
+                    <div className="p-1.5 rounded-lg shrink-0 mt-0.5"
+                         style={{ background: 'rgba(113,90,90,0.15)', border: '1px solid rgba(113,90,90,0.25)' }}>
+                      <Icon className="h-4 w-4" style={{ color: '#715A5A' }} />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm" style={{ color: '#D3DAD9' }}>{f.title}</h4>
+                      <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'rgba(211,218,217,0.55)' }}>
+                        {f.desc}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Brand Footer */}
-          <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between text-xs text-slate-500">
+          {/* Brand footer */}
+          <div className="mt-8 pt-5 flex items-center justify-between text-xs"
+               style={{ borderTop: '1px solid rgba(211,218,217,0.08)', color: 'rgba(211,218,217,0.40)' }}>
             <span>© {new Date().getFullYear()} Whtzup.city.</span>
             <span>All rights reserved.</span>
           </div>
         </div>
 
-        {/* Right Side: Login Card */}
-        <div className="lg:col-span-6 flex flex-col justify-center pt-16 lg:pt-0">
-          <Card className="p-8 bg-[#141820]/80 backdrop-blur-xl border border-white/5 rounded-3xl shadow-2xl relative overflow-hidden">
+        {/* ── Login Form ── */}
+        <div className="lg:col-span-6 flex flex-col justify-center pt-14 lg:pt-0">
+          <div
+            className="p-7 md:p-8 rounded-2xl relative overflow-hidden shadow-2xl"
+            style={{ background: 'rgba(68,68,78,0.85)', border: '1px solid rgba(211,218,217,0.07)' }}
+          >
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-slate-100">Welcome Back</h2>
-              <p className="text-sm text-slate-400 mt-1">
+              <h2 className="text-2xl font-bold" style={{ color: '#D3DAD9' }}>Welcome Back</h2>
+              <p className="text-sm mt-1" style={{ color: 'rgba(211,218,217,0.55)' }}>
                 Enter your credentials to access your dashboard.
               </p>
             </div>
 
-            {/* Error & Success Banners */}
+            {/* Banners */}
             {error && (
-              <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium">
+              <div className="mb-4 p-3 rounded-xl text-xs font-medium"
+                   style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.20)', color: '#fca5a5' }}>
                 {error}
               </div>
             )}
             {successMsg && (
-              <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+              <div className="mb-4 p-3 rounded-xl text-xs font-medium"
+                   style={{ background: 'rgba(16,185,129,0.10)', border: '1px solid rgba(16,185,129,0.20)', color: '#6ee7b7' }}>
                 {successMsg}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-300">Email Address</label>
+                <label className="text-xs font-medium" style={{ color: 'rgba(211,218,217,0.75)' }}>
+                  Email Address
+                </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"
+                        style={{ color: 'rgba(211,218,217,0.35)' }} />
                   <Input
                     type="email"
                     placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl focus:border-blue-500/40"
+                    className="pl-10 h-11 text-sm rounded-xl"
+                    style={{
+                      background: 'rgba(55,53,62,0.70)',
+                      border: '1px solid rgba(211,218,217,0.10)',
+                      color: '#D3DAD9',
+                    }}
                   />
                 </div>
               </div>
 
+              {/* Password */}
               <div className="space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-medium text-slate-300">Password</label>
-                </div>
+                <label className="text-xs font-medium" style={{ color: 'rgba(211,218,217,0.75)' }}>
+                  Password
+                </label>
                 <div className="relative">
-                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"
+                       style={{ color: 'rgba(211,218,217,0.35)' }} />
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl focus:border-blue-500/40"
+                    className="pl-10 pr-10 h-11 text-sm rounded-xl"
+                    style={{
+                      background: 'rgba(55,53,62,0.70)',
+                      border: '1px solid rgba(211,218,217,0.10)',
+                      color: '#D3DAD9',
+                    }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer hover:opacity-80 transition-opacity"
+                    style={{ color: 'rgba(211,218,217,0.40)' }}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
+              {/* Submit */}
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-11 font-semibold rounded-xl text-sm transition-all duration-300 cursor-pointer bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center gap-2"
+                className="w-full h-11 font-semibold rounded-xl text-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 mt-2"
+                style={{ background: '#715A5A', color: '#D3DAD9' }}
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Signing in...
+                    Signing in…
                   </>
                 ) : (
                   <>
@@ -217,14 +259,19 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-8 text-center text-sm text-slate-400">
+            <div className="mt-7 text-center text-sm" style={{ color: 'rgba(211,218,217,0.50)' }}>
               Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-zinc-300 hover:text-zinc-100 font-semibold hover:underline">
+              <Link
+                href="/register"
+                className="font-semibold hover:underline transition-colors"
+                style={{ color: '#D3DAD9' }}
+              >
                 Register here
               </Link>
             </div>
-          </Card>
+          </div>
         </div>
+
       </div>
     </div>
   );

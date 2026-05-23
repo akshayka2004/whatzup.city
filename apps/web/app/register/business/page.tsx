@@ -351,7 +351,7 @@ function RegisterBusinessWizardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#070709] text-slate-100 flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-[#37353E] text-slate-100 flex flex-col items-center justify-center">
         <Loader2 className="h-10 w-10 text-violet-400 animate-spin mb-4" />
         <p className="text-slate-400 text-sm">Loading onboarding draft status...</p>
       </div>
@@ -369,7 +369,7 @@ function RegisterBusinessWizardContent() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#070709] text-slate-100 py-10 px-4 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#37353E] text-slate-100 py-10 px-4 relative overflow-hidden font-sans">
       <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-violet-600/5 rounded-full blur-[160px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyan-500/5 rounded-full blur-[140px] pointer-events-none"></div>
 
@@ -386,7 +386,7 @@ function RegisterBusinessWizardContent() {
         </div>
 
         {/* Wizard Step Tracker bar */}
-        <div className="w-full bg-[#0d0d12] border border-white/5 p-4 rounded-2xl">
+        <div className="w-full p-4 rounded-2xl" style={{ background: 'rgba(68,68,78,0.70)', border: '1px solid rgba(211,218,217,0.07)' }}>
           <div className="flex justify-between items-center text-xs font-semibold text-slate-400 mb-3 px-2">
             <span>Progress Status</span>
             <span className="text-cyan-400">
@@ -1025,7 +1025,7 @@ export default function RegisterBusinessWizard() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#070709] text-slate-100 flex flex-col items-center justify-center">
+        <div className="min-h-screen bg-[#37353E] text-slate-100 flex flex-col items-center justify-center">
           <Loader2 className="h-10 w-10 text-violet-400 animate-spin mb-4" />
           <p className="text-slate-400 text-sm">Loading session wizard...</p>
         </div>
