@@ -28,8 +28,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function initAuth() {
       try {
-        const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
+        // 1. Instant paint from localStorage cache so UI doesn't flash logged-out
+        const cached = await authService.getCurrentUser();
+        if (cached) setUser(cached);
+
+        // 2. Source-of-truth check against API — uses httpOnly cookies.
+        //    apiService auto-refreshes on 401, so a valid refresh_token (7d)
+        //    keeps the session alive across reloads even after the 15-min
+        //    access token expires.
+        const fresh = await authService.fetchCurrentUser();
+        if (fresh) {
+          setUser(fresh);
+        } else if (cached) {
+          // Cookies invalid → clear stale cache so UI reflects logged-out state
+          setUser(null);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('user_session');
+            localStorage.removeItem('user');
+          }
+        }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
       } finally {

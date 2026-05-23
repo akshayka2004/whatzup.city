@@ -1,5 +1,7 @@
-// API service - Placeholder for API calls
-// Replace with your actual API endpoints and logic
+// ============================================================
+// API service — same-origin fetch via Next.js /api proxy.
+// Auto-refreshes the access token on 401 then retries once.
+// ============================================================
 
 export interface ApiResponse<T> {
   data: T;
@@ -14,161 +16,128 @@ export interface PaginatedResponse<T> {
   pageSize: number;
 }
 
+type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
+
 class ApiService {
-  // IMPORTANT: Always route through Next.js proxy (/api → server-side rewrite to API host).
-  // Using a direct API URL from the browser causes (1) CORS preflight failure,
-  // (2) missing /api global prefix → 404, and (3) cookie issues across origins.
-  // Bare-metal HTTP deployment REQUIRES same-origin requests.
+  // IMPORTANT: Always route through Next.js proxy (/api → server-side rewrite).
+  // Bare-metal HTTP deployment requires same-origin requests for cookies + CORS.
   private baseURL = '/api';
 
+  // Single in-flight refresh promise so concurrent 401s share one refresh call
+  private refreshing: Promise<boolean> | null = null;
+
   /**
-   * Generic GET request
+   * Attempt to refresh the access token. Uses the refresh_token cookie set
+   * by the API on login/signup. Returns true on success, false otherwise.
+   * Concurrent callers share one refresh roundtrip.
    */
+  private async tryRefresh(): Promise<boolean> {
+    if (this.refreshing) return this.refreshing;
+
+    this.refreshing = (async () => {
+      try {
+        const res = await fetch(`${this.baseURL}/v1/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: '{}',
+        });
+        return res.ok;
+      } catch {
+        return false;
+      } finally {
+        // Release the lock on next tick so concurrent retries see resolved value
+        setTimeout(() => {
+          this.refreshing = null;
+        }, 0);
+      }
+    })();
+
+    return this.refreshing;
+  }
+
+  /**
+   * Core fetch wrapper with 401 → refresh → retry loop.
+   * `skipAuthRetry` prevents infinite loops on the refresh endpoint itself.
+   */
+  private async request<T>(
+    method: Method,
+    endpoint: string,
+    body?: unknown,
+    skipAuthRetry = false,
+  ): Promise<ApiResponse<T>> {
+    const url = `${this.baseURL}${endpoint}`;
+    const init: RequestInit = {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    };
+
+    try {
+      let response = await fetch(url, init);
+
+      // Auto-refresh on 401 (skip for auth endpoints to avoid loops)
+      if (
+        response.status === 401 &&
+        !skipAuthRetry &&
+        !endpoint.includes('/auth/login') &&
+        !endpoint.includes('/auth/refresh') &&
+        !endpoint.includes('/auth/signup')
+      ) {
+        const refreshed = await this.tryRefresh();
+        if (refreshed) {
+          response = await fetch(url, init);
+        }
+      }
+
+      if (!response.ok) {
+        let errorMsg = `HTTP ${response.status}`;
+        try {
+          const errBody = await response.json();
+          errorMsg = errBody.message || errBody.error || errorMsg;
+        } catch {}
+        return {
+          data: null as unknown as T,
+          error: errorMsg,
+          status: response.status,
+        };
+      }
+
+      // 204 No Content has no body
+      if (response.status === 204) {
+        return { data: null as unknown as T, error: null, status: 204 };
+      }
+
+      const data = await response.json();
+      return { data, error: null, status: response.status };
+    } catch (error) {
+      return {
+        data: null as unknown as T,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        status: 0,
+      };
+    }
+  }
+
   async get<T>(endpoint: string): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        let errorMsg = `HTTP ${response.status}`;
-        try {
-          const errBody = await response.json();
-          errorMsg = errBody.message || errBody.error || errorMsg;
-        } catch {}
-        return {
-          data: null as unknown as T,
-          error: errorMsg,
-          status: response.status,
-        };
-      }
-
-      const data = await response.json();
-      return { data, error: null, status: 200 };
-    } catch (error) {
-      return {
-        data: null as unknown as T,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        status: 500,
-      };
-    }
+    return this.request<T>('GET', endpoint);
   }
 
-  /**
-   * Generic POST request
-   */
   async post<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: body ? JSON.stringify(body) : undefined,
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        let errorMsg = `HTTP ${response.status}`;
-        try {
-          const errBody = await response.json();
-          errorMsg = errBody.message || errBody.error || errorMsg;
-        } catch {}
-        return {
-          data: null as unknown as T,
-          error: errorMsg,
-          status: response.status,
-        };
-      }
-
-      const data = await response.json();
-      return { data, error: null, status: 200 };
-    } catch (error) {
-      return {
-        data: null as unknown as T,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        status: 500,
-      };
-    }
+    return this.request<T>('POST', endpoint, body);
   }
 
-  /**
-   * Generic PATCH request
-   */
   async patch<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: body ? JSON.stringify(body) : undefined,
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        let errorMsg = `HTTP ${response.status}`;
-        try {
-          const errBody = await response.json();
-          errorMsg = errBody.message || errBody.error || errorMsg;
-        } catch {}
-        return {
-          data: null as unknown as T,
-          error: errorMsg,
-          status: response.status,
-        };
-      }
-
-      const data = await response.json();
-      return { data, error: null, status: 200 };
-    } catch (error) {
-      return {
-        data: null as unknown as T,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        status: 500,
-      };
-    }
+    return this.request<T>('PATCH', endpoint, body);
   }
 
-  /**
-   * Generic DELETE request
-   */
+  async put<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>('PUT', endpoint, body);
+  }
+
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        let errorMsg = `HTTP ${response.status}`;
-        try {
-          const errBody = await response.json();
-          errorMsg = errBody.message || errBody.error || errorMsg;
-        } catch {}
-        return {
-          data: null as unknown as T,
-          error: errorMsg,
-          status: response.status,
-        };
-      }
-
-      const data = await response.json();
-      return { data, error: null, status: 200 };
-    } catch (error) {
-      return {
-        data: null as unknown as T,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        status: 500,
-      };
-    }
+    return this.request<T>('DELETE', endpoint);
   }
 }
 
