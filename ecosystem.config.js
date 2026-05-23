@@ -40,6 +40,18 @@ module.exports = {
         // Proxy target for /api/* rewrites — bare-metal API on port 4001
         API_URL: 'http://localhost:4001',
       }
+    },
+    {
+      name: 'saas-launch-page',
+      cwd: './apps/launch-page',
+      script: 'dist/server.js',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 6001
+      }
     }
   ]
 };

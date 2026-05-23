@@ -1874,3 +1874,29 @@ model GovernmentProfile {
 
   @@map("government_profiles")
 }
+
+model LaunchIndividualInterest {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(255)
+  email     String   @db.VarChar(255)
+  phone     String?  @db.VarChar(50)
+  interests String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("launch_individual_interests")
+}
+
+model LaunchBusinessInterest {
+  id           String   @id @default(uuid()) @db.Uuid
+  businessName String   @map("business_name") @db.VarChar(255)
+  category     String   @db.VarChar(100)
+  contactName  String   @map("contact_name") @db.VarChar(255)
+  email        String   @db.VarChar(255)
+  phone        String?  @db.VarChar(50)
+  website      String?  @db.VarChar(255)
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("launch_business_interests")
+}
+

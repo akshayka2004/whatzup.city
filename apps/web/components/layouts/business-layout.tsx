@@ -7,6 +7,7 @@ import { Header } from '../common/header';
 import { MobileNav } from '../navigation/mobile-nav';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/use-auth';
+import { useRequireAuth } from '@/hooks/use-require-auth';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
 import {
   AlertTriangle,
@@ -28,7 +29,14 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuth();
+  // Gate: while auth is loading we show a spinner; when loaded with no user,
+  // useRequireAuth redirects to /login. Business/staff/specialised entity
+  // accounts are all permitted past the gate; admin/super-admin too (they
+  // bypass verification check below).
+  const { user, loading: authLoading } = useRequireAuth([
+    'business', 'admin', 'super-admin', 'government',
+    'influencer', 'professional', 'event-organizer', 'organization',
+  ]);
 
   const [verificationStatus, setVerificationStatus] = useState<string>('APPROVED');
   const [loading, setLoading] = useState(true);
@@ -36,8 +44,15 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
 
   useEffect(() => {
     async function checkVerification() {
+      // Auth still resolving OR redirect in-flight — keep loading state on
+      if (authLoading) {
+        setLoading(true);
+        return;
+      }
       if (!user) {
-        setLoading(false);
+        // useRequireAuth has already triggered the redirect; show spinner
+        // until the navigation lands.
+        setLoading(true);
         return;
       }
 
@@ -90,7 +105,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
       setLoading(false);
     }
     checkVerification();
-  }, [user]);
+  }, [user, authLoading]);
 
   const getOnboardingPath = (role: string, entityId: string, entityType?: string) => {
     if (role === 'business') return `/register/business?id=${entityId}`;
@@ -112,9 +127,9 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#070709] text-slate-100">
-        <Loader2 className="h-8 w-8 text-cyan-400 animate-spin mr-2" />
-        <span className="text-sm text-slate-400">Authenticating workspace environment...</span>
+      <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
+        <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
+        <span className="text-sm text-muted-foreground">Authenticating workspace…</span>
       </div>
     );
   }
