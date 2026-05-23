@@ -28,8 +28,8 @@ module.exports = {
     {
       name: 'saas-web',
       cwd: './apps/web',
-      script: 'pnpm',
-      args: 'start -- --port 3000',
+      script: 'node_modules/next/dist/bin/next',
+      args: 'start --port 3000',
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
