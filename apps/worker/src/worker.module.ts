@@ -5,7 +5,13 @@ import { BillVerificationProcessor } from './processors/bill-verification.proces
 import { NotificationProcessor } from './processors/notification.processor';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env.local', '.env', '../../.env.local', '../../.env'],
+    }),
+    DatabaseModule,
+  ],
   providers: [BillVerificationProcessor, NotificationProcessor],
 })
 export class WorkerModule {}

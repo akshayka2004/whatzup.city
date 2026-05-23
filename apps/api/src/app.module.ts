@@ -68,7 +68,10 @@ import { EntityOnboardingModule } from './modules/entity-onboarding/entity-onboa
     // ── Configuration ───────────────────────────────────────
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env.local', '.env'],
+      // Search local app dir first (apps/api/.env), then project root .env
+      // (../../.env relative to apps/api/ where PM2 sets cwd).
+      // PM2 ecosystem env vars override file values regardless.
+      envFilePath: ['.env.local', '.env', '../../.env.local', '../../.env'],
       validate: validateEnv,
     }),
 
