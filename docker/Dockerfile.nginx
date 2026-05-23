@@ -1,0 +1,14 @@
+# ============================================================
+# Dockerfile — Nginx Reverse Proxy with Dynamic Domain Template
+# ============================================================
+
+FROM nginx:1.27-alpine
+
+# Copy the custom global nginx configuration
+COPY docker/nginx/nginx.conf /etc/nginx/nginx.conf
+
+# Copy the default configuration to the templates folder for dynamic variable substitution
+COPY docker/nginx/default.conf /etc/nginx/templates/default.conf.template
+
+# Expose HTTP and HTTPS ports
+EXPOSE 80 443

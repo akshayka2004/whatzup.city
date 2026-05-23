@@ -1,103 +1,126 @@
 # ============================================================
-# Docker Compose — Development Environment
+# Docker Compose — Local Production-Equivalent Environment
 # ============================================================
 
 services:
-  # ── PostgreSQL ─────────────────────────────────────────────
-  postgres:
-    image: postgres:16-alpine
-    container_name: saas-postgres
-    restart: unless-stopped
-    ports:
-      - '5432:5432'
-    environment:
-      POSTGRES_DB: saas_platform
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ── Redis ──────────────────────────────────────────────────
+  # ── Redis Cache & Queue Broker ──────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: saas-redis
+    container_name: saas-redis-local
     restart: unless-stopped
     ports:
       - '6379:6379'
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis}
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis} --appendonly yes
     volumes:
-      - redis_data:/data
+      - redis_local_data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-redis}', 'ping']
+      interval: 5s
       timeout: 5s
       retries: 5
 
-  # ── Typesense (Search Engine) ──────────────────────────────
+  # ── Typesense Search ────────────────────────────────────────
   typesense:
     image: typesense/typesense:27.1
-    container_name: saas-typesense
+    container_name: saas-typesense-local
     restart: unless-stopped
     ports:
       - '8108:8108'
     environment:
-      TYPESENSE_API_KEY: dev-typesense-key
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-dev-typesense-key}
       TYPESENSE_DATA_DIR: /data
     volumes:
-      - typesense_data:/data
+      - typesense_local_data:/data
 
-  # ── NestJS API ─────────────────────────────────────────────
+  # ── NestJS REST & WebSocket API Gateway ─────────────────────
   api:
     build:
       context: .
       dockerfile: docker/Dockerfile.api
-    container_name: saas-api
+    container_name: saas-api-local
     restart: unless-stopped
     ports:
       - '4000:4000'
     environment:
       NODE_ENV: development
       DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: dev-jwt-secret-change-in-production
-      JWT_REFRESH_SECRET: dev-refresh-secret-change-in-production
-      CORS_ORIGINS: http://localhost:3000
+      DIRECT_URL: ${DIRECT_URL}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis}@redis:6379
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis}
       TYPESENSE_HOST: typesense
-      TYPESENSE_API_KEY: dev-typesense-key
+      TYPESENSE_PORT: 8108
+      TYPESENSE_PROTOCOL: http
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-dev-typesense-key}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-in-production}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001}
+      PORT: 4000
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
-    volumes:
-      - ./apps/api/src:/app/apps/api/src
-      - ./packages:/app/packages
+      typesense:
+        condition: service_started
 
-  # ── Next.js Frontend ───────────────────────────────────────
+  # ── Background Worker Service ──────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: saas-worker-local
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: ${DATABASE_URL}
+      DIRECT_URL: ${DIRECT_URL}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis}@redis:6379
+      TYPESENSE_HOST: typesense
+      TYPESENSE_PORT: 8108
+      TYPESENSE_PROTOCOL: http
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-dev-typesense-key}
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ── Next.js Public Web Application ──────────────────────────
   web:
     build:
       context: .
-      dockerfile: docker/Dockerfile.web
-    container_name: saas-web
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        APP_NAME: web
+    container_name: saas-web-local
     restart: unless-stopped
     ports:
       - '3000:3000'
     environment:
+      NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:4000
+      PORT: 3000
     depends_on:
       - api
-    volumes:
-      - ./app:/app/app
-      - ./components:/app/components
-      - ./lib:/app/lib
-      - ./hooks:/app/hooks
-      - ./styles:/app/styles
+
+  # ── Next.js Admin/Merchant Dashboard ────────────────────────
+  admin:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+      args:
+        APP_NAME: admin
+    container_name: saas-admin-local
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      PORT: 3001
+    depends_on:
+      - api
 
 volumes:
-  postgres_data:
-  redis_data:
-  typesense_data:
+  redis_local_data:
+  typesense_local_data:

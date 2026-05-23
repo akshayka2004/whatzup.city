@@ -9,24 +9,27 @@ WORKDIR /app
 # ── Dependencies ─────────────────────────────────────────────
 FROM base AS deps
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY apps/api/package.json apps/api/
+COPY apps/worker/package.json apps/worker/
 COPY apps/web/package.json apps/web/
 COPY apps/admin/package.json apps/admin/
-COPY packages/ui/package.json packages/ui/
-COPY packages/types/package.json packages/types/
+COPY packages/auth/package.json packages/auth/
 COPY packages/database/package.json packages/database/
+COPY packages/types/package.json packages/types/
+COPY packages/ui/package.json packages/ui/
 RUN pnpm install --frozen-lockfile
 
 # ── Build ────────────────────────────────────────────────────
 FROM base AS builder
 ARG APP_NAME
 ENV APP_NAME=${APP_NAME}
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
-COPY --from=deps /app/apps/admin/node_modules ./apps/admin/node_modules
-COPY --from=deps /app/packages ./packages
-COPY apps apps
-COPY packages packages
-RUN cd packages/database && pnpm db:generate
+COPY --from=deps /app /app
+COPY . .
+RUN pnpm --filter @saas/types build
+RUN pnpm --filter @saas/auth build
+RUN pnpm --filter @saas/ui build
+RUN pnpm --filter @saas/database db:generate
+RUN pnpm --filter @saas/database build
 RUN pnpm --filter @saas/${APP_NAME} build
 
 # ── Production Runner ─────────────────────────────────────────
@@ -45,6 +48,6 @@ EXPOSE 3000
 
 # Health check verifies Next.js returns HTTP 200
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-3000} || exit 1
 
 CMD pnpm --filter @saas/${APP_NAME} start
