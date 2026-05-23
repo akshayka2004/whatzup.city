@@ -12,7 +12,6 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json apps/api/
 COPY apps/worker/package.json apps/worker/
 COPY apps/web/package.json apps/web/
-COPY apps/admin/package.json apps/admin/
 COPY packages/auth/package.json packages/auth/
 COPY packages/database/package.json packages/database/
 COPY packages/types/package.json packages/types/
