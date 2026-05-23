@@ -56,142 +56,207 @@ export class AuthService {
   }
 
   async signup(dto: SignupDto) {
-    // Auto-resolve to first tenant when caller omits tenantId (single-tenant bare-metal deployments)
-    if (!dto.tenantId) {
-      const defaultTenant = await this.db.tenant.findFirst({ select: { id: true } });
-      if (!defaultTenant) throw new BadRequestException('No tenant configured. Contact support.');
-      dto.tenantId = defaultTenant.id;
-    }
+    try {
+      // 1. Resolve tenant (auto-select first tenant for single-tenant deployments)
+      if (!dto.tenantId) {
+        const defaultTenant = await this.db.tenant.findFirst({ select: { id: true } });
+        if (!defaultTenant) {
+          throw new BadRequestException('No tenant configured. Contact support.');
+        }
+        dto.tenantId = defaultTenant.id;
+      }
 
-    if (!this.passwordService.isStrongPassword(dto.password)) {
-      throw new BadRequestException(
-        'Password is too weak. Must contain uppercase, lowercase, numbers, and special characters.',
-      );
-    }
+      // 2. Validate password strength
+      if (!this.passwordService.isStrongPassword(dto.password)) {
+        throw new BadRequestException(
+          'Password is too weak. Must contain uppercase, lowercase, numbers, and special characters.',
+        );
+      }
 
-    const emailNormalized = dto.email.toLowerCase().trim();
+      // 3. Normalise inputs
+      const emailNormalized = dto.email.toLowerCase().trim();
+      const phoneNormalized = dto.phone?.trim() || null;
+      const nameNormalized = dto.name?.trim() || '';
+      const role = dto.role || UserRoleEnum.USER;
+      const isCustomer = role === UserRoleEnum.USER;
 
-    // Check for existing user under this tenant
-    const existing = await this.db.user.findFirst({
-      where: {
-        tenantId: dto.tenantId,
-        email: emailNormalized,
-        deletedAt: null,
-      },
-    });
+      if (!nameNormalized) {
+        throw new BadRequestException('Name is required');
+      }
 
-    if (existing) {
-      throw new ConflictException('Email already registered for this tenant');
-    }
+      // 4. Pre-check uniqueness (cheap reads — better error than P2002)
+      const [existingUser, existingPhone] = await Promise.all([
+        this.db.user.findFirst({
+          where: { tenantId: dto.tenantId, email: emailNormalized, deletedAt: null },
+          select: { id: true },
+        }),
+        isCustomer && phoneNormalized
+          ? this.db.customer.findFirst({
+              where: { tenantId: dto.tenantId, phone: phoneNormalized, deletedAt: null },
+              select: { id: true },
+            })
+          : Promise.resolve(null),
+      ]);
 
-    if (dto.phone && (dto.role || UserRoleEnum.USER) === UserRoleEnum.USER) {
-      const existingPhone = await this.db.customer.findFirst({
-        where: { tenantId: dto.tenantId, phone: dto.phone, deletedAt: null },
-      });
+      if (existingUser) {
+        throw new ConflictException('Email already registered for this tenant');
+      }
       if (existingPhone) {
         throw new ConflictException('Phone number already registered for this tenant');
       }
-    }
 
-    const passwordHash = await this.passwordService.hash(dto.password);
+      // 5. Hash password (expensive — done before the transaction so the txn stays short)
+      const passwordHash = await this.passwordService.hash(dto.password);
 
-    const nameParts = dto.name.trim().split(/\s+/);
-    const role = dto.role || UserRoleEnum.USER;
-    const user = await this.db.user.create({
-      data: {
-        tenantId: dto.tenantId,
-        email: emailNormalized,
-        passwordHash,
-        name: dto.name,
-        phone: dto.phone,
-        role,
-        emailVerified: true,
-        isActive: true,
-        ...(role === UserRoleEnum.USER
-          ? {
-              customerProfile: {
-                create: {
-                  tenantId: dto.tenantId,
-                  firstName: nameParts[0] || dto.name,
-                  lastName: nameParts.slice(1).join(' '),
-                  email: emailNormalized,
-                  phone: dto.phone,
-                  status: 'ACTIVE',
-                },
+      const nameParts = nameNormalized.split(/\s+/);
+      const firstName = (nameParts[0] || nameNormalized).slice(0, 100);
+      const lastName = nameParts.slice(1).join(' ').slice(0, 100);
+
+      // 6. Atomic write — user + (customer profile + entity + onboarding) all-or-nothing
+      const user = await this.db.$transaction(
+        async (tx) => {
+          const createdUser = await tx.user.create({
+            data: {
+              tenantId: dto.tenantId!,
+              email: emailNormalized,
+              passwordHash,
+              name: nameNormalized,
+              phone: phoneNormalized,
+              role,
+              emailVerified: true,
+              isActive: true,
+              ...(isCustomer
+                ? {
+                    customerProfile: {
+                      create: {
+                        tenantId: dto.tenantId!,
+                        firstName,
+                        lastName,
+                        email: emailNormalized,
+                        phone: phoneNormalized,
+                        status: 'ACTIVE',
+                      },
+                    },
+                  }
+                : {}),
+            },
+            select: { id: true, tenantId: true, email: true, name: true, role: true },
+          });
+
+          if (isCustomer) {
+            const entity = await tx.entity.create({
+              data: {
+                tenantId: createdUser.tenantId,
+                userId: createdUser.id,
+                type: 'CUSTOMER',
+                status: 'APPROVED',
+                name: nameNormalized,
+                email: emailNormalized,
+                phone: phoneNormalized,
               },
-            }
-          : {}),
-      },
-    });
+              select: { id: true },
+            });
 
-    if (role === UserRoleEnum.USER) {
-      const entity = await this.db.entity.create({
+            await tx.onboardingProgress.create({
+              data: {
+                tenantId: createdUser.tenantId,
+                entityType: 'CUSTOMER',
+                entityId: entity.id,
+                currentStep: 2,
+                status: 'ACTIVE',
+                stepsCompleted: ['SIGNUP', 'EMAIL_VERIFIED'],
+                metadata: phoneNormalized ? { phone: phoneNormalized } : {},
+              },
+            });
+
+            await tx.onboardingEvent.create({
+              data: {
+                tenantId: createdUser.tenantId,
+                entityType: 'CUSTOMER',
+                entityId: entity.id,
+                event: 'ONBOARDING_STARTED',
+                metadata: { source: 'auth/signup' },
+              },
+            });
+          }
+
+          return createdUser;
+        },
+        { maxWait: 10000, timeout: 30000 },
+      );
+
+      // 7. Generate session tokens (own transaction)
+      const tokens = await this.generateTokens(user);
+
+      // 8. Fire-and-forget side effects — never block the response
+      void this.postSignupSideEffects(user).catch((err) =>
+        this.logger.warn(`Post-signup side-effects failed for ${user.email}: ${err.message}`),
+      );
+
+      return {
+        ...tokens,
+        message: 'Account created successfully. You are now logged in.',
+      };
+    } catch (err: any) {
+      // Pass-through known HTTP exceptions verbatim
+      if (err?.status && err?.message) throw err;
+
+      // Log unknown errors with full context so PM2 logs surface the cause
+      this.logger.error(
+        `Signup failed for ${dto.email}: ${err?.message || err}`,
+        err?.stack,
+      );
+
+      // Convert known Prisma errors to actionable messages
+      if (err?.code === 'P2002') {
+        throw new ConflictException('A user with this email or phone already exists');
+      }
+      if (err?.code === 'P2003') {
+        throw new BadRequestException('Invalid tenant reference');
+      }
+      if (err?.code?.startsWith?.('P')) {
+        throw new BadRequestException(`Database error (${err.code}). Please try again.`);
+      }
+
+      throw new BadRequestException(
+        err?.message || 'Registration failed due to an unexpected error',
+      );
+    }
+  }
+
+  /**
+   * Non-blocking side effects after successful signup.
+   * Email send + audit log — failures must NOT cause the signup response to fail.
+   */
+  private async postSignupSideEffects(user: { id: string; tenantId: string; email: string }) {
+    // Audit log (best-effort)
+    try {
+      await this.db.auditLog.create({
         data: {
           tenantId: user.tenantId,
           userId: user.id,
-          type: 'CUSTOMER',
-          status: 'APPROVED',
-          name: dto.name,
-          email: emailNormalized,
-          phone: dto.phone,
+          action: 'SIGNUP',
+          resource: 'users',
+          resourceId: user.id,
+          metadata: { email: user.email },
         },
       });
-
-      await this.db.onboardingProgress.create({
-        data: {
-          tenantId: user.tenantId,
-          entityType: 'CUSTOMER',
-          entityId: entity.id,
-          currentStep: 2,
-          status: 'ACTIVE',
-          stepsCompleted: ['SIGNUP', 'EMAIL_VERIFIED'],
-          metadata: { phone: dto.phone },
-        },
-      });
-      await this.db.onboardingEvent.create({
-        data: {
-          tenantId: user.tenantId,
-          entityType: 'CUSTOMER',
-          entityId: entity.id,
-          event: 'ONBOARDING_STARTED',
-          metadata: { source: 'auth/signup' },
-        },
-      });
+    } catch (err: any) {
+      this.logger.warn(`Audit log failed for ${user.email}: ${err.message}`);
     }
 
-    // Fire-and-forget: store token + send email without blocking the signup response
-    (async () => {
-      try {
-        const verificationToken = uuidv4();
-        await this.redisService.set(
-          `email-verification:${verificationToken}`,
-          { email: user.email, tenantId: user.tenantId },
-          86400,
-        );
-        await this.mailService.sendVerificationEmail(user.email, verificationToken, user.tenantId);
-      } catch (err: any) {
-        this.logger.warn(`Verification email failed for ${user.email}: ${err.message}`);
-      }
-    })();
-
-    // Track Audit Log
-    await this.db.auditLog.create({
-      data: {
-        tenantId: user.tenantId,
-        userId: user.id,
-        action: 'SIGNUP',
-        resource: 'users',
-        resourceId: user.id,
-        metadata: { email: user.email },
-      },
-    });
-
-    // Generate tokens — user is active immediately, no email gate
-    const tokens = await this.generateTokens(user);
-    return {
-      ...tokens,
-      message: 'Account created successfully. You are now logged in.',
-    };
+    // Verification email (best-effort)
+    try {
+      const verificationToken = uuidv4();
+      await this.redisService.set(
+        `email-verification:${verificationToken}`,
+        { email: user.email, tenantId: user.tenantId },
+        86400,
+      );
+      await this.mailService.sendVerificationEmail(user.email, verificationToken, user.tenantId);
+    } catch (err: any) {
+      this.logger.warn(`Verification email failed for ${user.email}: ${err.message}`);
+    }
   }
 
   async login(dto: LoginDto, ipAddress?: string, userAgent?: string) {

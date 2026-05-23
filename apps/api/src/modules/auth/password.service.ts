@@ -8,11 +8,14 @@ export class PasswordService {
    * Hash password using Argon2id algorithm
    */
   async hash(password: string): Promise<string> {
+    // OWASP 2024 minimum-secure profile: m=19456 KiB, t=2, p=1.
+    // parallelism=1 avoids CPU contention on 1-2 vCPU VPS instances —
+    // higher p with timeCost=2 starves other request handlers.
     return argon2.hash(password, {
       type: argon2.argon2id,
-      memoryCost: 32768, // 32 MB — faster on VPS, still OWASP-compliant
+      memoryCost: 19456,
       timeCost: 2,
-      parallelism: 4,
+      parallelism: 1,
     });
   }
 

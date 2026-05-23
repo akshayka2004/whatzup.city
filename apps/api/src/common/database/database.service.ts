@@ -14,33 +14,37 @@ export class DatabaseService
 
   constructor() {
     const isDev = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+
+    // Production: warn + error only (cuts log volume ~95%, lowers I/O pressure)
+    // Development: full query trace
     super({
-      log: [
-        { emit: 'event', level: 'query' },
-        { emit: 'event', level: 'info' },
-        { emit: 'event', level: 'warn' },
-        { emit: 'event', level: 'error' },
-      ],
-      errorFormat: 'pretty',
+      log: isDev
+        ? [
+            { emit: 'event', level: 'query' },
+            { emit: 'event', level: 'info' },
+            { emit: 'event', level: 'warn' },
+            { emit: 'event', level: 'error' },
+          ]
+        : [
+            { emit: 'event', level: 'warn' },
+            { emit: 'event', level: 'error' },
+          ],
+      errorFormat: isDev ? 'pretty' : 'minimal',
     });
 
-    this.$on('query', (e: Prisma.QueryEvent) => {
-      if (isDev) {
-        this.logger.debug(`Query: ${e.query} | Params: ${e.params} | Duration: ${e.duration}ms`);
-      }
-    });
+    if (isDev) {
+      this.$on('query' as never, (e: Prisma.QueryEvent) => {
+        // Log only slow queries (>200ms) to surface N+1 / missing indexes
+        if (e.duration > 200) {
+          this.logger.warn(`SLOW QUERY (${e.duration}ms): ${e.query}`);
+        }
+      });
 
-    this.$on('info', (e: Prisma.LogEvent) => {
-      this.logger.log(e.message);
-    });
+      this.$on('info' as never, (e: Prisma.LogEvent) => this.logger.log(e.message));
+    }
 
-    this.$on('warn', (e: Prisma.LogEvent) => {
-      this.logger.warn(e.message);
-    });
-
-    this.$on('error', (e: Prisma.LogEvent) => {
-      this.logger.error(e.message);
-    });
+    this.$on('warn' as never, (e: Prisma.LogEvent) => this.logger.warn(e.message));
+    this.$on('error' as never, (e: Prisma.LogEvent) => this.logger.error(e.message));
   }
 
   async onModuleInit() {

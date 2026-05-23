@@ -189,4 +189,31 @@ export class RedisService implements OnModuleDestroy {
   getClient(): Redis {
     return this.client;
   }
+
+  /**
+   * Read-through cache helper. Returns cached value if present, otherwise
+   * computes via loader, stores under key with TTL, and returns the fresh value.
+   * Falls back gracefully when Redis is offline (loader still runs).
+   *
+   * Usage:
+   *   const result = await redis.withCache('categories:tenant:abc', 300, () =>
+   *     this.db.category.findMany({ where: { tenantId: 'abc' } })
+   *   );
+   */
+  async withCache<T>(
+    key: string,
+    ttlSeconds: number,
+    loader: () => Promise<T>,
+  ): Promise<T> {
+    const cached = await this.get<T>(key);
+    if (cached !== null && cached !== undefined) {
+      return cached;
+    }
+    const fresh = await loader();
+    // Don't cache empty/null/falsy results — let the next caller retry
+    if (fresh !== null && fresh !== undefined) {
+      await this.set(key, fresh, ttlSeconds);
+    }
+    return fresh;
+  }
 }

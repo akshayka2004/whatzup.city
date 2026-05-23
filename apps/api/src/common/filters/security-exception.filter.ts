@@ -53,20 +53,23 @@ export class SecurityExceptionFilter implements ExceptionFilter {
     }
     // 3. Fallback for other standard JavaScript errors
     else {
-      const isProd = process.env.NODE_ENV === 'production';
       const errorMessage = exception instanceof Error ? exception.message : String(exception);
       const errorStack = exception instanceof Error ? exception.stack : undefined;
 
       this.logger.error(`[Unhandled Exception]: ${errorMessage}`, errorStack, 'System');
 
-      if (!isProd) {
-        message = errorMessage;
-      }
+      // Always surface the message — generic "Internal server error" makes debugging impossible
+      // for end users on bare-metal deployments. The filter still hides the stack trace.
+      message = errorMessage || message;
     }
 
     // Always log the details internally for developers
     if (status === HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.logger.error(`Critical error response generated (500)`, undefined, 'ExceptionFilter');
+      this.logger.error(
+        `Critical error response generated (500): ${typeof message === 'string' ? message : JSON.stringify(message)}`,
+        undefined,
+        'ExceptionFilter',
+      );
     }
 
     response.status(status).json({
