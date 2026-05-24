@@ -15,7 +15,7 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const isMobile = useIsMobile();
   // Both MASTER_ADMIN and SUPER_ADMIN may access the admin panel
-  const { user, loading } = useRequireAuth(['admin', 'super-admin']);
+  const { user, loading } = useRequireAuth(['admin', 'super-admin', 'MASTER_ADMIN', 'SUPER_ADMIN']);
 
   if (loading || !user) {
     return (

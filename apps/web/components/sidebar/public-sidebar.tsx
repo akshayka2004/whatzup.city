@@ -49,9 +49,9 @@ export function PublicSidebar() {
   return (
     <aside className="w-64 border-r border-border bg-sidebar text-sidebar-foreground flex flex-col">
       {/* Logo */}
-      <div className="flex items-center gap-2 border-b border-sidebar-border px-6 py-4">
-        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground text-xs font-black">W</div>
-        <span className="text-lg font-semibold text-sidebar-primary">Whtzup.city</span>
+      <div className="flex items-center gap-3 border-b border-sidebar-border px-6 py-4">
+        <img src="/logo.png" alt="Whtzup.city Logo" className="h-8 w-auto object-contain" />
+        <span className="text-lg font-semibold text-sidebar-primary tracking-tight">whtzup.city</span>
       </div>
 
       {/* Navigation */}

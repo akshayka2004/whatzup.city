@@ -14,7 +14,7 @@ interface SuperAdminLayoutProps {
 
 export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
   const isMobile = useIsMobile();
-  const { user, loading } = useRequireAuth(['super-admin']);
+  const { user, loading } = useRequireAuth(['super-admin', 'SUPER_ADMIN']);
 
   if (loading || !user) {
     return (

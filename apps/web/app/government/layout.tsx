@@ -5,7 +5,7 @@ import { useRequireAuth } from '@/hooks/use-require-auth';
 import { Loader2 } from 'lucide-react';
 
 export default function GovernmentLayout({ children }: { children: ReactNode }) {
-  const { user, loading } = useRequireAuth(['government', 'admin', 'super-admin']);
+  const { user, loading } = useRequireAuth(['government', 'admin', 'super-admin', 'GOVERNMENT_ADMIN', 'MASTER_ADMIN', 'SUPER_ADMIN']);
 
   if (loading || !user) {
     return (

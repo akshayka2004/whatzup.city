@@ -27,7 +27,20 @@ export function useRequireAuth(allowedRoles?: string[]) {
       return;
     }
 
-    if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
+    const normalizedUserRole = 
+      user.role === 'MASTER_ADMIN' || user.role === 'admin' ? 'admin' :
+      user.role === 'SUPER_ADMIN' || user.role === 'super-admin' ? 'super-admin' :
+      user.role === 'GOVERNMENT_ADMIN' || user.role === 'government' ? 'government' :
+      user.role.toLowerCase();
+
+    const normalizedAllowedRoles = allowedRoles?.map(role => 
+      role === 'MASTER_ADMIN' || role === 'admin' ? 'admin' :
+      role === 'SUPER_ADMIN' || role === 'super-admin' ? 'super-admin' :
+      role === 'GOVERNMENT_ADMIN' || role === 'government' ? 'government' :
+      role.toLowerCase()
+    );
+
+    if (normalizedAllowedRoles && normalizedAllowedRoles.length > 0 && !normalizedAllowedRoles.includes(normalizedUserRole)) {
       router.replace('/');
     }
   }, [user, loading, allowedRoles, router]);

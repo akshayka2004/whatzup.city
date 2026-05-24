@@ -58,10 +58,8 @@ export function AdminSidebar() {
   return (
     <aside className="w-64 border-r border-border bg-sidebar text-sidebar-foreground flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-2 border-b border-sidebar-border px-6 py-4">
-        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-          <Shield className="h-4 w-4 text-white" />
-        </div>
+      <div className="flex items-center gap-3 border-b border-sidebar-border px-6 py-4">
+        <img src="/logo.png" alt="Whtzup.city Logo" className="h-8 w-auto object-contain" />
         <div>
           <span className="text-sm font-semibold text-sidebar-primary block leading-tight">
             Admin Panel

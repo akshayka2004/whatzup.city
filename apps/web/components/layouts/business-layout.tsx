@@ -58,7 +58,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
       }
 
       // Admin or Super Admin are never gated
-      if (user.role === 'admin' || user.role === 'super-admin') {
+      if (['admin', 'super-admin', 'MASTER_ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
         setVerificationStatus('APPROVED');
         setLoading(false);
         return;
