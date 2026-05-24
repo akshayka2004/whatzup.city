@@ -156,7 +156,7 @@ app.get('/', (req, res) => {
     <div class="text-center mb-8">
       <span class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 inline-block mb-3">EXCLUSIVE PRE-REGISTRATION</span>
       <h1 class="text-4xl font-extrabold tracking-tight text-white mb-2">Be the First to Join</h1>
-      <p class="text-slate-400 text-sm max-w-sm mx-auto">Get early access, premium badges, and launch day perks at tomorrow's launch event.</p>
+      <p class="text-slate-400 text-sm max-w-sm mx-auto">Register your interest to stay updated with the latest news, announcements, and platform release details.</p>
     </div>
 
     <!-- Glassmorphic Card -->
