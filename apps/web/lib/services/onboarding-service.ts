@@ -87,7 +87,7 @@ class OnboardingService {
     },
   ): Promise<ApiResponse<BusinessDraft>> {
     try {
-      const res = await apiService.post<BusinessDraft>(
+      const res = await apiService.put<BusinessDraft>(
         `/v1/business-onboarding/${businessId}/step/${step}`,
         data,
       );

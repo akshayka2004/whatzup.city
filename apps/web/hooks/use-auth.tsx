@@ -66,8 +66,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (u.role === 'government' || u.rbacRole === 'GOVERNMENT_ADMIN') {
       return '/government/dashboard';
     }
-    if (u.role === 'business' || u.rbacRole === 'BUSINESS_OWNER' || u.rbacRole === 'BUSINESS_ADMIN' || u.rbacRole === 'BUSINESS_MODERATOR') {
+    
+    // Check for Business and other specialized entity roles
+    const isBusinessOrEntity = 
+      u.role === 'business' ||
+      u.role === 'business_moderator' ||
+      u.role === 'business_staff' ||
+      u.role === 'influencer' ||
+      u.role === 'professional' ||
+      u.role === 'event-organizer' ||
+      u.role === 'organization' ||
+      u.role === 'event_organizer' ||
+      u.role === 'organization_admin' ||
+      [
+        'BUSINESS_OWNER',
+        'BUSINESS_ADMIN',
+        'BUSINESS_MODERATOR',
+        'BUSINESS_STAFF',
+        'INFLUENCER',
+        'PROFESSIONAL',
+        'EVENT_ORGANIZER',
+        'ORGANIZATION_ADMIN'
+      ].includes(u.rbacRole || '');
+
+    if (isBusinessOrEntity) {
       if (u.entity?.status === 'DRAFT') {
+        const type = u.entity.type;
+        if (type === 'INFLUENCER') return `/register/influencer?id=${u.entity.id}`;
+        if (type === 'PROFESSIONAL') return `/register/professional?id=${u.entity.id}`;
+        if (type === 'EVENT_ORGANIZER') return `/register/event-organizer?id=${u.entity.id}`;
+        if (type === 'ORGANIZATION') return `/register/ngo?id=${u.entity.id}`;
         return `/register/business?id=${u.entity.id}`;
       }
       return '/dashboard';
