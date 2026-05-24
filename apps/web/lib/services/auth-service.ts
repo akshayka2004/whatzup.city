@@ -149,7 +149,8 @@ class AuthService {
                     : u.role.toLowerCase(),
           rbacRole: u.role,
           createdAt: new Date(),
-          businessId: response.data.businessId,
+          businessId: response.data.businessId || (u.entity?.type === 'BUSINESS' ? u.entity.id : undefined),
+          entity: u.entity || null,
         };
         if (typeof window !== 'undefined') {
           localStorage.setItem('user_session', JSON.stringify(apiUser));

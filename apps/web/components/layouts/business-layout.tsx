@@ -35,8 +35,8 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   // bypass verification check below).
   const { user, loading: authLoading } = useRequireAuth([
     'business', 'admin', 'super-admin', 'government',
-    'influencer', 'professional', 'event-organizer', 'organization',
-    'business_moderator', 'business_staff',
+    'influencer', 'professional', 'event-organizer', 'event_organizer',
+    'organization', 'organization_admin', 'business_moderator', 'business_staff',
   ]);
 
   const [verificationStatus, setVerificationStatus] = useState<string>('APPROVED');
