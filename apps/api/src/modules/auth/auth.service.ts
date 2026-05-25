@@ -290,8 +290,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Enforce email verification (can be bypassed in development based on config)
-    const enforceVerification = this.configService.get<boolean>('ENFORCE_EMAIL_VERIFICATION', true);
+    // Enforce email verification (can be bypassed via ENFORCE_EMAIL_VERIFICATION=false)
+    // Must compare as string — env vars are always strings, get<boolean> does NOT coerce
+    const enforceVerification =
+      this.configService.get<string>('ENFORCE_EMAIL_VERIFICATION', 'true') !== 'false';
     if (enforceVerification && !user.emailVerified) {
       throw new UnauthorizedException('Please verify your email address before logging in.');
     }

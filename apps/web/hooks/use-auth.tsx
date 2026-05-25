@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false;
     } catch (error) {
       console.error('Login failed:', error);
-      return false;
+      throw error; // re-throw so login page shows real API error message
     } finally {
       setLoading(false);
     }
