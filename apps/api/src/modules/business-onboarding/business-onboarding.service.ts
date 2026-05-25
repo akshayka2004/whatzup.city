@@ -132,7 +132,7 @@ export class BusinessOnboardingService {
       data: {
         tenantId,
         entityType: 'BUSINESS',
-        entityId: business.id,
+        entityId: entity.id,
         currentStep: 1,
         status: 'PENDING_VERIFICATION',
         stepsCompleted: ['START'],
@@ -237,7 +237,7 @@ export class BusinessOnboardingService {
 
     // Update progress tracker
     const progress = await this.db.onboardingProgress.findFirst({
-      where: { tenantId, entityType: 'BUSINESS', entityId: actualId },
+      where: { tenantId, entityType: 'BUSINESS', entityId: business.entityId || actualId },
     });
 
     if (progress) {
@@ -323,14 +323,6 @@ export class BusinessOnboardingService {
       data: { status: 'PENDING_VERIFICATION' },
     });
 
-    await this.db.onboardingProgress.updateMany({
-      where: { tenantId, entityType: 'BUSINESS', entityId: actualId },
-      data: {
-        currentStep: 6,
-        status: 'PENDING_VERIFICATION',
-      },
-    });
-
     // ── Ensure unified Entity record exists for admin moderation queue ──────
     // Business registrations via business-onboarding may not have an Entity.
     // We create one here so the OnboardingVerificationService (admin panel)
@@ -363,13 +355,23 @@ export class BusinessOnboardingService {
       });
     }
 
+    const finalEntityId = entityId as string;
+
+    await this.db.onboardingProgress.updateMany({
+      where: { tenantId, entityType: 'BUSINESS', entityId: finalEntityId },
+      data: {
+        currentStep: 6,
+        status: 'PENDING_VERIFICATION',
+      },
+    });
+
     // Prevent duplicate verification requests
     const existingRequest = await this.db.verificationRequest.findFirst({
-      where: { entityId, status: { in: ['PENDING', 'UNDER_REVIEW'] } },
+      where: { entityId: finalEntityId, status: { in: ['PENDING', 'UNDER_REVIEW'] } },
     });
     if (!existingRequest) {
       await this.db.verificationRequest.create({
-        data: { tenantId, entityId, status: 'PENDING' },
+        data: { tenantId, entityId: finalEntityId, status: 'PENDING' },
       });
     }
 
@@ -388,7 +390,7 @@ export class BusinessOnboardingService {
       data: {
         tenantId,
         entityType: 'BUSINESS',
-        entityId: entityId,
+        entityId: finalEntityId,
         event: 'BUSINESS_SUBMITTED_VERIFICATION',
       },
     });
@@ -422,7 +424,7 @@ export class BusinessOnboardingService {
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
 
     const progress = await this.db.onboardingProgress.findFirst({
-      where: { tenantId, entityType: 'BUSINESS', entityId: business.id },
+      where: { tenantId, entityType: 'BUSINESS', entityId: business.entityId || business.id },
     });
 
     return { business, onboardingProgress: progress };
