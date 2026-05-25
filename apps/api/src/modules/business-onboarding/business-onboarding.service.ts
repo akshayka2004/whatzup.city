@@ -265,28 +265,10 @@ export class BusinessOnboardingService {
       include: {
         documents: true,
         media: true,
-        subscriptions: true,
       },
     });
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
-
-    // Verification Completion Checks
-    if (business.documents.length === 0) {
-      throw new BadRequestException(
-        'At least one business document must be uploaded for verification',
-      );
-    }
-    if (business.media.length === 0) {
-      throw new BadRequestException(
-        'At least one media file (e.g. logo or banner) must be uploaded',
-      );
-    }
-    if (business.subscriptions.length === 0) {
-      throw new BadRequestException(
-        'Active package subscription is required to complete onboarding',
-      );
-    }
 
     // Update business status
     const updated = await this.db.business.update({
@@ -302,14 +284,57 @@ export class BusinessOnboardingService {
       },
     });
 
-    // Create a official Verification Request ticket in system
-    await this.db.businessVerification.create({
-      data: {
-        tenantId,
-        businessId: id,
-        status: 'PENDING',
-      },
+    // ── Ensure unified Entity record exists for admin moderation queue ──────
+    // Business registrations via business-onboarding may not have an Entity.
+    // We create one here so the OnboardingVerificationService (admin panel)
+    // can see this submission via the entity_verification_requests table.
+    let entityId = business.entityId;
+
+    if (!entityId) {
+      const entity = await this.db.entity.create({
+        data: {
+          tenantId,
+          userId,
+          type: 'BUSINESS' as any,
+          status: 'PENDING_VERIFICATION' as any,
+          name: business.name,
+          email: business.email || null,
+          phone: business.phone || null,
+        },
+      });
+      // Link entity back to business
+      await this.db.business.update({
+        where: { id },
+        data: { entityId: entity.id },
+      });
+      entityId = entity.id;
+    } else {
+      // Sync status on existing entity
+      await this.db.entity.update({
+        where: { id: entityId },
+        data: { status: 'PENDING_VERIFICATION' as any },
+      });
+    }
+
+    // Prevent duplicate verification requests
+    const existingRequest = await this.db.verificationRequest.findFirst({
+      where: { entityId, status: { in: ['PENDING', 'UNDER_REVIEW'] } },
     });
+    if (!existingRequest) {
+      await this.db.verificationRequest.create({
+        data: { tenantId, entityId, status: 'PENDING' },
+      });
+    }
+
+    // Legacy businessVerification record — kept for backward compatibility
+    const existingBizVerification = await this.db.businessVerification.findFirst({
+      where: { businessId: id, status: 'PENDING' },
+    });
+    if (!existingBizVerification) {
+      await this.db.businessVerification.create({
+        data: { tenantId, businessId: id, status: 'PENDING' },
+      });
+    }
 
     // Record Onboarding complete/submitted event
     await this.db.onboardingEvent.create({

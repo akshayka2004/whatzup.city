@@ -91,7 +91,7 @@ export default function LoginPage() {
       <div className="absolute top-5 left-0 right-0 flex justify-center lg:hidden z-20">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold tracking-wide"
              style={{ background: 'rgba(68,68,78,0.6)', borderColor: 'rgba(113,90,90,0.25)', color: '#D3DAD9' }}>
-          <img src="/logo.png" alt="Whtzup.city Logo" className="h-5 w-auto object-contain" />
+          <img src="/logo.png" alt="Whtzup.city Logo" className="h-9 w-auto object-contain" />
           <span className="font-semibold tracking-tight">whtzup.city</span>
         </div>
       </div>
