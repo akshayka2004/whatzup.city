@@ -27,19 +27,46 @@ import {
   Filter,
   Search,
   Shield,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { canAccess, hasRole, getRoleLabel } from '@/lib/rbac';
-
-// ── MOCK DATA ─────────────────────────────────────────────────────────
-// Empty seed — bills come only from real customer submissions (submitted_bills key).
-const MOCK_BILLS: any[] = [];
+import { apiService } from '@/lib/services/api-service';
+import { useAuth } from '@/hooks/use-auth';
 
 // ── TYPES ─────────────────────────────────────────────────────────────
 
 type BillStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FLAGGED' | 'RE_UPLOAD_REQUESTED' | 'ESCALATED';
 type TabKey = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FLAGGED' | 'RE_UPLOAD_REQUESTED';
 type ActionModal = 'approve' | 'reject' | 'reupload' | 'flag' | 'override' | null;
+
+function mapApiBill(b: any) {
+  return {
+    id: b.id,
+    billId: b.billId || b.id,
+    customer: {
+      name: b.customer?.name || b.user?.name || b.customerName || 'Customer',
+      email: b.customer?.email || b.user?.email || b.customerEmail || '',
+      avatar: (b.customer?.name || b.user?.name || 'CU').substring(0, 2).toUpperCase(),
+    },
+    business: b.business?.name || b.businessName || '',
+    amount: parseFloat(b.amount || b.bill?.amount || '0'),
+    billDate: b.billDate || b.bill?.billDate || '',
+    billNumber: b.billNumber || b.bill?.billNumber || b.id.substring(0, 8).toUpperCase(),
+    status: (b.status || 'PENDING') as BillStatus,
+    ocrConfidence: b.ocrConfidence ?? 75,
+    fraudScore: b.fraudScore ?? 0.1,
+    escalationLevel: b.escalationLevel || 'NONE',
+    ocrData: b.ocrData || {
+      merchant: b.business?.name || '',
+      total: `₹${b.amount || 0}`,
+      date: b.billDate || '',
+      items: [],
+    },
+    receiptUrl: b.receiptUrl || b.bill?.billImage || '',
+    uploadedAt: b.createdAt || new Date().toISOString(),
+  };
+}
 
 const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
   { key: 'PENDING', label: 'Pending', icon: Clock },
@@ -59,6 +86,7 @@ const STATUS_CONFIG: Record<BillStatus, { label: string; color: string; bg: stri
 };
 
 // ── FRAUD SCORE BADGE ─────────────────────────────────────────────────
+// (empty MOCK_BILLS removed — data comes from real API)
 
 function FraudBadge({ score }: { score: number }) {
   const pct = Math.round(score * 100);
@@ -81,35 +109,19 @@ function FraudBadge({ score }: { score: number }) {
 
 // ── MAIN PAGE ─────────────────────────────────────────────────────────
 
-const BILLS_KEY = 'submitted_bills';
-
-function mapSubmittedBill(b: any, idx: number) {
-  return {
-    id: b.id || `bv-sub-${idx}`,
-    billId: b.id || `bill-sub-${idx}`,
-    customer: { name: b.customerName || 'Customer', email: b.customerEmail || 'customer@platform.com', avatar: (b.customerName || 'CU').substring(0, 2).toUpperCase() },
-    business: b.businessName || 'Unknown Business',
-    amount: parseFloat(b.amount || '0'),
-    billDate: b.billDate || '',
-    billNumber: b.billNumber || '',
-    status: (b.status || 'PENDING') as BillStatus,
-    ocrConfidence: 75,
-    fraudScore: 0.1,
-    escalationLevel: 'NONE',
-    ocrData: { merchant: b.businessName || '', total: `₹${b.amount || 0}`, date: b.billDate || '', items: [b.review || 'Customer submitted bill'] },
-    receiptUrl: '',
-    uploadedAt: b.submittedAt || new Date().toISOString(),
-  };
-}
-
 export default function BillModerationPage() {
+  const { user } = useAuth();
   const [userRole, setUserRole] = useState<string>('BUSINESS_OWNER');
   const [activeTab, setActiveTab] = useState<TabKey>('PENDING');
-  const [bills, setBills] = useState(MOCK_BILLS);
-  const [selectedBill, setSelectedBill] = useState<(typeof MOCK_BILLS)[0] | null>(null);
+  const [bills, setBills] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedBill, setSelectedBill] = useState<any | null>(null);
   const [actionModal, setActionModal] = useState<ActionModal>(null);
   const [actionReason, setActionReason] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const businessId = user?.businessId || user?.entity?.id || '';
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -121,16 +133,27 @@ export default function BillModerationPage() {
           if (role) setUserRole(role);
         }
       } catch (_) {}
-      // Merge customer-submitted bills from localStorage
-      try {
-        const submitted = JSON.parse(localStorage.getItem(BILLS_KEY) || '[]');
-        if (submitted.length > 0) {
-          const mapped = submitted.map(mapSubmittedBill);
-          setBills([...mapped, ...MOCK_BILLS]);
-        }
-      } catch (_) {}
     }
   }, []);
+
+  const fetchBills = async (status?: string) => {
+    if (!businessId) return;
+    setLoading(true);
+    try {
+      const query = status ? `?status=${status}` : '';
+      const res = await apiService.get<any>(`/v1/businesses/${businessId}/bill-verifications${query}`);
+      if (res.data && !res.error) {
+        const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.verifications ?? [];
+        setBills(list.map(mapApiBill));
+      }
+    } catch (_) {}
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchBills(activeTab !== 'PENDING' ? activeTab : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId, activeTab]);
 
   const canVerify = canAccess(userRole, 'business.bills.verify');
   const canOverride = canAccess(userRole, 'business.bills.override');
@@ -144,30 +167,29 @@ export default function BillModerationPage() {
 
   const pendingCount = bills.filter((b) => b.status === 'PENDING').length;
   const flaggedCount = bills.filter((b) => b.status === 'FLAGGED' || b.status === 'ESCALATED').length;
+  const approvedCount = bills.filter((b) => b.status === 'APPROVED').length;
+  const rejectedCount = bills.filter((b) => b.status === 'REJECTED').length;
 
-  const handleAction = (action: ActionModal) => {
-    if (!selectedBill) return;
-    const newStatus: Record<NonNullable<ActionModal>, BillStatus> = {
-      approve: 'APPROVED',
-      reject: 'REJECTED',
-      reupload: 'RE_UPLOAD_REQUESTED',
-      flag: 'FLAGGED',
-      override: 'APPROVED',
-    };
-    setBills((prev) => {
-      const updated = prev.map((b) =>
-        b.id === selectedBill.id ? { ...b, status: newStatus[action!] } : b,
-      );
-      // Persist status changes for submitted bills back to localStorage
-      try {
-        const submitted = JSON.parse(localStorage.getItem(BILLS_KEY) || '[]');
-        const updatedSubmitted = submitted.map((b: any) =>
-          b.id === selectedBill.id ? { ...b, status: newStatus[action!] } : b
-        );
-        localStorage.setItem(BILLS_KEY, JSON.stringify(updatedSubmitted));
-      } catch (_) {}
-      return updated;
-    });
+  const handleAction = async (action: ActionModal) => {
+    if (!selectedBill || !businessId) return;
+    setActionLoading(true);
+    try {
+      const base = `/v1/businesses/${businessId}/bill-verifications/${selectedBill.id}`;
+      if (action === 'approve') {
+        await apiService.post(`${base}/approve`, { notes: actionReason || '' });
+      } else if (action === 'reject') {
+        await apiService.post(`${base}/reject`, { reason: actionReason });
+      } else if (action === 'reupload') {
+        await apiService.post(`${base}/request-reupload`, { reason: actionReason });
+      } else if (action === 'flag') {
+        await apiService.post(`${base}/flag`, { reason: actionReason });
+      } else if (action === 'override') {
+        await apiService.post(`${base}/owner-override`, { notes: actionReason || '' });
+      }
+      // Optimistically remove from current tab list
+      setBills((prev) => prev.filter((b) => b.id !== selectedBill.id));
+    } catch (_) {}
+    setActionLoading(false);
     setSelectedBill(null);
     setActionModal(null);
     setActionReason('');
@@ -204,10 +226,10 @@ export default function BillModerationPage() {
         {/* ── STATS ROW ──────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Pending Review', value: pendingCount, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-            { label: 'Approved Today', value: 12, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-            { label: 'Rejected Today', value: 3, icon: XCircle, color: 'text-rose-400', bg: 'bg-rose-500/10' },
-            { label: 'Fraud Flagged', value: flaggedCount, icon: ShieldAlert, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+            { label: 'Pending Review', value: loading ? '…' : pendingCount, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+            { label: 'Approved', value: loading ? '…' : approvedCount, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+            { label: 'Rejected', value: loading ? '…' : rejectedCount, icon: XCircle, color: 'text-rose-400', bg: 'bg-rose-500/10' },
+            { label: 'Fraud Flagged', value: loading ? '…' : flaggedCount, icon: ShieldAlert, color: 'text-orange-400', bg: 'bg-orange-500/10' },
           ].map((stat) => (
             <Card key={stat.label} className="p-4 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
               <div className="flex items-center justify-between mb-3">
@@ -260,7 +282,11 @@ export default function BillModerationPage() {
         </div>
 
         {/* ── BILL LIST ──────────────────────────────────────── */}
-        {filteredBills.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : filteredBills.length === 0 ? (
           <Card className="p-12 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
             <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto mb-3 opacity-50" />
             <h3 className="text-base font-semibold text-foreground mb-1">Queue Clear</h3>
@@ -408,7 +434,7 @@ export default function BillModerationPage() {
                             <p className="text-xs"><span className="text-muted-foreground">Date: </span><span className="text-foreground">{bill.ocrData.date}</span></p>
                             <div className="pt-1.5 border-t border-white/5">
                               <p className="text-[10px] text-muted-foreground mb-1">Line Items:</p>
-                              {bill.ocrData.items.map((item, i) => (
+                              {(bill.ocrData.items as string[]).map((item: string, i: number) => (
                                 <p key={i} className="text-xs text-foreground/80">• {item}</p>
                               ))}
                             </div>
@@ -514,6 +540,7 @@ export default function BillModerationPage() {
                 </Button>
                 <Button
                   onClick={() => handleAction(actionModal)}
+                  disabled={actionLoading}
                   className={cn(
                     'rounded-xl text-sm font-semibold cursor-pointer',
                     actionModal === 'approve' || actionModal === 'override' ? 'bg-emerald-600 hover:bg-emerald-500 text-white'

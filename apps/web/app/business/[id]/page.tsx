@@ -25,46 +25,73 @@ import {
   CalendarDays,
   Hash,
   IndianRupee,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiService } from '@/lib/services/api-service';
 
 const FAVORITES_KEY = 'saved_businesses';
 
-// Mock business data — keyed by numeric ID
-const MOCK_BUSINESSES: Record<number, {
-  name: string; category: string; subcategory: string; phone: string;
-  address: string; hours: string; website: string; instagram: string; rating: number; reviews: number;
-}> = {
-  1: { name: 'Bella Restaurant', category: 'Restaurants', subcategory: 'Fine Dining', phone: '+91 98765 43210', address: '12 MG Road, Bengaluru, KA 560001', hours: 'Mon–Sun: 11AM–11PM', website: 'bellarestaurant.in', instagram: '@bellarestaurant', rating: 4.8, reviews: 234 },
-  2: { name: 'Health Plus Clinic', category: 'Healthcare', subcategory: 'General Medicine', phone: '+91 98765 11111', address: '45 Residency Rd, Bengaluru, KA 560025', hours: 'Mon–Sat: 9AM–6PM', website: 'healthplusclinic.in', instagram: '@healthplusclinic', rating: 4.9, reviews: 342 },
-  3: { name: 'Fashion Hub Boutique', category: 'Shopping', subcategory: 'Clothing & Apparel', phone: '+91 98765 22222', address: '8 Commercial St, Bengaluru, KA 560001', hours: 'Mon–Sun: 10AM–9PM', website: 'fashionhub.in', instagram: '@fashionhub', rating: 4.5, reviews: 89 },
-  4: { name: 'Tech Solutions Ltd.', category: 'Professional Services', subcategory: 'IT Consulting', phone: '+91 98765 33333', address: '21 Electronics City, Bengaluru, KA 560100', hours: 'Mon–Fri: 9AM–6PM', website: 'techsolutions.in', instagram: '@techsolutionsltd', rating: 4.6, reviews: 156 },
-};
-
-function getBusiness(id: number) {
-  return MOCK_BUSINESSES[id] || { ...MOCK_BUSINESSES[1], name: `Business #${id}` };
-}
-
-function getFavIds(): number[] {
+function getFavIds(): string[] {
   if (typeof window === 'undefined') return [];
   try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]').map((b: any) => b.id); }
   catch { return []; }
 }
 
+function timeAgo(dateStr: string): string {
+  try {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const days = Math.floor(diff / 86400000);
+    if (days < 1) return 'today';
+    if (days === 1) return '1 day ago';
+    if (days < 7) return `${days} days ago`;
+    if (days < 30) return `${Math.floor(days / 7)} week${Math.floor(days / 7) > 1 ? 's' : ''} ago`;
+    return `${Math.floor(days / 30)} month${Math.floor(days / 30) > 1 ? 's' : ''} ago`;
+  } catch { return ''; }
+}
+
 export default function BusinessDetailPage() {
   const params = useParams();
-  const businessId = Number(params?.id) || 1;
-  const biz = getBusiness(businessId);
+  const businessId = (params?.id as string) || '';
+
+  const [biz, setBiz] = useState<any>(null);
+  const [offers, setOffers] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
+    if (!businessId) return;
     setIsSaved(getFavIds().includes(businessId));
     const handler = () => setIsSaved(getFavIds().includes(businessId));
     window.addEventListener('favoritesUpdated', handler);
     return () => window.removeEventListener('favoritesUpdated', handler);
   }, [businessId]);
 
+  useEffect(() => {
+    if (!businessId) return;
+    setLoading(true);
+    Promise.allSettled([
+      apiService.get<any>(`/v1/businesses/${businessId}`),
+      apiService.get<any>(`/v1/offers/business/${businessId}`),
+      apiService.get<any>(`/v1/reviews/business/${businessId}`),
+    ]).then(([bizRes, offersRes, reviewsRes]) => {
+      if (bizRes.status === 'fulfilled' && bizRes.value.data && !bizRes.value.error) {
+        setBiz(bizRes.value.data);
+      }
+      if (offersRes.status === 'fulfilled' && offersRes.value.data && !offersRes.value.error) {
+        const list = Array.isArray(offersRes.value.data) ? offersRes.value.data : offersRes.value.data?.data ?? [];
+        setOffers(list.filter((o: any) => o.isActive !== false).slice(0, 5));
+      }
+      if (reviewsRes.status === 'fulfilled' && reviewsRes.value.data && !reviewsRes.value.error) {
+        const list = Array.isArray(reviewsRes.value.data) ? reviewsRes.value.data : reviewsRes.value.data?.data ?? [];
+        setReviews(list.slice(0, 6));
+      }
+    }).finally(() => setLoading(false));
+  }, [businessId]);
+
   const handleToggleFavorite = () => {
+    if (!biz) return;
     try {
       const existing: any[] = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
       const idx = existing.findIndex((b: any) => b.id === businessId);
@@ -75,9 +102,9 @@ export default function BusinessDetailPage() {
         updated = [{
           id: businessId,
           name: biz.name,
-          category: biz.category,
-          rating: String(biz.rating),
-          reviews: biz.reviews,
+          category: biz.category?.name || '',
+          rating: String(biz.averageRating || 0),
+          reviews: biz._count?.reviews || 0,
           savedAt: new Date().toLocaleDateString(),
         }, ...existing];
       }
@@ -87,11 +114,11 @@ export default function BusinessDetailPage() {
     } catch (_) {}
   };
 
-  // ── Offer claim state ──────────────────────────────────────
-  const [claimingOffer, setClaimingOffer] = useState<{ pct: string; exp: string } | null>(null);
+  // ── Offer claim state
+  const [claimingOffer, setClaimingOffer] = useState<any>(null);
   const [claimedCode, setClaimedCode] = useState<string | null>(null);
 
-  // ── Bill submission state ──────────────────────────────────
+  // ── Bill submission state
   const [billModalOpen, setBillModalOpen] = useState(false);
   const [billSubmitted, setBillSubmitted] = useState(false);
   const [billNumber, setBillNumber] = useState('');
@@ -101,6 +128,7 @@ export default function BusinessDetailPage() {
   const [billRating, setBillRating] = useState(0);
   const [billRatingHover, setBillRatingHover] = useState(0);
   const [billImageName, setBillImageName] = useState('');
+  const [billSubmitting, setBillSubmitting] = useState(false);
 
   const handleConfirmClaim = () => {
     if (!claimingOffer) return;
@@ -109,32 +137,20 @@ export default function BusinessDetailPage() {
     setClaimingOffer(null);
   };
 
-  const handleBillSubmit = (e: React.FormEvent) => {
+  const handleBillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!billNumber || !billDate || !billAmount || billRating === 0) return;
+    setBillSubmitting(true);
     try {
-      // Persist bill to localStorage for moderator queue
-      const BILLS_KEY = 'submitted_bills';
-      const existing = JSON.parse(localStorage.getItem(BILLS_KEY) || '[]');
-      const newBill = {
-        id: `BILL-${Date.now()}`,
-        billNumber,
-        billDate,
-        amount: billAmount,
-        review: billReview,
-        rating: billRating,
+      await apiService.post('/v1/bills/upload', {
         businessId,
-        businessName: biz.name,
-        submittedAt: new Date().toISOString(),
-        status: 'PENDING',
-        imageFile: billImageName || null,
-      };
-      localStorage.setItem(BILLS_KEY, JSON.stringify([newBill, ...existing]));
-      // Track converted sales count for admin stats
-      const prev = parseInt(localStorage.getItem('converted_sales_count') || '0', 10);
-      localStorage.setItem('converted_sales_count', String(prev + 1));
-      window.dispatchEvent(new Event('billsUpdated'));
+        amount: parseFloat(billAmount),
+        billDate,
+        billImage: billImageName || '',
+        description: billReview || undefined,
+      });
     } catch (_) {}
+    setBillSubmitting(false);
     setBillSubmitted(true);
     setBillModalOpen(false);
   };
@@ -154,27 +170,63 @@ export default function BusinessDetailPage() {
     setBillModalOpen(true);
   };
 
+  const avgRating = biz?.averageRating ?? biz?.rating ?? 0;
+  const reviewCount = biz?._count?.reviews ?? reviews.length ?? 0;
+  const branch = biz?.branches?.[0];
+  const address = branch
+    ? [branch.address, branch.city, branch.state].filter(Boolean).join(', ')
+    : biz?.address || '';
+
+  if (loading) {
+    return (
+      <PublicLayout>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  if (!biz) {
+    return (
+      <PublicLayout>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+          <p className="text-lg font-semibold text-foreground mb-2">Business not found</p>
+          <p className="text-sm text-muted-foreground">This listing may have been removed or the ID is invalid.</p>
+        </div>
+      </PublicLayout>
+    );
+  }
+
   return (
     <PublicLayout>
       <div>
         {/* Hero Image */}
-        <div className="w-full h-96 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 border border-white/5 mb-8 flex items-center justify-center">
-          <p className="text-muted-foreground">Business Cover Image</p>
+        <div className="w-full h-96 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 border border-white/5 mb-8 flex items-center justify-center overflow-hidden">
+          {biz.coverImage ? (
+            <img src={biz.coverImage} alt={biz.name} className="w-full h-full object-cover" />
+          ) : (
+            <p className="text-muted-foreground">Business Cover Image</p>
+          )}
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2">
-            {/* ── Business Info Card ─────────────────────────── */}
+            {/* ── Business Info Card */}
             <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h1 className="text-3xl font-bold text-foreground mb-2">{biz.name}</h1>
-                  <p className="text-muted-foreground mb-4">{biz.category} • {biz.subcategory}</p>
+                  <p className="text-muted-foreground mb-4">
+                    {biz.category?.name || ''}
+                    {biz.subcategory ? ` • ${biz.subcategory}` : ''}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="icon"
+                    onClick={() => { if (navigator?.share) { navigator.share({ title: biz.name, url: window.location.href }); } }}
                     className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5"
                   >
                     <Share2 className="h-5 w-5" />
@@ -190,60 +242,67 @@ export default function BusinessDetailPage() {
                   </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-6 mb-6">
-                <div className="flex items-center gap-2">
-                  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                  <span className="font-bold text-lg">{biz.rating}</span>
-                  <span className="text-muted-foreground">({biz.reviews} reviews)</span>
+              {avgRating > 0 && (
+                <div className="flex items-center gap-6 mb-6">
+                  <div className="flex items-center gap-2">
+                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                    <span className="font-bold text-lg">{Number(avgRating).toFixed(1)}</span>
+                    <span className="text-muted-foreground">({reviewCount} reviews)</span>
+                  </div>
                 </div>
-              </div>
+              )}
               <div className="space-y-3">
-                <div className="flex items-center gap-3 text-foreground text-sm">
-                  <MapPin className="h-5 w-5 text-violet-400 flex-shrink-0" />
-                  <span>{biz.address}</span>
-                </div>
-                <div className="flex items-center gap-3 text-foreground text-sm">
-                  <Phone className="h-5 w-5 text-cyan-400 flex-shrink-0" />
-                  <span>{biz.phone}</span>
-                </div>
-                <div className="flex items-center gap-3 text-foreground text-sm">
-                  <Clock className="h-5 w-5 text-amber-400 flex-shrink-0" />
-                  <span>{biz.hours}</span>
-                </div>
-                <div className="flex items-center gap-3 text-foreground text-sm">
-                  <Instagram className="h-5 w-5 text-pink-400 flex-shrink-0" />
-                  <a href="#" className="text-pink-400 hover:underline">
-                    {biz.instagram}
-                  </a>
-                </div>
-                <div className="flex items-center gap-3 text-foreground text-sm">
-                  <Globe className="h-5 w-5 text-emerald-400 flex-shrink-0" />
-                  <a href="#" className="text-emerald-400 hover:underline">
-                    {biz.website}
-                  </a>
-                </div>
+                {address && (
+                  <div className="flex items-center gap-3 text-foreground text-sm">
+                    <MapPin className="h-5 w-5 text-violet-400 flex-shrink-0" />
+                    <span>{address}</span>
+                  </div>
+                )}
+                {(biz.phone || branch?.phone) && (
+                  <div className="flex items-center gap-3 text-foreground text-sm">
+                    <Phone className="h-5 w-5 text-cyan-400 flex-shrink-0" />
+                    <span>{biz.phone || branch?.phone}</span>
+                  </div>
+                )}
+                {branch?.operatingHours && (
+                  <div className="flex items-center gap-3 text-foreground text-sm">
+                    <Clock className="h-5 w-5 text-amber-400 flex-shrink-0" />
+                    <span>{typeof branch.operatingHours === 'string' ? branch.operatingHours : JSON.stringify(branch.operatingHours)}</span>
+                  </div>
+                )}
+                {biz.instagram && (
+                  <div className="flex items-center gap-3 text-foreground text-sm">
+                    <Instagram className="h-5 w-5 text-pink-400 flex-shrink-0" />
+                    <a href={`https://instagram.com/${biz.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="text-pink-400 hover:underline">
+                      {biz.instagram.startsWith('@') ? biz.instagram : `@${biz.instagram}`}
+                    </a>
+                  </div>
+                )}
+                {biz.website && (
+                  <div className="flex items-center gap-3 text-foreground text-sm">
+                    <Globe className="h-5 w-5 text-emerald-400 flex-shrink-0" />
+                    <a href={biz.website.startsWith('http') ? biz.website : `https://${biz.website}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">
+                      {biz.website}
+                    </a>
+                  </div>
+                )}
               </div>
             </Card>
 
-            {/* ── About ──────────────────────────────────────── */}
-            <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
-              <h2 className="text-2xl font-bold text-foreground mb-4">About</h2>
-              <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
-                {biz.name} is a verified business on our platform offering top-quality {biz.subcategory.toLowerCase()} services in {biz.category}. Located at {biz.address}.
-              </p>
-              <div className="flex gap-3 flex-wrap">
-                {[biz.category, biz.subcategory, 'Verified'].map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1 bg-white/5 border border-white/5 rounded-full text-sm text-slate-300"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </Card>
+            {/* ── About */}
+            {biz.description && (
+              <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
+                <h2 className="text-2xl font-bold text-foreground mb-4">About</h2>
+                <p className="text-muted-foreground mb-4 text-sm leading-relaxed">{biz.description}</p>
+                <div className="flex gap-3 flex-wrap">
+                  {[biz.category?.name, biz.subcategory, biz.status === 'ACTIVE' ? 'Verified' : null].filter(Boolean).map((tag) => (
+                    <span key={tag} className="px-3 py-1 bg-white/5 border border-white/5 rounded-full text-sm text-slate-300">{tag}</span>
+                  ))}
+                </div>
+              </Card>
+            )}
 
-            {/* ── Submit Bill Section ────────────────────────── */}
+            {/* ── Submit Bill Section */}
             <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
               <div className="flex items-center justify-between mb-3">
                 <div>
@@ -288,94 +347,107 @@ export default function BusinessDetailPage() {
               )}
             </Card>
 
-            {/* ── Reviews ────────────────────────────────────── */}
+            {/* ── Reviews */}
             <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
               <h2 className="text-2xl font-bold text-foreground mb-4">Reviews</h2>
-              <div className="space-y-4">
-                {[
-                  {
-                    name: 'John D.',
-                    rating: 5,
-                    text: 'Amazing food and ambiance! The pasta was to die for.',
-                    time: '2 days ago',
-                  },
-                  {
-                    name: 'Sarah M.',
-                    rating: 4,
-                    text: 'Great experience overall. Service was a bit slow during peak hours.',
-                    time: '1 week ago',
-                  },
-                  {
-                    name: 'Mike R.',
-                    rating: 5,
-                    text: 'Best Italian restaurant in town. Highly recommended!',
-                    time: '2 weeks ago',
-                  },
-                ].map((review, i) => (
-                  <div key={i} className="pb-4 border-b border-white/5 last:border-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="font-semibold text-foreground">{review.name}</p>
-                        <div className="flex items-center gap-2">
-                          <div className="flex gap-0.5">
-                            {[...Array(5)].map((_, j) => (
-                              <Star
-                                key={j}
-                                className={`h-4 w-4 ${j < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`}
-                              />
-                            ))}
+              {reviews.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No reviews yet. Be the first to share your experience!</p>
+              ) : (
+                <div className="space-y-4">
+                  {reviews.map((review: any, i: number) => (
+                    <div key={review.id || i} className="pb-4 border-b border-white/5 last:border-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <p className="font-semibold text-foreground">
+                            {review.user?.name || review.customerName || 'Anonymous'}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-0.5">
+                              {[...Array(5)].map((_, j) => (
+                                <Star
+                                  key={j}
+                                  className={`h-4 w-4 ${j < (review.rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              {review.createdAt ? timeAgo(review.createdAt) : ''}
+                            </span>
                           </div>
-                          <span className="text-sm text-muted-foreground">{review.time}</span>
                         </div>
                       </div>
+                      {review.comment && (
+                        <p className="text-muted-foreground text-sm">{review.comment}</p>
+                      )}
                     </div>
-                    <p className="text-muted-foreground text-sm">{review.text}</p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </Card>
           </div>
 
-          {/* ── Sidebar ──────────────────────────────────────── */}
+          {/* ── Sidebar */}
           <div>
             <Card className="p-6 rounded-2xl mb-6 sticky top-8 border-white/5 bg-card/40 backdrop-blur-xl">
               <h3 className="font-bold text-foreground mb-4">Active Offers</h3>
-              <div className="space-y-3">
-                {[
-                  { pct: '50%', exp: '5 days' },
-                  { pct: '30%', exp: '12 days' },
-                ].map((o, i) => (
-                  <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/5">
-                    <p className="font-semibold text-foreground mb-1">{o.pct} Off</p>
-                    <p className="text-xs text-muted-foreground mb-2">Expires in {o.exp}</p>
-                    <Button
-                      variant="outline"
-                      onClick={() => setClaimingOffer(o)}
-                      className="w-full rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
-                      size="sm"
-                    >
-                      Claim Offer
-                    </Button>
-                  </div>
-                ))}
-              </div>
+              {offers.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4">No active offers right now.</p>
+              ) : (
+                <div className="space-y-3">
+                  {offers.map((o: any, i: number) => {
+                    const discount = o.discountPercent
+                      ? `${o.discountPercent}% Off`
+                      : o.discountAmount
+                      ? `₹${o.discountAmount} Off`
+                      : o.title || 'Special Offer';
+                    const expiry = o.expiresAt
+                      ? `Expires ${new Date(o.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+                      : o.validUntil
+                      ? `Valid until ${new Date(o.validUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+                      : '';
+                    return (
+                      <div key={o.id || i} className="p-3 bg-white/5 rounded-xl border border-white/5">
+                        <p className="font-semibold text-foreground mb-1">{discount}</p>
+                        {o.description && <p className="text-xs text-muted-foreground mb-1">{o.description}</p>}
+                        {expiry && <p className="text-xs text-muted-foreground mb-2">{expiry}</p>}
+                        <Button
+                          variant="outline"
+                          onClick={() => setClaimingOffer(o)}
+                          className="w-full rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
+                          size="sm"
+                        >
+                          Claim Offer
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </Card>
             <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
-              <Button className="w-full rounded-xl mb-3 bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">
-                <MessageCircle className="mr-2 h-4 w-4" /> Contact
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
-              >
-                Visit Website
-              </Button>
+              {biz.phone && (
+                <a href={`tel:${biz.phone}`}>
+                  <Button className="w-full rounded-xl mb-3 bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">
+                    <MessageCircle className="mr-2 h-4 w-4" /> Contact
+                  </Button>
+                </a>
+              )}
+              {biz.website && (
+                <a href={biz.website.startsWith('http') ? biz.website : `https://${biz.website}`} target="_blank" rel="noreferrer">
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
+                  >
+                    Visit Website
+                  </Button>
+                </a>
+              )}
             </Card>
           </div>
         </div>
       </div>
 
-      {/* ── BILL SUBMISSION MODAL ──────────────────────────── */}
+      {/* ── BILL SUBMISSION MODAL */}
       {billModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <Card className="w-full max-w-lg p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -397,7 +469,6 @@ export default function BusinessDetailPage() {
             </div>
 
             <form onSubmit={handleBillSubmit} className="space-y-4">
-              {/* Bill Number */}
               <div>
                 <label className="text-sm font-medium text-slate-300 block mb-2 flex items-center gap-1.5">
                   <Hash className="h-3.5 w-3.5 text-muted-foreground" />
@@ -412,7 +483,6 @@ export default function BusinessDetailPage() {
                 />
               </div>
 
-              {/* Bill Date */}
               <div>
                 <label className="text-sm font-medium text-slate-300 block mb-2 flex items-center gap-1.5">
                   <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
@@ -428,7 +498,6 @@ export default function BusinessDetailPage() {
                 />
               </div>
 
-              {/* Amount */}
               <div>
                 <label className="text-sm font-medium text-slate-300 block mb-2 flex items-center gap-1.5">
                   <IndianRupee className="h-3.5 w-3.5 text-muted-foreground" />
@@ -446,7 +515,6 @@ export default function BusinessDetailPage() {
                 />
               </div>
 
-              {/* Receipt Image */}
               <div>
                 <label className="text-sm font-medium text-slate-300 block mb-2">
                   Receipt Image
@@ -479,7 +547,6 @@ export default function BusinessDetailPage() {
                 </label>
               </div>
 
-              {/* Rating */}
               <div>
                 <label className="text-sm font-medium text-slate-300 block mb-2">
                   Your Rating <span className="text-rose-400">*</span>
@@ -512,7 +579,6 @@ export default function BusinessDetailPage() {
                 </div>
               </div>
 
-              {/* Review Text */}
               <div>
                 <label className="text-sm font-medium text-slate-300 block mb-2">
                   Your Review <span className="text-xs text-muted-foreground font-normal">(optional)</span>
@@ -526,7 +592,6 @@ export default function BusinessDetailPage() {
                 />
               </div>
 
-              {/* Submit */}
               <div className="flex justify-end gap-3 pt-2">
                 <Button
                   type="button"
@@ -538,9 +603,10 @@ export default function BusinessDetailPage() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={!billNumber || !billDate || !billAmount || billRating === 0}
-                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold disabled:opacity-50 cursor-pointer"
+                  disabled={!billNumber || !billDate || !billAmount || billRating === 0 || billSubmitting}
+                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                 >
+                  {billSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Submit Bill
                 </Button>
               </div>
@@ -549,7 +615,7 @@ export default function BusinessDetailPage() {
         </div>
       )}
 
-      {/* ── CLAIM CONFIRMATION MODAL ────────────────────── */}
+      {/* ── CLAIM CONFIRMATION MODAL */}
       {claimingOffer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
@@ -565,7 +631,9 @@ export default function BusinessDetailPage() {
             <h3 className="text-lg font-bold text-foreground mb-2">Claim Promotional Offer</h3>
             <p className="text-sm text-muted-foreground mb-6">
               Are you sure you want to claim the{' '}
-              <span className="font-semibold text-foreground">{claimingOffer.pct} Off</span> offer?
+              <span className="font-semibold text-foreground">
+                {claimingOffer.discountPercent ? `${claimingOffer.discountPercent}% Off` : claimingOffer.title || 'this offer'}
+              </span>?
               This will generate a unique redemption code valid at {biz.name}.
             </p>
             <div className="flex justify-center gap-3">
@@ -587,7 +655,7 @@ export default function BusinessDetailPage() {
         </div>
       )}
 
-      {/* ── CLAIM SUCCESS MODAL ───────────────────────── */}
+      {/* ── CLAIM SUCCESS MODAL */}
       {claimedCode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">

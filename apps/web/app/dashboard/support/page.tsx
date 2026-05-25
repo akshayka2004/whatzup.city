@@ -40,55 +40,14 @@ const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string }> = {
   closed: { label: 'Closed', color: 'bg-slate-500/15 text-slate-400 border-slate-500/20' },
 };
 
-const MOCK_TICKETS: Ticket[] = [
-  {
-    id: 'TKT-001',
-    title: 'Unable to redeem offer',
-    category: 'offer',
-    status: 'open',
-    customerName: 'Rahul Sharma',
-    createdAt: '20 May 2026',
-    updatedAt: '22 May 2026',
-    messages: [
-      { id: '1', from: 'user', text: "I tried to redeem the 10% off offer but it showed 'already claimed'. I haven't used it.", timestamp: '20 May 2026, 11:00 AM' },
-    ],
-  },
-  {
-    id: 'TKT-002',
-    title: 'Bill rejected without reason',
-    category: 'billing',
-    status: 'in_progress',
-    customerName: 'Priya Menon',
-    createdAt: '21 May 2026',
-    updatedAt: '22 May 2026',
-    messages: [
-      { id: '1', from: 'user', text: "My bill for ₹850 was rejected. It is a genuine bill from yesterday.", timestamp: '21 May 2026, 9:30 AM' },
-      { id: '2', from: 'support', text: "Hi Priya! We are looking into this. Can you re-upload the bill photo with better lighting?", timestamp: '21 May 2026, 2:00 PM' },
-    ],
-  },
-  {
-    id: 'TKT-003',
-    title: 'Wrong operating hours listed',
-    category: 'general',
-    status: 'resolved',
-    customerName: 'Amit Joshi',
-    createdAt: '18 May 2026',
-    updatedAt: '19 May 2026',
-    messages: [
-      { id: '1', from: 'user', text: "Your Sunday hours show 10am-6pm but you were closed when I visited at 5pm.", timestamp: '18 May 2026, 6:00 PM' },
-      { id: '2', from: 'support', text: "Thank you for letting us know! We've updated our Sunday hours to 10am-4pm. Sorry for the inconvenience.", timestamp: '19 May 2026, 10:00 AM' },
-    ],
-  },
-];
-
 const STORAGE_KEY = 'business_tickets';
 
 function loadTickets(): Ticket[] {
-  if (typeof window === 'undefined') return MOCK_TICKETS;
+  if (typeof window === 'undefined') return [];
   try {
     const s = localStorage.getItem(STORAGE_KEY);
-    return s ? JSON.parse(s) : MOCK_TICKETS;
-  } catch { return MOCK_TICKETS; }
+    return s ? JSON.parse(s) : [];
+  } catch { return []; }
 }
 
 // ── Component ─────────────────────────────────────────────────────────

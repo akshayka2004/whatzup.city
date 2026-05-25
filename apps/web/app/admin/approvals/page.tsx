@@ -6,7 +6,6 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { apiService } from '@/lib/services/api-service';
-import { getPendingVerifications, updateVerification, updateBusiness, updateUser, DB_KEYS } from '@/lib/mock-db';
 import {
   CheckCircle,
   XCircle,
@@ -32,10 +31,6 @@ import {
   DollarSign,
 } from 'lucide-react';
 
-// Clean slate — no hardcoded demo approvals.
-// All entries come from real registrations stored in mock-db (pending_verifications key).
-const MOCK_APPROVALS: any[] = [];
-
 export default function ApprovalsPage() {
   const [approvals, setApprovals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,26 +54,13 @@ export default function ApprovalsPage() {
     try {
       const typeQuery = entityType !== 'ALL' ? `?type=${entityType}` : '';
       const response = await apiService.get<any>(`/v1/admin/businesses/pending${typeQuery}`);
-      let list: any[] = [];
       if (response.data && !response.error) {
-        list = response.data.data || [];
+        setApprovals(response.data.data || []);
+      } else {
+        setApprovals([]);
       }
-      // Always merge in locally submitted verifications from mock-db
-      const localVerifications = getPendingVerifications();
-      const localPending = localVerifications.filter((v) =>
-        entityType === 'ALL' || v.entity?.type === entityType
-      );
-      // Deduplicate by id — API records take precedence
-      const apiIds = new Set(list.map((x: any) => x.id));
-      const merged = [...list, ...localPending.filter((v) => !apiIds.has(v.id))];
-      setApprovals(merged.length > 0 ? merged : MOCK_APPROVALS);
     } catch (e) {
-      // Pure mock fallback — show local submissions + seed mock approvals
-      const localVerifications = getPendingVerifications();
-      const localPending = localVerifications.filter((v) =>
-        entityType === 'ALL' || v.entity?.type === entityType
-      );
-      setApprovals(localPending.length > 0 ? [...localPending, ...MOCK_APPROVALS] : MOCK_APPROVALS);
+      setApprovals([]);
     } finally {
       setLoading(false);
     }
@@ -92,125 +74,36 @@ export default function ApprovalsPage() {
     if (!approvingItem) return;
     setActionLoading(true);
     setError('');
-
     try {
       const response = await apiService.post<any>(
         `/v1/admin/businesses/${approvingItem.id}/approve`,
-        {
-          notes: approveNotes || 'Approved by dashboard administrator',
-        },
+        { notes: approveNotes || 'Approved by dashboard administrator' },
       );
-
-      if (!response.error) {
-        _finalizeApprove();
-      } else {
-        setError(response.error || 'Failed to approve submission.');
-        // Still apply locally
-        _finalizeApprove();
-      }
-    } catch (err: any) {
-      _finalizeApprove();
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const _finalizeApprove = () => {
-    if (!approvingItem) return;
-    // Update mock-db verification record
-    updateVerification(approvingItem.id, {
-      status: 'APPROVED',
-      approvalNotes: approveNotes || 'Approved',
-    });
-    // Update business status in mock-db
-    const bizId = approvingItem.entity?.id || approvingItem.entity?.business?.id;
-    if (bizId) {
-      updateBusiness(bizId, { status: 'ACTIVE', approvedAt: new Date().toISOString() });
-      // Update owner's entity status so their dashboard reflects ACTIVE
-      const ownerId = approvingItem.entity?.user?.id;
-      if (ownerId) {
-        updateUser(ownerId, {
-          entity: {
-            id: bizId,
-            type: 'BUSINESS',
-            status: 'ACTIVE',
-            name: approvingItem.entity?.name || '',
-          },
-        });
-        // Refresh localStorage session if it's the current logged-in user
-        if (typeof window !== 'undefined') {
-          try {
-            const stored = localStorage.getItem('user_session');
-            if (stored) {
-              const u = JSON.parse(stored);
-              if (u.id === ownerId || u.businessId === bizId) {
-                u.entity = { id: bizId, type: 'BUSINESS', status: 'ACTIVE', name: approvingItem.entity?.name || '' };
-                localStorage.setItem('user_session', JSON.stringify(u));
-                localStorage.setItem('user', JSON.stringify(u));
-              }
-            }
-          } catch (_) {}
-        }
-      }
-    }
+      if (response.error) setError(response.error);
+    } catch (_) {}
     setApprovals((prev) => prev.filter((a) => a.id !== approvingItem.id));
     setApprovingItem(null);
     setApproveNotes('');
+    setActionLoading(false);
   };
 
   const handleReject = async () => {
     if (!rejectingItem || !rejectReason) return;
     setActionLoading(true);
     setError('');
-
     try {
       const response = await apiService.post<any>(
         `/v1/admin/businesses/${rejectingItem.id}/reject`,
-        {
-          reason: rejectReason,
-        },
+        { reason: rejectReason },
       );
-
-      if (!response.error) {
-        _finalizeReject();
-      } else {
-        setError(response.error || 'Failed to reject submission.');
-        _finalizeReject();
-      }
-    } catch (err: any) {
-      _finalizeReject();
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const _finalizeReject = () => {
-    if (!rejectingItem) return;
-    updateVerification(rejectingItem.id, {
-      status: 'REJECTED',
-      rejectionReason: rejectReason,
-    });
-    const bizId = rejectingItem.entity?.id || rejectingItem.entity?.business?.id;
-    if (bizId) {
-      updateBusiness(bizId, { status: 'REJECTED' });
-      const ownerId = rejectingItem.entity?.user?.id;
-      if (ownerId) {
-        updateUser(ownerId, {
-          entity: {
-            id: bizId,
-            type: 'BUSINESS',
-            status: 'REJECTED',
-            name: rejectingItem.entity?.name || '',
-          },
-        });
-      }
-    }
+      if (response.error) setError(response.error);
+    } catch (_) {}
     setApprovals((prev) => prev.filter((a) => a.id !== rejectingItem.id));
     setRejectingItem(null);
     setRejectReason('');
+    setActionLoading(false);
   };
 
-  // Filter list locally to safeguard UI presentation matching tabs in development / mock fallback
   const displayApprovals = approvals.filter((item) => {
     if (activeTab === 'ALL') return true;
     return item.entity?.type === activeTab;
