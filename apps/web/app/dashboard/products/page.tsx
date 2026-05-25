@@ -117,6 +117,7 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Form states
   const [name, setName] = useState('');
@@ -144,11 +145,36 @@ export default function ProductsPage() {
     setIsAddOpen(true);
   };
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return;
-    const formattedPrice = price.startsWith('$') ? price : `$${price}`;
-    setProducts([{ id: Date.now(), name, category, price: formattedPrice, stock: Number(stock), sales: 0, tags: formTags, attributes: formAttrs.filter(a => a.key.trim()) }, ...products]);
+    if (!name || !businessId) return;
+    setSubmitting(true);
+    try {
+      const priceNum = parseFloat(price.replace('$', '')) || 0;
+      const res = await apiService.post<any>('/v1/products', {
+        businessId,
+        name,
+        category,
+        price: priceNum,
+        stock: Number(stock),
+        tags: formTags,
+        attributes: formAttrs.filter((a) => a.key.trim()),
+      });
+      if (res.data && !res.error) {
+        const p = res.data;
+        setProducts((prev) => [{
+          id: p.id,
+          name: p.name || name,
+          category: p.category || category,
+          price: p.price != null ? `$${p.price}` : `$${price}`,
+          stock: p.stockCount ?? p.stock ?? Number(stock),
+          sales: p.salesCount ?? p.sales ?? 0,
+          tags: Array.isArray(p.tags) ? p.tags : formTags,
+          attributes: Array.isArray(p.attributes) ? p.attributes : formAttrs.filter((a) => a.key.trim()),
+        }, ...prev]);
+      }
+    } catch (_) {}
+    setSubmitting(false);
     setIsAddOpen(false);
   };
 
@@ -162,21 +188,47 @@ export default function ProductsPage() {
     setFormAttrs(product.attributes || []);
   };
 
-  const handleEdit = (e: React.FormEvent) => {
+  const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !editingProduct) return;
-    const formattedPrice = price.startsWith('$') ? price : `$${price}`;
-    setProducts(products.map((p) =>
-      p.id === editingProduct.id
-        ? { ...p, name, category, price: formattedPrice, stock: Number(stock), tags: formTags, attributes: formAttrs.filter(a => a.key.trim()) }
-        : p,
-    ));
+    setSubmitting(true);
+    try {
+      const priceNum = parseFloat(price.replace('$', '')) || 0;
+      const res = await apiService.patch<any>(`/v1/products/${editingProduct.id}`, {
+        name,
+        category,
+        price: priceNum,
+        stock: Number(stock),
+        tags: formTags,
+        attributes: formAttrs.filter((a) => a.key.trim()),
+      });
+      const updated = res.data && !res.error ? res.data : null;
+      setProducts((prev) => prev.map((p) =>
+        p.id === editingProduct.id
+          ? {
+              ...p,
+              name: updated?.name || name,
+              category: updated?.category || category,
+              price: updated?.price != null ? `$${updated.price}` : `$${price}`,
+              stock: updated?.stockCount ?? updated?.stock ?? Number(stock),
+              tags: Array.isArray(updated?.tags) ? updated.tags : formTags,
+              attributes: Array.isArray(updated?.attributes) ? updated.attributes : formAttrs.filter((a) => a.key.trim()),
+            }
+          : p,
+      ));
+    } catch (_) {}
+    setSubmitting(false);
     setEditingProduct(null);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deletingProduct) return;
-    setProducts(products.filter((p) => p.id !== deletingProduct.id));
+    setSubmitting(true);
+    try {
+      await apiService.delete(`/v1/products/${deletingProduct.id}`);
+      setProducts((prev) => prev.filter((p) => p.id !== deletingProduct.id));
+    } catch (_) {}
+    setSubmitting(false);
     setDeletingProduct(null);
   };
 
@@ -400,7 +452,10 @@ export default function ProductsPage() {
                 <FormFields />
                 <div className="flex justify-end gap-3 pt-4">
                   <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)} className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer">Cancel</Button>
-                  <Button type="submit" className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">Add Product</Button>
+                  <Button type="submit" disabled={submitting} className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer flex items-center gap-1.5">
+                    {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    Add Product
+                  </Button>
                 </div>
               </form>
             </Card>
@@ -419,7 +474,10 @@ export default function ProductsPage() {
                 <FormFields />
                 <div className="flex justify-end gap-3 pt-4">
                   <Button type="button" variant="outline" onClick={() => setEditingProduct(null)} className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer">Cancel</Button>
-                  <Button type="submit" className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">Save Changes</Button>
+                  <Button type="submit" disabled={submitting} className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer flex items-center gap-1.5">
+                    {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    Save Changes
+                  </Button>
                 </div>
               </form>
             </Card>
@@ -442,7 +500,10 @@ export default function ProductsPage() {
               </p>
               <div className="flex justify-center gap-3">
                 <Button onClick={() => setDeletingProduct(null)} variant="outline" className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 px-4 cursor-pointer">Cancel</Button>
-                <Button onClick={handleDelete} className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4 cursor-pointer">Delete</Button>
+                <Button onClick={handleDelete} disabled={submitting} className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4 cursor-pointer flex items-center gap-1.5">
+                  {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Delete
+                </Button>
               </div>
             </Card>
           </div>
