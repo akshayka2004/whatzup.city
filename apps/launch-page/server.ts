@@ -79,9 +79,9 @@ app.get('/', (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Whatzup.city — Exclusive Launch Portal</title>
+  <title>Whtzup.city — Exclusive Launch Portal</title>
   <!-- SEO Tags -->
-  <meta name="description" content="Register interest for the launch of Whatzup.city, the ultimate SaaS listing platform.">
+  <meta name="description" content="Register interest for the launch of Whtzup.city, the ultimate SaaS listing platform.">
   <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -143,7 +143,7 @@ app.get('/', (req, res) => {
       <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
         <i data-lucide="sparkles" class="h-5 w-5 text-white animate-pulse"></i>
       </div>
-      <span class="text-xl font-bold tracking-wider uppercase text-white">whatzup<span class="text-indigo-400">.city</span></span>
+      <span class="text-xl font-bold tracking-wider uppercase text-white">whtzup<span class="text-indigo-400">.city</span></span>
     </div>
     <div class="flex items-center gap-4 text-xs sm:text-sm text-slate-400">
       <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span> Launch Event Ready</span>
@@ -288,7 +288,7 @@ app.get('/', (req, res) => {
 
         <div>
           <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Message / Business Needs (Optional)</label>
-          <textarea id="bus-notes" placeholder="Tell us what you'd like to achieve on Whatzup.city..." class="glass-input w-full p-4 rounded-xl text-sm h-20 resize-none"></textarea>
+          <textarea id="bus-notes" placeholder="Tell us what you'd like to achieve on Whtzup.city..." class="glass-input w-full p-4 rounded-xl text-sm h-20 resize-none"></textarea>
         </div>
 
         <button type="submit" id="btn-bus" class="w-full mt-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-sm font-bold text-white transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-2">
@@ -302,7 +302,7 @@ app.get('/', (req, res) => {
 
   <!-- Footer -->
   <footer class="w-full max-w-7xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between z-10 text-xs text-slate-500 border-t border-white/5">
-    <p>&copy; 2026 Whatzup.city. Pre-launch exclusive access portal.</p>
+    <p>&copy; 2026 Whtzup.city. Pre-launch exclusive access portal.</p>
     <p class="mt-2 sm:mt-0 flex items-center gap-1"><i data-lucide="shield-check" class="h-4 w-4"></i> Securely stored for launch communication</p>
   </footer>
 
