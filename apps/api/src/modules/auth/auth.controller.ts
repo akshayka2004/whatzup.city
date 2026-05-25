@@ -13,6 +13,7 @@ import {
   UseGuards,
   Req,
   Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
@@ -140,6 +141,10 @@ export class AuthController {
   ) {
     // Extract refresh token from cookies first, then fallback to request body
     const refreshToken = req.cookies?.['refresh_token'] || body.refreshToken;
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token missing');
+    }
 
     const ip = req.ip || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
