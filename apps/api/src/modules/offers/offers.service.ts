@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { OfferRepository } from '../../common/database/repositories/offer.repository';
 import { RedisService } from '../../common/redis/redis.service';
 import { AuditService } from '../audit/audit.service';
+import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class OffersService {
     private readonly offerRepo: OfferRepository,
     private readonly redis: RedisService,
     private readonly auditService: AuditService,
+    private readonly tenantResolver: TenantResolverService,
   ) {}
 
   async create(tenantId: string, userId: string, businessId: string, data: any) {
@@ -29,6 +31,7 @@ export class OffersService {
   }
 
   async findActive(tenantId: string, page = 1, limit = 20) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const pagination = new PaginationParamsDto();
     pagination.page = page;
     pagination.limit = limit;
@@ -47,6 +50,7 @@ export class OffersService {
   }
 
   async findByBusiness(tenantId: string, businessId: string) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const pagination = new PaginationParamsDto();
     pagination.page = 1;
     pagination.limit = 100;
@@ -54,6 +58,7 @@ export class OffersService {
   }
 
   async findById(tenantId: string, id: string) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const offer = await this.offerRepo.findOne(tenantId, id, {
       include: { business: { select: { id: true, name: true, slug: true } } },
     });

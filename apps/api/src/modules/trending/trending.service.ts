@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
+import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 
 @Injectable()
 export class TrendingService {
@@ -9,11 +10,13 @@ export class TrendingService {
   constructor(
     private readonly db: DatabaseService,
     private readonly redis: RedisService,
+    private readonly tenantResolver: TenantResolverService,
   ) {}
 
   // ── Trending Businesses ───────────────────────────────────
 
   async getTrendingBusinesses(tenantId: string) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const cacheKey = `trending:businesses:${tenantId}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) return cached;
@@ -89,6 +92,7 @@ export class TrendingService {
   // ── Trending Offers ───────────────────────────────────────
 
   async getTrendingOffers(tenantId: string) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const cacheKey = `trending:offers:${tenantId}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) return cached;
@@ -122,6 +126,7 @@ export class TrendingService {
   // ── Trending Categories ───────────────────────────────────
 
   async getTrendingCategories(tenantId: string) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const cacheKey = `trending:categories:${tenantId}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) return cached;

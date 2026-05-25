@@ -1,5 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { DatabaseService } from './database.service';
+import { TenantResolverService } from './tenant-resolver.service';
 import {
   UserRepository,
   BusinessRepository,
@@ -36,7 +37,7 @@ const REPOSITORIES = [
 
 @Global()
 @Module({
-  providers: [DatabaseService, ...REPOSITORIES],
-  exports: [DatabaseService, ...REPOSITORIES],
+  providers: [DatabaseService, TenantResolverService, ...REPOSITORIES],
+  exports: [DatabaseService, TenantResolverService, ...REPOSITORIES],
 })
 export class DatabaseModule {}

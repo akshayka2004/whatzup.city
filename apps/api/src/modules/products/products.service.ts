@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProductRepository } from '../../common/database/repositories/product.repository';
 import { AuditService } from '../audit/audit.service';
+import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class ProductsService {
   constructor(
     private readonly productRepo: ProductRepository,
     private readonly auditService: AuditService,
+    private readonly tenantResolver: TenantResolverService,
   ) {}
 
   async create(tenantId: string, userId: string, businessId: string, data: any) {
@@ -26,6 +28,7 @@ export class ProductsService {
   }
 
   async findByBusiness(tenantId: string, businessId: string, page = 1, limit = 20) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const pagination = new PaginationParamsDto();
     pagination.page = page;
     pagination.limit = limit;
@@ -36,6 +39,7 @@ export class ProductsService {
   }
 
   async findById(tenantId: string, id: string) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const product = await this.productRepo.findOne(tenantId, id);
     if (!product) throw new NotFoundException('Product not found');
     return product;

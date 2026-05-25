@@ -1,15 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
+import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 
 @Injectable()
 export class AnnouncementsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly tenantResolver: TenantResolverService,
+  ) {}
 
   async create(tenantId: string, agencyId: string, data: any) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     return this.db.governmentAnnouncement.create({ data: { tenantId, agencyId, ...data } });
   }
 
   async findPublished(tenantId: string, page = 1, limit = 20) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const now = new Date();
     const where = {
       tenantId,

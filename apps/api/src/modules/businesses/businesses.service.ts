@@ -3,6 +3,7 @@ import { BusinessRepository } from '../../common/database/repositories/business.
 import { RedisService } from '../../common/redis/redis.service';
 import { SearchService } from '../search/search.service';
 import { AuditService } from '../audit/audit.service';
+import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 import { BusinessStatus } from '@saas/types';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 
@@ -13,6 +14,7 @@ export class BusinessesService {
     private readonly redis: RedisService,
     private readonly searchService: SearchService,
     private readonly auditService: AuditService,
+    private readonly tenantResolver: TenantResolverService,
   ) {}
 
   async create(tenantId: string, ownerId: string, data: any) {
@@ -49,6 +51,7 @@ export class BusinessesService {
   }
 
   async findAll(tenantId: string, params: any) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const { page, limit, categoryId, city, status, search } = params;
 
     // Fall back to Postgres full-text search abstraction
@@ -79,6 +82,7 @@ export class BusinessesService {
   }
 
   async findById(tenantId: string, id: string) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const cached = await this.redis.get(`business:${id}`);
     if (cached) return cached;
 
@@ -97,6 +101,7 @@ export class BusinessesService {
   }
 
   async findBySlug(tenantId: string, slug: string) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const business = await this.businessRepo.findBySlug(tenantId, slug, {
       include: {
         category: true,
@@ -168,6 +173,7 @@ export class BusinessesService {
   }
 
   async getNearby(tenantId: string, lat: number, lng: number, radiusKm = 10) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     return this.businessRepo.findNearby(tenantId, lat, lng, radiusKm);
   }
 

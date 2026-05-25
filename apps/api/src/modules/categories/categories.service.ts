@@ -1,15 +1,18 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { CategoryRepository } from '../../common/database/repositories/category.repository';
 import { RedisService } from '../../common/redis/redis.service';
+import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 
 @Injectable()
 export class CategoriesService {
   constructor(
     private readonly categoryRepo: CategoryRepository,
     private readonly redis: RedisService,
+    private readonly tenantResolver: TenantResolverService,
   ) {}
 
   async findAll(tenantId: string) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const cached = await this.redis.get(`categories:${tenantId}`);
     if (cached) return cached;
 
