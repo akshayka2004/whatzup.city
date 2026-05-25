@@ -69,12 +69,25 @@ export class BusinessOnboardingService {
         })
       : [];
 
-    // Create business in DRAFT status
+    // Create Entity first so VerificationRequest can attach immediately.
+    const entity = await this.db.entity.create({
+      data: {
+        tenantId,
+        userId,
+        type: 'BUSINESS' as any,
+        status: 'PENDING_VERIFICATION' as any,
+        name: dto.businessName,
+      },
+    });
+
+    // Create business immediately in PENDING_VERIFICATION so it appears
+    // in admin review queue. Owner can still edit details afterwards.
     const business = await this.db.business.create({
       data: {
         tenantId,
         ownerId: userId,
         categoryId: category.id,
+        entityId: entity.id,
         name: dto.businessName,
         slug,
         description: '',
@@ -84,11 +97,21 @@ export class BusinessOnboardingService {
         zipCode: '',
         phone: '',
         email: '',
-        status: 'DRAFT',
+        status: 'PENDING_VERIFICATION',
+        isVerified: false,
         profileType: dto.profileType || 'OWNER',
         subcategoryIds: subcategories.map((category) => category.id),
         tags: [],
         socialLinks: {},
+      },
+    });
+
+    // VerificationRequest — admin moderation queue source
+    await this.db.verificationRequest.create({
+      data: {
+        tenantId,
+        entityId: entity.id,
+        status: 'PENDING',
       },
     });
 
@@ -111,7 +134,7 @@ export class BusinessOnboardingService {
         entityType: 'BUSINESS',
         entityId: business.id,
         currentStep: 1,
-        status: 'DRAFT',
+        status: 'PENDING_VERIFICATION',
         stepsCompleted: ['START'],
         metadata: {
           categoryName: category.name,

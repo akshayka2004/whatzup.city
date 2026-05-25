@@ -919,13 +919,14 @@ export class AuthService {
           })
         : [];
 
-      // 6b. Create the Entity
+      // 6b. Create the Entity — immediately PENDING_VERIFICATION so it
+      // lands in admin moderation queue (not verified until admin acts).
       const entityRecord = await tx.entity.create({
         data: {
           tenantId: tenant.id,
           userId: userRecord.id,
           type: 'BUSINESS',
-          status: 'DRAFT',
+          status: 'PENDING_VERIFICATION',
           name: dto.businessName,
           email: emailNormalized,
           phone: dto.phone,
@@ -955,7 +956,8 @@ export class AuthService {
           zipCode: '',
           phone: dto.phone,
           email: emailNormalized,
-          status: 'DRAFT',
+          status: 'PENDING_VERIFICATION',
+          isVerified: false,
           profileType: dto.profileType || 'OWNER',
           subcategoryIds: subcategories.map((category) => category.id),
           tags: [],
@@ -982,7 +984,7 @@ export class AuthService {
           entityType: 'BUSINESS',
           entityId: entityRecord.id,
           currentStep: 1,
-          status: 'DRAFT',
+          status: 'PENDING_VERIFICATION',
           stepsCompleted: ['START'],
           metadata: {
             categoryName: defaultCategory.name,
@@ -990,6 +992,16 @@ export class AuthService {
             subcategories,
             profileType: dto.profileType || 'OWNER',
           },
+        },
+      });
+
+      // 10b. Create VerificationRequest — admin moderation queue source.
+      // Every new business signup MUST appear in admin review tab.
+      await tx.verificationRequest.create({
+        data: {
+          tenantId: tenant.id,
+          entityId: entityRecord.id,
+          status: 'PENDING',
         },
       });
 
@@ -1197,13 +1209,13 @@ export class AuthService {
           });
         }
 
-        // 7. Create Entity
+        // 7. Create Entity — PENDING_VERIFICATION for admin review queue
         const entityRecord = await tx.entity.create({
           data: {
             tenantId: tenant.id,
             userId: user.id,
             type: 'BUSINESS',
-            status: 'DRAFT',
+            status: 'PENDING_VERIFICATION',
             name: businessName,
             email: user.email,
             phone: dto.phone || user.phone,
@@ -1233,7 +1245,8 @@ export class AuthService {
             zipCode: '',
             phone: dto.phone || user.phone || '',
             email: user.email,
-            status: 'DRAFT',
+            status: 'PENDING_VERIFICATION',
+            isVerified: false,
             profileType: 'OWNER',
             subcategoryIds: [],
             tags: [],
@@ -1259,13 +1272,22 @@ export class AuthService {
             entityType: 'BUSINESS',
             entityId: entityRecord.id,
             currentStep: 1,
-            status: 'DRAFT',
+            status: 'PENDING_VERIFICATION',
             stepsCompleted: ['START'],
             metadata: {
               categoryName: defaultCategory.name,
               categorySlug: defaultCategory.slug,
               profileType: 'OWNER',
             },
+          },
+        });
+
+        // 10b. Create VerificationRequest — admin moderation queue source.
+        await tx.verificationRequest.create({
+          data: {
+            tenantId: tenant.id,
+            entityId: entityRecord.id,
+            status: 'PENDING',
           },
         });
 
@@ -1327,13 +1349,14 @@ export class AuthService {
           });
         }
 
-        // Create Entity
+        // Create Entity — CUSTOMER auto-approved; all others
+        // PENDING_VERIFICATION until admin acts.
         const entityRecord = await tx.entity.create({
           data: {
             tenantId: user.tenantId,
             userId: user.id,
             type: dto.entityType,
-            status: dto.entityType === 'CUSTOMER' ? 'APPROVED' : 'DRAFT',
+            status: dto.entityType === 'CUSTOMER' ? 'APPROVED' : 'PENDING_VERIFICATION',
             name: entityName,
             email: user.email,
             phone: dto.phone || user.phone,
@@ -1392,11 +1415,22 @@ export class AuthService {
             entityType: dto.entityType.toString(),
             entityId: entityRecord.id,
             currentStep: 1,
-            status: dto.entityType === 'CUSTOMER' ? 'ACTIVE' : 'DRAFT',
+            status: dto.entityType === 'CUSTOMER' ? 'ACTIVE' : 'PENDING_VERIFICATION',
             stepsCompleted: ['START'],
             metadata: {},
           },
         });
+
+        // VerificationRequest for non-CUSTOMER entities → admin queue
+        if (dto.entityType !== 'CUSTOMER') {
+          await tx.verificationRequest.create({
+            data: {
+              tenantId: user.tenantId,
+              entityId: entityRecord.id,
+              status: 'PENDING',
+            },
+          });
+        }
 
         // Create onboarding event
         await tx.onboardingEvent.create({
