@@ -21,58 +21,14 @@ import {
   Send,
   X,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
 import { canAccess, getRoleLabel } from '@/lib/rbac';
+import { apiService } from '@/lib/services/api-service';
+import { useAuth } from '@/hooks/use-auth';
 
-// ── MOCK DATA ─────────────────────────────────────────────────────────
-
-const MOCK_TEAM = [
-  {
-    id: 'tm-001',
-    name: 'Sunita Rao',
-    email: 'sunita@business.com',
-    role: 'BUSINESS_OWNER',
-    avatar: 'SR',
-    status: 'ACTIVE',
-    joinedAt: '2025-01-15',
-    lastActive: '2 hours ago',
-    actionsCount: 142,
-  },
-  {
-    id: 'tm-002',
-    name: 'Arjun Nair',
-    email: 'arjun@business.com',
-    role: 'BUSINESS_MODERATOR',
-    avatar: 'AN',
-    status: 'ACTIVE',
-    joinedAt: '2025-03-20',
-    lastActive: '15 min ago',
-    actionsCount: 89,
-  },
-  {
-    id: 'tm-003',
-    name: 'Kavya Menon',
-    email: 'kavya@business.com',
-    role: 'BUSINESS_MODERATOR',
-    avatar: 'KM',
-    status: 'ACTIVE',
-    joinedAt: '2025-05-01',
-    lastActive: '1 day ago',
-    actionsCount: 34,
-  },
-  {
-    id: 'tm-004',
-    name: 'Deepak Kumar',
-    email: 'deepak@business.com',
-    role: 'BUSINESS_STAFF',
-    avatar: 'DK',
-    status: 'ACTIVE',
-    joinedAt: '2025-06-10',
-    lastActive: '3 days ago',
-    actionsCount: 18,
-  },
-];
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
   BUSINESS_OWNER: { label: 'Owner', color: 'text-violet-400', bg: 'bg-violet-500/10', icon: ShieldCheck },
@@ -82,26 +38,32 @@ const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; ic
 };
 
 export default function TeamManagementPage() {
+  const { user } = useAuth();
   const [userRole, setUserRole] = useState<string>('BUSINESS_OWNER');
-  const [team, setTeam] = useState(MOCK_TEAM);
+  const [team, setTeam] = useState<any[]>([]);
+  const [loadingTeam, setLoadingTeam] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
+
+  const businessId = user?.businessId || user?.entity?.id;
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'BUSINESS_MODERATOR' | 'BUSINESS_STAFF'>('BUSINESS_MODERATOR');
   const [inviteSent, setInviteSent] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
-        if (stored) {
-          const u = JSON.parse(stored);
-          const role = u?.rbacRole || (u?.role === 'business' ? 'BUSINESS_OWNER' : u?.role);
-          if (role) setUserRole(role);
-        }
-      } catch (_) {}
-    }
-  }, []);
+    // Set role from useAuth hook
+    const role = user?.rbacRole || (user?.role === 'business' ? 'BUSINESS_OWNER' : user?.role) || 'BUSINESS_OWNER';
+    setUserRole(role);
+  }, [user]);
+
+  useEffect(() => {
+    if (!businessId) return;
+    setLoadingTeam(true);
+    // NOTE: No dedicated staff/team endpoint found in businesses.controller.ts.
+    // TODO: Wire to GET /v1/businesses/:id/staff when endpoint is added.
+    // For now show empty state with loading indicator.
+    setLoadingTeam(false);
+  }, [businessId]);
 
   const canManageTeam = canAccess(userRole, 'business.team.manage');
 
@@ -237,6 +199,17 @@ export default function TeamManagementPage() {
         {/* ── TEAM LIST ──────────────────────────────────────────── */}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground px-1">Team Members ({team.length})</h3>
+          {loadingTeam ? (
+            <div className="flex items-center justify-center h-20">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : team.length === 0 ? (
+            <Card className="p-8 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+              <UserCog className="h-8 w-8 mx-auto text-muted-foreground mb-2 opacity-40" />
+              <p className="text-foreground font-semibold text-sm mb-1">No team members yet</p>
+              <p className="text-xs text-muted-foreground">Invite team members using the button above.</p>
+            </Card>
+          ) : null}
           {team.map((member) => {
             const cfg = ROLE_CONFIG[member.role] || ROLE_CONFIG['BUSINESS_STAFF'];
             const isCurrentUser = member.role === 'BUSINESS_OWNER' || member.role === 'BUSINESS_ADMIN';

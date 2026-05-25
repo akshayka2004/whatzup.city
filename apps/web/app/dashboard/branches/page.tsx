@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Plus, Edit, Trash2, MapPin, Phone, X, AlertTriangle,
-  BarChart3, User, Mail, Clock, Navigation, CheckCircle2,
+  BarChart3, User, Mail, Clock, Navigation, CheckCircle2, Loader2,
 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
+import { useAuth } from '@/hooks/use-auth';
 
 interface Branch {
-  id: number;
+  id: number | string;
   name: string;
   address: string;
   phone: string;
@@ -24,45 +26,6 @@ interface Branch {
   geoCoords: string;
 }
 
-const initialBranches: Branch[] = [
-  {
-    id: 1,
-    name: 'Downtown Branch',
-    address: '123 Main St, Downtown, City 400001',
-    phone: '+91 98765 43210',
-    status: 'Active',
-    managerName: 'Ravi Kumar',
-    managerPhone: '+91 91234 56789',
-    managerEmail: 'ravi@sunrise.com',
-    hours: 'Mon–Sat 9AM–9PM',
-    geoCoords: '19.0760, 72.8777',
-  },
-  {
-    id: 2,
-    name: 'Airport Branch',
-    address: '456 Airport Ave, Terminal 2, City',
-    phone: '+91 87654 32109',
-    status: 'Active',
-    managerName: 'Priya Sharma',
-    managerPhone: '+91 99887 76655',
-    managerEmail: 'priya@sunrise.com',
-    hours: 'Daily 6AM–11PM',
-    geoCoords: '19.0896, 72.8656',
-  },
-  {
-    id: 3,
-    name: 'Mall Branch',
-    address: '789 Mall Rd, Level 2, City',
-    phone: '+91 76543 21098',
-    status: 'Inactive',
-    managerName: 'Ankit Verma',
-    managerPhone: '+91 88776 65544',
-    managerEmail: 'ankit@sunrise.com',
-    hours: 'Mon–Sun 10AM–10PM',
-    geoCoords: '19.1020, 72.8600',
-  },
-];
-
 const EMPTY_FORM: Omit<Branch, 'id' | 'status'> = {
   name: '', address: '', phone: '',
   managerName: '', managerPhone: '', managerEmail: '',
@@ -70,8 +33,38 @@ const EMPTY_FORM: Omit<Branch, 'id' | 'status'> = {
 };
 
 export default function BranchesPage() {
-  const [branches, setBranches] = useState<Branch[]>(initialBranches);
+  const { user } = useAuth();
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
+
+  const businessId = user?.businessId || user?.entity?.id;
+
+  useEffect(() => {
+    if (!businessId) return;
+    setLoading(true);
+    apiService
+      .get<any[]>(`/v1/businesses/${businessId}/branches`)
+      .then((res) => {
+        if (res.data && !res.error) {
+          setBranches(
+            res.data.map((b: any) => ({
+              id: b.id,
+              name: b.name || b.branchName || '',
+              address: b.address || '',
+              phone: b.phone || b.phoneNumber || '',
+              status: b.isActive === false ? 'Inactive' : 'Active',
+              managerName: b.managerName || '',
+              managerPhone: b.managerPhone || '',
+              managerEmail: b.managerEmail || '',
+              hours: b.operatingHours || b.hours || '',
+              geoCoords: b.geoCoords || (b.lat && b.lng ? `${b.lat}, ${b.lng}` : ''),
+            })),
+          );
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [businessId]);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -181,6 +174,18 @@ export default function BranchesPage() {
             Add Branch
           </Button>
         </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : branches.length === 0 ? (
+          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+            <MapPin className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+            <p className="text-foreground font-semibold mb-1">No branches yet</p>
+            <p className="text-sm text-muted-foreground">Add your first branch location to get started.</p>
+          </Card>
+        ) : null}
 
         <div className="grid gap-4">
           {branches.map((branch) => (

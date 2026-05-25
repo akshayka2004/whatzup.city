@@ -1,58 +1,61 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload, Image as ImageIcon, Trash2, Eye, X, AlertTriangle } from 'lucide-react';
-
-const initialMedia = [
-  {
-    id: 1,
-    name: 'Storefront Front Entrance',
-    size: '1.2 MB',
-    url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500',
-  },
-  {
-    id: 2,
-    name: 'Menu Highlight Banner',
-    size: '2.4 MB',
-    url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500',
-  },
-  {
-    id: 3,
-    name: 'Interior Seating View',
-    size: '890 KB',
-    url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500',
-  },
-];
+import { Upload, Image as ImageIcon, Trash2, Eye, X, AlertTriangle, Loader2 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function MediaPage() {
-  const [media, setMedia] = useState(initialMedia);
+  const { user } = useAuth();
+  const [media, setMedia] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const businessId = user?.businessId || user?.entity?.id;
+
+  useEffect(() => {
+    if (!businessId) return;
+    setLoading(true);
+    apiService
+      .get<any[]>(`/v1/media/business/${businessId}`)
+      .then((res) => {
+        if (res.data && !res.error) setMedia(Array.isArray(res.data) ? res.data : []);
+      })
+      .finally(() => setLoading(false));
+  }, [businessId]);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [viewingMedia, setViewingMedia] = useState<any>(null);
   const [deletingMedia, setDeletingMedia] = useState<any>(null);
   const [fileName, setFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = (e: React.FormEvent) => {
+  const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fileName) return;
+    if (!fileName || !businessId) return;
+    // Optimistic add — actual upload requires multipart which is handled separately
     const newMedia = {
       id: Date.now(),
       name: fileName,
-      size: `${(Math.random() * 3 + 0.5).toFixed(1)} MB`,
-      url: `https://images.unsplash.com/photo-${1500000000000 + Math.floor(Math.random() * 100000000000)}?w=500`,
+      altText: fileName,
+      size: '—',
+      url: '',
     };
     setMedia([newMedia, ...media]);
     setIsUploadOpen(false);
     setFileName('');
+    // Refresh from API
+    const res = await apiService.get<any[]>(`/v1/media/business/${businessId}`);
+    if (res.data && !res.error) setMedia(Array.isArray(res.data) ? res.data : []);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    if (!deletingMedia) return;
     setMedia(media.filter((m) => m.id !== deletingMedia.id));
     setDeletingMedia(null);
+    await apiService.delete(`/v1/media/${deletingMedia.id}`);
   };
 
   return (
@@ -74,27 +77,48 @@ export default function MediaPage() {
           </Button>
         </div>
 
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : media.length === 0 ? (
+          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+            <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+            <p className="text-foreground font-semibold mb-1">No media files yet</p>
+            <p className="text-sm text-muted-foreground">Upload your first image to build your gallery.</p>
+          </Card>
+        ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {media.map((item) => (
+          {media.map((item) => {
+            const itemName = item.name || item.altText || item.filename || 'Untitled';
+            const itemUrl = item.url || item.fileUrl || item.path || '';
+            const itemSize = item.size || item.fileSize || '—';
+            return (
             <Card
               key={item.id}
               className="rounded-2xl overflow-hidden border-white/5 bg-card/40 backdrop-blur-xl group hover:shadow-lg transition-all duration-300"
             >
               <div className="h-48 w-full relative overflow-hidden bg-secondary">
-                <img
-                  src={item.url}
-                  alt={item.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
+                {itemUrl ? (
+                  <img
+                    src={itemUrl}
+                    alt={itemName}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ImageIcon className="h-10 w-10 text-muted-foreground opacity-40" />
+                  </div>
+                )}
               </div>
               <div className="p-4 flex items-center justify-between">
                 <div className="min-w-0 flex-1 mr-4">
-                  <h3 className="font-semibold text-foreground truncate">{item.name}</h3>
-                  <p className="text-xs text-muted-foreground">{item.size}</p>
+                  <h3 className="font-semibold text-foreground truncate">{itemName}</h3>
+                  <p className="text-xs text-muted-foreground">{itemSize}</p>
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    onClick={() => setViewingMedia(item)}
+                    onClick={() => setViewingMedia({ ...item, name: itemName, url: itemUrl, size: itemSize })}
                     size="icon"
                     variant="outline"
                     className="h-8 w-8 rounded-lg border-white/10 text-slate-300 hover:bg-white/5"
@@ -102,7 +126,7 @@ export default function MediaPage() {
                     <Eye className="h-4 w-4" />
                   </Button>
                   <Button
-                    onClick={() => setDeletingMedia(item)}
+                    onClick={() => setDeletingMedia({ ...item, name: itemName })}
                     size="icon"
                     variant="outline"
                     className="h-8 w-8 rounded-lg border-rose-500/20 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
@@ -112,8 +136,10 @@ export default function MediaPage() {
                 </div>
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
+        )}
 
         {/* ── UPLOAD MODAL ───────────────────────────────── */}
         {isUploadOpen && (

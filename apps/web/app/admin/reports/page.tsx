@@ -4,53 +4,12 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Eye, Trash2, X, ShieldAlert, Check, Flag, Search } from 'lucide-react';
+import { AlertTriangle, Eye, Trash2, X, ShieldAlert, Check, Flag, Search, Loader2 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 const ISSUE_REPORTS_KEY = 'issue_reports';
-
-const SEED_REPORTS = [
-  {
-    id: 'RPT-SEED-1',
-    type: 'Inappropriate Content',
-    reported: 'Business A',
-    date: '16 May 2026',
-    status: 'Pending',
-    details:
-      'The business listing description contains misleading information regarding their licensing status.',
-    source: 'admin',
-  },
-  {
-    id: 'RPT-SEED-2',
-    type: 'Fraudulent Activity',
-    reported: 'User B',
-    date: '15 May 2026',
-    status: 'Under Review',
-    details:
-      'User has posted 15 identical negative reviews on different local businesses in the span of 10 minutes.',
-    source: 'admin',
-  },
-  {
-    id: 'RPT-SEED-3',
-    type: 'Policy Violation',
-    reported: 'Business C',
-    date: '14 May 2026',
-    status: 'Resolved',
-    details:
-      'Pricing posted on the offers listing page does not match the storefront physical store pricing.',
-    source: 'admin',
-  },
-  {
-    id: 'RPT-SEED-4',
-    type: 'Spam',
-    reported: 'Review D',
-    date: '13 May 2026',
-    status: 'Pending',
-    details: 'Review text contains links pointing to external malicious betting websites.',
-    source: 'admin',
-  },
-];
 
 type ReportStatus = 'Pending' | 'Under Review' | 'Resolved' | 'Dismissed';
 
@@ -71,28 +30,55 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function ReportsPage() {
-  const [reports, setReports] = useState<any[]>(SEED_REPORTS);
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [viewingReport, setViewingReport] = useState<any>(null);
   const [deletingReport, setDeletingReport] = useState<any>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<ReportStatus | 'all'>('all');
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(ISSUE_REPORTS_KEY);
-      if (stored) {
-        const customerReports = JSON.parse(stored).map((r: any) => ({
-          id: r.id,
-          type: TYPE_LABELS[r.type] ?? r.type,
-          reported: r.businessName || 'Unknown',
-          date: r.submittedAt,
-          status: r.status === 'submitted' ? 'Pending' : r.status === 'under_review' ? 'Under Review' : 'Resolved',
-          details: r.description,
-          source: 'customer',
-        }));
-        setReports([...SEED_REPORTS, ...customerReports]);
-      }
-    } catch (_) {}
+    setLoading(true);
+    apiService
+      .get<any>('/v1/reports')
+      .then((res) => {
+        if (res.data && !res.error) {
+          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+          const apiReports = list.map((r: any) => ({
+            id: r.id,
+            type: TYPE_LABELS[r.type] ?? r.type ?? 'Other Issue',
+            reported: r.targetName || r.businessName || r.entityName || 'Unknown',
+            date: r.createdAt
+              ? new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+              : r.date || '—',
+            status: r.status === 'submitted' ? 'Pending' : r.status === 'under_review' ? 'Under Review' :
+              r.status === 'resolved' ? 'Resolved' : r.status === 'dismissed' ? 'Dismissed' : r.status || 'Pending',
+            details: r.description || r.details || '',
+            source: 'api',
+          }));
+          // Also merge any localStorage customer reports
+          try {
+            const stored = localStorage.getItem(ISSUE_REPORTS_KEY);
+            if (stored) {
+              const customerReports = JSON.parse(stored).map((r: any) => ({
+                id: r.id,
+                type: TYPE_LABELS[r.type] ?? r.type,
+                reported: r.businessName || 'Unknown',
+                date: r.submittedAt,
+                status: r.status === 'submitted' ? 'Pending' : r.status === 'under_review' ? 'Under Review' : 'Resolved',
+                details: r.description,
+                source: 'customer',
+              }));
+              setReports([...apiReports, ...customerReports]);
+            } else {
+              setReports(apiReports);
+            }
+          } catch (_) {
+            setReports(apiReports);
+          }
+        }
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = reports.filter((r) => {
@@ -126,6 +112,12 @@ export default function ReportsPage() {
             Manage user flag requests, spam reviews, and listing policy violations.
           </p>
         </div>
+
+        {loading && (
+          <div className="flex items-center justify-center h-20">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
 
         {/* Search + filter */}
         <div className="flex gap-2 flex-wrap">

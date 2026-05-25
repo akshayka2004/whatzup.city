@@ -1,79 +1,52 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, ChevronDown, Eye, Mail, Download, X, ArrowUpDown } from 'lucide-react';
-
-const initialCustomers = [
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    purchases: 5,
-    totalSpent: 450,
-    lastVisit: '2024-05-16',
-  },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    purchases: 12,
-    totalSpent: 1240,
-    lastVisit: '2024-05-15',
-  },
-  {
-    id: 3,
-    name: 'Bob Wilson',
-    email: 'bob@example.com',
-    purchases: 3,
-    totalSpent: 180,
-    lastVisit: '2024-05-14',
-  },
-  {
-    id: 4,
-    name: 'Alice Brown',
-    email: 'alice@example.com',
-    purchases: 8,
-    totalSpent: 890,
-    lastVisit: '2024-05-13',
-  },
-  {
-    id: 5,
-    name: 'Charlie Davis',
-    email: 'charlie@example.com',
-    purchases: 2,
-    totalSpent: 120,
-    lastVisit: '2024-05-12',
-  },
-  {
-    id: 6,
-    name: 'Diana Evans',
-    email: 'diana@example.com',
-    purchases: 15,
-    totalSpent: 2100,
-    lastVisit: '2024-05-11',
-  },
-  {
-    id: 7,
-    name: 'Frank Green',
-    email: 'frank@example.com',
-    purchases: 1,
-    totalSpent: 55,
-    lastVisit: '2024-05-10',
-  },
-];
+import { Search, ChevronDown, Eye, Mail, Download, X, ArrowUpDown, Loader2, Users } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
+import { useAuth } from '@/hooks/use-auth';
 
 type SortKey = 'name' | 'totalSpent' | 'purchases' | 'lastVisit';
 
 export default function CustomersPage() {
+  const { user } = useAuth();
+  const [allCustomers, setAllCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortKey>('totalSpent');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [viewingCustomer, setViewingCustomer] = useState<any>(null);
-  const [activeActionId, setActiveActionId] = useState<number | null>(null);
+  const [activeActionId, setActiveActionId] = useState<any>(null);
+
+  const businessId = user?.businessId || user?.entity?.id;
+
+  useEffect(() => {
+    if (!businessId) return;
+    setLoading(true);
+    // NOTE: This uses the admin customers endpoint scoped to businessId via query param.
+    // TODO: Replace with a business-scoped customers endpoint when available.
+    apiService
+      .get<any>(`/v1/customers?businessId=${businessId}&page=1`)
+      .then((res) => {
+        if (res.data && !res.error) {
+          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.customers ?? [];
+          setAllCustomers(
+            list.map((c: any) => ({
+              id: c.id,
+              name: c.name || c.fullName || `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || 'Unknown',
+              email: c.email || '—',
+              purchases: c.purchaseCount ?? c.purchases ?? 0,
+              totalSpent: c.totalSpent ?? 0,
+              lastVisit: c.lastVisit ?? c.lastPurchaseAt ?? c.updatedAt ?? '—',
+            })),
+          );
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [businessId]);
 
   const toggleSort = (key: SortKey) => {
     if (sortBy === key) {
@@ -85,7 +58,7 @@ export default function CustomersPage() {
   };
 
   const filteredCustomers = useMemo(() => {
-    let list = [...initialCustomers];
+    let list = [...allCustomers];
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       list = list.filter(
@@ -102,7 +75,7 @@ export default function CustomersPage() {
       return 0;
     });
     return list;
-  }, [searchTerm, sortBy, sortDir]);
+  }, [allCustomers, searchTerm, sortBy, sortDir]);
 
   const handleExport = () => {
     const csv = [
@@ -163,6 +136,17 @@ export default function CustomersPage() {
           </div>
         </div>
 
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : allCustomers.length === 0 ? (
+          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+            <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+            <p className="text-foreground font-semibold mb-1">No customers yet</p>
+            <p className="text-sm text-muted-foreground">Customer data will appear once purchases are recorded.</p>
+          </Card>
+        ) : (
         <Card className="rounded-2xl overflow-hidden border-white/5 bg-card/40 backdrop-blur-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -229,6 +213,7 @@ export default function CustomersPage() {
             </table>
           </div>
         </Card>
+        )} {/* end allCustomers.length > 0 */}
 
         {/* ── VIEW CUSTOMER MODAL ──────────────────────────── */}
         {viewingCustomer && (

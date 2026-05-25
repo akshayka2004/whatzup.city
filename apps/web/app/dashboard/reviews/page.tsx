@@ -1,37 +1,43 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Star, Trash2, X, AlertTriangle } from 'lucide-react';
-
-const initialReviews = [
-  {
-    id: 1,
-    author: 'John D.',
-    rating: 5,
-    text: 'Excellent service, highly recommended!',
-    date: '2024-05-16',
-  },
-  {
-    id: 2,
-    author: 'Jane S.',
-    rating: 4,
-    text: 'Good experience overall, would visit again.',
-    date: '2024-05-15',
-  },
-  {
-    id: 3,
-    author: 'Bob W.',
-    rating: 3,
-    text: 'Average service, nothing special.',
-    date: '2024-05-14',
-  },
-];
+import { Star, Trash2, X, AlertTriangle, Loader2 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState(initialReviews);
+  const { user } = useAuth();
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const businessId = user?.businessId || user?.entity?.id;
+
+  useEffect(() => {
+    if (!businessId) return;
+    setLoading(true);
+    apiService
+      .get<any>(`/v1/reviews/business/${businessId}?page=1`)
+      .then((res) => {
+        if (res.data && !res.error) {
+          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.reviews ?? [];
+          setReviews(
+            list.map((r: any) => ({
+              id: r.id,
+              author: r.customerName || r.author || r.user?.name || 'Anonymous',
+              rating: r.rating ?? 0,
+              text: r.comment || r.text || r.body || '',
+              date: r.createdAt
+                ? new Date(r.createdAt).toISOString().slice(0, 10)
+                : r.date || '—',
+            })),
+          );
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [businessId]);
   const [deletingReview, setDeletingReview] = useState<any>(null);
 
   const handleDelete = () => {
@@ -58,6 +64,18 @@ export default function ReviewsPage() {
             <span className="text-xs text-muted-foreground">avg ({reviews.length} reviews)</span>
           </div>
         </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : reviews.length === 0 ? (
+          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+            <Star className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+            <p className="text-foreground font-semibold mb-1">No reviews yet</p>
+            <p className="text-sm text-muted-foreground">Customer reviews will appear here once submitted.</p>
+          </Card>
+        ) : null}
 
         <div className="space-y-4">
           {reviews.map((review) => (

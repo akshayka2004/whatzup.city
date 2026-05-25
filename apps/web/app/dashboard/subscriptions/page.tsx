@@ -8,6 +8,8 @@ import {
   CreditCard, Check, ChevronUp, Zap, Star, Shield, Rocket,
   AlertCircle, Clock, X, ArrowUpRight, ArrowDownRight, RefreshCw,
 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
+import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 
 // ── Plan definitions ──────────────────────────────────────────────────
@@ -117,30 +119,53 @@ function loadRequests(): PendingRequest[] {
   try { return JSON.parse(localStorage.getItem(REQUESTS_KEY) || '[]'); } catch { return []; }
 }
 
-// ── Usage mock data ───────────────────────────────────────────────────
-
+// USAGE — TODO: fetch from subscription/usage endpoint when available
 const USAGE = {
-  bills: { used: 187, limit: 300 },
-  branches: { used: 2, limit: 3 },
-  offers: { used: 14, limit: 20 },
-  team: { used: 2, limit: 2 },
+  bills: { used: 0, limit: 0 },
+  branches: { used: 0, limit: 0 },
+  offers: { used: 0, limit: 0 },
+  team: { used: 0, limit: 0 },
 };
 
 // ── Component ─────────────────────────────────────────────────────────
 
 export default function BusinessSubscriptionsPage() {
+  const { user } = useAuth();
   const [currentPlan, setCurrentPlan] = useState<PlanId>('starter');
-  const [since, setSince] = useState('Jan 2025');
+  const [since, setSince] = useState('—');
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [confirmTarget, setConfirmTarget] = useState<PlanId | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
 
+  const businessId = user?.businessId || user?.entity?.id;
+
   useEffect(() => {
-    const sub = loadSubscription();
-    setCurrentPlan(sub.plan);
-    setSince(sub.since);
+    if (!businessId) return;
+    // Fetch active subscription from API
+    apiService
+      .get<any>(`/v1/subscriptions/businesses/${businessId}/active`)
+      .then((res) => {
+        if (res.data && !res.error) {
+          const planId = (res.data.packageId || res.data.planId || res.data.plan || 'free').toLowerCase() as PlanId;
+          const validPlanId = PLANS.find((p) => p.id === planId)?.id ?? 'free';
+          setCurrentPlan(validPlanId as PlanId);
+          if (res.data.createdAt) {
+            setSince(new Date(res.data.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }));
+          }
+        } else {
+          // Fallback to localStorage
+          const sub = loadSubscription();
+          setCurrentPlan(sub.plan);
+          setSince(sub.since);
+        }
+      })
+      .catch(() => {
+        const sub = loadSubscription();
+        setCurrentPlan(sub.plan);
+        setSince(sub.since);
+      });
     setRequests(loadRequests());
-  }, []);
+  }, [businessId]);
 
   const currentPlanDef = PLANS.find((p) => p.id === currentPlan)!;
   const pendingRequest = requests.find((r) => r.status === 'pending');

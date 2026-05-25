@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,14 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Bell, Megaphone, ShieldAlert, Plus, Send, Trash2,
   X, CheckCircle2, Clock, Building2, LogOut, AlertTriangle,
-  FileText, Eye,
+  FileText, Eye, Loader2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-// ── Mock data ────────────────────────────────────────────────────
+import { apiService } from '@/lib/services/api-service';
 
 interface Notice {
-  id: number;
+  id: number | string;
   title: string;
   type: 'ALERT' | 'ANNOUNCEMENT' | 'NOTICE';
   body: string;
@@ -23,13 +22,6 @@ interface Notice {
   status: string;
   expiresAt?: string; // ISO date — auto-expired when past
 }
-
-const MOCK_NOTICES: Notice[] = [
-  { id: 1, title: 'Road closure on MG Road', type: 'ALERT', body: 'MG Road will remain closed from 8AM–6PM on May 25 for maintenance works.', publishedAt: 'May 22, 2026', status: 'ACTIVE', expiresAt: '2026-06-15' },
-  { id: 2, title: 'Water supply interruption', type: 'ANNOUNCEMENT', body: 'Water supply will be interrupted in zones A–D on May 24 from 6AM–12PM.', publishedAt: 'May 21, 2026', status: 'ACTIVE' },
-  { id: 3, title: 'Public holiday notification', type: 'NOTICE', body: 'Government offices will be closed on May 27 on account of the state foundation day.', publishedAt: 'May 20, 2026', status: 'ACTIVE', expiresAt: '2026-05-28' },
-  { id: 4, title: 'Emergency evacuation drill', type: 'ALERT', body: 'A civil defence evacuation drill will be conducted on May 28 between 9AM–11AM.', publishedAt: 'May 19, 2026', status: 'EXPIRED' },
-];
 
 function isNoticeExpired(n: Notice): boolean {
   if (n.status === 'EXPIRED') return true;
@@ -47,7 +39,35 @@ const TYPE_CONFIG: Record<NoticeType, { label: string; color: string; bg: string
 
 export default function GovDashboardPage() {
   const router = useRouter();
-  const [notices, setNotices] = useState<Notice[]>(MOCK_NOTICES);
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [loadingNotices, setLoadingNotices] = useState(true);
+
+  useEffect(() => {
+    setLoadingNotices(true);
+    apiService
+      .get<any>('/v1/government-alerts')
+      .then((res) => {
+        if (res.data && !res.error) {
+          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+          setNotices(
+            list.map((a: any) => ({
+              id: a.id,
+              title: a.title || '—',
+              type: (['ALERT', 'ANNOUNCEMENT', 'NOTICE'].includes(a.type?.toUpperCase())
+                ? a.type.toUpperCase()
+                : 'NOTICE') as NoticeType,
+              body: a.content || a.message || a.body || '',
+              publishedAt: a.createdAt
+                ? new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                : a.publishedAt || '—',
+              status: a.isActive !== false ? 'ACTIVE' : 'EXPIRED',
+              expiresAt: a.expiresAt || a.validUntil || undefined,
+            })),
+          );
+        }
+      })
+      .finally(() => setLoadingNotices(false));
+  }, []);
   const [showForm, setShowForm] = useState(false);
   const [formTitle, setFormTitle] = useState('');
   const [formBody, setFormBody] = useState('');
@@ -174,7 +194,11 @@ export default function GovDashboardPage() {
             </div>
           </div>
 
-          {visibleNotices.length === 0 ? (
+          {loadingNotices ? (
+            <div className="flex items-center justify-center h-20">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : visibleNotices.length === 0 ? (
             <Card className="p-10 rounded-2xl text-center border-dashed border-white/10 bg-white/5">
               <Bell className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-40" />
               <p className="text-foreground font-semibold mb-1">No notices published</p>

@@ -1,62 +1,58 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload, FileText, CheckCircle2, AlertCircle, X } from 'lucide-react';
-
-const initialBills = [
-  {
-    id: 1,
-    invoice: 'INV-2026-9042',
-    billNumber: 'BN-41029',
-    amount: 154.5,
-    date: 'May 18, 2026',
-    status: 'APPROVED',
-  },
-  {
-    id: 2,
-    invoice: 'INV-2026-9118',
-    billNumber: 'BN-41135',
-    amount: 89.0,
-    date: 'May 19, 2026',
-    status: 'PROCESSING',
-  },
-  {
-    id: 3,
-    invoice: 'INV-2026-8840',
-    billNumber: 'BN-40812',
-    amount: 450.0,
-    date: 'May 15, 2026',
-    status: 'REJECTED',
-  },
-];
+import { Upload, FileText, CheckCircle2, AlertCircle, X, Loader2 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function BillsPage() {
-  const [bills, setBills] = useState(initialBills);
+  const { user } = useAuth();
+  const [bills, setBills] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const businessId = user?.businessId || user?.entity?.id;
+
+  useEffect(() => {
+    if (!businessId) return;
+    setLoading(true);
+    apiService
+      .get<any[]>(`/v1/businesses/${businessId}/bill-verifications`)
+      .then((res) => {
+        if (res.data && !res.error) setBills(res.data);
+      })
+      .finally(() => setLoading(false));
+  }, [businessId]);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [invoice, setInvoice] = useState('');
   const [billNumber, setBillNumber] = useState('');
   const [amount, setAmount] = useState('');
 
-  const handleUpload = (e: React.FormEvent) => {
+  const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!invoice || !amount) return;
-    const newBill = {
-      id: Date.now(),
-      invoice,
-      billNumber: billNumber || `BN-${Math.floor(10000 + Math.random() * 90000)}`,
+    if (!invoice || !amount || !businessId) return;
+    const res = await apiService.post<any>(`/v1/businesses/${businessId}/bill-verifications`, {
+      invoiceRef: invoice,
+      billNumber: billNumber || undefined,
       amount: parseFloat(amount),
-      date: new Date().toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      }),
-      status: 'PROCESSING',
-    };
-    setBills([newBill, ...bills]);
+    });
+    if (res.data && !res.error) {
+      setBills([res.data, ...bills]);
+    } else {
+      // Optimistic fallback
+      const newBill = {
+        id: Date.now(),
+        invoiceRef: invoice,
+        billNumber: billNumber || `BN-${Math.floor(10000 + Math.random() * 90000)}`,
+        amount: parseFloat(amount),
+        createdAt: new Date().toISOString(),
+        status: 'PROCESSING',
+      };
+      setBills([newBill, ...bills]);
+    }
     setIsUploadOpen(false);
     setInvoice('');
     setBillNumber('');
@@ -82,8 +78,26 @@ export default function BillsPage() {
           </Button>
         </div>
 
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : bills.length === 0 ? (
+          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+            <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+            <p className="text-foreground font-semibold mb-1">No bills yet</p>
+            <p className="text-sm text-muted-foreground">Upload your first bill receipt to get started.</p>
+          </Card>
+        ) : (
         <div className="space-y-4">
-          {bills.map((bill) => (
+          {bills.map((bill) => {
+            const invoiceRef = bill.invoiceRef || bill.invoice || bill.id;
+            const billNum = bill.billNumber || '—';
+            const uploadedDate = bill.createdAt
+              ? new Date(bill.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : bill.date || '—';
+            const amt = typeof bill.amount === 'number' ? bill.amount : parseFloat(bill.amount ?? '0');
+            return (
             <Card
               key={bill.id}
               className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
@@ -102,10 +116,10 @@ export default function BillsPage() {
                     <FileText className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground text-base">{bill.invoice}</h3>
+                    <h3 className="font-semibold text-foreground text-base">{invoiceRef}</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Bill #: <span className="text-slate-300 font-mono">{bill.billNumber}</span> •
-                      Uploaded: {bill.date}
+                      Bill #: <span className="text-slate-300 font-mono">{billNum}</span> •
+                      Uploaded: {uploadedDate}
                     </p>
                   </div>
                 </div>
@@ -113,7 +127,7 @@ export default function BillsPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">Total Amount</p>
                     <p className="font-bold text-foreground text-base mt-0.5">
-                      ${bill.amount.toFixed(2)}
+                      ${isNaN(amt) ? '—' : amt.toFixed(2)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -134,8 +148,10 @@ export default function BillsPage() {
                 </div>
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
+        )}
 
         {/* ── UPLOAD BILL MODAL ──────────────────────────── */}
         {isUploadOpen && (

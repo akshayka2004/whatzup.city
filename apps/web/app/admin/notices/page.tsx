@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Bell, Eye, Trash2, X, AlertTriangle, Tag } from 'lucide-react';
+import { Plus, Bell, Eye, Trash2, X, AlertTriangle, Tag, Loader2 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
 
 interface Notice {
   id: number;
@@ -17,26 +18,6 @@ interface Notice {
   tags: string[];
 }
 
-const initialNotices: Notice[] = [
-  {
-    id: 1,
-    title: 'Extreme Weather Advisory - City Center',
-    sender: 'Civic Authority Office',
-    status: 'BROADCASTING',
-    date: 'May 20, 2026',
-    body: 'All residents and businesses in the city center area are advised to take precautions due to expected heavy rainfall and potential flooding. Emergency services are on standby.',
-    tags: ['weather', 'emergency', 'flooding'],
-  },
-  {
-    id: 2,
-    title: 'Road Maintenance Blockage: Maple Street',
-    sender: 'Department of Transit',
-    status: 'EXPIRED',
-    date: 'May 15, 2026',
-    body: 'Maple Street between 3rd Avenue and 7th Avenue will be closed for resurfacing work. Estimated completion was May 18, 2026.',
-    tags: ['road-closure', 'maintenance', 'transit'],
-  },
-];
 
 // ── Reusable tag input ──────────────────────────────────────────────────────
 function TagInput({
@@ -101,7 +82,33 @@ function TagInput({
 }
 
 export default function AdminNoticesPage() {
-  const [notices, setNotices] = useState<Notice[]>(initialNotices);
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    apiService
+      .get<any[]>('/v1/government-alerts')
+      .then((res) => {
+        if (res.data && !res.error) {
+          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+          setNotices(
+            list.map((n: any) => ({
+              id: n.id,
+              title: n.title || '',
+              sender: n.publishedBy || n.sender || n.issuedBy || 'Platform Admin',
+              status: n.isActive !== false ? 'BROADCASTING' : 'EXPIRED',
+              date: n.createdAt
+                ? new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : n.date || '—',
+              body: n.content || n.body || n.message || '',
+              tags: Array.isArray(n.tags) ? n.tags : [],
+            })),
+          );
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [viewingNotice, setViewingNotice] = useState<Notice | null>(null);
   const [deletingNotice, setDeletingNotice] = useState<Notice | null>(null);
@@ -169,6 +176,18 @@ export default function AdminNoticesPage() {
             <Plus className="h-4 w-4" /> Create Alert
           </Button>
         </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : notices.length === 0 ? (
+          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+            <Bell className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+            <p className="text-foreground font-semibold mb-1">No notices yet</p>
+            <p className="text-sm text-muted-foreground">Published alerts and notices will appear here.</p>
+          </Card>
+        ) : null}
 
         <div className="space-y-4">
           {notices.map((note) => (

@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useRef, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Edit, Trash2, Eye, X, AlertTriangle, Box, Tag, Sliders } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, X, AlertTriangle, Box, Tag, Sliders, Loader2 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
+import { useAuth } from '@/hooks/use-auth';
 
 interface ProductAttribute {
   key: string;
@@ -23,12 +25,6 @@ interface Product {
   attributes: ProductAttribute[];
 }
 
-const initialProducts: Product[] = [
-  { id: 1, name: 'Product A', category: 'Electronics', price: '$99.99', stock: 45, sales: 234, tags: ['wireless', 'premium'], attributes: [{ key: 'Color', value: 'Black' }, { key: 'Warranty', value: '1 Year' }] },
-  { id: 2, name: 'Product B', category: 'Clothing', price: '$29.99', stock: 120, sales: 567, tags: ['summer', 'unisex'], attributes: [{ key: 'Material', value: 'Cotton' }, { key: 'Size', value: 'S/M/L/XL' }] },
-  { id: 3, name: 'Product C', category: 'Home', price: '$149.99', stock: 23, sales: 89, tags: ['eco-friendly'], attributes: [{ key: 'Weight', value: '2.5kg' }, { key: 'Brand', value: 'EcoHome' }] },
-  { id: 4, name: 'Product D', category: 'Electronics', price: '$199.99', stock: 8, sales: 456, tags: ['limited-edition', 'pro'], attributes: [{ key: 'Color', value: 'Space Grey' }, { key: 'Warranty', value: '2 Years' }, { key: 'Package Type', value: 'Premium Box' }] },
-];
 
 // ── Reusable tag input ───────────────────────────────────────────────
 function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
@@ -87,7 +83,36 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[
 }
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const { user } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const businessId = user?.businessId || user?.entity?.id;
+
+  useEffect(() => {
+    if (!businessId) return;
+    setLoading(true);
+    apiService
+      .get<any[]>(`/v1/products/business/${businessId}`)
+      .then((res) => {
+        if (res.data && !res.error) {
+          const list = Array.isArray(res.data) ? res.data : [];
+          setProducts(
+            list.map((p: any) => ({
+              id: p.id,
+              name: p.name || '',
+              category: p.category || p.categoryName || '',
+              price: p.price ? `$${p.price}` : p.priceFormatted || '—',
+              stock: p.stockCount ?? p.stock ?? 0,
+              sales: p.salesCount ?? p.sales ?? 0,
+              tags: Array.isArray(p.tags) ? p.tags : [],
+              attributes: Array.isArray(p.attributes) ? p.attributes : [],
+            })),
+          );
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [businessId]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
@@ -277,6 +302,18 @@ export default function ProductsPage() {
             Add Product
           </Button>
         </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : products.length === 0 ? (
+          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+            <Box className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+            <p className="text-foreground font-semibold mb-1">No products yet</p>
+            <p className="text-sm text-muted-foreground">Add your first product to build your catalog.</p>
+          </Card>
+        ) : null}
 
         <div className="space-y-4">
           {products.map((product) => (

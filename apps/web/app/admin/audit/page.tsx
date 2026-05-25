@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,9 @@ import {
   Settings,
   Bell,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
 
 // ── Event type definitions ────────────────────────────────────────────────────
@@ -56,177 +58,6 @@ interface AuditLogEntry {
   metadata?: Record<string, string>;
 }
 
-const ALL_AUDIT_LOGS: AuditLogEntry[] = [
-  // Bills
-  {
-    id: 101,
-    action: 'BILL_SUBMITTED',
-    category: 'BILL',
-    user: 'Priya Sharma (Customer)',
-    details: 'Bill INV-88291 submitted for "Gourmet Pizza Co." — ₹2,450',
-    date: 'May 21, 2026 06:00:44',
-    metadata: { billId: 'bill-001', business: 'Gourmet Pizza Co.', amount: '₹2,450' },
-  },
-  {
-    id: 102,
-    action: 'BILL_APPROVED',
-    category: 'BILL',
-    user: 'Moderator Raj (Business)',
-    details: 'Bill INV-88291 approved for Priya Sharma — sale converted',
-    date: 'May 21, 2026 09:15:12',
-    metadata: { billId: 'bill-001', status: 'APPROVED' },
-  },
-  {
-    id: 103,
-    action: 'BILL_SUBMITTED',
-    category: 'BILL',
-    user: 'Rahul Mehta (Customer)',
-    details: 'Bill INV-39201 submitted for "Vanguard Fitness Center" — ₹3,750',
-    date: 'May 20, 2026 14:30:00',
-    metadata: { billId: 'bill-002', business: 'Vanguard Fitness Center', amount: '₹3,750' },
-  },
-  {
-    id: 104,
-    action: 'BILL_FLAGGED',
-    category: 'BILL',
-    user: 'Auto-Fraud Detector (System)',
-    details: 'Bill INV-10293 flagged — OCR confidence 51%, fraud score 72%',
-    date: 'May 19, 2026 11:20:00',
-    metadata: { billId: 'bill-003', fraudScore: '0.72', ocrConfidence: '51%' },
-  },
-  {
-    id: 105,
-    action: 'BILL_REJECTED',
-    category: 'BILL',
-    user: 'Moderator Sunita (Business)',
-    details: 'Bill INV-10293 rejected — duplicate invoice detected, customer notified',
-    date: 'May 19, 2026 13:45:00',
-    metadata: { billId: 'bill-003', reason: 'Duplicate invoice hash' },
-  },
-  {
-    id: 106,
-    action: 'BILL_ESCALATED',
-    category: 'BILL',
-    user: 'System (Auto)',
-    details: 'Bill INV-55932 escalated to platform admin — fraud score 88%, submitted 3× in 48 hours',
-    date: 'May 20, 2026 15:45:00',
-    metadata: { billId: 'bill-esc-002', fraudScore: '0.88' },
-  },
-  // Offers
-  {
-    id: 201,
-    action: 'OFFER_CREATED',
-    category: 'OFFER',
-    user: 'Business Owner (Bella Restaurant)',
-    details: 'New offer created: "Summer Special — 50% Off" with tags: seasonal, dine-in',
-    date: 'May 20, 2026 10:00:00',
-    metadata: { offerId: 'offer-001', discount: '50%' },
-  },
-  {
-    id: 202,
-    action: 'OFFER_ACTIVATED',
-    category: 'OFFER',
-    user: 'Business Owner (Bella Restaurant)',
-    details: 'Offer "Member Exclusive — 30% Off" status changed to ACTIVE',
-    date: 'May 20, 2026 10:05:00',
-    metadata: { offerId: 'offer-002', status: 'ACTIVE' },
-  },
-  {
-    id: 203,
-    action: 'OFFER_REDEEMED',
-    category: 'OFFER',
-    user: 'Priya Sharma (Customer)',
-    details: 'Offer code CLAIM-4827 redeemed at Bella Restaurant',
-    date: 'May 21, 2026 12:30:00',
-    metadata: { code: 'CLAIM-4827', business: 'Bella Restaurant' },
-  },
-  // Business
-  {
-    id: 301,
-    action: 'BUSINESS_REGISTERED',
-    category: 'BUSINESS',
-    user: 'John Green',
-    details: 'New business registered: "Green & Co. Whole Foods" — Category: Retail',
-    date: 'May 19, 2026 08:00:00',
-    metadata: { businessId: 'biz-real-1', category: 'Retail & Supermarkets' },
-  },
-  {
-    id: 302,
-    action: 'BUSINESS_APPROVED',
-    category: 'BUSINESS',
-    user: 'Admin Alex',
-    details: 'Business "Gourmet Deli" (ID: 104) approved — entity verification completed',
-    date: 'May 20, 2026 14:02:10',
-    metadata: { businessId: '104' },
-  },
-  {
-    id: 303,
-    action: 'BUSINESS_SUSPENDED',
-    category: 'BUSINESS',
-    user: 'Admin Alex',
-    details: 'Business "Shadow Goods" suspended — repeated fraud bill submissions',
-    date: 'May 18, 2026 11:30:00',
-    metadata: { businessId: 'biz-shadow', reason: 'Fraud policy violation' },
-  },
-  // User / Moderation
-  {
-    id: 401,
-    action: 'USER_SUSPENDED',
-    category: 'USER',
-    user: 'Admin Sarah',
-    details: 'User account (ID: 981) suspended for fraudulent bill abuse — 5 duplicate bills',
-    date: 'May 20, 2026 13:45:00',
-    metadata: { userId: '981', reason: 'Fraud abuse' },
-  },
-  {
-    id: 402,
-    action: 'USER_APPROVED',
-    category: 'USER',
-    user: 'Admin Alex',
-    details: 'Entity verification approved: "Sarah Style (Fashion)" — Influencer profile unlocked',
-    date: 'May 20, 2026 09:00:00',
-    metadata: { entityId: 'entity-inf-1', type: 'INFLUENCER' },
-  },
-  // Moderation
-  {
-    id: 501,
-    action: 'REPORT_RESOLVED',
-    category: 'MODERATION',
-    user: 'System Worker',
-    details: 'Moderation report (ID: 1082) auto-dismissed — low confidence score flag',
-    date: 'May 20, 2026 12:12:15',
-    metadata: { reportId: '1082' },
-  },
-  {
-    id: 502,
-    action: 'FRAUD_FLAGGED',
-    category: 'MODERATION',
-    user: 'Auto-Fraud Detector',
-    details: 'Fraud flag raised for Urban Mart Grocery — duplicate invoice hash pattern',
-    date: 'May 20, 2026 15:40:00',
-    metadata: { business: 'Urban Mart Grocery', severity: 'HIGH' },
-  },
-  // Notices
-  {
-    id: 601,
-    action: 'NOTICE_PUBLISHED',
-    category: 'NOTICE',
-    user: 'Civic Authority Office',
-    details: 'Alert published: "Extreme Weather Advisory - City Center" — tags: weather, emergency',
-    date: 'May 20, 2026 07:30:00',
-    metadata: { noticeId: 'notice-001', tags: 'weather, emergency, flooding' },
-  },
-  // System
-  {
-    id: 701,
-    action: 'SYSTEM_STARTUP',
-    category: 'SYSTEM',
-    user: 'System',
-    details: 'Platform services started — API, Worker, and OCR queue online',
-    date: 'May 20, 2026 00:01:00',
-    metadata: {},
-  },
-];
 
 const FILTER_OPTIONS: { label: string; value: EventCategory | 'ALL' }[] = [
   { label: 'All Events', value: 'ALL' },
@@ -242,11 +73,38 @@ const FILTER_OPTIONS: { label: string; value: EventCategory | 'ALL' }[] = [
 const PAGE_SIZE = 10;
 
 export default function AdminAuditPage() {
+  const [allLogs, setAllLogs] = useState<AuditLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState<EventCategory | 'ALL'>('ALL');
   const [page, setPage] = useState(1);
 
-  const filtered = ALL_AUDIT_LOGS.filter((log) => {
+  useEffect(() => {
+    setLoading(true);
+    apiService
+      .get<any>('/v1/audit-logs?page=1')
+      .then((res) => {
+        if (res.data && !res.error) {
+          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.logs ?? [];
+          setAllLogs(
+            list.map((l: any, i: number) => ({
+              id: l.id ?? i,
+              action: l.action || l.eventType || 'UNKNOWN',
+              category: (l.category || l.eventCategory || 'SYSTEM') as EventCategory,
+              user: l.performedBy || l.user || l.userId || 'System',
+              details: l.description || l.details || l.message || '',
+              date: l.createdAt
+                ? new Date(l.createdAt).toLocaleString('en-IN')
+                : l.date || '—',
+              metadata: l.metadata || {},
+            })),
+          );
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = allLogs.filter((log) => {
     const matchCat = filterCategory === 'ALL' || log.category === filterCategory;
     const matchSearch =
       !search ||
@@ -302,13 +160,19 @@ export default function AdminAuditPage() {
           </Button>
         </div>
 
+        {loading && (
+          <div className="flex items-center justify-center h-20">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
         {/* Stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Total Events', value: ALL_AUDIT_LOGS.length, color: 'text-foreground' },
-            { label: 'Bill Events', value: ALL_AUDIT_LOGS.filter((l) => l.category === 'BILL').length, color: 'text-cyan-400' },
-            { label: 'Moderation', value: ALL_AUDIT_LOGS.filter((l) => l.category === 'MODERATION').length, color: 'text-rose-400' },
-            { label: 'Business Events', value: ALL_AUDIT_LOGS.filter((l) => l.category === 'BUSINESS').length, color: 'text-emerald-400' },
+            { label: 'Total Events', value: allLogs.length, color: 'text-foreground' },
+            { label: 'Bill Events', value: allLogs.filter((l) => l.category === 'BILL').length, color: 'text-cyan-400' },
+            { label: 'Moderation', value: allLogs.filter((l) => l.category === 'MODERATION').length, color: 'text-rose-400' },
+            { label: 'Business Events', value: allLogs.filter((l) => l.category === 'BUSINESS').length, color: 'text-emerald-400' },
           ].map((stat) => (
             <Card key={stat.label} className="p-4 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
               <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>

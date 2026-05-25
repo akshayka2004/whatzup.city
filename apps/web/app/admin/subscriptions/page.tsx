@@ -9,7 +9,7 @@ import {
   CreditCard, Search, TrendingUp, Users, Zap, CheckCircle2,
   Crown, Sparkles, Building2, Calendar, ArrowUpRight, ArrowDownRight,
   ChevronDown, MoreHorizontal, AlertCircle, X, Check,
-  BarChart3, DollarSign, RefreshCw, Clock, Bell,
+  BarChart3, DollarSign, RefreshCw, Clock, Bell, Loader2,
 } from 'lucide-react';
 
 const REQUESTS_KEY = 'subscription_requests';
@@ -77,19 +77,7 @@ const PLANS = [
   },
 ];
 
-// ── Mock subscriber businesses ───────────────────────────────────
-const SUBSCRIBERS = [
-  { id: 1, name: 'Bella Restaurant', plan: 'growth', billingDate: 'Jun 15, 2026', status: 'active', mrr: 1299, since: 'Jan 2025', offers: 87, listings: 3 },
-  { id: 2, name: 'Health Plus Clinic', plan: 'enterprise', billingDate: 'Jun 1, 2026', status: 'active', mrr: 3999, since: 'Nov 2024', offers: 210, listings: 8 },
-  { id: 3, name: 'Fashion Hub', plan: 'starter', billingDate: 'Jun 22, 2026', status: 'active', mrr: 499, since: 'Mar 2025', offers: 14, listings: 2 },
-  { id: 4, name: 'Tech Solutions', plan: 'growth', billingDate: 'Jun 8, 2026', status: 'active', mrr: 1299, since: 'Feb 2025', offers: 65, listings: 5 },
-  { id: 5, name: 'Vanguard Fitness', plan: 'starter', billingDate: 'Jun 30, 2026', status: 'past_due', mrr: 499, since: 'Apr 2025', offers: 9, listings: 1 },
-  { id: 6, name: 'Sunrise Bakery', plan: 'free', billingDate: '—', status: 'active', mrr: 0, since: 'May 2025', offers: 3, listings: 1 },
-  { id: 7, name: 'Metro Pharmacy', plan: 'growth', billingDate: 'Jun 12, 2026', status: 'active', mrr: 1299, since: 'Dec 2024', offers: 44, listings: 4 },
-  { id: 8, name: 'TechHub Electronics', plan: 'enterprise', billingDate: 'Jun 5, 2026', status: 'cancelled', mrr: 0, since: 'Oct 2024', offers: 0, listings: 0 },
-  { id: 9, name: 'Zen Spa & Wellness', plan: 'starter', billingDate: 'Jun 18, 2026', status: 'active', mrr: 499, since: 'May 2025', offers: 17, listings: 2 },
-  { id: 10, name: 'Quick Courier Co.', plan: 'free', billingDate: '—', status: 'active', mrr: 0, since: 'May 2026', offers: 1, listings: 1 },
-];
+import { apiService } from '@/lib/services/api-service';
 
 const STATUS_STYLE: Record<string, string> = {
   active: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -109,14 +97,44 @@ export default function AdminSubscriptionsPage() {
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedBiz, setSelectedBiz] = useState<(typeof SUBSCRIBERS)[0] | null>(null);
+  const [selectedBiz, setSelectedBiz] = useState<any>(null);
   const [modal, setModal] = useState<ModalType>(null);
   const [targetPlan, setTargetPlan] = useState('');
-  const [subscribers, setSubscribers] = useState(SUBSCRIBERS);
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [loadingSubs, setLoadingSubs] = useState(true);
   const [activeTab, setActiveTab] = useState<'subscribers' | 'requests'>('subscribers');
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
 
   useEffect(() => {
+    // Fetch all businesses to build subscriber table
+    // TODO: Replace with a dedicated admin subscribers endpoint when available
+    setLoadingSubs(true);
+    apiService
+      .get<any>('/v1/businesses?page=1')
+      .then((res) => {
+        if (res.data && !res.error) {
+          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.businesses ?? [];
+          setSubscribers(
+            list.map((b: any) => ({
+              id: b.id,
+              name: b.name || b.businessName || '',
+              plan: (b.subscriptionPlan || b.plan || 'free').toLowerCase(),
+              billingDate: b.nextBillingDate
+                ? new Date(b.nextBillingDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '—',
+              status: b.subscriptionStatus || (b.isActive ? 'active' : 'cancelled'),
+              mrr: b.mrr ?? (PLANS.find((p) => p.id === (b.subscriptionPlan || b.plan || 'free').toLowerCase())?.price ?? 0),
+              since: b.createdAt
+                ? new Date(b.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
+                : '—',
+              offers: b._count?.offers ?? b.offersCount ?? 0,
+              listings: b._count?.branches ?? b.branchCount ?? 1,
+            })),
+          );
+        }
+      })
+      .finally(() => setLoadingSubs(false));
+
     try {
       const stored = localStorage.getItem(REQUESTS_KEY);
       if (stored) setPendingRequests(JSON.parse(stored));
@@ -299,6 +317,12 @@ export default function AdminSubscriptionsPage() {
               </div>
             )}
           </Card>
+        )}
+
+        {activeTab === 'subscribers' && loadingSubs && (
+          <div className="flex items-center justify-center h-20">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
         )}
 
         {activeTab === 'subscribers' && (

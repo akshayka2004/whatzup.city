@@ -1,27 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Folder, Edit, Trash2, X, AlertTriangle } from 'lucide-react';
-
-const initialCategories = [
-  { id: 1, name: 'Food & Dining', slug: 'food-dining', listingsCount: 450, active: true },
-  { id: 2, name: 'Health & Wellness', slug: 'health-wellness', listingsCount: 312, active: true },
-  {
-    id: 3,
-    name: 'Professional Services',
-    slug: 'professional-services',
-    listingsCount: 189,
-    active: true,
-  },
-  { id: 4, name: 'Retail Shopping', slug: 'retail-shopping', listingsCount: 520, active: false },
-];
+import { Plus, Folder, Edit, Trash2, X, AlertTriangle, Loader2 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState(initialCategories);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    apiService
+      .get<any[]>('/v1/categories?tenantId=default')
+      .then((res) => {
+        if (res.data && !res.error) {
+          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+          setCategories(
+            list.map((c: any) => ({
+              id: c.id,
+              name: c.name || '',
+              slug: c.slug || c.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '',
+              listingsCount: c.listingsCount ?? c._count?.businesses ?? 0,
+              active: c.isActive !== false,
+            })),
+          );
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [deletingCategory, setDeletingCategory] = useState<any>(null);
@@ -109,6 +119,18 @@ export default function AdminCategoriesPage() {
             Add Category
           </Button>
         </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : categories.length === 0 ? (
+          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+            <Folder className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+            <p className="text-foreground font-semibold mb-1">No categories yet</p>
+            <p className="text-sm text-muted-foreground">Add your first category to organize listings.</p>
+          </Card>
+        ) : null}
 
         <div className="grid md:grid-cols-2 gap-6">
           {categories.map((cat) => (

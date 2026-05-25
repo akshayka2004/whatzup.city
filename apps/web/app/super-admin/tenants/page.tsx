@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,50 +15,44 @@ import {
   ShieldAlert,
   Receipt,
   TrendingUp,
+  Loader2,
 } from 'lucide-react';
-
-const initialTenants = [
-  {
-    id: 1,
-    name: 'Tenant A (E-Commerce Retail)',
-    plan: 'Premium',
-    users: 450,
-    status: 'Active',
-    signupDate: '2024-01-15',
-    sales: '$45,200',
-    offersCount: 24,
-    announcementsCount: 15,
-    convertedSales: 312,
-  },
-  {
-    id: 2,
-    name: 'Tenant B (Local Food Chains)',
-    plan: 'Standard',
-    users: 120,
-    status: 'Active',
-    signupDate: '2024-02-20',
-    sales: '$18,400',
-    offersCount: 12,
-    announcementsCount: 8,
-    convertedSales: 87,
-  },
-  {
-    id: 3,
-    name: 'Tenant C (Medical Services)',
-    plan: 'Trial',
-    users: 45,
-    status: 'Active',
-    signupDate: '2024-04-10',
-    sales: '$3,800',
-    offersCount: 4,
-    announcementsCount: 2,
-    convertedSales: 14,
-  },
-];
+import { apiService } from '@/lib/services/api-service';
 
 export default function TenantsPage() {
-  const [tenants, setTenants] = useState(initialTenants);
+  const [tenants, setTenants] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [managingTenant, setManagingTenant] = useState<any>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    // TODO: Replace with dedicated /v1/tenants endpoint when available.
+    // Using /v1/businesses?page=1 as a proxy for now (each business represents a tenant).
+    apiService
+      .get<any>('/v1/businesses?page=1')
+      .then((res) => {
+        if (res.data && !res.error) {
+          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+          setTenants(
+            list.map((b: any) => ({
+              id: b.id,
+              name: b.name || b.businessName || 'Unknown',
+              plan: b.subscriptionPlan || b.plan || 'Standard',
+              users: b.userCount ?? b.staffCount ?? 0,
+              status: b.isActive !== false ? 'Active' : 'Suspended',
+              signupDate: b.createdAt
+                ? new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                : '—',
+              sales: b.totalRevenue ? `$${b.totalRevenue.toLocaleString()}` : '—',
+              offersCount: b.offersCount ?? b._count?.offers ?? 0,
+              announcementsCount: b.announcementsCount ?? b._count?.announcements ?? 0,
+              convertedSales: b.convertedSales ?? b.billVerificationsCount ?? b._count?.billVerifications ?? 0,
+            })),
+          );
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleToggleStatus = (id: number) => {
     setTenants(
@@ -96,6 +90,20 @@ export default function TenantsPage() {
         <p className="text-muted-foreground mb-8">
           Manage platform tenants, review sales performance, and adjust subscriptions
         </p>
+
+        {loading && (
+          <div className="flex items-center justify-center h-32">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
+
+        {!loading && tenants.length === 0 && (
+          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+            <Building2 className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+            <p className="text-foreground font-semibold mb-1">No tenants found</p>
+            <p className="text-sm text-muted-foreground">Tenant registrations will appear here.</p>
+          </Card>
+        )}
 
         <div className="space-y-4">
           {tenants.map((tenant) => (

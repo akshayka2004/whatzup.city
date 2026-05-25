@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useRef, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Tag, Eye, Edit, Trash2, X, AlertTriangle, Clock, Calendar } from 'lucide-react';
+import { Plus, Tag, Eye, Edit, Trash2, X, AlertTriangle, Clock, Calendar, Loader2 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
+import { useAuth } from '@/hooks/use-auth';
 
 interface Offer {
   id: number;
@@ -30,13 +32,6 @@ function isScheduled(offer: Offer): boolean {
   if (!offer.startsAt) return false;
   return new Date(offer.startsAt) > new Date();
 }
-
-const initialOffers: Offer[] = [
-  { id: 1, title: 'Summer Special', discount: 50, active: true, views: 1234, clicks: 456, tags: ['seasonal', 'dine-in'], expiresAt: '2026-08-31' },
-  { id: 2, title: 'Member Exclusive', discount: 30, active: true, views: 987, clicks: 234, tags: ['members-only'] },
-  { id: 3, title: 'Bundle Deal', discount: 25, active: false, views: 654, clicks: 123, tags: ['bundle', 'takeaway'] },
-  { id: 4, title: 'Weekend Offer', discount: 40, active: true, views: 2341, clicks: 789, tags: ['weekend'], startsAt: '2026-05-23', expiresAt: '2026-06-30' },
-];
 
 // ── Reusable tag input component ──────────────────────────────────────────────
 function TagInput({
@@ -106,7 +101,37 @@ function TagInput({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function OffersPage() {
-  const [offers, setOffers] = useState<Offer[]>(initialOffers);
+  const { user } = useAuth();
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const businessId = user?.businessId || user?.entity?.id;
+
+  useEffect(() => {
+    if (!businessId) return;
+    setLoading(true);
+    apiService
+      .get<any[]>(`/v1/offers/business/${businessId}`)
+      .then((res) => {
+        if (res.data && !res.error) {
+          const list = Array.isArray(res.data) ? res.data : [];
+          setOffers(
+            list.map((o: any) => ({
+              id: o.id,
+              title: o.title || o.name || '',
+              discount: o.discountPercent ?? o.discount ?? 0,
+              active: o.isActive ?? o.active ?? false,
+              views: o.views ?? 0,
+              clicks: o.clicks ?? 0,
+              tags: Array.isArray(o.tags) ? o.tags : [],
+              startsAt: o.startsAt || o.startDate || undefined,
+              expiresAt: o.expiresAt || o.endDate || undefined,
+            })),
+          );
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [businessId]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [deletingOffer, setDeletingOffer] = useState<Offer | null>(null);
@@ -204,6 +229,18 @@ export default function OffersPage() {
             Create Offer
           </Button>
         </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : activeOffers.length === 0 ? (
+          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+            <Tag className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+            <p className="text-foreground font-semibold mb-1">No active offers</p>
+            <p className="text-sm text-muted-foreground">Create your first promotional offer to attract customers.</p>
+          </Card>
+        ) : null}
 
         <div className="grid md:grid-cols-2 gap-6">
           {activeOffers.map((offer) => (
