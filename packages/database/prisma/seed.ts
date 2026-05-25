@@ -448,6 +448,7 @@ async function main() {
   ];
 
   const categories = [];
+  const createdCategories: Record<string, any> = {};
   for (const cat of categoriesData) {
     const category = await prisma.category.upsert({
       where: { tenantId_slug: { tenantId: tenant.id, slug: cat.slug } },
@@ -462,8 +463,98 @@ async function main() {
       },
     });
     categories.push(category);
+    createdCategories[cat.slug] = category;
   }
   console.log(`✅ ${categories.length} categories upserted`);
+
+  // ── Seeding Sample Businesses ────────────────────────────
+  const sampleBusinesses = [
+    {
+      name: 'Sunrise Café',
+      slug: 'sunrise-cafe',
+      description: 'Fresh coffee and bakery items in Kochi.',
+      categorySlug: 'restaurants',
+      address: '123 Beach Road',
+      city: 'Kochi',
+      state: 'Kerala',
+      zipCode: '682001',
+      phone: '9876500010',
+      email: 'info@sunrisecafe.com',
+      status: 'APPROVED' as any,
+      isVerified: true,
+    },
+    {
+      name: 'Kerala Health Center',
+      slug: 'kerala-health-center',
+      description: 'Multi-specialty wellness clinic in Trivandrum.',
+      categorySlug: 'healthcare',
+      address: '45 MG Road',
+      city: 'Trivandrum',
+      state: 'Kerala',
+      zipCode: '695001',
+      phone: '9876500011',
+      email: 'trivandrum@keralahealth.org',
+      status: 'APPROVED' as any,
+      isVerified: true,
+    },
+    {
+      name: 'Smart Retailers',
+      slug: 'smart-retailers',
+      description: 'Electronics and apparel department store.',
+      categorySlug: 'retail',
+      address: 'Near Town Hall',
+      city: 'Kozhikode',
+      state: 'Kerala',
+      zipCode: '673001',
+      phone: '9876500012',
+      email: 'sales@smartretailers.com',
+      status: 'APPROVED' as any,
+      isVerified: true,
+    },
+  ];
+
+  // Resolve business owner user from DB
+  const businessOwnerUser = await prisma.user.findFirst({
+    where: { tenantId: tenant.id, role: 'BUSINESS_OWNER' as any },
+  });
+
+  if (businessOwnerUser) {
+    for (const b of sampleBusinesses) {
+      const category = createdCategories[b.categorySlug];
+      await prisma.business.upsert({
+        where: { tenantId_slug: { tenantId: tenant.id, slug: b.slug } },
+        update: {
+          name: b.name,
+          description: b.description,
+          address: b.address,
+          city: b.city,
+          state: b.state,
+          zipCode: b.zipCode,
+          phone: b.phone,
+          email: b.email,
+          status: b.status,
+          isVerified: b.isVerified,
+        },
+        create: {
+          tenantId: tenant.id,
+          ownerId: businessOwnerUser.id,
+          categoryId: category.id,
+          name: b.name,
+          slug: b.slug,
+          description: b.description,
+          address: b.address,
+          city: b.city,
+          state: b.state,
+          zipCode: b.zipCode,
+          phone: b.phone,
+          email: b.email,
+          status: b.status,
+          isVerified: b.isVerified,
+        },
+      });
+    }
+    console.log(`✅ ${sampleBusinesses.length} sample businesses seeded/upserted`);
+  }
 
   // ── Feature Flags ───────────────────────────────────────
   const flags = [

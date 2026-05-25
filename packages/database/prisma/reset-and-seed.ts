@@ -235,8 +235,10 @@ async function main() {
     { name: 'Finance',       slug: 'finance',       description: 'Banking & Financial Services',     icon: 'Landmark',        sortOrder: 8 },
   ];
 
+  const createdCategories: Record<string, any> = {};
   for (const cat of categoriesData) {
-    await prisma.category.create({ data: { tenantId: tenant.id, ...cat } });
+    const category = await prisma.category.create({ data: { tenantId: tenant.id, ...cat } });
+    createdCategories[cat.slug] = category;
   }
   console.log(`✅ ${categoriesData.length} categories seeded`);
 
@@ -258,6 +260,7 @@ async function main() {
     { email: 'orgadmin@platform.com',      name: 'NGO Admin',         role: UserRoleEnum.ORGANIZATION_ADMIN },
   ];
 
+  const createdUsers: Record<string, any> = {};
   for (const u of roleUsers) {
     const user = await prisma.user.create({
       data: {
@@ -270,6 +273,7 @@ async function main() {
         emailVerified: true,
       },
     });
+    createdUsers[u.role] = user;
 
     const dbRole = rolesMap[u.role.toString()];
     if (dbRole) {
@@ -279,6 +283,76 @@ async function main() {
     }
   }
   console.log(`✅ ${roleUsers.length} role-based users created`);
+
+  // ── Seed Businesses ──────────────────────────────────────────
+  const sampleBusinesses = [
+    {
+      name: 'Sunrise Café',
+      slug: 'sunrise-cafe',
+      description: 'Fresh coffee and bakery items in Kochi.',
+      categorySlug: 'restaurants',
+      address: '123 Beach Road',
+      city: 'Kochi',
+      state: 'Kerala',
+      zipCode: '682001',
+      phone: '9876500010',
+      email: 'info@sunrisecafe.com',
+      status: 'APPROVED' as any,
+      isVerified: true,
+    },
+    {
+      name: 'Kerala Health Center',
+      slug: 'kerala-health-center',
+      description: 'Multi-specialty wellness clinic in Trivandrum.',
+      categorySlug: 'healthcare',
+      address: '45 MG Road',
+      city: 'Trivandrum',
+      state: 'Kerala',
+      zipCode: '695001',
+      phone: '9876500011',
+      email: 'trivandrum@keralahealth.org',
+      status: 'APPROVED' as any,
+      isVerified: true,
+    },
+    {
+      name: 'Smart Retailers',
+      slug: 'smart-retailers',
+      description: 'Electronics and apparel department store.',
+      categorySlug: 'retail',
+      address: 'Near Town Hall',
+      city: 'Kozhikode',
+      state: 'Kerala',
+      zipCode: '673001',
+      phone: '9876500012',
+      email: 'sales@smartretailers.com',
+      status: 'APPROVED' as any,
+      isVerified: true,
+    },
+  ];
+
+  for (const b of sampleBusinesses) {
+    const category = createdCategories[b.categorySlug];
+    const owner = createdUsers['BUSINESS_OWNER'];
+    await prisma.business.create({
+      data: {
+        tenantId: tenant.id,
+        ownerId: owner.id,
+        categoryId: category.id,
+        name: b.name,
+        slug: b.slug,
+        description: b.description,
+        address: b.address,
+        city: b.city,
+        state: b.state,
+        zipCode: b.zipCode,
+        phone: b.phone,
+        email: b.email,
+        status: b.status,
+        isVerified: b.isVerified,
+      },
+    });
+  }
+  console.log(`✅ ${sampleBusinesses.length} sample businesses seeded`);
 
   // ── Feature Flags (global — no tenantId) ────────────────────
   const flags = [
