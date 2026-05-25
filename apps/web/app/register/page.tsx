@@ -257,61 +257,67 @@ export default function UnifiedRegisterPage() {
       return;
     }
 
-    if (role === 'BUSINESS' && (!certFile || !logoFile)) {
-      setError('Please upload your Registration Certificate and Company Logo.');
-      return;
-    }
-
-    if (role === 'GOVERNMENT' && !govtIdFile) {
-      setError('Please upload your Official Department ID Proof / Gazette Certificate.');
-      return;
-    }
+    // File uploads are optional — can be added later from dashboard.
+    // Submit always reaches verification queue.
 
     setLoading(true);
 
     try {
       if (role === 'BUSINESS') {
-        // 1. Update business details (Step 2 and 3)
-        await onboardingService.updateStep(businessId, 2, {
-          businessDescription: `Kerala based company ${companyName} operating in ${district}.`,
-          subcategorySlugs: ['cafes'],
-        });
+        // 1. Update business details (Step 2 and 3) — best-effort
+        try {
+          await onboardingService.updateStep(businessId, 2, {
+            businessDescription: `Kerala based company ${companyName} operating in ${district}.`,
+            subcategorySlugs: [],
+          });
+        } catch (e) { console.warn('Step 2 update failed:', e); }
 
-        await onboardingService.updateStep(businessId, 3, {
-          address,
-          city,
-          state: 'Kerala',
-          postalCode: '682001',
-          district,
-        });
+        try {
+          await onboardingService.updateStep(businessId, 3, {
+            address,
+            city,
+            state: 'Kerala',
+            postalCode: '682001',
+            district,
+          });
+        } catch (e) { console.warn('Step 3 update failed:', e); }
 
-        // 2. Assign default subscription packages to support verification onboarding check
-        await onboardingService.assignSubscription(businessId, 'LISTING_BASIC', 30);
+        // 2. Assign default subscription — best-effort
+        try {
+          await onboardingService.assignSubscription(businessId, 'LISTING_BASIC', 30);
+        } catch (e) { console.warn('Subscription assign failed:', e); }
 
-        // 3. Upload & Register Registration Certificate
-        const certData = await uploadFileToServer(certFile);
-        await onboardingService.registerDocument(businessId, {
-          name: certFile.name,
-          documentType: 'REGISTRATION_CERTIFICATE',
-          fileUrl: certData.fileUrl,
-          fileKey: certData.fileKey,
-          mimeType: certFile.type,
-          fileSize: certFile.size,
-        });
+        // 3. Upload & Register Registration Certificate — best-effort
+        try {
+          const certData = await uploadFileToServer(certFile!);
+          await onboardingService.registerDocument(businessId, {
+            name: certFile!.name,
+            documentType: 'REGISTRATION_CERTIFICATE',
+            fileUrl: certData.fileUrl,
+            fileKey: certData.fileKey,
+            mimeType: certFile!.type,
+            fileSize: certFile!.size,
+          });
+        } catch (e) { console.warn('Cert upload failed (continuing):', e); }
 
-        // 4. Upload & Register Business Logo
-        const logoData = await uploadFileToServer(logoFile);
-        await onboardingService.registerMedia(businessId, {
-          name: logoFile.name,
-          mediaType: 'LOGO',
-          fileUrl: logoData.fileUrl,
-          fileKey: logoData.fileKey,
-          mimeType: logoFile.type,
-          fileSize: logoFile.size,
-        });
+        // 4. Upload & Register Business Logo — best-effort
+        try {
+          const logoData = await uploadFileToServer(logoFile!);
+          await onboardingService.registerMedia(businessId, {
+            name: logoFile!.name,
+            mediaType: 'LOGO',
+            fileUrl: logoData.fileUrl,
+            fileKey: logoData.fileKey,
+            mimeType: logoFile!.type,
+            fileSize: logoFile!.size,
+          });
+        } catch (e) { console.warn('Logo upload failed (continuing):', e); }
 
-        // 5. Submit business verification request
-        await onboardingService.submitForVerification(businessId);
+        // 5. Submit business verification request — CRITICAL, must run
+        const submitRes = await onboardingService.submitForVerification(businessId);
+        if (submitRes.error) {
+          throw new Error(submitRes.error);
+        }
 
         // Update local session status
         if (typeof window !== 'undefined') {
@@ -350,29 +356,38 @@ export default function UnifiedRegisterPage() {
           throw new Error('Could not establish Government profile entity identity.');
         }
 
-        // 2. Update step 1 (Department details)
-        await universalOnboardingService.updateStep(entityId, 1, {
-          departmentName: name,
-          officialEmail: email,
-          departmentType: deptType,
-        });
+        // 2. Update step 1 (Department details) — best-effort
+        try {
+          await universalOnboardingService.updateStep(entityId, 1, {
+            departmentName: name,
+            officialEmail: email,
+            departmentType: deptType,
+          });
+        } catch (e) { console.warn('Govt step 1 failed:', e); }
 
-        // 3. Update step 2 (Administrative coverage)
-        await universalOnboardingService.updateStep(entityId, 2, {
-          district: district,
-        });
+        // 3. Update step 2 (Administrative coverage) — best-effort
+        try {
+          await universalOnboardingService.updateStep(entityId, 2, {
+            district: district,
+          });
+        } catch (e) { console.warn('Govt step 2 failed:', e); }
 
-        // 4. Upload and Register Department ID Proof / Gazette Certificate
-        const idData = await uploadFileToServer(govtIdFile, true);
-        await universalOnboardingService.registerDocument(entityId, {
-          documentType: 'ID_PROOF',
-          fileUrl: idData.fileUrl,
-          filename: govtIdFile.name,
-          mimeType: govtIdFile.type,
-        });
+        // 4. Upload Department ID Proof — best-effort
+        try {
+          const idData = await uploadFileToServer(govtIdFile!, true);
+          await universalOnboardingService.registerDocument(entityId, {
+            documentType: 'ID_PROOF',
+            fileUrl: idData.fileUrl,
+            filename: govtIdFile!.name,
+            mimeType: govtIdFile!.type,
+          });
+        } catch (e) { console.warn('Govt ID upload failed (continuing):', e); }
 
-        // 5. Submit application for validation
-        await universalOnboardingService.submitForVerification(entityId);
+        // 5. Submit application — CRITICAL
+        const submitRes = await universalOnboardingService.submitForVerification(entityId);
+        if (submitRes.error) {
+          throw new Error(submitRes.error);
+        }
 
         // Update local session status
         if (typeof window !== 'undefined') {

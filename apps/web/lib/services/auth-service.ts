@@ -1,13 +1,9 @@
-// Auth service - Mock implementation for SaaS platform roles
-//
-// Dev Credentials (all password: password123):
-// ─────────────────────────────────────────────
-//  1. Customer        user@platform.com
-//  2. Business Owner  business@platform.com
-//  3. Biz Moderator   moderator@platform.com
-//  4. Portal Admin    admin@platform.com
-//  5. Super Admin     superadmin@platform.com
-//  6. Government      government@platform.com
+// ─────────────────────────────────────────────────────────────────────
+// Auth service — real API only, no mock fallback.
+// All requests go through apiService (Next.js /api proxy → API server).
+// ─────────────────────────────────────────────────────────────────────
+
+import { apiService } from './api-service';
 
 export type UserRole =
   | 'user'
@@ -34,21 +30,19 @@ export interface User {
   } | null;
 }
 
+function mapRbacToRole(rbac: string): string {
+  if (rbac === 'BUSINESS_ADMIN' || rbac === 'BUSINESS_OWNER') return 'business';
+  if (rbac === 'MASTER_ADMIN') return 'admin';
+  if (rbac === 'SUPER_ADMIN') return 'super-admin';
+  if (rbac === 'GOVERNMENT_ADMIN') return 'government';
+  return rbac.toLowerCase();
+}
 
-
-import { apiService } from './api-service';
-import { getUserByEmail, addUser, MockUser } from '@/lib/mock-db';
-
-// ── Legacy in-memory fallback (mock-db is primary source) ────────────
-// IDs aligned with mock-db SEED_USERS. Used only when mock-db not yet initialised.
-const MOCK_USERS: User[] = [
-  { id: 'mock-user-1', email: 'user@platform.com', name: 'Alex Customer', role: 'user', rbacRole: 'USER', createdAt: new Date('2024-01-01') },
-  { id: 'mock-biz-owner-1', email: 'business@platform.com', name: 'John Business', role: 'business', rbacRole: 'BUSINESS_OWNER', createdAt: new Date('2024-01-01'), businessId: 'mock-biz-001', entity: { id: 'mock-biz-001', type: 'BUSINESS', status: 'ACTIVE', name: 'Sunrise Café' } },
-  { id: 'mock-biz-mod-1', email: 'moderator@platform.com', name: 'Sam Moderator', role: 'business', rbacRole: 'BUSINESS_MODERATOR', createdAt: new Date('2024-01-01'), businessId: 'mock-biz-001', entity: { id: 'mock-biz-001', type: 'BUSINESS', status: 'ACTIVE', name: 'Sunrise Café' } },
-  { id: 'mock-admin-1', email: 'admin@platform.com', name: 'Rita Admin', role: 'admin', rbacRole: 'MASTER_ADMIN', createdAt: new Date('2024-01-01') },
-  { id: 'mock-super-1', email: 'superadmin@platform.com', name: 'Dev Super', role: 'super-admin', rbacRole: 'SUPER_ADMIN', createdAt: new Date('2024-01-01') },
-  { id: 'mock-gov-1', email: 'government@platform.com', name: 'Gov Officer', role: 'government', rbacRole: 'GOVERNMENT_ADMIN', createdAt: new Date('2024-01-01') },
-];
+function persistUser(user: User): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('user_session', JSON.stringify(user));
+  localStorage.setItem('user', JSON.stringify(user));
+}
 
 class AuthService {
   async getCurrentUser(): Promise<User | null> {
@@ -76,37 +70,21 @@ class AuthService {
   }
 
   async fetchCurrentUser(): Promise<User | null> {
-    try {
-      const response = await apiService.get<any>('/v1/auth/me');
-      if (response.data && !response.error) {
-        const u = response.data;
-        const apiUser: User = {
-          id: u.id,
-          email: u.email,
-          name: u.name,
-          role:
-            u.role === 'BUSINESS_ADMIN' || u.role === 'BUSINESS_OWNER'
-              ? 'business'
-              : u.role === 'MASTER_ADMIN'
-                ? 'admin'
-                : u.role === 'SUPER_ADMIN'
-                  ? 'super-admin'
-                  : u.role === 'GOVERNMENT_ADMIN'
-                    ? 'government'
-                    : u.role.toLowerCase(),
-          rbacRole: u.role,
-          createdAt: new Date(),
-          businessId: u.entity?.type === 'BUSINESS' ? u.entity.id : undefined,
-          entity: u.entity,
-        };
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('user_session', JSON.stringify(apiUser));
-          localStorage.setItem('user', JSON.stringify(apiUser));
-        }
-        return apiUser;
-      }
-    } catch (_) {}
-    return null;
+    const response = await apiService.get<any>('/v1/auth/me');
+    if (!response.data || response.error) return null;
+    const u = response.data;
+    const apiUser: User = {
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: mapRbacToRole(u.role),
+      rbacRole: u.role,
+      createdAt: new Date(),
+      businessId: u.entity?.type === 'BUSINESS' ? u.entity.id : undefined,
+      entity: u.entity,
+    };
+    persistUser(apiUser);
+    return apiUser;
   }
 
   async selectRole(data: {
@@ -115,132 +93,71 @@ class AuthService {
     name?: string;
     phone?: string;
   }): Promise<any> {
-    try {
-      const response = await apiService.post<any>('/v1/auth/select-role', data);
-      if (response.data && !response.error) {
-        await this.fetchCurrentUser();
-        return response.data;
-      }
+    const response = await apiService.post<any>('/v1/auth/select-role', data);
+    if (response.error || !response.data) {
       throw new Error(response.error || 'Failed to select role');
-    } catch (e: any) {
-      throw new Error(e?.message || 'Failed to select role');
     }
+    await this.fetchCurrentUser();
+    return response.data;
   }
 
+  /**
+   * Sign in — real API only. Throws on failure with API message.
+   */
   async signIn(email: string, password: string): Promise<User | null> {
-    // Try real API first
-    try {
-      const response = await apiService.post<any>('/v1/auth/login', { email, password });
-      if (response.data && !response.error) {
-        const u = response.data.user;
-        const apiUser: User = {
-          id: u.id,
-          email: u.email,
-          name: u.name,
-          role:
-            u.role === 'BUSINESS_ADMIN' || u.role === 'BUSINESS_OWNER'
-              ? 'business'
-              : u.role === 'MASTER_ADMIN'
-                ? 'admin'
-                : u.role === 'SUPER_ADMIN'
-                  ? 'super-admin'
-                  : u.role === 'GOVERNMENT_ADMIN'
-                    ? 'government'
-                    : u.role.toLowerCase(),
-          rbacRole: u.role,
-          createdAt: new Date(),
-          businessId: response.data.businessId || (u.entity?.type === 'BUSINESS' ? u.entity.id : undefined),
-          entity: u.entity || null,
-        };
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('user_session', JSON.stringify(apiUser));
-          localStorage.setItem('user', JSON.stringify(apiUser));
-        }
-        return apiUser;
-      }
-    } catch (_) {}
-
-    // Mock fallback — check MOCK_USERS first, then mock-db (for newly registered users)
-    const dbUser = getUserByEmail(email);
-    if (dbUser && (password === dbUser.password || password === 'password123')) {
-      const user: User = {
-        id: dbUser.id,
-        email: dbUser.email,
-        name: dbUser.name,
-        role: dbUser.role,
-        rbacRole: dbUser.rbacRole,
-        createdAt: new Date(dbUser.createdAt),
-        businessId: dbUser.businessId,
-        entity: dbUser.entity ?? null,
-      };
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('user_session', JSON.stringify(user));
-        localStorage.setItem('user', JSON.stringify(user));
-      }
-      return user;
+    const response = await apiService.post<any>('/v1/auth/login', { email, password });
+    if (response.error || !response.data) {
+      throw new Error(response.error || 'Login failed');
     }
-    // Legacy MOCK_USERS fallback (in case mock-db not yet seeded)
-    if (password === 'password123') {
-      const mockUser = MOCK_USERS.find(
-        (u) => u.email.toLowerCase() === email.toLowerCase()
-      );
-      if (mockUser) {
-        const user = { ...mockUser, createdAt: new Date() };
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('user_session', JSON.stringify(user));
-          localStorage.setItem('user', JSON.stringify(user));
-        }
-        return user;
-      }
-    }
-    return null;
+    const u = response.data.user;
+    const apiUser: User = {
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: mapRbacToRole(u.role),
+      rbacRole: u.role,
+      createdAt: new Date(),
+      businessId: response.data.businessId || (u.entity?.type === 'BUSINESS' ? u.entity.id : undefined),
+      entity: u.entity || null,
+    };
+    persistUser(apiUser);
+    return apiUser;
   }
 
   async signUp(email: string, password: string, name: string): Promise<User | null> {
-    try {
-      const response = await apiService.post<any>('/v1/auth/signup', { email, password, name });
-      if (response.data && !response.error) {
-        const apiUser: User = {
-          id: response.data.user.id,
-          email: response.data.user.email,
-          name: response.data.user.name,
-          role: 'user',
-          rbacRole: 'USER',
-          createdAt: new Date(),
-        };
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('user_session', JSON.stringify(apiUser));
-          localStorage.setItem('user', JSON.stringify(apiUser));
-        }
-        return apiUser;
-      }
-    } catch (_) {}
-    return null;
+    const response = await apiService.post<any>('/v1/auth/signup', { email, password, name });
+    if (response.error || !response.data) {
+      throw new Error(response.error || 'Registration failed');
+    }
+    const u = response.data.user;
+    const apiUser: User = {
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: 'user',
+      rbacRole: 'USER',
+      createdAt: new Date(),
+    };
+    persistUser(apiUser);
+    return apiUser;
   }
 
   async businessSignup(data: any): Promise<{ user: User; businessId: string } | null> {
-    try {
-      const response = await apiService.post<any>('/v1/auth/business/signup', data);
-      if (response.data && !response.error) {
-        const apiUser: User = {
-          id: response.data.user.id,
-          email: response.data.user.email,
-          name: response.data.user.name,
-          role: 'business',
-          rbacRole: 'BUSINESS_OWNER',
-          createdAt: new Date(),
-        };
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('user_session', JSON.stringify(apiUser));
-          localStorage.setItem('user', JSON.stringify(apiUser));
-        }
-        return { user: apiUser, businessId: response.data.businessId };
-      } else {
-        throw new Error(response.error || 'Registration failed');
-      }
-    } catch (e: any) {
-      throw new Error(e?.message || 'Registration failed');
+    const response = await apiService.post<any>('/v1/auth/business/signup', data);
+    if (response.error || !response.data) {
+      throw new Error(response.error || 'Registration failed');
     }
+    const u = response.data.user;
+    const apiUser: User = {
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      role: 'business',
+      rbacRole: 'BUSINESS_OWNER',
+      createdAt: new Date(),
+    };
+    persistUser(apiUser);
+    return { user: apiUser, businessId: response.data.businessId };
   }
 
   hasRole(user: User | null, requiredRole: string): boolean {

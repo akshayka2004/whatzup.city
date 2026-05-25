@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,61 +13,18 @@ import {
   FileText,
   Image as ImageIcon,
   X,
+  Loader2,
 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
 
-const notices = [
-  {
-    id: 1,
-    title: 'New Tax Regulations Announced',
-    description:
-      'Important changes to business tax policies effective July 2026. All registered businesses must comply with updated GST filing requirements.',
-    date: '2024-05-16',
-    type: 'Announcement',
-    attachments: [
-      { name: 'Tax_Guidelines_2026.pdf', type: 'pdf', size: '2.4 MB' },
-      { name: 'Compliance_Checklist.pdf', type: 'pdf', size: '1.1 MB' },
-    ],
-  },
-  {
-    id: 2,
-    title: 'Public Health Advisory',
-    description:
-      'Health and safety guidelines update for food establishments and healthcare facilities in the metropolitan area.',
-    date: '2024-05-15',
-    type: 'Health',
-    attachments: [
-      { name: 'Health_Advisory_Notice.pdf', type: 'pdf', size: '890 KB' },
-      { name: 'Safety_Poster.jpg', type: 'image', size: '3.2 MB' },
-    ],
-  },
-  {
-    id: 3,
-    title: 'Infrastructure Maintenance',
-    description:
-      'Road construction and temporary closures on Main Street from May 20-30. Alternate routes recommended for daily commuters.',
-    date: '2024-05-14',
-    type: 'Infrastructure',
-    attachments: [{ name: 'Route_Map.png', type: 'image', size: '1.5 MB' }],
-  },
-  {
-    id: 4,
-    title: 'License Renewal Deadline',
-    description:
-      'Business license renewal period closing on June 15, 2026. Late penalties apply after deadline.',
-    date: '2024-05-13',
-    type: 'Legal',
-    attachments: [{ name: 'Renewal_Form.pdf', type: 'pdf', size: '450 KB' }],
-  },
-  {
-    id: 5,
-    title: 'Community Event Alert',
-    description:
-      'Major community festival happening downtown this weekend. Road closures and parking restrictions apply.',
-    date: '2024-05-12',
-    type: 'Event',
-    attachments: [],
-  },
-];
+interface Notice {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  type: string;
+  attachments: { name: string; type: 'pdf' | 'image'; size: string; url?: string }[];
+}
 
 const typeColors: Record<string, string> = {
   Announcement: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
@@ -77,16 +34,53 @@ const typeColors: Record<string, string> = {
   Event: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
 };
 
-export default function GovernmentPage() {
-  const [viewingNotice, setViewingNotice] = useState<any>(null);
+function mapApiNotice(n: any): Notice {
+  const atts = Array.isArray(n.attachments) ? n.attachments : [];
+  return {
+    id: n.id,
+    title: n.title || 'Untitled',
+    description: n.body || n.description || '',
+    date: (n.publishedAt || n.createdAt || '').slice(0, 10),
+    type: n.category || n.type || 'Announcement',
+    attachments: atts.map((a: any) => ({
+      name: a.name || a.filename || 'document',
+      type: (a.mimeType || '').includes('image') ? 'image' : 'pdf',
+      size: a.fileSize ? `${(a.fileSize / 1024).toFixed(0)} KB` : '—',
+      url: a.url || a.fileUrl,
+    })),
+  };
+}
 
-  const downloadFile = (filename: string) => {
-    const content = `Official Government Notice Document: ${filename}\nDate: ${new Date().toLocaleDateString()}\nThis is a simulated document download for verification purposes.`;
-    const blob = new Blob([content], { type: 'text/plain' });
+export default function GovernmentPage() {
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewingNotice, setViewingNotice] = useState<Notice | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    apiService
+      .get<any>('/v1/announcements')
+      .then((res) => {
+        if (res.data && !res.error) {
+          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.items ?? [];
+          setNotices(list.map(mapApiNotice));
+        } else {
+          setNotices([]);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const downloadFile = (att: { name: string; url?: string }) => {
+    if (att.url) {
+      window.open(att.url, '_blank');
+      return;
+    }
+    const blob = new Blob([`Document: ${att.name}\nNo source URL configured.`], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename;
+    a.download = att.name;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -101,66 +95,78 @@ export default function GovernmentPage() {
           Stay informed with official notices and announcements
         </p>
 
-        <div className="space-y-4">
-          {notices.map((notice) => (
-            <Card
-              key={notice.id}
-              className="p-6 rounded-2xl hover:shadow-md transition-all border-white/5 bg-card/40 backdrop-blur-xl"
-            >
-              <div className="flex items-start gap-4">
-                <div className="rounded-xl bg-white/5 p-3 border border-white/5">
-                  <AlertCircle className="h-6 w-6 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-foreground text-lg">{notice.title}</h3>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${typeColors[notice.type] || typeColors.Announcement}`}
-                    >
-                      {notice.type}
-                    </span>
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+          </div>
+        ) : notices.length === 0 ? (
+          <Card className="p-12 rounded-2xl text-center border-dashed border-white/10 bg-white/5">
+            <Bell className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-50" />
+            <h3 className="text-base font-semibold text-foreground mb-1">No Announcements</h3>
+            <p className="text-sm text-muted-foreground">Check back later for official updates.</p>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {notices.map((notice) => (
+              <Card
+                key={notice.id}
+                className="p-6 rounded-2xl hover:shadow-md transition-all border-white/5 bg-card/40 backdrop-blur-xl"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="rounded-xl bg-white/5 p-3 border border-white/5">
+                    <AlertCircle className="h-6 w-6 text-primary" />
                   </div>
-                  <p className="text-muted-foreground text-sm mb-3">{notice.description}</p>
-                  {notice.attachments.length > 0 && (
-                    <div className="flex items-center gap-2 mb-3 flex-wrap">
-                      {notice.attachments.map((a, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => downloadFile(a.name)}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-foreground rounded-lg text-xs border border-white/5 hover:border-white/10 transition-colors cursor-pointer"
-                          title={`Click to download ${a.name}`}
-                        >
-                          {a.type === 'image' ? (
-                            <ImageIcon className="h-3 w-3 text-cyan-400" />
-                          ) : (
-                            <FileText className="h-3 w-3 text-violet-400" />
-                          )}
-                          <span>{a.name}</span>
-                          <Download className="h-2.5 w-2.5 ml-1 text-slate-400" />
-                        </button>
-                      ))}
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-foreground text-lg">{notice.title}</h3>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${
+                          typeColors[notice.type] || typeColors.Announcement
+                        }`}
+                      >
+                        {notice.type}
+                      </span>
                     </div>
-                  )}
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" /> {notice.date}
+                    <p className="text-muted-foreground text-sm mb-3">{notice.description}</p>
+                    {notice.attachments.length > 0 && (
+                      <div className="flex items-center gap-2 mb-3 flex-wrap">
+                        {notice.attachments.map((a, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => downloadFile(a)}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-foreground rounded-lg text-xs border border-white/5 hover:border-white/10 transition-colors cursor-pointer"
+                          >
+                            {a.type === 'image' ? (
+                              <ImageIcon className="h-3 w-3 text-cyan-400" />
+                            ) : (
+                              <FileText className="h-3 w-3 text-violet-400" />
+                            )}
+                            <span>{a.name}</span>
+                            <Download className="h-2.5 w-2.5 ml-1 text-slate-400" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" /> {notice.date}
+                      </div>
+                      <Button
+                        onClick={() => setViewingNotice(notice)}
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 gap-1 cursor-pointer"
+                      >
+                        <Eye className="h-3.5 w-3.5" /> View Details
+                      </Button>
                     </div>
-                    <Button
-                      onClick={() => setViewingNotice(notice)}
-                      variant="outline"
-                      size="sm"
-                      className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 gap-1 cursor-pointer"
-                    >
-                      <Eye className="h-3.5 w-3.5" /> View Details
-                    </Button>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
 
-        {/* ── VIEW ANNOUNCEMENT MODAL ───────────────────── */}
         {viewingNotice && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <Card className="w-full max-w-lg p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative max-h-[85vh] overflow-y-auto">
@@ -178,7 +184,9 @@ export default function GovernmentPage() {
                   <h3 className="text-xl font-bold text-foreground">{viewingNotice.title}</h3>
                   <div className="flex items-center gap-2 mt-1">
                     <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${typeColors[viewingNotice.type]}`}
+                      className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        typeColors[viewingNotice.type] || typeColors.Announcement
+                      }`}
                     >
                       {viewingNotice.type}
                     </span>
@@ -187,9 +195,7 @@ export default function GovernmentPage() {
                 </div>
               </div>
               <div className="bg-white/5 p-4 rounded-xl border border-white/5 mb-6">
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  {viewingNotice.description}
-                </p>
+                <p className="text-sm text-slate-300 leading-relaxed">{viewingNotice.description}</p>
               </div>
 
               {viewingNotice.attachments.length > 0 && (
@@ -198,7 +204,7 @@ export default function GovernmentPage() {
                     Attached Documents & Media
                   </h4>
                   <div className="space-y-2">
-                    {viewingNotice.attachments.map((a: any, idx: number) => (
+                    {viewingNotice.attachments.map((a, idx) => (
                       <div
                         key={idx}
                         className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors"
@@ -217,7 +223,7 @@ export default function GovernmentPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => downloadFile(a.name)}
+                          onClick={() => downloadFile(a)}
                           className="rounded-lg border-white/10 text-slate-300 hover:bg-white/5 gap-1 h-8 cursor-pointer"
                         >
                           <Download className="h-3.5 w-3.5" /> Download

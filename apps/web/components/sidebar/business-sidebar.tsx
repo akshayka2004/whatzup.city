@@ -131,7 +131,7 @@ export function BusinessSidebar() {
       {/* Header */}
       <div className="border-b border-sidebar-border px-6 py-4">
         <div className="flex items-center gap-3 mb-2">
-          <img src="/logo.png" alt="Whtzup.city Logo" className="h-11 w-auto object-contain" />
+          <img src="/logo.png" alt="Whtzup.city Logo" className="h-16 w-auto object-contain" />
           <div className="flex flex-col min-w-0">
             <span className="text-sm font-semibold text-sidebar-primary leading-tight truncate">
               {businessName}

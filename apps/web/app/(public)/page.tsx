@@ -1,28 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
-  Search, MapPin, Star, Zap, Megaphone, Shield,
+  Search, MapPin, Star, Megaphone, Shield,
   ArrowRight, CheckCircle2,
   Receipt, Tag, ChevronRight, Sparkles, Globe,
   ShoppingBag, Stethoscope, Laptop, GraduationCap,
-  Utensils, Plane, Dumbbell, Quote, Building2, Bell
+  Utensils, Plane, Dumbbell, Building2, Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { apiService } from '@/lib/services/api-service';
 
-/* ────────────── DATA ────────────── */
-const STATS = [
-  { label: 'Registered Businesses', value: '1,420+', icon: Building2 },
-  { label: 'Active Promotions',      value: '340+',   icon: Tag },
-  { label: 'Verified Invoices',      value: '12K+',   icon: Receipt },
-  { label: 'Local Communities',      value: '25+',    icon: Globe },
-];
-
+/* ────────────── STATIC LABELS / ICONS ────────────── */
 const FEATURES = [
   {
     icon: Search,
@@ -67,47 +61,72 @@ const CATEGORIES = [
   { label: 'Health & Fitness',     icon: Dumbbell,       slug: 'fitness' },
 ];
 
-const TESTIMONIALS = [
-  {
-    name: 'Priya Sharma',
-    role: 'Local Resident',
-    text: "I discovered multiple verified organic bakeries near me I didn't know existed. Reviews backed by real bills make all the difference.",
-    avatar: 'PS',
-  },
-  {
-    name: 'Rajan Mehta',
-    role: 'Café Owner',
-    text: 'Listing our coffee shop here was straightforward. We gained significant foot traffic in the first month simply by offering a claimed coupon.',
-    avatar: 'RM',
-  },
-  {
-    name: 'Anita Verma',
-    role: 'Ward Moderator',
-    text: 'The dashboard makes alerting residents about street repairs and utility outages extremely simple. People stay informed instantly.',
-    avatar: 'AV',
-  },
-];
-
 /* ────────────── COMPONENT ────────────── */
 export default function HomePage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
 
+  const [stats, setStats] = useState<{ businesses: number; offers: number; bills: number; categories: number }>({
+    businesses: 0, offers: 0, bills: 0, categories: 0,
+  });
+  const [featuredBusiness, setFeaturedBusiness] = useState<any>(null);
+  const [featuredOffer, setFeaturedOffer] = useState<any>(null);
+  const [latestAnnouncement, setLatestAnnouncement] = useState<any>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    Promise.allSettled([
+      apiService.get<any>('/v1/trending/businesses?limit=1'),
+      apiService.get<any>('/v1/trending/offers?limit=1'),
+      apiService.get<any>('/v1/trending/categories'),
+      apiService.get<any>('/v1/announcements?limit=1'),
+    ]).then(([bizRes, offRes, catRes, annRes]) => {
+      // Featured business + total count
+      if (bizRes.status === 'fulfilled' && bizRes.value.data) {
+        const list = bizRes.value.data.items ?? bizRes.value.data.data ?? bizRes.value.data ?? [];
+        if (Array.isArray(list) && list.length > 0) setFeaturedBusiness(list[0]);
+        const total = bizRes.value.data.total ?? bizRes.value.data.meta?.total ?? (Array.isArray(list) ? list.length : 0);
+        setStats((s) => ({ ...s, businesses: total }));
+      }
+      // Featured offer + total count
+      if (offRes.status === 'fulfilled' && offRes.value.data) {
+        const list = offRes.value.data.items ?? offRes.value.data.data ?? offRes.value.data ?? [];
+        if (Array.isArray(list) && list.length > 0) setFeaturedOffer(list[0]);
+        const total = offRes.value.data.total ?? offRes.value.data.meta?.total ?? (Array.isArray(list) ? list.length : 0);
+        setStats((s) => ({ ...s, offers: total }));
+      }
+      // Categories count
+      if (catRes.status === 'fulfilled' && catRes.value.data) {
+        const list = catRes.value.data.items ?? catRes.value.data.data ?? catRes.value.data ?? [];
+        setStats((s) => ({ ...s, categories: Array.isArray(list) ? list.length : 0 }));
+      }
+      // Latest civic announcement
+      if (annRes.status === 'fulfilled' && annRes.value.data) {
+        const list = annRes.value.data.items ?? annRes.value.data.data ?? annRes.value.data ?? [];
+        if (Array.isArray(list) && list.length > 0) setLatestAnnouncement(list[0]);
+      }
+      setLoaded(true);
+    });
+  }, []);
+
   const handleSearch = () => {
     router.push(searchQuery.trim() ? `/search?q=${encodeURIComponent(searchQuery)}` : '/search');
   };
 
+  const statsCards = [
+    { label: 'Registered Businesses', value: stats.businesses.toString(), icon: Building2 },
+    { label: 'Active Promotions',     value: stats.offers.toString(),     icon: Tag },
+    { label: 'Active Categories',     value: stats.categories.toString(), icon: Globe },
+    { label: 'Verified Listings',     value: stats.businesses.toString(), icon: Receipt },
+  ];
+
   return (
     <PublicLayout>
-
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="relative mb-10 md:mb-14 rounded-2xl overflow-hidden border border-border bg-card">
-        {/* Subtle gradient wash */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent pointer-events-none" />
 
         <div className="relative grid lg:grid-cols-12 gap-6 lg:gap-0 items-stretch min-h-[440px]">
-
-          {/* Left content */}
           <div className="lg:col-span-7 flex flex-col justify-center px-6 py-10 lg:px-10 lg:py-14 space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold w-fit">
               <Sparkles className="h-3.5 w-3.5" />
@@ -124,7 +143,6 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Search */}
             <div className="flex flex-col sm:flex-row gap-3 max-w-lg">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -144,7 +162,6 @@ export default function HomePage() {
               </Button>
             </div>
 
-            {/* Trending tags */}
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                 Trending:
@@ -161,74 +178,91 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Right panel — hidden on mobile */}
+          {/* Right panel — live data */}
           <div className="hidden lg:flex lg:col-span-5 bg-secondary/60 border-l border-border items-center justify-center relative p-8 overflow-hidden">
             <div className="absolute -top-16 -right-16 w-48 h-48 bg-primary/10 rounded-full blur-3xl" />
             <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-primary/8 rounded-full blur-2xl" />
 
-            <div className="relative space-y-4 w-full max-w-xs">
-              {/* Business preview card */}
-              <Card className="p-4 rounded-xl border-border bg-card shadow-md">
-                <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
-                    <Utensils className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <h4 className="font-bold text-foreground text-sm truncate">Bella Restaurant</h4>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                    </div>
-                    <p className="text-xs text-muted-foreground">Authentic Italian Cuisine</p>
-                    <div className="flex items-center gap-1 mt-2">
-                      <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-                      <span className="text-xs font-bold text-foreground">4.8</span>
-                      <span className="text-xs text-muted-foreground">(234 reviews)</span>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/20 shrink-0">
-                    Open
-                  </span>
-                </div>
-              </Card>
+            {!loaded ? (
+              <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
+            ) : (
+              <div className="relative space-y-4 w-full max-w-xs">
+                {featuredBusiness && (
+                  <Link href={`/business/${featuredBusiness.id}`}>
+                    <Card className="p-4 rounded-xl border-border bg-card shadow-md cursor-pointer hover:border-primary/40 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
+                          <Utensils className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <h4 className="font-bold text-foreground text-sm truncate">{featuredBusiness.name}</h4>
+                            {featuredBusiness.isVerified && <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {featuredBusiness.category?.name || featuredBusiness.description || 'Verified business'}
+                          </p>
+                          <div className="flex items-center gap-1 mt-2">
+                            <Star className="h-3.5 w-3.5 fill-primary text-primary" />
+                            <span className="text-xs font-bold text-foreground">
+                              {featuredBusiness.avgRating?.toFixed(1) || '—'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">({featuredBusiness.reviewCount || 0} reviews)</span>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                )}
 
-              {/* Offer card */}
-              <Card className="p-4 rounded-xl border-border bg-card shadow-md">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/15 border border-primary/20">
-                    <Tag className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground">Fashion Hub Boutique</p>
-                    <p className="text-sm font-bold text-foreground">Flat 20% Off Storewide</p>
-                  </div>
-                  <span className="text-[10px] font-extrabold text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded-lg font-mono">
-                    FASHION20
-                  </span>
-                </div>
-              </Card>
+                {featuredOffer && (
+                  <Card className="p-4 rounded-xl border-border bg-card shadow-md">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/15 border border-primary/20">
+                        <Tag className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground truncate">{featuredOffer.business?.name || 'Featured offer'}</p>
+                        <p className="text-sm font-bold text-foreground truncate">{featuredOffer.title || featuredOffer.name}</p>
+                      </div>
+                      {featuredOffer.code && (
+                        <span className="text-[10px] font-extrabold text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded-lg font-mono">
+                          {featuredOffer.code}
+                        </span>
+                      )}
+                    </div>
+                  </Card>
+                )}
 
-              {/* Civic notice */}
-              <Card className="p-3 rounded-xl border-border bg-card shadow-md">
-                <div className="flex items-center gap-3">
-                  <div className="relative flex h-2.5 w-2.5 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Civic Notice</p>
-                    <p className="text-xs text-foreground font-semibold">MG Road Maintenance: Alternate Route</p>
-                  </div>
-                </div>
-              </Card>
-            </div>
+                {latestAnnouncement && (
+                  <Card className="p-3 rounded-xl border-border bg-card shadow-md">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex h-2.5 w-2.5 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Civic Notice</p>
+                        <p className="text-xs text-foreground font-semibold truncate">{latestAnnouncement.title}</p>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+
+                {!featuredBusiness && !featuredOffer && !latestAnnouncement && (
+                  <Card className="p-4 rounded-xl border-dashed border-border bg-card text-center">
+                    <p className="text-xs text-muted-foreground">No featured content yet.</p>
+                  </Card>
+                )}
+              </div>
+            )}
           </div>
-
         </div>
       </section>
 
       {/* ── STATS ────────────────────────────────────────────────────── */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10 md:mb-14">
-        {STATS.map((stat) => {
+        {statsCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.label} className="p-5 rounded-xl border-border bg-card text-center hover:border-primary/30 transition-colors">
@@ -300,37 +334,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ─────────────────────────────────────────────── */}
-      <section className="mb-10 md:mb-14">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-black text-foreground mb-2">Community Voices</h2>
-          <p className="text-muted-foreground text-sm">Insights from members utilising our ecosystem daily</p>
-        </div>
-
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {TESTIMONIALS.map((t) => (
-            <Card key={t.name} className="p-6 rounded-xl border-border bg-card relative hover:border-primary/30 transition-all">
-              <Quote className="absolute top-5 right-5 h-7 w-7 text-border pointer-events-none" />
-              <div className="flex items-center gap-1 mb-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="h-3.5 w-3.5 fill-primary text-primary" />
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed mb-5 italic">"{t.text}"</p>
-              <div className="flex items-center gap-3 pt-4 border-t border-border">
-                <div className="w-9 h-9 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-primary text-xs font-black shrink-0">
-                  {t.avatar}
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-foreground">{t.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{t.role}</p>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </section>
-
       {/* ── CTA ──────────────────────────────────────────────────────── */}
       <section className="relative rounded-2xl overflow-hidden border border-primary/20 bg-primary/8 mb-6">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
@@ -364,7 +367,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
     </PublicLayout>
   );
 }

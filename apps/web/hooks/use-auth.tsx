@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService, User, UserRole } from '@/lib/services/auth-service';
 import { useRouter } from 'next/navigation';
-import { initMockDb } from '@/lib/mock-db';
 
 interface AuthContextType {
   user: User | null;
@@ -23,9 +22,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Boot mock DB first (wipes stale data if version changed)
-    initMockDb();
-
     async function initAuth() {
       try {
         // 1. Instant paint from localStorage cache so UI doesn't flash logged-out
@@ -133,25 +129,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const switchRole = (role: string) => {
-    // Dev helper — swap mock user in localStorage and reload
-    const mockMap: Record<string, string> = {
-      user: 'user@platform.com',
-      business: 'business@platform.com',
-      moderator: 'moderator@platform.com',
-      admin: 'admin@platform.com',
-      'super-admin': 'superadmin@platform.com',
-      government: 'government@platform.com',
-    };
-    const email = mockMap[role];
-    if (!email) return;
-    // Trigger a mock signIn via authService and reload
-    authService.signIn(email, 'password123').then((u) => {
-      if (u) {
-        setUser(u);
-        router.push(resolveRedirect(u));
-      }
-    });
+  const switchRole = (_role: string) => {
+    // Role switching is intentionally a no-op — real auth requires real credentials.
   };
 
   const signUp = async (email: string, password: string, name: string): Promise<boolean> => {
