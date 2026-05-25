@@ -10,7 +10,7 @@ import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
 
 interface Offer {
-  id: number;
+  id: string;
   title: string;
   discount: number;
   active: boolean;
@@ -120,12 +120,12 @@ export default function OffersPage() {
               id: o.id,
               title: o.title || o.name || '',
               discount: o.discountPercent ?? o.discount ?? 0,
-              active: o.isActive ?? o.active ?? false,
+              active: o.status === 'ACTIVE' || o.isActive === true || o.active === true,
               views: o.views ?? 0,
               clicks: o.clicks ?? 0,
               tags: Array.isArray(o.tags) ? o.tags : [],
-              startsAt: o.startsAt || o.startDate || undefined,
-              expiresAt: o.expiresAt || o.endDate || undefined,
+              startsAt: o.startDate || o.startsAt || undefined,
+              expiresAt: o.endDate || o.expiresAt || undefined,
             })),
           );
         }
@@ -136,6 +136,7 @@ export default function OffersPage() {
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [deletingOffer, setDeletingOffer] = useState<Offer | null>(null);
   const [viewingOffer, setViewingOffer] = useState<Offer | null>(null);
+  const [saving, setSaving] = useState(false);
 
   // Form states
   const [title, setTitle] = useState('');
@@ -155,22 +156,41 @@ export default function OffersPage() {
     setIsCreateOpen(true);
   };
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title) return;
-    const newOffer: Offer = {
-      id: Date.now(),
-      title,
-      discount: Number(discount),
-      active,
-      views: 0,
-      clicks: 0,
-      tags: formTags,
-      startsAt: formStartsAt || undefined,
-      expiresAt: formExpiresAt || undefined,
-    };
-    setOffers([newOffer, ...offers]);
-    setIsCreateOpen(false);
+    if (!title || !businessId) return;
+    setSaving(true);
+    try {
+      const now = new Date().toISOString();
+      const defaultEnd = new Date(Date.now() + 30 * 86_400_000).toISOString();
+      const res = await apiService.post<any>('/v1/offers', {
+        businessId,
+        title,
+        description: '',
+        discountPercent: Number(discount),
+        status: active ? 'ACTIVE' : 'INACTIVE',
+        startDate: formStartsAt ? new Date(formStartsAt).toISOString() : now,
+        endDate: formExpiresAt ? new Date(formExpiresAt).toISOString() : defaultEnd,
+        tags: formTags,
+      });
+      if (res.data && !res.error) {
+        const o = res.data;
+        setOffers([{
+          id: o.id,
+          title: o.title,
+          discount: o.discountPercent ?? Number(discount),
+          active: o.status === 'ACTIVE',
+          views: 0,
+          clicks: 0,
+          tags: formTags,
+          startsAt: o.startDate || formStartsAt || undefined,
+          expiresAt: o.endDate || formExpiresAt || undefined,
+        }, ...offers]);
+        setIsCreateOpen(false);
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleOpenEdit = (offer: Offer) => {
@@ -183,32 +203,64 @@ export default function OffersPage() {
     setFormExpiresAt(offer.expiresAt || '');
   };
 
-  const handleEdit = (e: React.FormEvent) => {
+  const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !editingOffer) return;
-    setOffers(
-      offers.map((o) =>
-        o.id === editingOffer.id
-          ? { ...o, title, discount: Number(discount), active, tags: formTags,
-              startsAt: formStartsAt || undefined, expiresAt: formExpiresAt || undefined }
-          : o,
-      ),
-    );
-    setEditingOffer(null);
+    setSaving(true);
+    try {
+      const body: Record<string, unknown> = {
+        title,
+        discountPercent: Number(discount),
+        status: active ? 'ACTIVE' : 'INACTIVE',
+        tags: formTags,
+      };
+      if (formStartsAt) body.startDate = new Date(formStartsAt).toISOString();
+      if (formExpiresAt) body.endDate = new Date(formExpiresAt).toISOString();
+      const res = await apiService.patch<any>(`/v1/offers/${editingOffer.id}`, body);
+      if (!res.error) {
+        setOffers(offers.map((o) =>
+          o.id === editingOffer.id
+            ? { ...o, title, discount: Number(discount), active, tags: formTags,
+                startsAt: formStartsAt || undefined, expiresAt: formExpiresAt || undefined }
+            : o,
+        ));
+        setEditingOffer(null);
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Auto-filter: hide expired offers from active view
   const activeOffers = offers.filter((o) => !isExpired(o));
   const expiredOffers = offers.filter(isExpired);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deletingOffer) return;
-    setOffers(offers.filter((o) => o.id !== deletingOffer.id));
-    setDeletingOffer(null);
+    setSaving(true);
+    try {
+      const res = await apiService.delete(`/v1/offers/${deletingOffer.id}`);
+      if (!res.error) {
+        setOffers(offers.filter((o) => o.id !== deletingOffer.id));
+        setDeletingOffer(null);
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const toggleActive = (id: number) => {
+  const toggleActive = async (id: string) => {
+    const offer = offers.find((o) => o.id === id);
+    if (!offer) return;
+    const newStatus = offer.active ? 'INACTIVE' : 'ACTIVE';
+    // Optimistic update
     setOffers(offers.map((o) => (o.id === id ? { ...o, active: !o.active } : o)));
+    try {
+      await apiService.patch(`/v1/offers/${id}`, { status: newStatus });
+    } catch {
+      // Revert on error
+      setOffers(offers.map((o) => (o.id === id ? { ...o, active: offer.active } : o)));
+    }
   };
 
   return (
@@ -426,9 +478,10 @@ export default function OffersPage() {
                   </Button>
                   <Button
                     type="submit"
+                    disabled={saving}
                     className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
                   >
-                    Create Offer
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Offer'}
                   </Button>
                 </div>
               </form>
@@ -513,9 +566,10 @@ export default function OffersPage() {
                   </Button>
                   <Button
                     type="submit"
+                    disabled={saving}
                     className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
                   >
-                    Save Changes
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
                   </Button>
                 </div>
               </form>
@@ -552,9 +606,10 @@ export default function OffersPage() {
                 </Button>
                 <Button
                   onClick={handleDelete}
+                  disabled={saving}
                   className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4 cursor-pointer"
                 >
-                  Delete
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
                 </Button>
               </div>
             </Card>
