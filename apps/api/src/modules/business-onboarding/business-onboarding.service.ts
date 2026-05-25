@@ -150,7 +150,7 @@ export class BusinessOnboardingService {
       data: {
         tenantId,
         entityType: 'BUSINESS',
-        entityId: business.id,
+        entityId: entity.id,
         event: 'BUSINESS_ONBOARDING_STARTED',
         metadata: { step: 1 },
       },
@@ -262,11 +262,31 @@ export class BusinessOnboardingService {
       });
     }
 
+    let eventEntityId = business.entityId;
+    if (!eventEntityId) {
+      const entity = await this.db.entity.create({
+        data: {
+          tenantId,
+          userId,
+          type: 'BUSINESS' as any,
+          status: 'DRAFT',
+          name: business.name,
+          email: business.email || null,
+          phone: business.phone || null,
+        },
+      });
+      await this.db.business.update({
+        where: { id: actualId },
+        data: { entityId: entity.id },
+      });
+      eventEntityId = entity.id;
+    }
+
     await this.db.onboardingEvent.create({
       data: {
         tenantId,
         entityType: 'BUSINESS',
-        entityId: actualId,
+        entityId: eventEntityId,
         event: `STEP_${step}_COMPLETED`,
         metadata: { step },
       },
@@ -368,7 +388,7 @@ export class BusinessOnboardingService {
       data: {
         tenantId,
         entityType: 'BUSINESS',
-        entityId: actualId,
+        entityId: entityId,
         event: 'BUSINESS_SUBMITTED_VERIFICATION',
       },
     });
