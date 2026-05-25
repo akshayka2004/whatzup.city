@@ -174,11 +174,13 @@ export class BusinessOnboardingService {
     step: number,
     dto: UpdateBusinessDetailsDto,
   ) {
+    // Accept either business.id or entity.id (entity.id is stored in JWT and used in redirects)
     const business = await this.db.business.findFirst({
-      where: { id, tenantId },
+      where: { tenantId, OR: [{ id }, { entityId: id }] },
     });
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
+    const actualId = business.id;
 
     const updateData: any = {};
     if (dto.businessDescription !== undefined) updateData.description = dto.businessDescription;
@@ -200,14 +202,14 @@ export class BusinessOnboardingService {
 
     if (dto.businessEmail && dto.businessEmail !== business.email) {
       const duplicateEmail = await this.db.business.findFirst({
-        where: { tenantId, email: dto.businessEmail, deletedAt: null, NOT: { id } },
+        where: { tenantId, email: dto.businessEmail, deletedAt: null, NOT: { id: actualId } },
       });
       if (duplicateEmail) throw new ConflictException('Business email already registered');
     }
 
     if (dto.businessPhone && dto.businessPhone !== business.phone) {
       const duplicatePhone = await this.db.business.findFirst({
-        where: { tenantId, phone: dto.businessPhone, deletedAt: null, NOT: { id } },
+        where: { tenantId, phone: dto.businessPhone, deletedAt: null, NOT: { id: actualId } },
       });
       if (duplicatePhone) throw new ConflictException('Business phone already registered');
     }
@@ -229,13 +231,13 @@ export class BusinessOnboardingService {
     if (subcategories) updatedMetadata.subcategories = subcategories;
 
     const updated = await this.db.business.update({
-      where: { id },
+      where: { id: actualId },
       data: updateData,
     });
 
     // Update progress tracker
     const progress = await this.db.onboardingProgress.findFirst({
-      where: { tenantId, entityType: 'BUSINESS', entityId: id },
+      where: { tenantId, entityType: 'BUSINESS', entityId: actualId },
     });
 
     if (progress) {
@@ -264,7 +266,7 @@ export class BusinessOnboardingService {
       data: {
         tenantId,
         entityType: 'BUSINESS',
-        entityId: id,
+        entityId: actualId,
         event: `STEP_${step}_COMPLETED`,
         metadata: { step },
       },
@@ -275,7 +277,7 @@ export class BusinessOnboardingService {
       userId,
       action: 'BUSINESS_ONBOARDING_UPDATE',
       resource: 'BUSINESS',
-      resourceId: id,
+      resourceId: actualId,
       metadata: { step },
     });
 
@@ -283,8 +285,9 @@ export class BusinessOnboardingService {
   }
 
   async submitForVerification(userId: string, tenantId: string, id: string) {
+    // Accept either business.id or entity.id
     const business = await this.db.business.findFirst({
-      where: { id, tenantId },
+      where: { tenantId, OR: [{ id }, { entityId: id }] },
       include: {
         documents: true,
         media: true,
@@ -292,15 +295,16 @@ export class BusinessOnboardingService {
     });
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
+    const actualId = business.id;
 
     // Update business status
     const updated = await this.db.business.update({
-      where: { id },
+      where: { id: actualId },
       data: { status: 'PENDING_VERIFICATION' },
     });
 
     await this.db.onboardingProgress.updateMany({
-      where: { tenantId, entityType: 'BUSINESS', entityId: id },
+      where: { tenantId, entityType: 'BUSINESS', entityId: actualId },
       data: {
         currentStep: 6,
         status: 'PENDING_VERIFICATION',
@@ -327,7 +331,7 @@ export class BusinessOnboardingService {
       });
       // Link entity back to business
       await this.db.business.update({
-        where: { id },
+        where: { id: actualId },
         data: { entityId: entity.id },
       });
       entityId = entity.id;
@@ -351,11 +355,11 @@ export class BusinessOnboardingService {
 
     // Legacy businessVerification record — kept for backward compatibility
     const existingBizVerification = await this.db.businessVerification.findFirst({
-      where: { businessId: id, status: 'PENDING' },
+      where: { businessId: actualId, status: 'PENDING' },
     });
     if (!existingBizVerification) {
       await this.db.businessVerification.create({
-        data: { tenantId, businessId: id, status: 'PENDING' },
+        data: { tenantId, businessId: actualId, status: 'PENDING' },
       });
     }
 
@@ -364,14 +368,14 @@ export class BusinessOnboardingService {
       data: {
         tenantId,
         entityType: 'BUSINESS',
-        entityId: id,
+        entityId: actualId,
         event: 'BUSINESS_SUBMITTED_VERIFICATION',
       },
     });
 
     // Dispatch queue job for verification notifications & indexing preparation
     await this.onboardingQueue.add('process-business-verification', {
-      businessId: id,
+      businessId: actualId,
       tenantId,
     });
 
@@ -380,7 +384,7 @@ export class BusinessOnboardingService {
       userId,
       action: 'BUSINESS_SUBMIT_VERIFICATION',
       resource: 'BUSINESS',
-      resourceId: id,
+      resourceId: actualId,
     });
 
     return {
@@ -390,14 +394,15 @@ export class BusinessOnboardingService {
   }
 
   async getProgress(userId: string, tenantId: string, id: string) {
+    // Accept either business.id or entity.id
     const business = await this.db.business.findFirst({
-      where: { id, tenantId },
+      where: { tenantId, OR: [{ id }, { entityId: id }] },
     });
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
 
     const progress = await this.db.onboardingProgress.findFirst({
-      where: { tenantId, entityType: 'BUSINESS', entityId: id },
+      where: { tenantId, entityType: 'BUSINESS', entityId: business.id },
     });
 
     return { business, onboardingProgress: progress };

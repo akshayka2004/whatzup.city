@@ -25,6 +25,18 @@ import {
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
 
+// ── Derive category from action string ───────────────────────────────────────
+function deriveCategory(action = ''): EventCategory {
+  const a = action.toUpperCase();
+  if (a.includes('BILL') || a.includes('INVOICE')) return 'BILL';
+  if (a.includes('OFFER') || a.includes('COUPON') || a.includes('PROMO')) return 'OFFER';
+  if (a.includes('BUSINESS') || a.includes('ONBOARDING') || a.includes('LISTING')) return 'BUSINESS';
+  if (a.includes('REJECT') || a.includes('MODERAT') || a.includes('FLAG') || a.includes('BAN') || a.includes('FRAUD')) return 'MODERATION';
+  if (a.includes('USER') || a.includes('LOGIN') || a.includes('LOGOUT') || a.includes('REGISTER') || a.includes('AUTH') || a.includes('PASSWORD')) return 'USER';
+  if (a.includes('NOTICE') || a.includes('ANNOUNCEMENT') || a.includes('ALERT')) return 'NOTICE';
+  return 'SYSTEM';
+}
+
 // ── Event type definitions ────────────────────────────────────────────────────
 type EventCategory =
   | 'BILL'
@@ -90,8 +102,8 @@ export default function AdminAuditPage() {
             list.map((l: any, i: number) => ({
               id: l.id ?? i,
               action: l.action || l.eventType || 'UNKNOWN',
-              category: (l.category || l.eventCategory || 'SYSTEM') as EventCategory,
-              user: l.performedBy || l.user || l.userId || 'System',
+              category: (l.category || l.eventCategory || deriveCategory(l.action || l.eventType)) as EventCategory,
+              user: l.performedBy || l.user?.name || l.user?.email || l.userId || 'System',
               details: l.description || l.details || l.message || '',
               date: l.createdAt
                 ? new Date(l.createdAt).toLocaleString('en-IN')

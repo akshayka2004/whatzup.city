@@ -49,8 +49,14 @@ export class EntityOnboardingService {
 
   async getProgress(userId: string, tenantId: string, entityId: string) {
     const entity = await this.getEntityAndVerifyOwner(userId, tenantId, entityId);
+
+    // Progress may be stored under entity.id (entity-onboarding flow)
+    // OR under business.id (business-onboarding flow where entityId = business.id)
+    const candidateIds = [entityId];
+    if ((entity as any).business?.id) candidateIds.push((entity as any).business.id);
+
     const progress = await this.db.onboardingProgress.findFirst({
-      where: { tenantId, entityId },
+      where: { tenantId, entityId: { in: candidateIds } },
     });
 
     return { entity, onboardingProgress: progress };

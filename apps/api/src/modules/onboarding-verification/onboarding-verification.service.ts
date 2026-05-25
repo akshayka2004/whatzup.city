@@ -167,9 +167,14 @@ export class OnboardingVerificationService {
       data: { status: 'APPROVED' },
     });
 
-    // 5. Update onboarding progress status
+    // 5. Update onboarding progress status — progress may be stored under entity.id OR business.id
+    const progressEntityIds = [request.entityId];
+    if (request.entity.type === 'BUSINESS') {
+      const biz = await this.db.business.findFirst({ where: { entityId: request.entityId }, select: { id: true } });
+      if (biz) progressEntityIds.push(biz.id);
+    }
     await this.db.onboardingProgress.updateMany({
-      where: { entityId: request.entityId },
+      where: { entityId: { in: progressEntityIds } },
       data: { status: 'APPROVED' },
     });
 
@@ -281,9 +286,14 @@ export class OnboardingVerificationService {
       data: { status: 'REJECTED', rejectionReason: dto.reason },
     });
 
-    // 5. Update onboarding progress status
+    // 5. Update onboarding progress status — progress may be stored under entity.id OR business.id
+    const progressEntityIds = [request.entityId];
+    if (request.entity.type === 'BUSINESS') {
+      const biz = await this.db.business.findFirst({ where: { entityId: request.entityId }, select: { id: true } });
+      if (biz) progressEntityIds.push(biz.id);
+    }
     await this.db.onboardingProgress.updateMany({
-      where: { entityId: request.entityId },
+      where: { entityId: { in: progressEntityIds } },
       data: { status: 'REJECTED' },
     });
 
