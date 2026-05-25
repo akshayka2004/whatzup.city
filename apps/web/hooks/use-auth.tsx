@@ -102,12 +102,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string): Promise<boolean> => {
     setLoading(true);
     try {
+      // Login response now includes entity — no second roundtrip needed for redirect
       const loggedInUser = await authService.signIn(email, password);
       if (loggedInUser) {
-        // Try to fetch full profile; fall back to signIn result
-        const activeUser = (await authService.fetchCurrentUser()) || loggedInUser;
-        setUser(activeUser);
-        router.push(resolveRedirect(activeUser));
+        setUser(loggedInUser);
+        router.push(resolveRedirect(loggedInUser));
+        // Background refresh: loads full permissions without blocking redirect
+        authService.fetchCurrentUser()
+          .then((fresh) => { if (fresh) setUser(fresh); })
+          .catch(() => {});
         return true;
       }
       return false;

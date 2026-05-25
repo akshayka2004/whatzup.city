@@ -8,6 +8,8 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  HttpException,
+  HttpStatus,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -261,24 +263,53 @@ export class AuthService {
 
   async login(dto: LoginDto, ipAddress?: string, userAgent?: string) {
     const emailNormalized = dto.email.toLowerCase().trim();
+
+    // ── Brute-force protection (Redis counters) ───────────────────────
+    // IP bucket  : 10 attempts / 15 min
+    // User bucket: 5  attempts / 10 min
+    const ipKey   = `login:ip:${ipAddress || 'unknown'}`;
+    const userKey = `login:user:${emailNormalized}`;
+
+    const [ipCount, userCount] = await Promise.all([
+      this.redisService.incr(ipKey),
+      this.redisService.incr(userKey),
+    ]);
+    // Set TTL only on first increment (atomic create)
+    if (ipCount   === 1) await this.redisService.expire(ipKey,   900); // 15 min
+    if (userCount === 1) await this.redisService.expire(userKey, 600); // 10 min
+
+    if (ipCount > 10 || userCount > 5) {
+      throw new HttpException(
+        'Too many login attempts. Please try again in 15 minutes.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    // ── Fetch user (include active entity for login response) ─────────
     const user = await this.db.user.findFirst({
       where: {
         ...(dto.tenantId ? { tenantId: dto.tenantId } : {}),
         email: emailNormalized,
         deletedAt: null,
       },
+      include: {
+        entities: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
     });
 
-    // Audit logs for security tracking
     if (!user || !user.isActive) {
-      // Create a mock failed audit log if tenant exists to prevent user enumeration
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // ── Password verify (intentionally slow — argon2) ─────────────────
     const isPasswordValid = await this.passwordService.compare(dto.password, user.passwordHash);
     if (!isPasswordValid) {
-      // Log failed login attempt
-      await this.db.auditLog.create({
+      // Fire-and-forget audit log — don't add latency on the hot path
+      this.db.auditLog.create({
         data: {
           tenantId: user.tenantId,
           userId: user.id,
@@ -286,41 +317,42 @@ export class AuthService {
           resource: 'auth',
           metadata: { ipAddress, userAgent },
         },
-      });
+      }).catch(() => {});
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Enforce email verification (can be bypassed via ENFORCE_EMAIL_VERIFICATION=false)
-    // Must compare as string — env vars are always strings, get<boolean> does NOT coerce
+    // Clear rate-limit counters on success
+    await Promise.all([
+      this.redisService.del(ipKey),
+      this.redisService.del(userKey),
+    ]);
+
+    // Enforce email verification (must compare as string — get<boolean> does NOT coerce)
     const enforceVerification =
       this.configService.get<string>('ENFORCE_EMAIL_VERIFICATION', 'true') !== 'false';
     if (enforceVerification && !user.emailVerified) {
       throw new UnauthorizedException('Please verify your email address before logging in.');
     }
 
-    // Update last login
-    await this.db.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
-
-    // Track Device Login
+    // ── Parallel: token generation + lastLoginAt update + deviceLogin ──
     const deviceType = userAgent ? this.parseDeviceType(userAgent) : 'Unknown';
-    await this.db.deviceLogin.create({
-      data: {
-        tenantId: user.tenantId,
-        userId: user.id,
-        deviceType,
-        ipAddress,
-        lastLoginAt: new Date(),
-      },
-    });
+    const now = new Date();
+    const [tokens] = await Promise.all([
+      this.generateTokens(user, userAgent, ipAddress),
+      this.db.user.update({ where: { id: user.id }, data: { lastLoginAt: now } }),
+      this.db.deviceLogin.create({
+        data: {
+          tenantId: user.tenantId,
+          userId: user.id,
+          deviceType,
+          ipAddress,
+          lastLoginAt: now,
+        },
+      }),
+    ]);
 
-    // Generate Access & Refresh tokens
-    const tokens = await this.generateTokens(user, userAgent, ipAddress);
-
-    // Track Successful Login
-    await this.db.auditLog.create({
+    // Fire-and-forget success audit log
+    this.db.auditLog.create({
       data: {
         tenantId: user.tenantId,
         userId: user.id,
@@ -328,9 +360,19 @@ export class AuthService {
         resource: 'auth',
         metadata: { ipAddress, userAgent },
       },
-    });
+    }).catch(() => {});
 
-    return tokens;
+    // Return entity in response so frontend can skip a second /me roundtrip
+    const activeEntity = user.entities?.[0] ?? null;
+    return {
+      ...tokens,
+      user: {
+        ...tokens.user,
+        entity: activeEntity
+          ? { id: activeEntity.id, type: activeEntity.type, status: activeEntity.status, name: activeEntity.name }
+          : null,
+      },
+    };
   }
 
   async refreshTokens(refreshToken: string, ipAddress?: string, userAgent?: string) {
