@@ -48,7 +48,7 @@ export default function AdminCategoriesPage() {
     setIsAddOpen(true);
   };
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
     const finalSlug =
@@ -57,14 +57,13 @@ export default function AdminCategoriesPage() {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
-    const newCat = {
-      id: Date.now(),
-      name,
-      slug: finalSlug,
-      listingsCount: 0,
-      active,
-    };
-    setCategories([...categories, newCat]);
+    const res = await apiService.post<any>('/v1/categories', { name, slug: finalSlug });
+    if (res.data && !res.error) {
+      setCategories([
+        ...categories,
+        { id: res.data.id, name: res.data.name, slug: res.data.slug, listingsCount: 0, active: res.data.isActive !== false },
+      ]);
+    }
     setIsAddOpen(false);
   };
 
@@ -75,30 +74,46 @@ export default function AdminCategoriesPage() {
     setActive(cat.active);
   };
 
-  const handleEdit = (e: React.FormEvent) => {
+  const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return;
+    if (!name || !editingCategory) return;
     const finalSlug =
       slug ||
       name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
-    setCategories(
-      categories.map((c) =>
-        c.id === editingCategory.id ? { ...c, name, slug: finalSlug, active } : c,
-      ),
-    );
+    const res = await apiService.patch<any>(`/v1/categories/${editingCategory.id}`, {
+      name,
+      slug: finalSlug,
+      isActive: active,
+    });
+    if (res.data && !res.error) {
+      setCategories(
+        categories.map((c) =>
+          c.id === editingCategory.id ? { ...c, name, slug: finalSlug, active } : c,
+        ),
+      );
+    }
     setEditingCategory(null);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
+    if (!deletingCategory) return;
+    await apiService.delete<any>(`/v1/categories/${deletingCategory.id}`);
     setCategories(categories.filter((c) => c.id !== deletingCategory.id));
     setDeletingCategory(null);
   };
 
-  const toggleActive = (id: number) => {
-    setCategories(categories.map((c) => (c.id === id ? { ...c, active: !c.active } : c)));
+  const toggleActive = async (id: string | number) => {
+    const cat = categories.find((c) => c.id === id);
+    if (!cat) return;
+    const newActive = !cat.active;
+    setCategories(categories.map((c) => (c.id === id ? { ...c, active: newActive } : c)));
+    const res = await apiService.patch<any>(`/v1/categories/${id}`, { isActive: newActive });
+    if (res.error) {
+      setCategories(categories.map((c) => (c.id === id ? { ...c, active: !newActive } : c)));
+    }
   };
 
   return (

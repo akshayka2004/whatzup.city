@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -20,7 +20,7 @@ export class CategoriesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @Post()
   @ApiBearerAuth()
   async create(@CurrentUser('tenantId') tenantId: string, @Body() data: any) {
@@ -28,7 +28,7 @@ export class CategoriesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @Patch(':id')
   @ApiBearerAuth()
   async update(
@@ -37,5 +37,13 @@ export class CategoriesController {
     @Body() data: any,
   ) {
     return this.categoriesService.update(id, tenantId, data);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Delete(':id')
+  @ApiBearerAuth()
+  async remove(@Param('id') id: string, @CurrentUser('tenantId') tenantId: string) {
+    return this.categoriesService.remove(id, tenantId);
   }
 }

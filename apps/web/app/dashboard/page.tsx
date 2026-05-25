@@ -79,20 +79,26 @@ export default function BusinessDashboardPage() {
       ]);
 
       if (bizRes.status === 'fulfilled' && bizRes.value.data) {
-        const bizData = bizRes.value.data;
-        setBusiness(Array.isArray(bizData) ? bizData[0] : bizData);
+        const bizData: any = bizRes.value.data;
+        // /v1/businesses/owner/mine returns PaginatedResult { data: [...], meta: {...} }
+        const list = Array.isArray(bizData)
+          ? bizData
+          : bizData?.data ?? bizData?.items ?? [];
+        setBusiness(Array.isArray(list) && list.length > 0 ? list[0] : null);
       }
 
       if (offersRes.status === 'fulfilled' && offersRes.value.data) {
-        const d = offersRes.value.data;
-        setOffers(Array.isArray(d) ? d : d.data || []);
+        const d: any = offersRes.value.data;
+        const list = Array.isArray(d) ? d : d?.data ?? d?.items ?? [];
+        setOffers(list);
       } else {
         setOffers([]);
       }
 
       if (analyticsRes.status === 'fulfilled' && analyticsRes.value.data) {
-        const ev = analyticsRes.value.data;
-        setAnalyticsEvents(Array.isArray(ev) ? ev : []);
+        const ev: any = analyticsRes.value.data;
+        const list = Array.isArray(ev) ? ev : ev?.data ?? ev?.items ?? [];
+        setAnalyticsEvents(list);
       }
     } catch (_) {}
     setLoading(false);

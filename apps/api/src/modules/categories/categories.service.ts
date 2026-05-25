@@ -26,6 +26,7 @@ export class CategoriesService {
     tenantId: string,
     data: { name: string; slug: string; description?: string; icon?: string; parentId?: string },
   ) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const existing = await this.categoryRepo.findBySlug(tenantId, data.slug);
     if (existing) {
       throw new ConflictException('Category with this slug already exists');
@@ -37,6 +38,7 @@ export class CategoriesService {
   }
 
   async update(id: string, tenantId: string, data: any) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const existing = await this.categoryRepo.findOne(tenantId, id);
     if (!existing) {
       throw new NotFoundException('Category not found');
@@ -52,5 +54,16 @@ export class CategoriesService {
     const cat = await this.categoryRepo.update(tenantId, id, data);
     await this.redis.del(`categories:${tenantId}`);
     return cat;
+  }
+
+  async remove(id: string, tenantId: string) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
+    const existing = await this.categoryRepo.findOne(tenantId, id);
+    if (!existing) {
+      throw new NotFoundException('Category not found');
+    }
+    await this.categoryRepo.softDelete(tenantId, id);
+    await this.redis.del(`categories:${tenantId}`);
+    return { success: true };
   }
 }
