@@ -57,7 +57,6 @@ interface SearchResult {
   rating: number | null;
   reviews: number;
   city: string;
-  verified: boolean;
   instagram?: string;
   website?: string;
   location: string;
@@ -91,7 +90,6 @@ function SearchContent() {
           rating: b.avgRating ?? b.rating ?? null,
           reviews: b.reviewCount ?? b.reviewsCount ?? 0,
           city: b.city || '',
-          verified: !!b.isVerified,
           instagram: b.socialLinks?.instagram,
           website: b.website,
           location: [b.address, b.city, b.state].filter(Boolean).join(', '),
@@ -201,11 +199,6 @@ function SearchContent() {
                       <h3 className="text-lg font-semibold text-foreground">{result.name}</h3>
                       <p className="text-sm text-muted-foreground">{result.category}</p>
                     </div>
-                    {result.verified && (
-                      <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs rounded-full font-semibold">
-                        Verified
-                      </span>
-                    )}
                   </div>
                   <div className="flex items-center gap-4 text-sm mb-3">
                     <div className="flex items-center gap-1">

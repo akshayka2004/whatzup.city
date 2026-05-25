@@ -295,7 +295,7 @@ export default function BusinessDetailPage() {
                 <h2 className="text-2xl font-bold text-foreground mb-4">About</h2>
                 <p className="text-muted-foreground mb-4 text-sm leading-relaxed">{biz.description}</p>
                 <div className="flex gap-3 flex-wrap">
-                  {[biz.category?.name, biz.subcategory, biz.status === 'ACTIVE' ? 'Verified' : null].filter(Boolean).map((tag) => (
+                  {[biz.category?.name, biz.subcategory].filter(Boolean).map((tag) => (
                     <span key={tag} className="px-3 py-1 bg-white/5 border border-white/5 rounded-full text-sm text-slate-300">{tag}</span>
                   ))}
                 </div>

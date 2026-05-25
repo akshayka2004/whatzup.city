@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import {
   Edit2, Mail, Phone, MapPin, LogOut, Check, X,
   Sparkles, Receipt, Heart, Tag, Building2, CalendarDays,
-  ShieldCheck, Camera, Loader2,
+  Camera, Loader2,
 } from 'lucide-react';
 
 /* ── Types matching API responses ─────────────────────────────── */
@@ -207,11 +207,6 @@ export default function ProfilePage() {
                   <h2 className="text-2xl font-extrabold text-foreground">
                     {profile.firstName} {profile.lastName}
                   </h2>
-                  {(user as any).emailVerified !== false && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
-                      <ShieldCheck className="h-3 w-3" /> Verified
-                    </span>
-                  )}
                 </div>
                 <p className="text-muted-foreground text-sm mb-3">
                   {user.email} {memberSince && `• Member since ${memberSince}`}
