@@ -111,8 +111,8 @@ export default function LoginPage() {
             {/* Brand badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold tracking-wide w-fit"
                  style={{ background: 'rgba(113,90,90,0.15)', borderColor: 'rgba(113,90,90,0.30)', color: '#D3DAD9' }}>
-              <Sparkles className="h-3.5 w-3.5" style={{ color: '#715A5A' }} />
-              Whtzup.city
+              <img src="/logo.png" alt="Whtzup.city Logo" className="h-5 w-auto object-contain" />
+              <span className="font-semibold tracking-tight">whtzup.city</span>
             </div>
 
             <div className="space-y-3">

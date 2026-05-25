@@ -430,8 +430,8 @@ export default function UnifiedRegisterPage() {
         {/* Top Header */}
         <div className="text-center space-y-2 mb-2">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-700/30 border border-zinc-600/30 text-zinc-300 text-xs font-semibold tracking-wide">
-            <Sparkles className="h-3.5 w-3.5" />
-            Whtzup.city
+            <img src="/logo.png" alt="Whtzup.city Logo" className="h-5 w-auto object-contain" />
+            <span className="font-semibold tracking-tight">whtzup.city</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
             Create Your Account
