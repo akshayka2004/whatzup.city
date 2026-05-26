@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Star, Loader2 } from 'lucide-react';
+import { MapPin, Star, Loader2, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { apiService } from '@/lib/services/api-service';
 
@@ -69,9 +69,17 @@ export default function NearbyPage() {
               <Card key={business.id} className="p-6 rounded-2xl">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="font-semibold text-foreground text-lg truncate">
-                      {business.name}
-                    </h3>
+                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                      <h3 className="font-semibold text-foreground text-lg truncate">
+                        {business.name}
+                      </h3>
+                      {business.isVerified && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Verified
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {business.category?.name || business.categoryName || ''}
                     </p>

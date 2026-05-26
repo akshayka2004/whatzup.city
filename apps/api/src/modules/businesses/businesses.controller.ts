@@ -42,7 +42,6 @@ export class BusinessesController {
         categoryId,
         city,
         search,
-        status: { in: ['APPROVED', 'PENDING_VERIFICATION'] },
       },
       true,
     );

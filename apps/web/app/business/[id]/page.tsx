@@ -26,6 +26,7 @@ import {
   Hash,
   IndianRupee,
   Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/services/api-service';
@@ -106,6 +107,7 @@ export default function BusinessDetailPage() {
           rating: String(biz.averageRating || 0),
           reviews: biz._count?.reviews || 0,
           savedAt: new Date().toLocaleDateString(),
+          isVerified: biz.isVerified,
         }, ...existing];
       }
       localStorage.setItem(FAVORITES_KEY, JSON.stringify(updated));
@@ -216,7 +218,15 @@ export default function BusinessDetailPage() {
             <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-foreground mb-2">{biz.name}</h1>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <h1 className="text-3xl font-bold text-foreground">{biz.name}</h1>
+                    {biz.isVerified && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Verified Merchant
+                      </span>
+                    )}
+                  </div>
                   <p className="text-muted-foreground mb-4">
                     {biz.category?.name || ''}
                     {biz.subcategory ? ` • ${biz.subcategory}` : ''}

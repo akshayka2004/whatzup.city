@@ -45,7 +45,7 @@ export class TrendingService {
     if (engagementData.length === 0) {
       // Fallback: use raw DB ordering
       const fallback = await this.db.business.findMany({
-        where: { tenantId, status: 'APPROVED', deletedAt: null },
+        where: { tenantId, deletedAt: null },
         orderBy: [{ totalReviews: 'desc' }, { averageRating: 'desc' }],
         take: 10,
         select: {
@@ -56,6 +56,7 @@ export class TrendingService {
           city: true,
           averageRating: true,
           totalReviews: true,
+          isVerified: true,
         },
       });
       await this.redis.set(`trending:businesses:${tenantId}`, fallback, 1800);
@@ -67,7 +68,7 @@ export class TrendingService {
       .map((e) => e.businessId as string);
 
     const businesses = await this.db.business.findMany({
-      where: { id: { in: businessIds }, status: 'APPROVED', deletedAt: null },
+      where: { id: { in: businessIds }, deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -76,6 +77,7 @@ export class TrendingService {
         city: true,
         averageRating: true,
         totalReviews: true,
+        isVerified: true,
       },
     });
 
@@ -135,7 +137,7 @@ export class TrendingService {
       where: { tenantId, isActive: true, deletedAt: null },
       include: {
         _count: {
-          select: { businesses: { where: { status: 'APPROVED', deletedAt: null } } },
+          select: { businesses: { where: { deletedAt: null } } },
         },
       },
     });

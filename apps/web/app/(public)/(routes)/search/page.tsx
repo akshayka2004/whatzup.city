@@ -6,7 +6,7 @@ import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Star, MapPin, Globe, Instagram, Heart, Loader2 } from 'lucide-react';
+import { Search, Star, MapPin, Globe, Instagram, Heart, Loader2, CheckCircle2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { apiService } from '@/lib/services/api-service';
 import {
@@ -60,6 +60,7 @@ interface SearchResult {
   instagram?: string;
   website?: string;
   location: string;
+  isVerified?: boolean;
 }
 
 function SearchContent() {
@@ -93,6 +94,7 @@ function SearchContent() {
           instagram: b.socialLinks?.instagram,
           website: b.website,
           location: [b.address, b.city, b.state].filter(Boolean).join(', '),
+          isVerified: b.isVerified,
         })),
       );
     } else {
@@ -196,7 +198,15 @@ function SearchContent() {
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <h3 className="text-lg font-semibold text-foreground">{result.name}</h3>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 className="text-lg font-semibold text-foreground">{result.name}</h3>
+                        {result.isVerified && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Verified
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground">{result.category}</p>
                     </div>
                   </div>

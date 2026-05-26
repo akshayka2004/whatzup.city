@@ -167,9 +167,7 @@ export class BusinessesService {
       newData: updated,
     });
 
-    if (updated.status === BusinessStatus.APPROVED || updated.status === BusinessStatus.PENDING_VERIFICATION) {
-      await this.searchService.indexBusiness(updated.id, tenantId);
-    }
+    await this.searchService.indexBusiness(updated.id, tenantId);
 
     return updated;
   }
@@ -187,11 +185,7 @@ export class BusinessesService {
       newData: { status },
     });
 
-    if (status === BusinessStatus.APPROVED || status === BusinessStatus.PENDING_VERIFICATION) {
-      await this.searchService.indexBusiness(updated.id, tenantId);
-    } else {
-      await this.searchService.removeFromIndex(id, tenantId);
-    }
+    await this.searchService.indexBusiness(updated.id, tenantId);
 
     return updated;
   }

@@ -5,15 +5,16 @@ import Link from 'next/link';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Trash2, Star, X, AlertTriangle, Search } from 'lucide-react';
+import { Heart, Trash2, Star, X, AlertTriangle, Search, CheckCircle2 } from 'lucide-react';
 
 export interface SavedBusiness {
-  id: number;
+  id: string | number;
   name: string;
   category: string;
   rating: string;
   reviews: number;
   savedAt: string;
+  isVerified?: boolean;
 }
 
 export const FAVORITES_KEY = 'saved_businesses';
@@ -85,7 +86,15 @@ export default function FavoritesPage() {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="font-semibold text-foreground text-lg">{fav.name}</h3>
+                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                      <h3 className="font-semibold text-foreground text-lg truncate">{fav.name}</h3>
+                      {fav.isVerified && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Verified
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">{fav.category}</p>
                     {fav.savedAt && (
                       <p className="text-[10px] text-muted-foreground mt-0.5">Saved {fav.savedAt}</p>

@@ -34,7 +34,7 @@ export class SearchService {
       const searchParams: any = {
         q: query,
         query_by: 'name,description,categoryName',
-        filter_by: `tenantId:=${tenantId} && status:=[APPROVED, PENDING_VERIFICATION]`,
+        filter_by: `tenantId:=${tenantId}`,
         page,
         per_page: limit,
       };
@@ -64,7 +64,6 @@ export class SearchService {
     // Postgres Fallback
     const where: any = {
       tenantId,
-      status: { in: ['APPROVED', 'PENDING_VERIFICATION'] },
       deletedAt: null,
     };
     if (query && query !== '*') {
@@ -111,7 +110,7 @@ export class SearchService {
       const searchParams = {
         q: '*',
         query_by: 'name',
-        filter_by: `tenantId:=${tenantId} && status:=[APPROVED, PENDING_VERIFICATION] && location:(${lat}, ${lng}, ${radius} mi)`,
+        filter_by: `tenantId:=${tenantId} && location:(${lat}, ${lng}, ${radius} mi)`,
         sort_by: `location(${lat}, ${lng}):asc`,
         page,
         per_page: 20,
@@ -142,7 +141,7 @@ export class SearchService {
     if (cached) return cached;
 
     const data = await this.db.business.findMany({
-      where: { tenantId, status: 'APPROVED', deletedAt: null },
+      where: { tenantId, deletedAt: null },
       orderBy: [{ averageRating: 'desc' }, { totalReviews: 'desc' }],
       take: 10,
       select: {
@@ -154,6 +153,7 @@ export class SearchService {
         averageRating: true,
         totalReviews: true,
         description: true,
+        isVerified: true,
       },
     });
 
@@ -170,7 +170,7 @@ export class SearchService {
     if (cached) return cached;
 
     const data = await this.db.business.findMany({
-      where: { tenantId, status: 'APPROVED', deletedAt: null },
+      where: { tenantId, deletedAt: null },
       orderBy: [{ totalReviews: 'desc' }, { createdAt: 'desc' }],
       take: 10,
       select: {
@@ -181,6 +181,7 @@ export class SearchService {
         city: true,
         averageRating: true,
         totalReviews: true,
+        isVerified: true,
       },
     });
 
