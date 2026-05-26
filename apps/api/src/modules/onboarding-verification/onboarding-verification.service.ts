@@ -22,6 +22,7 @@ export class OnboardingVerificationService {
     page = 1,
     limit = 20,
     filters: { status?: string; search?: string; type?: EntityType } = {},
+    actorRole?: string,
   ) {
     const skip = (page - 1) * limit;
 
@@ -86,8 +87,28 @@ export class OnboardingVerificationService {
       }),
     ]);
 
+    let finalData = data;
+    if (actorRole !== 'SUPER_ADMIN') {
+      finalData = data.map((req: any) => {
+        // Deep clone or shallow copy nested objects to avoid mutating prisma cached values directly
+        if (req.entity?.user) {
+          const userCopy = { ...req.entity.user };
+          delete userCopy.email;
+          delete userCopy.phone;
+          return {
+            ...req,
+            entity: {
+              ...req.entity,
+              user: userCopy,
+            },
+          };
+        }
+        return req;
+      });
+    }
+
     return {
-      data,
+      data: finalData,
       meta: {
         total,
         page,

@@ -9,29 +9,42 @@ export class UsersService {
     private readonly redis: RedisService,
   ) {}
 
-  async findById(id: string) {
+  async findById(id: string, requesterId?: string, requesterRole?: string) {
     const cached = await this.redis.get(`user:${id}`);
-    if (cached) return cached;
+    let user = cached;
 
-    const user = await this.db.user.findUnique({
-      where: { id, deletedAt: null },
-      select: {
-        id: true,
-        tenantId: true,
-        email: true,
-        name: true,
-        phone: true,
-        avatar: true,
-        role: true,
-        isActive: true,
-        emailVerified: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) {
+      user = await this.db.user.findUnique({
+        where: { id, deletedAt: null },
+        select: {
+          id: true,
+          tenantId: true,
+          email: true,
+          name: true,
+          phone: true,
+          avatar: true,
+          role: true,
+          isActive: true,
+          emailVerified: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+      if (!user) throw new NotFoundException('User not found');
+      await this.redis.set(`user:${id}`, user, 300);
+    }
 
-    await this.redis.set(`user:${id}`, user, 300);
+    if (requesterId !== undefined || requesterRole !== undefined) {
+      const isSelf = requesterId === id;
+      const isSuperAdmin = requesterRole === 'SUPER_ADMIN';
+      if (!isSelf && !isSuperAdmin) {
+        const userCopy = { ...user } as any;
+        delete userCopy.email;
+        delete userCopy.phone;
+        return userCopy;
+      }
+    }
+
     return user;
   }
 
@@ -41,7 +54,11 @@ export class UsersService {
     });
   }
 
-  async findAll(tenantId: string, params: { page?: number; limit?: number; role?: string }) {
+  async findAll(
+    tenantId: string,
+    params: { page?: number; limit?: number; role?: string },
+    requesterRole?: string,
+  ) {
     const page = params.page || 1;
     const limit = Math.min(params.limit || 20, 100);
     const skip = (page - 1) * limit;
@@ -69,8 +86,18 @@ export class UsersService {
       this.db.user.count({ where }),
     ]);
 
+    let finalData = data;
+    if (requesterRole !== 'SUPER_ADMIN') {
+      finalData = data.map((u) => {
+        const uCopy = { ...u } as any;
+        delete uCopy.email;
+        delete uCopy.phone;
+        return uCopy;
+      });
+    }
+
     return {
-      data,
+      data: finalData,
       meta: {
         total,
         page,

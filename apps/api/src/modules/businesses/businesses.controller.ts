@@ -34,14 +34,18 @@ export class BusinessesController {
     @Query('city') city?: string,
     @Query('search') search?: string,
   ) {
-    return this.businessesService.findAll(tenantId, {
-      page,
-      limit,
-      categoryId,
-      city,
-      search,
-      status: 'APPROVED',
-    });
+    return this.businessesService.findAll(
+      tenantId,
+      {
+        page,
+        limit,
+        categoryId,
+        city,
+        search,
+        status: { in: ['APPROVED', 'PENDING_VERIFICATION'] },
+      },
+      true,
+    );
   }
 
   @Public()
@@ -53,7 +57,7 @@ export class BusinessesController {
     @Query('lng') lng: number,
     @Query('radius') radius?: number,
   ) {
-    return this.businessesService.getNearby(tenantId, lat, lng, radius);
+    return this.businessesService.getNearby(tenantId, lat, lng, radius, true);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -71,7 +75,7 @@ export class BusinessesController {
   @Get(':id')
   @ApiOperation({ summary: 'Get business by ID (public)' })
   async findOne(@Query('tenantId') tenantId: string = 'default', @Param('id') id: string) {
-    return this.businessesService.findById(tenantId, id);
+    return this.businessesService.findById(tenantId, id, true);
   }
 
   @UseGuards(JwtAuthGuard)

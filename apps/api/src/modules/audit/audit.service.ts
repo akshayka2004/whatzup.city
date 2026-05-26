@@ -25,6 +25,7 @@ export class AuditService {
     page = 1,
     limit = 50,
     filters?: { userId?: string; action?: string; resource?: string },
+    actorRole?: string,
   ): Promise<any> {
     const where: any = { tenantId };
     if (filters?.userId) where.userId = filters.userId;
@@ -41,8 +42,25 @@ export class AuditService {
       }),
       this.db.auditLog.count({ where }),
     ]);
+
+    let finalData = data;
+    if (actorRole !== 'SUPER_ADMIN') {
+      finalData = data.map((log: any) => {
+        if (log.user) {
+          const userCopy = { ...log.user };
+          delete userCopy.email;
+          delete userCopy.phone;
+          return {
+            ...log,
+            user: userCopy,
+          };
+        }
+        return log;
+      });
+    }
+
     return {
-      data,
+      data: finalData,
       meta: {
         total,
         page,

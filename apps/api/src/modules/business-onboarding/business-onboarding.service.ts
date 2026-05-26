@@ -8,6 +8,7 @@ import {
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { AuditService } from '../audit/audit.service';
+import { SearchService } from '../search/search.service';
 import {
   StartBusinessOnboardingDto,
   UpdateBusinessDetailsDto,
@@ -21,6 +22,7 @@ export class BusinessOnboardingService {
     private readonly db: DatabaseService,
     private readonly redis: RedisService,
     private readonly audit: AuditService,
+    private readonly searchService: SearchService,
     @InjectQueue('onboarding-queue') private readonly onboardingQueue: Queue,
   ) {}
 
@@ -105,6 +107,9 @@ export class BusinessOnboardingService {
         socialLinks: {},
       },
     });
+
+    // Index business immediately
+    await this.searchService.indexBusiness(business.id, tenantId);
 
     // VerificationRequest — admin moderation queue source
     await this.db.verificationRequest.create({
@@ -235,6 +240,8 @@ export class BusinessOnboardingService {
       data: updateData,
     });
 
+    await this.searchService.indexBusiness(actualId, tenantId);
+
     // Update progress tracker
     const progress = await this.db.onboardingProgress.findFirst({
       where: { tenantId, entityType: 'BUSINESS', entityId: business.entityId || actualId },
@@ -322,6 +329,8 @@ export class BusinessOnboardingService {
       where: { id: actualId },
       data: { status: 'PENDING_VERIFICATION' },
     });
+
+    await this.searchService.indexBusiness(actualId, tenantId);
 
     // ── Ensure unified Entity record exists for admin moderation queue ──────
     // Business registrations via business-onboarding may not have an Entity.

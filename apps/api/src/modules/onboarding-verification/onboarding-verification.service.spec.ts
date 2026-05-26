@@ -174,7 +174,7 @@ describe('OnboardingVerificationService', () => {
       });
 
       expect(mockDb.onboardingProgress.updateMany).toHaveBeenCalledWith({
-        where: { entityId: 'ent-123' },
+        where: { entityId: { in: ['ent-123', 'biz-123'] } },
         data: { status: 'APPROVED' },
       });
 

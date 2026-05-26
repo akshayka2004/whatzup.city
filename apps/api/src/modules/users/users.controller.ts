@@ -17,26 +17,30 @@ export class UsersController {
   @Get('me')
   @ApiOperation({ summary: 'Get current user profile' })
   async getProfile(@CurrentUser('id') userId: string) {
-    return this.usersService.findById(userId);
+    return this.usersService.findById(userId, userId);
   }
 
   @Get()
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'List all users (admin only)' })
   async findAll(
-    @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser() currentUser: any,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('role') role?: string,
   ) {
-    return this.usersService.findAll(tenantId, { page, limit, role });
+    return this.usersService.findAll(
+      currentUser.tenantId,
+      { page, limit, role },
+      currentUser.role,
+    );
   }
 
   @Get(':id')
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get user by ID (admin only)' })
-  async findOne(@Param('id') id: string) {
-    return this.usersService.findById(id);
+  async findOne(@Param('id') id: string, @CurrentUser() currentUser: any) {
+    return this.usersService.findById(id, currentUser.id, currentUser.role);
   }
 
   @Patch('me')

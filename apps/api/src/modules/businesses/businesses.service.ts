@@ -38,6 +38,8 @@ export class BusinessesService {
       status: BusinessStatus.PENDING_VERIFICATION,
     });
 
+    await this.searchService.indexBusiness(business.id, tenantId);
+
     await this.auditService.log({
       tenantId,
       userId: ownerId,
@@ -50,7 +52,7 @@ export class BusinessesService {
     return business;
   }
 
-  async findAll(tenantId: string, params: any) {
+  async findAll(tenantId: string, params: any, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const { page, limit, categoryId, city, status, search } = params;
 
@@ -76,15 +78,34 @@ export class BusinessesService {
     pagination.sortBy = 'createdAt';
     pagination.sortOrder = SortOrder.DESC;
 
-    return this.businessRepo.findMany(tenantId, criteria, pagination, {
+    const result = await this.businessRepo.findMany(tenantId, criteria, pagination, {
       include: { category: { select: { id: true, name: true, slug: true } } },
     });
+
+    if (isPublic && result?.data) {
+      result.data = result.data.map((biz: any) => {
+        const copy = { ...biz };
+        delete copy.ownerName;
+        delete copy.ownerId;
+        return copy;
+      });
+    }
+
+    return result;
   }
 
-  async findById(tenantId: string, id: string) {
+  async findById(tenantId: string, id: string, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const cached = await this.redis.get(`business:${id}`);
-    if (cached) return cached;
+    if (cached) {
+      if (isPublic) {
+        const copy = { ...cached } as any;
+        delete copy.ownerName;
+        delete copy.ownerId;
+        return copy;
+      }
+      return cached;
+    }
 
     const business = await this.businessRepo.findOne(tenantId, id, {
       include: {
@@ -97,10 +118,17 @@ export class BusinessesService {
     if (!business) throw new NotFoundException('Business not found');
 
     await this.redis.set(`business:${id}`, business, 300);
+
+    if (isPublic) {
+      const copy = { ...business };
+      delete copy.ownerName;
+      delete copy.ownerId;
+      return copy;
+    }
     return business;
   }
 
-  async findBySlug(tenantId: string, slug: string) {
+  async findBySlug(tenantId: string, slug: string, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const business = await this.businessRepo.findBySlug(tenantId, slug, {
       include: {
@@ -110,6 +138,13 @@ export class BusinessesService {
       },
     });
     if (!business) throw new NotFoundException('Business not found');
+
+    if (isPublic) {
+      const copy = { ...business };
+      delete copy.ownerName;
+      delete copy.ownerId;
+      return copy;
+    }
     return business;
   }
 
@@ -132,7 +167,7 @@ export class BusinessesService {
       newData: updated,
     });
 
-    if (updated.status === BusinessStatus.APPROVED) {
+    if (updated.status === BusinessStatus.APPROVED || updated.status === BusinessStatus.PENDING_VERIFICATION) {
       await this.searchService.indexBusiness(updated.id, tenantId);
     }
 
@@ -152,7 +187,7 @@ export class BusinessesService {
       newData: { status },
     });
 
-    if (status === BusinessStatus.APPROVED) {
+    if (status === BusinessStatus.APPROVED || status === BusinessStatus.PENDING_VERIFICATION) {
       await this.searchService.indexBusiness(updated.id, tenantId);
     } else {
       await this.searchService.removeFromIndex(id, tenantId);
@@ -172,9 +207,18 @@ export class BusinessesService {
     );
   }
 
-  async getNearby(tenantId: string, lat: number, lng: number, radiusKm = 10) {
+  async getNearby(tenantId: string, lat: number, lng: number, radiusKm = 10, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
-    return this.businessRepo.findNearby(tenantId, lat, lng, radiusKm);
+    const data = await this.businessRepo.findNearby(tenantId, lat, lng, radiusKm);
+    if (isPublic && data) {
+      return data.map((biz: any) => {
+        const copy = { ...biz };
+        delete copy.ownerName;
+        delete copy.ownerId;
+        return copy;
+      });
+    }
+    return data;
   }
 
   private generateSlug(name: string): string {

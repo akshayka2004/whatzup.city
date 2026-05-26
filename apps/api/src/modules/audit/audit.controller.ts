@@ -18,11 +18,12 @@ export class AuditController {
   @Get()
   async findAll(
     @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('role') actorRole: string,
     @Query('page') page?: number,
     @Query('userId') userId?: string,
     @Query('action') action?: string,
     @Query('resource') resource?: string,
   ): Promise<any> {
-    return this.auditService.findAll(tenantId, page, 50, { userId, action, resource });
+    return this.auditService.findAll(tenantId, page, 50, { userId, action, resource }, actorRole);
   }
 }

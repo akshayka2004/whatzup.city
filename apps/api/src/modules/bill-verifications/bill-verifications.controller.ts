@@ -42,11 +42,12 @@ export class BillVerificationsController {
   @ApiOperation({ summary: 'Get business bill verification queue' })
   async getBusinessQueue(
     @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('role') actorRole: string,
     @Param('businessId') businessId: string,
     @Query('status') status?: string,
     @Query('page') page?: number,
   ) {
-    return this.verificationsService.getBusinessQueue(tenantId, businessId, status, page);
+    return this.verificationsService.getBusinessQueue(tenantId, businessId, status, page, undefined, actorRole);
   }
 
   /**
@@ -165,9 +166,10 @@ export class BillVerificationsController {
   @ApiOperation({ summary: 'Platform fraud escalation queue (MASTER_ADMIN monitor)' })
   async getEscalatedQueue(
     @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('role') actorRole: string,
     @Query('page') page?: number,
   ) {
-    return this.verificationsService.getEscalatedQueue(tenantId, page);
+    return this.verificationsService.getEscalatedQueue(tenantId, page, 20, actorRole);
   }
 
   /**
@@ -197,8 +199,9 @@ export class BillVerificationsController {
   @ApiOperation({ summary: '[Deprecated] Legacy pending queue — use /escalated instead' })
   async getPending(
     @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('role') actorRole: string,
     @Query('page') page?: number,
   ) {
-    return this.verificationsService.getEscalatedQueue(tenantId, page);
+    return this.verificationsService.getEscalatedQueue(tenantId, page, 20, actorRole);
   }
 }

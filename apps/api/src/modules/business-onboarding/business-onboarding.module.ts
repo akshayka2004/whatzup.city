@@ -4,6 +4,7 @@ import { BusinessOnboardingService } from './business-onboarding.service';
 import { OnboardingProcessor } from './onboarding.processor';
 import { BullModule } from '@nestjs/bullmq';
 import { AuditModule } from '../audit/audit.module';
+import { SearchModule } from '../search/search.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AuditModule } from '../audit/audit.module';
       },
     }),
     AuditModule,
+    SearchModule,
   ],
   controllers: [BusinessOnboardingController],
   providers: [BusinessOnboardingService, OnboardingProcessor],

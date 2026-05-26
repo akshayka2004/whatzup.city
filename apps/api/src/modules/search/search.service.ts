@@ -34,7 +34,7 @@ export class SearchService {
       const searchParams: any = {
         q: query,
         query_by: 'name,description,categoryName',
-        filter_by: `tenantId:=${tenantId} && status:=APPROVED`,
+        filter_by: `tenantId:=${tenantId} && status:=[APPROVED, PENDING_VERIFICATION]`,
         page,
         per_page: limit,
       };
@@ -62,7 +62,11 @@ export class SearchService {
     }
 
     // Postgres Fallback
-    const where: any = { tenantId, status: 'APPROVED', deletedAt: null };
+    const where: any = {
+      tenantId,
+      status: { in: ['APPROVED', 'PENDING_VERIFICATION'] },
+      deletedAt: null,
+    };
     if (query && query !== '*') {
       where.OR = [
         { name: { contains: query, mode: 'insensitive' } },
@@ -83,8 +87,15 @@ export class SearchService {
       this.db.business.count({ where }),
     ]);
 
+    const strippedData = data.map((biz: any) => {
+      const copy = { ...biz };
+      delete copy.ownerName;
+      delete copy.ownerId;
+      return copy;
+    });
+
     const response = {
-      data,
+      data: strippedData,
       meta: { total, page, limit },
       source: 'postgres',
     };
@@ -100,7 +111,7 @@ export class SearchService {
       const searchParams = {
         q: '*',
         query_by: 'name',
-        filter_by: `tenantId:=${tenantId} && status:=APPROVED && location:(${lat}, ${lng}, ${radius} mi)`,
+        filter_by: `tenantId:=${tenantId} && status:=[APPROVED, PENDING_VERIFICATION] && location:(${lat}, ${lng}, ${radius} mi)`,
         sort_by: `location(${lat}, ${lng}):asc`,
         page,
         per_page: 20,

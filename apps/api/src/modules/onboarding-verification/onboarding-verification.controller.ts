@@ -20,6 +20,7 @@ export class OnboardingVerificationController {
   @ApiOperation({ summary: 'List all pending business onboarding submissions (Admin only)' })
   async getPending(
     @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('role') actorRole: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('status') status?: string,
@@ -30,11 +31,17 @@ export class OnboardingVerificationController {
   ) {
     const pageNum = page ? Number(page) : 1;
     const limitNum = limit ? Number(limit) : 20;
-    return this.verificationService.getPending(tenantId, pageNum, limitNum, {
-      status,
-      search,
-      type,
-    });
+    return this.verificationService.getPending(
+      tenantId,
+      pageNum,
+      limitNum,
+      {
+        status,
+        search,
+        type,
+      },
+      actorRole,
+    );
   }
 
   @Post(':id/approve')

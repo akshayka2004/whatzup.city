@@ -46,6 +46,7 @@ export class BillVerificationsService {
     status?: string,
     page = 1,
     limit = 20,
+    actorRole?: string,
   ) {
     const pagination = new PaginationParamsDto();
     pagination.page = page;
@@ -57,7 +58,7 @@ export class BillVerificationsService {
     if (status) filters.status = status;
     else filters.status = 'PENDING';
 
-    return this.verificationRepo.findMany(tenantId, filters, pagination, {
+    const result = await this.verificationRepo.findMany(tenantId, filters, pagination, {
       include: {
         bill: {
           include: {
@@ -68,6 +69,26 @@ export class BillVerificationsService {
         },
       },
     });
+
+    if (actorRole !== 'SUPER_ADMIN' && result?.data) {
+      result.data = result.data.map((v: any) => {
+        if (v.bill?.user) {
+          const userCopy = { ...v.bill.user };
+          delete userCopy.email;
+          delete userCopy.phone;
+          return {
+            ...v,
+            bill: {
+              ...v.bill,
+              user: userCopy,
+            },
+          };
+        }
+        return v;
+      });
+    }
+
+    return result;
   }
 
   // ── FRAUD ANALYSIS ────────────────────────────────────────────────
@@ -389,14 +410,14 @@ export class BillVerificationsService {
   /**
    * Returns bills escalated to platform level — visible to MASTER_ADMIN (read-only) and SUPER_ADMIN.
    */
-  async getEscalatedQueue(tenantId: string, page = 1, limit = 20) {
+  async getEscalatedQueue(tenantId: string, page = 1, limit = 20, actorRole?: string) {
     const pagination = new PaginationParamsDto();
     pagination.page = page;
     pagination.limit = limit;
     pagination.sortBy = 'createdAt';
     pagination.sortOrder = SortOrder.ASC;
 
-    return this.verificationRepo.findMany(
+    const result = await this.verificationRepo.findMany(
       tenantId,
       { escalationLevel: 'PLATFORM' },
       pagination,
@@ -411,5 +432,25 @@ export class BillVerificationsService {
         },
       },
     );
+
+    if (actorRole !== 'SUPER_ADMIN' && result?.data) {
+      result.data = result.data.map((v: any) => {
+        if (v.bill?.user) {
+          const userCopy = { ...v.bill.user };
+          delete userCopy.email;
+          delete userCopy.phone;
+          return {
+            ...v,
+            bill: {
+              ...v.bill,
+              user: userCopy,
+            },
+          };
+        }
+        return v;
+      });
+    }
+
+    return result;
   }
 }
