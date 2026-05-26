@@ -58,13 +58,15 @@ export class ProductsService {
 
   async findByBusiness(tenantId: string, businessId: string, page = 1, limit = 20) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
+    // Resolve entity.id → actual business.id (same as create/update)
+    const actualBusinessId = await this.resolveBusinessId(tenantId, businessId);
     const pagination = new PaginationParamsDto();
     pagination.page = page;
     pagination.limit = limit;
     pagination.sortBy = 'sortOrder';
     pagination.sortOrder = SortOrder.ASC;
 
-    return this.productRepo.findMany(tenantId, { businessId }, pagination);
+    return this.productRepo.findMany(tenantId, { businessId: actualBusinessId }, pagination);
   }
 
   async findById(tenantId: string, id: string) {
