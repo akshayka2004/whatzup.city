@@ -69,6 +69,7 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Form state — shared between add/edit modals
   const [name, setName] = useState('');
@@ -102,11 +103,12 @@ export default function ProductsPage() {
       .finally(() => setLoading(false));
   }, [businessId]);
 
-  const resetForm = () => { setName(''); setDescription(''); setPrice(''); setIsAvailable(true); };
+  const resetForm = () => { setName(''); setDescription(''); setPrice(''); setIsAvailable(true); setFormError(null); };
 
   const handleOpenAdd = () => { resetForm(); setIsAddOpen(true); };
 
   const handleOpenEdit = (p: Product) => {
+    setFormError(null);
     setEditingProduct(p);
     setName(p.name);
     setDescription(p.description);
@@ -116,7 +118,9 @@ export default function ProductsPage() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !businessId) return;
+    if (!name.trim()) return;
+    if (!businessId) { setFormError('No business found for your account. Please refresh and try again.'); return; }
+    setFormError(null);
     setSubmitting(true);
     try {
       const res = await apiService.post<any>('/v1/products', {
@@ -126,7 +130,9 @@ export default function ProductsPage() {
         price: parseFloat(price) || 0,
         isAvailable,
       });
-      if (res.data && !res.error) {
+      if (res.error) {
+        setFormError(res.error);
+      } else if (res.data) {
         const p = res.data;
         setProducts((prev) => [{
           id: p.id,
@@ -138,13 +144,16 @@ export default function ProductsPage() {
         setIsAddOpen(false);
         resetForm();
       }
-    } catch (_) {}
+    } catch (err: any) {
+      setFormError(err?.message || 'Unexpected error. Please try again.');
+    }
     setSubmitting(false);
   };
 
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !editingProduct) return;
+    setFormError(null);
     setSubmitting(true);
     try {
       const res = await apiService.patch<any>(`/v1/products/${editingProduct.id}`, {
@@ -153,22 +162,28 @@ export default function ProductsPage() {
         price: parseFloat(price) || 0,
         isAvailable,
       });
-      const updated = res.data && !res.error ? res.data : null;
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === editingProduct.id
-            ? {
-                ...p,
-                name: updated?.name || name,
-                description: updated?.description || description,
-                price: updated?.price != null ? String(updated.price) : price,
-                isAvailable: updated?.isAvailable !== false,
-              }
-            : p,
-        ),
-      );
-      setEditingProduct(null);
-    } catch (_) {}
+      if (res.error) {
+        setFormError(res.error);
+      } else {
+        const updated = res.data;
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.id === editingProduct.id
+              ? {
+                  ...p,
+                  name: updated?.name || name,
+                  description: updated?.description || description,
+                  price: updated?.price != null ? String(updated.price) : price,
+                  isAvailable: updated?.isAvailable !== false,
+                }
+              : p,
+          ),
+        );
+        setEditingProduct(null);
+      }
+    } catch (err: any) {
+      setFormError(err?.message || 'Unexpected error. Please try again.');
+    }
     setSubmitting(false);
   };
 
@@ -299,6 +314,12 @@ export default function ProductsPage() {
                   <input type="checkbox" id="add-available" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="rounded bg-white/5 border-white/10 h-4 w-4" />
                   <label htmlFor="add-available" className="text-sm text-slate-300">Available immediately</label>
                 </div>
+                {formError && (
+                  <div className="flex items-start gap-2 text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2">
+                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>{formError}</span>
+                  </div>
+                )}
                 <div className="flex justify-end gap-3 pt-4">
                   <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)} className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer">Cancel</Button>
                   <Button type="submit" disabled={submitting} className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer flex items-center gap-1.5">
@@ -350,6 +371,12 @@ export default function ProductsPage() {
                   <input type="checkbox" id="edit-available" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="rounded bg-white/5 border-white/10 h-4 w-4" />
                   <label htmlFor="edit-available" className="text-sm text-slate-300">Available</label>
                 </div>
+                {formError && (
+                  <div className="flex items-start gap-2 text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2">
+                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                    <span>{formError}</span>
+                  </div>
+                )}
                 <div className="flex justify-end gap-3 pt-4">
                   <Button type="button" variant="outline" onClick={() => setEditingProduct(null)} className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer">Cancel</Button>
                   <Button type="submit" disabled={submitting} className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer flex items-center gap-1.5">
