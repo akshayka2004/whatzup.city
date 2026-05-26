@@ -4,6 +4,7 @@ import { RedisService } from '../../common/redis/redis.service';
 import { AuditService } from '../audit/audit.service';
 import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
+import { PaginatedResult } from '../../common/database/pagination';
 
 @Injectable()
 export class OffersService {
@@ -30,7 +31,7 @@ export class OffersService {
     return offer;
   }
 
-  async findActive(tenantId: string, page = 1, limit = 20) {
+  async findActive(tenantId: string, page = 1, limit = 20, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const pagination = new PaginationParamsDto();
     pagination.page = page;
@@ -44,24 +45,58 @@ export class OffersService {
       endDate: { gte: new Date() },
     };
 
+    if (isPublic) {
+      const limitVal = limit || 20;
+      const pageVal = page || 1;
+      const skipVal = (pageVal - 1) * limitVal;
+
+      const where = { ...criteria, deletedAt: null };
+
+      const [data, total] = await Promise.all([
+        this.offerRepo.model.findMany({
+          where,
+          skip: skipVal,
+          take: limitVal,
+          orderBy: { endDate: 'asc' },
+          include: { business: { select: { id: true, name: true, slug: true, logo: true } } },
+        }),
+        this.offerRepo.model.count({ where }),
+      ]);
+
+      return PaginatedResult.create(data, total, pageVal, limitVal);
+    }
+
     return this.offerRepo.findMany(tenantId, criteria, pagination, {
       include: { business: { select: { id: true, name: true, slug: true, logo: true } } },
     });
   }
 
-  async findByBusiness(tenantId: string, businessId: string) {
+  async findByBusiness(tenantId: string, businessId: string, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const pagination = new PaginationParamsDto();
     pagination.page = 1;
     pagination.limit = 100;
+
+    if (isPublic) {
+      return this.offerRepo.model.findMany({
+        where: { businessId, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
     return this.offerRepo.findMany(tenantId, { businessId }, pagination);
   }
 
-  async findById(tenantId: string, id: string) {
+  async findById(tenantId: string, id: string, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
-    const offer = await this.offerRepo.findOne(tenantId, id, {
-      include: { business: { select: { id: true, name: true, slug: true } } },
-    });
+    const offer = isPublic
+      ? await this.offerRepo.model.findFirst({
+          where: { id, deletedAt: null },
+          include: { business: { select: { id: true, name: true, slug: true } } },
+        })
+      : await this.offerRepo.findOne(tenantId, id, {
+          include: { business: { select: { id: true, name: true, slug: true } } },
+        });
     if (!offer) throw new NotFoundException('Offer not found');
     return offer;
   }

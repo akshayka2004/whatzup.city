@@ -6,6 +6,7 @@ import { AuditService } from '../audit/audit.service';
 import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 import { BusinessStatus } from '@saas/types';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
+import { PaginatedResult } from '../../common/database/pagination';
 
 @Injectable()
 export class BusinessesService {
@@ -64,6 +65,7 @@ export class BusinessesService {
         { categoryId, city },
         page,
         limit,
+        isPublic,
       );
     }
 
@@ -72,15 +74,26 @@ export class BusinessesService {
     if (city) criteria.city = { contains: city, mode: 'insensitive' };
     if (status) criteria.status = status;
 
-    const pagination = new PaginationParamsDto();
-    pagination.page = page || 1;
-    pagination.limit = limit || 20;
-    pagination.sortBy = 'createdAt';
-    pagination.sortOrder = SortOrder.DESC;
+    const limitVal = limit || 20;
+    const pageVal = page || 1;
+    const skipVal = (pageVal - 1) * limitVal;
 
-    const result = await this.businessRepo.findMany(tenantId, criteria, pagination, {
-      include: { category: { select: { id: true, name: true, slug: true } } },
-    });
+    const where = isPublic 
+      ? { ...criteria, deletedAt: null }
+      : { ...criteria, tenantId, deletedAt: null };
+
+    const [data, total] = await Promise.all([
+      this.businessRepo.model.findMany({
+        where,
+        skip: skipVal,
+        take: limitVal,
+        orderBy: { createdAt: 'desc' },
+        include: { category: { select: { id: true, name: true, slug: true } } },
+      }),
+      this.businessRepo.model.count({ where }),
+    ]);
+
+    const result = PaginatedResult.create(data, total, pageVal, limitVal);
 
     if (isPublic && result?.data) {
       result.data = result.data.map((biz: any) => {
@@ -113,13 +126,22 @@ export class BusinessesService {
       return cached;
     }
 
-    const business = await this.businessRepo.findOne(tenantId, id, {
-      include: {
-        category: true,
-        branches: { where: { isActive: true } },
-        _count: { select: { reviews: true, products: true, offers: true } },
-      },
-    });
+    const business = isPublic
+      ? await this.businessRepo.model.findFirst({
+          where: { id, deletedAt: null },
+          include: {
+            category: true,
+            branches: { where: { isActive: true } },
+            _count: { select: { reviews: true, products: true, offers: true } },
+          },
+        })
+      : await this.businessRepo.findOne(tenantId, id, {
+          include: {
+            category: true,
+            branches: { where: { isActive: true } },
+            _count: { select: { reviews: true, products: true, offers: true } },
+          },
+        });
 
     if (!business) throw new NotFoundException('Business not found');
 
@@ -136,13 +158,22 @@ export class BusinessesService {
 
   async findBySlug(tenantId: string, slug: string, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
-    const business = await this.businessRepo.findBySlug(tenantId, slug, {
-      include: {
-        category: true,
-        branches: { where: { isActive: true } },
-        _count: { select: { reviews: true, products: true, offers: true } },
-      },
-    });
+    const business = isPublic
+      ? await this.businessRepo.model.findFirst({
+          where: { slug, deletedAt: null },
+          include: {
+            category: true,
+            branches: { where: { isActive: true } },
+            _count: { select: { reviews: true, products: true, offers: true } },
+          },
+        })
+      : await this.businessRepo.findBySlug(tenantId, slug, {
+          include: {
+            category: true,
+            branches: { where: { isActive: true } },
+            _count: { select: { reviews: true, products: true, offers: true } },
+          },
+        });
     if (!business) throw new NotFoundException('Business not found');
 
     if (isPublic) {
@@ -209,7 +240,28 @@ export class BusinessesService {
 
   async getNearby(tenantId: string, lat: number, lng: number, radiusKm = 10, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
-    const data = await this.businessRepo.findNearby(tenantId, lat, lng, radiusKm);
+    const latDelta = radiusKm / 111;
+    const lngDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
+
+    const where: any = isPublic
+      ? {
+          latitude: { gte: lat - latDelta, lte: lat + latDelta },
+          longitude: { gte: lng - lngDelta, lte: lng + lngDelta },
+          deletedAt: null,
+        }
+      : {
+          tenantId,
+          latitude: { gte: lat - latDelta, lte: lat + latDelta },
+          longitude: { gte: lng - lngDelta, lte: lng + lngDelta },
+          deletedAt: null,
+        };
+
+    const data = await this.businessRepo.model.findMany({
+      where,
+      take: 50,
+      include: { category: { select: { id: true, name: true } } },
+    });
+
     if (isPublic && data) {
       return data.map((biz: any) => {
         const copy = { ...biz };

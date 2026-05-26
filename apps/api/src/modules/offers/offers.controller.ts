@@ -23,13 +23,13 @@ export class OffersController {
   @Public()
   @Get()
   async findActive(@Query('tenantId') tenantId: string = 'default', @Query('page') page?: number) {
-    return this.offersService.findActive(tenantId, page);
+    return this.offersService.findActive(tenantId, page, 20, true);
   }
 
   @Public()
   @Get(':id')
   async findOne(@Query('tenantId') tenantId: string = 'default', @Param('id') id: string) {
-    return this.offersService.findById(tenantId, id);
+    return this.offersService.findById(tenantId, id, true);
   }
 
   @Public()
@@ -38,7 +38,7 @@ export class OffersController {
     @Query('tenantId') tenantId: string = 'default',
     @Param('businessId') businessId: string,
   ) {
-    return this.offersService.findByBusiness(tenantId, businessId);
+    return this.offersService.findByBusiness(tenantId, businessId, true);
   }
 
   @UseGuards(JwtAuthGuard)

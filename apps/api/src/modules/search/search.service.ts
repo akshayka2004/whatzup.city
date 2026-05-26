@@ -48,8 +48,9 @@ export class SearchService implements OnApplicationBootstrap {
     filters?: { categoryId?: string; city?: string; minRating?: number },
     page = 1,
     limit = 20,
+    isPublic = false,
   ): Promise<any> {
-    const cacheKey = `search:${tenantId}:${query}:${JSON.stringify(filters)}:${page}`;
+    const cacheKey = `search:${tenantId}:${query}:${JSON.stringify(filters)}:${page}:${isPublic}`;
     const cached = await this.redis.get<any>(cacheKey);
     if (cached) return cached;
 
@@ -57,14 +58,26 @@ export class SearchService implements OnApplicationBootstrap {
       const searchParams: any = {
         q: query,
         query_by: 'name,description,categoryName',
-        filter_by: `tenantId:=${tenantId}`,
+        filter_by: isPublic ? '' : `tenantId:=${tenantId}`,
         page,
         per_page: limit,
       };
 
-      if (filters?.categoryId) searchParams.filter_by += ` && categoryId:=${filters.categoryId}`;
-      if (filters?.city) searchParams.filter_by += ` && city:=${filters.city}`;
-      if (filters?.minRating) searchParams.filter_by += ` && averageRating:>=${filters.minRating}`;
+      if (filters?.categoryId) {
+        searchParams.filter_by = searchParams.filter_by
+          ? `${searchParams.filter_by} && categoryId:=${filters.categoryId}`
+          : `categoryId:=${filters.categoryId}`;
+      }
+      if (filters?.city) {
+        searchParams.filter_by = searchParams.filter_by
+          ? `${searchParams.filter_by} && city:=${filters.city}`
+          : `city:=${filters.city}`;
+      }
+      if (filters?.minRating) {
+        searchParams.filter_by = searchParams.filter_by
+          ? `${searchParams.filter_by} && averageRating:>=${filters.minRating}`
+          : `averageRating:>=${filters.minRating}`;
+      }
 
       const typesenseResults = await this.typesenseService.search('businesses', searchParams);
       if (typesenseResults && typesenseResults.hits && typesenseResults.hits.length > 0) {
@@ -85,10 +98,9 @@ export class SearchService implements OnApplicationBootstrap {
     }
 
     // Postgres Fallback
-    const where: any = {
-      tenantId,
-      deletedAt: null,
-    };
+    const where: any = isPublic
+      ? { deletedAt: null }
+      : { tenantId, deletedAt: null };
     if (query && query !== '*') {
       where.OR = [
         { name: { contains: query, mode: 'insensitive' } },
@@ -133,7 +145,7 @@ export class SearchService implements OnApplicationBootstrap {
       const searchParams = {
         q: '*',
         query_by: 'name',
-        filter_by: `tenantId:=${tenantId} && location:(${lat}, ${lng}, ${radius} mi)`,
+        filter_by: `location:(${lat}, ${lng}, ${radius} mi)`,
         sort_by: `location(${lat}, ${lng}):asc`,
         page,
         per_page: 20,
@@ -164,7 +176,7 @@ export class SearchService implements OnApplicationBootstrap {
     if (cached) return cached;
 
     const data = await this.db.business.findMany({
-      where: { tenantId, deletedAt: null },
+      where: { deletedAt: null },
       orderBy: [{ averageRating: 'desc' }, { totalReviews: 'desc' }],
       take: 10,
       select: {
@@ -193,7 +205,7 @@ export class SearchService implements OnApplicationBootstrap {
     if (cached) return cached;
 
     const data = await this.db.business.findMany({
-      where: { tenantId, deletedAt: null },
+      where: { deletedAt: null },
       orderBy: [{ totalReviews: 'desc' }, { createdAt: 'desc' }],
       take: 10,
       select: {

@@ -32,7 +32,6 @@ export class TrendingService {
     const engagementData = await this.db.analyticsEvent.groupBy({
       by: ['businessId'],
       where: {
-        tenantId,
         businessId: { not: null },
         createdAt: { gte: thirtyDaysAgo },
         event: { in: ['BUSINESS_VIEW', 'BUSINESS_CLICK', 'OFFER_REDEEM', 'REVIEW_SUBMIT'] },
@@ -45,7 +44,7 @@ export class TrendingService {
     if (engagementData.length === 0) {
       // Fallback: use raw DB ordering
       const fallback = await this.db.business.findMany({
-        where: { tenantId, deletedAt: null },
+        where: { deletedAt: null },
         orderBy: [{ totalReviews: 'desc' }, { averageRating: 'desc' }],
         take: 10,
         select: {
@@ -102,7 +101,6 @@ export class TrendingService {
     const now = new Date();
     const offers = await this.db.offer.findMany({
       where: {
-        tenantId,
         status: 'ACTIVE',
         startDate: { lte: now },
         endDate: { gte: now },
@@ -134,7 +132,7 @@ export class TrendingService {
     if (cached) return cached;
 
     const categories = await this.db.category.findMany({
-      where: { tenantId, isActive: true, deletedAt: null },
+      where: { isActive: true, deletedAt: null },
       include: {
         _count: {
           select: { businesses: { where: { deletedAt: null } } },

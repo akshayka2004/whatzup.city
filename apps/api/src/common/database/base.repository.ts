@@ -8,7 +8,7 @@ export abstract class BaseRepository<T, TCreateInput = any, TUpdateInput = any> 
     protected readonly modelName: string,
   ) {}
 
-  protected get model() {
+  get model() {
     return (this.db as any)[this.modelName];
   }
 
