@@ -88,6 +88,20 @@ export class TypesenseService implements OnModuleInit {
     return this.client.collections(collection).documents().search(searchParameters);
   }
 
+  async hasDocuments(collection: string): Promise<boolean> {
+    if (!this.isEnabled) return false;
+    try {
+      const res = await this.client.collections(collection).documents().search({ q: '*', per_page: 0 });
+      return res.found > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  getEnabled(): boolean {
+    return this.isEnabled;
+  }
+
   async health(): Promise<boolean> {
     if (!this.isEnabled) return false;
     try {

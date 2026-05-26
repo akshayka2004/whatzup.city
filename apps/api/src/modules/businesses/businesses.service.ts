@@ -96,6 +96,12 @@ export class BusinessesService {
 
   async findById(tenantId: string, id: string, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
+    
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    if (!isUuid) {
+      return this.findBySlug(tenantId, id, isPublic);
+    }
+
     const cached = await this.redis.get(`business:${id}`);
     if (cached) {
       if (isPublic) {

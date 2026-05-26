@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { TypesenseService } from '../typesense/typesense.service';
@@ -6,7 +6,7 @@ import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 
 @Injectable()
-export class SearchService {
+export class SearchService implements OnApplicationBootstrap {
   private readonly logger = new Logger(SearchService.name);
 
   constructor(
@@ -15,6 +15,29 @@ export class SearchService {
     private readonly redis: RedisService,
     @InjectQueue('search-queue') private readonly searchQueue: Queue,
   ) {}
+
+  async onApplicationBootstrap() {
+    try {
+      const isEnabled = this.typesenseService.getEnabled();
+      if (isEnabled) {
+        const hasDocs = await this.typesenseService.hasDocuments('businesses');
+        if (!hasDocs) {
+          this.logger.log('Typesense businesses collection is empty. Syncing from database...');
+          const businesses = await this.db.business.findMany({
+            where: { deletedAt: null },
+            select: { id: true, tenantId: true },
+          });
+          this.logger.log(`Found ${businesses.length} businesses in database to index.`);
+          for (const biz of businesses) {
+            await this.indexBusiness(biz.id, biz.tenantId);
+          }
+          this.logger.log('Typesense sync jobs queued successfully.');
+        }
+      }
+    } catch (err) {
+      this.logger.error('Failed to auto-sync Typesense search index', err);
+    }
+  }
 
   /**
    * Main Search Endpoint (Typesense First, Postgres Fallback)
@@ -44,7 +67,7 @@ export class SearchService {
       if (filters?.minRating) searchParams.filter_by += ` && averageRating:>=${filters.minRating}`;
 
       const typesenseResults = await this.typesenseService.search('businesses', searchParams);
-      if (typesenseResults && typesenseResults.hits) {
+      if (typesenseResults && typesenseResults.hits && typesenseResults.hits.length > 0) {
         const response = {
           data: typesenseResults.hits.map((hit: any) => hit.document),
           meta: {
