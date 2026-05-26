@@ -58,8 +58,14 @@ export class ProductsService {
 
   async findByBusiness(tenantId: string, businessId: string, page = 1, limit = 20) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
-    // Resolve entity.id → actual business.id (same as create/update)
-    const actualBusinessId = await this.resolveBusinessId(tenantId, businessId);
+    // Resolve entity.id → actual business.id. Return empty list if not found
+    // (public endpoint — 400 would break the page with no visible error).
+    let actualBusinessId: string;
+    try {
+      actualBusinessId = await this.resolveBusinessId(tenantId, businessId);
+    } catch {
+      return { data: [], meta: { total: 0, page, limit } };
+    }
     const pagination = new PaginationParamsDto();
     pagination.page = page;
     pagination.limit = limit;

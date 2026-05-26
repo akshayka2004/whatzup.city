@@ -78,12 +78,14 @@ export default function ProductsPage() {
   const [isAvailable, setIsAvailable] = useState(true);
 
   const businessId = user?.businessId || user?.entity?.id;
+  const tenantId = user?.tenantId;
 
   useEffect(() => {
     if (!businessId) { setLoading(false); return; }
     setLoading(true);
+    const params = tenantId ? `?tenantId=${tenantId}` : '';
     apiService
-      .get<any>(`/v1/products/business/${businessId}`)
+      .get<any>(`/v1/products/business/${businessId}${params}`)
       .then((res) => {
         if (res.data && !res.error) {
           // Handle both raw array and PaginatedResult { data: [...], meta: {...} }
@@ -101,7 +103,7 @@ export default function ProductsPage() {
         }
       })
       .finally(() => setLoading(false));
-  }, [businessId]);
+  }, [businessId, tenantId]);
 
   const resetForm = () => { setName(''); setDescription(''); setPrice(''); setIsAvailable(true); setFormError(null); };
 
