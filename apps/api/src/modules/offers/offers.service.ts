@@ -197,6 +197,21 @@ export class OffersService {
   async redeem(tenantId: string, id: string, userId: string) {
     const redeemed = await this.offerRepo.incrementRedemptions(tenantId, id);
 
+    // Write OfferRedemption record — claimer becomes a customer of this business
+    try {
+      await this.db.offerRedemption.create({
+        data: {
+          tenantId,
+          offerId: id,
+          userId,
+          code: redeemed.code || 'CLAIMED',
+          status: 'REDEEMED',
+        },
+      });
+    } catch (_) {
+      // Non-fatal — counter already incremented above
+    }
+
     await this.auditService.log({
       tenantId,
       userId,

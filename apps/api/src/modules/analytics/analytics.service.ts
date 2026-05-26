@@ -64,6 +64,7 @@ export class AnalyticsService {
       pendingApprovals,
       totalReviews,
       totalOffers,
+      offerCustomerIds,
     ] = await Promise.all([
       this.db.user.count({ where: { tenantId, deletedAt: null } }),
       this.db.business.count({ where: { tenantId, deletedAt: null } }),
@@ -77,6 +78,12 @@ export class AnalyticsService {
       }),
       this.db.review.count({ where: { business: { tenantId }, deletedAt: null } }),
       this.db.offer.count({ where: { business: { tenantId }, status: 'ACTIVE', deletedAt: null } }),
+      // Distinct users who redeemed at least one offer = offer customers
+      this.db.offerRedemption.findMany({
+        where: { tenantId, deletedAt: null },
+        select: { userId: true },
+        distinct: ['userId'],
+      }),
     ]);
 
     const overview = {
@@ -86,6 +93,7 @@ export class AnalyticsService {
       pendingApprovals,
       totalReviews,
       totalOffers,
+      totalOfferCustomers: offerCustomerIds.length,
       revenueThisMonth: 0,
       growthRate: 12.5,
     };
@@ -175,6 +183,7 @@ export class AnalyticsService {
       impressions,
       ratingDistribution,
       recentReviews,
+      customerIds,
     ] = await Promise.all([
       this.db.offer.findMany({
         where: { businessId: actualId, deletedAt: null },
@@ -214,6 +223,16 @@ export class AnalyticsService {
         },
         orderBy: { createdAt: 'desc' },
         take: 5,
+      }),
+      // Distinct customers = users who redeemed at least one offer from this business
+      this.db.offerRedemption.findMany({
+        where: {
+          tenantId,
+          deletedAt: null,
+          offer: { businessId: actualId },
+        },
+        select: { userId: true },
+        distinct: ['userId'],
       }),
     ]);
 
@@ -261,6 +280,7 @@ export class AnalyticsService {
         totalReviews: business.totalReviews,
         teamCount,
         impressions,
+        customerCount: customerIds.length,
       },
       offerPerformance,
       redemptionTrend,

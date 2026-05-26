@@ -50,17 +50,19 @@ export default function AdminDashboardPage() {
   const [businessCount, setBusinessCount] = useState(0);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [funnelData, setFunnelData] = useState<any>(null);
+  const [overviewData, setOverviewData] = useState<any>(null);
   const [chartData, setChartData] = useState<any[]>([]);
   const [successRate, setSuccessRate] = useState('—');
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [pendingRes, bizRes, auditRes, funnelRes] = await Promise.allSettled([
+      const [pendingRes, bizRes, auditRes, funnelRes, overviewRes] = await Promise.allSettled([
         apiService.get<any>('/v1/admin/businesses/pending?limit=1'),
         apiService.get<any>('/v1/businesses?tenantId=default&limit=1'),
         apiService.get<any>('/v1/audit-logs?page=1'),
         apiService.get<any>('/v1/admin/onboarding/analytics/funnel'),
+        apiService.get<any>('/v1/analytics/overview'),
       ]);
 
       if (pendingRes.status === 'fulfilled' && pendingRes.value.data) {
@@ -73,6 +75,10 @@ export default function AdminDashboardPage() {
 
       if (auditRes.status === 'fulfilled' && auditRes.value.data) {
         setAuditLogs((auditRes.value.data.data || []).slice(0, 6));
+      }
+
+      if (overviewRes.status === 'fulfilled' && overviewRes.value.data) {
+        setOverviewData(overviewRes.value.data);
       }
 
       if (funnelRes.status === 'fulfilled' && funnelRes.value.data) {
@@ -145,9 +151,9 @@ export default function AdminDashboardPage() {
       href: '/admin/audit',
     },
     {
-      label: 'Customers Onboarded',
-      value: loading ? '…' : (funnelData?.customerFunnel?.completed ?? 0).toLocaleString(),
-      change: `${funnelData?.customerFunnel?.started ?? 0} started`,
+      label: 'Offer Customers',
+      value: loading ? '…' : (overviewData?.totalOfferCustomers ?? 0).toLocaleString(),
+      change: 'Users who claimed offers',
       icon: AlertTriangle,
       color: 'text-amber-500 bg-amber-500/10',
       href: null,

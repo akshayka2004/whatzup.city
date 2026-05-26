@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   TrendingUp, Users, Tag, Star, Eye,
-  ShoppingBag, RefreshCw, Loader2, UserCheck,
+  ShoppingBag, RefreshCw, Loader2, UserCheck, Heart,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -157,6 +157,14 @@ export default function AnalyticsPage() {
       color: 'text-cyan-400',
       bg: 'bg-cyan-500/10',
     },
+    {
+      label: 'Customers',
+      value: loading ? '…' : (kpis.customerCount ?? 0).toLocaleString(),
+      sub: 'unique offer claimers',
+      icon: Heart,
+      color: 'text-rose-400',
+      bg: 'bg-rose-500/10',
+    },
   ];
 
   return (
@@ -224,7 +232,7 @@ export default function AnalyticsPage() {
         {businessId && !error && (
           <>
             {/* ── KPI Cards ── */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {statCards.map((s) => (
                 <StatCard key={s.label} {...s} loading={loading} />
               ))}
