@@ -59,6 +59,7 @@ export default function BusinessDashboardPage() {
   const [title, setTitle] = useState('');
   const [discount, setDiscount] = useState(0);
   const [active, setActive] = useState(true);
+  const [apiRedemptions, setApiRedemptions] = useState(0);
 
   const userRole = user?.rbacRole || (user?.role === 'business' ? 'BUSINESS_OWNER' : user?.role) || 'BUSINESS_OWNER';
   const businessId = user?.businessId || user?.entity?.id || '';
@@ -74,7 +75,7 @@ export default function BusinessDashboardPage() {
     try {
       const [bizRes, offersRes, analyticsRes] = await Promise.allSettled([
         apiService.get<any>('/v1/businesses/owner/mine'),
-        apiService.get<any>(`/v1/offers/business/${businessId}`),
+        apiService.get<any>(`/v1/offers/my/${businessId}`),
         apiService.get<any>(`/v1/analytics/business/${businessId}?days=30`),
       ]);
 
@@ -97,8 +98,12 @@ export default function BusinessDashboardPage() {
 
       if (analyticsRes.status === 'fulfilled' && analyticsRes.value.data) {
         const ev: any = analyticsRes.value.data;
-        const list = Array.isArray(ev) ? ev : ev?.data ?? ev?.items ?? [];
+        // New shape: { events: [...], totalRedemptions: n } OR legacy array
+        const list = Array.isArray(ev) ? ev : Array.isArray(ev?.events) ? ev.events : ev?.data ?? ev?.items ?? [];
         setAnalyticsEvents(list);
+        if (!Array.isArray(ev) && typeof ev?.totalRedemptions === 'number') {
+          setApiRedemptions(ev.totalRedemptions);
+        }
       }
     } catch (_) {}
     setLoading(false);
@@ -115,7 +120,13 @@ export default function BusinessDashboardPage() {
 
   const views = getCount('BUSINESS_VIEW') + getCount('PROFILE_VIEW');
   const clicks = getCount('BUSINESS_CLICK') + getCount('CTA_CLICK');
-  const claims = getCount('OFFER_CLAIMED') + getCount('OFFER_CLAIM') + getCount('COUPON_CLAIMED');
+  // Prefer DB-sourced redemption total; fall back to analytics event counts
+  const offerRedemptionsFromList = offers.reduce((sum: number, o: any) => sum + (o.currentRedemptions || 0), 0);
+  const claims = apiRedemptions > 0
+    ? apiRedemptions
+    : offerRedemptionsFromList > 0
+      ? offerRedemptionsFromList
+      : getCount('OFFER_CLAIMED') + getCount('OFFER_CLAIM') + getCount('COUPON_CLAIMED');
   const ctr = views > 0 ? ((clicks / views) * 100).toFixed(1) + '%' : '—';
 
   const stats = [
@@ -142,13 +153,13 @@ export default function BusinessDashboardPage() {
     if (!title || !businessId) return;
     try {
       const res = await apiService.post<any>('/v1/offers', {
-        businessId, title, discountPercentage: Number(discount), status: active ? 'ACTIVE' : 'INACTIVE',
+        businessId, title, discountPercent: Number(discount), status: active ? 'ACTIVE' : 'PAUSED',
       });
       if (res.data && !res.error) {
         setOffers((prev) => [res.data, ...prev]);
       }
     } catch (_) {
-      setOffers((prev) => [{ id: `local-${Date.now()}`, title, discountPercentage: Number(discount), status: active ? 'ACTIVE' : 'INACTIVE', viewCount: 0, clickCount: 0 }, ...prev]);
+      setOffers((prev) => [{ id: `local-${Date.now()}`, title, discountPercent: Number(discount), status: active ? 'ACTIVE' : 'PAUSED', currentRedemptions: 0 }, ...prev]);
     }
     setIsCreateOpen(false);
   };
@@ -156,7 +167,7 @@ export default function BusinessDashboardPage() {
   const handleOpenEdit = (offer: any) => {
     setEditingOffer(offer);
     setTitle(offer.title || '');
-    setDiscount(offer.discountPercentage || offer.discount || 0);
+    setDiscount(offer.discountPercent || offer.discountPercentage || offer.discount || 0);
     setActive(offer.status === 'ACTIVE' || offer.active === true);
   };
 
@@ -165,12 +176,12 @@ export default function BusinessDashboardPage() {
     if (!title || !editingOffer) return;
     try {
       const res = await apiService.patch<any>(`/v1/offers/${editingOffer.id}`, {
-        title, discountPercentage: Number(discount), status: active ? 'ACTIVE' : 'INACTIVE',
+        title, discountPercent: Number(discount), status: active ? 'ACTIVE' : 'PAUSED',
       });
-      const updated = res.data && !res.error ? res.data : { ...editingOffer, title, discountPercentage: Number(discount), status: active ? 'ACTIVE' : 'INACTIVE' };
+      const updated = res.data && !res.error ? res.data : { ...editingOffer, title, discountPercent: Number(discount), status: active ? 'ACTIVE' : 'PAUSED' };
       setOffers((prev) => prev.map((o) => (o.id === editingOffer.id ? updated : o)));
     } catch (_) {
-      setOffers((prev) => prev.map((o) => o.id === editingOffer.id ? { ...o, title, discountPercentage: Number(discount), status: active ? 'ACTIVE' : 'INACTIVE' } : o));
+      setOffers((prev) => prev.map((o) => o.id === editingOffer.id ? { ...o, title, discountPercent: Number(discount), status: active ? 'ACTIVE' : 'PAUSED' } : o));
     }
     setEditingOffer(null);
   };
@@ -185,7 +196,7 @@ export default function BusinessDashboardPage() {
   };
 
   const toggleActive = async (offer: any) => {
-    const newStatus = offer.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const newStatus = offer.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
     try {
       await apiService.patch<any>(`/v1/offers/${offer.id}`, { status: newStatus });
     } catch (_) {}
@@ -385,7 +396,7 @@ export default function BusinessDashboardPage() {
                       <div className="flex items-center gap-6 text-sm mt-3">
                         <div>
                           <p className="text-xs text-muted-foreground">Discount</p>
-                          <p className="font-bold text-foreground text-base">{offer.discountPercentage || offer.discount || 0}%</p>
+                          <p className="font-bold text-foreground text-base">{offer.discountPercent || offer.discountPercentage || offer.discount || 0}%</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Views</p>
@@ -393,7 +404,7 @@ export default function BusinessDashboardPage() {
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Claims</p>
-                          <p className="font-bold text-foreground text-base">{offer.claimCount || offer.clicks || 0}</p>
+                          <p className="font-bold text-foreground text-base">{offer.currentRedemptions || offer.claimCount || 0}</p>
                         </div>
                       </div>
                     </div>
@@ -517,9 +528,9 @@ export default function BusinessDashboardPage() {
               </div>
               <div className="grid grid-cols-3 gap-4 mb-6">
                 {[
-                  { label: 'Discount', value: `${viewingOffer.discountPercentage || viewingOffer.discount || 0}%` },
+                  { label: 'Discount', value: `${viewingOffer.discountPercent || viewingOffer.discountPercentage || viewingOffer.discount || 0}%` },
                   { label: 'Views', value: viewingOffer.viewCount || viewingOffer.views || 0 },
-                  { label: 'Claims', value: viewingOffer.claimCount || viewingOffer.clicks || 0 },
+                  { label: 'Claims', value: viewingOffer.currentRedemptions || viewingOffer.claimCount || 0 },
                 ].map((s) => (
                   <div key={s.label} className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
                     <p className="text-xs text-muted-foreground mb-1">{s.label}</p>

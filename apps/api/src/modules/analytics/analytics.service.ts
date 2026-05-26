@@ -102,13 +102,19 @@ export class AnalyticsService {
     const cached = await this.redis.get(cacheKey);
     if (cached) return cached;
 
-    // Verify tenant holds this business
+    // Accept both business.id and entity.id (owners store entity.id in session)
     const business = await this.db.business.findFirst({
-      where: { id: businessId, tenantId, deletedAt: null },
+      where: {
+        tenantId,
+        deletedAt: null,
+        OR: [{ id: businessId }, { entityId: businessId }],
+      },
+      select: { id: true },
     });
     if (!business) {
       throw new ForbiddenException('Access denied to this business analytics.');
     }
+    const actualBusinessId = business.id;
 
     const since = new Date();
     since.setDate(since.getDate() - days);
@@ -118,13 +124,22 @@ export class AnalyticsService {
       by: ['event'],
       where: {
         tenantId,
-        businessId,
+        businessId: actualBusinessId,
         createdAt: { gte: since },
       },
       _count: true,
     });
 
-    const result = events.map((e) => ({ event: e.event, count: e._count }));
+    // Also fetch real offer redemptions for this business
+    const offerRedemptions = await this.db.offer.aggregate({
+      where: { businessId: actualBusinessId, deletedAt: null },
+      _sum: { currentRedemptions: true },
+    });
+
+    const result = {
+      events: events.map((e) => ({ event: e.event, count: e._count })),
+      totalRedemptions: offerRedemptions._sum.currentRedemptions ?? 0,
+    };
     await this.redis.set(cacheKey, result, 300);
     return result;
   }
