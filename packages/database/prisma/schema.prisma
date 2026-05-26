@@ -554,19 +554,23 @@ enum BusinessProfileType {
 }
 
 model BusinessBranch {
-  id         String    @id @default(uuid()) @db.Uuid
-  tenantId   String    @map("tenant_id") @db.Uuid
-  businessId String    @map("business_id") @db.Uuid
-  name       String    @db.VarChar(255)
-  address    String    @db.Text
-  city       String    @db.VarChar(100)
-  state      String    @db.VarChar(100)
-  zipCode    String    @map("zip_code") @db.VarChar(20)
-  latitude   Decimal?  @db.Decimal(10, 8)
-  longitude  Decimal?  @db.Decimal(11, 8)
-  phone      String?   @db.VarChar(50)
-  email      String?   @db.VarChar(255)
-  isActive   Boolean   @default(true) @map("is_active")
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  businessId      String    @map("business_id") @db.Uuid
+  name            String    @db.VarChar(255)
+  address         String    @db.Text
+  city            String    @default("") @db.VarChar(100)
+  state           String    @default("") @db.VarChar(100)
+  zipCode         String    @default("") @map("zip_code") @db.VarChar(20)
+  latitude        Decimal?  @db.Decimal(10, 8)
+  longitude       Decimal?  @db.Decimal(11, 8)
+  phone           String?   @db.VarChar(50)
+  email           String?   @db.VarChar(255)
+  managerName     String?   @map("manager_name") @db.VarChar(255)
+  managerPhone    String?   @map("manager_phone") @db.VarChar(50)
+  managerEmail    String?   @map("manager_email") @db.VarChar(255)
+  operatingHours  String?   @map("operating_hours") @db.VarChar(255)
+  isActive        Boolean   @default(true) @map("is_active")
   
   // Core Audit Fields
   createdAt  DateTime  @default(now()) @map("created_at")

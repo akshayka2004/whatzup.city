@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { OfferRepository } from '../../common/database/repositories/offer.repository';
 import { RedisService } from '../../common/redis/redis.service';
 import { AuditService } from '../audit/audit.service';
 import { TenantResolverService } from '../../common/database/tenant-resolver.service';
+import { DatabaseService } from '../../common/database/database.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 import { PaginatedResult } from '../../common/database/pagination';
 
@@ -13,10 +14,48 @@ export class OffersService {
     private readonly redis: RedisService,
     private readonly auditService: AuditService,
     private readonly tenantResolver: TenantResolverService,
+    private readonly db: DatabaseService,
   ) {}
 
+  /**
+   * Resolve businessId — accept either business.id OR entity.id (JWT stores
+   * entity.id for business users).
+   */
+  private async resolveBusinessId(tenantId: string, businessOrEntityId: string): Promise<string> {
+    const biz = await this.db.business.findFirst({
+      where: {
+        tenantId,
+        OR: [{ id: businessOrEntityId }, { entityId: businessOrEntityId }],
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (!biz) throw new BadRequestException('Business not found for offer');
+    return biz.id;
+  }
+
   async create(tenantId: string, userId: string, businessId: string, data: any) {
-    const offer = await this.offerRepo.create(tenantId, { businessId, ...data });
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
+    const actualBusinessId = await this.resolveBusinessId(tenantId, businessId);
+
+    // Strip unknown Prisma fields — Offer schema has no `tags`, `active`, etc.
+    const now = new Date();
+    const defaultEnd = new Date(Date.now() + 30 * 86_400_000);
+    const payload: any = {
+      title: data.title,
+      description: data.description || '',
+      status: data.status || 'ACTIVE',
+      startDate: data.startDate ? new Date(data.startDate) : now,
+      endDate: data.endDate ? new Date(data.endDate) : defaultEnd,
+    };
+    if (data.discountPercent !== undefined) payload.discountPercent = Number(data.discountPercent);
+    else if (data.discountPercentage !== undefined) payload.discountPercent = Number(data.discountPercentage);
+    if (data.discountAmount !== undefined) payload.discountAmount = data.discountAmount;
+    if (data.code !== undefined) payload.code = data.code;
+    if (data.maxRedemptions !== undefined) payload.maxRedemptions = data.maxRedemptions;
+    if (data.terms !== undefined) payload.terms = data.terms;
+
+    const offer = await this.offerRepo.create(tenantId, { businessId: actualBusinessId, ...payload });
     await this.redis.delPattern(`offers:${tenantId}:*`);
 
     await this.auditService.log({
@@ -73,18 +112,20 @@ export class OffersService {
 
   async findByBusiness(tenantId: string, businessId: string, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
+    // Accept either business.id or entity.id
+    const actualBusinessId = await this.resolveBusinessId(tenantId, businessId).catch(() => businessId);
     const pagination = new PaginationParamsDto();
     pagination.page = 1;
     pagination.limit = 100;
 
     if (isPublic) {
       return this.offerRepo.model.findMany({
-        where: { businessId, deletedAt: null },
+        where: { businessId: actualBusinessId, deletedAt: null },
         orderBy: { createdAt: 'desc' },
       });
     }
 
-    return this.offerRepo.findMany(tenantId, { businessId }, pagination);
+    return this.offerRepo.findMany(tenantId, { businessId: actualBusinessId }, pagination);
   }
 
   async findById(tenantId: string, id: string, isPublic = false) {
@@ -105,7 +146,21 @@ export class OffersService {
     const existing = await this.offerRepo.findOne(tenantId, id);
     if (!existing) throw new NotFoundException('Offer not found');
 
-    const offer = await this.offerRepo.update(tenantId, id, data);
+    // Strip unknown Prisma fields (e.g., `tags`, `active`) to prevent errors
+    const payload: any = {};
+    if (data.title !== undefined) payload.title = data.title;
+    if (data.description !== undefined) payload.description = data.description;
+    if (data.status !== undefined) payload.status = data.status;
+    if (data.startDate !== undefined) payload.startDate = new Date(data.startDate);
+    if (data.endDate !== undefined) payload.endDate = new Date(data.endDate);
+    if (data.discountPercent !== undefined) payload.discountPercent = Number(data.discountPercent);
+    else if (data.discountPercentage !== undefined) payload.discountPercent = Number(data.discountPercentage);
+    if (data.discountAmount !== undefined) payload.discountAmount = data.discountAmount;
+    if (data.code !== undefined) payload.code = data.code;
+    if (data.maxRedemptions !== undefined) payload.maxRedemptions = data.maxRedemptions;
+    if (data.terms !== undefined) payload.terms = data.terms;
+
+    const offer = await this.offerRepo.update(tenantId, id, payload);
     await this.redis.delPattern(`offers:${tenantId}:*`);
 
     await this.auditService.log({

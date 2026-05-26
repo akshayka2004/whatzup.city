@@ -62,6 +62,8 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { OnboardingVerificationModule } from './modules/onboarding-verification/onboarding-verification.module';
 import { OnboardingAnalyticsModule } from './modules/onboarding-analytics/onboarding-analytics.module';
 import { EntityOnboardingModule } from './modules/entity-onboarding/entity-onboarding.module';
+import { BranchesModule } from './modules/branches/branches.module';
+import { TeamModule } from './modules/team/team.module';
 
 @Module({
   imports: [
@@ -154,6 +156,8 @@ import { EntityOnboardingModule } from './modules/entity-onboarding/entity-onboa
     OnboardingVerificationModule,
     OnboardingAnalyticsModule,
     EntityOnboardingModule,
+    BranchesModule,
+    TeamModule,
   ],
   providers: [
     {

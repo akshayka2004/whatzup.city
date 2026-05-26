@@ -107,30 +107,32 @@ export default function OffersPage() {
 
   const businessId = user?.businessId || user?.entity?.id;
 
-  useEffect(() => {
+  const fetchOffers = async () => {
     if (!businessId) return;
     setLoading(true);
-    apiService
-      .get<any[]>(`/v1/offers/business/${businessId}`)
-      .then((res) => {
-        if (res.data && !res.error) {
-          const list = Array.isArray(res.data) ? res.data : [];
-          setOffers(
-            list.map((o: any) => ({
-              id: o.id,
-              title: o.title || o.name || '',
-              discount: o.discountPercent ?? o.discount ?? 0,
-              active: o.status === 'ACTIVE' || o.isActive === true || o.active === true,
-              views: o.views ?? 0,
-              clicks: o.clicks ?? 0,
-              tags: Array.isArray(o.tags) ? o.tags : [],
-              startsAt: o.startDate || o.startsAt || undefined,
-              expiresAt: o.endDate || o.expiresAt || undefined,
-            })),
-          );
-        }
-      })
-      .finally(() => setLoading(false));
+    const res = await apiService.get<any>(`/v1/offers/business/${businessId}`);
+    if (res.data && !res.error) {
+      const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.items ?? [];
+      setOffers(
+        list.map((o: any) => ({
+          id: o.id,
+          title: o.title || o.name || '',
+          discount: o.discountPercent ?? o.discount ?? 0,
+          active: o.status === 'ACTIVE' || o.isActive === true || o.active === true,
+          views: o.views ?? 0,
+          clicks: o.clicks ?? 0,
+          tags: Array.isArray(o.tags) ? o.tags : [],
+          startsAt: o.startDate || o.startsAt || undefined,
+          expiresAt: o.endDate || o.expiresAt || undefined,
+        })),
+      );
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchOffers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessId]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
@@ -163,30 +165,24 @@ export default function OffersPage() {
     try {
       const now = new Date().toISOString();
       const defaultEnd = new Date(Date.now() + 30 * 86_400_000).toISOString();
+      // NOTE: Offer schema has no `tags` field — store them in description for now.
+      const desc = formTags.length > 0 ? `Tags: ${formTags.join(', ')}` : '';
       const res = await apiService.post<any>('/v1/offers', {
         businessId,
         title,
-        description: '',
+        description: desc,
         discountPercent: Number(discount),
         status: active ? 'ACTIVE' : 'INACTIVE',
         startDate: formStartsAt ? new Date(formStartsAt).toISOString() : now,
         endDate: formExpiresAt ? new Date(formExpiresAt).toISOString() : defaultEnd,
-        tags: formTags,
       });
       if (res.data && !res.error) {
-        const o = res.data;
-        setOffers([{
-          id: o.id,
-          title: o.title,
-          discount: o.discountPercent ?? Number(discount),
-          active: o.status === 'ACTIVE',
-          views: 0,
-          clicks: 0,
-          tags: formTags,
-          startsAt: o.startDate || formStartsAt || undefined,
-          expiresAt: o.endDate || formExpiresAt || undefined,
-        }, ...offers]);
+        // Refetch to get fresh list with whatever the DB returned
+        await fetchOffers();
         setIsCreateOpen(false);
+        resetForm();
+      } else if (res.error) {
+        alert(`Failed to create offer: ${res.error}`);
       }
     } finally {
       setSaving(false);
@@ -208,11 +204,12 @@ export default function OffersPage() {
     if (!title || !editingOffer) return;
     setSaving(true);
     try {
+      const desc = formTags.length > 0 ? `Tags: ${formTags.join(', ')}` : '';
       const body: Record<string, unknown> = {
         title,
+        description: desc,
         discountPercent: Number(discount),
         status: active ? 'ACTIVE' : 'INACTIVE',
-        tags: formTags,
       };
       if (formStartsAt) body.startDate = new Date(formStartsAt).toISOString();
       if (formExpiresAt) body.endDate = new Date(formExpiresAt).toISOString();
@@ -225,6 +222,8 @@ export default function OffersPage() {
             : o,
         ));
         setEditingOffer(null);
+      } else {
+        alert(`Failed to update offer: ${res.error}`);
       }
     } finally {
       setSaving(false);

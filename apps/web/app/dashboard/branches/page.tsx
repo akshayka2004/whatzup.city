@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Plus, Edit, Trash2, MapPin, Phone, X, AlertTriangle,
-  BarChart3, User, Mail, Clock, Navigation, CheckCircle2, Loader2,
+  BarChart3, User, Clock, Navigation, CheckCircle2, Loader2,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
 
 interface Branch {
-  id: number | string;
+  id: string;
   name: string;
   address: string;
   phone: string;
@@ -32,110 +32,68 @@ const EMPTY_FORM: Omit<Branch, 'id' | 'status'> = {
   hours: '', geoCoords: '',
 };
 
-export default function BranchesPage() {
-  const { user } = useAuth();
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isAddOpen, setIsAddOpen] = useState(false);
+type BranchForm = typeof EMPTY_FORM;
 
-  const businessId = user?.businessId || user?.entity?.id;
-
-  useEffect(() => {
-    if (!businessId) return;
-    setLoading(true);
-    apiService
-      .get<any[]>(`/v1/businesses/${businessId}/branches`)
-      .then((res) => {
-        if (res.data && !res.error) {
-          setBranches(
-            res.data.map((b: any) => ({
-              id: b.id,
-              name: b.name || b.branchName || '',
-              address: b.address || '',
-              phone: b.phone || b.phoneNumber || '',
-              status: b.isActive === false ? 'Inactive' : 'Active',
-              managerName: b.managerName || '',
-              managerPhone: b.managerPhone || '',
-              managerEmail: b.managerEmail || '',
-              hours: b.operatingHours || b.hours || '',
-              geoCoords: b.geoCoords || (b.lat && b.lng ? `${b.lat}, ${b.lng}` : ''),
-            })),
-          );
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [businessId]);
-  const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
-  const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null);
-  const [form, setForm] = useState(EMPTY_FORM);
-
-  const setField = (key: keyof typeof EMPTY_FORM, val: string) =>
-    setForm((f) => ({ ...f, [key]: val }));
-
-  const handleOpenAdd = () => {
-    setForm(EMPTY_FORM);
-    setIsAddOpen(true);
-  };
-
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name) return;
-    setBranches([...branches, { id: Date.now(), ...form, status: 'Active' }]);
-    setIsAddOpen(false);
-  };
-
-  const handleOpenEdit = (branch: Branch) => {
-    setEditingBranch(branch);
-    setForm({
-      name: branch.name, address: branch.address, phone: branch.phone,
-      managerName: branch.managerName, managerPhone: branch.managerPhone,
-      managerEmail: branch.managerEmail, hours: branch.hours, geoCoords: branch.geoCoords,
-    });
-  };
-
-  const handleEdit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name || !editingBranch) return;
-    setBranches(branches.map((b) => b.id === editingBranch.id ? { ...editingBranch, ...form } : b));
-    setEditingBranch(null);
-  };
-
-  const handleDelete = () => {
-    if (!deletingBranch) return;
-    setBranches(branches.filter((b) => b.id !== deletingBranch.id));
-    setDeletingBranch(null);
-  };
-
-  const toggleStatus = (id: number) =>
-    setBranches(branches.map((b) =>
-      b.id === id ? { ...b, status: b.status === 'Active' ? 'Inactive' : 'Active' } : b,
-    ));
-
-  // Reusable form fields component
-  const FormFields = () => (
+// ── FormFields component (hoisted OUT of parent to prevent focus loss) ──────
+function BranchFormFields({
+  form,
+  setField,
+}: {
+  form: BranchForm;
+  setField: (key: keyof BranchForm, val: string) => void;
+}) {
+  return (
     <>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label className="text-xs font-medium text-slate-300 block mb-1.5">Branch Name *</label>
-          <Input value={form.name} onChange={(e) => setField('name', e.target.value)} placeholder="Downtown Branch" required className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+          <Input
+            value={form.name}
+            onChange={(e) => setField('name', e.target.value)}
+            placeholder="Downtown Branch"
+            required
+            className="rounded-xl border-white/10 bg-white/5"
+          />
         </div>
         <div>
           <label className="text-xs font-medium text-slate-300 block mb-1.5">Phone Number *</label>
-          <Input value={form.phone} onChange={(e) => setField('phone', e.target.value)} placeholder="+91 98765 43210" required className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+          <Input
+            value={form.phone}
+            onChange={(e) => setField('phone', e.target.value)}
+            placeholder="+91 98765 43210"
+            required
+            className="rounded-xl border-white/10 bg-white/5"
+          />
         </div>
       </div>
       <div>
         <label className="text-xs font-medium text-slate-300 block mb-1.5">Address *</label>
-        <Input value={form.address} onChange={(e) => setField('address', e.target.value)} placeholder="123 Main St, City 400001" required className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+        <Input
+          value={form.address}
+          onChange={(e) => setField('address', e.target.value)}
+          placeholder="123 Main St, City 400001"
+          required
+          className="rounded-xl border-white/10 bg-white/5"
+        />
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label className="text-xs font-medium text-slate-300 block mb-1.5">Operating Hours</label>
-          <Input value={form.hours} onChange={(e) => setField('hours', e.target.value)} placeholder="Mon–Sat 9AM–9PM" className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+          <Input
+            value={form.hours}
+            onChange={(e) => setField('hours', e.target.value)}
+            placeholder="Mon-Sat 9AM-9PM"
+            className="rounded-xl border-white/10 bg-white/5"
+          />
         </div>
         <div>
           <label className="text-xs font-medium text-slate-300 block mb-1.5">Geo Coordinates</label>
-          <Input value={form.geoCoords} onChange={(e) => setField('geoCoords', e.target.value)} placeholder="19.0760, 72.8777" className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+          <Input
+            value={form.geoCoords}
+            onChange={(e) => setField('geoCoords', e.target.value)}
+            placeholder="19.0760, 72.8777"
+            className="rounded-xl border-white/10 bg-white/5"
+          />
         </div>
       </div>
       <div className="pt-2 border-t border-white/5">
@@ -143,20 +101,181 @@ export default function BranchesPage() {
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-medium text-slate-300 block mb-1.5">Manager Name</label>
-            <Input value={form.managerName} onChange={(e) => setField('managerName', e.target.value)} placeholder="Ravi Kumar" className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+            <Input
+              value={form.managerName}
+              onChange={(e) => setField('managerName', e.target.value)}
+              placeholder="Ravi Kumar"
+              className="rounded-xl border-white/10 bg-white/5"
+            />
           </div>
           <div>
             <label className="text-xs font-medium text-slate-300 block mb-1.5">Manager Phone</label>
-            <Input value={form.managerPhone} onChange={(e) => setField('managerPhone', e.target.value)} placeholder="+91 91234 56789" className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+            <Input
+              value={form.managerPhone}
+              onChange={(e) => setField('managerPhone', e.target.value)}
+              placeholder="+91 91234 56789"
+              className="rounded-xl border-white/10 bg-white/5"
+            />
           </div>
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-slate-300 block mb-1.5">Manager Email</label>
-            <Input type="email" value={form.managerEmail} onChange={(e) => setField('managerEmail', e.target.value)} placeholder="manager@business.com" className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+            <Input
+              type="email"
+              value={form.managerEmail}
+              onChange={(e) => setField('managerEmail', e.target.value)}
+              placeholder="manager@business.com"
+              className="rounded-xl border-white/10 bg-white/5"
+            />
           </div>
         </div>
       </div>
     </>
   );
+}
+
+function mapBranchFromApi(b: any): Branch {
+  return {
+    id: b.id,
+    name: b.name || '',
+    address: b.address || '',
+    phone: b.phone || '',
+    status: b.isActive === false ? 'Inactive' : 'Active',
+    managerName: b.managerName || '',
+    managerPhone: b.managerPhone || '',
+    managerEmail: b.managerEmail || '',
+    hours: b.operatingHours || '',
+    geoCoords: b.latitude != null && b.longitude != null ? `${b.latitude}, ${b.longitude}` : '',
+  };
+}
+
+export default function BranchesPage() {
+  const { user } = useAuth();
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
+  const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null);
+  const [form, setForm] = useState<BranchForm>(EMPTY_FORM);
+
+  const businessId = user?.businessId || user?.entity?.id;
+
+  const setField = (key: keyof BranchForm, val: string) =>
+    setForm((f) => ({ ...f, [key]: val }));
+
+  const fetchBranches = async () => {
+    if (!businessId) return;
+    setLoading(true);
+    const res = await apiService.get<any>(`/v1/businesses/${businessId}/branches`);
+    if (res.data && !res.error) {
+      const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      setBranches(list.map(mapBranchFromApi));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchBranches();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessId]);
+
+  const handleOpenAdd = () => {
+    setForm(EMPTY_FORM);
+    setError('');
+    setIsAddOpen(true);
+  };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !businessId) return;
+    setSaving(true);
+    setError('');
+    const res = await apiService.post<any>(`/v1/businesses/${businessId}/branches`, {
+      name: form.name,
+      address: form.address,
+      phone: form.phone,
+      managerName: form.managerName,
+      managerPhone: form.managerPhone,
+      managerEmail: form.managerEmail,
+      operatingHours: form.hours,
+      geoCoords: form.geoCoords,
+    });
+    setSaving(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    setBranches([mapBranchFromApi(res.data), ...branches]);
+    setIsAddOpen(false);
+  };
+
+  const handleOpenEdit = (branch: Branch) => {
+    setEditingBranch(branch);
+    setForm({
+      name: branch.name,
+      address: branch.address,
+      phone: branch.phone,
+      managerName: branch.managerName,
+      managerPhone: branch.managerPhone,
+      managerEmail: branch.managerEmail,
+      hours: branch.hours,
+      geoCoords: branch.geoCoords,
+    });
+    setError('');
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !editingBranch) return;
+    setSaving(true);
+    setError('');
+    const res = await apiService.patch<any>(`/v1/branches/${editingBranch.id}`, {
+      name: form.name,
+      address: form.address,
+      phone: form.phone,
+      managerName: form.managerName,
+      managerPhone: form.managerPhone,
+      managerEmail: form.managerEmail,
+      operatingHours: form.hours,
+      geoCoords: form.geoCoords,
+    });
+    setSaving(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    setBranches(branches.map((b) => (b.id === editingBranch.id ? mapBranchFromApi(res.data) : b)));
+    setEditingBranch(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingBranch) return;
+    setSaving(true);
+    const res = await apiService.delete<any>(`/v1/branches/${deletingBranch.id}`);
+    setSaving(false);
+    if (!res.error) {
+      setBranches(branches.filter((b) => b.id !== deletingBranch.id));
+      setDeletingBranch(null);
+    }
+  };
+
+  const toggleStatus = async (id: string) => {
+    const branch = branches.find((b) => b.id === id);
+    if (!branch) return;
+    const newActive = branch.status !== 'Active';
+    // Optimistic
+    setBranches(branches.map((b) =>
+      b.id === id ? { ...b, status: newActive ? 'Active' : 'Inactive' } : b,
+    ));
+    const res = await apiService.patch<any>(`/v1/branches/${id}`, { isActive: newActive });
+    if (res.error) {
+      // Revert
+      setBranches(branches.map((b) =>
+        b.id === id ? { ...b, status: branch.status } : b,
+      ));
+    }
+  };
 
   return (
     <BusinessLayout>
@@ -196,7 +315,6 @@ export default function BranchesPage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
 
               <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
-                {/* Left — branch info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-3 flex-wrap">
                     <h3 className="text-lg font-bold text-foreground">{branch.name}</h3>
@@ -249,7 +367,6 @@ export default function BranchesPage() {
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex gap-2 flex-wrap shrink-0">
                   <Link href={`/dashboard/branches/${branch.id}/performance`}>
                     <Button
@@ -284,7 +401,7 @@ export default function BranchesPage() {
           ))}
         </div>
 
-        {/* ── ADD MODAL ─────────────────────────────────────────── */}
+        {/* Add modal */}
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <Card className="w-full max-w-xl p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -294,18 +411,23 @@ export default function BranchesPage() {
                   <X className="h-5 w-5" />
                 </button>
               </div>
+              {error && (
+                <p className="mb-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">{error}</p>
+              )}
               <form onSubmit={handleAdd} className="space-y-4">
-                <FormFields />
+                <BranchFormFields form={form} setField={setField} />
                 <div className="flex gap-3 pt-2">
                   <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">Cancel</Button>
-                  <Button type="submit" className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">Add Branch</Button>
+                  <Button type="submit" disabled={saving} className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add Branch'}
+                  </Button>
                 </div>
               </form>
             </Card>
           </div>
         )}
 
-        {/* ── EDIT MODAL ────────────────────────────────────────── */}
+        {/* Edit modal */}
         {editingBranch && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <Card className="w-full max-w-xl p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -315,18 +437,23 @@ export default function BranchesPage() {
                   <X className="h-5 w-5" />
                 </button>
               </div>
+              {error && (
+                <p className="mb-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">{error}</p>
+              )}
               <form onSubmit={handleEdit} className="space-y-4">
-                <FormFields />
+                <BranchFormFields form={form} setField={setField} />
                 <div className="flex gap-3 pt-2">
                   <Button type="button" variant="outline" onClick={() => setEditingBranch(null)} className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">Cancel</Button>
-                  <Button type="submit" className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">Save Changes</Button>
+                  <Button type="submit" disabled={saving} className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
+                  </Button>
                 </div>
               </form>
             </Card>
           </div>
         )}
 
-        {/* ── DELETE CONFIRM ────────────────────────────────────── */}
+        {/* Delete confirm */}
         {deletingBranch && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl text-center">
@@ -335,11 +462,13 @@ export default function BranchesPage() {
               </div>
               <h3 className="text-base font-bold text-foreground mb-2">Delete Branch?</h3>
               <p className="text-sm text-muted-foreground mb-6">
-                Permanently delete <span className="font-bold text-foreground">"{deletingBranch.name}"</span>?
+                Permanently delete <span className="font-bold text-foreground">&quot;{deletingBranch.name}&quot;</span>?
               </p>
               <div className="flex gap-3">
                 <Button onClick={() => setDeletingBranch(null)} variant="outline" className="flex-1 rounded-xl border-white/10 text-slate-300 cursor-pointer hover:bg-white/5">Cancel</Button>
-                <Button onClick={handleDelete} className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white cursor-pointer">Delete</Button>
+                <Button onClick={handleDelete} disabled={saving} className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white cursor-pointer">
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
+                </Button>
               </div>
             </Card>
           </div>
