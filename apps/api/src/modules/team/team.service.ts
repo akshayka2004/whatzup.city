@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { AuditService } from '../audit/audit.service';
-import * as bcrypt from 'bcrypt';
+import { PasswordService } from '../auth/password.service';
 
 type StaffRole = 'BUSINESS_OWNER' | 'BUSINESS_ADMIN' | 'BUSINESS_MODERATOR' | 'BUSINESS_STAFF';
 
@@ -10,6 +10,7 @@ export class TeamService {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly passwordService: PasswordService,
   ) {}
 
   /**
@@ -81,10 +82,24 @@ export class TeamService {
       throw new ConflictException('A user account with this email already exists');
     }
 
-    const passwordHash = await bcrypt.hash(data.password, 12);
+    const passwordHash = await this.passwordService.hash(data.password);
 
-    // Create user — pre-verified so they can sign in immediately. Role on User
-    // table is USER; business permissions come from BusinessStaff record.
+    // Map frontend role to BusinessMemberRole
+    const memberRole = data.role === 'BUSINESS_OWNER' || data.role === 'BUSINESS_ADMIN'
+      ? 'OWNER'
+      : data.role === 'BUSINESS_MODERATOR'
+        ? 'MODERATOR'
+        : 'STAFF';
+
+    // Set the User.role to the correct business role so login redirects to /dashboard
+    // and businessId resolves correctly from the JWT/me endpoint.
+    const userRoleEnum = memberRole === 'OWNER'
+      ? 'BUSINESS_OWNER'
+      : memberRole === 'MODERATOR'
+        ? 'BUSINESS_MODERATOR'
+        : 'BUSINESS_STAFF';
+
+    // Create user — pre-verified so they can sign in immediately.
     const user = await this.db.user.create({
       data: {
         tenantId,
@@ -92,18 +107,11 @@ export class TeamService {
         passwordHash,
         name: data.name.trim(),
         phone: data.phone || null,
-        role: 'USER' as any,
+        role: userRoleEnum as any,
         isActive: true,
         emailVerified: true,
       },
     });
-
-    // Link as BusinessStaff
-    const memberRole = data.role === 'BUSINESS_OWNER' || data.role === 'BUSINESS_ADMIN'
-      ? 'OWNER'
-      : data.role === 'BUSINESS_MODERATOR'
-        ? 'MODERATOR'
-        : 'STAFF';
 
     const staff = await this.db.businessStaff.create({
       data: {

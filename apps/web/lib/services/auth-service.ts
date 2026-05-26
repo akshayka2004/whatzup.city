@@ -80,7 +80,8 @@ class AuthService {
       role: mapRbacToRole(u.role),
       rbacRole: u.role,
       createdAt: new Date(),
-      businessId: u.entity?.type === 'BUSINESS' ? u.entity.id : undefined,
+      // businessId: staff members get it from /me directly; owners get it via entity
+      businessId: u.businessId || (u.entity?.type === 'BUSINESS' ? u.entity.id : undefined),
       entity: u.entity,
     };
     persistUser(apiUser);
@@ -117,7 +118,10 @@ class AuthService {
       role: mapRbacToRole(u.role),
       rbacRole: u.role,
       createdAt: new Date(),
-      businessId: response.data.businessId || (u.entity?.type === 'BUSINESS' ? u.entity.id : undefined),
+      // response.data.businessId — set for staff/moderator accounts (no entity)
+      // u.businessId — set on the user sub-object (mirrors the same)
+      // entity fallback — for business owners with entity
+      businessId: response.data.businessId || u.businessId || (u.entity?.type === 'BUSINESS' ? u.entity.id : undefined),
       entity: u.entity || null,
     };
     persistUser(apiUser);

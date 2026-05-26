@@ -5,6 +5,7 @@
 
 export const UserRole = {
   USER: 'USER',
+  BUSINESS_STAFF: 'BUSINESS_STAFF',
   BUSINESS_MODERATOR: 'BUSINESS_MODERATOR',
   BUSINESS_OWNER: 'BUSINESS_OWNER',
   BUSINESS_ADMIN: 'BUSINESS_ADMIN', // Legacy alias for BUSINESS_OWNER
@@ -68,13 +69,24 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     'business.products.manage',
   ],
 
+  [UserRole.BUSINESS_STAFF]: [
+    // Staff — listings and offers management, media upload
+    'business.offers.manage',
+    'business.listings.manage',
+    'business.media.upload',
+    'business.products.manage',
+    'business.issues.view',
+  ],
+
   [UserRole.BUSINESS_MODERATOR]: [
-    // Branch-scoped only — no global analytics, no financials
+    // Moderator — bill review, moderation, branch stats
     'business.bills.verify',
     'business.reviews.moderate',
     'business.branch.stats',
     'business.issues.view',
     'business.media.upload',
+    'business.offers.manage',
+    'business.listings.manage',
   ],
 
   [UserRole.GOVERNMENT_ADMIN]: [
@@ -125,10 +137,11 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
 
 const ROLE_LEVEL: Record<string, number> = {
   [UserRole.USER]: 1,
-  [UserRole.BUSINESS_MODERATOR]: 2,
-  [UserRole.BUSINESS_OWNER]: 3,
-  [UserRole.BUSINESS_ADMIN]: 3,
-  [UserRole.GOVERNMENT_ADMIN]: 3,
+  [UserRole.BUSINESS_STAFF]: 2,
+  [UserRole.BUSINESS_MODERATOR]: 3,
+  [UserRole.BUSINESS_OWNER]: 4,
+  [UserRole.BUSINESS_ADMIN]: 4,
+  [UserRole.GOVERNMENT_ADMIN]: 4,
   [UserRole.MASTER_ADMIN]: 5,
   [UserRole.SUPER_ADMIN]: 6,
 };
@@ -150,6 +163,7 @@ export function isBusinessRole(role: string): boolean {
   return [
     UserRole.BUSINESS_OWNER,
     UserRole.BUSINESS_MODERATOR,
+    UserRole.BUSINESS_STAFF,
     UserRole.BUSINESS_ADMIN,
   ].includes(role as UserRoleType);
 }
@@ -167,6 +181,7 @@ export function getRoleLabel(role: string): string {
     [UserRole.SUPER_ADMIN]: 'Super Admin',
     [UserRole.MASTER_ADMIN]: 'Master Admin',
     [UserRole.BUSINESS_OWNER]: 'Business Owner',
+    [UserRole.BUSINESS_STAFF]: 'Staff',
     [UserRole.BUSINESS_MODERATOR]: 'Moderator',
     [UserRole.BUSINESS_ADMIN]: 'Business Owner',
     [UserRole.GOVERNMENT_ADMIN]: 'Government',

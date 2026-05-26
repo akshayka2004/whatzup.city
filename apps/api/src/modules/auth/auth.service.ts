@@ -364,10 +364,24 @@ export class AuthService {
 
     // Return entity in response so frontend can skip a second /me roundtrip
     const activeEntity = user.entities?.[0] ?? null;
+
+    // For staff/moderator accounts without an entity, resolve businessId via BusinessStaff
+    let staffBusinessId: string | undefined;
+    if (!activeEntity) {
+      const staffRecord = await this.db.businessStaff.findFirst({
+        where: { userId: user.id, deletedAt: null },
+        include: { business: { select: { id: true } } },
+        orderBy: { createdAt: 'desc' },
+      });
+      staffBusinessId = staffRecord?.business?.id;
+    }
+
     return {
       ...tokens,
+      businessId: staffBusinessId,
       user: {
         ...tokens.user,
+        businessId: staffBusinessId,
         entity: activeEntity
           ? { id: activeEntity.id, type: activeEntity.type, status: activeEntity.status, name: activeEntity.name }
           : null,
@@ -683,6 +697,18 @@ export class AuthService {
 
     const activeEntity = user.entities[0] || null;
 
+    // For staff/moderator accounts that have no entity (created via team management),
+    // resolve their associated business so the frontend can use it as businessId.
+    let staffBusinessId: string | undefined;
+    if (!activeEntity) {
+      const staffRecord = await this.db.businessStaff.findFirst({
+        where: { userId: user.id, deletedAt: null, isActive: true },
+        include: { business: { select: { id: true } } },
+        orderBy: { createdAt: 'desc' },
+      });
+      staffBusinessId = staffRecord?.business?.id;
+    }
+
     const parsedUser = {
       id: user.id,
       tenantId: user.tenantId,
@@ -690,6 +716,7 @@ export class AuthService {
       name: user.name,
       role: user.role,
       permissions: Array.from(permissions),
+      businessId: staffBusinessId,
       entity: activeEntity ? {
         id: activeEntity.id,
         type: activeEntity.type,
