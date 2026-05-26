@@ -40,10 +40,10 @@ export class SearchProcessor extends WorkerHost {
             city: business.city,
             location:
               business.latitude && business.longitude
-                ? [business.latitude, business.longitude]
+                ? [Number(business.latitude), Number(business.longitude)]
                 : undefined,
-            averageRating: business.averageRating,
-            totalReviews: business.totalReviews,
+            averageRating: business.averageRating != null ? Number(business.averageRating) : 0,
+            totalReviews: business.totalReviews != null ? Number(business.totalReviews) : 0,
             status: business.status,
             createdAt: business.createdAt.getTime(), // Using timestamps for faster sorting
           };
