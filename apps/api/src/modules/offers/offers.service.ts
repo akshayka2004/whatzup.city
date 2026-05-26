@@ -38,18 +38,23 @@ export class OffersService {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const actualBusinessId = await this.resolveBusinessId(tenantId, businessId);
 
-    // Strip unknown Prisma fields — Offer schema has no `tags`, `active`, etc.
+    // Strip unknown Prisma fields — Offer schema has no `tags`, `active`, `INACTIVE` etc.
     const now = new Date();
     const defaultEnd = new Date(Date.now() + 30 * 86_400_000);
+    // Only allow valid OfferStatus enum values. 'INACTIVE' (sent by some frontends) is not valid.
+    const VALID_STATUSES = new Set(['DRAFT', 'ACTIVE', 'PAUSED', 'EXPIRED', 'ARCHIVED']);
+    const rawStatus = (data.status || 'ACTIVE').toString().toUpperCase();
+    const status = VALID_STATUSES.has(rawStatus) ? rawStatus : 'ACTIVE';
     const payload: any = {
       title: data.title,
       description: data.description || '',
-      status: data.status || 'ACTIVE',
+      status,
       startDate: data.startDate ? new Date(data.startDate) : now,
       endDate: data.endDate ? new Date(data.endDate) : defaultEnd,
     };
-    if (data.discountPercent !== undefined) payload.discountPercent = Number(data.discountPercent);
-    else if (data.discountPercentage !== undefined) payload.discountPercent = Number(data.discountPercentage);
+    // discountPercent is Int? — must be integer (Math.round prevents float rejection)
+    if (data.discountPercent !== undefined) payload.discountPercent = Math.round(Number(data.discountPercent));
+    else if (data.discountPercentage !== undefined) payload.discountPercent = Math.round(Number(data.discountPercentage));
     if (data.discountAmount !== undefined) payload.discountAmount = data.discountAmount;
     if (data.code !== undefined) payload.code = data.code;
     if (data.maxRedemptions !== undefined) payload.maxRedemptions = data.maxRedemptions;
@@ -111,20 +116,29 @@ export class OffersService {
   }
 
   async findByBusiness(tenantId: string, businessId: string, isPublic = false) {
-    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
-    // Accept either business.id or entity.id
-    const actualBusinessId = await this.resolveBusinessId(tenantId, businessId).catch(() => businessId);
-    const pagination = new PaginationParamsDto();
-    pagination.page = 1;
-    pagination.limit = 100;
-
     if (isPublic) {
+      // Public path: resolve business.id globally — accept entity.id OR business.id,
+      // no tenantId filter needed (businessId is already globally unique UUID).
+      const biz = await this.db.business.findFirst({
+        where: {
+          OR: [{ id: businessId }, { entityId: businessId }],
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      if (!biz) return [];
       return this.offerRepo.model.findMany({
-        where: { businessId: actualBusinessId, deletedAt: null },
+        where: { businessId: biz.id, deletedAt: null },
         orderBy: { createdAt: 'desc' },
       });
     }
 
+    // Authenticated (dashboard) path
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
+    const actualBusinessId = await this.resolveBusinessId(tenantId, businessId).catch(() => businessId);
+    const pagination = new PaginationParamsDto();
+    pagination.page = 1;
+    pagination.limit = 100;
     return this.offerRepo.findMany(tenantId, { businessId: actualBusinessId }, pagination);
   }
 
@@ -148,13 +162,17 @@ export class OffersService {
 
     // Strip unknown Prisma fields (e.g., `tags`, `active`) to prevent errors
     const payload: any = {};
+    const VALID_STATUSES = new Set(['DRAFT', 'ACTIVE', 'PAUSED', 'EXPIRED', 'ARCHIVED']);
     if (data.title !== undefined) payload.title = data.title;
     if (data.description !== undefined) payload.description = data.description;
-    if (data.status !== undefined) payload.status = data.status;
+    if (data.status !== undefined) {
+      const s = data.status.toString().toUpperCase();
+      payload.status = VALID_STATUSES.has(s) ? s : 'ACTIVE';
+    }
     if (data.startDate !== undefined) payload.startDate = new Date(data.startDate);
     if (data.endDate !== undefined) payload.endDate = new Date(data.endDate);
-    if (data.discountPercent !== undefined) payload.discountPercent = Number(data.discountPercent);
-    else if (data.discountPercentage !== undefined) payload.discountPercent = Number(data.discountPercentage);
+    if (data.discountPercent !== undefined) payload.discountPercent = Math.round(Number(data.discountPercent));
+    else if (data.discountPercentage !== undefined) payload.discountPercent = Math.round(Number(data.discountPercentage));
     if (data.discountAmount !== undefined) payload.discountAmount = data.discountAmount;
     if (data.code !== undefined) payload.code = data.code;
     if (data.maxRedemptions !== undefined) payload.maxRedemptions = data.maxRedemptions;

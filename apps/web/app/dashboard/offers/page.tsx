@@ -110,7 +110,8 @@ export default function OffersPage() {
   const fetchOffers = async () => {
     if (!businessId) return;
     setLoading(true);
-    const res = await apiService.get<any>(`/v1/offers/business/${businessId}`);
+    // Use authenticated route — passes JWT tenantId so resolution is accurate
+    const res = await apiService.get<any>(`/v1/offers/my/${businessId}`);
     if (res.data && !res.error) {
       const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.items ?? [];
       setOffers(
@@ -118,7 +119,7 @@ export default function OffersPage() {
           id: o.id,
           title: o.title || o.name || '',
           discount: o.discountPercent ?? o.discount ?? 0,
-          active: o.status === 'ACTIVE' || o.isActive === true || o.active === true,
+          active: o.status === 'ACTIVE',
           views: o.views ?? 0,
           clicks: o.clicks ?? 0,
           tags: Array.isArray(o.tags) ? o.tags : [],
@@ -172,7 +173,7 @@ export default function OffersPage() {
         title,
         description: desc,
         discountPercent: Number(discount),
-        status: active ? 'ACTIVE' : 'INACTIVE',
+        status: active ? 'ACTIVE' : 'PAUSED',
         startDate: formStartsAt ? new Date(formStartsAt).toISOString() : now,
         endDate: formExpiresAt ? new Date(formExpiresAt).toISOString() : defaultEnd,
       });
@@ -209,7 +210,7 @@ export default function OffersPage() {
         title,
         description: desc,
         discountPercent: Number(discount),
-        status: active ? 'ACTIVE' : 'INACTIVE',
+        status: active ? 'ACTIVE' : 'PAUSED',
       };
       if (formStartsAt) body.startDate = new Date(formStartsAt).toISOString();
       if (formExpiresAt) body.endDate = new Date(formExpiresAt).toISOString();
@@ -251,7 +252,7 @@ export default function OffersPage() {
   const toggleActive = async (id: string) => {
     const offer = offers.find((o) => o.id === id);
     if (!offer) return;
-    const newStatus = offer.active ? 'INACTIVE' : 'ACTIVE';
+    const newStatus = offer.active ? 'PAUSED' : 'ACTIVE';
     // Optimistic update
     setOffers(offers.map((o) => (o.id === id ? { ...o, active: !o.active } : o)));
     try {

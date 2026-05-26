@@ -42,6 +42,17 @@ export class OffersController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('my/:businessId')
+  @ApiBearerAuth()
+  async findMyOffers(
+    @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Param('businessId') businessId: string,
+  ) {
+    return this.offersService.findByBusiness(tenantId, businessId, false);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post()
   @ApiBearerAuth()
   async create(
