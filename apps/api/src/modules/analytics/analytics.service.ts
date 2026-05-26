@@ -145,6 +145,140 @@ export class AnalyticsService {
   }
 
   /**
+   * Rich business summary — all real DB data, no dependency on analytics event tracking.
+   * Used by the business owner analytics dashboard.
+   */
+  async getBusinessSummary(tenantId: string, businessId: string, days = 30) {
+    const cacheKey = `analytics:summary:${tenantId}:${businessId}:${days}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) return cached;
+
+    // Accept entity.id OR business.id
+    const business = await this.db.business.findFirst({
+      where: {
+        tenantId,
+        deletedAt: null,
+        OR: [{ id: businessId }, { entityId: businessId }],
+      },
+      select: { id: true, averageRating: true, totalReviews: true },
+    });
+    if (!business) throw new ForbiddenException('Access denied to this business analytics.');
+    const actualId = business.id;
+
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+
+    const [
+      offerStats,
+      redemptionHistory,
+      teamCount,
+      impressions,
+      ratingDistribution,
+      recentReviews,
+    ] = await Promise.all([
+      this.db.offer.findMany({
+        where: { businessId: actualId, deletedAt: null },
+        select: { title: true, status: true, discountPercent: true, currentRedemptions: true },
+      }),
+      this.db.offerRedemption.findMany({
+        where: {
+          offer: { businessId: actualId },
+          createdAt: { gte: since },
+          deletedAt: null,
+        },
+        select: { createdAt: true },
+      }),
+      this.db.businessStaff.count({
+        where: { businessId: actualId, deletedAt: null, isActive: true },
+      }),
+      this.db.analyticsEvent.count({
+        where: {
+          businessId: actualId,
+          event: { in: ['BUSINESS_VIEW', 'PROFILE_VIEW'] },
+          createdAt: { gte: since },
+        },
+      }),
+      this.db.review.groupBy({
+        by: ['rating'],
+        where: { businessId: actualId, deletedAt: null, status: 'APPROVED' },
+        _count: true,
+      }),
+      this.db.review.findMany({
+        where: { businessId: actualId, deletedAt: null, status: 'APPROVED' },
+        select: {
+          rating: true,
+          title: true,
+          comment: true,
+          createdAt: true,
+          user: { select: { name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+    ]);
+
+    const activeOffers      = offerStats.filter((o) => o.status === 'ACTIVE').length;
+    const totalOffers       = offerStats.length;
+    const totalRedemptions  = offerStats.reduce((s, o) => s + o.currentRedemptions, 0);
+
+    const offerPerformance = [...offerStats]
+      .sort((a, b) => b.currentRedemptions - a.currentRedemptions)
+      .slice(0, 8)
+      .map((o) => ({
+        title: o.title.length > 16 ? o.title.slice(0, 16) + '…' : o.title,
+        redemptions: o.currentRedemptions,
+        discount: o.discountPercent ?? 0,
+        status: o.status,
+      }));
+
+    // Build day-by-day redemption trend
+    const trendMap: Record<string, number> = {};
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      trendMap[d.toISOString().split('T')[0]] = 0;
+    }
+    for (const r of redemptionHistory) {
+      const key = r.createdAt.toISOString().split('T')[0];
+      if (trendMap[key] !== undefined) trendMap[key]++;
+    }
+    const redemptionTrend = Object.entries(trendMap).map(([date, count]) => ({
+      date: date.slice(5), // MM-DD — shorter for chart labels
+      count,
+    }));
+
+    const ratingDist = [5, 4, 3, 2, 1].map((stars) => ({
+      stars,
+      count: ratingDistribution.find((r) => r.rating === stars)?._count ?? 0,
+    }));
+
+    const result = {
+      kpis: {
+        activeOffers,
+        totalOffers,
+        totalRedemptions,
+        avgRating: Number(business.averageRating) || null,
+        totalReviews: business.totalReviews,
+        teamCount,
+        impressions,
+      },
+      offerPerformance,
+      redemptionTrend,
+      ratingDistribution: ratingDist,
+      recentReviews: recentReviews.map((r) => ({
+        rating: r.rating,
+        title: r.title ?? null,
+        comment: r.comment,
+        author: (r.user as any)?.name ?? 'Customer',
+        createdAt: r.createdAt,
+      })),
+    };
+
+    await this.redis.set(cacheKey, result, 120); // 2-min cache
+    return result;
+  }
+
+  /**
    * Fetch advanced, multi-dimensional detailed analytics for administrative audits.
    */
   async getDetailedAnalytics(tenantId: string) {

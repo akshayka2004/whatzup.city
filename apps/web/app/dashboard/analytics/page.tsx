@@ -1,106 +1,177 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  TrendingUp, Users, Receipt, Tag, Star, Download,
-  Repeat2, Building2, Heart, Activity, Megaphone,
-  Eye, ChevronUp, ChevronDown, Minus, Loader2,
+  TrendingUp, Users, Tag, Star, Eye,
+  ShoppingBag, RefreshCw, Loader2, UserCheck,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
   LineChart, Line,
   BarChart, Bar,
-  AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
 
-const RANGES = ['7D', '30D', '90D', '1Y'] as const;
-type Range = typeof RANGES[number];
+const RANGES = ['7D', '30D', '90D'] as const;
+type Range = (typeof RANGES)[number];
 
 const tooltipStyle = {
-  background: '#121212',
-  borderColor: 'oklch(0.25 0 0)',
-  borderRadius: '12px',
+  background: '#0f0f0f',
+  borderColor: 'oklch(0.22 0 0)',
+  borderRadius: '10px',
   fontSize: '11px',
 };
 
+function StatCard({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  color,
+  bg,
+  loading,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  icon: any;
+  color: string;
+  bg: string;
+  loading: boolean;
+}) {
+  return (
+    <Card className="p-5 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all group relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-28 h-28 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+      <div className={`inline-flex p-2.5 rounded-xl mb-3 ${bg}`}>
+        <Icon className={`h-4 w-4 ${color}`} />
+      </div>
+      <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
+      {loading ? (
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mt-1" />
+      ) : (
+        <>
+          <p className="text-2xl font-extrabold text-foreground leading-tight">{value}</p>
+          {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
+        </>
+      )}
+    </Card>
+  );
+}
+
 export default function AnalyticsPage() {
-  const [range, setRange] = useState<Range>('30D');
   const { user } = useAuth();
+  const [range, setRange] = useState<Range>('30D');
   const [loading, setLoading] = useState(true);
-  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [data, setData] = useState<any>(null);
+  const [error, setError] = useState(false);
 
   const businessId = user?.businessId || user?.entity?.id;
 
-  const rangeToDays: Record<Range, number> = { '7D': 7, '30D': 30, '90D': 90, '1Y': 365 };
+  const rangeToDays: Record<Range, number> = { '7D': 7, '30D': 30, '90D': 90 };
 
-  useEffect(() => {
-    if (!businessId) return;
+  const fetchSummary = useCallback(async () => {
+    if (!businessId) { setLoading(false); return; }
     setLoading(true);
-    apiService
-      .get<any>(`/v1/analytics/business/${businessId}?days=${rangeToDays[range]}`)
-      .then((res) => {
-        if (res.data && !res.error) setAnalyticsData(res.data);
-      })
-      .finally(() => setLoading(false));
+    setError(false);
+    try {
+      const res = await apiService.get<any>(
+        `/v1/analytics/business/${businessId}/summary?days=${rangeToDays[range]}`,
+      );
+      if (res.data && !res.error) {
+        setData(res.data);
+      } else {
+        setError(true);
+      }
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   }, [businessId, range]);
 
-  const kpiCards = analyticsData
-    ? [
-        {
-          label: 'Total Customers',
-          value: analyticsData.totalCustomers ?? '—',
-          change: analyticsData.customerGrowthPct ?? '—',
-          trend: analyticsData.customerGrowthPct?.startsWith('+') ? 'up' : analyticsData.customerGrowthPct?.startsWith('-') ? 'down' : 'neutral',
-          icon: Users,
-          color: 'text-violet-400',
-          bg: 'bg-violet-500/10',
-        },
-        {
-          label: 'Active Offers',
-          value: analyticsData.activeOffers ?? '—',
-          change: '—',
-          trend: 'neutral',
-          icon: Tag,
-          color: 'text-amber-400',
-          bg: 'bg-amber-500/10',
-        },
-        {
-          label: 'Avg Rating',
-          value: analyticsData.avgRating ?? '—',
-          change: '—',
-          trend: 'neutral',
-          icon: Star,
-          color: 'text-yellow-400',
-          bg: 'bg-yellow-500/10',
-        },
-        {
-          label: 'Listing Impressions',
-          value: analyticsData.impressions ?? '—',
-          change: '—',
-          trend: 'neutral',
-          icon: Eye,
-          color: 'text-indigo-400',
-          bg: 'bg-indigo-500/10',
-        },
-      ]
-    : [];
+  useEffect(() => { fetchSummary(); }, [fetchSummary]);
+
+  const kpis = data?.kpis ?? {};
+  const offerPerf   = data?.offerPerformance ?? [];
+  const redemTrend  = data?.redemptionTrend ?? [];
+  const ratingDist  = data?.ratingDistribution ?? [];
+  const recentRevs  = data?.recentReviews ?? [];
+
+  const avgRatingDisplay = kpis.avgRating != null
+    ? Number(kpis.avgRating).toFixed(1)
+    : '—';
+
+  const statCards = [
+    {
+      label: 'Listing Impressions',
+      value: loading ? '…' : (kpis.impressions ?? 0).toLocaleString(),
+      sub: `past ${rangeToDays[range]} days`,
+      icon: Eye,
+      color: 'text-indigo-400',
+      bg: 'bg-indigo-500/10',
+    },
+    {
+      label: 'Active Offers',
+      value: loading ? '…' : `${kpis.activeOffers ?? 0} / ${kpis.totalOffers ?? 0}`,
+      sub: 'active / total',
+      icon: Tag,
+      color: 'text-amber-400',
+      bg: 'bg-amber-500/10',
+    },
+    {
+      label: 'Total Redemptions',
+      value: loading ? '…' : (kpis.totalRedemptions ?? 0).toLocaleString(),
+      sub: 'all-time across all offers',
+      icon: ShoppingBag,
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
+    },
+    {
+      label: 'Avg Rating',
+      value: loading ? '…' : avgRatingDisplay,
+      sub: kpis.totalReviews
+        ? `${kpis.totalReviews} review${kpis.totalReviews !== 1 ? 's' : ''}`
+        : 'no reviews yet',
+      icon: Star,
+      color: 'text-yellow-400',
+      bg: 'bg-yellow-500/10',
+    },
+    {
+      label: 'Total Reviews',
+      value: loading ? '…' : (kpis.totalReviews ?? 0).toLocaleString(),
+      sub: avgRatingDisplay !== '—' ? `${avgRatingDisplay} avg` : undefined,
+      icon: Users,
+      color: 'text-violet-400',
+      bg: 'bg-violet-500/10',
+    },
+    {
+      label: 'Team Members',
+      value: loading ? '…' : (kpis.teamCount ?? 0).toLocaleString(),
+      sub: 'active staff',
+      icon: UserCheck,
+      color: 'text-cyan-400',
+      bg: 'bg-cyan-500/10',
+    },
+  ];
 
   return (
     <BusinessLayout>
       <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Analytics</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Business intelligence for your growth.</p>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              Real-time business performance from your database.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
               {RANGES.map((r) => (
                 <button
@@ -116,64 +187,223 @@ export default function AnalyticsPage() {
                 </button>
               ))}
             </div>
-            <Button variant="outline" size="sm" className="rounded-xl border-white/10 gap-1.5 text-slate-300 hover:bg-white/5 cursor-pointer">
-              <Download className="h-3.5 w-3.5" />
-              Export
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchSummary}
+              disabled={loading}
+              className="rounded-xl border-white/10 gap-1.5 text-slate-300 hover:bg-white/5"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : !analyticsData ? (
+        {/* ── No business ── */}
+        {!businessId && (
           <Card className="p-12 rounded-2xl border-white/5 bg-card/40 text-center">
             <TrendingUp className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
-            <p className="text-foreground font-semibold mb-1">No analytics data yet</p>
-            <p className="text-sm text-muted-foreground">Data will appear once your business receives activity.</p>
+            <p className="text-foreground font-semibold mb-1">No business linked</p>
+            <p className="text-sm text-muted-foreground">Your account is not linked to a business.</p>
           </Card>
-        ) : (
+        )}
+
+        {/* ── Error ── */}
+        {!loading && error && businessId && (
+          <Card className="p-12 rounded-2xl border-rose-500/20 bg-rose-500/5 text-center">
+            <TrendingUp className="h-10 w-10 mx-auto text-rose-400 mb-3 opacity-60" />
+            <p className="text-foreground font-semibold mb-1">Failed to load analytics</p>
+            <p className="text-sm text-muted-foreground mb-4">Could not fetch analytics data. Try refreshing.</p>
+            <Button onClick={fetchSummary} size="sm" className="rounded-xl bg-primary text-primary-foreground">
+              Retry
+            </Button>
+          </Card>
+        )}
+
+        {businessId && !error && (
           <>
-            {/* ── KPI Cards ─────────────────────────────────────────── */}
-            {kpiCards.length > 0 && (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {kpiCards.map((kpi) => {
-                  const Icon = kpi.icon;
-                  return (
-                    <Card
-                      key={kpi.label}
-                      className="p-5 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all group"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className={`p-2.5 rounded-xl ${kpi.bg}`}>
-                          <Icon className={`h-4 w-4 ${kpi.color}`} />
-                        </div>
-                        <span className={`text-[10px] font-bold flex items-center gap-0.5 ${
-                          kpi.trend === 'up' ? 'text-emerald-400' : kpi.trend === 'down' ? 'text-rose-400' : 'text-muted-foreground'
-                        }`}>
-                          {kpi.trend === 'up' ? <ChevronUp className="h-3 w-3" /> : kpi.trend === 'down' ? <ChevronDown className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
-                          {kpi.change}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-0.5">{kpi.label}</p>
-                      <p className="text-2xl font-extrabold text-foreground">{kpi.value}</p>
-                    </Card>
-                  );
-                })}
+            {/* ── KPI Cards ── */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {statCards.map((s) => (
+                <StatCard key={s.label} {...s} loading={loading} />
+              ))}
+            </div>
+
+            {/* ── Redemption Trend Chart ── */}
+            <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+              <div className="mb-5">
+                <h3 className="text-base font-bold text-foreground">Offer Redemption Trend</h3>
+                <p className="text-xs text-muted-foreground">
+                  Daily redemptions in the last {rangeToDays[range]} days.
+                </p>
               </div>
+              <div className="h-56">
+                {loading ? (
+                  <div className="h-full flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : redemTrend.every((d: any) => d.count === 0) ? (
+                  <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                    No redemptions recorded in this period.
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={redemTrend} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.22 0 0)" />
+                      <XAxis
+                        dataKey="date"
+                        stroke="oklch(0.60 0 0)"
+                        fontSize={9}
+                        tickLine={false}
+                        interval={Math.floor(redemTrend.length / 8)}
+                      />
+                      <YAxis stroke="oklch(0.60 0 0)" fontSize={10} tickLine={false} allowDecimals={false} />
+                      <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff', fontWeight: 'bold' }} />
+                      <Line
+                        type="monotone"
+                        dataKey="count"
+                        name="Redemptions"
+                        stroke="oklch(0.630 0.045 15)"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </Card>
+
+            {/* ── Offer Performance + Rating Distribution ── */}
+            <div className="grid lg:grid-cols-2 gap-6">
+
+              {/* Offer Performance */}
+              <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+                <div className="mb-5">
+                  <h3 className="text-base font-bold text-foreground">Offer Performance</h3>
+                  <p className="text-xs text-muted-foreground">Claims and discount % per offer.</p>
+                </div>
+                <div className="h-56">
+                  {loading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : offerPerf.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                      No offers yet.
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={offerPerf}
+                        margin={{ top: 5, right: 10, left: -25, bottom: 0 }}
+                        layout="vertical"
+                      >
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="oklch(0.22 0 0)" />
+                        <XAxis type="number" stroke="oklch(0.60 0 0)" fontSize={10} tickLine={false} />
+                        <YAxis
+                          type="category"
+                          dataKey="title"
+                          stroke="oklch(0.60 0 0)"
+                          fontSize={9}
+                          tickLine={false}
+                          width={75}
+                        />
+                        <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff', fontWeight: 'bold' }} />
+                        <Legend wrapperStyle={{ fontSize: 10, color: 'oklch(0.65 0 0)' }} />
+                        <Bar dataKey="redemptions" name="Claims" fill="oklch(0.630 0.045 15)" radius={[0, 4, 4, 0]} maxBarSize={18} />
+                        <Bar dataKey="discount" name="Discount %" fill="oklch(0.55 0.12 270)" radius={[0, 4, 4, 0]} maxBarSize={18} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </Card>
+
+              {/* Rating Distribution */}
+              <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+                <div className="mb-5">
+                  <h3 className="text-base font-bold text-foreground">Rating Distribution</h3>
+                  <p className="text-xs text-muted-foreground">Approved reviews by star rating.</p>
+                </div>
+                {loading ? (
+                  <div className="h-56 flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : ratingDist.every((r: any) => r.count === 0) ? (
+                  <div className="h-56 flex items-center justify-center text-sm text-muted-foreground">
+                    No approved reviews yet.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {ratingDist.map((r: any) => {
+                      const total = ratingDist.reduce((s: number, x: any) => s + x.count, 0);
+                      const pct = total > 0 ? Math.round((r.count / total) * 100) : 0;
+                      return (
+                        <div key={r.stars} className="flex items-center gap-3">
+                          <span className="text-xs font-semibold text-muted-foreground w-8 shrink-0">
+                            {r.stars}★
+                          </span>
+                          <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-amber-400 transition-all duration-500"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-muted-foreground w-10 text-right shrink-0">
+                            {r.count} ({pct}%)
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+            </div>
+
+            {/* ── Recent Reviews ── */}
+            {!loading && recentRevs.length > 0 && (
+              <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+                <h3 className="text-base font-bold text-foreground mb-4">Recent Reviews</h3>
+                <div className="space-y-4">
+                  {recentRevs.map((rev: any, i: number) => (
+                    <div
+                      key={i}
+                      className="flex gap-4 p-4 rounded-xl bg-white/3 border border-white/5"
+                    >
+                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold text-sm">
+                        {rev.author?.charAt(0)?.toUpperCase() ?? 'C'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <span className="text-sm font-semibold text-foreground">{rev.author}</span>
+                          <span className="text-amber-400 text-xs">{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</span>
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            {new Date(rev.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
+                        {rev.title && (
+                          <p className="text-xs font-medium text-foreground mb-0.5">{rev.title}</p>
+                        )}
+                        <p className="text-sm text-muted-foreground line-clamp-2">{rev.comment}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             )}
 
-            {/* No time-series chart data from the analytics/business endpoint — show placeholder */}
-            <Card className="p-8 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl text-center">
-              <Activity className="h-8 w-8 mx-auto text-muted-foreground mb-3 opacity-40" />
-              <p className="text-sm text-muted-foreground">
-                Detailed time-series charts require a dedicated analytics time-series endpoint.
-                {/* TODO: Wire to time-series endpoint when available */}
+            {/* ── Impressions note ── */}
+            <Card className="p-4 rounded-2xl border-white/5 bg-card/20 text-center">
+              <p className="text-xs text-muted-foreground">
+                <Eye className="inline h-3.5 w-3.5 mr-1 opacity-60" />
+                Impressions are counted each time a customer opens your business listing. Counts are tracked
+                from the point of deployment — historical visits before tracking was enabled show as 0.
               </p>
             </Card>
           </>
         )}
+
       </div>
     </BusinessLayout>
   );

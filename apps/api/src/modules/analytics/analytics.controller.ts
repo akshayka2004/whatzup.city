@@ -54,4 +54,20 @@ export class AnalyticsController {
       days ? Number(days) : undefined,
     );
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('business/:businessId/summary')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Rich business analytics summary — offers, redemptions, reviews, team, impressions' })
+  async getBusinessSummary(
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('businessId') businessId: string,
+    @Query('days') days?: number,
+  ) {
+    return this.analyticsService.getBusinessSummary(
+      tenantId,
+      businessId,
+      days ? Number(days) : undefined,
+    );
+  }
 }

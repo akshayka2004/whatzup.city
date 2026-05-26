@@ -78,7 +78,16 @@ export default function BusinessDetailPage() {
       apiService.get<any>(`/v1/reviews/business/${businessId}`),
     ]).then(([bizRes, offersRes, reviewsRes]) => {
       if (bizRes.status === 'fulfilled' && bizRes.value.data && !bizRes.value.error) {
-        setBiz(bizRes.value.data);
+        const bizData = bizRes.value.data;
+        setBiz(bizData);
+        // Track impression — fire-and-forget, never blocks render
+        if (bizData?.id) {
+          apiService.post('/v1/analytics/track', {
+            event: 'BUSINESS_VIEW',
+            businessId: bizData.id,
+            tenantId: bizData.tenantId,
+          }).catch(() => {});
+        }
       }
       if (offersRes.status === 'fulfilled' && offersRes.value.data && !offersRes.value.error) {
         const list = Array.isArray(offersRes.value.data) ? offersRes.value.data : offersRes.value.data?.data ?? [];
