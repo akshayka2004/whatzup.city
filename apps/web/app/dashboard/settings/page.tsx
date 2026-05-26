@@ -94,7 +94,8 @@ export default function BusinessSettingsPage() {
       setBusinessLoading(true);
 
       const res = await apiService.get<any>('/v1/businesses/owner/mine');
-      const biz: BusinessRecord | null = res.data?.business || res.data || null;
+      const list = res.data?.data || (Array.isArray(res.data) ? res.data : []);
+      const biz: BusinessRecord | null = list.length > 0 ? list[0] : null;
 
       if (!cancelled) {
         if (biz?.id) {
