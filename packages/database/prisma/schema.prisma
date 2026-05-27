@@ -104,9 +104,13 @@ model User {
   isActive      Boolean      @default(true) @map("is_active")
   emailVerified Boolean      @default(false) @map("email_verified")
   lastLoginAt   DateTime?    @map("last_login_at")
-  referralCode  String?      @unique @map("referral_code") @db.VarChar(20)
-  referredBy    String?      @map("referred_by") @db.Uuid
-  
+  referralCode         String?      @unique @map("referral_code") @db.VarChar(20)
+  referredBy           String?      @map("referred_by") @db.Uuid
+  acceptedTermsAt      DateTime?    @map("accepted_terms_at")
+  acceptedPrivacyAt    DateTime?    @map("accepted_privacy_at")
+  termsVersion         String?      @map("terms_version") @db.VarChar(20)
+  privacyPolicyVersion String?      @map("privacy_policy_version") @db.VarChar(20)
+
   // Core Audit Fields
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")

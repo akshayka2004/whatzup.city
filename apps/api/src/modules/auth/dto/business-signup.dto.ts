@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsArray } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsArray, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BusinessProfileType } from '@prisma/client';
 
@@ -37,4 +37,19 @@ export class BusinessSignupDto {
   @IsOptional()
   @IsEnum(BusinessProfileType)
   profileType?: BusinessProfileType;
+
+  @ApiProperty({ description: 'Referral code of the user who invited you', required: false })
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
+
+  @ApiProperty({ description: 'User accepted Terms of Service', required: false })
+  @IsOptional()
+  @IsBoolean()
+  acceptedTerms?: boolean;
+
+  @ApiProperty({ description: 'User accepted Privacy Policy', required: false })
+  @IsOptional()
+  @IsBoolean()
+  acceptedPrivacyPolicy?: boolean;
 }

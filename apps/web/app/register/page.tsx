@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
+import { LegalFooter } from '@/components/common/legal-footer';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
 import { authService } from '@/lib/services/auth-service';
 import {
@@ -188,6 +189,8 @@ export default function UnifiedRegisterPage() {
   const [categorySlug, setCategorySlug] = useState('food');
   const [subcategorySlug, setSubcategorySlug] = useState('restaurants');
   const [referralCode, setReferralCode] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
   const [tenantId, setTenantId] = useState('');
   const [businessId, setBusinessId] = useState('');
@@ -245,6 +248,10 @@ export default function UnifiedRegisterPage() {
       setError('Password does not meet the complexity requirements.');
       return;
     }
+    if (!acceptedTerms || !acceptedPrivacy) {
+      setError('You must accept the Terms of Service and Privacy Policy to register.');
+      return;
+    }
 
     setLoading(true);
 
@@ -260,6 +267,8 @@ export default function UnifiedRegisterPage() {
           ownerName: name, email, phone, password,
           businessName: companyName, categorySlug, profileType: 'OWNER',
           ...(referralCode.trim() ? { referralCode: referralCode.trim() } : {}),
+          acceptedTerms,
+          acceptedPrivacyPolicy: acceptedPrivacy,
         });
 
         if (res.error || !res.data) {
@@ -286,6 +295,8 @@ export default function UnifiedRegisterPage() {
           email, password, name, phone,
           role: role === 'GOVERNMENT' ? 'GOVERNMENT_ADMIN' : 'USER',
           ...(referralCode.trim() ? { referralCode: referralCode.trim() } : {}),
+          acceptedTerms,
+          acceptedPrivacyPolicy: acceptedPrivacy,
         });
 
         if (res.error || !res.data) {
@@ -877,7 +888,53 @@ export default function UnifiedRegisterPage() {
                 </div>
               </div>
 
-              <div className="flex justify-between pt-6 border-t border-white/5">
+              {/* Legal acceptance */}
+              <div className="space-y-3 pt-3 border-t border-white/5">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[#715A5A] cursor-pointer"
+                    required
+                  />
+                  <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors leading-relaxed">
+                    I agree to the{' '}
+                    <Link
+                      href="/terms-of-service"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#c4a8a8] underline underline-offset-2 hover:text-white"
+                    >
+                      Terms of Service
+                    </Link>
+                    {' '}of Whtzup.city <span className="text-rose-400">*</span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={acceptedPrivacy}
+                    onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[#715A5A] cursor-pointer"
+                    required
+                  />
+                  <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors leading-relaxed">
+                    I have read and accept the{' '}
+                    <Link
+                      href="/privacy-policy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#c4a8a8] underline underline-offset-2 hover:text-white"
+                    >
+                      Privacy Policy
+                    </Link>
+                    {' '}<span className="text-rose-400">*</span>
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex justify-between pt-4 border-t border-white/5">
                 <Button
                   type="button"
                   onClick={() => setCurrentStep(1)}
@@ -1084,6 +1141,7 @@ export default function UnifiedRegisterPage() {
 
         </Card>
       </div>
+      <LegalFooter />
     </div>
   );
 }

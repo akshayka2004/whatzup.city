@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsUUID } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsUUID, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRoleEnum } from '@prisma/client';
 
@@ -35,4 +35,14 @@ export class SignupDto {
   @IsOptional()
   @IsString()
   referralCode?: string;
+
+  @ApiProperty({ description: 'User accepted Terms of Service', required: false })
+  @IsOptional()
+  @IsBoolean()
+  acceptedTerms?: boolean;
+
+  @ApiProperty({ description: 'User accepted Privacy Policy', required: false })
+  @IsOptional()
+  @IsBoolean()
+  acceptedPrivacyPolicy?: boolean;
 }

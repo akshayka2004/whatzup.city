@@ -142,6 +142,8 @@ export class AuthService {
               isActive: true,
               referralCode: newReferralCode,
               ...(referrerId ? { referredBy: referrerId } : {}),
+              ...(dto.acceptedTerms ? { acceptedTermsAt: new Date(), termsVersion: '1.0' } : {}),
+              ...(dto.acceptedPrivacyPolicy ? { acceptedPrivacyAt: new Date(), privacyPolicyVersion: '1.0' } : {}),
               ...(isCustomer
                 ? {
                     customerProfile: {
@@ -969,6 +971,7 @@ export class AuthService {
 
       // 5. Create the User
       const passwordHash = await this.passwordService.hash(dto.password);
+      const bizReferralCode = Math.random().toString(36).slice(2, 10).toUpperCase();
       const userRecord = await tx.user.create({
         data: {
           tenantId: tenant.id,
@@ -979,6 +982,9 @@ export class AuthService {
           role: UserRoleEnum.BUSINESS_ADMIN,
           emailVerified: true,
           isActive: true,
+          referralCode: bizReferralCode,
+          ...(dto.acceptedTerms ? { acceptedTermsAt: new Date(), termsVersion: '1.0' } : {}),
+          ...(dto.acceptedPrivacyPolicy ? { acceptedPrivacyAt: new Date(), privacyPolicyVersion: '1.0' } : {}),
         },
       });
 

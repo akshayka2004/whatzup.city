@@ -506,7 +506,7 @@ export default function ProfilePage() {
               <a href="/privacy-policy" className="flex items-center gap-1 hover:text-primary transition-colors">
                 <Shield className="h-3.5 w-3.5" /> Privacy Policy
               </a>
-              <a href="/terms" className="flex items-center gap-1 hover:text-primary transition-colors">
+              <a href="/terms-of-service" className="flex items-center gap-1 hover:text-primary transition-colors">
                 <FileText className="h-3.5 w-3.5" /> Terms of Service
               </a>
               <a href="/report" className="flex items-center gap-1 hover:text-primary transition-colors">
