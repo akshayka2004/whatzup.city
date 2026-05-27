@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import {
   Edit2, Mail, Phone, MapPin, LogOut, Check, X,
   Sparkles, Receipt, Heart, Tag, Building2, CalendarDays,
-  Camera, Loader2,
+  Camera, Loader2, Trash2, AlertTriangle, HeadphonesIcon, Shield, FileText,
 } from 'lucide-react';
 
 /* ── Types matching API responses ─────────────────────────────── */
@@ -62,6 +62,8 @@ export default function ProfilePage() {
 
   const [bills, setBills] = useState<BillRow[]>([]);
   const [claimedOffers, setClaimedOffers] = useState<{ id: string; title: string; business: string; date: string }[]>([]);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   /* ── Redirect if logged out ──────────────────────────────────── */
   useEffect(() => {
@@ -126,6 +128,20 @@ export default function ProfilePage() {
 
     return () => { cancelled = true; };
   }, [user]);
+
+  /* ── Delete account ─────────────────────────────────────────── */
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    const res = await apiService.delete('/v1/users/me');
+    setDeleting(false);
+    if (res.error) {
+      setSaveErr(res.error || 'Failed to delete account.');
+      setDeleteConfirm(false);
+      return;
+    }
+    await signOut();
+    router.push('/');
+  };
 
   /* ── Save handler ────────────────────────────────────────────── */
   const handleSave = async () => {
@@ -431,6 +447,72 @@ export default function ProfilePage() {
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
+
+            {/* Delete Account */}
+            {!deleteConfirm ? (
+              <Button
+                variant="outline"
+                onClick={() => setDeleteConfirm(true)}
+                className="w-full rounded-xl justify-start border-rose-500/30 text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Account
+              </Button>
+            ) : (
+              <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/5 space-y-3">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+                  <p className="text-sm text-rose-300 font-medium">
+                    This will permanently delete your account and all associated data. This cannot be undone.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleDeleteAccount}
+                    disabled={deleting}
+                    className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    Confirm Delete
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setDeleteConfirm(false)}
+                    className="flex-1 rounded-xl border-border hover:bg-secondary text-foreground cursor-pointer"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* Support & Legal Footer */}
+        <Card className="p-5 rounded-2xl border-border bg-card">
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <HeadphonesIcon className="h-4 w-4 text-primary" />
+            Help & Support
+          </h3>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <a
+              href="mailto:support@lifeartgroup.in"
+              className="flex items-center gap-2 hover:text-primary transition-colors"
+            >
+              <Mail className="h-4 w-4" />
+              support@lifeartgroup.in
+            </a>
+            <div className="flex items-center gap-4 pt-1 text-xs">
+              <a href="/privacy-policy" className="flex items-center gap-1 hover:text-primary transition-colors">
+                <Shield className="h-3.5 w-3.5" /> Privacy Policy
+              </a>
+              <a href="/terms" className="flex items-center gap-1 hover:text-primary transition-colors">
+                <FileText className="h-3.5 w-3.5" /> Terms of Service
+              </a>
+              <a href="/report" className="flex items-center gap-1 hover:text-primary transition-colors">
+                <AlertTriangle className="h-3.5 w-3.5" /> Report Issue
+              </a>
+            </div>
           </div>
         </Card>
 

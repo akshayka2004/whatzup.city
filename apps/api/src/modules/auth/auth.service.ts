@@ -110,6 +110,19 @@ export class AuthService {
       // 5. Hash password (expensive — done before the transaction so the txn stays short)
       const passwordHash = await this.passwordService.hash(dto.password);
 
+      // 5a. Referral: resolve referrer if a referral code was supplied
+      let referrerId: string | undefined;
+      if ((dto as any).referralCode) {
+        const referrer = await this.db.user.findFirst({
+          where: { referralCode: (dto as any).referralCode, deletedAt: null },
+          select: { id: true },
+        });
+        if (referrer) referrerId = referrer.id;
+      }
+
+      // 5b. Generate a unique referral code for the new user (8 alphanum chars)
+      const newReferralCode = Math.random().toString(36).slice(2, 10).toUpperCase();
+
       const nameParts = nameNormalized.split(/\s+/);
       const firstName = (nameParts[0] || nameNormalized).slice(0, 100);
       const lastName = nameParts.slice(1).join(' ').slice(0, 100);
@@ -127,6 +140,8 @@ export class AuthService {
               role,
               emailVerified: true,
               isActive: true,
+              referralCode: newReferralCode,
+              ...(referrerId ? { referredBy: referrerId } : {}),
               ...(isCustomer
                 ? {
                     customerProfile: {

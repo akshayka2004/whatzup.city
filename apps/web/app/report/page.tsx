@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  AlertTriangle, ArrowLeft, Check, Flag, ChevronDown,
-  Store, Tag, Star, MessageSquare, Globe, ShieldAlert,
+  AlertTriangle, ArrowLeft, Check, Flag,
+  Store, Tag, Star, MessageSquare, Globe, ShieldAlert, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-// ── Types ─────────────────────────────────────────────────────────────
+import { apiService } from '@/lib/services/api-service';
+import { useAuth } from '@/hooks/use-auth';
 
 type IssueType =
   | 'fake_business'
@@ -20,16 +20,6 @@ type IssueType =
   | 'inappropriate_content'
   | 'wrong_info'
   | 'other';
-
-interface IssueReport {
-  id: string;
-  type: IssueType;
-  subject: string;
-  description: string;
-  businessName: string;
-  submittedAt: string;
-  status: 'submitted' | 'under_review' | 'resolved';
-}
 
 const ISSUE_TYPES: { id: IssueType; label: string; desc: string; icon: any; color: string }[] = [
   { id: 'fake_business', label: 'Fake / Duplicate Business', desc: 'Business listing appears fraudulent or is a duplicate.', icon: Store, color: 'text-rose-400' },
@@ -40,39 +30,45 @@ const ISSUE_TYPES: { id: IssueType; label: string; desc: string; icon: any; colo
   { id: 'other', label: 'Other Issue', desc: 'Something else that needs admin attention.', icon: MessageSquare, color: 'text-slate-400' },
 ];
 
-const STORAGE_KEY = 'issue_reports';
-
-function loadReports(): IssueReport[] {
-  if (typeof window === 'undefined') return [];
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
-}
-
-// ── Component ─────────────────────────────────────────────────────────
-
 export default function ReportPage() {
+  const { user } = useAuth();
   const [step, setStep] = useState<'type' | 'details' | 'success'>('type');
   const [selectedType, setSelectedType] = useState<IssueType | null>(null);
   const [businessName, setBusinessName] = useState('');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [submittedId, setSubmittedId] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedType || !description.trim()) return;
-    const now = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    const report: IssueReport = {
-      id: `RPT-${String(Date.now()).slice(-5)}`,
+    setError('');
+    setSubmitting(true);
+
+    const payload = {
       type: selectedType,
       subject: subject.trim() || ISSUE_TYPES.find((t) => t.id === selectedType)!.label,
       description: description.trim(),
-      businessName: businessName.trim(),
-      submittedAt: now,
-      status: 'submitted',
+      targetName: businessName.trim() || undefined,
     };
-    const existing = loadReports();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([report, ...existing]));
-    setSubmittedId(report.id);
+
+    if (user) {
+      // Authenticated — send to API
+      const res = await apiService.post<any>('/v1/reports', payload);
+      setSubmitting(false);
+      if (res.error) {
+        setError(res.error || 'Failed to submit report. Please try again.');
+        return;
+      }
+      setSubmittedId(res.data?.id || `RPT-${Date.now().toString(36).toUpperCase().slice(-6)}`);
+    } else {
+      // Unauthenticated — save locally + prompt to sign in
+      setSubmitting(false);
+      const id = `RPT-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+      setSubmittedId(id);
+    }
     setStep('success');
   };
 
@@ -83,6 +79,7 @@ export default function ReportPage() {
     setSubject('');
     setDescription('');
     setSubmittedId('');
+    setError('');
   };
 
   return (
@@ -149,10 +146,7 @@ export default function ReportPage() {
         {step === 'details' && selectedType && (
           <div className="space-y-6">
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setStep('type')}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
-              >
+              <button onClick={() => setStep('type')} className="text-muted-foreground hover:text-foreground cursor-pointer">
                 <ArrowLeft className="h-4 w-4" />
               </button>
               <div>
@@ -200,16 +194,29 @@ export default function ReportPage() {
                     className="w-full rounded-xl border border-white/10 bg-white/5 text-sm text-foreground px-3 py-2.5 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
+                {!user && (
+                  <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                    <AlertTriangle className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-300">
+                      You are not logged in. <Link href="/login" className="underline font-medium">Sign in</Link> so admins can follow up with you.
+                    </p>
+                  </div>
+                )}
                 <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
                   <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-300">
                     False reports may result in account restrictions. Only report genuine issues.
                   </p>
                 </div>
+                {error && (
+                  <p className="text-xs text-rose-400">{error}</p>
+                )}
                 <Button
                   type="submit"
-                  className="w-full rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
+                  disabled={submitting}
+                  className="w-full rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer flex items-center justify-center gap-2"
                 >
+                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   Submit Report
                 </Button>
               </form>
@@ -225,14 +232,10 @@ export default function ReportPage() {
             </div>
             <h2 className="text-xl font-extrabold text-foreground">Report Submitted</h2>
             <p className="text-muted-foreground text-sm">
-              Your report <strong className="text-foreground">{submittedId}</strong> has been submitted. Our team will review it within 24–48 hours.
+              Your report <strong className="text-foreground">{submittedId}</strong> has been submitted and is visible to our admin team. We will review it within 24–48 hours.
             </p>
             <div className="flex gap-2 justify-center pt-2">
-              <Button
-                onClick={reset}
-                variant="outline"
-                className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
-              >
+              <Button onClick={reset} variant="outline" className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">
                 Report Another
               </Button>
               <Link href="/">

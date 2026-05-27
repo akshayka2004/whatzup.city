@@ -30,4 +30,9 @@ export class SignupDto {
   @IsOptional()
   @IsEnum(UserRoleEnum)
   role?: UserRoleEnum;
+
+  @ApiProperty({ description: 'Referral code of the user who invited you', required: false })
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
 }

@@ -24,6 +24,7 @@ import {
   ClipboardList,
   MessageSquare,
   Package,
+  Flag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ const OWNER_MENU = [
   { label: 'Team', href: '/dashboard/team', icon: UserCog },
   { label: 'Subscriptions', href: '/dashboard/subscriptions', icon: CreditCard },
   { label: 'Support', href: '/dashboard/support', icon: LifeBuoy },
+  { label: 'Report Issue', href: '/report', icon: Flag },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 

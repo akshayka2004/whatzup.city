@@ -122,4 +122,41 @@ export class BusinessesController {
       status: BusinessStatus.PENDING_VERIFICATION,
     });
   }
+
+  // ── Tag endpoints ──────────────────────────────────────────
+
+  @Public()
+  @Get('search/by-tag')
+  @ApiOperation({ summary: 'Search businesses by tag keyword (public)' })
+  async searchByTag(
+    @Query('tenantId') tenantId: string = 'default',
+    @Query('tag') tag: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.businessesService.searchByTag(tenantId, tag || '', page, limit);
+  }
+
+  @Public()
+  @Get(':id/tags')
+  @ApiOperation({ summary: 'Get tags for a business (public)' })
+  async getTags(
+    @Query('tenantId') tenantId: string = 'default',
+    @Param('id') businessId: string,
+  ) {
+    return this.businessesService.getTags(tenantId, businessId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/tags')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set tags for a business (owner)' })
+  async setTags(
+    @Param('id') businessId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('id') userId: string,
+    @Body('tags') tags: string[],
+  ) {
+    return this.businessesService.setTags(tenantId, businessId, userId, tags || []);
+  }
 }

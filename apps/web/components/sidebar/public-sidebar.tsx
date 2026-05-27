@@ -12,6 +12,7 @@ import {
   Bell,
   Settings,
   LogOut,
+  Flag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ const menuItems = [
   { label: 'Announcements', href: '/government', icon: FileText },
   { label: 'Favorites', href: '/favorites', icon: Heart },
   { label: 'Notifications', href: '/notifications', icon: Bell },
+  { label: 'Report Issue', href: '/report', icon: Flag },
 ];
 
 export function PublicSidebar() {

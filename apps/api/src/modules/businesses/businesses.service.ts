@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { BusinessRepository } from '../../common/database/repositories/business.repository';
+import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { SearchService } from '../search/search.service';
 import { AuditService } from '../audit/audit.service';
@@ -12,6 +13,7 @@ import { PaginatedResult } from '../../common/database/pagination';
 export class BusinessesService {
   constructor(
     private readonly businessRepo: BusinessRepository,
+    private readonly db: DatabaseService,
     private readonly redis: RedisService,
     private readonly searchService: SearchService,
     private readonly auditService: AuditService,
@@ -271,6 +273,69 @@ export class BusinessesService {
       });
     }
     return data;
+  }
+
+  // ── Business Tags ─────────────────────────────────────────
+
+  async getTags(tenantId: string, businessId: string) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
+    const tags = await (this.db as any).businessTag.findMany({
+      where: { tenantId, businessId },
+      select: { tag: true },
+      orderBy: { tag: 'asc' },
+    });
+    return tags.map((t: any) => t.tag);
+  }
+
+  async setTags(tenantId: string, businessId: string, ownerId: string, tags: string[]) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
+    const business = await this.businessRepo.findOne(tenantId, businessId);
+    if (!business) throw new NotFoundException('Business not found');
+    if (business.ownerId !== ownerId) throw new ForbiddenException('Not authorized');
+
+    const normalized = [...new Set(tags.map((t) => t.trim().toLowerCase()).filter(Boolean))];
+
+    // Delete all existing tags then re-insert
+    await (this.db as any).businessTag.deleteMany({ where: { tenantId, businessId } });
+    if (normalized.length > 0) {
+      await (this.db as any).businessTag.createMany({
+        data: normalized.map((tag) => ({ tenantId, businessId, tag })),
+        skipDuplicates: true,
+      });
+    }
+
+    await this.redis.del(`business:${businessId}`);
+    return normalized;
+  }
+
+  async searchByTag(tenantId: string, tag: string, page = 1, limit = 20) {
+    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
+    const normalized = tag.trim().toLowerCase();
+
+    const [rows, total] = await Promise.all([
+      (this.db as any).businessTag.findMany({
+        where: { tenantId, tag: { contains: normalized } },
+        include: {
+          business: {
+            include: { category: { select: { id: true, name: true, slug: true } } },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      (this.db as any).businessTag.count({
+        where: { tenantId, tag: { contains: normalized } },
+      }),
+    ]);
+
+    const data = rows.map((r: any) => {
+      const biz = { ...r.business };
+      delete biz.ownerName;
+      delete biz.ownerId;
+      return biz;
+    });
+
+    return PaginatedResult.create(data, total, page, limit);
   }
 
   private generateSlug(name: string): string {

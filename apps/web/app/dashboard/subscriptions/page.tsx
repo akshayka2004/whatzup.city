@@ -5,7 +5,7 @@ import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  CreditCard, Check, ChevronUp, Zap, Star, Shield, Rocket,
+  CreditCard, Check, Zap, Star, Rocket,
   AlertCircle, Clock, X, ArrowUpRight, ArrowDownRight, RefreshCw,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
@@ -16,83 +16,67 @@ import { cn } from '@/lib/utils';
 
 const PLANS = [
   {
-    id: 'free',
-    name: 'Free',
-    price: 0,
-    period: '/mo',
-    icon: Shield,
-    color: 'text-slate-400',
-    bg: 'bg-slate-500/10',
-    border: 'border-slate-500/20',
-    features: [
-      '1 Branch',
-      '50 Bills/month',
-      'Basic analytics',
-      '5 Offers',
-      'Community support',
-    ],
-  },
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 499,
-    period: '/mo',
+    id: 'basic',
+    name: 'Basic',
+    priceMonthly: 300,
+    priceAnnual: 2500,
     icon: Zap,
     color: 'text-cyan-400',
     bg: 'bg-cyan-500/10',
     border: 'border-cyan-500/20',
+    highlight: false,
     features: [
-      '3 Branches',
-      '300 Bills/month',
-      'Standard analytics',
-      '20 Offers',
+      '30 Offers per month',
+      '10 Posts per month',
+      'Bill moderation',
+      'Basic sales & income overview',
+      'Partial profile customization',
       'Email support',
-      'Team (2 members)',
     ],
   },
   {
-    id: 'growth',
-    name: 'Growth',
-    price: 1299,
-    period: '/mo',
+    id: 'standard',
+    name: 'Standard',
+    priceMonthly: 600,
+    priceAnnual: 5000,
     icon: Star,
     color: 'text-violet-400',
     bg: 'bg-violet-500/10',
     border: 'border-violet-500/30',
     highlight: true,
     features: [
-      '10 Branches',
-      'Unlimited bills',
-      'Advanced analytics',
-      'Unlimited offers',
-      'Priority support',
-      'Team (10 members)',
-      'Campaign tools',
+      '50 Offers per month',
+      '25 Posts per month',
+      'Bill moderation',
+      'Dedicated analytics dashboard',
+      'Partial profile customization',
+      'Priority email support',
     ],
   },
   {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 3999,
-    period: '/mo',
+    id: 'premium',
+    name: 'Premium',
+    priceMonthly: 1200,
+    priceAnnual: 10000,
     icon: Rocket,
     color: 'text-amber-400',
     bg: 'bg-amber-500/10',
     border: 'border-amber-500/20',
+    highlight: false,
     features: [
-      'Unlimited branches',
-      'Unlimited bills',
+      '100 Offers per month',
+      '50 Posts per month',
+      'Bill moderation',
       'Full analytics suite',
-      'Unlimited offers',
+      'Complete profile customization',
+      'All platform features',
       'Dedicated support',
-      'Unlimited team',
-      'Custom integrations',
-      'SLA guarantee',
     ],
   },
 ] as const;
 
 type PlanId = typeof PLANS[number]['id'];
+type BillingPeriod = 'monthly' | 'annual';
 
 interface PendingRequest {
   id: string;
@@ -107,11 +91,22 @@ const STORAGE_KEY = 'business_subscription';
 const REQUESTS_KEY = 'subscription_requests';
 
 function loadSubscription(): { plan: PlanId; since: string } {
-  if (typeof window === 'undefined') return { plan: 'starter', since: 'Jan 2025' };
+  if (typeof window === 'undefined') return { plan: 'basic', since: 'Jan 2025' };
   try {
     const s = localStorage.getItem(STORAGE_KEY);
-    return s ? JSON.parse(s) : { plan: 'starter', since: 'Jan 2025' };
-  } catch { return { plan: 'starter', since: 'Jan 2025' }; }
+    if (s) {
+      const parsed = JSON.parse(s);
+      // Map legacy plan IDs to new ones
+      const id = parsed.plan;
+      const mapped =
+        id === 'starter' ? 'basic' :
+        id === 'growth' ? 'standard' :
+        id === 'enterprise' ? 'premium' :
+        PLANS.find((p) => p.id === id) ? id : 'basic';
+      return { plan: mapped as PlanId, since: parsed.since || 'Jan 2025' };
+    }
+    return { plan: 'basic', since: 'Jan 2025' };
+  } catch { return { plan: 'basic', since: 'Jan 2025' }; }
 }
 
 function loadRequests(): PendingRequest[] {
@@ -121,39 +116,41 @@ function loadRequests(): PendingRequest[] {
 
 // USAGE — TODO: fetch from subscription/usage endpoint when available
 const USAGE = {
-  bills: { used: 0, limit: 0 },
-  branches: { used: 0, limit: 0 },
   offers: { used: 0, limit: 0 },
-  team: { used: 0, limit: 0 },
+  posts: { used: 0, limit: 0 },
+  bills: { used: 0, limit: 0 },
 };
 
 // ── Component ─────────────────────────────────────────────────────────
 
 export default function BusinessSubscriptionsPage() {
   const { user } = useAuth();
-  const [currentPlan, setCurrentPlan] = useState<PlanId>('starter');
+  const [currentPlan, setCurrentPlan] = useState<PlanId>('basic');
   const [since, setSince] = useState('—');
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [confirmTarget, setConfirmTarget] = useState<PlanId | null>(null);
   const [successMsg, setSuccessMsg] = useState('');
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
 
   const businessId = user?.businessId || user?.entity?.id;
 
   useEffect(() => {
     if (!businessId) return;
-    // Fetch active subscription from API
     apiService
       .get<any>(`/v1/subscriptions/businesses/${businessId}/active`)
       .then((res) => {
         if (res.data && !res.error) {
-          const planId = (res.data.packageId || res.data.planId || res.data.plan || 'free').toLowerCase() as PlanId;
-          const validPlanId = PLANS.find((p) => p.id === planId)?.id ?? 'free';
-          setCurrentPlan(validPlanId as PlanId);
+          const raw = (res.data.packageId || res.data.planId || res.data.plan || 'basic').toLowerCase();
+          const mapped =
+            raw === 'starter' ? 'basic' :
+            raw === 'growth' ? 'standard' :
+            raw === 'enterprise' ? 'premium' :
+            PLANS.find((p) => p.id === raw)?.id ?? 'basic';
+          setCurrentPlan(mapped as PlanId);
           if (res.data.createdAt) {
             setSince(new Date(res.data.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }));
           }
         } else {
-          // Fallback to localStorage
           const sub = loadSubscription();
           setCurrentPlan(sub.plan);
           setSince(sub.since);
@@ -169,6 +166,9 @@ export default function BusinessSubscriptionsPage() {
 
   const currentPlanDef = PLANS.find((p) => p.id === currentPlan)!;
   const pendingRequest = requests.find((r) => r.status === 'pending');
+
+  const getPrice = (plan: typeof PLANS[number]) =>
+    billingPeriod === 'monthly' ? plan.priceMonthly : plan.priceAnnual;
 
   const handleRequest = (targetId: PlanId) => {
     if (targetId === currentPlan) return;
@@ -198,6 +198,8 @@ export default function BusinessSubscriptionsPage() {
   };
 
   const getPlanName = (id: PlanId) => PLANS.find((p) => p.id === id)?.name ?? id;
+
+  const confirmPlanDef = confirmTarget ? PLANS.find((p) => p.id === confirmTarget) : null;
 
   return (
     <BusinessLayout>
@@ -230,10 +232,11 @@ export default function BusinessSubscriptionsPage() {
             </div>
             <div className="flex flex-col items-end gap-1">
               <p className="text-3xl font-extrabold text-foreground">
-                {currentPlanDef.price === 0 ? 'Free' : `₹${currentPlanDef.price.toLocaleString()}`}
-                {currentPlanDef.price > 0 && (
-                  <span className="text-sm font-normal text-muted-foreground">/mo</span>
-                )}
+                ₹{currentPlanDef.priceMonthly.toLocaleString()}
+                <span className="text-sm font-normal text-muted-foreground">/mo</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                ₹{currentPlanDef.priceAnnual.toLocaleString()}/yr
               </p>
               <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                 ● Active
@@ -242,16 +245,16 @@ export default function BusinessSubscriptionsPage() {
           </div>
 
           {/* Usage meters */}
-          <div className="mt-6 grid sm:grid-cols-4 gap-4">
+          <div className="mt-6 grid sm:grid-cols-3 gap-4">
             {Object.entries(USAGE).map(([key, { used, limit }]) => {
-              const pct = Math.round((used / limit) * 100);
-              const overLimit = used >= limit;
+              const pct = limit > 0 ? Math.round((used / limit) * 100) : 0;
+              const overLimit = limit > 0 && used >= limit;
               return (
                 <div key={key}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="text-xs text-muted-foreground capitalize">{key}</span>
                     <span className={cn('text-xs font-semibold', overLimit ? 'text-rose-400' : 'text-foreground')}>
-                      {used}/{limit}
+                      {used}/{limit || '—'}
                     </span>
                   </div>
                   <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
@@ -264,14 +267,6 @@ export default function BusinessSubscriptionsPage() {
               );
             })}
           </div>
-
-          {/* Team limit warning */}
-          {USAGE.team.used >= USAGE.team.limit && (
-            <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium">
-              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              Team member limit reached. Upgrade to add more collaborators.
-            </div>
-          )}
         </Card>
 
         {/* ── Pending Request Banner ───────────────────────────── */}
@@ -296,8 +291,42 @@ export default function BusinessSubscriptionsPage() {
 
         {/* ── Plan Cards ───────────────────────────────────────── */}
         <div>
-          <h2 className="text-base font-bold text-foreground mb-4">Available Plans</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-base font-bold text-foreground">Available Plans</h2>
+            {/* Billing toggle */}
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
+              <button
+                onClick={() => setBillingPeriod('monthly')}
+                className={cn(
+                  'px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer',
+                  billingPeriod === 'monthly'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingPeriod('annual')}
+                className={cn(
+                  'px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5',
+                  billingPeriod === 'annual'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                Annual
+                <span className={cn(
+                  'text-[9px] font-bold px-1.5 py-0.5 rounded-full',
+                  billingPeriod === 'annual' ? 'bg-emerald-500 text-white' : 'bg-emerald-500/20 text-emerald-400',
+                )}>
+                  Save
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-4">
             {PLANS.map((plan) => {
               const isCurrent = plan.id === currentPlan;
               const hasPending = !!pendingRequest;
@@ -305,6 +334,7 @@ export default function BusinessSubscriptionsPage() {
               const currentIdx = PLANS.findIndex((p) => p.id === currentPlan);
               const planIdx = PLANS.findIndex((p) => p.id === plan.id);
               const isUpgrade = planIdx > currentIdx;
+              const price = getPrice(plan);
 
               return (
                 <Card
@@ -314,7 +344,7 @@ export default function BusinessSubscriptionsPage() {
                     isCurrent
                       ? 'border-primary/40 bg-primary/5'
                       : plan.highlight
-                      ? `border ${plan.border} bg-card/60`
+                      ? `border ${plan.border} ${plan.bg}`
                       : 'border-white/5 bg-card/40',
                   )}
                 >
@@ -342,10 +372,15 @@ export default function BusinessSubscriptionsPage() {
 
                   <div>
                     <span className="text-2xl font-extrabold text-foreground">
-                      {plan.price === 0 ? 'Free' : `₹${plan.price.toLocaleString()}`}
+                      ₹{price.toLocaleString()}
                     </span>
-                    {plan.price > 0 && (
-                      <span className="text-xs text-muted-foreground">/mo</span>
+                    <span className="text-xs text-muted-foreground ml-1">
+                      {billingPeriod === 'monthly' ? '/mo' : '/yr'}
+                    </span>
+                    {billingPeriod === 'annual' && (
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        ₹{Math.round(plan.priceAnnual / 12).toLocaleString()}/mo billed annually
+                      </p>
                     )}
                   </div>
 
@@ -442,7 +477,7 @@ export default function BusinessSubscriptionsPage() {
       </div>
 
       {/* ── Confirm Modal ─────────────────────────────────────── */}
-      {confirmTarget && (
+      {confirmTarget && confirmPlanDef && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-card space-y-4 mx-4">
             <h3 className="text-lg font-bold text-foreground">Confirm Request</h3>
@@ -450,8 +485,16 @@ export default function BusinessSubscriptionsPage() {
               Request a plan change from{' '}
               <strong className="text-foreground">{getPlanName(currentPlan)}</strong> to{' '}
               <strong className="text-foreground">{getPlanName(confirmTarget)}</strong>?
-              An admin will review and approve it shortly.
             </p>
+            <div className="px-3 py-2.5 rounded-xl bg-white/5 border border-white/10">
+              <p className="text-xs text-muted-foreground mb-0.5">New plan pricing</p>
+              <p className="text-lg font-extrabold text-foreground">
+                ₹{confirmPlanDef.priceMonthly.toLocaleString()}<span className="text-sm font-normal text-muted-foreground">/mo</span>
+                <span className="text-muted-foreground font-normal text-sm mx-2">·</span>
+                ₹{confirmPlanDef.priceAnnual.toLocaleString()}<span className="text-sm font-normal text-muted-foreground">/yr</span>
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">An admin will review and approve your request shortly.</p>
             <div className="flex gap-2">
               <Button
                 onClick={() => setConfirmTarget(null)}

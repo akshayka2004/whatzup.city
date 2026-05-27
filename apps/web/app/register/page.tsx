@@ -53,12 +53,119 @@ const KERALA_DISTRICTS = [
 ];
 
 const CATEGORIES = [
-  { slug: 'restaurants', label: 'Food & Restaurants' },
-  { slug: 'retail', label: 'Retail & Shopping' },
-  { slug: 'services', label: 'Professional Services' },
-  { slug: 'healthcare', label: 'Healthcare Providers' },
-  { slug: 'education', label: 'Educational Services' },
-  { slug: 'entertainment', label: 'Entertainment & Leisure' },
+  {
+    slug: 'food',
+    label: 'Food',
+    subcategories: [
+      { slug: 'restaurants', label: 'Restaurants' },
+      { slug: 'home_chefs', label: 'Home Chefs' },
+      { slug: 'mess', label: 'Mess' },
+      { slug: 'street_food', label: 'Street Food' },
+      { slug: 'catering', label: 'Catering' },
+      { slug: 'quick_eats', label: 'Quick Eats' },
+      { slug: 'fast_food_chains', label: 'Fast-food Chains' },
+      { slug: 'home_bakes', label: 'Home Bakes' },
+      { slug: 'cafe', label: 'Cafe' },
+    ],
+  },
+  {
+    slug: 'fashion',
+    label: 'Fashion',
+    subcategories: [
+      { slug: 'boutiques', label: 'Boutiques' },
+      { slug: 'retail_outlets', label: 'Retail Outlets' },
+      { slug: 'stitching_centers', label: 'Stitching Centers' },
+      { slug: 'dry_cleaning', label: 'Dry Cleaning' },
+      { slug: 'shops', label: 'Shops' },
+    ],
+  },
+  {
+    slug: 'staycation',
+    label: 'Staycation',
+    subcategories: [
+      { slug: 'hotels', label: 'Hotels' },
+      { slug: 'resorts', label: 'Resorts' },
+      { slug: 'villas', label: 'Villas' },
+      { slug: 'serviced_apartments', label: 'Serviced Apartments' },
+      { slug: 'bungalow', label: 'Bungalow' },
+      { slug: 'farmhouse', label: 'Farmhouse' },
+      { slug: 'camping', label: 'Camping' },
+    ],
+  },
+  {
+    slug: 'buffet',
+    label: 'Buffet',
+    subcategories: [
+      { slug: 'breakfast_buffet', label: 'Breakfast' },
+      { slug: 'lunch_buffet', label: 'Lunch' },
+      { slug: 'brunch_buffet', label: 'Brunch' },
+      { slug: 'dinner_buffet', label: 'Dinner' },
+    ],
+  },
+  {
+    slug: 'real_estate',
+    label: 'Real Estate',
+    subcategories: [
+      { slug: 'villa', label: 'Villa' },
+      { slug: 'apartment', label: 'Apartment' },
+    ],
+  },
+  {
+    slug: 'healthcare',
+    label: 'Healthcare',
+    subcategories: [
+      { slug: 'clinics', label: 'Clinics' },
+      { slug: 'medical_stores', label: 'Medical Stores' },
+      { slug: 'diagnostics_centers', label: 'Diagnostics Centers' },
+      { slug: 'wellness_center', label: 'Wellness Center' },
+      { slug: 'ayurveda_clinic', label: 'Ayurveda Clinic' },
+      { slug: 'nursing_homes', label: 'Nursing Homes' },
+      { slug: 'hospitals', label: 'Hospitals' },
+      { slug: 'dialysis_centers', label: 'Dialysis Centers' },
+      { slug: 'psychiatric_services', label: 'Psychiatric Services' },
+      { slug: 'palliative_care', label: 'Palliative & End-of-life Care' },
+      { slug: 'home_health_care', label: 'Home Health Care Services' },
+      { slug: 'telemedicine', label: 'Telemedicine & Digital Health' },
+      { slug: 'emergency_health', label: 'Emergency Health Services' },
+    ],
+  },
+  {
+    slug: 'venue_spots',
+    label: 'Venue Spots',
+    subcategories: [
+      { slug: 'auditorium', label: 'Auditorium' },
+      { slug: 'trade_center', label: 'Trade Center' },
+      { slug: 'mandapams', label: 'Mandapams' },
+    ],
+  },
+  {
+    slug: 'fitness_wellness',
+    label: 'Fitness & Wellness',
+    subcategories: [
+      { slug: 'spa', label: 'Spa' },
+      { slug: 'gym', label: 'Gym' },
+      { slug: 'ayurvedic_treatments', label: 'Ayurvedic Treatments' },
+    ],
+  },
+  {
+    slug: 'events',
+    label: 'Events',
+    subcategories: [
+      { slug: 'music', label: 'Music' },
+      { slug: 'night_life', label: 'Night Life' },
+    ],
+  },
+  {
+    slug: 'local_shop',
+    label: 'Local Shop',
+    subcategories: [
+      { slug: 'supermarket', label: 'Supermarket' },
+      { slug: 'hyper_market', label: 'Hyper Market' },
+      { slug: 'kirana_store', label: 'Kirana Store' },
+      { slug: 'bakery', label: 'Bakery' },
+      { slug: 'provision_store', label: 'Provision Store' },
+    ],
+  },
 ];
 
 export default function UnifiedRegisterPage() {
@@ -78,7 +185,9 @@ export default function UnifiedRegisterPage() {
 
   // Business-specific Step 2 fields
   const [companyName, setCompanyName] = useState('');
-  const [categorySlug, setCategorySlug] = useState('restaurants');
+  const [categorySlug, setCategorySlug] = useState('food');
+  const [subcategorySlug, setSubcategorySlug] = useState('restaurants');
+  const [referralCode, setReferralCode] = useState('');
 
   const [tenantId, setTenantId] = useState('');
   const [businessId, setBusinessId] = useState('');
@@ -150,6 +259,7 @@ export default function UnifiedRegisterPage() {
         const res = await apiService.post<any>('/v1/auth/business/signup', {
           ownerName: name, email, phone, password,
           businessName: companyName, categorySlug, profileType: 'OWNER',
+          ...(referralCode.trim() ? { referralCode: referralCode.trim() } : {}),
         });
 
         if (res.error || !res.data) {
@@ -175,6 +285,7 @@ export default function UnifiedRegisterPage() {
         const res = await apiService.post<any>('/v1/auth/signup', {
           email, password, name, phone,
           role: role === 'GOVERNMENT' ? 'GOVERNMENT_ADMIN' : 'USER',
+          ...(referralCode.trim() ? { referralCode: referralCode.trim() } : {}),
         });
 
         if (res.error || !res.data) {
@@ -268,7 +379,7 @@ export default function UnifiedRegisterPage() {
         try {
           await onboardingService.updateStep(businessId, 2, {
             businessDescription: `Kerala based company ${companyName} operating in ${district}.`,
-            subcategorySlugs: [],
+            subcategorySlugs: subcategorySlug ? [subcategorySlug] : [],
           });
         } catch (e) { console.warn('Step 2 update failed:', e); }
 
@@ -687,7 +798,7 @@ export default function UnifiedRegisterPage() {
 
                 {/* BUSINESS Additional Fields */}
                 {role === 'BUSINESS' && (
-                  <div className="grid md:grid-cols-2 gap-4 pt-3 border-t border-white/5">
+                  <div className="space-y-4 pt-3 border-t border-white/5">
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-slate-300">Company Name</label>
                       <div className="relative">
@@ -703,25 +814,67 @@ export default function UnifiedRegisterPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-300">Catalog Category</label>
-                      <div className="relative">
-                        <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-                        <select
-                          value={categorySlug}
-                          onChange={(e) => setCategorySlug(e.target.value)}
-                          className="w-full h-11 pl-10 pr-4 border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer" style={{ background: '#37353E' }}
-                        >
-                          {CATEGORIES.map((cat) => (
-                            <option key={cat.slug} value={cat.slug} style={{ background: '#37353E' }}>
-                              {cat.label}
-                            </option>
-                          ))}
-                        </select>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-slate-300">Category</label>
+                        <div className="relative">
+                          <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                          <select
+                            value={categorySlug}
+                            onChange={(e) => {
+                              setCategorySlug(e.target.value);
+                              const cat = CATEGORIES.find((c) => c.slug === e.target.value);
+                              setSubcategorySlug(cat?.subcategories?.[0]?.slug || '');
+                            }}
+                            className="w-full h-11 pl-10 pr-4 border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer" style={{ background: '#37353E' }}
+                          >
+                            {CATEGORIES.map((cat) => (
+                              <option key={cat.slug} value={cat.slug} style={{ background: '#37353E' }}>
+                                {cat.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-slate-300">Subcategory</label>
+                        <div className="relative">
+                          <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                          <select
+                            value={subcategorySlug}
+                            onChange={(e) => setSubcategorySlug(e.target.value)}
+                            className="w-full h-11 pl-10 pr-4 border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer" style={{ background: '#37353E' }}
+                          >
+                            {(CATEGORIES.find((c) => c.slug === categorySlug)?.subcategories || []).map((sub) => (
+                              <option key={sub.slug} value={sub.slug} style={{ background: '#37353E' }}>
+                                {sub.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Referral Code */}
+              <div className="space-y-1.5 pt-2">
+                <label className="text-xs font-medium text-slate-300">
+                  Referral Code <span className="text-slate-500">(optional)</span>
+                </label>
+                <div className="relative">
+                  <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                  <Input
+                    type="text"
+                    placeholder="Enter referral code if you have one"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    maxLength={20}
+                    className="pl-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl font-mono tracking-wider"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-between pt-6 border-t border-white/5">

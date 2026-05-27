@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Delete, Post, Param, Body, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -43,6 +43,20 @@ export class UsersController {
     return this.usersService.findById(id, currentUser.id, currentUser.role);
   }
 
+  @Delete('me')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete own account (self-service)' })
+  async deleteSelf(@CurrentUser('id') userId: string) {
+    await this.usersService.deleteSelf(userId);
+    return { message: 'Account deleted' };
+  }
+
+  @Get('me/referrals')
+  @ApiOperation({ summary: 'Get referral stats for current user' })
+  async myReferrals(@CurrentUser('id') userId: string) {
+    return this.usersService.getReferralStats(userId);
+  }
+
   @Patch('me')
   @ApiOperation({ summary: 'Update current user profile' })
   async updateProfile(
@@ -58,5 +72,12 @@ export class UsersController {
   async remove(@Param('id') id: string) {
     await this.usersService.softDelete(id);
     return { message: 'User deactivated' };
+  }
+
+  @Get('referral-leaderboard')
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Top referrers leaderboard (admin only)' })
+  async referralLeaderboard(@CurrentUser() currentUser: any) {
+    return this.usersService.getReferralLeaderboard(currentUser.tenantId);
   }
 }

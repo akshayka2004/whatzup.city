@@ -2,13 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Users, Lock, Activity, Settings, Flag, Database, LogOut, Folder } from 'lucide-react';
+import { Users, Lock, Activity, Settings, Flag, Database, LogOut, Folder, Tag, Share2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 const menuItems = [
   { label: 'Tenants', href: '/super-admin', icon: Users, exact: true },
   { label: 'Categories', href: '/super-admin/categories', icon: Folder },
+  { label: 'Referrals', href: '/super-admin/referrals', icon: Share2 },
+  { label: 'Platform Offers', href: '/super-admin/offers', icon: Tag },
   { label: 'Security', href: '/super-admin/security', icon: Lock },
   { label: 'System Health', href: '/super-admin/health', icon: Activity },
   { label: 'Roles', href: '/super-admin/roles', icon: Settings },

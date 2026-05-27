@@ -119,4 +119,54 @@ export class UsersService {
     await this.db.user.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } });
     await this.redis.del(`user:${id}`);
   }
+
+  /** Self-service account deletion — soft-deletes user + deactivates entities */
+  async deleteSelf(userId: string) {
+    const user = await this.db.user.findUnique({
+      where: { id: userId, deletedAt: null },
+      select: { id: true, tenantId: true },
+    });
+    if (!user) throw new Error('User not found');
+
+    const now = new Date();
+    await this.db.$transaction([
+      this.db.user.update({ where: { id: userId }, data: { deletedAt: now, isActive: false } }),
+      this.db.entity.updateMany({ where: { userId, deletedAt: null }, data: { deletedAt: now } }),
+      this.db.session.deleteMany({ where: { userId } }),
+      this.db.refreshToken.deleteMany({ where: { userId } }),
+    ]);
+    await this.redis.del(`user:${userId}`);
+  }
+
+  async getReferralStats(userId: string) {
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+      select: { referralCode: true } as any,
+    });
+    const referrals = await this.db.user.findMany({
+      where: { referredBy: userId, deletedAt: null } as any,
+      select: { id: true, name: true, email: true, createdAt: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return { referralCode: (user as any)?.referralCode, count: referrals.length, referrals };
+  }
+
+  async getReferralLeaderboard(tenantId: string) {
+    // Group users by referredBy to get counts
+    const result = await this.db.$queryRaw`
+      SELECT u.id, u.name, u.email, u.referral_code as "referralCode",
+             COUNT(r.id)::int as "referralCount"
+      FROM users u
+      LEFT JOIN users r ON r.referred_by = u.id AND r.deleted_at IS NULL
+      WHERE u.tenant_id = ${tenantId}::uuid AND u.deleted_at IS NULL
+      GROUP BY u.id, u.name, u.email, u.referral_code
+      HAVING COUNT(r.id) > 0
+      ORDER BY "referralCount" DESC
+      LIMIT 50
+    `;
+    const total = await this.db.user.count({
+      where: { tenantId, deletedAt: null, referredBy: { not: null } } as any,
+    });
+    return { leaderboard: result, totalReferredUsers: total };
+  }
 }

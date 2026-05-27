@@ -84,6 +84,7 @@ model Tenant {
   uploadedDocuments       UploadedDocument[]
   verificationRequests    VerificationRequest[]
   plans                   Plan[]
+  businessTags            BusinessTag[]
 
   @@index([deletedAt])
   @@map("tenants")
@@ -103,6 +104,8 @@ model User {
   isActive      Boolean      @default(true) @map("is_active")
   emailVerified Boolean      @default(false) @map("email_verified")
   lastLoginAt   DateTime?    @map("last_login_at")
+  referralCode  String?      @unique @map("referral_code") @db.VarChar(20)
+  referredBy    String?      @map("referred_by") @db.Uuid
   
   // Core Audit Fields
   createdAt     DateTime     @default(now()) @map("created_at")
@@ -523,6 +526,8 @@ model Business {
   subscriptions     Subscription[]
   payments          Payment[]
 
+  businessTags      BusinessTag[]
+
   @@unique([tenantId, slug])
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -535,6 +540,23 @@ model Business {
   @@index([averageRating])
   @@index([deletedAt])
   @@map("businesses")
+}
+
+model BusinessTag {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  tag        String   @db.VarChar(100)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, businessId, tag])
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([tenantId, tag])
+  @@map("business_tags")
 }
 
 enum BusinessStatus {
