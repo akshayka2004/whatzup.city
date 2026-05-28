@@ -14,6 +14,7 @@ import {
   Users,
   Building2,
   CreditCard,
+  UserPlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import { Button } from '@/components/ui/button';
 
 const menuItems = [
   { label: 'Dashboard', href: '/admin', icon: BarChart3, exact: true },
+  { label: 'Registrations', href: '/admin/registrations', icon: UserPlus },
   { label: 'Approvals', href: '/admin/approvals', icon: CheckCircle,
     tooltip: 'Business onboarding verification' },
   { label: 'Reports', href: '/admin/reports', icon: AlertTriangle },
