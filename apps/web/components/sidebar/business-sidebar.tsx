@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Package,
   Flag,
+  UserPlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,7 @@ const OWNER_MENU = [
   { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
   { label: 'Bill Moderation', href: '/dashboard/moderation', icon: ShieldCheck, badge: 'pending' },
   { label: 'Customers', href: '/dashboard/customers', icon: Users },
+  { label: 'Registrations', href: '/dashboard/registrations', icon: UserPlus },
   { label: 'Campaigns', href: '/dashboard/campaigns', icon: Megaphone },
   { label: 'Offers', href: '/dashboard/offers', icon: Tag },
   { label: 'Products', href: '/dashboard/products', icon: Package },

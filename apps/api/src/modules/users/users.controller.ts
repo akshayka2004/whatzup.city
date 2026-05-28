@@ -36,6 +36,37 @@ export class UsersController {
     );
   }
 
+  @Get('admin/all-registrations')
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'List all platform registrations with full details (super-admin)' })
+  async allRegistrations(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('role') role?: string,
+    @Query('search') search?: string,
+    @Query('tenantId') tenantId?: string,
+  ) {
+    return this.usersService.findAllRegistrations({ page, limit, role, search, tenantId });
+  }
+
+  @Get('tenant/registrations')
+  @ApiOperation({ summary: 'List registrations scoped to current tenant (business admins)' })
+  async tenantRegistrations(
+    @CurrentUser() currentUser: any,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('role') role?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.usersService.findAllRegistrations({
+      page,
+      limit,
+      role,
+      search,
+      tenantId: currentUser.tenantId,
+    });
+  }
+
   @Get(':id')
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get user by ID (admin only)' })

@@ -138,6 +138,97 @@ export class UsersService {
     await this.redis.del(`user:${userId}`);
   }
 
+  async findAllRegistrations(params: {
+    tenantId?: string;
+    page?: number;
+    limit?: number;
+    role?: string;
+    search?: string;
+  }) {
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.min(Number(params.limit) || 30, 100);
+    const skip = (page - 1) * limit;
+
+    const where: any = { deletedAt: null };
+    if (params.tenantId) where.tenantId = params.tenantId;
+    if (params.role) where.role = params.role;
+    if (params.search) {
+      where.OR = [
+        { name: { contains: params.search, mode: 'insensitive' } },
+        { email: { contains: params.search, mode: 'insensitive' } },
+        { phone: { contains: params.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.db.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          tenantId: true,
+          email: true,
+          name: true,
+          phone: true,
+          role: true,
+          isActive: true,
+          emailVerified: true,
+          referralCode: true,
+          acceptedTermsAt: true,
+          acceptedPrivacyAt: true,
+          createdAt: true,
+          lastLoginAt: true,
+          tenant: { select: { name: true, slug: true } },
+          businesses: {
+            where: { deletedAt: null },
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              name: true,
+              status: true,
+              city: true,
+              state: true,
+              phone: true,
+              email: true,
+              address: true,
+              district: true,
+              category: { select: { name: true, slug: true } },
+              createdAt: true,
+            },
+          },
+          customerProfile: {
+            select: {
+              status: true,
+              city: true,
+              district: true,
+              state: true,
+            },
+          },
+        },
+      }),
+      this.db.user.count({ where }),
+    ]);
+
+    return {
+      data: data.map((u: any) => ({
+        ...u,
+        business: u.businesses?.[0] ?? null,
+        businesses: undefined,
+      })),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrev: page > 1,
+      },
+    };
+  }
+
   async getReferralStats(userId: string) {
     const user = await this.db.user.findUnique({
       where: { id: userId },
