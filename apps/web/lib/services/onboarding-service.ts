@@ -83,10 +83,28 @@ class OnboardingService {
     businessId: string,
     filename: string,
     mimeType: string,
+    category: string = 'gallery',
   ): Promise<ApiResponse<{ uploadUrl: string; fileKey: string }>> {
     return apiService.post<{ uploadUrl: string; fileKey: string }>(
-      '/v1/media/upload-url',
-      { businessId, filename, mimeType },
+      '/v1/storage/upload-url',
+      { entityId: businessId, filename, mimeType, category },
+    );
+  }
+
+  async getBusinessDocumentUploadUrl(
+    businessId: string,
+    data: {
+      documentType: string;
+      filename: string;
+      mimeType: string;
+      documentNumber?: string;
+      issuedAuthority?: string;
+      expiryDate?: string;
+    },
+  ): Promise<ApiResponse<{ uploadUrl: string; fileKey: string; documentId: string }>> {
+    return apiService.post<{ uploadUrl: string; fileKey: string; documentId: string }>(
+      `/v1/businesses/${businessId}/documents`,
+      data,
     );
   }
 

@@ -9,7 +9,7 @@ import {
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { AuditService } from '../audit/audit.service';
-import { MediaService } from '../media/media.service';
+import { StorageService } from '../../common/storage/storage.service';
 import { UpdateOnboardingStepDto, UploadEntityDocumentDto } from './dto/entity-onboarding.dto';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class EntityOnboardingService {
     private readonly db: DatabaseService,
     private readonly redis: RedisService,
     private readonly audit: AuditService,
-    private readonly mediaService: MediaService,
+    private readonly storageService: StorageService,
   ) {}
 
   private async getEntityAndVerifyOwner(userId: string, tenantId: string, entityId: string) {
@@ -235,12 +235,23 @@ export class EntityOnboardingService {
     await this.getEntityAndVerifyOwner(userId, tenantId, entityId);
 
     const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-    if (!allowedMimeTypes.includes(mimeType)) {
-      throw new BadRequestException('File must be a PDF or image file (jpg, png, webp)');
-    }
+    this.storageService.validateMimeType(mimeType, allowedMimeTypes);
 
-    // Generate signed upload URL from MediaService, using entityId in place of businessId
-    return this.mediaService.getSignedUploadUrl(tenantId, entityId, filename, mimeType);
+    // Generate structured storage path using StorageService
+    const fileKey = this.storageService.generateStoragePath(
+      tenantId,
+      entityId,
+      'document', // category: document => maps to verification-documents bucket
+      filename,
+    );
+
+    // Generate signed upload URL from StorageService
+    const { uploadUrl } = await this.storageService.createSignedUploadUrl(
+      'verification-documents',
+      fileKey,
+    );
+
+    return { uploadUrl, fileKey };
   }
 
   async attachDocument(
@@ -265,13 +276,17 @@ export class EntityOnboardingService {
       }
     }
 
+    const dbUrl = dto.fileUrl.startsWith('{')
+      ? dto.fileUrl
+      : JSON.stringify({ bucket: 'verification-documents', path: dto.fileUrl });
+
     // Save document record to DB
     const document = await this.db.uploadedDocument.create({
       data: {
         tenantId,
         entityId,
         documentType: dto.documentType,
-        fileUrl: dto.fileUrl,
+        fileUrl: dbUrl,
         status: 'PENDING',
         documentNumber: dto.documentNumber,
         issuedAuthority: dto.issuedAuthority,
@@ -319,6 +334,18 @@ export class EntityOnboardingService {
 
     if (!document) {
       throw new NotFoundException('Document not found');
+    }
+
+    // Parse and delete from storage
+    if (document.fileUrl && document.fileUrl.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(document.fileUrl);
+        if (parsed && typeof parsed.bucket === 'string' && typeof parsed.path === 'string') {
+          await this.storageService.deleteFile(parsed.bucket, parsed.path);
+        }
+      } catch (err: any) {
+        this.logger.error(`Failed to delete document file from storage: ${err.message}`);
+      }
     }
 
     await this.db.uploadedDocument.delete({

@@ -110,7 +110,11 @@ export class UsersService {
   }
 
   async update(id: string, data: { name?: string; phone?: string; avatar?: string }) {
-    const user = await this.db.user.update({ where: { id }, data });
+    const updateData = { ...data };
+    if (updateData.avatar && !updateData.avatar.trim().startsWith('{')) {
+      updateData.avatar = JSON.stringify({ bucket: 'profile-media', path: updateData.avatar });
+    }
+    const user = await this.db.user.update({ where: { id }, data: updateData });
     await this.redis.del(`user:${id}`);
     return user;
   }

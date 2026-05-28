@@ -4,6 +4,7 @@ import { Queue } from 'bullmq';
 import { BillRepository } from '../../common/database/repositories/bill.repository';
 import { BillVerificationRepository } from '../../common/database/repositories/bill-verification.repository';
 import { AuditService } from '../audit/audit.service';
+import { StorageService } from '../../common/storage/storage.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class BillsService {
     private readonly billRepo: BillRepository,
     private readonly verificationRepo: BillVerificationRepository,
     private readonly auditService: AuditService,
+    private readonly storageService: StorageService,
     @InjectQueue('ocr-queue') private readonly ocrQueue: Queue,
   ) {}
 
@@ -28,13 +30,17 @@ export class BillsService {
       description?: string;
     },
   ) {
+    const dbUrl = data.billImage.startsWith('{')
+      ? data.billImage
+      : JSON.stringify({ bucket: 'bill-uploads', path: data.billImage });
+
     // 1. Create the Bill Record
     const bill = await this.billRepo.create(tenantId, {
       userId,
       businessId: data.businessId,
       amount: data.amount,
       billDate: new Date(data.billDate),
-      billImage: data.billImage,
+      billImage: dbUrl,
       description: data.description,
       status: 'UPLOADED',
     });
@@ -45,11 +51,21 @@ export class BillsService {
       status: 'PENDING',
     });
 
+    // Generate signed download URL for background OCR worker to access private file
+    let signedUrl = '';
+    try {
+      const parsed = JSON.parse(dbUrl);
+      signedUrl = await this.storageService.createSignedDownloadUrl(parsed.bucket, parsed.path, 900); // 15 minutes
+    } catch (err: any) {
+      this.logger.error(`Failed to generate signed download URL for OCR worker: ${err.message}`);
+      signedUrl = data.billImage; // Fallback
+    }
+
     // 3. Dispatch to OCR Background Worker
     await this.ocrQueue.add('extract-text', {
       tenantId,
       billId: bill.id,
-      imageUrl: data.billImage,
+      imageUrl: signedUrl,
       userId,
     });
     this.logger.debug(`Dispatched OCR job for bill: ${bill.id}`);

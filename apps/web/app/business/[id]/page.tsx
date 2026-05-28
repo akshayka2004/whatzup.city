@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/services/api-service';
+import { optimizeImage } from '@/lib/utils/image-optimizer';
 
 const FAVORITES_KEY = 'saved_businesses';
 
@@ -143,6 +144,7 @@ export default function BusinessDetailPage() {
   const [billRating, setBillRating] = useState(0);
   const [billRatingHover, setBillRatingHover] = useState(0);
   const [billImageName, setBillImageName] = useState('');
+  const [billFile, setBillFile] = useState<File | null>(null);
   const [billSubmitting, setBillSubmitting] = useState(false);
 
   const handleConfirmClaim = () => {
@@ -154,20 +156,64 @@ export default function BusinessDetailPage() {
 
   const handleBillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!billNumber || !billDate || !billAmount || billRating === 0) return;
+    if (!billNumber || !billDate || !billAmount || billRating === 0 || !billFile) return;
     setBillSubmitting(true);
     try {
+      // 1. Optimize image client-side if it's an image
+      let fileToUpload = billFile;
+      try {
+        fileToUpload = await optimizeImage(billFile, { quality: 0.8 });
+      } catch (err) {
+        console.error('Image optimization failed:', err);
+      }
+
+      // 2. Request signed upload URL
+      const signedRes = await apiService.post<{ uploadUrl: string; fileKey: string }>(
+        '/v1/storage/upload-url',
+        {
+          entityId: businessId,
+          filename: fileToUpload.name,
+          mimeType: fileToUpload.type,
+          category: 'bill',
+        },
+      );
+
+      if (!signedRes.data || signedRes.error) {
+        throw new Error(signedRes.error || 'Failed to get upload URL');
+      }
+
+      const { uploadUrl, fileKey } = signedRes.data;
+
+      // 3. Direct upload to Supabase storage
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': fileToUpload.type },
+        body: fileToUpload,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload file to storage');
+      }
+
+      // 4. Send JSON-serialized reference to backend
+      const billImageRef = JSON.stringify({ bucket: 'bill-uploads', path: fileKey });
+
       await apiService.post('/v1/bills/upload', {
         businessId,
         amount: parseFloat(billAmount),
         billDate,
-        billImage: billImageName || '',
+        billImage: billImageRef,
         description: billReview || undefined,
       });
-    } catch (_) {}
-    setBillSubmitting(false);
-    setBillSubmitted(true);
-    setBillModalOpen(false);
+
+      setBillSubmitted(true);
+      setBillModalOpen(false);
+    } catch (err: any) {
+      console.error('Bill submission failed:', err);
+      alert(err.message || 'Bill submission failed. Please try again.');
+    } finally {
+      setBillSubmitting(false);
+    }
   };
 
   const resetBillForm = () => {
@@ -178,6 +224,7 @@ export default function BusinessDetailPage() {
     setBillRating(0);
     setBillRatingHover(0);
     setBillImageName('');
+    setBillFile(null);
   };
 
   const openBillModal = () => {
@@ -612,7 +659,10 @@ export default function BusinessDetailPage() {
                     className="hidden"
                     onChange={(e) => {
                       const f = e.target.files?.[0];
-                      if (f) setBillImageName(f.name);
+                      if (f) {
+                        setBillFile(f);
+                        setBillImageName(f.name);
+                      }
                     }}
                   />
                 </label>

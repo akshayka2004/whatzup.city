@@ -6,13 +6,15 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bullmq';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { validateEnv } from './common/config/env.validation';
 import { SecurityExceptionFilter } from './common/filters/security-exception.filter';
+import { StorageSerializerInterceptor } from './common/interceptors/storage-serializer.interceptor';
 
 // Infrastructure modules
 import { DatabaseModule } from './common/database/database.module';
 import { RedisModule } from './common/redis/redis.module';
+import { StorageModule } from './common/storage/storage.module';
 
 // Domain modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -100,6 +102,7 @@ import { LaunchInterestsModule } from './modules/launch-interests/launch-interes
     // ── Infrastructure ──────────────────────────────────────
     DatabaseModule,
     RedisModule,
+    StorageModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -180,6 +183,10 @@ import { LaunchInterestsModule } from './modules/launch-interests/launch-interes
     {
       provide: APP_FILTER,
       useClass: SecurityExceptionFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: StorageSerializerInterceptor,
     },
   ],
 })

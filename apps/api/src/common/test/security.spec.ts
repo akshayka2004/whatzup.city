@@ -90,7 +90,18 @@ describe('Security and Hardening Tests', () => {
         },
       };
 
-      mediaService = new MediaService(mockDb as any, { get: jest.fn() } as any);
+      mediaService = new MediaService(
+        mockDb as any,
+        { get: jest.fn() } as any,
+        {
+          validateFileSize: jest.fn(),
+          validateMimeType: jest.fn(),
+          generateStoragePath: jest.fn(),
+          createSignedUploadUrl: jest.fn(),
+          deleteFile: jest.fn(),
+        } as any,
+        {} as any,
+      );
     });
 
     it('should block access if business belongs to different tenant', async () => {

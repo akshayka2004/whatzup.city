@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { onboardingService, BusinessDraft } from '@/lib/services/onboarding-service';
+import { optimizeImage } from '@/lib/utils/image-optimizer';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -220,55 +221,70 @@ function RegisterBusinessWizardContent() {
     if (!businessId) return null;
     progressCallback(10);
 
-    // 1. Get signed url
-    const signedRes = await onboardingService.getSignedUrl(businessId, file.name, file.type);
-    if (!signedRes.data || signedRes.error) {
-      throw new Error(signedRes.error || `Failed to fetch upload URL for ${file.name}`);
+    let fileToUpload = file;
+    if (type === 'LOGO' || type === 'BANNER') {
+      try {
+        fileToUpload = await optimizeImage(file, { quality: 0.8 });
+      } catch (err) {
+        console.error('Image optimization failed, using original file:', err);
+      }
     }
+
+    let uploadUrl = '';
+    let fileKey = '';
+
+    if (type === 'DOC') {
+      // 1. Get signed upload URL and register in BusinessDocument table at once
+      const docRes = await onboardingService.getBusinessDocumentUploadUrl(businessId, {
+        documentType: verificationDocType || 'BUSINESS_REGISTRATION_PROOF',
+        filename: fileToUpload.name,
+        mimeType: fileToUpload.type,
+      });
+
+      if (!docRes.data || docRes.error) {
+        throw new Error(docRes.error || `Failed to fetch upload URL for ${fileToUpload.name}`);
+      }
+      uploadUrl = docRes.data.uploadUrl;
+      fileKey = docRes.data.fileKey;
+    } else {
+      // 1. Get signed upload URL for media (LOGO/BANNER)
+      const category = type === 'LOGO' ? 'logo' : 'banner';
+      const signedRes = await onboardingService.getSignedUrl(businessId, fileToUpload.name, fileToUpload.type, category);
+      if (!signedRes.data || signedRes.error) {
+        throw new Error(signedRes.error || `Failed to fetch upload URL for ${fileToUpload.name}`);
+      }
+      uploadUrl = signedRes.data.uploadUrl;
+      fileKey = signedRes.data.fileKey;
+    }
+
     progressCallback(30);
 
-    const { uploadUrl, fileKey } = signedRes.data;
-
-    // 2. Upload file content to S3/Mock URL
-    const uploadSuccess = await onboardingService.uploadFile(uploadUrl, file);
+    // 2. Upload file content directly to Supabase Storage
+    const uploadSuccess = await onboardingService.uploadFile(uploadUrl, fileToUpload);
     if (!uploadSuccess) {
-      throw new Error(`Failed to transmit file payload for ${file.name}`);
+      throw new Error(`Failed to transmit file payload for ${fileToUpload.name}`);
     }
     progressCallback(60);
 
-    // Build URL to represent the saved item in DB
-    const finalUrl = uploadUrl.startsWith('/')
-      ? uploadUrl.split('?')[0] // local mock URL
-      : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'saas-uploads'}/${fileKey}`;
-
-    // 3. Register with backend DB
-    let regRes;
-    if (type === 'DOC') {
-      regRes = await onboardingService.registerDocument(businessId, {
-        name: file.name,
-        documentType: verificationDocType as any,
-        fileUrl: finalUrl,
-        fileKey,
-        mimeType: file.type,
-        fileSize: file.size,
-      });
-    } else {
-      regRes = await onboardingService.registerMedia(businessId, {
-        name: file.name,
+    // 3. For LOGO/BANNER, register with backend DB (DOC is already registered as PENDING)
+    if (type !== 'DOC') {
+      const dbUrl = JSON.stringify({ bucket: 'business-media', path: fileKey });
+      const regRes = await onboardingService.registerMedia(businessId, {
+        name: fileToUpload.name,
         mediaType: type,
-        fileUrl: finalUrl,
+        fileUrl: dbUrl,
         fileKey,
-        mimeType: file.type,
-        fileSize: file.size,
+        mimeType: fileToUpload.type,
+        fileSize: fileToUpload.size,
       });
-    }
 
-    if (regRes.error) {
-      throw new Error(regRes.error || `Registration failed for ${file.name}`);
+      if (regRes.error) {
+        throw new Error(regRes.error || `Registration failed for ${fileToUpload.name}`);
+      }
     }
 
     progressCallback(100);
-    return regRes.data;
+    return true;
   };
 
   // Submit Step 5 (Uploading files & Proceeding to Review)

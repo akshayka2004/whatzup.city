@@ -76,12 +76,14 @@ export class BusinessMediaService {
       dto.mimeType,
     );
 
+    const dbUrl = JSON.stringify({ bucket: 'business-media', path: fileKey });
+
     // Save Media entry
     const media = await this.db.media.create({
       data: {
         tenantId,
         businessId,
-        url: fileKey,
+        url: dbUrl,
         type: dto.mediaType,
         filename: dto.filename,
         size: dto.size,
@@ -93,12 +95,12 @@ export class BusinessMediaService {
     if (dto.mediaType === 'LOGO') {
       await this.db.business.update({
         where: { id: businessId },
-        data: { logo: fileKey },
+        data: { logo: dbUrl },
       });
     } else if (dto.mediaType === 'COVER_BANNER') {
       await this.db.business.update({
         where: { id: businessId },
-        data: { coverImage: fileKey },
+        data: { coverImage: dbUrl },
       });
     }
 

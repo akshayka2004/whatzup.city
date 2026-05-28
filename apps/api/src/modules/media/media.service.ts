@@ -6,10 +6,13 @@ import {
   NotFoundException,
   BadRequestException,
   OnModuleInit,
+  Inject,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DatabaseService } from '../../common/database/database.service';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { SUPABASE_CLIENT } from '../../common/supabase/supabase.client';
+import { StorageService } from '../../common/storage/storage.service';
 
 const ALLOWED_MIME_TYPES: Record<string, string[]> = {
   'image/jpeg': ['jpg', 'jpeg'],
@@ -17,39 +20,19 @@ const ALLOWED_MIME_TYPES: Record<string, string[]> = {
   'image/gif': ['gif'],
   'image/webp': ['webp'],
   'application/pdf': ['pdf'],
-  'application/msword': ['doc'],
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['docx'],
-  'text/plain': ['txt'],
 };
 
 @Injectable()
 export class MediaService implements OnModuleInit {
   private readonly logger = new Logger(MediaService.name);
-  private supabaseClient: SupabaseClient | null = null;
-  private readonly bucket: string;
-  private readonly maxUploadSize: number;
+  private readonly bucket = 'business-media';
 
   constructor(
     private readonly db: DatabaseService,
     private readonly config: ConfigService,
-  ) {
-    const supabaseUrl = this.config.get<string>('SUPABASE_URL');
-    const serviceRoleKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY');
-    this.bucket = this.config.get<string>('SUPABASE_STORAGE_BUCKET') || 'saas-uploads';
-    const sizeLimit = this.config.get<number>('MAX_UPLOAD_SIZE');
-    this.maxUploadSize = sizeLimit ? Number(sizeLimit) : 10 * 1024 * 1024; // 10MB default
-
-    if (supabaseUrl && serviceRoleKey) {
-      this.supabaseClient = createClient(supabaseUrl, serviceRoleKey, {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-        },
-      });
-    } else {
-      this.logger.warn('Supabase Storage configuration missing, Media uploads will fail.');
-    }
-  }
+    private readonly storageService: StorageService,
+    @Inject(SUPABASE_CLIENT) private readonly supabaseClient: SupabaseClient,
+  ) {}
 
   onModuleInit() {
     // Run cleanup job every 24 hours (86400000 ms)
@@ -71,8 +54,6 @@ export class MediaService implements OnModuleInit {
    * Scans Supabase Storage for orphaned files and removes them.
    */
   async cleanOrphanedFiles() {
-    if (!this.supabaseClient) return;
-
     this.logger.log('Starting orphaned files cleanup job...');
     try {
       const { data: files, error } = await this.supabaseClient.storage
@@ -98,7 +79,7 @@ export class MediaService implements OnModuleInit {
         const isReferenced = await this.checkFileReferenceInDb(fileKey);
         if (!isReferenced) {
           this.logger.log(`Deleting orphaned storage file: ${fileKey}`);
-          await this.supabaseClient.storage.from(this.bucket).remove([fileKey]);
+          await this.storageService.deleteFile(this.bucket, fileKey);
         }
       }
     } catch (err: any) {
@@ -145,15 +126,23 @@ export class MediaService implements OnModuleInit {
     return false;
   }
 
-  private getFileKeyFromUrl(url: string): string | null {
-    if (url.startsWith('/')) {
-      // Mock local URL
-      return null;
+  private getFileKeyFromUrl(url: string): { bucket: string; path: string } | null {
+    if (!url) return null;
+    if (url.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(url);
+        if (parsed && typeof parsed.bucket === 'string' && typeof parsed.path === 'string') {
+          return parsed;
+        }
+      } catch {}
     }
     const bucketPart = `/public/${this.bucket}/`;
     const index = url.indexOf(bucketPart);
     if (index !== -1) {
-      return url.substring(index + bucketPart.length);
+      return {
+        bucket: this.bucket,
+        path: url.substring(index + bucketPart.length),
+      };
     }
     return null;
   }
@@ -235,31 +224,21 @@ export class MediaService implements OnModuleInit {
     // 2. Validate file extension
     this.validateFileExtension(filename, mimeType);
 
-    const uniqueId = Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 7);
-    const fileKey = `${tenantId}/businesses/${businessId}/${uniqueId}-${filename.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    // 3. Generate structured storage path using StorageService
+    const fileKey = this.storageService.generateStoragePath(
+      tenantId,
+      businessId,
+      'gallery',
+      filename,
+    );
 
-    if (!this.supabaseClient) {
-      this.logger.warn(
-        `Supabase Storage is not configured. Generating mock upload URL for key: ${fileKey}`,
-      );
-      const uploadUrl = `/api/media/mock-upload?key=${fileKey}`;
-      return { uploadUrl, fileKey };
-    }
+    // 4. Generate signed upload URL
+    const { uploadUrl } = await this.storageService.createSignedUploadUrl(
+      this.bucket,
+      fileKey,
+    );
 
-    try {
-      const { data, error } = await this.supabaseClient.storage
-        .from(this.bucket)
-        .createSignedUploadUrl(fileKey);
-
-      if (error || !data) {
-        throw new Error(error?.message || 'Failed to generate signed URL');
-      }
-
-      return { uploadUrl: data.signedUrl, fileKey };
-    } catch (err: any) {
-      this.logger.error(`Error generating signed upload URL: ${err.message}`);
-      throw new InternalServerErrorException(`Storage service unavailable: ${err.message}`);
-    }
+    return { uploadUrl, fileKey };
   }
 
   async createRecord(
@@ -274,13 +253,21 @@ export class MediaService implements OnModuleInit {
     }
     this.validateFileExtension(data.filename, data.mimeType);
 
-    if (data.size > this.maxUploadSize) {
-      throw new BadRequestException(
-        `File size exceeds maximum upload limit of ${this.maxUploadSize / (1024 * 1024)}MB`,
-      );
+    this.storageService.validateFileSize(data.size, 5 * 1024 * 1024); // Business media max limit is 5MB
+
+    let dbUrl = data.url;
+    if (!dbUrl.trim().startsWith('{')) {
+      dbUrl = JSON.stringify({ bucket: this.bucket, path: data.url });
     }
 
-    return this.db.media.create({ data: { tenantId, businessId, ...data } });
+    return this.db.media.create({
+      data: {
+        tenantId,
+        businessId,
+        ...data,
+        url: dbUrl,
+      },
+    });
   }
 
   async findByBusiness(tenantId: string, businessId: string) {
@@ -291,6 +278,20 @@ export class MediaService implements OnModuleInit {
   }
 
   async delete(tenantId: string, id: string) {
+    // Fetch record first to delete associated file
+    const media = await this.db.media.findUnique({
+      where: { id },
+    });
+    if (media) {
+      const storageRef = this.getFileKeyFromUrl(media.url);
+      if (storageRef) {
+        try {
+          await this.storageService.deleteFile(storageRef.bucket, storageRef.path);
+        } catch (err: any) {
+          this.logger.error(`Failed to remove file from Supabase Storage: ${err.message}`);
+        }
+      }
+    }
     return this.db.media.delete({ where: { tenantId, id } });
   }
 
@@ -306,10 +307,10 @@ export class MediaService implements OnModuleInit {
     // Enforce BOLA checks on delete
     await this.validateBusinessAccess(tenantId, media.businessId, userId, role);
 
-    const fileKey = this.getFileKeyFromUrl(media.url);
-    if (fileKey && this.supabaseClient) {
+    const storageRef = this.getFileKeyFromUrl(media.url);
+    if (storageRef) {
       try {
-        await this.supabaseClient.storage.from(this.bucket).remove([fileKey]);
+        await this.storageService.deleteFile(storageRef.bucket, storageRef.path);
       } catch (err: any) {
         this.logger.error(`Failed to remove file from Supabase Storage: ${err.message}`);
       }
