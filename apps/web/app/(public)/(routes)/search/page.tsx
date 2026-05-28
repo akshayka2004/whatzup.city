@@ -231,16 +231,28 @@ function SearchContent() {
                       </span>
                     )}
                     {result.instagram && (
-                      <span className="flex items-center gap-1">
-                        <Instagram className="h-3 w-3 text-pink-400" />
+                      <a
+                        href={`https://instagram.com/${result.instagram.replace('@', '')}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-pink-400 hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Instagram className="h-3 w-3" />
                         {result.instagram}
-                      </span>
+                      </a>
                     )}
                     {result.website && (
-                      <span className="flex items-center gap-1">
-                        <Globe className="h-3 w-3 text-cyan-400" />
+                      <a
+                        href={result.website.startsWith('http') ? result.website : `https://${result.website}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-cyan-400 hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Globe className="h-3 w-3" />
                         {result.website}
-                      </span>
+                      </a>
                     )}
                   </div>
                   <div className="flex gap-2">

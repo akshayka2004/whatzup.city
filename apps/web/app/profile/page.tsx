@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import {
   Edit2, Mail, Phone, MapPin, LogOut, Check, X,
   Sparkles, Receipt, Heart, Tag, Building2, CalendarDays,
-  Camera, Loader2, Trash2, AlertTriangle, HeadphonesIcon, Shield, FileText,
+  Camera, Loader2, Trash2, AlertTriangle, HeadphonesIcon, Shield, FileText, Copy, Users,
 } from 'lucide-react';
 
 /* ── Types matching API responses ─────────────────────────────── */
@@ -64,6 +64,9 @@ export default function ProfilePage() {
   const [claimedOffers, setClaimedOffers] = useState<{ id: string; title: string; business: string; date: string }[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
+  const [referralCount, setReferralCount] = useState<number | null>(null);
+  const [referralCopied, setReferralCopied] = useState(false);
 
   /* ── Redirect if logged out ──────────────────────────────────── */
   useEffect(() => {
@@ -78,6 +81,13 @@ export default function ProfilePage() {
 
     (async () => {
       setProfileLoading(true);
+
+      // Fetch referral stats — works for ALL roles (customer, business, admin)
+      const refRes = await apiService.get<any>('/v1/users/me/referrals');
+      if (!cancelled && refRes.data) {
+        if (refRes.data.referralCode) setReferralCode(refRes.data.referralCode);
+        if (typeof refRes.data.count === 'number') setReferralCount(refRes.data.count);
+      }
 
       // Fetch customer profile (phone, city, etc.)
       const meRes = await apiService.get<any>('/v1/customers/me');
@@ -96,6 +106,8 @@ export default function ProfilePage() {
         };
         setProfile(next);
         setTempProfile(next);
+        // Secondary referral code source — only if /v1/users/me/referrals returned nothing
+        if (u.referralCode) setReferralCode((prev) => prev || u.referralCode);
       } else if (!cancelled) {
         // Fallback: parse from useAuth().user
         const parts = (user.name || '').trim().split(/\s+/);
@@ -236,7 +248,42 @@ export default function ProfilePage() {
                     <Receipt className="h-3.5 w-3.5 text-primary" />
                     <span className="font-semibold text-foreground">{bills.length}</span> bills submitted
                   </span>
+                  {referralCount !== null && referralCount > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5 text-emerald-400" />
+                      <span className="font-semibold text-foreground">{referralCount}</span> referrals
+                    </span>
+                  )}
                 </div>
+
+                {/* Referral code + count */}
+                {referralCode && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+                    {/* Code chip */}
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Referral Code</span>
+                      <span className="font-mono text-sm font-bold text-primary tracking-widest">{referralCode}</span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(referralCode);
+                          setReferralCopied(true);
+                          setTimeout(() => setReferralCopied(false), 2000);
+                        }}
+                        className="text-primary hover:text-primary/70 cursor-pointer transition-colors"
+                        title="Copy referral code"
+                      >
+                        {referralCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                    {/* Referral count chip */}
+                    {referralCount !== null && (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Referrals</span>
+                        <span className="text-sm font-bold text-emerald-400">{referralCount}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Edit toggle */}

@@ -349,6 +349,8 @@ async function main() {
 
   const seededUsers: any[] = [];
   for (const u of coreUsers) {
+    // Generate a deterministic referral code from the email prefix so re-runs are idempotent
+    const seedCode = u.email.split('@')[0].replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 8).padEnd(8, '0');
     const user = await prisma.user.upsert({
       where: { tenantId_email: { tenantId: tenant.id, email: u.email } },
       update: {},
@@ -360,8 +362,16 @@ async function main() {
         role: u.role,
         isActive: true,
         emailVerified: true,
+        referralCode: seedCode,
       },
     });
+    // Backfill code if the user already existed but had none
+    if (!user.referralCode) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { referralCode: seedCode },
+      }).catch(() => { /* ignore collision — another user already holds this code */ });
+    }
 
     // Map to dynamic RBAC Role table
     const targetRoleCode = u.role.toString();
@@ -390,60 +400,124 @@ async function main() {
   // ── Categories ──────────────────────────────────────────
   const categoriesData = [
     {
-      name: 'Restaurants',
-      slug: 'restaurants',
-      description: 'Dining & Food Services',
+      name: 'Food',
+      slug: 'food',
+      description: 'Restaurants, Home Chefs, Street Food & More',
       icon: 'UtensilsCrossed',
       sortOrder: 1,
     },
     {
+      name: 'Fashion',
+      slug: 'fashion',
+      description: 'Boutiques, Retail Outlets & Stitching Centers',
+      icon: 'Shirt',
+      sortOrder: 2,
+    },
+    {
+      name: 'Staycation',
+      slug: 'staycation',
+      description: 'Hotels, Resorts, Villas & Holiday Stays',
+      icon: 'BedDouble',
+      sortOrder: 3,
+    },
+    {
+      name: 'Buffet',
+      slug: 'buffet',
+      description: 'Breakfast, Lunch, Brunch & Dinner Buffets',
+      icon: 'ChefHat',
+      sortOrder: 4,
+    },
+    {
+      name: 'Real Estate',
+      slug: 'real_estate',
+      description: 'Villas & Apartments',
+      icon: 'Home',
+      sortOrder: 5,
+    },
+    {
       name: 'Healthcare',
       slug: 'healthcare',
-      description: 'Medical & Health Services',
+      description: 'Clinics, Hospitals & Medical Services',
       icon: 'Heart',
-      sortOrder: 2,
+      sortOrder: 6,
+    },
+    {
+      name: 'Venue Spots',
+      slug: 'venue_spots',
+      description: 'Auditoriums, Trade Centers & Mandapams',
+      icon: 'Building2',
+      sortOrder: 7,
+    },
+    {
+      name: 'Fitness & Wellness',
+      slug: 'fitness_wellness',
+      description: 'Spa, Gym & Ayurvedic Treatments',
+      icon: 'Dumbbell',
+      sortOrder: 8,
+    },
+    {
+      name: 'Events',
+      slug: 'events',
+      description: 'Music, Night Life & Entertainment Events',
+      icon: 'Music',
+      sortOrder: 9,
+    },
+    {
+      name: 'Local Shop',
+      slug: 'local_shop',
+      description: 'Supermarkets, Kirana Stores & Bakeries',
+      icon: 'ShoppingBag',
+      sortOrder: 10,
+    },
+    // Legacy categories (kept for backward compatibility)
+    {
+      name: 'Restaurants',
+      slug: 'restaurants',
+      description: 'Dining & Food Services',
+      icon: 'UtensilsCrossed',
+      sortOrder: 11,
     },
     {
       name: 'Retail',
       slug: 'retail',
       description: 'Shopping & Retail Stores',
       icon: 'ShoppingBag',
-      sortOrder: 3,
+      sortOrder: 12,
     },
     {
       name: 'Services',
       slug: 'services',
       description: 'Professional & Personal Services',
       icon: 'Wrench',
-      sortOrder: 4,
+      sortOrder: 13,
     },
     {
       name: 'Technology',
       slug: 'technology',
       description: 'Tech Companies & Startups',
       icon: 'Cpu',
-      sortOrder: 5,
+      sortOrder: 14,
     },
     {
       name: 'Education',
       slug: 'education',
       description: 'Schools, Training & Tutoring',
       icon: 'GraduationCap',
-      sortOrder: 6,
+      sortOrder: 15,
     },
     {
       name: 'Entertainment',
       slug: 'entertainment',
       description: 'Entertainment & Recreation',
       icon: 'Music',
-      sortOrder: 7,
+      sortOrder: 16,
     },
     {
       name: 'Finance',
       slug: 'finance',
       description: 'Banking & Financial Services',
       icon: 'Landmark',
-      sortOrder: 8,
+      sortOrder: 17,
     },
   ];
 

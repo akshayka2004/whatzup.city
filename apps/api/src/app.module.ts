@@ -103,10 +103,21 @@ import { LaunchInterestsModule } from './modules/launch-interests/launch-interes
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
-        connection: {
-          host: config.get('REDIS_HOST', 'localhost'),
-          port: config.get('REDIS_PORT', 6379),
-          password: config.get('REDIS_PASSWORD'),
+        // Use REDIS_URL when available so BullMQ shares the same Redis
+        // instance as RedisService — no duplicate connections.
+        connection: config.get<string>('REDIS_URL')
+          ? { url: config.get<string>('REDIS_URL') }
+          : {
+              host: config.get('REDIS_HOST', 'localhost'),
+              port: config.get<number>('REDIS_PORT', 6379),
+              password: config.get('REDIS_PASSWORD'),
+            },
+        // Global default job options applied to every queue
+        defaultJobOptions: {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 1000 },
+          removeOnComplete: { count: 100 },  // keep last 100 completed
+          removeOnFail:     { count: 200 },  // keep last 200 failed for inspection
         },
       }),
       inject: [ConfigService],

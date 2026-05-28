@@ -158,6 +158,8 @@ model User {
   @@index([email])
   @@index([role])
   @@index([deletedAt])
+  @@index([referralCode])    // fast lookup when user registers with a code
+  @@index([referredBy])      // leaderboard GROUP BY referredBy
   @@map("users")
 }
 
@@ -830,6 +832,8 @@ model OfferRedemption {
   @@index([offerId])
   @@index([userId])
   @@index([deletedAt])
+  @@index([tenantId, userId, deletedAt])    // COUNT(DISTINCT user_id) per tenant
+  @@index([tenantId, offerId, userId])      // per-business distinct customer count
   @@map("offer_redemptions")
 }
 
@@ -1364,6 +1368,10 @@ model AnalyticsEvent {
   @@index([event])
   @@index([createdAt])
   @@index([deletedAt])
+  // Compound indexes for the most common query patterns
+  @@index([tenantId, businessId, event])           // dashboard COUNT by event
+  @@index([tenantId, businessId, createdAt])       // time-windowed analytics groupBy
+  @@index([tenantId, event, createdAt])            // platform-wide event trends
   @@map("analytics_events")
 }
 

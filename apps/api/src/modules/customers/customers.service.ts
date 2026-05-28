@@ -22,6 +22,7 @@ export class CustomersService {
         role: true,
         isActive: true,
         emailVerified: true,
+        referralCode: true,
         createdAt: true,
         customerProfile: true,
       },

@@ -40,12 +40,18 @@ export class BusinessOnboardingService {
   async startOnboarding(userId: string, tenantId: string, dto: StartBusinessOnboardingDto) {
     const slug = this.generateSlug(dto.businessName);
 
-    // Verify category exists
-    const category = await this.db.category.findFirst({
+    // Resolve category — fall back to first available if slug not found
+    let category = await this.db.category.findFirst({
       where: { tenantId, slug: dto.categorySlug, deletedAt: null },
     });
     if (!category) {
-      throw new NotFoundException(`Category ${dto.categorySlug} not found`);
+      category = await this.db.category.findFirst({
+        where: { tenantId, deletedAt: null },
+        orderBy: { sortOrder: 'asc' },
+      });
+    }
+    if (!category) {
+      throw new NotFoundException('No categories configured. Please contact support.');
     }
 
     const duplicateName = await this.db.business.findFirst({

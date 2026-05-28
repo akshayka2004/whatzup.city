@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,7 @@ const ISSUE_TYPES: { id: IssueType; label: string; desc: string; icon: any; colo
 
 export default function ReportPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [step, setStep] = useState<'type' | 'details' | 'success'>('type');
   const [selectedType, setSelectedType] = useState<IssueType | null>(null);
   const [businessName, setBusinessName] = useState('');
@@ -87,11 +89,14 @@ export default function ReportPage() {
       {/* Header */}
       <div className="border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-6 py-4 flex items-center gap-3">
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="rounded-xl text-muted-foreground hover:text-foreground cursor-pointer">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="rounded-xl text-muted-foreground hover:text-foreground cursor-pointer"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
           <div className="flex items-center gap-2">
             <Flag className="h-5 w-5 text-rose-400" />
             <span className="font-bold text-foreground">Report an Issue</span>
@@ -238,11 +243,12 @@ export default function ReportPage() {
               <Button onClick={reset} variant="outline" className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">
                 Report Another
               </Button>
-              <Link href="/">
-                <Button className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground cursor-pointer">
-                  Back to Home
-                </Button>
-              </Link>
+              <Button
+                onClick={() => router.back()}
+                className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground cursor-pointer"
+              >
+                Go Back
+              </Button>
             </div>
           </Card>
         )}

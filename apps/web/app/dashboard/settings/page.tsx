@@ -383,7 +383,14 @@ export default function BusinessSettingsPage() {
                     <p className="text-xs text-muted-foreground">
                       {link.platform === 'custom' && link.customName ? link.customName : cfg.label}
                     </p>
-                    <p className="text-sm font-medium text-foreground truncate">{link.value}</p>
+                    <a
+                      href={link.value.startsWith('http') ? link.value : `https://${link.value}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={`text-sm font-medium truncate hover:underline ${cfg.color}`}
+                    >
+                      {link.value}
+                    </a>
                   </div>
                   <button
                     onClick={() => handleRemoveLink(link.id)}

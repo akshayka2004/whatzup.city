@@ -27,9 +27,23 @@ export class SearchService implements OnApplicationBootstrap {
             where: { deletedAt: null },
             select: { id: true, tenantId: true },
           });
-          this.logger.log(`Found ${businesses.length} businesses in database to index.`);
-          for (const biz of businesses) {
-            await this.indexBusiness(biz.id, biz.tenantId);
+          this.logger.log(`Found ${businesses.length} businesses to index — queuing in bulk.`);
+
+          // Batch into chunks of 50 to avoid flooding the queue with thousands of
+          // individual jobs at startup. Each job processes one business but we
+          // only add 50 at a time with a small delay so the queue drains gradually.
+          const CHUNK = 50;
+          for (let i = 0; i < businesses.length; i += CHUNK) {
+            const chunk = businesses.slice(i, i + CHUNK);
+            await Promise.all(
+              chunk.map((biz) =>
+                this.searchQueue.add(
+                  'sync-business',
+                  { action: 'INDEX', type: 'BUSINESS', id: biz.id, tenantId: biz.tenantId },
+                  { delay: Math.floor(i / CHUNK) * 2000 }, // stagger chunks by 2 s
+                ),
+              ),
+            );
           }
           this.logger.log('Typesense sync jobs queued successfully.');
         }

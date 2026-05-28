@@ -18,34 +18,39 @@ export class HealthController {
   @Get()
   @ApiOperation({ summary: 'Aggregated health check of API and core dependencies' })
   async check() {
-    const checks: Record<string, string> = { api: 'healthy' };
+    const checks: Record<string, any> = { api: 'healthy' };
+    const t0 = Date.now();
 
     // 1. Check Database
     try {
+      const dbT = Date.now();
       await this.db.$queryRaw`SELECT 1`;
-      checks.database = 'healthy';
+      checks.database = { status: 'healthy', latencyMs: Date.now() - dbT };
     } catch {
-      checks.database = 'unhealthy';
+      checks.database = { status: 'unhealthy' };
     }
 
-    // 2. Check Redis connection
+    // 2. Check Redis connection + latency
     try {
+      const redisT = Date.now();
       await this.redis.set('health:check', 'ok', 5);
-      checks.redis = 'healthy';
+      checks.redis = { status: 'healthy', latencyMs: Date.now() - redisT };
     } catch {
-      checks.redis = 'unhealthy';
+      checks.redis = { status: 'unhealthy' };
     }
 
     // 3. Check Typesense search engine
     try {
       const isTypesenseHealthy = await this.typesense.health();
-      checks.typesense = isTypesenseHealthy ? 'healthy' : 'healthy_degraded'; // Degrades gracefully
+      checks.typesense = {
+        status: isTypesenseHealthy ? 'healthy' : 'healthy_degraded',
+      };
     } catch {
-      checks.typesense = 'unhealthy';
+      checks.typesense = { status: 'unhealthy' };
     }
 
-    const allHealthy = Object.entries(checks).every(([key, status]) => {
-      // Graceful degradation for typesense_degraded does not crash health check
+    const allHealthy = Object.entries(checks).every(([key, val]) => {
+      const status = typeof val === 'string' ? val : val.status;
       if (key === 'typesense' && status === 'healthy_degraded') return true;
       return status === 'healthy';
     });
@@ -55,7 +60,12 @@ export class HealthController {
       checks,
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      memory: process.memoryUsage(),
+      totalLatencyMs: Date.now() - t0,
+      memory: {
+        heapUsedMb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        heapTotalMb: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+        rssMb: Math.round(process.memoryUsage().rss / 1024 / 1024),
+      },
     };
   }
 

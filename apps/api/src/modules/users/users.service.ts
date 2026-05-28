@@ -232,32 +232,41 @@ export class UsersService {
   async getReferralStats(userId: string) {
     const user = await this.db.user.findUnique({
       where: { id: userId },
-      select: { referralCode: true } as any,
+      select: { referralCode: true },
     });
     const referrals = await this.db.user.findMany({
-      where: { referredBy: userId, deletedAt: null } as any,
+      where: { referredBy: userId, deletedAt: null },
       select: { id: true, name: true, email: true, createdAt: true },
       orderBy: { createdAt: 'desc' },
     });
-    return { referralCode: (user as any)?.referralCode, count: referrals.length, referrals };
+    return { referralCode: user?.referralCode ?? null, count: referrals.length, referrals };
   }
 
   async getReferralLeaderboard(tenantId: string) {
-    // Group users by referredBy to get counts
-    const result = await this.db.$queryRaw`
-      SELECT u.id, u.name, u.email, u.referral_code as "referralCode",
-             COUNT(r.id)::int as "referralCount"
-      FROM users u
-      LEFT JOIN users r ON r.referred_by = u.id AND r.deleted_at IS NULL
-      WHERE u.tenant_id = ${tenantId}::uuid AND u.deleted_at IS NULL
-      GROUP BY u.id, u.name, u.email, u.referral_code
-      HAVING COUNT(r.id) > 0
-      ORDER BY "referralCount" DESC
-      LIMIT 50
-    `;
-    const total = await this.db.user.count({
-      where: { tenantId, deletedAt: null, referredBy: { not: null } } as any,
-    });
-    return { leaderboard: result, totalReferredUsers: total };
+    const cacheKey = `referral:leaderboard:${tenantId}`;
+    const cached = await this.redis.get<any>(cacheKey);
+    if (cached) return cached;
+
+    const [result, total] = await Promise.all([
+      // Referral leaderboard — uses @@index([referredBy]) for the self-join
+      this.db.$queryRaw`
+        SELECT u.id, u.name, u.email, u.referral_code as "referralCode",
+               COUNT(r.id)::int as "referralCount"
+        FROM users u
+        LEFT JOIN users r ON r.referred_by = u.id AND r.deleted_at IS NULL
+        WHERE u.tenant_id = ${tenantId}::uuid AND u.deleted_at IS NULL
+        GROUP BY u.id, u.name, u.email, u.referral_code
+        HAVING COUNT(r.id) > 0
+        ORDER BY "referralCount" DESC
+        LIMIT 50
+      `,
+      this.db.user.count({
+        where: { tenantId, deletedAt: null, referredBy: { not: null } },
+      }),
+    ]);
+
+    const data = { leaderboard: result, totalReferredUsers: total };
+    await this.redis.set(cacheKey, data, 600); // 10-min cache
+    return data;
   }
 }

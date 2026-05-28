@@ -852,12 +852,18 @@ export class AuthService {
       throw new NotFoundException('Default tenant configuration not found');
     }
 
-    // Verify category exists in default tenant
-    const defaultCategory = await this.db.category.findFirst({
+    // Resolve category — fall back to first available if slug not found
+    let defaultCategory = await this.db.category.findFirst({
       where: { tenantId: defaultTenant.id, slug: dto.categorySlug, deletedAt: null },
     });
     if (!defaultCategory) {
-      throw new NotFoundException(`Category ${dto.categorySlug} not found`);
+      defaultCategory = await this.db.category.findFirst({
+        where: { tenantId: defaultTenant.id, deletedAt: null },
+        orderBy: { sortOrder: 'asc' },
+      });
+    }
+    if (!defaultCategory) {
+      throw new NotFoundException('No categories configured. Please contact support.');
     }
 
     // Generate unique tenant slug

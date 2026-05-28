@@ -78,12 +78,12 @@ export class AnalyticsService {
       }),
       this.db.review.count({ where: { business: { tenantId }, deletedAt: null } }),
       this.db.offer.count({ where: { business: { tenantId }, status: 'ACTIVE', deletedAt: null } }),
-      // Distinct users who redeemed at least one offer = offer customers
-      this.db.offerRedemption.findMany({
-        where: { tenantId, deletedAt: null },
-        select: { userId: true },
-        distinct: ['userId'],
-      }),
+      // COUNT(DISTINCT user_id) — orders of magnitude faster than fetching all rows
+      this.db.$queryRaw<[{ count: bigint }]>`
+        SELECT COUNT(DISTINCT user_id) AS count
+        FROM offer_redemptions
+        WHERE tenant_id = ${tenantId}::uuid AND deleted_at IS NULL
+      `,
     ]);
 
     const overview = {
@@ -93,7 +93,7 @@ export class AnalyticsService {
       pendingApprovals,
       totalReviews,
       totalOffers,
-      totalOfferCustomers: offerCustomerIds.length,
+      totalOfferCustomers: Number((offerCustomerIds as any)[0]?.count ?? 0),
       revenueThisMonth: 0,
       growthRate: 12.5,
     };
@@ -224,16 +224,15 @@ export class AnalyticsService {
         orderBy: { createdAt: 'desc' },
         take: 5,
       }),
-      // Distinct customers = users who redeemed at least one offer from this business
-      this.db.offerRedemption.findMany({
-        where: {
-          tenantId,
-          deletedAt: null,
-          offer: { businessId: actualId },
-        },
-        select: { userId: true },
-        distinct: ['userId'],
-      }),
+      // Distinct customers — raw SQL avoids full-scan on offerRedemptions
+      this.db.$queryRaw<[{ count: bigint }]>`
+        SELECT COUNT(DISTINCT r.user_id) AS count
+        FROM offer_redemptions r
+        INNER JOIN offers o ON o.id = r.offer_id
+        WHERE r.tenant_id = ${tenantId}::uuid
+          AND r.deleted_at IS NULL
+          AND o.business_id = ${actualId}::uuid
+      `,
     ]);
 
     const activeOffers      = offerStats.filter((o) => o.status === 'ACTIVE').length;
@@ -280,7 +279,7 @@ export class AnalyticsService {
         totalReviews: business.totalReviews,
         teamCount,
         impressions,
-        customerCount: customerIds.length,
+        customerCount: Number((customerIds as any)[0]?.count ?? 0),
       },
       offerPerformance,
       redemptionTrend,

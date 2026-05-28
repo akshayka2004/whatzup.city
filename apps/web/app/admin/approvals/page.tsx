@@ -376,13 +376,13 @@ export default function ApprovalsPage() {
                           <span className="text-slate-500">Social Handles</span>
                           <div className="col-span-2 space-y-1">
                             {reviewingItem.entity.influencerProfile.instagram && (
-                              <p className="text-slate-300">IG: <span className="font-semibold text-slate-200">{reviewingItem.entity.influencerProfile.instagram}</span></p>
+                              <p className="text-slate-300">IG: <a href={`https://instagram.com/${reviewingItem.entity.influencerProfile.instagram.replace('@','')}`} target="_blank" rel="noreferrer" className="font-semibold text-pink-400 hover:underline">{reviewingItem.entity.influencerProfile.instagram}</a></p>
                             )}
                             {reviewingItem.entity.influencerProfile.youtube && (
-                              <p className="text-slate-300">YT: <span className="text-slate-400">{reviewingItem.entity.influencerProfile.youtube}</span></p>
+                              <p className="text-slate-300">YT: <a href={reviewingItem.entity.influencerProfile.youtube.startsWith('http') ? reviewingItem.entity.influencerProfile.youtube : `https://${reviewingItem.entity.influencerProfile.youtube}`} target="_blank" rel="noreferrer" className="text-red-400 hover:underline">{reviewingItem.entity.influencerProfile.youtube}</a></p>
                             )}
                             {reviewingItem.entity.influencerProfile.linkedin && (
-                              <p className="text-slate-300">LI: <span className="text-slate-450">{reviewingItem.entity.influencerProfile.linkedin}</span></p>
+                              <p className="text-slate-300">LI: <a href={reviewingItem.entity.influencerProfile.linkedin.startsWith('http') ? reviewingItem.entity.influencerProfile.linkedin : `https://linkedin.com/in/${reviewingItem.entity.influencerProfile.linkedin}`} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline">{reviewingItem.entity.influencerProfile.linkedin}</a></p>
                             )}
                           </div>
                         </div>

@@ -3,14 +3,16 @@ import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { FcmService } from './fcm.service';
 import { DatabaseService } from '../../common/database/database.service';
+import { RedisService } from '../../common/redis/redis.service';
 
-@Processor('notification-queue')
+@Processor('notification-queue', { concurrency: 5 })
 export class NotificationProcessor extends WorkerHost {
   private readonly logger = new Logger(NotificationProcessor.name);
 
   constructor(
     private readonly fcmService: FcmService,
     private readonly db: DatabaseService,
+    private readonly redis: RedisService,
   ) {
     super();
   }
@@ -20,15 +22,20 @@ export class NotificationProcessor extends WorkerHost {
     this.logger.log(`Delivering push [${priority}] to user: ${userId}`);
 
     try {
-      // Lookup user device tokens from deviceLogins table
-      const logins = await this.db.deviceLogin.findMany({
-        where: { userId, tenantId, deletedAt: null },
-        select: { deviceToken: true },
-      });
+      // Lookup user device tokens — cached for 60 s to avoid repeated DB hits
+      const tokenCacheKey = `device-tokens:${tenantId}:${userId}`;
+      let tokens: string[] | null = await this.redis.get<string[]>(tokenCacheKey);
 
-      const tokens: string[] = logins
-        .map((login) => login.deviceToken)
-        .filter((token): token is string => !!token);
+      if (!tokens) {
+        const logins = await this.db.deviceLogin.findMany({
+          where: { userId, tenantId, deletedAt: null },
+          select: { deviceToken: true },
+        });
+        tokens = logins
+          .map((login) => login.deviceToken)
+          .filter((token): token is string => !!token);
+        await this.redis.set(tokenCacheKey, tokens, 60);
+      }
 
       if (tokens.length === 0) {
         this.logger.debug(`No device tokens for user ${userId}, skipping push`);

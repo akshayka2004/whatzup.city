@@ -40,7 +40,8 @@ async function bootstrap() {
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     }),
   );
-  app.use(compression());
+  // Compress responses > 1 KB at level 6 (good balance of speed vs size)
+  app.use(compression({ level: 6, threshold: 1024 }));
   app.use(cookieParser());
 
   // ── CORS ────────────────────────────────────────────────

@@ -17,6 +17,10 @@ import {
   MessageCircle,
   Globe,
   Instagram,
+  Facebook,
+  Linkedin,
+  Twitter,
+  Youtube,
   Ticket,
   Check,
   X,
@@ -297,11 +301,59 @@ export default function BusinessDetailPage() {
                     </a>
                   </div>
                 )}
+                {biz.socialLinks?.instagram && !biz.instagram && (
+                  <div className="flex items-center gap-3 text-foreground text-sm">
+                    <Instagram className="h-5 w-5 text-pink-400 flex-shrink-0" />
+                    <a href={`https://instagram.com/${biz.socialLinks.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="text-pink-400 hover:underline">
+                      {biz.socialLinks.instagram}
+                    </a>
+                  </div>
+                )}
+                {biz.socialLinks?.facebook && (
+                  <div className="flex items-center gap-3 text-foreground text-sm">
+                    <Facebook className="h-5 w-5 text-blue-400 flex-shrink-0" />
+                    <a href={biz.socialLinks.facebook.startsWith('http') ? biz.socialLinks.facebook : `https://facebook.com/${biz.socialLinks.facebook}`} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">
+                      {biz.socialLinks.facebook}
+                    </a>
+                  </div>
+                )}
+                {(biz.socialLinks?.twitter || biz.socialLinks?.x) && (
+                  <div className="flex items-center gap-3 text-foreground text-sm">
+                    <Twitter className="h-5 w-5 text-sky-400 flex-shrink-0" />
+                    <a href={(biz.socialLinks.twitter || biz.socialLinks.x)!.startsWith('http') ? (biz.socialLinks.twitter || biz.socialLinks.x)! : `https://x.com/${(biz.socialLinks.twitter || biz.socialLinks.x)!.replace('@','')}`} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline">
+                      {biz.socialLinks.twitter || biz.socialLinks.x}
+                    </a>
+                  </div>
+                )}
+                {biz.socialLinks?.linkedin && (
+                  <div className="flex items-center gap-3 text-foreground text-sm">
+                    <Linkedin className="h-5 w-5 text-sky-500 flex-shrink-0" />
+                    <a href={biz.socialLinks.linkedin.startsWith('http') ? biz.socialLinks.linkedin : `https://linkedin.com/company/${biz.socialLinks.linkedin}`} target="_blank" rel="noreferrer" className="text-sky-500 hover:underline">
+                      {biz.socialLinks.linkedin}
+                    </a>
+                  </div>
+                )}
+                {biz.socialLinks?.youtube && (
+                  <div className="flex items-center gap-3 text-foreground text-sm">
+                    <Youtube className="h-5 w-5 text-red-400 flex-shrink-0" />
+                    <a href={biz.socialLinks.youtube.startsWith('http') ? biz.socialLinks.youtube : `https://${biz.socialLinks.youtube}`} target="_blank" rel="noreferrer" className="text-red-400 hover:underline">
+                      {biz.socialLinks.youtube}
+                    </a>
+                  </div>
+                )}
                 {biz.website && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <Globe className="h-5 w-5 text-emerald-400 flex-shrink-0" />
                     <a href={biz.website.startsWith('http') ? biz.website : `https://${biz.website}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">
                       {biz.website}
+                    </a>
+                  </div>
+                )}
+                {!biz.website && biz.socialLinks?.website && (
+                  <div className="flex items-center gap-3 text-foreground text-sm">
+                    <Globe className="h-5 w-5 text-emerald-400 flex-shrink-0" />
+                    <a href={biz.socialLinks.website.startsWith('http') ? biz.socialLinks.website : `https://${biz.socialLinks.website}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">
+                      {biz.socialLinks.website}
                     </a>
                   </div>
                 )}

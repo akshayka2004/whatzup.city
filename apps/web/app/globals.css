@@ -6,17 +6,17 @@
 /* Palette: #37353E · #44444E · #715A5A · #D3DAD9 */
 :root {
   --background: oklch(0.968 0.005 185);
-  --foreground: oklch(0.240 0.012 285);
+  --foreground: oklch(0.10 0 0);
   --card: oklch(0.990 0 0);
-  --card-foreground: oklch(0.240 0.012 285);
+  --card-foreground: oklch(0.10 0 0);
   --popover: oklch(0.990 0 0);
-  --popover-foreground: oklch(0.240 0.012 285);
+  --popover-foreground: oklch(0.10 0 0);
   --primary: oklch(0.440 0.042 15);
   --primary-foreground: oklch(0.975 0 0);
   --secondary: oklch(0.915 0.006 185);
-  --secondary-foreground: oklch(0.240 0.012 285);
+  --secondary-foreground: oklch(0.10 0 0);
   --muted: oklch(0.915 0.006 185);
-  --muted-foreground: oklch(0.510 0.008 200);
+  --muted-foreground: oklch(0.30 0.008 200);
   --accent: oklch(0.440 0.042 15);
   --accent-foreground: oklch(0.975 0 0);
   --destructive: oklch(0.60 0.20 25);
@@ -125,3 +125,36 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ── Light-mode: override hardcoded pale palette classes ── */
+html:not(.dark) .text-slate-100,
+html:not(.dark) .text-slate-200,
+html:not(.dark) .text-zinc-100,
+html:not(.dark) .text-zinc-200,
+html:not(.dark) .text-neutral-100,
+html:not(.dark) .text-neutral-200 { color: #111827 !important; }
+
+html:not(.dark) .text-slate-300,
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-slate-500,
+html:not(.dark) .text-slate-600,
+html:not(.dark) .text-zinc-300,
+html:not(.dark) .text-zinc-400,
+html:not(.dark) .text-zinc-500,
+html:not(.dark) .text-zinc-600,
+html:not(.dark) .text-neutral-300,
+html:not(.dark) .text-neutral-400,
+html:not(.dark) .text-neutral-500,
+html:not(.dark) .text-neutral-600 { color: #374151 !important; }
+
+/* ── Light-mode: inputs, textareas, selects — dark text on white bg ── */
+html:not(.dark) input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+html:not(.dark) textarea,
+html:not(.dark) select {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+  border-color: #d1d5db !important;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder { color: #9ca3af !important; }

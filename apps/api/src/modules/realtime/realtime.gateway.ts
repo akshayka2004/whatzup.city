@@ -67,9 +67,15 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
         return;
       }
 
-      // 2. Validate token/user active presence in Redis/database
-      const user = await this.authService.validateUser(payload);
-      if (!user || !user.isActive) {
+      // 2. Validate user — cache result for 60 s to avoid DB hit on every reconnect
+      const cacheKey = `ws:auth:${userId}`;
+      let isActive: boolean | null = await this.redisService.get<boolean>(cacheKey);
+      if (isActive === null) {
+        const user = await this.authService.validateUser(payload);
+        isActive = user?.isActive ?? false;
+        await this.redisService.set(cacheKey, isActive, 60);
+      }
+      if (!isActive) {
         this.logger.warn(`WebSocket auth failed: User ${userId} is inactive or deleted`);
         client.disconnect(true);
         return;

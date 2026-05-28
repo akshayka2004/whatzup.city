@@ -540,13 +540,15 @@ export default function UnifiedRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen w-full text-slate-100 flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans"
+    <div className="min-h-screen w-full font-sans flex flex-col"
          style={{ backgroundColor: '#37353E' }}>
-      {/* Ambient background decoration */}
-      <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[160px] pointer-events-none"
-           style={{ background: 'rgba(113,90,90,0.08)' }} />
-      <div className="absolute bottom-[-15%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[140px] pointer-events-none"
-           style={{ background: 'rgba(113,90,90,0.06)' }} />
+      {/* Centered content area */}
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden text-slate-100">
+        {/* Ambient background decoration */}
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[160px] pointer-events-none"
+             style={{ background: 'rgba(113,90,90,0.08)' }} />
+        <div className="absolute bottom-[-15%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[140px] pointer-events-none"
+             style={{ background: 'rgba(113,90,90,0.06)' }} />
 
       <div className="w-full max-w-4xl relative z-10 space-y-6">
         {/* Top Header */}
@@ -1141,7 +1143,12 @@ export default function UnifiedRegisterPage() {
 
         </Card>
       </div>
-      <LegalFooter />
+      </div>
+
+      {/* Footer — dark wrapper so theme vars resolve on the always-dark register page */}
+      <div className="dark w-full">
+        <LegalFooter />
+      </div>
     </div>
   );
 }

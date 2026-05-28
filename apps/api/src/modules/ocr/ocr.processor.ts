@@ -8,7 +8,9 @@ import { AuditService } from '../audit/audit.service';
 import { BillRepository } from '../../common/database/repositories/bill.repository';
 import { URL } from 'url';
 
-@Processor('ocr-queue')
+// Limit to 1 concurrent OCR job — Tesseract is CPU/memory heavy.
+// Queue additional jobs; they process serially without blocking the event loop.
+@Processor('ocr-queue', { concurrency: 1 })
 export class OcrProcessor extends WorkerHost {
   private readonly logger = new Logger(OcrProcessor.name);
 
@@ -114,8 +116,13 @@ export class OcrProcessor extends WorkerHost {
 
       await this.billRepo.update(tenantId, billId, { status: 'PROCESSING' });
 
-      // 3. Run OCR Extraction
-      const ocrResult = await this.ocrService.extractText(imageUrl);
+      // 3. Run OCR Extraction (90-second hard timeout to prevent stall)
+      const ocrResult = await Promise.race([
+        this.ocrService.extractText(imageUrl),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('OCR timeout after 90s')), 90_000),
+        ),
+      ]);
 
       // 4. Save extracted metadata
       if (verification) {
