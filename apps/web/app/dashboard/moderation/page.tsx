@@ -336,30 +336,33 @@ export default function BillModerationPage() {
                     </div>
 
                     {/* Right: Metrics + Actions */}
-                    <div className="flex items-center gap-6 flex-wrap">
-                      <div className="text-center">
-                        <p className="text-[10px] text-muted-foreground mb-0.5">Amount</p>
-                        <p className="font-bold text-foreground text-sm">₹{bill.amount.toLocaleString('en-IN')}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-[10px] text-muted-foreground mb-0.5">OCR Confidence</p>
-                        <p className={cn('font-semibold text-sm', bill.ocrConfidence >= 80 ? 'text-emerald-400' : bill.ocrConfidence >= 60 ? 'text-amber-400' : 'text-rose-400')}>
-                          {bill.ocrConfidence}%
-                        </p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-[10px] text-muted-foreground mb-0.5">Fraud Score</p>
-                        <FraudBadge score={bill.fraudScore} />
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6 w-full lg:w-auto">
+                      {/* Metrics Group */}
+                      <div className="grid grid-cols-3 gap-2 lg:flex lg:items-center lg:gap-6 w-full lg:w-auto border-t border-white/5 pt-3 lg:border-t-0 lg:pt-0">
+                        <div className="text-center lg:text-left">
+                          <p className="text-[10px] text-muted-foreground mb-0.5">Amount</p>
+                          <p className="font-bold text-foreground text-sm">₹{bill.amount.toLocaleString('en-IN')}</p>
+                        </div>
+                        <div className="text-center lg:text-left">
+                          <p className="text-[10px] text-muted-foreground mb-0.5">OCR Conf</p>
+                          <p className={cn('font-semibold text-sm', bill.ocrConfidence >= 80 ? 'text-emerald-400' : bill.ocrConfidence >= 60 ? 'text-amber-400' : 'text-rose-400')}>
+                            {bill.ocrConfidence}%
+                          </p>
+                        </div>
+                        <div className="text-center lg:text-left">
+                          <p className="text-[10px] text-muted-foreground mb-0.5">Risk Score</p>
+                          <FraudBadge score={bill.fraudScore} />
+                        </div>
                       </div>
 
                       {/* Action buttons */}
                       {canVerify && bill.status === 'PENDING' && (
-                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-2 w-full lg:w-auto justify-end border-t border-white/5 pt-3 lg:border-t-0 lg:pt-0" onClick={(e) => e.stopPropagation()}>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => { setSelectedBill(bill); setActionModal('reupload'); }}
-                            className="h-8 rounded-xl border-blue-500/20 text-blue-400 hover:bg-blue-500/10 text-xs px-2.5 cursor-pointer"
+                            className="h-9 rounded-xl border-blue-500/20 text-blue-400 hover:bg-blue-500/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                           >
                             <RefreshCw className="h-3.5 w-3.5 mr-1" /> Re-upload
                           </Button>
@@ -367,14 +370,14 @@ export default function BillModerationPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => { setSelectedBill(bill); setActionModal('reject'); }}
-                            className="h-8 rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 text-xs px-2.5 cursor-pointer"
+                            className="h-9 rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                           >
                             <X className="h-3.5 w-3.5 mr-1" /> Reject
                           </Button>
                           <Button
                             size="sm"
                             onClick={() => { setSelectedBill(bill); setActionModal('approve'); }}
-                            className="h-8 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-2.5 cursor-pointer"
+                            className="h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                           >
                             <Check className="h-3.5 w-3.5 mr-1" /> Approve
                           </Button>
@@ -382,12 +385,12 @@ export default function BillModerationPage() {
                       )}
 
                       {canVerify && bill.status === 'FLAGGED' && (
-                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-2 w-full lg:w-auto justify-end border-t border-white/5 pt-3 lg:border-t-0 lg:pt-0" onClick={(e) => e.stopPropagation()}>
                           {canOverride && (
                             <Button
                               size="sm"
                               onClick={() => { setSelectedBill(bill); setActionModal('override'); }}
-                              className="h-8 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs px-2.5 cursor-pointer"
+                              className="h-9 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                             >
                               <Shield className="h-3.5 w-3.5 mr-1" /> Override
                             </Button>
@@ -396,7 +399,7 @@ export default function BillModerationPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => { setSelectedBill(bill); setActionModal('reject'); }}
-                            className="h-8 rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 text-xs px-2.5 cursor-pointer"
+                            className="h-9 rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                           >
                             <X className="h-3.5 w-3.5 mr-1" /> Reject
                           </Button>

@@ -8,12 +8,18 @@ import {
   TrendingUp, Users, Tag, Star, Eye,
   ShoppingBag, RefreshCw, Loader2, UserCheck, Heart,
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  LineChart, Line,
-  BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-} from 'recharts';
+import dynamic from 'next/dynamic';
+
+const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
+const LineChart = dynamic(() => import('recharts').then(m => m.LineChart), { ssr: false });
+const Line = dynamic(() => import('recharts').then(m => m.Line), { ssr: false });
+const BarChart = dynamic(() => import('recharts').then(m => m.BarChart), { ssr: false });
+const Bar = dynamic(() => import('recharts').then(m => m.Bar), { ssr: false });
+const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false });
+const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false });
+const CartesianGrid = dynamic(() => import('recharts').then(m => m.CartesianGrid), { ssr: false });
+const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false });
+const Legend = dynamic(() => import('recharts').then(m => m.Legend), { ssr: false });
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -45,18 +51,18 @@ function StatCard({
   loading: boolean;
 }) {
   return (
-    <Card className="p-5 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all group relative overflow-hidden">
+    <Card className="p-4 md:p-5 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all group relative overflow-hidden">
       <div className="absolute top-0 right-0 w-28 h-28 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
-      <div className={`inline-flex p-2.5 rounded-xl mb-3 ${bg}`}>
+      <div className={`inline-flex p-2 md:p-2.5 rounded-xl mb-2 md:mb-3 ${bg}`}>
         <Icon className={`h-4 w-4 ${color}`} />
       </div>
-      <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
+      <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5 truncate">{label}</p>
       {loading ? (
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mt-1" />
       ) : (
         <>
-          <p className="text-2xl font-extrabold text-foreground leading-tight">{value}</p>
-          {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
+          <p className="text-lg md:text-2xl font-extrabold text-foreground leading-tight">{value}</p>
+          {sub && <p className="text-[9px] md:text-[11px] text-muted-foreground mt-0.5 truncate">{sub}</p>}
         </>
       )}
     </Card>
@@ -97,7 +103,13 @@ export default function AnalyticsPage() {
   useEffect(() => { fetchSummary(); }, [fetchSummary]);
 
   const kpis = data?.kpis ?? {};
-  const offerPerf   = data?.offerPerformance ?? [];
+  const offerPerfRaw   = data?.offerPerformance ?? [];
+  const offerPerf = offerPerfRaw.map((o: any) => ({
+    ...o,
+    title: (o.title as string || '').length > 10
+      ? (o.title as string).slice(0, 10) + '…'
+      : (o.title as string || ''),
+  }));
   const redemTrend  = data?.redemptionTrend ?? [];
   const ratingDist  = data?.ratingDistribution ?? [];
   const recentRevs  = data?.recentReviews ?? [];
@@ -232,16 +244,16 @@ export default function AnalyticsPage() {
         {businessId && !error && (
           <>
             {/* ── KPI Cards ── */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {statCards.map((s) => (
-                <StatCard key={s.label} {...s} loading={loading} />
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+              {statCards.map((card, i) => (
+                <StatCard key={i} {...card} loading={loading} />
               ))}
             </div>
 
             {/* ── Redemption Trend Chart ── */}
             <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
               <div className="mb-5">
-                <h3 className="text-base font-bold text-foreground">Offer Redemption Trend</h3>
+                <h3 className="text-base font-bold text-foreground">Redemption Activity</h3>
                 <p className="text-xs text-muted-foreground">
                   Daily redemptions in the last {rangeToDays[range]} days.
                 </p>

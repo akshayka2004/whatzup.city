@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProviderClient } from '@/components/theme-provider-client';
@@ -6,6 +6,13 @@ import { AuthProvider } from '@/hooks/use-auth';
 
 const _geist = Geist({ subsets: ['latin'] });
 const _geistMono = Geist_Mono({ subsets: ['latin'] });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1.0,
+  maximumScale: 5.0,
+  themeColor: '#09090b',
+};
 
 export const metadata: Metadata = {
   title: 'Whtzup.city',

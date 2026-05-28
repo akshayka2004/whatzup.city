@@ -78,8 +78,16 @@ export function Header() {
   const profileHref = getProfileHref();
 
   return (
-    <header className="border-b border-border bg-card px-6 py-4 shadow-sm flex items-center justify-between">
-      <div className="flex items-center gap-4 flex-1 max-w-lg">
+    <header className="border-b border-border bg-card px-4 py-3 md:px-6 md:py-4 shadow-sm flex items-center justify-between h-16">
+      {/* Mobile Logo Fallback */}
+      <div className="flex items-center gap-2 md:hidden">
+        <Link href="/">
+          <img src="/logo.png" alt="Whtzup.city Logo" className="h-8 w-auto object-contain cursor-pointer" />
+        </Link>
+      </div>
+
+      {/* Desktop Search Input */}
+      <div className="hidden md:flex items-center gap-4 flex-1 max-w-lg">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -92,7 +100,7 @@ export function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         {/* Active Role Indicator */}
         {user && (
           <div
@@ -108,21 +116,21 @@ export function Header() {
           variant="ghost"
           size="icon"
           onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-          className="rounded-lg"
+          className="rounded-lg h-11 w-11 md:h-9 md:w-9 flex items-center justify-center cursor-pointer"
           suppressHydrationWarning
         >
           {mounted && resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="rounded-lg">
+        <Button variant="ghost" size="icon" className="rounded-lg h-11 w-11 md:h-9 md:w-9 flex items-center justify-center cursor-pointer">
           <Bell className="h-5 w-5" />
         </Button>
 
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-lg hover:bg-white/5">
+            <Button variant="ghost" size="icon" className="rounded-lg hover:bg-white/5 h-11 w-11 md:h-9 md:w-9 flex items-center justify-center cursor-pointer">
               <Settings className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
@@ -130,8 +138,6 @@ export function Header() {
             align="end"
             className="w-56 rounded-xl border-white/5 bg-card/95 backdrop-blur-xl"
           >
-
-
             <DropdownMenuLabel className="font-semibold text-xs text-muted-foreground">
               Account Actions
             </DropdownMenuLabel>
@@ -163,7 +169,7 @@ export function Header() {
         {/* User avatar */}
         {user ? (
           <Link href={profileHref}>
-            <div className="h-10 w-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-md cursor-pointer hover:opacity-80 transition-opacity">
+            <div className="h-10 w-10 md:h-9 md:w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-md cursor-pointer hover:opacity-80 transition-opacity">
               {getInitials(user.name)}
             </div>
           </Link>
@@ -171,7 +177,7 @@ export function Header() {
           <Link href="/login">
             <Button
               size="sm"
-              className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-sm"
+              className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-sm h-10 px-4 md:h-9 md:px-3 cursor-pointer"
             >
               <LogIn className="h-4 w-4" />
               Sign In

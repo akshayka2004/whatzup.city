@@ -714,8 +714,7 @@ export class AuthService {
 
     const activeEntity = user.entities[0] || null;
 
-    // For staff/moderator accounts that have no entity (created via team management),
-    // resolve their associated business so the frontend can use it as businessId.
+    // Resolve associated businessId so the frontend can use it directly.
     let staffBusinessId: string | undefined;
     if (!activeEntity) {
       const staffRecord = await this.db.businessStaff.findFirst({
@@ -724,6 +723,18 @@ export class AuthService {
         orderBy: { createdAt: 'desc' },
       });
       staffBusinessId = staffRecord?.business?.id;
+
+      if (!staffBusinessId) {
+        // Fallback: check if the user is the owner of a business (legacy / direct owner flow)
+        const ownerRecord = await this.db.business.findFirst({
+          where: { ownerId: user.id, deletedAt: null },
+          select: { id: true },
+          orderBy: { createdAt: 'desc' },
+        });
+        staffBusinessId = ownerRecord?.id;
+      }
+    } else if (activeEntity.type === 'BUSINESS' && activeEntity.business) {
+      staffBusinessId = activeEntity.business.id;
     }
 
     const parsedUser = {

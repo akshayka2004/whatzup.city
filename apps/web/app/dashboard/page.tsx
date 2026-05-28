@@ -33,16 +33,16 @@ import {
   CheckCircle,
   XCircle,
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from 'recharts';
+import dynamic from 'next/dynamic';
 import { cn } from '@/lib/utils';
+
+const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
+const BarChart = dynamic(() => import('recharts').then(m => m.BarChart), { ssr: false });
+const Bar = dynamic(() => import('recharts').then(m => m.Bar), { ssr: false });
+const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false });
+const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false });
+const CartesianGrid = dynamic(() => import('recharts').then(m => m.CartesianGrid), { ssr: false });
+const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false });
 
 export default function BusinessDashboardPage() {
   const { user } = useAuth();
@@ -150,8 +150,8 @@ export default function BusinessDashboardPage() {
   const chartData = offers
     .slice(0, 10)
     .map((o: any) => ({
-      name: (o.title as string).length > 14
-        ? (o.title as string).slice(0, 14) + '…'
+      name: (o.title as string).length > 10
+        ? (o.title as string).slice(0, 10) + '…'
         : o.title,
       Claims: Number(o.currentRedemptions) || 0,
       'Discount %': o.discountPercent || o.discountPercentage || 0,
@@ -343,28 +343,28 @@ export default function BusinessDashboardPage() {
         )}
 
         {/* ── Stats Grid — real DB data ── */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {stats.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card
                 key={stat.label}
-                className="p-6 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
+                className="p-4 md:p-6 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors pointer-events-none" />
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-xl ${stat.color}`}>
-                    <Icon className="h-5 w-5" />
+                <div className="flex items-center justify-between mb-3 md:mb-4">
+                  <div className={`p-2 md:p-3 rounded-xl ${stat.color}`}>
+                    <Icon className="h-4 w-4 md:h-5 md:w-5" />
                   </div>
                 </div>
-                <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                <h3 className="text-3xl font-extrabold text-foreground mt-1 tracking-tight">
+                <p className="text-xs md:text-sm font-medium text-muted-foreground">{stat.label}</p>
+                <h3 className="text-xl md:text-3xl font-extrabold text-foreground mt-1 tracking-tight">
                   {loading
-                    ? <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    ? <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                     : stat.value}
                 </h3>
                 {!loading && stat.sub && (
-                  <p className="text-xs text-muted-foreground mt-1">{stat.sub}</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground mt-1 truncate">{stat.sub}</p>
                 )}
               </Card>
             );

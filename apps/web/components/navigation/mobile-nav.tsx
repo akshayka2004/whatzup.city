@@ -1,31 +1,257 @@
 'use client';
 
-import { Home, Search, Plus, Heart, Menu } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
+import {
+  Home,
+  Search,
+  MapPin,
+  Heart,
+  Menu,
+  BarChart3,
+  TrendingUp,
+  Tag,
+  Package,
+  CheckCircle,
+  AlertTriangle,
+  UserPlus,
+  Users,
+  Activity,
+  LogOut,
+  Settings,
+  Folder,
+  Share2,
+  Lock,
+  Flag,
+  Database,
+  Bell,
+  FileText,
+  Star,
+  GitBranch,
+  Image as ImageIcon,
+  UserCog,
+  CreditCard,
+  LifeBuoy,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 
-const navItems = [
-  { icon: Home, label: 'Home', href: '/' },
-  { icon: Search, label: 'Search', href: '/search' },
-  { icon: Plus, label: 'Create', href: '#' },
-  { icon: Heart, label: 'Saved', href: '/favorites' },
-  { icon: Menu, label: 'Menu', href: '#' },
-];
+// ── NAVIGATION TYPES & CONFIGS ────────────────────────────────────────
+
+interface NavItem {
+  icon: React.ElementType;
+  label: string;
+  href: string;
+}
 
 export function MobileNav() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeRole, setActiveRole] = useState<string>('USER');
+
+  useEffect(() => {
+    if (user) {
+      setActiveRole(user.rbacRole || user.role?.toUpperCase() || 'USER');
+    } else {
+      setActiveRole('USER');
+    }
+  }, [user]);
+
+  // Determine Routing Context
+  const isDashboard = pathname.startsWith('/dashboard');
+  const isAdmin = pathname.startsWith('/admin');
+  const isSuperAdmin = pathname.startsWith('/super-admin');
+
+  // Helper to check if a tab is active
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/';
+    return pathname.startsWith(href);
+  };
+
+  // Bottom Tabs Generation
+  let primaryTabs: NavItem[] = [];
+  let drawerItems: { label: string; href: string; icon: React.ElementType; action?: () => void }[] = [];
+
+  if (isDashboard) {
+    primaryTabs = [
+      { label: 'Overview', href: '/dashboard', icon: Home },
+      { label: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp },
+      { label: 'Offers', href: '/dashboard/offers', icon: Tag },
+      { label: 'Products', href: '/dashboard/products', icon: Package },
+    ];
+
+    drawerItems = [
+      { label: 'Bill Moderation', href: '/dashboard/moderation', icon: CheckCircle },
+      { label: 'Customers', href: '/dashboard/customers', icon: Users },
+      { label: 'Registrations', href: '/dashboard/registrations', icon: UserPlus },
+      { label: 'Campaigns', href: '/dashboard/campaigns', icon: Tag },
+      { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
+      { label: 'Branches', href: '/dashboard/branches', icon: GitBranch },
+      { label: 'Media', href: '/dashboard/media', icon: ImageIcon },
+      { label: 'Team', href: '/dashboard/team', icon: UserCog },
+      { label: 'Subscriptions', href: '/dashboard/subscriptions', icon: CreditCard },
+      { label: 'Support', href: '/dashboard/support', icon: LifeBuoy },
+      { label: 'Report Issue', href: '/report', icon: Flag },
+      { label: 'Settings', href: '/dashboard/settings', icon: Settings },
+    ];
+  } else if (isAdmin) {
+    primaryTabs = [
+      { label: 'Dashboard', href: '/admin', icon: BarChart3 },
+      { label: 'Registrations', href: '/admin/registrations', icon: UserPlus },
+      { label: 'Approvals', href: '/admin/approvals', icon: CheckCircle },
+      { label: 'Reports', href: '/admin/reports', icon: AlertTriangle },
+    ];
+
+    drawerItems = [
+      { label: 'Notices', href: '/admin/notices', icon: Bell },
+      { label: 'Audit Logs', href: '/admin/audit', icon: FileText },
+      { label: 'Categories', href: '/admin/categories', icon: Folder },
+      { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
+      { label: 'Settings', href: '/admin/settings', icon: Settings },
+    ];
+  } else if (isSuperAdmin) {
+    primaryTabs = [
+      { label: 'Tenants', href: '/super-admin', icon: Users },
+      { label: 'Registrations', href: '/super-admin/registrations', icon: UserPlus },
+      { label: 'Platform Offers', href: '/super-admin/offers', icon: Tag },
+      { label: 'System Health', href: '/super-admin/health', icon: Activity },
+    ];
+
+    drawerItems = [
+      { label: 'Categories', href: '/super-admin/categories', icon: Folder },
+      { label: 'Referrals', href: '/super-admin/referrals', icon: Share2 },
+      { label: 'Security', href: '/super-admin/security', icon: Lock },
+      { label: 'Roles', href: '/super-admin/roles', icon: Settings },
+      { label: 'Feature Flags', href: '/super-admin/flags', icon: Flag },
+      { label: 'Infrastructure', href: '/super-admin/infrastructure', icon: Database },
+      { label: 'Settings', href: '/super-admin/settings', icon: Settings },
+    ];
+  } else {
+    // Public User context
+    primaryTabs = [
+      { label: 'Home', href: '/', icon: Home },
+      { label: 'Search', href: '/search', icon: Search },
+      { label: 'Map', href: '/nearby', icon: MapPin },
+      { label: 'Saved', href: '/favorites', icon: Heart },
+    ];
+
+    drawerItems = user
+      ? [
+          { label: 'Profile Settings', href: '/profile', icon: Settings },
+          { label: 'Help & Support', href: '/support', icon: LifeBuoy },
+          { label: 'Report Platform Issue', href: '/report', icon: Flag },
+        ]
+      : [
+          { label: 'Sign In / Register', href: '/login', icon: UserPlus },
+          { label: 'Help & Support', href: '/support', icon: LifeBuoy },
+          { label: 'Report Platform Issue', href: '/report', icon: Flag },
+        ];
+  }
+
+  const handleDrawerItemClick = (href: string, action?: () => void) => {
+    setIsOpen(false);
+    if (action) {
+      action();
+    } else {
+      router.push(href);
+    }
+  };
+
+  const handleSignOutClick = async () => {
+    setIsOpen(false);
+    await signOut();
+  };
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-card px-4 py-2 flex items-center justify-around">
-      {navItems.map((item) => {
+    <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/90 backdrop-blur-md px-2 py-1 flex items-center justify-around z-50 h-16 pb-safe">
+      {primaryTabs.map((item) => {
         const Icon = item.icon;
+        const active = isActive(item.href);
         return (
-          <Link key={item.label} href={item.href}>
-            <Button variant="ghost" size="sm" className="flex flex-col gap-1 rounded-lg">
-              <Icon className="h-6 w-6" />
-              <span className="text-xs">{item.label}</span>
-            </Button>
+          <Link key={item.label} href={item.href} className="flex-1">
+            <button
+              className={`w-full flex flex-col items-center justify-center gap-1 rounded-xl py-1 text-[10px] font-medium transition-colors ${
+                active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              <span>{item.label}</span>
+            </button>
           </Link>
         );
       })}
+
+      {/* Menu Trigger Sheet */}
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetTrigger asChild>
+          <button
+            className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+            onClick={() => setIsOpen(true)}
+          >
+            <Menu className="h-5 w-5 shrink-0" />
+            <span>Menu</span>
+          </button>
+        </SheetTrigger>
+        <SheetContent
+          side="bottom"
+          className="rounded-t-[32px] max-h-[80vh] overflow-y-auto pb-8 bg-zinc-950/95 border-t border-white/10 text-white z-50"
+        >
+          <SheetHeader className="text-left pb-4 border-b border-white/5">
+            <SheetTitle className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+              <Menu className="h-5 w-5 text-primary" />
+              Navigation Menu
+            </SheetTitle>
+            <SheetDescription className="text-xs text-muted-foreground">
+              {isDashboard
+                ? 'Manage your business operations and listings'
+                : isAdmin
+                ? 'System approvals and platform moderation'
+                : isSuperAdmin
+                ? 'Tenants & multi-tenant cluster management'
+                : 'Browse city offers and manage your profile'}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="grid grid-cols-2 gap-3 py-6">
+            {drawerItems.map((item) => {
+              const ItemIcon = item.icon;
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => handleDrawerItemClick(item.href, item.action)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] transition-all text-left text-xs font-semibold cursor-pointer h-12"
+                >
+                  <ItemIcon className="h-4 w-4 text-primary shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </button>
+              );
+            })}
+
+            {/* Logout/Sign Out Option inside Drawer */}
+            {user && (
+              <button
+                onClick={handleSignOutClick}
+                className="col-span-2 flex items-center gap-3 px-4 py-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-all text-left text-xs font-semibold text-rose-400 cursor-pointer h-12 mt-2"
+              >
+                <LogOut className="h-4 w-4 shrink-0 text-rose-400" />
+                <span>Sign Out</span>
+              </button>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </nav>
   );
 }
+

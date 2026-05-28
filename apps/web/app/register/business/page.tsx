@@ -528,7 +528,7 @@ function RegisterBusinessWizardContent() {
                     placeholder="123 Ocean Blvd, Suite B"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
+                    className="h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
                     required
                   />
                 </div>
@@ -540,7 +540,7 @@ function RegisterBusinessWizardContent() {
                       placeholder="Miami"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
+                      className="h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
                       required
                     />
                   </div>
@@ -550,7 +550,7 @@ function RegisterBusinessWizardContent() {
                       placeholder="FL"
                       value={state}
                       onChange={(e) => setState(e.target.value)}
-                      className="bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
+                      className="h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
                       required
                     />
                   </div>
@@ -560,13 +560,13 @@ function RegisterBusinessWizardContent() {
                       placeholder="33139"
                       value={postalCode}
                       onChange={(e) => setPostalCode(e.target.value)}
-                      className="bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
+                      className="h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
                       required
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-slate-300">
                       Website URL (Optional)
@@ -574,10 +574,11 @@ function RegisterBusinessWizardContent() {
                     <div className="relative">
                       <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                       <Input
+                        type="url"
                         placeholder="https://sunrisecafe.com"
                         value={website}
                         onChange={(e) => setWebsite(e.target.value)}
-                        className="pl-10 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
+                        className="pl-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
                       />
                     </div>
                   </div>
@@ -588,10 +589,11 @@ function RegisterBusinessWizardContent() {
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
                       <Input
+                        type="url"
                         placeholder="https://maps.google.com/..."
                         value={googleMapsUrl}
                         onChange={(e) => setGoogleMapsUrl(e.target.value)}
-                        className="pl-10 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
+                        className="pl-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
                       />
                     </div>
                   </div>
@@ -601,14 +603,14 @@ function RegisterBusinessWizardContent() {
                   <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest block mb-3">
                     Social Directories
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="relative">
                       <Facebook className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-400" />
                       <Input
                         placeholder="Facebook Username"
                         value={facebook}
                         onChange={(e) => setFacebook(e.target.value)}
-                        className="pl-10 bg-white/5 border-white/10 text-xs text-slate-100 rounded-xl"
+                        className="pl-10 h-11 bg-white/5 border-white/10 text-xs text-slate-100 rounded-xl"
                       />
                     </div>
                     <div className="relative">
@@ -617,7 +619,7 @@ function RegisterBusinessWizardContent() {
                         placeholder="Instagram Username"
                         value={instagram}
                         onChange={(e) => setInstagram(e.target.value)}
-                        className="pl-10 bg-white/5 border-white/10 text-xs text-slate-100 rounded-xl"
+                        className="pl-10 h-11 bg-white/5 border-white/10 text-xs text-slate-100 rounded-xl"
                       />
                     </div>
                     <div className="relative">
@@ -626,7 +628,7 @@ function RegisterBusinessWizardContent() {
                         placeholder="Twitter Handle"
                         value={twitter}
                         onChange={(e) => setTwitter(e.target.value)}
-                        className="pl-10 bg-white/5 border-white/10 text-xs text-slate-100 rounded-xl"
+                        className="pl-10 h-11 bg-white/5 border-white/10 text-xs text-slate-100 rounded-xl"
                       />
                     </div>
                   </div>
