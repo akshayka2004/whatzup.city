@@ -19,7 +19,7 @@ const PLATFORM_OPTIONS = [
   { id: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-pink-400', placeholder: '@handle or URL' },
   { id: 'facebook', label: 'Facebook', icon: Facebook, color: 'text-blue-400', placeholder: 'Page URL' },
   { id: 'linkedin', label: 'LinkedIn', icon: Linkedin, color: 'text-sky-400', placeholder: 'Company page URL' },
-  { id: 'x', label: 'X / Twitter', icon: Twitter, color: 'text-slate-300', placeholder: '@handle' },
+  { id: 'x', label: 'X / Twitter', icon: Twitter, color: 'text-foreground/80', placeholder: '@handle' },
   { id: 'youtube', label: 'YouTube', icon: Youtube, color: 'text-red-400', placeholder: 'Channel URL' },
   { id: 'website', label: 'Website', icon: Globe, color: 'text-cyan-400', placeholder: 'https://example.com' },
   { id: 'whatsapp', label: 'WhatsApp', icon: Phone, color: 'text-emerald-400', placeholder: '+91 98765 43210' },

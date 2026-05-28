@@ -252,7 +252,7 @@ export default function BusinessDashboardPage() {
               variant="outline"
               onClick={fetchData}
               disabled={loading}
-              className="rounded-xl border-white/10 text-foreground hover:bg-white/5 gap-2"
+              className="rounded-xl border-border text-foreground hover:bg-muted/40 gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -261,7 +261,7 @@ export default function BusinessDashboardPage() {
               <Button
                 variant="outline"
                 onClick={() => { setIsShareOpen(true); setIsCopied(false); }}
-                className="rounded-xl border-white/10 text-foreground hover:bg-white/5 gap-2"
+                className="rounded-xl border-border text-foreground hover:bg-muted/40 gap-2"
               >
                 <Share2 className="h-4 w-4" />
                 Share
@@ -301,7 +301,7 @@ export default function BusinessDashboardPage() {
 
         {/* ── Business info strip ── */}
         {business && (
-          <Card className="p-4 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+          <Card className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
             <div className="flex flex-wrap items-center gap-4 text-sm">
               {/* Status badge */}
               <span className={cn(
@@ -310,7 +310,7 @@ export default function BusinessDashboardPage() {
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                   : business.status === 'PENDING_VERIFICATION' || business.status === 'UNDER_REVIEW'
                     ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                    : 'bg-white/5 text-muted-foreground border-white/10',
+                    : 'bg-muted/40 text-muted-foreground border-border',
               )}>
                 {business.status === 'APPROVED'
                   ? <><CheckCircle className="h-3 w-3" /> Approved</>
@@ -349,7 +349,7 @@ export default function BusinessDashboardPage() {
             return (
               <Card
                 key={stat.label}
-                className="p-4 md:p-6 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
+                className="p-4 md:p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors pointer-events-none" />
                 <div className="flex items-center justify-between mb-3 md:mb-4">
@@ -380,7 +380,7 @@ export default function BusinessDashboardPage() {
               { label: 'Pending Media', value: '—', icon: Clock, href: '/dashboard/media', color: 'text-amber-400', bg: 'bg-amber-500/10' },
             ].map((s) => (
               <Link key={s.label} href={s.href}>
-                <Card className="p-4 rounded-2xl border-white/5 bg-card/40 hover:bg-card/60 transition-all cursor-pointer">
+                <Card className="p-4 rounded-2xl border-border bg-card/40 hover:bg-card/60 transition-all cursor-pointer">
                   <div className={cn('h-8 w-8 rounded-lg flex items-center justify-center mb-3', s.bg)}>
                     <s.icon className={cn('h-4 w-4', s.color)} />
                   </div>
@@ -393,7 +393,7 @@ export default function BusinessDashboardPage() {
         )}
 
         {/* ── Offer Performance Chart ── */}
-        <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold text-foreground">Offer Performance</h3>
@@ -442,7 +442,7 @@ export default function BusinessDashboardPage() {
               <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
             </div>
           ) : offers.length === 0 ? (
-            <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-card/20 text-center">
+            <Card className="p-10 rounded-2xl border-dashed border-border bg-card/20 text-center">
               <Tag className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
               <p className="text-muted-foreground text-sm">No offers created yet.</p>
               <Button onClick={handleOpenCreate} className="mt-4 rounded-xl bg-primary text-primary-foreground gap-2">
@@ -454,7 +454,7 @@ export default function BusinessDashboardPage() {
               {offers.map((offer) => (
                 <Card
                   key={offer.id}
-                  className="p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-white/5 bg-card/40 backdrop-blur-xl relative overflow-hidden group"
+                  className="p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden group"
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
                   <div className="flex items-center justify-between">
@@ -466,7 +466,7 @@ export default function BusinessDashboardPage() {
                           className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold hover:opacity-85 transition-opacity ${
                             offer.status === 'ACTIVE'
                               ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                              : 'bg-white/5 text-muted-foreground border border-white/10'
+                              : 'bg-muted/40 text-muted-foreground border border-border'
                           }`}
                         >
                           {offer.status === 'ACTIVE' ? 'Active' : offer.status === 'PAUSED' ? 'Paused' : offer.status}
@@ -506,7 +506,7 @@ export default function BusinessDashboardPage() {
                         onClick={() => setViewingOffer(offer)}
                         size="icon"
                         variant="outline"
-                        className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 h-9 w-9"
+                        className="rounded-xl border-border hover:bg-muted/40 text-muted-foreground h-9 w-9"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -514,7 +514,7 @@ export default function BusinessDashboardPage() {
                         onClick={() => handleOpenEdit(offer)}
                         size="icon"
                         variant="outline"
-                        className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 h-9 w-9"
+                        className="rounded-xl border-border hover:bg-muted/40 text-muted-foreground h-9 w-9"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -522,7 +522,7 @@ export default function BusinessDashboardPage() {
                         onClick={() => setDeletingOffer(offer)}
                         size="icon"
                         variant="outline"
-                        className="rounded-xl border-white/10 hover:bg-rose-500/10 text-rose-400 hover:text-rose-300 border-rose-500/20 h-9 w-9"
+                        className="rounded-xl border-border hover:bg-destructive/10 text-destructive border-destructive/20 h-9 w-9"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -537,7 +537,7 @@ export default function BusinessDashboardPage() {
         {/* ── CREATE MODAL ── */}
         {isCreateOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button
                 onClick={() => setIsCreateOpen(false)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -547,17 +547,17 @@ export default function BusinessDashboardPage() {
               <h3 className="text-xl font-bold text-foreground mb-4">Create Promotional Offer</h3>
               <form onSubmit={handleCreate} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Offer Title</label>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">Offer Title</label>
                   <Input
                     placeholder="e.g. Summer Special"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Discount Percentage</label>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">Discount Percentage</label>
                   <Input
                     type="number"
                     min="1"
@@ -565,7 +565,7 @@ export default function BusinessDashboardPage() {
                     value={discount || ''}
                     onChange={(e) => setDiscount(Number(e.target.value))}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div className="flex items-center gap-2 pt-2">
@@ -574,16 +574,16 @@ export default function BusinessDashboardPage() {
                     id="create-active"
                     checked={active}
                     onChange={(e) => setActive(e.target.checked)}
-                    className="rounded bg-white/5 border-white/10 h-4 w-4"
+                    className="rounded bg-background border-input h-4 w-4"
                   />
-                  <label htmlFor="create-active" className="text-sm text-slate-300">Activate immediately</label>
+                  <label htmlFor="create-active" className="text-sm text-muted-foreground">Activate immediately</label>
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setIsCreateOpen(false)}
-                    className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300"
+                    className="rounded-xl border-border hover:bg-muted text-foreground"
                   >
                     Cancel
                   </Button>
@@ -599,7 +599,7 @@ export default function BusinessDashboardPage() {
         {/* ── EDIT MODAL ── */}
         {editingOffer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button
                 onClick={() => setEditingOffer(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -609,16 +609,16 @@ export default function BusinessDashboardPage() {
               <h3 className="text-xl font-bold text-foreground mb-4">Edit Offer</h3>
               <form onSubmit={handleEdit} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Offer Title</label>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">Offer Title</label>
                   <Input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Discount %</label>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">Discount %</label>
                   <Input
                     type="number"
                     min="1"
@@ -626,7 +626,7 @@ export default function BusinessDashboardPage() {
                     value={discount || ''}
                     onChange={(e) => setDiscount(Number(e.target.value))}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div className="flex items-center gap-2 pt-2">
@@ -635,16 +635,16 @@ export default function BusinessDashboardPage() {
                     id="edit-active"
                     checked={active}
                     onChange={(e) => setActive(e.target.checked)}
-                    className="rounded bg-white/5 border-white/10 h-4 w-4"
+                    className="rounded bg-background border-input h-4 w-4"
                   />
-                  <label htmlFor="edit-active" className="text-sm text-slate-300">Active</label>
+                  <label htmlFor="edit-active" className="text-sm text-muted-foreground">Active</label>
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => setEditingOffer(null)}
-                    className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300"
+                    className="rounded-xl border-border hover:bg-muted text-foreground"
                   >
                     Cancel
                   </Button>
@@ -660,7 +660,7 @@ export default function BusinessDashboardPage() {
         {/* ── DELETE MODAL ── */}
         {deletingOffer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
               <button
                 onClick={() => setDeletingOffer(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -678,7 +678,7 @@ export default function BusinessDashboardPage() {
                 <Button
                   onClick={() => setDeletingOffer(null)}
                   variant="outline"
-                  className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 px-4"
+                  className="rounded-xl border-border hover:bg-muted text-foreground px-4"
                 >
                   Cancel
                 </Button>
@@ -693,7 +693,7 @@ export default function BusinessDashboardPage() {
         {/* ── VIEW MODAL ── */}
         {viewingOffer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button
                 onClick={() => setViewingOffer(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -709,7 +709,7 @@ export default function BusinessDashboardPage() {
                   <span className={`inline-block px-2 py-0.5 mt-1 rounded-full text-xs font-semibold ${
                     viewingOffer.status === 'ACTIVE'
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                      : 'bg-white/5 text-muted-foreground border border-white/10'
+                      : 'bg-secondary/40 text-muted-foreground border border-border'
                   }`}>
                     {viewingOffer.status === 'ACTIVE' ? 'Active' : viewingOffer.status}
                   </span>
@@ -722,7 +722,7 @@ export default function BusinessDashboardPage() {
                   { label: 'Max Redemptions', value: viewingOffer.maxRedemptions ?? 'Unlimited' },
                   { label: 'Expires', value: viewingOffer.endDate ? new Date(viewingOffer.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—' },
                 ].map((s) => (
-                  <div key={s.label} className="bg-white/5 p-4 rounded-xl border border-white/5">
+                  <div key={s.label} className="bg-secondary/50 p-4 rounded-xl border border-border">
                     <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
                     <p className="text-xl font-extrabold text-foreground">{s.value}</p>
                   </div>
@@ -752,7 +752,7 @@ export default function BusinessDashboardPage() {
         {/* ── SHARE MODAL ── */}
         {isShareOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button
                 onClick={() => setIsShareOpen(false)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -765,7 +765,7 @@ export default function BusinessDashboardPage() {
                 <Input
                   readOnly
                   value={storefrontUrl || 'Storefront URL not available'}
-                  className="rounded-xl border-white/10 bg-white/5 text-foreground"
+                  className="rounded-xl border-input bg-background text-foreground"
                 />
                 <Button
                   onClick={() => {
@@ -784,7 +784,7 @@ export default function BusinessDashboardPage() {
                 <Button
                   onClick={() => setIsShareOpen(false)}
                   variant="outline"
-                  className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5"
+                  className="rounded-xl border-border text-foreground hover:bg-muted"
                 >
                   Close
                 </Button>

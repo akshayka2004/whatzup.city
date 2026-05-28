@@ -175,7 +175,7 @@ export default function AdminDashboardPage() {
             <Button
               onClick={fetchData}
               variant="outline"
-              className="rounded-xl gap-2 border-white/10 hover:bg-white/5 text-muted-foreground"
+              className="rounded-xl gap-2 border-border hover:bg-muted/40 text-muted-foreground"
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -197,7 +197,7 @@ export default function AdminDashboardPage() {
             const card = (
               <Card
                 key={stat.label}
-                className="p-6 rounded-2xl hover:shadow-lg transition-all duration-300 border-white/5 bg-card/60 backdrop-blur-xl relative overflow-hidden group cursor-pointer"
+                className="p-6 rounded-2xl hover:shadow-lg transition-all duration-300 border-border bg-card/60 backdrop-blur-xl relative overflow-hidden group cursor-pointer"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors pointer-events-none" />
                 <div className="flex items-center justify-between mb-4">
@@ -227,7 +227,7 @@ export default function AdminDashboardPage() {
         {/* Main Section */}
         <div className="grid lg:grid-cols-12 gap-8">
           {/* Funnel Chart */}
-          <Card className="lg:col-span-8 p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl flex flex-col justify-between">
+          <Card className="lg:col-span-8 p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-6">
                 <div>
@@ -255,12 +255,12 @@ export default function AdminDashboardPage() {
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.25 0 0)" />
-                      <XAxis dataKey="label" stroke="oklch(0.65 0 0)" fontSize={11} tickLine={false} />
-                      <YAxis stroke="oklch(0.65 0 0)" fontSize={11} tickLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                      <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} />
+                      <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} />
                       <Tooltip
-                        contentStyle={{ background: '#121212', borderColor: 'oklch(0.25 0 0)', borderRadius: '12px' }}
-                        labelStyle={{ color: '#fff', fontWeight: 'bold' }}
+                        contentStyle={{ background: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px' }}
+                        labelStyle={{ color: 'var(--foreground)', fontWeight: 'bold' }}
                       />
                       <Bar dataKey="approvals" fill="oklch(0.65 0.15 280)" radius={[4, 4, 0, 0]} maxBarSize={40} name="Count" />
                       <Bar dataKey="rejections" fill="oklch(0.5 0.15 25)" radius={[4, 4, 0, 0]} maxBarSize={40} name="Rejected" />
@@ -272,7 +272,7 @@ export default function AdminDashboardPage() {
           </Card>
 
           {/* Live Audit Log */}
-          <Card className="lg:col-span-4 p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl flex flex-col justify-between">
+          <Card className="lg:col-span-4 p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl flex flex-col justify-between">
             <div>
               <h3 className="text-lg font-bold text-foreground mb-1">Live Audit Log</h3>
               <p className="text-xs text-muted-foreground mb-4">
@@ -290,7 +290,7 @@ export default function AdminDashboardPage() {
                   {auditLogs.map((log: any) => (
                     <div
                       key={log.id}
-                      className="flex gap-3 p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5"
+                      className="flex gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors border border-transparent hover:border-border"
                     >
                       <div className="w-1.5 h-10 rounded-full bg-primary flex-shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -313,7 +313,7 @@ export default function AdminDashboardPage() {
             <Link href="/admin/audit">
               <Button
                 variant="outline"
-                className="w-full mt-4 rounded-xl border-white/10 text-foreground hover:bg-white/5"
+                className="w-full mt-4 rounded-xl border-border text-foreground hover:bg-muted/40"
               >
                 View All Audit Logs
                 <ArrowUpRight className="h-4 w-4 ml-2" />

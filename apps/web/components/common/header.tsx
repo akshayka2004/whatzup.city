@@ -130,13 +130,13 @@ export function Header() {
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-lg hover:bg-white/5 h-11 w-11 md:h-9 md:w-9 flex items-center justify-center cursor-pointer">
+            <Button variant="ghost" size="icon" className="rounded-lg h-11 w-11 md:h-9 md:w-9 flex items-center justify-center cursor-pointer">
               <Settings className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-56 rounded-xl border-white/5 bg-card/95 backdrop-blur-xl"
+            className="w-56 rounded-xl border-border bg-card/95 backdrop-blur-xl"
           >
             <DropdownMenuLabel className="font-semibold text-xs text-muted-foreground">
               Account Actions

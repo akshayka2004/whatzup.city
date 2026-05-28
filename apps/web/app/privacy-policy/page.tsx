@@ -71,7 +71,7 @@ export default function PrivacyPolicyPage() {
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="block px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors leading-snug"
+                className="block px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors leading-snug"
               >
                 {s.label}
               </a>
@@ -235,7 +235,7 @@ export default function PrivacyPolicyPage() {
                 { name: 'Razorpay', desc: 'Payment processing for subscription plans' },
                 { name: 'Redis / BullMQ', desc: 'Session caching and background job queuing' },
               ].map((item) => (
-                <div key={item.name} className="flex gap-3 px-3 py-2.5 rounded-xl bg-white/5 border border-white/10">
+                <div key={item.name} className="flex gap-3 px-3 py-2.5 rounded-xl bg-muted/40 border border-border">
                   <span className="font-semibold text-foreground text-sm shrink-0">{item.name}</span>
                   <span className="text-sm">{item.desc}</span>
                 </div>
@@ -291,7 +291,7 @@ export default function PrivacyPolicyPage() {
           {/* Section 13 */}
           <Section id="contact" title="13. Contact Us">
             <p>For privacy-related inquiries, data access requests, or concerns about how your information is handled:</p>
-            <div className="mt-3 p-4 rounded-xl bg-white/5 border border-white/10 text-sm space-y-1">
+            <div className="mt-3 p-4 rounded-xl bg-muted/40 border border-border text-sm space-y-1">
               <p className="font-semibold text-foreground">Lifeart Business Services Private Limited</p>
               <p>29/3372, Vazhuthacaud, AIR Road</p>
               <p>Thiruvananthapuram, Kerala 695014, India</p>

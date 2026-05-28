@@ -125,7 +125,7 @@ export default function SelectRolePage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#37353E] text-slate-100 flex items-center justify-center py-12 px-4 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-background text-foreground flex items-center justify-center py-12 px-4 relative overflow-hidden">
       <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full blur-[160px] pointer-events-none" style={{ background: 'rgba(113,90,90,0.08)' }} />
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[140px] pointer-events-none" style={{ background: 'rgba(113,90,90,0.06)' }} />
 
@@ -136,13 +136,13 @@ export default function SelectRolePage() {
             <Sparkles className="h-3.5 w-3.5" />
             Welcome — Choose Your Path
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-foregroundxl md:text-4xl font-extrabold tracking-tight">
             How will you use{' '}
             <span className="bg-gradient-to-r from-violet-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
               the platform?
             </span>
           </h1>
-          <p className="text-sm text-slate-400 max-w-md mx-auto">
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
             Select your account type. Your dashboard and permissions are tailored to your role.
           </p>
         </div>
@@ -169,7 +169,7 @@ export default function SelectRolePage() {
                   }`}
                 >
                   <div className="flex items-start justify-between">
-                    <div className={`p-3 rounded-xl ${selected ? 'bg-white/10' : 'bg-white/5'} transition`}>
+                    <div className={`p-3 rounded-xl ${selected ? 'bg-secondary' : 'bg-background'} transition`}>
                       <Icon className={`h-6 w-6 ${option.iconColor}`} />
                     </div>
                     {selected ? (
@@ -183,8 +183,8 @@ export default function SelectRolePage() {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-100 mb-1">{option.title}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed">{option.description}</p>
+                    <h3 className="font-bold text-foreground mb-1">{option.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{option.description}</p>
                   </div>
                 </button>
               );
@@ -193,27 +193,27 @@ export default function SelectRolePage() {
 
           {/* Extra fields once role selected */}
           {selectedType && (
-            <Card className="bg-[#0b0b0f]/80 backdrop-blur-xl border border-white/5 p-6 rounded-2xl space-y-4">
-              <h3 className="text-sm font-bold text-slate-100">Additional Details (optional)</h3>
+            <Card className="bg-card/80 backdrop-blur-xl border border-border p-6 rounded-2xl space-y-4">
+              <h3 className="text-sm font-bold text-foreground">Additional Details (optional)</h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-medium text-slate-400 block mb-1">
+                  <label className="text-xs font-medium text-muted-foreground block mb-1">
                     {selectedType === 'BUSINESS' ? 'Business Name' : selectedType === 'GOVERNMENT' ? 'Department Name' : 'Your Name'}
                   </label>
                   <Input
                     placeholder={selectedType === 'BUSINESS' ? 'Sunrise Café' : selectedType === 'GOVERNMENT' ? 'Public Safety Dept.' : 'Jane Doe'}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
+                    className="bg-background border-input text-sm text-foreground rounded-xl"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-slate-400 block mb-1">Phone Number</label>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1">Phone Number</label>
                   <Input
                     placeholder="+91 98765 43210"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
+                    className="bg-background border-input text-sm text-foreground rounded-xl"
                   />
                 </div>
               </div>

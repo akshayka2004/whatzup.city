@@ -141,7 +141,7 @@ export default function AdminCategoriesPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : categories.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary/20 text-center">
             <Folder className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No categories yet</p>
             <p className="text-sm text-muted-foreground">Add your first category to organize listings.</p>
@@ -152,7 +152,7 @@ export default function AdminCategoriesPage() {
           {categories.map((cat) => (
             <Card
               key={cat.id}
-              className="p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-white/5 bg-card/40 backdrop-blur-xl relative overflow-hidden group"
+              className="p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden group"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
               <div className="flex items-center justify-between">
@@ -178,7 +178,7 @@ export default function AdminCategoriesPage() {
                       <button
                         onClick={() => toggleActive(cat.id)}
                         className={`font-semibold mt-0.5 text-xs hover:opacity-80 transition-opacity ${
-                          cat.active ? 'text-emerald-400' : 'text-slate-400'
+                          cat.active ? 'text-emerald-400' : 'text-muted-foreground'
                         }`}
                       >
                         {cat.active ? 'Active' : 'Inactive'}
@@ -191,7 +191,7 @@ export default function AdminCategoriesPage() {
                     onClick={() => handleOpenEdit(cat)}
                     size="icon"
                     variant="outline"
-                    className="h-9 w-9 rounded-xl border-white/10 text-slate-300 hover:bg-white/5"
+                    className="h-9 w-9 rounded-xl border-border text-foreground hover:bg-muted"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -212,7 +212,7 @@ export default function AdminCategoriesPage() {
         {/* ── ADD MODAL ────────────────────────────────────────────── */}
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button
                 onClick={() => setIsAddOpen(false)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -222,7 +222,7 @@ export default function AdminCategoriesPage() {
               <h3 className="text-xl font-bold text-foreground mb-4">Add Directory Category</h3>
               <form onSubmit={handleAdd} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Category Name
                   </label>
                   <Input
@@ -239,11 +239,11 @@ export default function AdminCategoriesPage() {
                       );
                     }}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Slug URL Path
                   </label>
                   <Input
@@ -251,7 +251,7 @@ export default function AdminCategoriesPage() {
                     value={slug}
                     onChange={(e) => setSlug(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div className="flex items-center gap-2 pt-2">
@@ -260,9 +260,9 @@ export default function AdminCategoriesPage() {
                     id="cat-active-chk"
                     checked={active}
                     onChange={(e) => setActive(e.target.checked)}
-                    className="rounded bg-white/5 border-white/10 text-primary focus:ring-primary h-4 w-4"
+                    className="rounded bg-background border-input text-primary focus:ring-primary h-4 w-4"
                   />
-                  <label htmlFor="cat-active-chk" className="text-sm text-slate-300">
+                  <label htmlFor="cat-active-chk" className="text-sm text-muted-foreground">
                     Enable category status immediately
                   </label>
                 </div>
@@ -271,7 +271,7 @@ export default function AdminCategoriesPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsAddOpen(false)}
-                    className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300"
+                    className="rounded-xl border-border hover:bg-muted text-foreground"
                   >
                     Cancel
                   </Button>
@@ -290,7 +290,7 @@ export default function AdminCategoriesPage() {
         {/* ── EDIT MODAL ───────────────────────────────────────────── */}
         {editingCategory && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button
                 onClick={() => setEditingCategory(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -300,25 +300,25 @@ export default function AdminCategoriesPage() {
               <h3 className="text-xl font-bold text-foreground mb-4">Edit Category Branch</h3>
               <form onSubmit={handleEdit} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Category Name
                   </label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Slug URL Path
                   </label>
                   <Input
                     value={slug}
                     onChange={(e) => setSlug(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div className="flex items-center gap-2 pt-2">
@@ -327,9 +327,9 @@ export default function AdminCategoriesPage() {
                     id="edit-cat-active-chk"
                     checked={active}
                     onChange={(e) => setActive(e.target.checked)}
-                    className="rounded bg-white/5 border-white/10 text-primary focus:ring-primary h-4 w-4"
+                    className="rounded bg-background border-input text-primary focus:ring-primary h-4 w-4"
                   />
-                  <label htmlFor="edit-cat-active-chk" className="text-sm text-slate-300">
+                  <label htmlFor="edit-cat-active-chk" className="text-sm text-muted-foreground">
                     Category active status
                   </label>
                 </div>
@@ -338,7 +338,7 @@ export default function AdminCategoriesPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setEditingCategory(null)}
-                    className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300"
+                    className="rounded-xl border-border hover:bg-muted text-foreground"
                   >
                     Cancel
                   </Button>
@@ -357,7 +357,7 @@ export default function AdminCategoriesPage() {
         {/* ── DELETE MODAL ─────────────────────────────────────────── */}
         {deletingCategory && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
               <button
                 onClick={() => setDeletingCategory(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -377,7 +377,7 @@ export default function AdminCategoriesPage() {
                 <Button
                   onClick={() => setDeletingCategory(null)}
                   variant="outline"
-                  className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 px-4"
+                  className="rounded-xl border-border hover:bg-muted text-foreground px-4"
                 >
                   Cancel
                 </Button>

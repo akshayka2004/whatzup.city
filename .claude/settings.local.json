@@ -26,7 +26,11 @@
       "Bash(echo \"TSC_EXIT:$?\")",
       "Bash(grep -v \"//.*const\")",
       "Bash(npx tsc *)",
-      "Bash(xargs -I{} sh -c 'echo \"=== {} ===\"; head -5 \"{}\"')"
+      "Bash(xargs -I{} sh -c 'echo \"=== {} ===\"; head -5 \"{}\"')",
+      "Bash(pnpm --filter database db:push)",
+      "Bash(npx prisma *)",
+      "Bash(pnpm --filter api build)",
+      "Bash(pnpm --filter web build)"
     ]
   }
 }

@@ -507,7 +507,7 @@ export default function BusinessDetailPage() {
                 <a href={biz.website.startsWith('http') ? biz.website : `https://${biz.website}`} target="_blank" rel="noreferrer">
                   <Button
                     variant="outline"
-                    className="w-full rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
+                    className="w-full rounded-xl border-border text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
                   >
                     Visit Website
                   </Button>
@@ -521,7 +521,7 @@ export default function BusinessDetailPage() {
       {/* ── BILL SUBMISSION MODAL */}
       {billModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-lg p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+          <Card className="w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setBillModalOpen(false)}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -541,7 +541,7 @@ export default function BusinessDetailPage() {
 
             <form onSubmit={handleBillSubmit} className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-300 block mb-2 flex items-center gap-1.5">
+                <label className="text-sm font-medium text-muted-foreground block mb-2 flex items-center gap-1.5">
                   <Hash className="h-3.5 w-3.5 text-muted-foreground" />
                   Bill / Invoice Number <span className="text-rose-400">*</span>
                 </label>
@@ -550,12 +550,12 @@ export default function BusinessDetailPage() {
                   value={billNumber}
                   onChange={(e) => setBillNumber(e.target.value)}
                   required
-                  className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                  className="rounded-xl border-input bg-background focus-visible:ring-primary text-foreground"
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-300 block mb-2 flex items-center gap-1.5">
+                <label className="text-sm font-medium text-muted-foreground block mb-2 flex items-center gap-1.5">
                   <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
                   Bill Date <span className="text-rose-400">*</span>
                 </label>
@@ -565,12 +565,12 @@ export default function BusinessDetailPage() {
                   onChange={(e) => setBillDate(e.target.value)}
                   required
                   max={new Date().toISOString().split('T')[0]}
-                  className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                  className="rounded-xl border-input bg-background focus-visible:ring-primary text-foreground"
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-300 block mb-2 flex items-center gap-1.5">
+                <label className="text-sm font-medium text-muted-foreground block mb-2 flex items-center gap-1.5">
                   <IndianRupee className="h-3.5 w-3.5 text-muted-foreground" />
                   Amount Paid <span className="text-rose-400">*</span>
                 </label>
@@ -582,17 +582,17 @@ export default function BusinessDetailPage() {
                   value={billAmount}
                   onChange={(e) => setBillAmount(e.target.value)}
                   required
-                  className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                  className="rounded-xl border-input bg-background focus-visible:ring-primary text-foreground"
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-300 block mb-2">
+                <label className="text-sm font-medium text-muted-foreground block mb-2">
                   Receipt Image
                 </label>
                 <label
                   htmlFor="bill-image-input"
-                  className="flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-xl p-5 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl p-5 text-center cursor-pointer hover:border-primary/50 transition-colors"
                 >
                   {billImageName ? (
                     <div className="flex items-center gap-2 text-sm text-emerald-400">
@@ -619,7 +619,7 @@ export default function BusinessDetailPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-300 block mb-2">
+                <label className="text-sm font-medium text-muted-foreground block mb-2">
                   Your Rating <span className="text-rose-400">*</span>
                 </label>
                 <div className="flex gap-1">
@@ -651,7 +651,7 @@ export default function BusinessDetailPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-300 block mb-2">
+                <label className="text-sm font-medium text-muted-foreground block mb-2">
                   Your Review <span className="text-xs text-muted-foreground font-normal">(optional)</span>
                 </label>
                 <Textarea
@@ -659,7 +659,7 @@ export default function BusinessDetailPage() {
                   value={billReview}
                   onChange={(e) => setBillReview(e.target.value)}
                   rows={3}
-                  className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground resize-none text-sm"
+                  className="rounded-xl border-input bg-background focus-visible:ring-primary text-foreground resize-none text-sm"
                 />
               </div>
 
@@ -668,7 +668,7 @@ export default function BusinessDetailPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setBillModalOpen(false)}
-                  className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer"
+                  className="rounded-xl border-border hover:bg-muted text-foreground cursor-pointer"
                 >
                   Cancel
                 </Button>
@@ -689,7 +689,7 @@ export default function BusinessDetailPage() {
       {/* ── CLAIM CONFIRMATION MODAL */}
       {claimingOffer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+          <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
             <button
               onClick={() => setClaimingOffer(null)}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -711,7 +711,7 @@ export default function BusinessDetailPage() {
               <Button
                 onClick={() => setClaimingOffer(null)}
                 variant="outline"
-                className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 px-4 cursor-pointer"
+                className="rounded-xl border-border hover:bg-muted text-foreground px-4 cursor-pointer"
               >
                 Cancel
               </Button>
@@ -729,7 +729,7 @@ export default function BusinessDetailPage() {
       {/* ── CLAIM SUCCESS MODAL */}
       {claimedCode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+          <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
             <button
               onClick={() => setClaimedCode(null)}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -743,7 +743,7 @@ export default function BusinessDetailPage() {
             <p className="text-xs text-muted-foreground mb-4">
               Present this code at the business counter to redeem your discount.
             </p>
-            <div className="bg-white/5 p-4 rounded-xl border border-white/5 mb-6">
+            <div className="bg-muted/50 p-4 rounded-xl border border-border mb-6">
               <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">
                 Redemption Code
               </p>

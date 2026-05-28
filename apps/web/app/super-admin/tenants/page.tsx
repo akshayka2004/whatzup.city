@@ -98,7 +98,7 @@ export default function TenantsPage() {
         )}
 
         {!loading && tenants.length === 0 && (
-          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary/20 text-center">
             <Building2 className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No tenants found</p>
             <p className="text-sm text-muted-foreground">Tenant registrations will appear here.</p>
@@ -109,11 +109,11 @@ export default function TenantsPage() {
           {tenants.map((tenant) => (
             <Card
               key={tenant.id}
-              className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1">
-                  <div className="rounded-xl bg-white/5 p-3 border border-white/5 text-muted-foreground">
+                  <div className="rounded-xl bg-secondary/40 p-3 border border-border text-muted-foreground">
                     <Building2 className="h-5 w-5" />
                   </div>
                   <div>
@@ -160,7 +160,7 @@ export default function TenantsPage() {
         {/* ── TENANT DEEP DIVE MODAL ───────────────────────── */}
         {managingTenant && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-2xl p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <Card className="w-full max-w-2xl p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setManagingTenant(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -182,7 +182,7 @@ export default function TenantsPage() {
 
               {/* Stats Deep Dive */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                <div className="bg-secondary/50 p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
                     <span className="text-[10px] uppercase font-bold tracking-wider">
                       Total Sales
@@ -191,7 +191,7 @@ export default function TenantsPage() {
                   </div>
                   <p className="text-lg font-extrabold text-foreground">{managingTenant.sales}</p>
                 </div>
-                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                <div className="bg-secondary/50 p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
                     <span className="text-[10px] uppercase font-bold tracking-wider">
                       Active Offers
@@ -202,7 +202,7 @@ export default function TenantsPage() {
                     {managingTenant.offersCount}
                   </p>
                 </div>
-                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                <div className="bg-secondary/50 p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
                     <span className="text-[10px] uppercase font-bold tracking-wider">
                       Notices Sent
@@ -215,7 +215,7 @@ export default function TenantsPage() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                <div className="bg-secondary/50 p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
                     <span className="text-[10px] uppercase font-bold tracking-wider">
                       Active Users
@@ -239,12 +239,12 @@ export default function TenantsPage() {
               </div>
 
               {/* Controls */}
-              <div className="space-y-4 border-t border-white/5 pt-4">
+              <div className="space-y-4 border-t border-border pt-4">
                 <h4 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                   <Settings2 className="h-4 w-4 text-primary" /> Management Controls
                 </h4>
 
-                <div className="flex flex-wrap gap-4 items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="flex flex-wrap gap-4 items-center justify-between p-4 bg-secondary/40 rounded-xl border border-border">
                   <div>
                     <p className="text-sm font-semibold text-foreground">Subscription Plan</p>
                     <p className="text-xs text-muted-foreground">
@@ -257,7 +257,7 @@ export default function TenantsPage() {
                         key={plan}
                         onClick={() => handleChangePlan(managingTenant.id, plan)}
                         variant={managingTenant.plan === plan ? 'default' : 'outline'}
-                        className={`rounded-lg text-xs h-8 ${managingTenant.plan === plan ? 'bg-primary text-primary-foreground' : 'border-white/10 text-slate-300'}`}
+                        className={`rounded-lg text-xs h-8 ${managingTenant.plan === plan ? 'bg-primary text-primary-foreground' : 'border-border text-foreground hover:bg-muted'}`}
                       >
                         {plan}
                       </Button>
@@ -265,7 +265,7 @@ export default function TenantsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between p-4 bg-secondary/40 rounded-xl border border-border">
                   <div>
                     <p className="text-sm font-semibold text-foreground">Tenant Access State</p>
                     <p className="text-xs text-muted-foreground">
@@ -286,7 +286,7 @@ export default function TenantsPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end pt-6 border-t border-white/5 mt-6">
+              <div className="flex justify-end pt-6 border-t border-border mt-6">
                 <Button
                   onClick={() => setManagingTenant(null)}
                   className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"

@@ -391,7 +391,7 @@ export default function OffersPage() {
         {/* ── CREATE MODAL ─────────────────────────────────────────── */}
         {isCreateOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setIsCreateOpen(false)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -401,7 +401,7 @@ export default function OffersPage() {
               <h3 className="text-xl font-bold text-foreground mb-4">Create Promotional Offer</h3>
               <form onSubmit={handleCreate} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Offer Title
                   </label>
                   <Input
@@ -409,11 +409,11 @@ export default function OffersPage() {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Discount Percentage
                   </label>
                   <Input
@@ -423,11 +423,11 @@ export default function OffersPage() {
                     value={discount || ''}
                     onChange={(e) => setDiscount(Number(e.target.value))}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Tags
                     <span className="ml-1 text-xs text-muted-foreground font-normal">(type & press Enter or comma to add)</span>
                   </label>
@@ -435,23 +435,23 @@ export default function OffersPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium text-slate-300 block mb-2">Starts On</label>
+                    <label className="text-sm font-medium text-muted-foreground block mb-2">Starts On</label>
                     <Input
                       type="date"
                       value={formStartsAt}
                       onChange={(e) => setFormStartsAt(e.target.value)}
                       min={today}
-                      className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm"
+                      className="rounded-xl border-input bg-background text-foreground text-sm"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-slate-300 block mb-2">Expires On</label>
+                    <label className="text-sm font-medium text-muted-foreground block mb-2">Expires On</label>
                     <Input
                       type="date"
                       value={formExpiresAt}
                       onChange={(e) => setFormExpiresAt(e.target.value)}
                       min={formStartsAt || today}
-                      className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm"
+                      className="rounded-xl border-input bg-background text-foreground text-sm"
                     />
                   </div>
                 </div>
@@ -461,9 +461,9 @@ export default function OffersPage() {
                     id="active-chk"
                     checked={active}
                     onChange={(e) => setActive(e.target.checked)}
-                    className="rounded bg-white/5 border-white/10 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                    className="rounded bg-background border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer"
                   />
-                  <label htmlFor="active-chk" className="text-sm text-slate-300 cursor-pointer">
+                  <label htmlFor="active-chk" className="text-sm text-muted-foreground cursor-pointer">
                     Set active immediately
                   </label>
                 </div>
@@ -472,7 +472,7 @@ export default function OffersPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsCreateOpen(false)}
-                    className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer"
+                    className="rounded-xl border-border hover:bg-muted text-foreground cursor-pointer"
                   >
                     Cancel
                   </Button>
@@ -492,7 +492,7 @@ export default function OffersPage() {
         {/* ── EDIT MODAL ───────────────────────────────────────────── */}
         {editingOffer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setEditingOffer(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -502,18 +502,18 @@ export default function OffersPage() {
               <h3 className="text-xl font-bold text-foreground mb-4">Edit Offer Details</h3>
               <form onSubmit={handleEdit} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Offer Title
                   </label>
                   <Input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Discount Percentage
                   </label>
                   <Input
@@ -523,11 +523,11 @@ export default function OffersPage() {
                     value={discount || ''}
                     onChange={(e) => setDiscount(Number(e.target.value))}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Tags
                     <span className="ml-1 text-xs text-muted-foreground font-normal">(type & press Enter or comma)</span>
                   </label>
@@ -535,12 +535,12 @@ export default function OffersPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium text-slate-300 block mb-2">Starts On</label>
-                    <Input type="date" value={formStartsAt} onChange={(e) => setFormStartsAt(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
+                    <label className="text-sm font-medium text-muted-foreground block mb-2">Starts On</label>
+                    <Input type="date" value={formStartsAt} onChange={(e) => setFormStartsAt(e.target.value)} className="rounded-xl border-input bg-background text-foreground text-sm" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-slate-300 block mb-2">Expires On</label>
-                    <Input type="date" value={formExpiresAt} onChange={(e) => setFormExpiresAt(e.target.value)} min={formStartsAt || today} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
+                    <label className="text-sm font-medium text-muted-foreground block mb-2">Expires On</label>
+                    <Input type="date" value={formExpiresAt} onChange={(e) => setFormExpiresAt(e.target.value)} min={formStartsAt || today} className="rounded-xl border-input bg-background text-foreground text-sm" />
                   </div>
                 </div>
                 <div className="flex items-center gap-2 pt-2">
@@ -549,9 +549,9 @@ export default function OffersPage() {
                     id="edit-active-chk"
                     checked={active}
                     onChange={(e) => setActive(e.target.checked)}
-                    className="rounded bg-white/5 border-white/10 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                    className="rounded bg-background border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer"
                   />
-                  <label htmlFor="edit-active-chk" className="text-sm text-slate-300 cursor-pointer">
+                  <label htmlFor="edit-active-chk" className="text-sm text-muted-foreground cursor-pointer">
                     Active status
                   </label>
                 </div>
@@ -560,7 +560,7 @@ export default function OffersPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setEditingOffer(null)}
-                    className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer"
+                    className="rounded-xl border-border hover:bg-muted text-foreground cursor-pointer"
                   >
                     Cancel
                   </Button>
@@ -580,7 +580,7 @@ export default function OffersPage() {
         {/* ── DELETE MODAL ─────────────────────────────────────────── */}
         {deletingOffer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
               <button
                 onClick={() => setDeletingOffer(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -600,7 +600,7 @@ export default function OffersPage() {
                 <Button
                   onClick={() => setDeletingOffer(null)}
                   variant="outline"
-                  className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 px-4 cursor-pointer"
+                  className="rounded-xl border-border hover:bg-muted text-foreground px-4 cursor-pointer"
                 >
                   Cancel
                 </Button>
@@ -619,7 +619,7 @@ export default function OffersPage() {
         {/* ── DETAIL/VIEW MODAL ────────────────────────────────────── */}
         {viewingOffer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button
                 onClick={() => setViewingOffer(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -636,7 +636,7 @@ export default function OffersPage() {
                     className={`inline-block px-2 py-0.5 mt-1 rounded-full text-xs font-semibold ${
                       viewingOffer.active
                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : 'bg-white/5 text-muted-foreground border border-white/10'
+                        : 'bg-secondary/40 text-muted-foreground border border-border'
                     }`}
                   >
                     {viewingOffer.active ? 'Active' : 'Inactive'}
@@ -663,17 +663,17 @@ export default function OffersPage() {
               )}
 
               <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
+                <div className="bg-secondary/50 p-4 rounded-xl text-center border border-border">
                   <p className="text-xs text-muted-foreground mb-1">Discount</p>
                   <p className="text-2xl font-extrabold text-foreground">
                     {viewingOffer.discount}%
                   </p>
                 </div>
-                <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
+                <div className="bg-secondary/50 p-4 rounded-xl text-center border border-border">
                   <p className="text-xs text-muted-foreground mb-1">Total Views</p>
                   <p className="text-2xl font-extrabold text-foreground">{viewingOffer.views}</p>
                 </div>
-                <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
+                <div className="bg-secondary/50 p-4 rounded-xl text-center border border-border">
                   <p className="text-xs text-muted-foreground mb-1">Total Clicks</p>
                   <p className="text-2xl font-extrabold text-foreground">{viewingOffer.clicks}</p>
                 </div>

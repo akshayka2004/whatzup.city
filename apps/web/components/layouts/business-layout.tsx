@@ -206,13 +206,13 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
           {showOverlay ? (
             // Premium full-page glass overlay
             <div className="absolute inset-0 bg-background/40 backdrop-blur-md z-40 flex items-center justify-center p-6">
-              <Card className="max-w-md p-8 bg-[#0d0d12]/80 border border-white/5 shadow-2xl rounded-3xl text-center space-y-6">
+              <Card className="max-w-md p-8 bg-[#0d0d12]/80 border border-border shadow-2xl rounded-3xl text-center space-y-6">
                 <div className="w-16 h-16 rounded-full bg-violet-600/10 border border-violet-500/20 flex items-center justify-center mx-auto">
                   <Lock className="h-6 w-6 text-violet-400" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-slate-100">Verification Required</h3>
-                  <p className="text-sm text-slate-400 leading-relaxed">
+                  <h3 className="text-xl font-bold text-foreground">Verification Required</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     This sub-panel is restricted. Your account is currently pending administrator
                     approval. Once verified, you will unlock full analytics, marketing campaigns,
                     and partner support.
@@ -221,7 +221,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
                 <div className="flex justify-center gap-4">
                   <Button
                     onClick={() => router.push('/dashboard')}
-                    className="bg-white/5 border border-white/10 hover:bg-white/10 text-slate-300 rounded-xl px-5 py-2 text-xs font-semibold cursor-pointer"
+                    className="bg-muted/40 border border-border hover:bg-muted/80 text-muted-foreground rounded-xl px-5 py-2 text-xs font-semibold cursor-pointer"
                   >
                     Return to Dashboard
                   </Button>

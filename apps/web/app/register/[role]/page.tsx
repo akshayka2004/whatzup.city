@@ -214,10 +214,10 @@ export default function RoleOnboardingWizard() {
 
   if (!isValidRole) {
     return (
-      <div className="min-h-screen bg-[#37353E] text-slate-100 flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
         <ShieldAlert className="h-12 w-12 text-rose-500 mb-4 animate-bounce" />
         <h1 className="text-2xl font-bold">Invalid Onboarding Role</h1>
-        <p className="text-slate-400 text-sm mt-2 text-center max-w-sm">
+        <p className="text-muted-foreground text-sm mt-2 text-center max-w-sm">
           The requested onboarding role parameter is invalid. Please return to selection panel.
         </p>
         <Button onClick={() => router.push('/register/select-role')} className="mt-6 bg-violet-600">
@@ -229,9 +229,9 @@ export default function RoleOnboardingWizard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#37353E] text-slate-100 flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center">
         <Loader2 className="h-10 w-10 text-cyan-400 animate-spin mb-4" />
-        <p className="text-slate-400 text-sm">Synchronizing onboarding session...</p>
+        <p className="text-muted-foreground text-sm">Synchronizing onboarding session...</p>
       </div>
     );
   }
@@ -471,7 +471,7 @@ export default function RoleOnboardingWizard() {
   const ActiveStepIcon = currentRoleConfig.icons[currentStep - 1] || UserIcon;
 
   return (
-    <div className="min-h-screen bg-[#37353E] text-slate-100 py-10 px-4 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-background text-foreground py-10 px-4 relative overflow-hidden font-sans">
       <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-violet-600/5 rounded-full blur-[160px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyan-500/5 rounded-full blur-[140px] pointer-events-none"></div>
 
@@ -481,23 +481,23 @@ export default function RoleOnboardingWizard() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase tracking-wider">
             {role.replace('-', ' ')} Onboarding
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-foregroundxl md:text-4xl font-extrabold tracking-tight">
             Verification & Setup Wizard
           </h1>
-          <p className="text-sm text-slate-400 max-w-md mx-auto">
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
             Completing setup for {entityData?.name || 'your profile'}
           </p>
         </div>
 
         {/* Step tracker */}
-        <div className="w-full p-4 rounded-2xl" style={{ background: 'rgba(68,68,78,0.70)', border: '1px solid rgba(211,218,217,0.07)' }}>
-          <div className="flex justify-between items-center text-xs font-semibold text-slate-400 mb-3 px-2">
+        <div className="w-full p-4 rounded-2xl" >
+          <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground mb-3 px-2">
             <span>Progress Status</span>
             <span className="text-cyan-400">
               Step {currentStep} of {totalSteps}: {currentRoleConfig.steps[currentStep - 1]}
             </span>
           </div>
-          <Progress value={(currentStep / totalSteps) * 100} className="h-2 bg-white/5" />
+          <Progress value={(currentStep / totalSteps) * 100} className="h-2 bg-background" />
           <div className="grid grid-cols-4 gap-2 mt-4 text-[10px] text-center font-mono">
             {currentRoleConfig.steps.map((title, i) => (
               <span
@@ -507,7 +507,7 @@ export default function RoleOnboardingWizard() {
                     ? 'text-emerald-400 font-bold'
                     : i + 1 === currentStep
                     ? 'text-cyan-400 font-bold border-b border-cyan-500 pb-1'
-                    : 'text-slate-600'
+                    : 'text-muted-foreground/50'
                 }
               >
                 Step {i + 1}
@@ -530,16 +530,16 @@ export default function RoleOnboardingWizard() {
           </div>
         )}
 
-        <Card className="bg-[#0b0b0f]/80 backdrop-blur-xl border border-white/5 p-6 md:p-8 rounded-3xl shadow-xl">
+        <Card className="bg-card/80 backdrop-blur-xl border border-border p-6 md:p-8 rounded-3xl shadow-xl">
           {/* Dynamically render step form */}
           {currentStep < totalSteps ? (
             <form onSubmit={handleStepSubmit} className="space-y-6">
               <div>
-                <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <ActiveStepIcon className="h-5 w-5 text-violet-400 animate-pulse" />
                   {currentRoleConfig.steps[currentStep - 1]}
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Fill in details below to customize your specialized credentials.
                 </p>
               </div>
@@ -549,52 +549,52 @@ export default function RoleOnboardingWizard() {
                 {role === 'influencer' && currentStep === 1 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Niche Category</label>
+                      <label className="text-xs font-medium text-muted-foreground">Niche Category</label>
                       <Input
                         placeholder="Fashion, Tech, Food, Travel, Gaming"
                         value={niche}
                         onChange={(e) => setNiche(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                         required
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-slate-300">Instagram Handle</label>
+                        <label className="text-xs font-medium text-muted-foreground">Instagram Handle</label>
                         <Input
                           placeholder="@myhandle"
                           value={instagram}
                           onChange={(e) => setInstagram(e.target.value)}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-slate-300">YouTube Channel URL</label>
+                        <label className="text-xs font-medium text-muted-foreground">YouTube Channel URL</label>
                         <Input
                           placeholder="youtube.com/c/channel"
                           value={youtube}
                           onChange={(e) => setYoutube(e.target.value)}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                         />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-slate-300">Facebook Page link</label>
+                        <label className="text-xs font-medium text-muted-foreground">Facebook Page link</label>
                         <Input
                           placeholder="facebook.com/page"
                           value={facebook}
                           onChange={(e) => setFacebook(e.target.value)}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-slate-300">LinkedIn Profile link</label>
+                        <label className="text-xs font-medium text-muted-foreground">LinkedIn Profile link</label>
                         <Input
                           placeholder="linkedin.com/in/profile"
                           value={linkedin}
                           onChange={(e) => setLinkedin(e.target.value)}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                         />
                       </div>
                     </div>
@@ -605,25 +605,25 @@ export default function RoleOnboardingWizard() {
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-slate-300">Total Followers Count</label>
+                        <label className="text-xs font-medium text-muted-foreground">Total Followers Count</label>
                         <Input
                           type="number"
                           placeholder="15000"
                           value={followersCount}
                           onChange={(e) => setFollowersCount(Number(e.target.value))}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                           required
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-slate-300">Engagement Rate (%)</label>
+                        <label className="text-xs font-medium text-muted-foreground">Engagement Rate (%)</label>
                         <Input
                           type="number"
                           step="0.01"
                           placeholder="3.2"
                           value={engagementRate}
                           onChange={(e) => setEngagementRate(Number(e.target.value))}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                           required
                         />
                       </div>
@@ -634,21 +634,21 @@ export default function RoleOnboardingWizard() {
                 {role === 'influencer' && currentStep === 3 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Portfolio Website URL</label>
+                      <label className="text-xs font-medium text-muted-foreground">Portfolio Website URL</label>
                       <Input
                         placeholder="https://myportfolio.com"
                         value={portfolioUrl}
                         onChange={(e) => setPortfolioUrl(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Media Kit PDF Link (Optional)</label>
+                      <label className="text-xs font-medium text-muted-foreground">Media Kit PDF Link (Optional)</label>
                       <Input
                         placeholder="https://drive.google.com/mediakit.pdf"
                         value={mediaKitUrl}
                         onChange={(e) => setMediaKitUrl(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                       />
                     </div>
                   </>
@@ -658,34 +658,34 @@ export default function RoleOnboardingWizard() {
                 {role === 'professional' && currentStep === 1 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Service Category</label>
+                      <label className="text-xs font-medium text-muted-foreground">Service Category</label>
                       <Input
                         placeholder="Legal Advisor, Fitness Trainer, Freelance Architect, Plumbing Expert"
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                         required
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Years of Experience</label>
+                      <label className="text-xs font-medium text-muted-foreground">Years of Experience</label>
                       <Input
                         type="number"
                         placeholder="5"
                         value={experienceYears}
                         onChange={(e) => setExperienceYears(Number(e.target.value))}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-300">Certifications (Add list)</label>
+                      <label className="text-xs font-medium text-muted-foreground">Certifications (Add list)</label>
                       <div className="flex gap-2">
                         <Input
                           placeholder="e.g. Bar License, AWS Solutions Architect"
                           value={newCert}
                           onChange={(e) => setNewCert(e.target.value)}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                         />
                         <Button
                           type="button"
@@ -695,7 +695,7 @@ export default function RoleOnboardingWizard() {
                               setNewCert('');
                             }
                           }}
-                          className="bg-white/10 hover:bg-white/20 text-slate-100"
+                          className="bg-secondary hover:bg-white/20 text-foreground"
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -725,36 +725,36 @@ export default function RoleOnboardingWizard() {
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-slate-300">Min Pricing Hour / Rate ($)</label>
+                        <label className="text-xs font-medium text-muted-foreground">Min Pricing Hour / Rate ($)</label>
                         <Input
                           type="number"
                           placeholder="25"
                           value={pricingMin}
                           onChange={(e) => setPricingMin(Number(e.target.value))}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                           required
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-slate-300">Max Pricing Hour / Rate ($)</label>
+                        <label className="text-xs font-medium text-muted-foreground">Max Pricing Hour / Rate ($)</label>
                         <Input
                           type="number"
                           placeholder="150"
                           value={pricingMax}
                           onChange={(e) => setPricingMax(Number(e.target.value))}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                           required
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-300">Operational Service Regions</label>
+                      <label className="text-xs font-medium text-muted-foreground">Operational Service Regions</label>
                       <div className="flex gap-2">
                         <Input
                           placeholder="e.g. Manhattan, Brooklyn, Queens"
                           value={newArea}
                           onChange={(e) => setNewArea(e.target.value)}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                         />
                         <Button
                           type="button"
@@ -764,7 +764,7 @@ export default function RoleOnboardingWizard() {
                               setNewArea('');
                             }
                           }}
-                          className="bg-white/10 hover:bg-white/20 text-slate-100"
+                          className="bg-secondary hover:bg-white/20 text-foreground"
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -793,17 +793,17 @@ export default function RoleOnboardingWizard() {
                 {role === 'professional' && currentStep === 3 && (
                   <>
                     <div className="space-y-3">
-                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
                         Set Weekly Availability Hours
                       </label>
                       {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
-                        <div key={day} className="flex justify-between items-center gap-4 py-2 border-b border-white/5">
-                          <span className="capitalize text-xs font-medium text-slate-300">{day}</span>
+                        <div key={day} className="flex justify-between items-center gap-4 py-2 border-b border-border">
+                          <span className="capitalize text-xs font-medium text-muted-foreground">{day}</span>
                           <Input
                             placeholder="Closed or 9am - 5pm"
                             value={availability[day] || ''}
                             onChange={(e) => setAvailability({ ...availability, [day]: e.target.value })}
-                            className="max-w-[200px] h-8 bg-white/5 border-white/10 text-xs rounded-lg"
+                            className="max-w-[200px] h-8 bg-background border-input text-xs rounded-lg"
                           />
                         </div>
                       ))}
@@ -815,22 +815,22 @@ export default function RoleOnboardingWizard() {
                 {role === 'event-organizer' && currentStep === 1 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Organizer / Agency Name</label>
+                      <label className="text-xs font-medium text-muted-foreground">Organizer / Agency Name</label>
                       <Input
                         placeholder="Metropolitan Events Ltd."
                         value={organizationName}
                         onChange={(e) => setOrganizationName(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                         required
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Website</label>
+                      <label className="text-xs font-medium text-muted-foreground">Website</label>
                       <Input
                         placeholder="https://metroevents.com"
                         value={website}
                         onChange={(e) => setWebsite(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                       />
                     </div>
                     <div className="grid grid-cols-3 gap-3">
@@ -838,19 +838,19 @@ export default function RoleOnboardingWizard() {
                         placeholder="Facebook URL"
                         value={facebookLink}
                         onChange={(e) => setFacebookLink(e.target.value)}
-                        className="bg-white/5 border-white/10 text-xs rounded-xl"
+                        className="bg-background border-input text-xs rounded-xl"
                       />
                       <Input
                         placeholder="Instagram URL"
                         value={instagramLink}
                         onChange={(e) => setInstagramLink(e.target.value)}
-                        className="bg-white/5 border-white/10 text-xs rounded-xl"
+                        className="bg-background border-input text-xs rounded-xl"
                       />
                       <Input
                         placeholder="Twitter URL"
                         value={twitterLink}
                         onChange={(e) => setTwitterLink(e.target.value)}
-                        className="bg-white/5 border-white/10 text-xs rounded-xl"
+                        className="bg-background border-input text-xs rounded-xl"
                       />
                     </div>
                   </>
@@ -859,13 +859,13 @@ export default function RoleOnboardingWizard() {
                 {role === 'event-organizer' && currentStep === 2 && (
                   <>
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-300">Categories of Hosted Events</label>
+                      <label className="text-xs font-medium text-muted-foreground">Categories of Hosted Events</label>
                       <div className="flex gap-2">
                         <Input
                           placeholder="Concerts, Food Festivals, Coding Hackathons"
                           value={newEvCat}
                           onChange={(e) => setNewEvCat(e.target.value)}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                         />
                         <Button
                           type="button"
@@ -875,7 +875,7 @@ export default function RoleOnboardingWizard() {
                               setNewEvCat('');
                             }
                           }}
-                          className="bg-white/10 hover:bg-white/20 text-slate-100"
+                          className="bg-secondary hover:bg-white/20 text-foreground"
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -900,13 +900,13 @@ export default function RoleOnboardingWizard() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-300">Partnered Venues (Optional)</label>
+                      <label className="text-xs font-medium text-muted-foreground">Partnered Venues (Optional)</label>
                       <div className="flex gap-2">
                         <Input
                           placeholder="Downtown Amphitheater, Metropolitan Convention Center"
                           value={newVenue}
                           onChange={(e) => setNewVenue(e.target.value)}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                         />
                         <Button
                           type="button"
@@ -916,7 +916,7 @@ export default function RoleOnboardingWizard() {
                               setNewVenue('');
                             }
                           }}
-                          className="bg-white/10 hover:bg-white/20 text-slate-100"
+                          className="bg-secondary hover:bg-white/20 text-foreground"
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -946,9 +946,9 @@ export default function RoleOnboardingWizard() {
                         id="ticketingCheck"
                         checked={ticketingSupport}
                         onChange={(e) => setTicketingSupport(e.target.checked)}
-                        className="h-4 w-4 rounded bg-white/5 border-white/10 text-cyan-600 focus:ring-cyan-500"
+                        className="h-4 w-4 rounded bg-background border-input text-cyan-600 focus:ring-cyan-500"
                       />
-                      <label htmlFor="ticketingCheck" className="text-xs text-slate-300 font-medium cursor-pointer">
+                      <label htmlFor="ticketingCheck" className="text-xs text-muted-foreground font-medium cursor-pointer">
                         Do you require integrated digital ticketing support?
                       </label>
                     </div>
@@ -957,28 +957,28 @@ export default function RoleOnboardingWizard() {
 
                 {role === 'event-organizer' && currentStep === 3 && (
                   <>
-                    <div className="p-4 rounded-2xl bg-white/[0.01] border border-white/5 space-y-4">
-                      <label className="text-xs font-bold text-slate-300">Add a Past Event Showcase</label>
+                    <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-4">
+                      <label className="text-xs font-bold text-muted-foreground">Add a Past Event Showcase</label>
                       <div className="grid grid-cols-2 gap-3">
                         <Input
                           placeholder="Event Title"
                           value={newEvName}
                           onChange={(e) => setNewEvName(e.target.value)}
-                          className="bg-white/5 border-white/10 text-xs rounded-xl"
+                          className="bg-background border-input text-xs rounded-xl"
                         />
                         <Input
                           type="date"
                           placeholder="Event Date"
                           value={newEvDate}
                           onChange={(e) => setNewEvDate(e.target.value)}
-                          className="bg-white/5 border-white/10 text-xs rounded-xl"
+                          className="bg-background border-input text-xs rounded-xl"
                         />
                       </div>
                       <Textarea
                         placeholder="Brief summary of event turnout, theme..."
                         value={newEvDesc}
                         onChange={(e) => setNewEvDesc(e.target.value)}
-                        className="min-h-16 bg-white/5 border-white/10 text-xs rounded-xl"
+                        className="min-h-16 bg-background border-input text-xs rounded-xl"
                       />
                       <Button
                         type="button"
@@ -1000,16 +1000,16 @@ export default function RoleOnboardingWizard() {
                     </div>
 
                     <div className="space-y-2 pt-2">
-                      <span className="text-xs font-semibold text-slate-400">Added Events ({previousEvents.length})</span>
+                      <span className="text-xs font-semibold text-muted-foreground">Added Events ({previousEvents.length})</span>
                       <div className="space-y-2 max-h-36 overflow-y-auto pr-2">
                         {previousEvents.map((ev, idx) => (
                           <div
                             key={idx}
-                            className="flex justify-between items-center p-3 rounded-xl bg-white/[0.02] border border-white/5 text-xs"
+                            className="flex justify-between items-center p-3 rounded-xl bg-muted/40 border border-border text-xs"
                           >
                             <div>
-                              <p className="font-bold text-slate-200">{ev.name}</p>
-                              <p className="text-[10px] text-slate-400">{ev.date} - {ev.description}</p>
+                              <p className="font-bold text-foreground">{ev.name}</p>
+                              <p className="text-[10px] text-muted-foreground">{ev.date} - {ev.description}</p>
                             </div>
                             <Button
                               type="button"
@@ -1029,32 +1029,32 @@ export default function RoleOnboardingWizard() {
                 {role === 'ngo' && currentStep === 1 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">NGO / Organization Name</label>
+                      <label className="text-xs font-medium text-muted-foreground">NGO / Organization Name</label>
                       <Input
                         placeholder="Global Help Federation"
                         value={ngoName}
                         onChange={(e) => setNgoName(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                         required
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Registry Certificate Number</label>
+                      <label className="text-xs font-medium text-muted-foreground">Registry Certificate Number</label>
                       <Input
                         placeholder="NGO-12345/A"
                         value={registrationNumber}
                         onChange={(e) => setRegistrationNumber(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                         required
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Website Link</label>
+                      <label className="text-xs font-medium text-muted-foreground">Website Link</label>
                       <Input
                         placeholder="https://globalhelp.org"
                         value={website}
                         onChange={(e) => setWebsite(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                       />
                     </div>
                   </>
@@ -1063,23 +1063,23 @@ export default function RoleOnboardingWizard() {
                 {role === 'ngo' && currentStep === 2 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Primary Cause Category</label>
+                      <label className="text-xs font-medium text-muted-foreground">Primary Cause Category</label>
                       <Input
                         placeholder="Disaster Relief, Education For All, Stray Animals Rescue, Climate Action"
                         value={causeCategory}
                         onChange={(e) => setCauseCategory(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-300">Operational Target Regions</label>
+                      <label className="text-xs font-medium text-muted-foreground">Operational Target Regions</label>
                       <div className="flex gap-2">
                         <Input
                           placeholder="e.g. District A, District B, State-wide"
                           value={newOpArea}
                           onChange={(e) => setNewOpArea(e.target.value)}
-                          className="bg-white/5 border-white/10 text-sm rounded-xl"
+                          className="bg-background border-input text-sm rounded-xl"
                         />
                         <Button
                           type="button"
@@ -1089,7 +1089,7 @@ export default function RoleOnboardingWizard() {
                               setNewOpArea('');
                             }
                           }}
-                          className="bg-white/10 hover:bg-white/20 text-slate-100"
+                          className="bg-secondary hover:bg-white/20 text-foreground"
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -1119,32 +1119,32 @@ export default function RoleOnboardingWizard() {
                 {role === 'government' && currentStep === 1 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Official Department Name</label>
+                      <label className="text-xs font-medium text-muted-foreground">Official Department Name</label>
                       <Input
                         placeholder="Department of Civic Infrastructure"
                         value={departmentName}
                         onChange={(e) => setDepartmentName(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                         required
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Official Authority Email</label>
+                      <label className="text-xs font-medium text-muted-foreground">Official Authority Email</label>
                       <Input
                         type="email"
                         placeholder="contact@civic.gov.in"
                         value={officialEmail}
                         onChange={(e) => setOfficialEmail(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                         required
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">Department Authority Type</label>
+                      <label className="text-xs font-medium text-muted-foreground">Department Authority Type</label>
                       <select
                         value={departmentType}
                         onChange={(e) => setDepartmentType(e.target.value)}
-                        className="w-full h-11 px-3 bg-white/5 border border-white/10 text-slate-300 rounded-xl text-sm focus:outline-none cursor-pointer"
+                        className="w-full h-11 px-3 bg-background border border-input text-muted-foreground rounded-xl text-sm focus:outline-none cursor-pointer"
                       >
                         <option value="Local" className="bg-[#0f0f13]">Local Civic Body / Municipality</option>
                         <option value="District" className="bg-[#0f0f13]">District Commissioner Office</option>
@@ -1158,12 +1158,12 @@ export default function RoleOnboardingWizard() {
                 {role === 'government' && currentStep === 2 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-slate-300">District / Jurisdiction Coverage</label>
+                      <label className="text-xs font-medium text-muted-foreground">District / Jurisdiction Coverage</label>
                       <Input
                         placeholder="South Bengaluru Division, Miami-Dade District"
                         value={district}
                         onChange={(e) => setDistrict(e.target.value)}
-                        className="bg-white/5 border-white/10 text-sm rounded-xl"
+                        className="bg-background border-input text-sm rounded-xl"
                         required
                       />
                     </div>
@@ -1171,12 +1171,12 @@ export default function RoleOnboardingWizard() {
                 )}
               </div>
 
-              <div className="flex justify-between pt-6 border-t border-white/5">
+              <div className="flex justify-between pt-6 border-t border-border">
                 <Button
                   type="button"
                   onClick={handleBack}
                   disabled={currentStep === 1 || submitting}
-                  className="h-11 px-5 bg-white/5 border border-white/10 text-slate-300 rounded-xl cursor-pointer disabled:opacity-30"
+                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer disabled:opacity-30"
                 >
                   <span className="flex items-center gap-1.5">
                     <ArrowLeft className="h-4 w-4" />
@@ -1204,78 +1204,78 @@ export default function RoleOnboardingWizard() {
             // FINAL STEP: DOCUMENT UPLOAD & SUBMISSION
             <div className="space-y-8 animate-in fade-in duration-300">
               <div>
-                <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <UploadCloud className="h-5 w-5 text-violet-400" />
                   Submit Verification Documents
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Upload verification papers (Gazette papers, licenses, certificates, ID cards) to verify your entity profile.
                 </p>
               </div>
 
               {/* Upload form container */}
-              <form onSubmit={handleUploadDoc} className="p-5 rounded-2xl bg-white/[0.01] border border-white/5 space-y-4">
+              <form onSubmit={handleUploadDoc} className="p-5 rounded-2xl bg-muted/30 border border-border space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-300">Document Type Label</label>
+                    <label className="text-xs font-medium text-muted-foreground">Document Type Label</label>
                     <Input
                       placeholder="e.g. Authority Letter, Press License, TIN Document"
                       value={docTypeLabel}
                       onChange={(e) => setDocTypeLabel(e.target.value)}
-                      className="bg-white/5 border-white/10 text-xs rounded-xl"
+                      className="bg-background border-input text-xs rounded-xl"
                       required
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-slate-300">Document / Certificate ID Number</label>
+                    <label className="text-xs font-medium text-muted-foreground">Document / Certificate ID Number</label>
                     <Input
                       placeholder="e.g. LIC-998877"
                       value={docNumber}
                       onChange={(e) => setDocNumber(e.target.value)}
-                      className="bg-white/5 border-white/10 text-xs rounded-xl"
+                      className="bg-background border-input text-xs rounded-xl"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-slate-300">Issued Authority Name</label>
+                  <label className="text-xs font-medium text-muted-foreground">Issued Authority Name</label>
                   <Input
                     placeholder="e.g. Internal Revenue Department, Ministry of Press"
                     value={issuedAuthority}
                     onChange={(e) => setIssuedAuthority(e.target.value)}
-                    className="bg-white/5 border-white/10 text-xs rounded-xl"
+                    className="bg-background border-input text-xs rounded-xl"
                   />
                 </div>
 
                 {/* File picker */}
-                <div className="p-6 rounded-2xl border-2 border-dashed border-white/10 hover:border-violet-500/50 bg-white/[0.01] text-center cursor-pointer transition relative">
+                <div className="p-6 rounded-2xl border-2 border-dashed border-input hover:border-violet-500/50 bg-white/[0.01] text-center cursor-pointer transition relative">
                   <input
                     type="file"
                     accept="application/pdf,image/png,image/jpeg,image/webp"
                     onChange={(e) => setVerificationDoc(e.target.files?.[0] || null)}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
-                  <UploadCloud className="h-10 w-10 text-slate-400 mx-auto mb-2" />
+                  <UploadCloud className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
                   {verificationDoc ? (
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-violet-400">{verificationDoc.name}</p>
-                      <p className="text-[10px] text-slate-400">{(verificationDoc.size / 1024 / 1024).toFixed(2)} MB • Click to replace</p>
+                      <p className="text-[10px] text-muted-foreground">{(verificationDoc.size / 1024 / 1024).toFixed(2)} MB • Click to replace</p>
                     </div>
                   ) : (
                     <div>
-                      <p className="text-sm font-semibold text-slate-200">Drag files here or click to browse</p>
-                      <p className="text-[10px] text-slate-400 mt-1">Supports PDF, PNG, JPG, WEBP (Max 10MB)</p>
+                      <p className="text-sm font-semibold text-foreground">Drag files here or click to browse</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">Supports PDF, PNG, JPG, WEBP (Max 10MB)</p>
                     </div>
                   )}
                 </div>
 
                 {uploadProgress > 0 && (
                   <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] text-slate-400">
+                    <div className="flex justify-between text-[10px] text-muted-foreground">
                       <span>Transmitting file chunks...</span>
                       <span>{uploadProgress}%</span>
                     </div>
-                    <Progress value={uploadProgress} className="h-1 bg-white/5" />
+                    <Progress value={uploadProgress} className="h-1 bg-background" />
                   </div>
                 )}
 
@@ -1290,12 +1290,12 @@ export default function RoleOnboardingWizard() {
 
               {/* Uploaded documents showcase */}
               <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
                   Registered Documents ({uploadedDocs.length})
                 </h4>
 
                 {uploadedDocs.length === 0 ? (
-                  <div className="p-4 rounded-xl border border-white/5 bg-white/[0.01] text-center text-xs text-slate-500">
+                  <div className="p-4 rounded-xl border border-border bg-white/[0.01] text-center text-xs text-muted-foreground">
                     No documents uploaded yet.
                   </div>
                 ) : (
@@ -1303,14 +1303,14 @@ export default function RoleOnboardingWizard() {
                     {uploadedDocs.map((doc) => (
                       <div
                         key={doc.id}
-                        className="p-4 rounded-xl border border-white/5 bg-white/[0.02] flex justify-between items-start text-xs hover:border-white/10 transition"
+                        className="p-4 rounded-xl border border-border bg-white/[0.02] flex justify-between items-start text-xs hover:border-input transition"
                       >
                         <div className="space-y-1">
-                          <p className="font-semibold text-slate-200 flex items-center gap-1.5">
+                          <p className="font-semibold text-foreground flex items-center gap-1.5">
                             <FileCheck className="h-4 w-4 text-emerald-400 shrink-0" />
                             {doc.documentType}
                           </p>
-                          {doc.documentNumber && <p className="text-[10px] text-slate-400 font-mono">ID: {doc.documentNumber}</p>}
+                          {doc.documentNumber && <p className="text-[10px] text-muted-foreground font-mono">ID: {doc.documentNumber}</p>}
                           <a
                             href={doc.fileUrl}
                             target="_blank"
@@ -1334,12 +1334,12 @@ export default function RoleOnboardingWizard() {
               </div>
 
               {/* Navigation buttons */}
-              <div className="flex justify-between pt-6 border-t border-white/5">
+              <div className="flex justify-between pt-6 border-t border-border">
                 <Button
                   type="button"
                   onClick={handleBack}
                   disabled={submitting}
-                  className="h-11 px-5 bg-white/5 border border-white/10 text-slate-300 rounded-xl cursor-pointer"
+                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
                 >
                   <span className="flex items-center gap-1.5">
                     <ArrowLeft className="h-4 w-4" />

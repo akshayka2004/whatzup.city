@@ -142,7 +142,7 @@ export default function FraudEscalationsPage() {
             { label: 'High Risk (>80%)', value: bills.filter((b) => b.fraudScore >= 0.8).length, icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/10' },
             { label: 'Avg Fraud Score', value: `${Math.round((bills.reduce((a, b) => a + b.fraudScore, 0) / bills.length) * 100)}%`, icon: TrendingUp, color: 'text-orange-400', bg: 'bg-orange-500/10' },
           ].map((stat) => (
-            <Card key={stat.label} className="p-4 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+            <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-muted-foreground">{stat.label}</span>
                 <div className={cn('h-7 w-7 rounded-lg flex items-center justify-center', stat.bg)}>
@@ -161,13 +161,13 @@ export default function FraudEscalationsPage() {
             placeholder="Search by business or bill #..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-9 rounded-xl border-white/10 bg-card/40 text-sm"
+            className="pl-8 h-9 rounded-xl border-input bg-background text-sm"
           />
         </div>
 
         {/* ── ESCALATED BILL LIST ─────────────────────────────── */}
         {filtered.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary/20 text-center">
             <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto mb-3 opacity-50" />
             <h3 className="text-base font-semibold text-foreground mb-1">No Escalations</h3>
             <p className="text-sm text-muted-foreground">Platform fraud queue is clear.</p>
@@ -180,7 +180,7 @@ export default function FraudEscalationsPage() {
                 <Card
                   key={item.id}
                   className={cn(
-                    'p-5 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all',
+                    'p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all',
                     fraudPct >= 80 && 'border-l-2 border-l-red-500/60',
                     fraudPct >= 60 && fraudPct < 80 && 'border-l-2 border-l-orange-500/50',
                   )}
@@ -232,7 +232,7 @@ export default function FraudEscalationsPage() {
                         onClick={() => setReviewingItem(item)}
                         size="sm"
                         variant="outline"
-                        className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 gap-1.5 text-xs h-8 cursor-pointer"
+                        className="rounded-xl border-border text-foreground hover:bg-muted gap-1.5 text-xs h-8 cursor-pointer"
                       >
                         <Eye className="h-3.5 w-3.5" /> View Details
                       </Button>
@@ -256,7 +256,7 @@ export default function FraudEscalationsPage() {
         {/* ── DETAIL MODAL ─────────────────────────────────────── */}
         {reviewingItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-lg p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl">
+            <Card className="w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <ShieldAlert className="h-4 w-4 text-rose-400" />
@@ -307,7 +307,7 @@ export default function FraudEscalationsPage() {
 
                 <Button
                   onClick={() => setReviewingItem(null)}
-                  className="w-full rounded-xl bg-white/10 hover:bg-white/15 text-foreground text-sm cursor-pointer"
+                  className="w-full rounded-xl bg-secondary hover:bg-secondary/80 text-secondary-foreground text-sm cursor-pointer"
                 >
                   Close
                 </Button>

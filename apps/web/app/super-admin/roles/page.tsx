@@ -134,7 +134,7 @@ export default function SuperAdminRolesPage() {
           {roles.map((role) => (
             <Card
               key={role.name}
-              className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -147,7 +147,7 @@ export default function SuperAdminRolesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 text-sm border-t sm:border-t-0 pt-4 sm:pt-0 border-white/5">
+                <div className="flex items-center gap-6 text-sm border-t sm:border-t-0 pt-4 sm:pt-0 border-border">
                   <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
                     <UserCheck className="h-4 w-4" />
                     {role.users.toLocaleString()} accounts
@@ -156,7 +156,7 @@ export default function SuperAdminRolesPage() {
                     className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                       role.writeAccess
                         ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
-                        : 'bg-white/5 text-muted-foreground border border-white/10'
+                        : 'bg-secondary/40 text-muted-foreground border border-border'
                     }`}
                   >
                     {role.writeAccess ? 'Write Access' : 'Read Only'}
@@ -165,7 +165,7 @@ export default function SuperAdminRolesPage() {
                     onClick={() => setConfiguringRole(role)}
                     size="sm"
                     variant="ghost"
-                    className="rounded-lg h-8 text-xs font-semibold hover:bg-white/5"
+                    className="rounded-lg h-8 text-xs font-semibold hover:bg-muted"
                   >
                     Configure
                   </Button>
@@ -178,7 +178,7 @@ export default function SuperAdminRolesPage() {
         {/* ── ADD ROLE MODAL ─────────────────────────────── */}
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button
                 onClick={() => setIsAddOpen(false)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -188,7 +188,7 @@ export default function SuperAdminRolesPage() {
               <h3 className="text-xl font-bold text-foreground mb-4">Add Custom Role</h3>
               <form onSubmit={handleAddRole} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Role ID Name
                   </label>
                   <Input
@@ -196,21 +196,21 @@ export default function SuperAdminRolesPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Role Level Description
                   </label>
                   <Input
                     placeholder="e.g. Level 2 (Promotional Access)"
                     value={level}
                     onChange={(e) => setLevel(e.target.value)}
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
-                <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between p-3 bg-secondary/40 rounded-xl border border-border">
                   <div>
                     <p className="text-xs font-semibold text-foreground">Write Access Allowed</p>
                     <p className="text-[10px] text-muted-foreground">
@@ -232,7 +232,7 @@ export default function SuperAdminRolesPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsAddOpen(false)}
-                    className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300"
+                    className="rounded-xl border-border hover:bg-muted text-foreground"
                   >
                     Cancel
                   </Button>
@@ -251,7 +251,7 @@ export default function SuperAdminRolesPage() {
         {/* ── CONFIGURE ROLE MODAL ───────────────────────── */}
         {configuringRole && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-lg p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+            <Card className="w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[85vh] overflow-y-auto">
               <button
                 onClick={() => setConfiguringRole(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -273,7 +273,7 @@ export default function SuperAdminRolesPage() {
 
               <div className="space-y-4 mb-6">
                 <h4 className="text-sm font-semibold text-foreground">Modify Write Privileges</h4>
-                <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5">
+                <div className="flex items-center justify-between p-4 bg-secondary/40 rounded-xl border border-border">
                   <div>
                     <p className="text-sm font-semibold text-foreground">
                       Global Mutate Permission
@@ -306,7 +306,7 @@ export default function SuperAdminRolesPage() {
                         className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-colors ${
                           hasPerm
                             ? 'bg-primary/10 border-primary text-foreground'
-                            : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
+                            : 'bg-secondary/40 border-border text-muted-foreground hover:bg-secondary/80'
                         }`}
                       >
                         <span className="text-xs font-semibold">{perm}</span>
@@ -317,7 +317,7 @@ export default function SuperAdminRolesPage() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center border-t border-white/5 pt-6 mt-6">
+              <div className="flex justify-between items-center border-t border-border pt-6 mt-6">
                 <Button
                   onClick={() => handleDeleteRole(configuringRole.name)}
                   variant="outline"
@@ -329,7 +329,7 @@ export default function SuperAdminRolesPage() {
                   <Button
                     onClick={() => setConfiguringRole(null)}
                     variant="outline"
-                    className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300"
+                    className="rounded-xl border-border hover:bg-muted text-foreground"
                   >
                     Cancel
                   </Button>

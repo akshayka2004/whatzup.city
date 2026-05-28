@@ -493,7 +493,7 @@ export default function BillModerationPage() {
         {/* ── ACTION MODAL ──────────────────────────────────── */}
         {actionModal && selectedBill && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl">
               <div className={cn(
                 'mx-auto h-12 w-12 rounded-full flex items-center justify-center mb-4',
                 actionModal === 'approve' || actionModal === 'override' ? 'bg-emerald-500/10 text-emerald-400'
@@ -529,7 +529,7 @@ export default function BillModerationPage() {
                   }
                   value={actionReason}
                   onChange={(e) => setActionReason(e.target.value)}
-                  className="mb-4 rounded-xl border-white/10 bg-white/5 text-sm resize-none h-20"
+                  className="mb-4 rounded-xl border-input bg-background text-sm resize-none h-20"
                 />
               )}
 
@@ -537,7 +537,7 @@ export default function BillModerationPage() {
                 <Button
                   variant="outline"
                   onClick={() => { setActionModal(null); setActionReason(''); }}
-                  className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 text-sm cursor-pointer"
+                  className="rounded-xl border-border text-foreground hover:bg-muted text-sm cursor-pointer"
                 >
                   Cancel
                 </Button>

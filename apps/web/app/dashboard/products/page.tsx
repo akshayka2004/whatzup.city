@@ -35,7 +35,7 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (t: string[]) 
 
   return (
     <div
-      className="min-h-[42px] flex flex-wrap gap-1.5 items-center border border-white/10 bg-white/5 rounded-xl px-3 py-2 cursor-text focus-within:border-primary transition-colors"
+      className="min-h-[42px] flex flex-wrap gap-1.5 items-center border border-border bg-secondary/40 rounded-xl px-3 py-2 cursor-text focus-within:border-primary transition-colors"
       onClick={() => ref.current?.focus()}
     >
       {tags.map((tag) => (
@@ -223,7 +223,7 @@ export default function ProductsPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : products.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary/20 text-center">
             <Box className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No products yet</p>
             <p className="text-sm text-muted-foreground">Add your first product to build your catalog.</p>
@@ -231,7 +231,7 @@ export default function ProductsPage() {
         ) : (
           <div className="space-y-4">
             {products.map((product) => (
-              <Card key={product.id} className="p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-white/5 bg-card/40 backdrop-blur-xl relative overflow-hidden">
+              <Card key={product.id} className="p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
@@ -240,7 +240,7 @@ export default function ProductsPage() {
                       <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
                         product.isAvailable
                           ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                          : 'bg-white/5 text-muted-foreground border-white/10'
+                          : 'bg-secondary/40 text-muted-foreground border-border'
                       }`}>
                         {product.isAvailable ? 'Available' : 'Unavailable'}
                       </span>
@@ -258,10 +258,10 @@ export default function ProductsPage() {
                     )}
                   </div>
                   <div className="flex gap-2 shrink-0 ml-4">
-                    <Button onClick={() => setViewingProduct(product)} size="icon" variant="outline" className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 h-9 w-9 cursor-pointer">
+                    <Button onClick={() => setViewingProduct(product)} size="icon" variant="outline" className="rounded-xl border-border hover:bg-muted text-foreground h-9 w-9 cursor-pointer">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button onClick={() => handleOpenEdit(product)} size="icon" variant="outline" className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 h-9 w-9 cursor-pointer">
+                    <Button onClick={() => handleOpenEdit(product)} size="icon" variant="outline" className="rounded-xl border-border hover:bg-muted text-foreground h-9 w-9 cursor-pointer">
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button onClick={() => setDeletingProduct(product)} size="icon" variant="outline" className="rounded-xl border-rose-500/20 hover:bg-rose-500/10 text-rose-400 hover:text-rose-300 h-9 w-9 cursor-pointer">
@@ -277,44 +277,44 @@ export default function ProductsPage() {
         {/* ── ADD MODAL ── */}
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button onClick={() => setIsAddOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
               <h3 className="text-xl font-bold text-foreground mb-4">Add Product</h3>
               <form onSubmit={handleAdd} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Product Name *</label>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">Product Name *</label>
                   <Input
                     placeholder="e.g. Premium Speakers"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Description</label>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">Description</label>
                   <Input
                     placeholder="Short product description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Price ($) *</label>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">Price ($) *</label>
                   <Input
                     placeholder="e.g. 99.99"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div className="flex items-center gap-2 pt-1">
-                  <input type="checkbox" id="add-available" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="rounded bg-white/5 border-white/10 h-4 w-4" />
-                  <label htmlFor="add-available" className="text-sm text-slate-300">Available immediately</label>
+                  <input type="checkbox" id="add-available" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="rounded bg-background border-input h-4 w-4" />
+                  <label htmlFor="add-available" className="text-sm text-muted-foreground">Available immediately</label>
                 </div>
                 {formError && (
                   <div className="flex items-start gap-2 text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2">
@@ -323,7 +323,7 @@ export default function ProductsPage() {
                   </div>
                 )}
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)} className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer">Cancel</Button>
+                  <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)} className="rounded-xl border-border hover:bg-muted text-foreground cursor-pointer">Cancel</Button>
                   <Button type="submit" disabled={submitting} className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer flex items-center gap-1.5">
                     {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                     Add Product
@@ -337,41 +337,41 @@ export default function ProductsPage() {
         {/* ── EDIT MODAL ── */}
         {editingProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button onClick={() => setEditingProduct(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
               <h3 className="text-xl font-bold text-foreground mb-4">Edit Product</h3>
               <form onSubmit={handleEdit} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Product Name *</label>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">Product Name *</label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Description</label>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">Description</label>
                   <Input
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Price ($) *</label>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">Price ($) *</label>
                   <Input
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
                 <div className="flex items-center gap-2 pt-1">
-                  <input type="checkbox" id="edit-available" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="rounded bg-white/5 border-white/10 h-4 w-4" />
-                  <label htmlFor="edit-available" className="text-sm text-slate-300">Available</label>
+                  <input type="checkbox" id="edit-available" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="rounded bg-background border-input h-4 w-4" />
+                  <label htmlFor="edit-available" className="text-sm text-muted-foreground">Available</label>
                 </div>
                 {formError && (
                   <div className="flex items-start gap-2 text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2">
@@ -380,7 +380,7 @@ export default function ProductsPage() {
                   </div>
                 )}
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setEditingProduct(null)} className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer">Cancel</Button>
+                  <Button type="button" variant="outline" onClick={() => setEditingProduct(null)} className="rounded-xl border-border hover:bg-muted text-foreground cursor-pointer">Cancel</Button>
                   <Button type="submit" disabled={submitting} className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer flex items-center gap-1.5">
                     {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                     Save Changes
@@ -394,7 +394,7 @@ export default function ProductsPage() {
         {/* ── DELETE MODAL ── */}
         {deletingProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
               <button onClick={() => setDeletingProduct(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
@@ -406,7 +406,7 @@ export default function ProductsPage() {
                 Delete <span className="font-semibold text-foreground">"{deletingProduct.name}"</span>? This is permanent.
               </p>
               <div className="flex justify-center gap-3">
-                <Button onClick={() => setDeletingProduct(null)} variant="outline" className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 px-4 cursor-pointer">Cancel</Button>
+                <Button onClick={() => setDeletingProduct(null)} variant="outline" className="rounded-xl border-border hover:bg-muted text-foreground px-4 cursor-pointer">Cancel</Button>
                 <Button onClick={handleDelete} disabled={submitting} className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4 cursor-pointer flex items-center gap-1.5">
                   {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Delete
@@ -419,7 +419,7 @@ export default function ProductsPage() {
         {/* ── VIEW MODAL ── */}
         {viewingProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button onClick={() => setViewingProduct(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
@@ -432,13 +432,13 @@ export default function ProductsPage() {
                   <span className={`inline-block px-2 py-0.5 mt-1 rounded-full text-xs font-semibold border ${
                     viewingProduct.isAvailable
                       ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      : 'bg-white/5 text-muted-foreground border-white/10'
+                      : 'bg-secondary/40 text-muted-foreground border-border'
                   }`}>
                     {viewingProduct.isAvailable ? 'Available' : 'Unavailable'}
                   </span>
                 </div>
               </div>
-              <div className="bg-white/5 p-4 rounded-xl border border-white/5 mb-4">
+              <div className="bg-secondary/50 p-4 rounded-xl border border-border mb-4">
                 <p className="text-xs text-muted-foreground mb-1">Price</p>
                 <p className="text-2xl font-extrabold text-foreground">
                   {parseFloat(viewingProduct.price) > 0 ? `$${parseFloat(viewingProduct.price).toFixed(2)}` : '—'}

@@ -205,10 +205,10 @@ export function MobileNav() {
         </SheetTrigger>
         <SheetContent
           side="bottom"
-          className="rounded-t-[32px] max-h-[80vh] overflow-y-auto pb-8 bg-zinc-950/95 border-t border-white/10 text-white z-50"
+          className="rounded-t-[32px] max-h-[80vh] overflow-y-auto pb-8 bg-card border-t border-border text-foreground z-50"
         >
-          <SheetHeader className="text-left pb-4 border-b border-white/5">
-            <SheetTitle className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+          <SheetHeader className="text-left pb-4 border-b border-border">
+            <SheetTitle className="text-lg font-bold text-foreground tracking-tight flex items-center gap-2">
               <Menu className="h-5 w-5 text-primary" />
               Navigation Menu
             </SheetTitle>
@@ -230,7 +230,7 @@ export function MobileNav() {
                 <button
                   key={item.label}
                   onClick={() => handleDrawerItemClick(item.href, item.action)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.08] transition-all text-left text-xs font-semibold cursor-pointer h-12"
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/40 border border-border hover:bg-secondary/80 text-foreground transition-all text-left text-xs font-semibold cursor-pointer h-12"
                 >
                   <ItemIcon className="h-4 w-4 text-primary shrink-0" />
                   <span className="truncate">{item.label}</span>
@@ -242,9 +242,9 @@ export function MobileNav() {
             {user && (
               <button
                 onClick={handleSignOutClick}
-                className="col-span-2 flex items-center gap-3 px-4 py-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-all text-left text-xs font-semibold text-rose-400 cursor-pointer h-12 mt-2"
+                className="col-span-2 flex items-center gap-3 px-4 py-3 rounded-2xl bg-destructive/10 border border-destructive/20 hover:bg-destructive/20 transition-all text-left text-xs font-semibold text-destructive cursor-pointer h-12 mt-2"
               >
-                <LogOut className="h-4 w-4 shrink-0 text-rose-400" />
+                <LogOut className="h-4 w-4 shrink-0 text-destructive" />
                 <span>Sign Out</span>
               </button>
             )}

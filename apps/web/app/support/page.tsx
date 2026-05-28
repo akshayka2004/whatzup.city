@@ -49,7 +49,7 @@ const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; icon: 
   open: { label: 'Open', color: 'bg-amber-500/15 text-amber-400 border-amber-500/20', icon: Clock },
   in_progress: { label: 'In Progress', color: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/20', icon: MessageSquare },
   resolved: { label: 'Resolved', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
-  closed: { label: 'Closed', color: 'bg-slate-500/15 text-slate-400 border-slate-500/20', icon: X },
+  closed: { label: 'Closed', color: 'bg-slate-500/15 text-muted-foreground border-slate-500/20', icon: X },
 };
 
 const INITIAL_TICKETS: Ticket[] = [
@@ -196,13 +196,13 @@ export default function SupportPage() {
                   placeholder="Search tickets…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8 h-9 rounded-xl border-white/10 bg-white/5 text-sm"
+                  className="pl-8 h-9 rounded-xl border-border bg-muted/40 text-sm"
                 />
               </div>
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as any)}
-                className="h-9 rounded-xl border border-white/10 bg-card text-xs text-foreground px-2 cursor-pointer"
+                className="h-9 rounded-xl border border-border bg-card text-xs text-foreground px-2 cursor-pointer"
               >
                 <option value="all">All</option>
                 {Object.entries(STATUS_CONFIG).map(([id, cfg]) => (
@@ -212,7 +212,7 @@ export default function SupportPage() {
             </div>
 
             {filtered.length === 0 && (
-              <Card className="p-8 rounded-2xl border-white/5 bg-card/40 text-center">
+              <Card className="p-8 rounded-2xl border-border bg-card/40 text-center">
                 <LifeBuoy className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">No tickets found.</p>
               </Card>
@@ -228,7 +228,7 @@ export default function SupportPage() {
                   onClick={() => { setSelected(ticket); setShowNew(false); }}
                   className={cn(
                     'p-4 rounded-2xl border cursor-pointer transition-all hover:shadow-md',
-                    active ? 'border-primary/40 bg-primary/5' : 'border-white/5 bg-card/60',
+                    active ? 'border-primary/40 bg-primary/5' : 'border-border bg-card/60',
                   )}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
@@ -254,7 +254,7 @@ export default function SupportPage() {
           <div className="lg:col-span-2">
             {/* New Ticket Form */}
             {showNew && (
-              <Card className="p-6 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl">
+              <Card className="p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl">
                 <h2 className="text-base font-bold text-foreground mb-5 flex items-center gap-2">
                   <Plus className="h-4 w-4 text-primary" />
                   New Support Ticket
@@ -266,7 +266,7 @@ export default function SupportPage() {
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
                       placeholder="Brief summary of your issue"
-                      className="rounded-xl border-white/10 bg-white/5 text-sm"
+                      className="rounded-xl border-border bg-muted/40 text-sm"
                       required
                     />
                   </div>
@@ -275,7 +275,7 @@ export default function SupportPage() {
                     <select
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value as TicketCategory)}
-                      className="w-full h-9 rounded-xl border border-white/10 bg-card text-sm text-foreground px-3 cursor-pointer"
+                      className="w-full h-9 rounded-xl border border-border bg-card text-sm text-foreground px-3 cursor-pointer"
                     >
                       {CATEGORIES.map((c) => (
                         <option key={c.id} value={c.id}>{c.label}</option>
@@ -290,7 +290,7 @@ export default function SupportPage() {
                       placeholder="Describe your issue in detail…"
                       rows={5}
                       required
-                      className="w-full rounded-xl border border-white/10 bg-white/5 text-sm text-foreground px-3 py-2.5 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full rounded-xl border border-border bg-muted/40 text-sm text-foreground px-3 py-2.5 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
                   <div className="flex gap-2">
@@ -298,7 +298,7 @@ export default function SupportPage() {
                       type="button"
                       onClick={() => setShowNew(false)}
                       variant="outline"
-                      className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
+                      className="flex-1 rounded-xl border-border text-muted-foreground hover:bg-muted/40 cursor-pointer"
                     >
                       Cancel
                     </Button>
@@ -315,9 +315,9 @@ export default function SupportPage() {
 
             {/* Ticket Thread */}
             {selected && !showNew && (
-              <Card className="rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl flex flex-col" style={{ minHeight: '520px' }}>
+              <Card className="rounded-2xl border-border bg-card/60 backdrop-blur-xl flex flex-col" style={{ minHeight: '520px' }}>
                 {/* Header */}
-                <div className="p-5 border-b border-white/5">
+                <div className="p-5 border-b border-border">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">{selected.id} · {selected.category}</p>
@@ -337,7 +337,7 @@ export default function SupportPage() {
                         'max-w-[80%] rounded-2xl px-4 py-3',
                         msg.from === 'user'
                           ? 'bg-primary/20 text-foreground rounded-tr-sm'
-                          : 'bg-white/5 text-foreground rounded-tl-sm',
+                          : 'bg-muted/40 text-foreground rounded-tl-sm',
                       )}>
                         <p className="text-xs font-semibold mb-1 text-muted-foreground">
                           {msg.from === 'user' ? 'You' : 'Support Team'}
@@ -351,12 +351,12 @@ export default function SupportPage() {
 
                 {/* Reply */}
                 {selected.status !== 'closed' && selected.status !== 'resolved' && (
-                  <form onSubmit={handleReply} className="p-4 border-t border-white/5 flex gap-2">
+                  <form onSubmit={handleReply} className="p-4 border-t border-border flex gap-2">
                     <Input
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
                       placeholder="Type a reply…"
-                      className="flex-1 rounded-xl border-white/10 bg-white/5 text-sm"
+                      className="flex-1 rounded-xl border-border bg-muted/40 text-sm"
                     />
                     <Button
                       type="submit"
@@ -373,7 +373,7 @@ export default function SupportPage() {
 
             {/* Empty state */}
             {!selected && !showNew && (
-              <Card className="p-12 rounded-2xl border-white/5 bg-card/40 text-center">
+              <Card className="p-12 rounded-2xl border-border bg-card/40 text-center">
                 <LifeBuoy className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                 <p className="text-base font-semibold text-foreground mb-1">Select a ticket to view</p>
                 <p className="text-sm text-muted-foreground">Or open a new ticket for help with your issue.</p>

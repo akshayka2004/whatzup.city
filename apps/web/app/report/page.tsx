@@ -28,7 +28,7 @@ const ISSUE_TYPES: { id: IssueType; label: string; desc: string; icon: any; colo
   { id: 'fake_review', label: 'Fake Review', desc: 'Review appears to be fabricated or purchased.', icon: Star, color: 'text-yellow-400' },
   { id: 'inappropriate_content', label: 'Inappropriate Content', desc: 'Media or description violates community guidelines.', icon: ShieldAlert, color: 'text-violet-400' },
   { id: 'wrong_info', label: 'Wrong Information', desc: 'Address, hours, or contact info is incorrect.', icon: Globe, color: 'text-cyan-400' },
-  { id: 'other', label: 'Other Issue', desc: 'Something else that needs admin attention.', icon: MessageSquare, color: 'text-slate-400' },
+  { id: 'other', label: 'Other Issue', desc: 'Something else that needs admin attention.', icon: MessageSquare, color: 'text-muted-foreground' },
 ];
 
 export default function ReportPage() {
@@ -124,7 +124,7 @@ export default function ReportPage() {
                       'text-left p-4 rounded-2xl border transition-all cursor-pointer',
                       selected
                         ? 'border-primary/40 bg-primary/5'
-                        : 'border-white/5 bg-card/60 hover:border-white/10 hover:bg-white/5',
+                        : 'border-border bg-card/60 hover:border-border hover:bg-muted/40',
                     )}
                   >
                     <div className="flex items-center gap-2 mb-2">
@@ -162,7 +162,7 @@ export default function ReportPage() {
               </div>
             </div>
 
-            <Card className="p-6 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl">
+            <Card className="p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground block mb-1.5">
@@ -172,7 +172,7 @@ export default function ReportPage() {
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
                     placeholder="Which business is this about?"
-                    className="rounded-xl border-white/10 bg-white/5 text-sm"
+                    className="rounded-xl border-border bg-muted/40 text-sm"
                   />
                 </div>
                 <div>
@@ -183,7 +183,7 @@ export default function ReportPage() {
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                     placeholder="Brief summary"
-                    className="rounded-xl border-white/10 bg-white/5 text-sm"
+                    className="rounded-xl border-border bg-muted/40 text-sm"
                   />
                 </div>
                 <div>
@@ -196,7 +196,7 @@ export default function ReportPage() {
                     placeholder="Describe the issue in detail. Include dates, offer names, or any relevant information."
                     rows={6}
                     required
-                    className="w-full rounded-xl border border-white/10 bg-white/5 text-sm text-foreground px-3 py-2.5 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-full rounded-xl border border-border bg-muted/40 text-sm text-foreground px-3 py-2.5 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 {!user && (
@@ -231,7 +231,7 @@ export default function ReportPage() {
 
         {/* Step: Success */}
         {step === 'success' && (
-          <Card className="p-10 rounded-2xl border-white/5 bg-card/60 text-center space-y-4">
+          <Card className="p-10 rounded-2xl border-border bg-card/60 text-center space-y-4">
             <div className="mx-auto w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
               <Check className="h-8 w-8 text-emerald-400" />
             </div>
@@ -240,7 +240,7 @@ export default function ReportPage() {
               Your report <strong className="text-foreground">{submittedId}</strong> has been submitted and is visible to our admin team. We will review it within 24–48 hours.
             </p>
             <div className="flex gap-2 justify-center pt-2">
-              <Button onClick={reset} variant="outline" className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">
+              <Button onClick={reset} variant="outline" className="rounded-xl border-border text-muted-foreground hover:bg-muted/40 cursor-pointer">
                 Report Another
               </Button>
               <Button

@@ -541,9 +541,9 @@ export default function UnifiedRegisterPage() {
 
   return (
     <div className="min-h-screen w-full font-sans flex flex-col"
-         style={{ backgroundColor: '#37353E' }}>
+         >
       {/* Centered content area */}
-      <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden text-slate-100">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden text-foreground">
         {/* Ambient background decoration */}
         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[160px] pointer-events-none"
              style={{ background: 'rgba(113,90,90,0.08)' }} />
@@ -553,24 +553,24 @@ export default function UnifiedRegisterPage() {
       <div className="w-full max-w-4xl relative z-10 space-y-6">
         {/* Top Header */}
         <div className="text-center space-y-2 mb-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-700/30 border border-zinc-600/30 text-zinc-300 text-xs font-semibold tracking-wide">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted border border-border text-muted-foreground text-xs font-semibold tracking-wide">
             <img src="/logo.png" alt="Whtzup.city Logo" className="h-5 w-auto object-contain" />
             <span className="font-semibold tracking-tight">whtzup.city</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-foregroundxl md:text-4xl font-extrabold tracking-tight">
             Create Your Account
           </h1>
-          <p className="text-sm text-slate-400 max-w-md mx-auto">
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
             Complete registration steps to unlock full catalog listings, reviews, and alerts.
           </p>
         </div>
 
         {/* Stepper bar */}
         <div className="w-full p-4 rounded-2xl backdrop-blur-xl"
-             style={{ background: 'rgba(68,68,78,0.70)', border: '1px solid rgba(211,218,217,0.07)' }}>
-          <div className="flex justify-between items-center text-xs font-semibold text-slate-400 mb-3 px-1">
+             >
+          <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground mb-3 px-1">
             <span>Progress Status</span>
-            <span className="text-zinc-300">
+            <span className="text-muted-foreground">
               Step {currentStep} of 3: {
                 currentStep === 1 ? 'Choose Account Type' :
                 currentStep === 2 ? 'Credentials & Setup' :
@@ -578,7 +578,7 @@ export default function UnifiedRegisterPage() {
               }
             </span>
           </div>
-          <Progress value={(currentStep / 3) * 100} className="h-2 bg-white/5" />
+          <Progress value={(currentStep / 3) * 100} className="h-2 bg-background" />
           <div className="grid grid-cols-3 gap-2 mt-4 text-[10px] text-center font-mono">
             {['Account Type', 'Credentials', 'Profile Setup'].map((title, i) => (
               <span
@@ -587,8 +587,8 @@ export default function UnifiedRegisterPage() {
                   i + 1 < currentStep
                     ? 'text-emerald-400 font-bold'
                     : i + 1 === currentStep
-                      ? 'text-zinc-300 font-bold border-b border-zinc-500 pb-1'
-                      : 'text-slate-600'
+                      ? 'text-muted-foreground font-bold border-b border-border pb-1'
+                      : 'text-muted-foreground/50'
                 }
               >
                 {title}
@@ -614,14 +614,14 @@ export default function UnifiedRegisterPage() {
 
         {/* Form Card */}
         <Card className="backdrop-blur-xl p-6 md:p-8 rounded-2xl shadow-2xl relative overflow-hidden"
-              style={{ background: 'rgba(68,68,78,0.85)', border: '1px solid rgba(211,218,217,0.07)' }}>
+              >
           
           {/* STEP 1: Account Type Selection */}
           {currentStep === 1 && (
             <div className="space-y-6">
               <div className="text-center md:text-left">
-                <h2 className="text-xl font-bold text-slate-100">Select Account Class</h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <h2 className="text-xl font-bold text-foreground">Select Account Class</h2>
+                <p className="text-xs text-muted-foreground mt-1">
                   Choose how you plan to use Whtzup.city. Select from standard roles:
                 </p>
               </div>
@@ -633,7 +633,7 @@ export default function UnifiedRegisterPage() {
                     title: 'Customer',
                     description: 'Explore verified business catalogs, post public ratings, claim offer coupons.',
                     icon: UserIcon,
-                    color: 'from-violet-600/20 to-violet-500/5 hover:border-zinc-500/50',
+                    color: 'from-violet-600/20 to-violet-500/5 hover:border-border',
                     iconColor: 'text-violet-400',
                   },
                   {
@@ -661,11 +661,11 @@ export default function UnifiedRegisterPage() {
                       type="button"
                       onClick={() => setRole(item.type as RegisterRole)}
                       className={`p-6 rounded-2xl border text-left bg-gradient-to-b ${item.color} transition cursor-pointer flex flex-col gap-4 relative ${
-                        isSelected ? 'border-white scale-[1.02] shadow-xl' : 'border-white/5'
+                        isSelected ? 'border-white scale-[1.02] shadow-xl' : 'border-border'
                       }`}
                     >
                       <div className="flex justify-between items-start">
-                        <div className={`p-3 rounded-xl bg-white/5`}>
+                        <div className={`p-3 rounded-xl bg-background`}>
                           <Icon className={`h-6 w-6 ${item.iconColor}`} />
                         </div>
                         {isSelected && (
@@ -675,22 +675,22 @@ export default function UnifiedRegisterPage() {
                         )}
                       </div>
                       <div>
-                        <h3 className="font-bold text-slate-100 mb-1">{item.title}</h3>
-                        <p className="text-xs text-slate-400 leading-relaxed">{item.description}</p>
+                        <h3 className="font-bold text-foreground mb-1">{item.title}</h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
                       </div>
                     </button>
                   );
                 })}
               </div>
 
-              <div className="flex justify-between pt-4 border-t border-white/5">
-                <Link href="/login" className="text-slate-400 hover:text-slate-200 text-sm font-semibold flex items-center gap-1.5">
+              <div className="flex justify-between pt-4 border-t border-border">
+                <Link href="/login" className="text-muted-foreground hover:text-foreground text-sm font-semibold flex items-center gap-1.5">
                   <ArrowLeft className="h-4 w-4" /> Back to Login
                 </Link>
 
                 <Button
                   onClick={() => setCurrentStep(2)}
-                  className="rounded-xl h-11 px-6 font-semibold text-[#D3DAD9] hover:opacity-90 transition-opacity" style={{ background: '#715A5A' }}
+                  className="rounded-xl h-11 px-6 font-semibold text-[#D3DAD9] hover:opacity-90 transition-opacity" 
                 >
                   Continue <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Button>
@@ -702,8 +702,8 @@ export default function UnifiedRegisterPage() {
           {currentStep === 2 && (
             <form onSubmit={handleStep2Submit} className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold text-slate-100">Setup Credentials</h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <h2 className="text-xl font-bold text-foreground">Setup Credentials</h2>
+                <p className="text-xs text-muted-foreground mt-1">
                   Fill in primary user and registry details. Fields are validated dynamically.
                 </p>
               </div>
@@ -711,33 +711,33 @@ export default function UnifiedRegisterPage() {
               <div className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-300">
+                    <label className="text-xs font-medium text-muted-foreground">
                       {role === 'BUSINESS' ? 'Owner Full Name' : role === 'GOVERNMENT' ? 'Department Official Name' : 'Full Name'}
                     </label>
                     <div className="relative">
-                      <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                      <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="text"
                         placeholder="e.g. Adarsh Kumar"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="pl-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
+                        className="pl-10 h-11 bg-background border-input text-sm text-foreground rounded-xl"
                         required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-300">Email Address</label>
+                    <label className="text-xs font-medium text-muted-foreground">Email Address</label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="email"
                         placeholder="adarsh@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className={`pl-10 h-11 bg-white/5 text-sm text-slate-100 rounded-xl ${
-                          email && !isEmailValid ? 'border-rose-500/50' : 'border-white/10'
+                        className={`pl-10 h-11 bg-background text-sm text-foreground rounded-xl ${
+                          email && !isEmailValid ? 'border-rose-500/50' : 'border-input'
                         }`}
                         required
                       />
@@ -750,17 +750,17 @@ export default function UnifiedRegisterPage() {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-300">Phone Number (10 Digits)</label>
+                    <label className="text-xs font-medium text-muted-foreground">Phone Number (10 Digits)</label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="text"
                         placeholder="e.g. 9876543210"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} // Clean up non-digits
                         maxLength={10}
-                        className={`pl-10 h-11 bg-white/5 text-sm text-slate-100 rounded-xl ${
-                          phone && !isPhoneValid ? 'border-rose-500/50' : 'border-white/10'
+                        className={`pl-10 h-11 bg-background text-sm text-foreground rounded-xl ${
+                          phone && !isPhoneValid ? 'border-rose-500/50' : 'border-input'
                         }`}
                         required
                       />
@@ -771,23 +771,23 @@ export default function UnifiedRegisterPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-300">Password</label>
+                    <label className="text-xs font-medium text-muted-foreground">Password</label>
                     <div className="relative">
-                      <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                      <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         type={showPassword ? 'text' : 'password'}
                         placeholder="••••••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className={`pl-10 pr-10 h-11 bg-white/5 text-sm text-slate-100 rounded-xl ${
-                          password && !isPasswordValid ? 'border-rose-500/50' : 'border-white/10'
+                        className={`pl-10 pr-10 h-11 bg-background text-sm text-foreground rounded-xl ${
+                          password && !isPasswordValid ? 'border-rose-500/50' : 'border-input'
                         }`}
                         required
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground cursor-pointer"
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -797,31 +797,31 @@ export default function UnifiedRegisterPage() {
 
                 {/* Password Checker Display */}
                 {password && (
-                  <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl text-xs space-y-1">
-                    <p className="font-semibold text-slate-300">Password strength checklist:</p>
+                  <div className="p-3 bg-muted/40 border border-border rounded-xl text-xs space-y-1">
+                    <p className="font-semibold text-muted-foreground">Password strength checklist:</p>
                     <div className="grid grid-cols-2 gap-2 mt-1">
-                      <p className={hasMinLength ? 'text-emerald-400' : 'text-slate-500'}>✔ Minimum 8 characters</p>
-                      <p className={hasUppercase ? 'text-emerald-400' : 'text-slate-500'}>✔ At least one uppercase letter</p>
-                      <p className={hasLowercase ? 'text-emerald-400' : 'text-slate-500'}>✔ At least one lowercase letter</p>
-                      <p className={hasDigit ? 'text-emerald-400' : 'text-slate-500'}>✔ At least one number digit</p>
-                      <p className={hasSpecialChar ? 'text-emerald-400' : 'text-slate-500'}>✔ At least one special character</p>
+                      <p className={hasMinLength ? 'text-emerald-400' : 'text-muted-foreground'}>✔ Minimum 8 characters</p>
+                      <p className={hasUppercase ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one uppercase letter</p>
+                      <p className={hasLowercase ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one lowercase letter</p>
+                      <p className={hasDigit ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one number digit</p>
+                      <p className={hasSpecialChar ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one special character</p>
                     </div>
                   </div>
                 )}
 
                 {/* BUSINESS Additional Fields */}
                 {role === 'BUSINESS' && (
-                  <div className="space-y-4 pt-3 border-t border-white/5">
+                  <div className="space-y-4 pt-3 border-t border-border">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-slate-300">Company Name</label>
+                      <label className="text-xs font-medium text-muted-foreground">Company Name</label>
                       <div className="relative">
-                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           type="text"
                           placeholder="e.g. Sunrise Cafe Ltd."
                           value={companyName}
                           onChange={(e) => setCompanyName(e.target.value)}
-                          className="pl-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
+                          className="pl-10 h-11 bg-background border-input text-sm text-foreground rounded-xl"
                           required
                         />
                       </div>
@@ -829,9 +829,9 @@ export default function UnifiedRegisterPage() {
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-slate-300">Category</label>
+                        <label className="text-xs font-medium text-muted-foreground">Category</label>
                         <div className="relative">
-                          <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                          <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                           <select
                             value={categorySlug}
                             onChange={(e) => {
@@ -839,10 +839,10 @@ export default function UnifiedRegisterPage() {
                               const cat = CATEGORIES.find((c) => c.slug === e.target.value);
                               setSubcategorySlug(cat?.subcategories?.[0]?.slug || '');
                             }}
-                            className="w-full h-11 pl-10 pr-4 border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer" style={{ background: '#37353E' }}
+                            className="w-full h-11 pl-10 pr-4 border border-input text-muted-foreground rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer"
                           >
                             {CATEGORIES.map((cat) => (
-                              <option key={cat.slug} value={cat.slug} style={{ background: '#37353E' }}>
+                              <option key={cat.slug} value={cat.slug}>
                                 {cat.label}
                               </option>
                             ))}
@@ -851,16 +851,16 @@ export default function UnifiedRegisterPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-slate-300">Subcategory</label>
+                        <label className="text-xs font-medium text-muted-foreground">Subcategory</label>
                         <div className="relative">
-                          <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+                          <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                           <select
                             value={subcategorySlug}
                             onChange={(e) => setSubcategorySlug(e.target.value)}
-                            className="w-full h-11 pl-10 pr-4 border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer" style={{ background: '#37353E' }}
+                            className="w-full h-11 pl-10 pr-4 border border-input text-muted-foreground rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer"
                           >
                             {(CATEGORIES.find((c) => c.slug === categorySlug)?.subcategories || []).map((sub) => (
-                              <option key={sub.slug} value={sub.slug} style={{ background: '#37353E' }}>
+                              <option key={sub.slug} value={sub.slug}>
                                 {sub.label}
                               </option>
                             ))}
@@ -874,24 +874,24 @@ export default function UnifiedRegisterPage() {
 
               {/* Referral Code */}
               <div className="space-y-1.5 pt-2">
-                <label className="text-xs font-medium text-slate-300">
-                  Referral Code <span className="text-slate-500">(optional)</span>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Referral Code <span className="text-muted-foreground">(optional)</span>
                 </label>
                 <div className="relative">
-                  <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                  <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="text"
                     placeholder="Enter referral code if you have one"
                     value={referralCode}
                     onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                     maxLength={20}
-                    className="pl-10 h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl font-mono tracking-wider"
+                    className="pl-10 h-11 bg-background border-input text-sm text-foreground rounded-xl font-mono tracking-wider"
                   />
                 </div>
               </div>
 
               {/* Legal acceptance */}
-              <div className="space-y-3 pt-3 border-t border-white/5">
+              <div className="space-y-3 pt-3 border-t border-border">
                 <label className="flex items-start gap-3 cursor-pointer group">
                   <input
                     type="checkbox"
@@ -900,7 +900,7 @@ export default function UnifiedRegisterPage() {
                     className="mt-0.5 h-4 w-4 shrink-0 accent-[#715A5A] cursor-pointer"
                     required
                   />
-                  <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors leading-relaxed">
+                  <span className="text-xs text-muted-foreground group-hover:text-muted-foreground transition-colors leading-relaxed">
                     I agree to the{' '}
                     <Link
                       href="/terms-of-service"
@@ -921,7 +921,7 @@ export default function UnifiedRegisterPage() {
                     className="mt-0.5 h-4 w-4 shrink-0 accent-[#715A5A] cursor-pointer"
                     required
                   />
-                  <span className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors leading-relaxed">
+                  <span className="text-xs text-muted-foreground group-hover:text-muted-foreground transition-colors leading-relaxed">
                     I have read and accept the{' '}
                     <Link
                       href="/privacy-policy"
@@ -936,12 +936,12 @@ export default function UnifiedRegisterPage() {
                 </label>
               </div>
 
-              <div className="flex justify-between pt-4 border-t border-white/5">
+              <div className="flex justify-between pt-4 border-t border-border">
                 <Button
                   type="button"
                   onClick={() => setCurrentStep(1)}
                   disabled={loading}
-                  className="h-11 px-5 bg-white/5 border border-white/10 text-slate-300 rounded-xl cursor-pointer"
+                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
                 </Button>
@@ -949,7 +949,7 @@ export default function UnifiedRegisterPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 text-[#D3DAD9] hover:opacity-90 transition-opacity" style={{ background: '#715A5A' }}
+                  className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 text-[#D3DAD9] hover:opacity-90 transition-opacity" 
                 >
                   {loading ? (
                     <>
@@ -969,11 +969,11 @@ export default function UnifiedRegisterPage() {
           {currentStep === 3 && (
             <form onSubmit={handleStep4Submit} className="space-y-6">
               <div>
-                <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <Building2 className="h-5 w-5 text-zinc-400" />
                   Kerala Regional Profile Setup
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Provide structural details and official documents for your Kerala-based entity.
                 </p>
               </div>
@@ -981,16 +981,16 @@ export default function UnifiedRegisterPage() {
               <div className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-300">Kerala Jurisdiction District</label>
+                    <label className="text-xs font-medium text-muted-foreground">Kerala Jurisdiction District</label>
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <select
                         value={district}
                         onChange={(e) => setDistrict(e.target.value)}
-                        className="w-full h-11 pl-10 pr-4 border border-white/10 text-slate-300 rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer" style={{ background: '#37353E' }}
+                        className="w-full h-11 pl-10 pr-4 border border-input text-muted-foreground rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer"
                       >
                         {KERALA_DISTRICTS.map((dist) => (
-                          <option key={dist} value={dist} style={{ background: '#37353E' }}>
+                          <option key={dist} value={dist}>
                             {dist}
                           </option>
                         ))}
@@ -999,86 +999,86 @@ export default function UnifiedRegisterPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-300">City / Town</label>
+                    <label className="text-xs font-medium text-muted-foreground">City / Town</label>
                     <Input
                       type="text"
                       placeholder="e.g. Kochi, Trivandrum"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
+                      className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
                       required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-slate-300">Full Physical Address</label>
+                  <label className="text-xs font-medium text-muted-foreground">Full Physical Address</label>
                   <Input
                     type="text"
                     placeholder="e.g. 45/998-A, MG Road, Ernakulam"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="h-11 bg-white/5 border-white/10 text-sm text-slate-100 rounded-xl"
+                    className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
                     required
                   />
                 </div>
 
                 {role === 'GOVERNMENT' && (
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-slate-300">Administrative Level Type</label>
+                    <label className="text-xs font-medium text-muted-foreground">Administrative Level Type</label>
                     <select
                       value={deptType}
                       onChange={(e) => setDeptType(e.target.value)}
-                      className="w-full h-11 px-3 border border-white/10 text-slate-300 rounded-xl text-sm focus:outline-none cursor-pointer" style={{ background: '#37353E' }}
+                      className="w-full h-11 px-3 border border-input text-muted-foreground rounded-xl text-sm focus:outline-none cursor-pointer"
                     >
-                      <option value="Local" style={{ background: '#37353E' }}>Local Civic Body / Municipality</option>
-                      <option value="District" style={{ background: '#37353E' }}>District Administration / Collectorate</option>
-                      <option value="State" style={{ background: '#37353E' }}>Kerala State Department</option>
+                      <option value="Local">Local Civic Body / Municipality</option>
+                      <option value="District">District Administration / Collectorate</option>
+                      <option value="State">Kerala State Department</option>
                     </select>
                   </div>
                 )}
 
                 {/* File Upload Section for COMPANY */}
                 {role === 'BUSINESS' && (
-                  <div className="grid md:grid-cols-2 gap-4 pt-3 border-t border-white/5">
+                  <div className="grid md:grid-cols-2 gap-4 pt-3 border-t border-border">
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                      <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                         <FileCheck className="h-4 w-4 text-cyan-400" />
                         1. Registration Certificate (PDF/Image)
                       </label>
-                      <div className="p-4 rounded-xl border border-dashed border-white/10 hover:border-zinc-500/50 bg-white/[0.01] text-center cursor-pointer relative">
+                      <div className="p-4 rounded-xl border border-dashed border-input hover:border-border bg-white/[0.01] text-center cursor-pointer relative">
                         <input
                           type="file"
                           accept="application/pdf,image/png,image/jpeg,image/webp"
                           onChange={(e) => setCertFile(e.target.files?.[0] || null)}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
-                        <UploadCloud className="h-6 w-6 text-slate-400 mx-auto mb-1.5" />
+                        <UploadCloud className="h-6 w-6 text-muted-foreground mx-auto mb-1.5" />
                         {certFile ? (
-                          <p className="text-[11px] font-semibold text-zinc-300 truncate">{certFile.name}</p>
+                          <p className="text-[11px] font-semibold text-muted-foreground truncate">{certFile.name}</p>
                         ) : (
-                          <p className="text-[10px] text-slate-500">Click to select registration file (Max 10MB)</p>
+                          <p className="text-[10px] text-muted-foreground">Click to select registration file (Max 10MB)</p>
                         )}
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                      <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                         <Layers className="h-4 w-4 text-cyan-400" />
                         2. Company Brand Logo (Image)
                       </label>
-                      <div className="p-4 rounded-xl border border-dashed border-white/10 hover:border-zinc-500/50 bg-white/[0.01] text-center cursor-pointer relative">
+                      <div className="p-4 rounded-xl border border-dashed border-input hover:border-border bg-white/[0.01] text-center cursor-pointer relative">
                         <input
                           type="file"
                           accept="image/png,image/jpeg,image/webp"
                           onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         />
-                        <UploadCloud className="h-6 w-6 text-slate-400 mx-auto mb-1.5" />
+                        <UploadCloud className="h-6 w-6 text-muted-foreground mx-auto mb-1.5" />
                         {logoFile ? (
-                          <p className="text-[11px] font-semibold text-zinc-300 truncate">{logoFile.name}</p>
+                          <p className="text-[11px] font-semibold text-muted-foreground truncate">{logoFile.name}</p>
                         ) : (
-                          <p className="text-[10px] text-slate-500">Click to select company logo (Max 10MB)</p>
+                          <p className="text-[10px] text-muted-foreground">Click to select company logo (Max 10MB)</p>
                         )}
                       </div>
                     </div>
@@ -1087,23 +1087,23 @@ export default function UnifiedRegisterPage() {
 
                 {/* File Upload Section for GOVERNMENT */}
                 {role === 'GOVERNMENT' && (
-                  <div className="space-y-2 pt-3 border-t border-white/5">
-                    <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
+                  <div className="space-y-2 pt-3 border-t border-border">
+                    <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                       <FileCheck className="h-4 w-4 text-amber-400" />
                       Official ID Proof / Gazette Certificate (PDF/Image)
                     </label>
-                    <div className="p-5 rounded-xl border border-dashed border-white/10 hover:border-zinc-500/50 bg-white/[0.01] text-center cursor-pointer relative">
+                    <div className="p-5 rounded-xl border border-dashed border-input hover:border-border bg-white/[0.01] text-center cursor-pointer relative">
                       <input
                         type="file"
                         accept="application/pdf,image/png,image/jpeg,image/webp"
                         onChange={(e) => setGovtIdFile(e.target.files?.[0] || null)}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       />
-                      <UploadCloud className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                      <UploadCloud className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                       {govtIdFile ? (
                         <p className="text-[11px] font-semibold text-amber-400 truncate">{govtIdFile.name}</p>
                       ) : (
-                        <p className="text-[10px] text-slate-500">Click to select verification authority letter (Max 10MB)</p>
+                        <p className="text-[10px] text-muted-foreground">Click to select verification authority letter (Max 10MB)</p>
                       )}
                     </div>
                   </div>
@@ -1112,20 +1112,20 @@ export default function UnifiedRegisterPage() {
                 {/* Uploading progress tracker */}
                 {uploadProgress > 0 && (
                   <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] text-slate-400">
+                    <div className="flex justify-between text-[10px] text-muted-foreground">
                       <span>Uploading document files...</span>
                       <span>{uploadProgress}%</span>
                     </div>
-                    <Progress value={uploadProgress} className="h-1 bg-white/5" />
+                    <Progress value={uploadProgress} className="h-1 bg-background" />
                   </div>
                 )}
               </div>
 
-              <div className="flex justify-end pt-6 border-t border-white/5">
+              <div className="flex justify-end pt-6 border-t border-border">
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition text-[#D3DAD9]" style={{ background: '#715A5A' }}
+                  className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition text-[#D3DAD9]" 
                 >
                   {loading ? (
                     <>

@@ -33,7 +33,7 @@ const iconColors: Record<string, string> = {
   review: 'text-green-600 dark:text-green-400',
   alert: 'text-orange-600 dark:text-orange-400',
   info: 'text-purple-600 dark:text-purple-400',
-  default: 'text-slate-400',
+  default: 'text-muted-foreground',
 };
 
 function getIcon(type: string) {
@@ -128,7 +128,7 @@ export default function NotificationsPage() {
           {unreadCount > 0 && (
             <Button
               variant="outline"
-              className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5"
+              className="rounded-xl border-border text-muted-foreground hover:bg-muted/40"
               onClick={handleMarkAllRead}
             >
               Mark all as read
@@ -141,7 +141,7 @@ export default function NotificationsPage() {
             <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
           </div>
         ) : notifications.length === 0 ? (
-          <Card className="p-12 rounded-2xl text-center border-dashed border-white/10 bg-white/5">
+          <Card className="p-12 rounded-2xl text-center border-dashed border-border bg-muted/40">
             <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-semibold text-foreground mb-2">No Notifications</h3>
             <p className="text-muted-foreground">You're all caught up!</p>
@@ -154,12 +154,12 @@ export default function NotificationsPage() {
                 <Card
                   key={notification.id}
                   onClick={() => handleToggleRead(notification.id)}
-                  className={`p-4 rounded-2xl hover:shadow-md transition-all cursor-pointer border border-white/5 ${
+                  className={`p-4 rounded-2xl hover:shadow-md transition-all cursor-pointer border border-border ${
                     notification.read ? 'bg-card/20 opacity-70' : 'bg-card/60 font-semibold'
                   }`}
                 >
                   <div className="flex items-start gap-4">
-                    <div className="rounded-xl bg-white/5 p-3 flex-shrink-0 border border-white/5">
+                    <div className="rounded-xl bg-muted/40 p-3 flex-shrink-0 border border-border">
                       <Icon className={`h-6 w-6 ${iconColors[notification.type] || iconColors.default}`} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -178,7 +178,7 @@ export default function NotificationsPage() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="rounded-xl flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-white/5"
+                      className="rounded-xl flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/40"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDismiss(notification.id);

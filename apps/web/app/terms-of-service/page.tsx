@@ -80,7 +80,7 @@ export default function TermsOfServicePage() {
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="block px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors leading-snug"
+                className="block px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors leading-snug"
               >
                 {s.label}
               </a>
@@ -328,7 +328,7 @@ export default function TermsOfServicePage() {
           {/* Section 21 */}
           <Section id="contact" title="21. Contact Information">
             <p>For support, legal concerns, or policy inquiries:</p>
-            <div className="mt-3 p-4 rounded-xl bg-white/5 border border-white/10 text-sm space-y-1">
+            <div className="mt-3 p-4 rounded-xl bg-muted/40 border border-border text-sm space-y-1">
               <p className="font-semibold text-foreground">Lifeart Business Services Private Limited</p>
               <p>29/3372, Vazhuthacaud, AIR Road</p>
               <p>Thiruvananthapuram, Kerala 695014, India</p>
