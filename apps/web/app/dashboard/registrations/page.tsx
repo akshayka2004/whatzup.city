@@ -7,59 +7,34 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
   Users, Building2, UserCheck,
-  Search, ChevronLeft, ChevronRight, X,
-  Mail, Phone, MapPin, Calendar, Tag, RefreshCw,
-  BadgeCheck, Clock,
+  Search, ChevronLeft, ChevronRight,
+  Mail, Phone, Globe, Calendar, Tag, RefreshCw,
+  FileText,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
 
-type TabId = 'all' | 'USER' | 'BUSINESS_ADMIN';
+type TabId = 'businesses' | 'individuals';
 
 const TABS: { id: TabId; label: string; icon: any }[] = [
-  { id: 'all', label: 'All', icon: Users },
-  { id: 'USER', label: 'Customers', icon: UserCheck },
-  { id: 'BUSINESS_ADMIN', label: 'Businesses', icon: Building2 },
+  { id: 'businesses', label: 'Business Interests', icon: Building2 },
+  { id: 'individuals', label: 'Individual Interests', icon: UserCheck },
 ];
 
-const ROLE_LABELS: Record<string, string> = {
-  USER: 'Customer',
-  BUSINESS_ADMIN: 'Business',
-  GOVERNMENT_ADMIN: 'Government',
-};
-
-const ROLE_COLORS: Record<string, string> = {
-  USER: 'bg-violet-500/15 text-violet-400',
-  BUSINESS_ADMIN: 'bg-cyan-500/15 text-cyan-400',
-  GOVERNMENT_ADMIN: 'bg-amber-500/15 text-amber-400',
-};
-
-const BSTATUS_COLORS: Record<string, string> = {
-  APPROVED: 'bg-emerald-500/15 text-emerald-400',
-  PENDING_VERIFICATION: 'bg-amber-500/15 text-amber-400',
-  UNDER_REVIEW: 'bg-blue-500/15 text-blue-400',
-  REJECTED: 'bg-rose-500/15 text-rose-400',
-  SUSPENDED: 'bg-slate-500/15 text-slate-400',
-  DRAFT: 'bg-slate-500/15 text-slate-400',
-};
-
-function InitialsAvatar({ name, role }: { name: string; role: string }) {
+function InitialsAvatar({ name, type }: { name: string; type: 'business' | 'individual' }) {
   const initials = name
     .split(' ')
     .map((n) => n[0])
     .join('')
     .slice(0, 2)
     .toUpperCase();
-  const colorMap: Record<string, string> = {
-    USER: 'bg-violet-500/20 text-violet-300',
-    BUSINESS_ADMIN: 'bg-cyan-500/20 text-cyan-300',
-    GOVERNMENT_ADMIN: 'bg-amber-500/20 text-amber-300',
-  };
   return (
     <div
       className={cn(
         'h-9 w-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0',
-        colorMap[role] || 'bg-slate-500/20 text-slate-300',
+        type === 'business'
+          ? 'bg-cyan-500/20 text-cyan-300'
+          : 'bg-violet-500/20 text-violet-300',
       )}
     >
       {initials}
@@ -83,47 +58,20 @@ function DetailRow({
       <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
       <div className="min-w-0">
         <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{label}</p>
-        <p className={cn('text-sm text-foreground break-all', mono && 'font-mono tracking-wider')}>{value}</p>
-      </div>
-    </div>
-  );
-}
-
-function LegalStatus({
-  label,
-  accepted,
-  timestamp,
-}: {
-  label: string;
-  accepted: boolean;
-  timestamp?: string;
-}) {
-  return (
-    <div className="flex items-start gap-2">
-      {accepted ? (
-        <BadgeCheck className="h-3.5 w-3.5 text-emerald-400 mt-0.5 shrink-0" />
-      ) : (
-        <X className="h-3.5 w-3.5 text-rose-400 mt-0.5 shrink-0" />
-      )}
-      <div>
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{label}</p>
-        {accepted && timestamp ? (
-          <p className="text-xs text-emerald-400">{new Date(timestamp).toLocaleString('en-IN')}</p>
-        ) : (
-          <p className="text-xs text-rose-400">Not accepted</p>
-        )}
+        <p className={cn('text-sm text-foreground break-all', mono && 'font-mono')}>{value}</p>
       </div>
     </div>
   );
 }
 
 export default function DashboardRegistrationsPage() {
-  const [tab, setTab] = useState<TabId>('all');
+  const [tab, setTab] = useState<TabId>('businesses');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>({ total: 0, totalPages: 1 });
+  const [stats, setStats] = useState({ businesses: 0, individuals: 0, total: 0 });
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -135,14 +83,22 @@ export default function DashboardRegistrationsPage() {
 
   useEffect(() => {
     setPage(1);
+    setExpanded(null);
   }, [tab, debouncedSearch]);
+
+  // Fetch stats once
+  useEffect(() => {
+    apiService.get<any>('/v1/launch-interests/stats').then((res) => {
+      if (res.data && !res.error) setStats(res.data);
+    });
+  }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: '25' });
-    if (tab !== 'all') params.set('role', tab);
     if (debouncedSearch) params.set('search', debouncedSearch);
-    const res = await apiService.get<any>(`/v1/users/tenant/registrations?${params}`);
+    const endpoint = tab === 'businesses' ? 'businesses' : 'individuals';
+    const res = await apiService.get<any>(`/v1/launch-interests/${endpoint}?${params}`);
     if (res.data && !res.error) {
       setData(res.data.data || []);
       setMeta(res.data.meta || { total: 0, totalPages: 1 });
@@ -162,7 +118,7 @@ export default function DashboardRegistrationsPage() {
           <div>
             <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Registrations</h1>
             <p className="text-muted-foreground text-sm mt-0.5">
-              All accounts registered under your business tenant.
+              Interest submissions from the platform launch page.
             </p>
           </div>
           <Button
@@ -179,19 +135,9 @@ export default function DashboardRegistrationsPage() {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { label: 'Total Registrations', value: meta.total, icon: Users, color: 'text-primary' },
-            {
-              label: 'Customers',
-              value: data.filter((u) => u.role === 'USER').length,
-              icon: UserCheck,
-              color: 'text-violet-400',
-            },
-            {
-              label: 'Businesses',
-              value: data.filter((u) => u.role === 'BUSINESS_ADMIN').length,
-              icon: Building2,
-              color: 'text-cyan-400',
-            },
+            { label: 'Total Submissions', value: stats.total, icon: Users, color: 'text-primary' },
+            { label: 'Business Interests', value: stats.businesses, icon: Building2, color: 'text-cyan-400' },
+            { label: 'Individual Interests', value: stats.individuals, icon: UserCheck, color: 'text-violet-400' },
           ].map((stat) => {
             const Icon = stat.icon;
             return (
@@ -235,237 +181,46 @@ export default function DashboardRegistrationsPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name, email, phone…"
+              placeholder={
+                tab === 'businesses'
+                  ? 'Search business, contact, email…'
+                  : 'Search name, email, phone…'
+              }
               className="pl-9 h-9 rounded-xl border-white/10 bg-white/5 text-sm"
             />
           </div>
         </div>
 
-        {/* Table */}
+        {/* List */}
         <Card className="rounded-2xl border-white/5 bg-card/60 overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-16 text-muted-foreground text-sm gap-2">
-              <RefreshCw className="h-4 w-4 animate-spin" /> Loading registrations…
+              <RefreshCw className="h-4 w-4 animate-spin" /> Loading…
             </div>
           ) : data.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground">
               <Users className="h-8 w-8 opacity-30" />
-              <p className="text-sm">No registrations found</p>
+              <p className="text-sm">No submissions found</p>
             </div>
           ) : (
             <div className="divide-y divide-white/5">
-              {data.map((user) => {
-                const isOpen = expanded === user.id;
-                return (
-                  <div key={user.id}>
-                    {/* Main row */}
-                    <button
-                      onClick={() => setExpanded(isOpen ? null : user.id)}
-                      className="w-full text-left px-5 py-4 hover:bg-white/[0.03] transition-colors"
-                    >
-                      <div className="flex items-center gap-4 min-w-0">
-                        <InitialsAvatar name={user.name || '?'} role={user.role} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-sm text-foreground truncate">{user.name}</span>
-                            <span
-                              className={cn(
-                                'text-[10px] font-bold px-2 py-0.5 rounded-full',
-                                ROLE_COLORS[user.role] || 'bg-slate-500/15 text-slate-400',
-                              )}
-                            >
-                              {ROLE_LABELS[user.role] || user.role}
-                            </span>
-                            {!user.isActive && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400">
-                                Inactive
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground flex-wrap">
-                            <span className="flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {user.email}
-                            </span>
-                            {user.phone && (
-                              <span className="flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
-                                {user.phone}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="hidden sm:flex flex-col items-end gap-1 shrink-0 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(user.createdAt).toLocaleDateString('en-IN', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            {user.acceptedTermsAt ? (
-                              <span className="flex items-center gap-1 text-emerald-400">
-                                <BadgeCheck className="h-3 w-3" />
-                                Terms
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1 text-rose-400">
-                                <X className="h-3 w-3" />
-                                Terms
-                              </span>
-                            )}
-                            {user.acceptedPrivacyAt ? (
-                              <span className="flex items-center gap-1 text-emerald-400">
-                                <BadgeCheck className="h-3 w-3" />
-                                Privacy
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1 text-rose-400">
-                                <X className="h-3 w-3" />
-                                Privacy
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-
-                    {/* Expanded detail panel */}
-                    {isOpen && (
-                      <div className="bg-white/[0.02] border-t border-white/5 px-5 py-5">
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
-                          {/* Account details */}
-                          <div className="space-y-3">
-                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                              Account Details
-                            </p>
-                            <DetailRow icon={Mail} label="Email" value={user.email} />
-                            <DetailRow icon={Phone} label="Phone" value={user.phone || '—'} />
-                            <DetailRow icon={Tag} label="Referral Code" value={user.referralCode || '—'} mono />
-                            <DetailRow
-                              icon={Calendar}
-                              label="Registered"
-                              value={new Date(user.createdAt).toLocaleString('en-IN')}
-                            />
-                            {user.lastLoginAt && (
-                              <DetailRow
-                                icon={Clock}
-                                label="Last Login"
-                                value={new Date(user.lastLoginAt).toLocaleString('en-IN')}
-                              />
-                            )}
-                          </div>
-
-                          {/* Legal compliance */}
-                          <div className="space-y-3">
-                            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                              Legal Compliance
-                            </p>
-                            <LegalStatus
-                              label="Terms of Service"
-                              accepted={!!user.acceptedTermsAt}
-                              timestamp={user.acceptedTermsAt}
-                            />
-                            <LegalStatus
-                              label="Privacy Policy"
-                              accepted={!!user.acceptedPrivacyAt}
-                              timestamp={user.acceptedPrivacyAt}
-                            />
-                            <DetailRow
-                              icon={UserCheck}
-                              label="Email Verified"
-                              value={user.emailVerified ? 'Yes' : 'No'}
-                            />
-                            <DetailRow
-                              icon={UserCheck}
-                              label="Account Status"
-                              value={user.isActive ? 'Active' : 'Inactive'}
-                            />
-                          </div>
-
-                          {/* Business details */}
-                          {user.business && (
-                            <div className="space-y-3">
-                              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                                Business Details
-                              </p>
-                              <DetailRow icon={Building2} label="Business Name" value={user.business.name} />
-                              <DetailRow
-                                icon={Tag}
-                                label="Category"
-                                value={user.business.category?.name || '—'}
-                              />
-                              <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground text-xs">Status</span>
-                                <span
-                                  className={cn(
-                                    'text-[10px] font-bold px-2 py-0.5 rounded-full',
-                                    BSTATUS_COLORS[user.business.status] ||
-                                      'bg-slate-500/15 text-slate-400',
-                                  )}
-                                >
-                                  {user.business.status?.replace(/_/g, ' ')}
-                                </span>
-                              </div>
-                              {user.business.city && (
-                                <DetailRow
-                                  icon={MapPin}
-                                  label="Location"
-                                  value={[
-                                    user.business.city,
-                                    user.business.state,
-                                    user.business.district,
-                                  ]
-                                    .filter(Boolean)
-                                    .join(', ')}
-                                />
-                              )}
-                              {user.business.phone && (
-                                <DetailRow icon={Phone} label="Biz Phone" value={user.business.phone} />
-                              )}
-                              {user.business.email && (
-                                <DetailRow icon={Mail} label="Biz Email" value={user.business.email} />
-                              )}
-                              {user.business.address && (
-                                <DetailRow icon={MapPin} label="Address" value={user.business.address} />
-                              )}
-                            </div>
-                          )}
-
-                          {/* Customer profile */}
-                          {user.customerProfile && (
-                            <div className="space-y-3">
-                              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                                Customer Profile
-                              </p>
-                              <DetailRow
-                                icon={UserCheck}
-                                label="Status"
-                                value={user.customerProfile.status || '—'}
-                              />
-                              {user.customerProfile.city && (
-                                <DetailRow
-                                  icon={MapPin}
-                                  label="Location"
-                                  value={[
-                                    user.customerProfile.city,
-                                    user.customerProfile.district,
-                                    user.customerProfile.state,
-                                  ]
-                                    .filter(Boolean)
-                                    .join(', ')}
-                                />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {tab === 'businesses'
+                ? data.map((item) => (
+                    <BusinessRow
+                      key={item.id}
+                      item={item}
+                      expanded={expanded}
+                      setExpanded={setExpanded}
+                    />
+                  ))
+                : data.map((item) => (
+                    <IndividualRow
+                      key={item.id}
+                      item={item}
+                      expanded={expanded}
+                      setExpanded={setExpanded}
+                    />
+                  ))}
             </div>
           )}
         </Card>
@@ -500,5 +255,184 @@ export default function DashboardRegistrationsPage() {
         )}
       </div>
     </BusinessLayout>
+  );
+}
+
+function BusinessRow({
+  item,
+  expanded,
+  setExpanded,
+}: {
+  item: any;
+  expanded: string | null;
+  setExpanded: (id: string | null) => void;
+}) {
+  const isOpen = expanded === item.id;
+  return (
+    <div>
+      <button
+        onClick={() => setExpanded(isOpen ? null : item.id)}
+        className="w-full text-left px-5 py-4 hover:bg-white/[0.03] transition-colors"
+      >
+        <div className="flex items-center gap-4 min-w-0">
+          <InitialsAvatar name={item.businessName || '?'} type="business" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-sm text-foreground truncate">{item.businessName}</span>
+              {item.category && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400">
+                  {item.category}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground flex-wrap">
+              <span>{item.contactName}</span>
+              <span className="flex items-center gap-1">
+                <Mail className="h-3 w-3" />
+                {item.email}
+              </span>
+              {item.phone && (
+                <span className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  {item.phone}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="hidden sm:block shrink-0 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {new Date(item.createdAt).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </span>
+          </div>
+        </div>
+      </button>
+      {isOpen && (
+        <div className="bg-white/[0.02] border-t border-white/5 px-5 py-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
+            <div className="space-y-3">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Business Info
+              </p>
+              <DetailRow icon={Building2} label="Business Name" value={item.businessName} />
+              <DetailRow icon={Tag} label="Category" value={item.category || '—'} />
+              {item.website && <DetailRow icon={Globe} label="Website" value={item.website} />}
+            </div>
+            <div className="space-y-3">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Contact Details
+              </p>
+              <DetailRow icon={UserCheck} label="Contact Name" value={item.contactName} />
+              <DetailRow icon={Mail} label="Email" value={item.email} />
+              {item.phone && <DetailRow icon={Phone} label="Phone" value={item.phone} />}
+              <DetailRow
+                icon={Calendar}
+                label="Submitted"
+                value={new Date(item.createdAt).toLocaleString('en-IN')}
+              />
+            </div>
+            {item.notes && (
+              <div className="space-y-3">
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Notes
+                </p>
+                <div className="flex items-start gap-2">
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{item.notes}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IndividualRow({
+  item,
+  expanded,
+  setExpanded,
+}: {
+  item: any;
+  expanded: string | null;
+  setExpanded: (id: string | null) => void;
+}) {
+  const isOpen = expanded === item.id;
+  return (
+    <div>
+      <button
+        onClick={() => setExpanded(isOpen ? null : item.id)}
+        className="w-full text-left px-5 py-4 hover:bg-white/[0.03] transition-colors"
+      >
+        <div className="flex items-center gap-4 min-w-0">
+          <InitialsAvatar name={item.name || '?'} type="individual" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-sm text-foreground truncate">{item.name}</span>
+            </div>
+            <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground flex-wrap">
+              <span className="flex items-center gap-1">
+                <Mail className="h-3 w-3" />
+                {item.email}
+              </span>
+              {item.phone && (
+                <span className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  {item.phone}
+                </span>
+              )}
+              {item.interests && (
+                <span className="truncate max-w-[200px] italic opacity-70">{item.interests}</span>
+              )}
+            </div>
+          </div>
+          <div className="hidden sm:block shrink-0 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {new Date(item.createdAt).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </span>
+          </div>
+        </div>
+      </button>
+      {isOpen && (
+        <div className="bg-white/[0.02] border-t border-white/5 px-5 py-5">
+          <div className="grid sm:grid-cols-2 gap-6 text-sm">
+            <div className="space-y-3">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                Personal Details
+              </p>
+              <DetailRow icon={UserCheck} label="Name" value={item.name} />
+              <DetailRow icon={Mail} label="Email" value={item.email} />
+              {item.phone && <DetailRow icon={Phone} label="Phone" value={item.phone} />}
+              <DetailRow
+                icon={Calendar}
+                label="Submitted"
+                value={new Date(item.createdAt).toLocaleString('en-IN')}
+              />
+            </div>
+            {item.interests && (
+              <div className="space-y-3">
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Interests
+                </p>
+                <div className="flex items-start gap-2">
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{item.interests}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

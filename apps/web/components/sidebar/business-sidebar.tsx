@@ -59,6 +59,7 @@ const MODERATOR_MENU = [
   { label: 'Review Moderation', href: '/dashboard/reviews', icon: Star },
   { label: 'Customer Reports', href: '/dashboard/customers', icon: MessageSquare },
   // Fraud Alerts hidden — dormant module
+  { label: 'Registrations', href: '/dashboard/registrations', icon: UserPlus },
   { label: 'Offers', href: '/dashboard/offers', icon: Tag },
   { label: 'Media', href: '/dashboard/media', icon: Image },
 ];
