@@ -15,6 +15,7 @@ import {
   Building2,
   CreditCard,
   UserPlus,
+  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ const menuItems = [
   { label: 'Audit Logs', href: '/admin/audit', icon: FileText },
   { label: 'Categories', href: '/admin/categories', icon: Building2 },
   { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
+  { label: 'My Profile', href: '/admin/profile', icon: User },
 ];
 // Note: Moderation (/admin/moderation) and Fraud Escalations (/admin/fraud-escalations)
 // pages are kept but hidden from navigation until activation criteria are met.
