@@ -500,7 +500,16 @@ model Business {
   isVerified     Boolean        @default(false) @map("is_verified")
   verifiedAt     DateTime?      @map("verified_at")
   featuredUntil  DateTime?      @map("featured_until")
-  
+
+  // Trial & Introductory Offer
+  trialStatus             TrialStatus @default(NOT_STARTED) @map("trial_status")
+  trialStartDate          DateTime?   @map("trial_start_date")
+  trialEndDate            DateTime?   @map("trial_end_date")
+  hasIntroOffer           Boolean     @default(false) @map("has_intro_offer")
+  introOfferClaimedAt     DateTime?   @map("intro_offer_claimed_at")
+  introOfferRedeemed      Boolean     @default(false) @map("intro_offer_redeemed")
+  introOfferDiscountPct   Int         @default(20) @map("intro_offer_discount_pct")
+
   // Core Audit Fields
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
@@ -579,6 +588,13 @@ enum BusinessProfileType {
   OWNER
   AGENCY
   STAFF
+}
+
+enum TrialStatus {
+  NOT_STARTED
+  ACTIVE
+  EXPIRED
+  CONVERTED
 }
 
 model BusinessBranch {

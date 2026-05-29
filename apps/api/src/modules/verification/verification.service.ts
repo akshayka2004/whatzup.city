@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { VerificationRepository } from '../../common/database/repositories/verification.repository';
 import { BusinessRepository } from '../../common/database/repositories/business.repository';
 import { AuditService } from '../audit/audit.service';
+import { TrialsService } from '../trials/trials.service';
 import { BusinessStatus } from '@saas/types';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 
@@ -11,6 +12,7 @@ export class VerificationService {
     private readonly verificationRepo: VerificationRepository,
     private readonly businessRepo: BusinessRepository,
     private readonly auditService: AuditService,
+    private readonly trialsService: TrialsService,
   ) {}
 
   async submitRequest(tenantId: string, businessId: string, userId: string) {
@@ -79,10 +81,17 @@ export class VerificationService {
       verifiedAt: new Date(),
     });
 
-    await this.businessRepo.updateStatus(
+    const updatedBusiness = await this.businessRepo.updateStatus(
       tenantId,
       verification.businessId,
       BusinessStatus.APPROVED,
+    );
+
+    // Start 15-day free trial for approved business (Release 1)
+    await this.trialsService.startTrial(
+      tenantId,
+      verification.businessId,
+      updatedBusiness.ownerId,
     );
 
     await this.auditService.log({

@@ -15,6 +15,11 @@ import {
   TrendingUp,
   CheckCircle2,
   Loader2,
+  Timer,
+  AlertTriangle,
+  Clock,
+  Gift,
+  BadgeCheck,
 } from 'lucide-react';
 import {
   LineChart,
@@ -32,15 +37,17 @@ import { apiService } from '@/lib/services/api-service';
 export default function SuperAdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<any>(null);
+  const [trialStats, setTrialStats] = useState<any>(null);
 
   useEffect(() => {
     setLoading(true);
-    apiService
-      .get<any>('/v1/analytics/overview')
-      .then((res) => {
-        if (res.data && !res.error) setOverview(res.data);
-      })
-      .finally(() => setLoading(false));
+    Promise.all([
+      apiService.get<any>('/v1/analytics/overview'),
+      apiService.get<any>('/v1/trials/admin/stats'),
+    ]).then(([overviewRes, trialRes]) => {
+      if (overviewRes.data && !overviewRes.error) setOverview(overviewRes.data);
+      if (trialRes.data && !trialRes.error) setTrialStats(trialRes.data);
+    }).finally(() => setLoading(false));
   }, []);
 
   const stats = [
@@ -122,6 +129,62 @@ export default function SuperAdminDashboardPage() {
               </Card>
             );
           })}
+        </div>
+
+        {/* ── Trial & Intro Offer Stats ─────────────────────── */}
+        <div>
+          <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
+            <Timer className="h-4 w-4 text-primary" />
+            Release 1 — Trial & Offer Stats
+          </h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {[
+              {
+                label: 'Businesses On Trial',
+                value: trialStats?.onTrial ?? '—',
+                icon: Timer,
+                color: 'text-cyan-500 bg-cyan-500/10',
+              },
+              {
+                label: 'Expiring In 7 Days',
+                value: trialStats?.expiringIn7Days ?? '—',
+                icon: AlertTriangle,
+                color: 'text-amber-500 bg-amber-500/10',
+              },
+              {
+                label: 'Expired Trials',
+                value: trialStats?.expired ?? '—',
+                icon: Clock,
+                color: 'text-rose-500 bg-rose-500/10',
+              },
+              {
+                label: 'Intro Offer Claimed',
+                value: trialStats?.introClaimed ?? '—',
+                icon: Gift,
+                color: 'text-violet-500 bg-violet-500/10',
+              },
+              {
+                label: 'Intro Offer Redeemed',
+                value: trialStats?.introRedeemed ?? '—',
+                icon: BadgeCheck,
+                color: 'text-emerald-500 bg-emerald-500/10',
+              },
+            ].map((stat) => {
+              const Icon = stat.icon;
+              return (
+                <Card
+                  key={stat.label}
+                  className="p-5 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl"
+                >
+                  <div className={`p-2.5 rounded-xl ${stat.color} inline-flex mb-3`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
+                  <h3 className="text-2xl font-extrabold text-foreground mt-1">{stat.value}</h3>
+                </Card>
+              );
+            })}
+          </div>
         </div>
 
         {/* No time-series data available from analytics/overview — show placeholder */}

@@ -9,6 +9,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/use-auth';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
+import { apiService } from '@/lib/services/api-service';
 import {
   AlertTriangle,
   ShieldAlert,
@@ -17,9 +18,16 @@ import {
   ArrowRight,
   Loader2,
   Lock,
+  Clock,
+  CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+
+// Paths allowed even when trial has expired
+const TRIAL_ALLOWED_PATHS = ['/dashboard/profile', '/dashboard/support', '/dashboard/subscriptions'];
+
+type TrialStatus = 'NOT_STARTED' | 'ACTIVE' | 'EXPIRED' | 'CONVERTED';
 
 interface BusinessLayoutProps {
   children: ReactNode;
@@ -42,6 +50,8 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   const [verificationStatus, setVerificationStatus] = useState<string>('APPROVED');
   const [loading, setLoading] = useState(true);
   const [rejectionReason, setRejectionReason] = useState<string>('');
+  const [trialStatus, setTrialStatus] = useState<TrialStatus>('NOT_STARTED');
+  const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(0);
 
   useEffect(() => {
     async function checkVerification() {
@@ -80,6 +90,17 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
         } catch (e) {
           console.error('Failed to resolve business verification status:', e);
           setVerificationStatus('DRAFT');
+        }
+
+        // Fetch trial status for approved businesses
+        try {
+          const trialRes = await apiService.get<any>(`/v1/trials/status/${user.businessId}`);
+          if (trialRes.data) {
+            setTrialStatus(trialRes.data.trialStatus as TrialStatus);
+            setTrialDaysRemaining(trialRes.data.daysRemaining ?? 0);
+          }
+        } catch {
+          // Non-fatal — trial check failure doesn't block the layout
         }
       }
       // 2. Specialized entity roles using entity.id
@@ -125,6 +146,11 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
     pathname.includes('/support');
 
   const showOverlay = verificationStatus !== 'APPROVED' && isRestrictedPath;
+
+  // Trial expiry: block all paths except the allowed list when trial is EXPIRED
+  const trialExpired = trialStatus === 'EXPIRED';
+  const isTrialAllowedPath = TRIAL_ALLOWED_PATHS.some((p) => pathname.startsWith(p));
+  const showTrialModal = trialExpired && !isTrialAllowedPath && verificationStatus === 'APPROVED';
 
   if (loading) {
     return (
@@ -201,8 +227,68 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
 
         <Header />
 
+        {/* ── Trial expiry banner (ACTIVE trial, days remaining) ── */}
+        {trialStatus === 'ACTIVE' && trialDaysRemaining <= 5 && (
+          <div className="w-full bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex items-center justify-between text-xs text-amber-300 z-40 relative">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 shrink-0 text-amber-400 animate-pulse" />
+              <span>
+                <strong>Trial expires in {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''}.</strong>{' '}
+                Choose a subscription plan to keep uninterrupted access.
+              </span>
+            </div>
+            <Button
+              onClick={() => router.push('/dashboard/subscriptions')}
+              className="h-7 px-3 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer shrink-0"
+            >
+              View Plans <ArrowRight className="h-3 w-3" />
+            </Button>
+          </div>
+        )}
+
         {/* Content */}
         <main className="flex-1 overflow-auto relative">
+          {/* ── Trial expired: full-screen non-dismissible modal ─────────── */}
+          {showTrialModal && (
+            <div className="fixed inset-0 z-[200] bg-background/95 backdrop-blur-xl flex items-center justify-center p-4">
+              <div className="w-full max-w-md">
+                <Card className="p-8 rounded-3xl border border-white/10 bg-[#0d0d12]/90 shadow-2xl text-center space-y-6">
+                  {/* Icon */}
+                  <div className="w-20 h-20 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto">
+                    <CreditCard className="h-8 w-8 text-rose-400" />
+                  </div>
+
+                  {/* Message */}
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-extrabold text-foreground tracking-tight">
+                      Free Trial Expired
+                    </h2>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Your free trial has expired.
+                      <br />
+                      Please select a subscription plan to continue using the platform.
+                    </p>
+                  </div>
+
+                  {/* CTA */}
+                  <Button
+                    onClick={() => router.push('/dashboard/subscriptions')}
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold text-base cursor-pointer"
+                  >
+                    Choose Subscription
+                  </Button>
+
+                  <p className="text-[10px] text-muted-foreground/60">
+                    Questions? Contact{' '}
+                    <a href="mailto:support@lifeartgroup.in" className="text-primary underline">
+                      support@lifeartgroup.in
+                    </a>
+                  </p>
+                </Card>
+              </div>
+            </div>
+          )}
+
           {showOverlay ? (
             // Premium full-page glass overlay
             <div className="absolute inset-0 bg-background/40 backdrop-blur-md z-40 flex items-center justify-center p-6">

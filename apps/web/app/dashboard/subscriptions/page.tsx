@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import {
   CreditCard, Check, Zap, Star, Rocket,
   AlertCircle, Clock, X, ArrowUpRight, ArrowDownRight, RefreshCw,
+  Timer, Gift, Lock,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
@@ -132,10 +133,21 @@ export default function BusinessSubscriptionsPage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
 
+  // Trial & intro offer state
+  const [trialStatus, setTrialStatus] = useState<string>('NOT_STARTED');
+  const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(0);
+  const [trialEndDate, setTrialEndDate] = useState<string>('');
+  const [hasIntroOffer, setHasIntroOffer] = useState(false);
+  const [introOfferDiscountPct, setIntroOfferDiscountPct] = useState(20);
+  const [claimingOffer, setClaimingOffer] = useState(false);
+  const [offerMsg, setOfferMsg] = useState('');
+
   const businessId = user?.businessId || user?.entity?.id;
 
   useEffect(() => {
     if (!businessId) return;
+
+    // Fetch subscription
     apiService
       .get<any>(`/v1/subscriptions/businesses/${businessId}/active`)
       .then((res) => {
@@ -161,8 +173,43 @@ export default function BusinessSubscriptionsPage() {
         setCurrentPlan(sub.plan);
         setSince(sub.since);
       });
+
+    // Fetch trial status
+    apiService.get<any>(`/v1/trials/status/${businessId}`).then((res) => {
+      if (res.data) {
+        setTrialStatus(res.data.trialStatus ?? 'NOT_STARTED');
+        setTrialDaysRemaining(res.data.daysRemaining ?? 0);
+        setTrialEndDate(res.data.trialEndDate ?? '');
+        setHasIntroOffer(res.data.hasIntroOffer ?? false);
+        setIntroOfferDiscountPct(res.data.introOfferDiscountPct ?? 20);
+      }
+    }).catch(() => {});
+
     setRequests(loadRequests());
   }, [businessId]);
+
+  const handleClaimIntroOffer = async () => {
+    if (!businessId || claimingOffer) return;
+    setClaimingOffer(true);
+    try {
+      const res = await apiService.post<any>(`/v1/trials/claim-intro-offer/${businessId}`, {});
+      if (!res.error) {
+        setHasIntroOffer(true);
+        setOfferMsg('Introductory offer claimed! 20% discount will apply to your first subscription.');
+        setTimeout(() => setOfferMsg(''), 5000);
+      } else {
+        setOfferMsg(res.error || 'Failed to claim offer');
+        setTimeout(() => setOfferMsg(''), 4000);
+      }
+    } catch {
+      setOfferMsg('Failed to claim offer. Try again.');
+      setTimeout(() => setOfferMsg(''), 4000);
+    } finally {
+      setClaimingOffer(false);
+    }
+  };
+
+  const discountedPrice = (price: number) => Math.round(price * (1 - introOfferDiscountPct / 100));
 
   const currentPlanDef = PLANS.find((p) => p.id === currentPlan)!;
   const pendingRequest = requests.find((r) => r.status === 'pending');
@@ -216,6 +263,99 @@ export default function BusinessSubscriptionsPage() {
             {successMsg}
           </div>
         )}
+
+        {/* ── Trial Status Card ───────────────────────────────── */}
+        {trialStatus !== 'NOT_STARTED' && (
+          <Card className={cn(
+            'p-5 rounded-2xl border flex items-center justify-between gap-4',
+            trialStatus === 'ACTIVE'
+              ? 'bg-cyan-500/5 border-cyan-500/20'
+              : trialStatus === 'EXPIRED'
+              ? 'bg-rose-500/5 border-rose-500/20'
+              : 'bg-emerald-500/5 border-emerald-500/20',
+          )}>
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                'p-2.5 rounded-xl',
+                trialStatus === 'ACTIVE' ? 'bg-cyan-500/10' : trialStatus === 'EXPIRED' ? 'bg-rose-500/10' : 'bg-emerald-500/10',
+              )}>
+                <Timer className={cn('h-5 w-5', trialStatus === 'ACTIVE' ? 'text-cyan-400' : trialStatus === 'EXPIRED' ? 'text-rose-400' : 'text-emerald-400')} />
+              </div>
+              <div>
+                <p className="font-bold text-foreground text-sm">
+                  {trialStatus === 'ACTIVE' && `Free Trial — ${trialDaysRemaining} day${trialDaysRemaining !== 1 ? 's' : ''} remaining`}
+                  {trialStatus === 'EXPIRED' && 'Free Trial Expired'}
+                  {trialStatus === 'CONVERTED' && 'Trial Converted to Subscription'}
+                </p>
+                {trialEndDate && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {trialStatus === 'ACTIVE' ? 'Expires' : 'Expired'}{' '}
+                    {new Date(trialEndDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                )}
+              </div>
+            </div>
+            <span className={cn(
+              'text-[11px] font-bold px-3 py-1 rounded-full',
+              trialStatus === 'ACTIVE' && 'bg-cyan-500/15 text-cyan-400',
+              trialStatus === 'EXPIRED' && 'bg-rose-500/15 text-rose-400',
+              trialStatus === 'CONVERTED' && 'bg-emerald-500/15 text-emerald-400',
+            )}>
+              {trialStatus === 'ACTIVE' ? 'Active' : trialStatus === 'EXPIRED' ? 'Expired' : 'Converted'}
+            </span>
+          </Card>
+        )}
+
+        {/* ── Introductory Offer Banner ───────────────────────── */}
+        {offerMsg && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-sm font-semibold">
+            <Gift className="h-4 w-4 shrink-0" />
+            {offerMsg}
+          </div>
+        )}
+        {!hasIntroOffer && trialStatus !== 'NOT_STARTED' && (
+          <Card className="p-5 rounded-2xl border border-violet-500/20 bg-violet-500/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-violet-500/10">
+                <Gift className="h-5 w-5 text-violet-400" />
+              </div>
+              <div>
+                <p className="font-bold text-foreground text-sm">Claim Your Introductory Offer</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Get <span className="text-violet-400 font-bold">20% off</span> your first subscription purchase. One-time offer — applies when billing activates.
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleClaimIntroOffer}
+              disabled={claimingOffer}
+              className="shrink-0 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold px-4 cursor-pointer"
+            >
+              {claimingOffer ? 'Claiming…' : 'Claim 20% Off'}
+            </Button>
+          </Card>
+        )}
+        {hasIntroOffer && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-violet-500/10 border border-violet-500/20">
+            <Gift className="h-4 w-4 text-violet-400 shrink-0" />
+            <p className="text-sm text-violet-300 font-semibold">
+              🎉 <strong>20% Introductory Discount Available</strong> — applies to your first subscription when billing activates.
+            </p>
+          </div>
+        )}
+
+        {/* ── Coming Soon Notice ──────────────────────────────── */}
+        <Card className="p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 flex items-center gap-4">
+          <div className="p-2.5 rounded-xl bg-amber-500/10 shrink-0">
+            <Lock className="h-5 w-5 text-amber-400" />
+          </div>
+          <div>
+            <p className="font-bold text-foreground text-sm">Coming Soon</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Subscription Activation Available Soon — payment processing will be enabled in the next release.
+            </p>
+          </div>
+        </Card>
 
         {/* ── Current Plan Card ────────────────────────────────── */}
         <Card className="p-6 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl">
@@ -371,13 +511,31 @@ export default function BusinessSubscriptionsPage() {
                   </div>
 
                   <div>
-                    <span className="text-2xl font-extrabold text-foreground">
-                      ₹{price.toLocaleString()}
-                    </span>
-                    <span className="text-xs text-muted-foreground ml-1">
-                      {billingPeriod === 'monthly' ? '/mo' : '/yr'}
-                    </span>
-                    {billingPeriod === 'annual' && (
+                    {hasIntroOffer ? (
+                      <>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-extrabold text-foreground">
+                            ₹{discountedPrice(price).toLocaleString()}
+                          </span>
+                          <span className="text-sm text-muted-foreground line-through">
+                            ₹{price.toLocaleString()}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-violet-400 bg-violet-500/10 px-1.5 py-0.5 rounded-full">
+                          {introOfferDiscountPct}% intro discount
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-2xl font-extrabold text-foreground">
+                          ₹{price.toLocaleString()}
+                        </span>
+                        <span className="text-xs text-muted-foreground ml-1">
+                          {billingPeriod === 'monthly' ? '/mo' : '/yr'}
+                        </span>
+                      </>
+                    )}
+                    {billingPeriod === 'annual' && !hasIntroOffer && (
                       <p className="text-[10px] text-muted-foreground mt-0.5">
                         ₹{Math.round(plan.priceAnnual / 12).toLocaleString()}/mo billed annually
                       </p>
@@ -393,38 +551,16 @@ export default function BusinessSubscriptionsPage() {
                     ))}
                   </ul>
 
-                  {!isCurrent && (
-                    <Button
-                      onClick={() => setConfirmTarget(plan.id)}
-                      disabled={hasPending}
-                      size="sm"
-                      variant={isUpgrade ? 'default' : 'outline'}
-                      className={cn(
-                        'w-full rounded-xl text-xs font-semibold cursor-pointer gap-1.5',
-                        isUpgrade
-                          ? 'bg-gradient-to-r from-primary to-accent text-primary-foreground'
-                          : 'border-white/10 text-slate-300 hover:bg-white/5',
-                        hasPending && 'opacity-50 cursor-not-allowed',
-                      )}
-                    >
-                      {isUpgrade ? (
-                        <><ArrowUpRight className="h-3.5 w-3.5" />Upgrade</>
-                      ) : (
-                        <><ArrowDownRight className="h-3.5 w-3.5" />Downgrade</>
-                      )}
-                    </Button>
-                  )}
-                  {isCurrent && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled
-                      className="w-full rounded-xl text-xs border-primary/30 text-primary cursor-default opacity-70"
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      Current Plan
-                    </Button>
-                  )}
+                  {/* Release 1: Payment disabled — show Coming Soon */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled
+                    className="w-full rounded-xl text-xs border-white/10 text-muted-foreground cursor-not-allowed opacity-60"
+                  >
+                    <Lock className="h-3.5 w-3.5 mr-1" />
+                    Coming Soon
+                  </Button>
                 </Card>
               );
             })}

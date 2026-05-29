@@ -67,6 +67,7 @@ import { EntityOnboardingModule } from './modules/entity-onboarding/entity-onboa
 import { BranchesModule } from './modules/branches/branches.module';
 import { TeamModule } from './modules/team/team.module';
 import { LaunchInterestsModule } from './modules/launch-interests/launch-interests.module';
+import { TrialsModule } from './modules/trials/trials.module';
 
 @Module({
   imports: [
@@ -174,6 +175,7 @@ import { LaunchInterestsModule } from './modules/launch-interests/launch-interes
     BranchesModule,
     TeamModule,
     LaunchInterestsModule,
+    TrialsModule,
   ],
   providers: [
     {
