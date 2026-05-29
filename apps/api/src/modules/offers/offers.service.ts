@@ -6,6 +6,7 @@ import { TenantResolverService } from '../../common/database/tenant-resolver.ser
 import { DatabaseService } from '../../common/database/database.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 import { PaginatedResult } from '../../common/database/pagination';
+import { BusinessCustomerService } from '../customers/business-customer.service';
 
 @Injectable()
 export class OffersService {
@@ -15,6 +16,7 @@ export class OffersService {
     private readonly auditService: AuditService,
     private readonly tenantResolver: TenantResolverService,
     private readonly db: DatabaseService,
+    private readonly businessCustomerService: BusinessCustomerService,
   ) {}
 
   /**
@@ -211,6 +213,14 @@ export class OffersService {
     } catch (_) {
       // Non-fatal — counter already incremented above
     }
+
+    // Track customer-business relationship
+    await this.businessCustomerService.trackInteraction(
+      tenantId,
+      userId,
+      redeemed.businessId,
+      'OFFER_REDEEM',
+    );
 
     await this.auditService.log({
       tenantId,

@@ -196,8 +196,9 @@ export default function UnifiedRegisterPage() {
   const [businessId, setBusinessId] = useState('');
 
   // Form states: Kerala Entity Profile details & Doc uploads (Step 4)
-  const [district, setDistrict] = useState(KERALA_DISTRICTS[0]);
-  const [city, setCity] = useState('');
+  // Locked to Thiruvananthapuram for Release 1 — multi-city UI hidden, DB architecture preserved
+  const [district] = useState('Thiruvananthapuram');
+  const [city] = useState('Thiruvananthapuram');
   const [address, setAddress] = useState('');
   const [deptType, setDeptType] = useState('Local');
 
@@ -374,8 +375,8 @@ export default function UnifiedRegisterPage() {
     setError('');
     setSuccess('');
 
-    if (!city.trim() || !address.trim()) {
-      setError('City and Address details are required.');
+    if (!address.trim()) {
+      setError('Address is required.');
       return;
     }
 
@@ -979,35 +980,13 @@ export default function UnifiedRegisterPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">Kerala Jurisdiction District</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <select
-                        value={district}
-                        onChange={(e) => setDistrict(e.target.value)}
-                        className="w-full h-11 pl-10 pr-4 border border-input text-muted-foreground rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer"
-                      >
-                        {KERALA_DISTRICTS.map((dist) => (
-                          <option key={dist} value={dist}>
-                            {dist}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-muted-foreground">City / Town</label>
-                    <Input
-                      type="text"
-                      placeholder="e.g. Kochi, Trivandrum"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
-                      required
-                    />
+                {/* City locked to Thiruvananthapuram for Release 1 */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">City / District</label>
+                  <div className="flex items-center gap-2 h-11 px-3 rounded-xl border border-input bg-muted/30 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 shrink-0" />
+                    <span>Thiruvananthapuram, Kerala</span>
+                    <span className="ml-auto text-[10px] text-muted-foreground/50 font-mono">Release 1</span>
                   </div>
                 </div>
 

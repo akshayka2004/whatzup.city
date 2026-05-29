@@ -6,6 +6,7 @@ import { BillVerificationRepository } from '../../common/database/repositories/b
 import { AuditService } from '../audit/audit.service';
 import { StorageService } from '../../common/storage/storage.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
+import { BusinessCustomerService } from '../customers/business-customer.service';
 
 @Injectable()
 export class BillsService {
@@ -17,6 +18,7 @@ export class BillsService {
     private readonly auditService: AuditService,
     private readonly storageService: StorageService,
     @InjectQueue('ocr-queue') private readonly ocrQueue: Queue,
+    private readonly businessCustomerService: BusinessCustomerService,
   ) {}
 
   async upload(
@@ -81,6 +83,14 @@ export class BillsService {
       resourceId: bill.id,
       metadata: { businessId: data.businessId, amount: data.amount },
     });
+
+    // 5. Track customer-business relationship
+    await this.businessCustomerService.trackInteraction(
+      tenantId,
+      userId,
+      data.businessId,
+      'BILL_UPLOAD',
+    );
 
     return bill;
   }

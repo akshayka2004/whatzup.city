@@ -3,15 +3,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { StripHtmlInput } from '../../../common/decorators/sanitize.decorator';
 
 export class CreateReportDto {
-  @ApiProperty({ example: 'BUSINESS' })
+  @ApiProperty({ example: 'BUSINESS', required: false })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  targetType!: string;
+  targetType?: string;
 
-  @ApiProperty({ example: '00000000-0000-0000-0000-000000000001' })
+  @ApiProperty({ example: '00000000-0000-0000-0000-000000000001', required: false })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  targetId!: string;
+  targetId?: string;
 
   @ApiProperty({ example: 'SPAM' })
   @IsString()
@@ -29,6 +29,20 @@ export class CreateReportDto {
   @IsArray()
   @IsUrl({}, { each: true })
   evidence?: string[];
+
+  /** Human-readable subject line from the report form */
+  @ApiProperty({ example: 'Fake Business Listing', required: false })
+  @IsOptional()
+  @IsString()
+  @StripHtmlInput()
+  subject?: string;
+
+  /** Name of the business/entity being reported */
+  @ApiProperty({ example: 'Acme Store', required: false })
+  @IsOptional()
+  @IsString()
+  @StripHtmlInput()
+  targetName?: string;
 }
 
 export class ResolveReportDto {

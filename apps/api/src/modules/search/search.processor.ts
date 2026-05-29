@@ -24,10 +24,23 @@ export class SearchProcessor extends WorkerHost {
       if (type === 'BUSINESS') {
         if (action === 'INDEX') {
           const business = await this.businessRepo.findOne(tenantId, id, {
-            include: { category: { select: { name: true } } },
+            include: {
+              category: { select: { name: true } },
+              branches: { select: { name: true }, take: 10 },
+              offers: { select: { title: true }, where: { deletedAt: null }, take: 20 },
+              businessTags: { select: { tag: true } },
+            },
           });
 
           if (!business) return;
+
+          const biz = business as any;
+
+          // Aggregate extra searchable text fields
+          const branchNames = (biz.branches ?? []).map((b: any) => b.name).filter(Boolean).join(' ');
+          const offerTitles = (biz.offers ?? []).map((o: any) => o.title).filter(Boolean).join(' ');
+          const tags: string[] = (biz.businessTags ?? []).map((t: any) => t.tag).filter(Boolean);
+          const productNames = ''; // Products not in this query path; extend here if model grows
 
           // Transform for Typesense Document schema
           const document = {
@@ -36,7 +49,12 @@ export class SearchProcessor extends WorkerHost {
             name: business.name,
             description: business.description || '',
             categoryId: business.categoryId,
-            categoryName: business.category?.name || '',
+            categoryName: biz.category?.name || '',
+            subcategoryName: (business as any).subcategory || '',
+            tags: tags.length ? tags : undefined,
+            branchNames: branchNames || undefined,
+            offerTitles: offerTitles || undefined,
+            productNames: productNames || undefined,
             city: business.city,
             location:
               business.latitude && business.longitude
@@ -45,7 +63,7 @@ export class SearchProcessor extends WorkerHost {
             averageRating: business.averageRating != null ? Number(business.averageRating) : 0,
             totalReviews: business.totalReviews != null ? Number(business.totalReviews) : 0,
             status: business.status,
-            createdAt: business.createdAt.getTime(), // Using timestamps for faster sorting
+            createdAt: business.createdAt.getTime(),
           };
 
           await this.typesenseService.indexDocument('businesses', document);

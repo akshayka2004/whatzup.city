@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, Image as ImageIcon, Trash2, Eye, X, AlertTriangle, Loader2, CheckCircle2 } from 'lucide-react';
+import { Upload, Image as ImageIcon, Trash2, Eye, X, AlertTriangle, Loader2, CheckCircle2, Tag } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -32,7 +33,9 @@ export default function MediaPage() {
 
   // ── Upload form state ──────────────────────────────────────
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadTitle, setUploadTitle] = useState('');
   const [uploadDesc, setUploadDesc] = useState('');
+  const [uploadTagsStr, setUploadTagsStr] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -43,9 +46,9 @@ export default function MediaPage() {
     setSelectedFile(file);
     setUploadError('');
     setUploadSuccess(false);
-    if (file && !uploadDesc) {
-      // Pre-fill description from filename (without extension)
-      setUploadDesc(file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
+    if (file && !uploadTitle) {
+      // Pre-fill title from filename (without extension)
+      setUploadTitle(file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
     }
   };
 
@@ -84,6 +87,10 @@ export default function MediaPage() {
       }
 
       // Step 3: Register media record in API
+      const tags = uploadTagsStr
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
       const createRes = await apiService.post<any>('/v1/media', {
         businessId,
         url: fileKey,
@@ -91,6 +98,9 @@ export default function MediaPage() {
         filename: selectedFile.name,
         size: selectedFile.size,
         mimeType: selectedFile.type,
+        title: uploadTitle.trim() || undefined,
+        description: uploadDesc.trim() || undefined,
+        tags: tags.length ? tags : undefined,
       });
 
       if (createRes.error) {
@@ -109,7 +119,9 @@ export default function MediaPage() {
       setTimeout(() => {
         setIsUploadOpen(false);
         setSelectedFile(null);
+        setUploadTitle('');
         setUploadDesc('');
+        setUploadTagsStr('');
         setUploadSuccess(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
       }, 1200);
@@ -202,8 +214,15 @@ export default function MediaPage() {
                   </div>
                   <div className="p-4 flex items-center justify-between">
                     <div className="min-w-0 flex-1 mr-4">
-                      <h3 className="font-semibold text-foreground truncate">{itemName}</h3>
+                      <h3 className="font-semibold text-foreground truncate">{item.title || itemName}</h3>
                       <p className="text-xs text-muted-foreground">{itemSize}</p>
+                      {item.tags && item.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {item.tags.slice(0, 3).map((t: string) => (
+                            <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">{t}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button
@@ -235,7 +254,7 @@ export default function MediaPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
               <button
-                onClick={() => { setIsUploadOpen(false); setSelectedFile(null); setUploadDesc(''); setUploadError(''); setUploadSuccess(false); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                onClick={() => { setIsUploadOpen(false); setSelectedFile(null); setUploadTitle(''); setUploadDesc(''); setUploadTagsStr(''); setUploadError(''); setUploadSuccess(false); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="h-5 w-5" />
@@ -279,6 +298,38 @@ export default function MediaPage() {
                     />
                   </div>
 
+                  {/* Metadata fields */}
+                  <div>
+                    <label className="text-xs font-medium text-slate-300 block mb-1.5">Title</label>
+                    <Input
+                      value={uploadTitle}
+                      onChange={(e) => setUploadTitle(e.target.value)}
+                      placeholder="Image title (optional)"
+                      className="rounded-xl border-white/10 bg-white/5"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-300 block mb-1.5">Description</label>
+                    <textarea
+                      value={uploadDesc}
+                      onChange={(e) => setUploadDesc(e.target.value)}
+                      placeholder="Short description (optional)"
+                      rows={2}
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+                      <Tag className="h-3 w-3" /> Tags (comma separated)
+                    </label>
+                    <Input
+                      value={uploadTagsStr}
+                      onChange={(e) => setUploadTagsStr(e.target.value)}
+                      placeholder="interior, product, team"
+                      className="rounded-xl border-white/10 bg-white/5"
+                    />
+                  </div>
+
                   {uploadError && (
                     <div className="flex items-start gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
                       <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -290,7 +341,7 @@ export default function MediaPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => { setIsUploadOpen(false); setSelectedFile(null); setUploadDesc(''); setUploadError(''); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                      onClick={() => { setIsUploadOpen(false); setSelectedFile(null); setUploadTitle(''); setUploadDesc(''); setUploadTagsStr(''); setUploadError(''); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                       className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer"
                       disabled={uploading}
                     >

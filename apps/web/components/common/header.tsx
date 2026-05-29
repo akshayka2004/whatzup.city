@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Moon,
@@ -10,6 +10,8 @@ import {
   Settings,
   LogIn,
   Sparkles,
+  CheckCheck,
+  BellOff,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -23,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
+import { apiService } from '@/lib/services/api-service';
 import Link from 'next/link';
 
 export function Header() {
@@ -32,6 +35,43 @@ export function Header() {
   const [searchVal, setSearchVal] = useState('');
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // ── Notifications ─────────────────────────────────────────────
+  const [notifs, setNotifs] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifFetched = useRef(false);
+
+  // Fetch unread count on mount (authenticated users only)
+  useEffect(() => {
+    if (!user) return;
+    apiService.get<{ unreadCount: number }>('/v1/notifications/unread-count')
+      .then((r) => { if (r.data) setUnreadCount(r.data.unreadCount); })
+      .catch(() => {});
+  }, [user]);
+
+  const openNotifDropdown = async () => {
+    setNotifOpen(true);
+    if (notifFetched.current) return;
+    notifFetched.current = true;
+    const r = await apiService.get<any>('/v1/notifications?limit=20');
+    if (r.data) {
+      const list = Array.isArray(r.data) ? r.data : r.data?.data ?? r.data?.items ?? [];
+      setNotifs(list);
+    }
+  };
+
+  const markAllRead = async () => {
+    await apiService.patch('/v1/notifications/mark-all-read', {});
+    setUnreadCount(0);
+    setNotifs((prev) => prev.map((n) => ({ ...n, isRead: true })));
+  };
+
+  const markOneRead = async (id: string) => {
+    await apiService.patch(`/v1/notifications/${id}/read`, {});
+    setNotifs((prev) => prev.map((n) => n.id === id ? { ...n, isRead: true } : n));
+    setUnreadCount((c) => Math.max(0, c - 1));
+  };
 
   const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchVal.trim()) {
@@ -123,9 +163,67 @@ export function Header() {
         </Button>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="rounded-lg h-11 w-11 md:h-9 md:w-9 flex items-center justify-center cursor-pointer">
-          <Bell className="h-5 w-5" />
-        </Button>
+        {user ? (
+          <DropdownMenu open={notifOpen} onOpenChange={(open) => { if (open) openNotifDropdown(); else setNotifOpen(false); }}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative rounded-lg h-11 w-11 md:h-9 md:w-9 flex items-center justify-center cursor-pointer">
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 md:top-0.5 md:right-0.5 h-4 w-4 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center leading-none">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80 rounded-xl border-border bg-card/95 backdrop-blur-xl p-0 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                <DropdownMenuLabel className="font-semibold text-sm text-foreground p-0">
+                  Notifications {unreadCount > 0 && <span className="ml-1.5 text-xs text-rose-400">({unreadCount} new)</span>}
+                </DropdownMenuLabel>
+                {unreadCount > 0 && (
+                  <button onClick={markAllRead} className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
+                    <CheckCheck className="h-3 w-3" /> Mark all read
+                  </button>
+                )}
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {notifs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-muted-foreground gap-2">
+                    <BellOff className="h-7 w-7 opacity-30" />
+                    <p className="text-xs">No notifications yet</p>
+                  </div>
+                ) : (
+                  notifs.map((n) => (
+                    <button
+                      key={n.id}
+                      onClick={() => { if (!n.isRead) markOneRead(n.id); }}
+                      className={`w-full text-left px-4 py-3 border-b border-border/50 last:border-0 hover:bg-muted/40 transition-colors cursor-pointer ${n.isRead ? 'opacity-60' : ''}`}
+                    >
+                      <div className="flex items-start gap-2">
+                        {!n.isRead && <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
+                        <div className={`flex-1 ${n.isRead ? 'ml-3.5' : ''}`}>
+                          <p className="text-xs font-semibold text-foreground leading-snug">{n.title || n.type || 'Notification'}</p>
+                          {(n.body || n.message) && (
+                            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{n.body || n.message}</p>
+                          )}
+                          {n.createdAt && (
+                            <p className="text-[10px] text-muted-foreground/50 mt-1">
+                              {new Date(n.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button variant="ghost" size="icon" className="rounded-lg h-11 w-11 md:h-9 md:w-9 flex items-center justify-center cursor-pointer" onClick={() => router.push('/login')}>
+            <Bell className="h-5 w-5" />
+          </Button>
+        )}
 
         {/* User menu */}
         <DropdownMenu>

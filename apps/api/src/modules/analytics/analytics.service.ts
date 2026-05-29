@@ -57,6 +57,8 @@ export class AnalyticsService {
     const cached = await this.redis.get(cacheKey);
     if (cached) return cached;
 
+    const dbAny = this.db as any;
+
     const [
       totalUsers,
       totalBusinesses,
@@ -65,6 +67,9 @@ export class AnalyticsService {
       totalReviews,
       totalOffers,
       offerCustomerIds,
+      totalRedemptions,
+      totalClaims,
+      totalComplaints,
     ] = await Promise.all([
       this.db.user.count({ where: { tenantId, deletedAt: null } }),
       this.db.business.count({ where: { tenantId, deletedAt: null } }),
@@ -84,6 +89,15 @@ export class AnalyticsService {
         FROM offer_redemptions
         WHERE tenant_id = ${tenantId}::uuid AND deleted_at IS NULL
       `,
+      this.db.offerRedemption.count({ where: { tenantId, deletedAt: null } }),
+      // Total claims tracked in CRM
+      dbAny.businessCustomer
+        ? dbAny.businessCustomer.aggregate({
+            where: { tenantId, deletedAt: null },
+            _sum: { offersClaimedCount: true },
+          }).then((r: any) => r._sum?.offersClaimedCount ?? 0).catch(() => 0)
+        : Promise.resolve(0),
+      this.db.moderationReport.count({ where: { tenantId } }),
     ]);
 
     const overview = {
@@ -94,6 +108,9 @@ export class AnalyticsService {
       totalReviews,
       totalOffers,
       totalOfferCustomers: Number((offerCustomerIds as any)[0]?.count ?? 0),
+      totalRedemptions,
+      totalClaims,
+      totalComplaints,
       revenueThisMonth: 0,
       growthRate: 12.5,
     };
@@ -176,6 +193,8 @@ export class AnalyticsService {
     const since = new Date();
     since.setDate(since.getDate() - days);
 
+    const db = this.db as any; // cast for businessCustomer access
+
     const [
       offerStats,
       redemptionHistory,
@@ -184,6 +203,7 @@ export class AnalyticsService {
       ratingDistribution,
       recentReviews,
       customerIds,
+      crmStats,
     ] = await Promise.all([
       this.db.offer.findMany({
         where: { businessId: actualId, deletedAt: null },
@@ -233,6 +253,12 @@ export class AnalyticsService {
           AND r.deleted_at IS NULL
           AND o.business_id = ${actualId}::uuid
       `,
+      // CRM stats from BusinessCustomer table
+      db.businessCustomer.aggregate({
+        where: { businessId: actualId, deletedAt: null },
+        _count: { _all: true },
+        _sum: { offersClaimedCount: true, offersRedeemedCount: true },
+      }).catch(() => ({ _count: { _all: 0 }, _sum: { offersClaimedCount: 0, offersRedeemedCount: 0 } })),
     ]);
 
     const activeOffers      = offerStats.filter((o) => o.status === 'ACTIVE').length;
@@ -270,6 +296,11 @@ export class AnalyticsService {
       count: ratingDistribution.find((r) => r.rating === stars)?._count ?? 0,
     }));
 
+    const crmCustomers = (crmStats as any)._count?._all ?? 0;
+    const crmClaims = (crmStats as any)._sum?.offersClaimedCount ?? 0;
+    const crmRedemptions = (crmStats as any)._sum?.offersRedeemedCount ?? 0;
+    const redemptionRate = crmClaims > 0 ? Math.round((crmRedemptions / crmClaims) * 100) : 0;
+
     const result = {
       kpis: {
         activeOffers,
@@ -279,7 +310,11 @@ export class AnalyticsService {
         totalReviews: business.totalReviews,
         teamCount,
         impressions,
-        customerCount: Number((customerIds as any)[0]?.count ?? 0),
+        customerCount: Math.max(Number((customerIds as any)[0]?.count ?? 0), crmCustomers),
+        // CRM-sourced metrics
+        totalClaims: crmClaims,
+        totalCrmRedemptions: crmRedemptions,
+        redemptionRate,
       },
       offerPerformance,
       redemptionTrend,

@@ -46,9 +46,10 @@ function RegisterBusinessWizardContent() {
   const [subcategorySlugs, setSubcategorySlugs] = useState<string[]>([]);
 
   // Step 3 Contact & Location States
+  // City/state locked to Thiruvananthapuram for Release 1
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
+  const city = 'Thiruvananthapuram';
+  const state = 'Kerala';
   const [postalCode, setPostalCode] = useState('');
   const [website, setWebsite] = useState('');
   const [googleMapsUrl, setGoogleMapsUrl] = useState('');
@@ -89,8 +90,7 @@ function RegisterBusinessWizardContent() {
           setBusinessDraft(draft);
           setDescription(draft.description || '');
           setAddress(draft.address || '');
-          setCity(draft.city || '');
-          setState(draft.state || '');
+          // city/state are locked to Thiruvananthapuram/Kerala for Release 1
           setPostalCode(draft.zipCode || '');
           setWebsite(draft.socialLinks?.website || '');
           setGoogleMapsUrl(draft.socialLinks?.googleMapsUrl || '');
@@ -549,35 +549,21 @@ function RegisterBusinessWizardContent() {
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  {/* City/State locked to Thiruvananthapuram, Kerala for Release 1 */}
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">City</label>
-                    <Input
-                      placeholder="Miami"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">State</label>
-                    <Input
-                      placeholder="FL"
-                      value={state}
-                      onChange={(e) => setState(e.target.value)}
-                      className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
-                      required
-                    />
+                    <label className="text-xs font-medium text-muted-foreground">City / District</label>
+                    <div className="flex items-center h-11 px-3 rounded-xl border border-input bg-muted/30 text-sm text-muted-foreground">
+                      Thiruvananthapuram, Kerala
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">Postal Code</label>
                     <Input
-                      placeholder="33139"
+                      placeholder="e.g. 695001"
                       value={postalCode}
                       onChange={(e) => setPostalCode(e.target.value)}
                       className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
-                      required
                     />
                   </div>
                 </div>

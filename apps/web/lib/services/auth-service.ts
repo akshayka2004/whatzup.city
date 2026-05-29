@@ -31,8 +31,8 @@ export interface User {
 }
 
 function mapRbacToRole(rbac: string): string {
-  if (rbac === 'BUSINESS_ADMIN' || rbac === 'BUSINESS_OWNER') return 'business';
-  if (rbac === 'MASTER_ADMIN') return 'admin';
+  if (['BUSINESS_ADMIN', 'BUSINESS_OWNER', 'BUSINESS_MODERATOR', 'BUSINESS_STAFF'].includes(rbac)) return 'business';
+  if (rbac === 'MASTER_ADMIN' || rbac === 'PORTAL_ADMIN') return 'admin';
   if (rbac === 'SUPER_ADMIN') return 'super-admin';
   if (rbac === 'GOVERNMENT_ADMIN') return 'government';
   return rbac.toLowerCase();

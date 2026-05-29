@@ -1366,15 +1366,19 @@ model GovernmentAnnouncement {
 // ── MEDIA ───────────────────────────────────────────────────
 
 model Media {
-  id         String    @id @default(uuid()) @db.Uuid
-  tenantId   String    @map("tenant_id") @db.Uuid
-  businessId String    @map("business_id") @db.Uuid
-  url        String    @db.Text
-  type       String    @db.VarChar(20)
-  filename   String    @db.VarChar(255)
-  size       Int
-  mimeType   String    @map("mime_type") @db.VarChar(100)
-  sortOrder  Int       @default(0) @map("sort_order")
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  businessId  String    @map("business_id") @db.Uuid
+  url         String    @db.Text
+  type        String    @db.VarChar(20)
+  filename    String    @db.VarChar(255)
+  size        Int
+  mimeType    String    @map("mime_type") @db.VarChar(100)
+  sortOrder   Int       @default(0) @map("sort_order")
+  // Gallery metadata
+  title       String?   @db.VarChar(255)
+  description String?   @db.Text
+  tags        String[]  @default([])
   
   // Core Audit Fields
   createdAt  DateTime  @default(now()) @map("created_at")

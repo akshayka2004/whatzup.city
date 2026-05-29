@@ -1,12 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
+import { PasswordService } from '../auth/password.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly db: DatabaseService,
     private readonly redis: RedisService,
+    private readonly passwordService: PasswordService,
   ) {}
 
   async findById(id: string, requesterId?: string, requesterRole?: string) {
@@ -272,5 +274,109 @@ export class UsersService {
     const data = { leaderboard: result, totalReferredUsers: total };
     await this.redis.set(cacheKey, data, 600); // 10-min cache
     return data;
+  }
+
+  /**
+   * Authenticated user changes their own password.
+   */
+  async changePassword(userId: string, data: { currentPassword: string; newPassword: string }) {
+    if (!data.currentPassword || !data.newPassword) {
+      throw new BadRequestException('currentPassword and newPassword are required');
+    }
+    if (data.newPassword.length < 8) {
+      throw new BadRequestException('New password must be at least 8 characters');
+    }
+
+    const user = await this.db.user.findUnique({
+      where: { id: userId, deletedAt: null },
+      select: { id: true, passwordHash: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    const matches = await this.passwordService.compare(data.currentPassword, user.passwordHash);
+    if (!matches) throw new BadRequestException('Current password is incorrect');
+
+    const newHash = await this.passwordService.hash(data.newPassword);
+    await this.db.user.update({ where: { id: userId }, data: { passwordHash: newHash } });
+    await this.redis.del(`user:${userId}`);
+    return { message: 'Password updated successfully' };
+  }
+
+  /**
+   * Super Admin creates a Portal Admin / Master Admin account.
+   * The new admin can log in immediately (emailVerified: true, isActive: true).
+   */
+  async createAdminUser(
+    tenantId: string,
+    data: { name: string; email: string; password: string; role: 'MASTER_ADMIN' | 'PORTAL_ADMIN' },
+  ) {
+    if (!data.name || !data.email || !data.password) {
+      throw new BadRequestException('Name, email and password are required');
+    }
+    if (data.password.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters');
+    }
+
+    const validRoles = ['MASTER_ADMIN', 'PORTAL_ADMIN'];
+    if (!validRoles.includes(data.role)) {
+      throw new BadRequestException('Invalid role — must be MASTER_ADMIN or PORTAL_ADMIN');
+    }
+
+    const emailNormalized = data.email.trim().toLowerCase();
+    const existing = await this.db.user.findFirst({ where: { email: emailNormalized, deletedAt: null } });
+    if (existing) throw new ConflictException(`User with email "${emailNormalized}" already exists`);
+
+    const passwordHash = await this.passwordService.hash(data.password);
+
+    // PORTAL_ADMIN maps to MASTER_ADMIN in the DB enum (they differ only in UX label)
+    const dbRole = data.role === 'PORTAL_ADMIN' ? 'MASTER_ADMIN' : data.role;
+
+    const user = await this.db.user.create({
+      data: {
+        tenantId,
+        email: emailNormalized,
+        passwordHash,
+        name: data.name.trim(),
+        role: dbRole as any,
+        isActive: true,
+        emailVerified: true,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+        isActive: true,
+      },
+    });
+
+    return user;
+  }
+
+  /**
+   * List admin users (MASTER_ADMIN / SUPER_ADMIN) for the Super Admin panel.
+   */
+  async listAdminUsers(tenantId?: string) {
+    const where: any = {
+      deletedAt: null,
+      role: { in: ['MASTER_ADMIN', 'SUPER_ADMIN'] },
+    };
+    if (tenantId) where.tenantId = tenantId;
+
+    return this.db.user.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        lastLoginAt: true,
+      },
+    });
   }
 }

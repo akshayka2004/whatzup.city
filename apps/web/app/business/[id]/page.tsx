@@ -14,7 +14,6 @@ import {
   Phone,
   Share2,
   Heart,
-  MessageCircle,
   Globe,
   Instagram,
   Facebook,
@@ -277,20 +276,28 @@ export default function BusinessDetailPage() {
             {/* ── Business Info Card */}
             <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
               <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <h1 className="text-3xl font-bold text-foreground">{biz.name}</h1>
-                    {biz.isVerified && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        Verified Merchant
-                      </span>
-                    )}
+                <div className="flex items-start gap-4">
+                  {/* Business Logo */}
+                  {biz.logo && (
+                    <div className="h-16 w-16 rounded-xl overflow-hidden border border-white/10 bg-white/5 shrink-0">
+                      <img src={biz.logo} alt={`${biz.name} logo`} className="h-full w-full object-contain" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <h1 className="text-3xl font-bold text-foreground">{biz.name}</h1>
+                      {biz.isVerified && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Verified Merchant
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground mb-4">
+                      {biz.category?.name || ''}
+                      {biz.subcategory ? ` • ${biz.subcategory}` : ''}
+                    </p>
                   </div>
-                  <p className="text-muted-foreground mb-4">
-                    {biz.category?.name || ''}
-                    {biz.subcategory ? ` • ${biz.subcategory}` : ''}
-                  </p>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -325,7 +332,14 @@ export default function BusinessDetailPage() {
                 {address && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <MapPin className="h-5 w-5 text-violet-400 flex-shrink-0" />
-                    <span>{address}</span>
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-violet-400 hover:underline"
+                    >
+                      {address}
+                    </a>
                   </div>
                 )}
                 {(biz.phone || branch?.phone) && (
@@ -542,15 +556,8 @@ export default function BusinessDetailPage() {
                 </div>
               )}
             </Card>
-            <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
-              {biz.phone && (
-                <a href={`tel:${biz.phone}`}>
-                  <Button className="w-full rounded-xl mb-3 bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">
-                    <MessageCircle className="mr-2 h-4 w-4" /> Contact
-                  </Button>
-                </a>
-              )}
-              {biz.website && (
+            {biz.website && (
+              <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
                 <a href={biz.website.startsWith('http') ? biz.website : `https://${biz.website}`} target="_blank" rel="noreferrer">
                   <Button
                     variant="outline"
@@ -559,8 +566,8 @@ export default function BusinessDetailPage() {
                     Visit Website
                   </Button>
                 </a>
-              )}
-            </Card>
+              </Card>
+            )}
           </div>
         </div>
       </div>

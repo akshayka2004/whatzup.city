@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { BillsController } from './bills.controller';
 import { BillsService } from './bills.service';
 import { AuditModule } from '../audit/audit.module';
+import { CustomersModule } from '../customers/customers.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { AuditModule } from '../audit/audit.module';
       name: 'ocr-queue',
     }),
     AuditModule,
+    CustomersModule,
   ],
   controllers: [BillsController],
   providers: [BillsService],

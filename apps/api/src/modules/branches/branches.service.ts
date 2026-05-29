@@ -1,12 +1,16 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger, ConflictException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { AuditService } from '../audit/audit.service';
+import { PasswordService } from '../auth/password.service';
 
 @Injectable()
 export class BranchesService {
+  private readonly logger = new Logger(BranchesService.name);
+
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly passwordService: PasswordService,
   ) {}
 
   /**
@@ -53,6 +57,14 @@ export class BranchesService {
     const business = await this.resolveBusiness(tenantId, businessOrEntityId, userId);
     const { latitude, longitude } = this.parseCoords(data.geoCoords);
 
+    // If branch admin credentials provided, validate email uniqueness before creating branch
+    const adminEmail = data.adminEmail?.trim().toLowerCase();
+    const adminPassword = data.adminPassword;
+    if (adminEmail && adminPassword) {
+      const existing = await this.db.user.findFirst({ where: { email: adminEmail, deletedAt: null } });
+      if (existing) throw new ConflictException(`A user with email "${adminEmail}" already exists`);
+    }
+
     const branch = await this.db.businessBranch.create({
       data: {
         tenantId,
@@ -64,9 +76,9 @@ export class BranchesService {
         zipCode: data.zipCode || '',
         phone: data.phone || null,
         email: data.email || null,
-        managerName: data.managerName || null,
+        managerName: data.managerName || data.adminName || null,
         managerPhone: data.managerPhone || null,
-        managerEmail: data.managerEmail || null,
+        managerEmail: data.managerEmail || adminEmail || null,
         operatingHours: data.operatingHours || data.hours || null,
         latitude,
         longitude,
@@ -74,13 +86,47 @@ export class BranchesService {
       },
     });
 
+    // Auto-create branch admin user if credentials were supplied
+    if (adminEmail && adminPassword) {
+      try {
+        const passwordHash = await this.passwordService.hash(adminPassword);
+        const adminUser = await this.db.user.create({
+          data: {
+            tenantId,
+            email: adminEmail,
+            passwordHash,
+            name: (data.adminName || data.managerName || 'Branch Admin').trim(),
+            phone: data.adminPhone || data.managerPhone || null,
+            role: 'BUSINESS_STAFF' as any,
+            isActive: true,
+            emailVerified: true,
+          },
+        });
+
+        await this.db.businessStaff.create({
+          data: {
+            tenantId,
+            businessId: business.id,
+            userId: adminUser.id,
+            role: 'STAFF' as any,
+            isActive: true,
+          },
+        });
+
+        this.logger.log(`Branch admin user created: ${adminEmail} for branch ${branch.id}`);
+      } catch (err: any) {
+        this.logger.error(`Failed to create branch admin user: ${err.message}`);
+        // Non-fatal — branch was created, admin user creation is best-effort
+      }
+    }
+
     await this.audit.log({
       tenantId,
       userId,
       action: 'CREATE_BRANCH',
       resource: 'BUSINESS_BRANCH',
       resourceId: branch.id,
-      newData: branch,
+      newData: { ...branch, adminEmail: adminEmail || undefined },
     });
 
     return branch;

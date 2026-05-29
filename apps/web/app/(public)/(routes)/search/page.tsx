@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Star, MapPin, Globe, Instagram, Heart, Loader2, CheckCircle2 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { Search, Star, MapPin, Globe, Instagram, Heart, Loader2, CheckCircle2, Tag, Building2 } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { apiService } from '@/lib/services/api-service';
 import {
   Select,
@@ -65,22 +65,36 @@ interface SearchResult {
 
 function SearchContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialQuery = searchParams.get('q') || '';
 
   const [searchTerm, setSearchTerm] = useState(initialQuery);
-  const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('relevant');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [favIds, setFavIds] = useState<string[]>([]);
 
-  const fetchResults = async (term: string, cat: string) => {
+  // Type-ahead suggestions
+  const [suggestions, setSuggestions] = useState<{ businesses: any[]; categories: string[]; subcategories: string[] }>({ businesses: [], categories: [], subcategories: [] });
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchBoxRef = useRef<HTMLDivElement>(null);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const fetchResults = async (term: string) => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (term.trim()) params.set('search', term.trim());
-    if (cat !== 'all') params.set('city', cat);
-    const qs = params.toString();
-    const res = await apiService.get<any>(`/v1/businesses${qs ? '?' + qs : ''}`);
+    if (term.trim()) params.set('q', term.trim());
+    const res = await apiService.get<any>(`/v1/search/discover?${params.toString()}`);
     if (res.data && !res.error) {
       const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.items ?? [];
       setResults(
@@ -88,8 +102,8 @@ function SearchContent() {
           id: b.id,
           name: b.name || '',
           category: b.category?.name || b.categoryName || 'General',
-          rating: b.avgRating ?? b.rating ?? null,
-          reviews: b.reviewCount ?? b.reviewsCount ?? 0,
+          rating: b.averageRating ?? b.avgRating ?? b.rating ?? null,
+          reviews: b.totalReviews ?? b.reviewCount ?? b.reviewsCount ?? 0,
           city: b.city || '',
           instagram: b.socialLinks?.instagram,
           website: b.website,
@@ -103,12 +117,19 @@ function SearchContent() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    setSearchTerm(initialQuery);
-  }, [initialQuery]);
+  const fetchSuggestions = async (term: string) => {
+    if (term.length < 2) { setSuggestions({ businesses: [], categories: [], subcategories: [] }); setShowSuggestions(false); return; }
+    const res = await apiService.get<any>(`/v1/search/suggestions?q=${encodeURIComponent(term)}`);
+    if (res.data) {
+      setSuggestions(res.data);
+      setShowSuggestions(true);
+    }
+  };
+
+  useEffect(() => { setSearchTerm(initialQuery); }, [initialQuery]);
 
   useEffect(() => {
-    fetchResults(searchTerm, categoryFilter);
+    fetchResults(searchTerm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -119,12 +140,15 @@ function SearchContent() {
     return () => window.removeEventListener('favoritesUpdated', handler);
   }, []);
 
-  // Debounced re-fetch on search term change
+  // Debounced re-fetch + suggestions on search term change
   useEffect(() => {
-    const t = setTimeout(() => fetchResults(searchTerm, categoryFilter), 300);
+    const t = setTimeout(() => {
+      fetchResults(searchTerm);
+      fetchSuggestions(searchTerm);
+    }, 250);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, categoryFilter]);
+  }, [searchTerm]);
 
   const handleToggleFav = (result: SearchResult) => {
     toggleFav(result);
@@ -137,34 +161,86 @@ function SearchContent() {
     return 0;
   });
 
+  const hasSuggestions = showSuggestions && (
+    suggestions.businesses.length > 0 ||
+    suggestions.categories.length > 0 ||
+    suggestions.subcategories.length > 0
+  );
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-6">Search Businesses</h1>
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+        {/* Search input with type-ahead */}
+        <div ref={searchBoxRef} className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none z-10" />
           <Input
-            placeholder="Search by name, category, or service..."
+            placeholder="Search by name, category, product, or offer…"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); }}
+            onFocus={() => { if (searchTerm.length >= 2) setShowSuggestions(true); }}
             className="pl-10 py-3 rounded-xl text-base border-white/10 bg-white/5"
+            autoComplete="off"
           />
+          {/* Suggestions dropdown */}
+          {hasSuggestions && (
+            <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
+              {suggestions.businesses.length > 0 && (
+                <div>
+                  <p className="px-4 pt-3 pb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Businesses</p>
+                  {suggestions.businesses.map((b) => (
+                    <Link
+                      key={b.id}
+                      href={`/business/${b.id}`}
+                      onClick={() => setShowSuggestions(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors cursor-pointer"
+                    >
+                      <Building2 className="h-4 w-4 text-primary shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{b.name}</p>
+                        {b.categoryName && <p className="text-xs text-muted-foreground">{b.categoryName}</p>}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {suggestions.categories.length > 0 && (
+                <div>
+                  <p className="px-4 pt-2 pb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Categories</p>
+                  {suggestions.categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => { setSearchTerm(cat); setShowSuggestions(false); }}
+                      className="flex items-center gap-3 px-4 py-2 w-full text-left hover:bg-muted/40 transition-colors cursor-pointer"
+                    >
+                      <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-foreground">{cat}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {suggestions.subcategories.filter(Boolean).length > 0 && (
+                <div>
+                  <p className="px-4 pt-2 pb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Subcategories</p>
+                  {suggestions.subcategories.filter(Boolean).map((sub) => (
+                    <button
+                      key={sub}
+                      onClick={() => { setSearchTerm(sub); setShowSuggestions(false); }}
+                      className="flex items-center gap-3 px-4 py-2 w-full text-left hover:bg-muted/40 transition-colors cursor-pointer"
+                    >
+                      <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm text-foreground">{sub}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="h-2" />
+            </div>
+          )}
         </div>
         <div className="flex gap-4 flex-wrap">
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-40 rounded-xl border-white/10">
-              <SelectValue placeholder="City" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Cities</SelectItem>
-              <SelectItem value="Kochi">Kochi</SelectItem>
-              <SelectItem value="Trivandrum">Trivandrum</SelectItem>
-              <SelectItem value="Kozhikode">Kozhikode</SelectItem>
-              <SelectItem value="Thrissur">Thrissur</SelectItem>
-            </SelectContent>
-          </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-40 rounded-xl border-white/10">
+            <SelectTrigger className="w-44 rounded-xl border-white/10">
               <SelectValue placeholder="Sort" />
             </SelectTrigger>
             <SelectContent>
@@ -173,6 +249,10 @@ function SearchContent() {
               <SelectItem value="reviews">Most Reviewed</SelectItem>
             </SelectContent>
           </Select>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/50 bg-muted/30 text-xs text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5" />
+            Thiruvananthapuram
+          </div>
         </div>
       </div>
 

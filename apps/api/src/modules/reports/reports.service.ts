@@ -8,11 +8,13 @@ export class ReportsService {
   async create(
     reporterId: string,
     data: {
-      targetType: string;
-      targetId: string;
+      targetType?: string;
+      targetId?: string;
       type: string;
       description: string;
       evidence?: string[];
+      subject?: string;
+      targetName?: string;
     },
   ): Promise<any> {
     const reporter = await this.db.user.findUnique({
@@ -20,14 +22,25 @@ export class ReportsService {
       select: { tenantId: true },
     });
     const tenantId = reporter?.tenantId || 'default';
+
+    // Build description: prepend subject/targetName context when present
+    let fullDescription = data.description;
+    if (data.subject || data.targetName) {
+      const prefix: string[] = [];
+      if (data.targetName) prefix.push(`Business: ${data.targetName}`);
+      if (data.subject) prefix.push(`Subject: ${data.subject}`);
+      fullDescription = `${prefix.join(' | ')}\n\n${data.description}`;
+    }
+
     return this.db.moderationReport.create({
       data: {
         tenantId,
         reporterId,
-        targetType: data.targetType,
-        targetId: data.targetId,
+        // Default sentinel values when the form doesn't specify a direct target
+        targetType: data.targetType || 'GENERAL',
+        targetId: data.targetId || '00000000-0000-0000-0000-000000000000',
         type: data.type,
-        description: data.description,
+        description: fullDescription,
         evidence: data.evidence || [],
       },
     });

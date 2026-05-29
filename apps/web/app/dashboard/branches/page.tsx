@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import {
   Plus, Edit, Trash2, MapPin, Phone, X, AlertTriangle,
   BarChart3, User, Clock, Navigation, CheckCircle2, Loader2,
+  Mail, KeyRound,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
@@ -26,21 +27,25 @@ interface Branch {
   geoCoords: string;
 }
 
-const EMPTY_FORM: Omit<Branch, 'id' | 'status'> = {
+const EMPTY_FORM: Omit<Branch, 'id' | 'status'> & { adminEmail: string; adminPassword: string } = {
   name: '', address: '', phone: '',
   managerName: '', managerPhone: '', managerEmail: '',
   hours: '', geoCoords: '',
+  adminEmail: '', adminPassword: '',
 };
 
 type BranchForm = typeof EMPTY_FORM;
+type BranchFormKey = keyof BranchForm;
 
 // ── FormFields component (hoisted OUT of parent to prevent focus loss) ──────
 function BranchFormFields({
   form,
   setField,
+  isEdit = false,
 }: {
   form: BranchForm;
-  setField: (key: keyof BranchForm, val: string) => void;
+  setField: (key: BranchFormKey, val: string) => void;
+  isEdit?: boolean;
 }) {
   return (
     <>
@@ -129,6 +134,43 @@ function BranchFormFields({
           </div>
         </div>
       </div>
+      {/* Branch Admin Login Credentials — only shown when creating */}
+      {!isEdit && (
+        <div className="pt-2 border-t border-white/5">
+          <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Branch Admin Account</p>
+          <p className="text-[11px] text-muted-foreground/60 mb-3">
+            Optional — creates a staff login account for this branch admin so they can access the dashboard immediately.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+                <Mail className="h-3 w-3" /> Login Email
+              </label>
+              <Input
+                type="email"
+                value={form.adminEmail}
+                onChange={(e) => setField('adminEmail', e.target.value)}
+                placeholder="branch@yourbusiness.com"
+                className="rounded-xl border-white/10 bg-white/5"
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+                <KeyRound className="h-3 w-3" /> Password
+              </label>
+              <Input
+                type="password"
+                value={form.adminPassword}
+                onChange={(e) => setField('adminPassword', e.target.value)}
+                placeholder="Min 8 characters"
+                className="rounded-xl border-white/10 bg-white/5"
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -161,7 +203,7 @@ export default function BranchesPage() {
 
   const businessId = user?.businessId || user?.entity?.id;
 
-  const setField = (key: keyof BranchForm, val: string) =>
+  const setField = (key: BranchFormKey, val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
 
   const fetchBranches = async () => {
@@ -191,7 +233,7 @@ export default function BranchesPage() {
     if (!form.name || !businessId) return;
     setSaving(true);
     setError('');
-    const res = await apiService.post<any>(`/v1/businesses/${businessId}/branches`, {
+    const payload: any = {
       name: form.name,
       address: form.address,
       phone: form.phone,
@@ -200,7 +242,15 @@ export default function BranchesPage() {
       managerEmail: form.managerEmail,
       operatingHours: form.hours,
       geoCoords: form.geoCoords,
-    });
+    };
+    // Only include admin credentials if both fields are filled
+    if (form.adminEmail.trim() && form.adminPassword.trim()) {
+      payload.adminEmail = form.adminEmail.trim();
+      payload.adminPassword = form.adminPassword;
+      payload.adminName = form.managerName || undefined;
+      payload.adminPhone = form.managerPhone || undefined;
+    }
+    const res = await apiService.post<any>(`/v1/businesses/${businessId}/branches`, payload);
     setSaving(false);
     if (res.error) {
       setError(res.error);
@@ -221,6 +271,8 @@ export default function BranchesPage() {
       managerEmail: branch.managerEmail,
       hours: branch.hours,
       geoCoords: branch.geoCoords,
+      adminEmail: '',
+      adminPassword: '',
     });
     setError('');
   };
@@ -415,7 +467,7 @@ export default function BranchesPage() {
                 <p className="mb-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">{error}</p>
               )}
               <form onSubmit={handleAdd} className="space-y-4">
-                <BranchFormFields form={form} setField={setField} />
+                <BranchFormFields form={form} setField={setField} isEdit={false} />
                 <div className="flex gap-3 pt-2">
                   <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">Cancel</Button>
                   <Button type="submit" disabled={saving} className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">
@@ -441,7 +493,7 @@ export default function BranchesPage() {
                 <p className="mb-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">{error}</p>
               )}
               <form onSubmit={handleEdit} className="space-y-4">
-                <BranchFormFields form={form} setField={setField} />
+                <BranchFormFields form={form} setField={setField} isEdit={true} />
                 <div className="flex gap-3 pt-2">
                   <Button type="button" variant="outline" onClick={() => setEditingBranch(null)} className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">Cancel</Button>
                   <Button type="submit" disabled={saving} className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">

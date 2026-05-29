@@ -1,346 +1,309 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Settings,
-  Plus,
   Shield,
-  UserCheck,
+  Plus,
   X,
-  Check,
-  Trash2,
-  Edit2,
-  ShieldAlert,
+  Loader2,
+  UserCheck,
+  Mail,
+  KeyRound,
+  User,
+  CheckCircle2,
+  Calendar,
+  Clock,
 } from 'lucide-react';
+import { apiService } from '@/lib/services/api-service';
+import { cn } from '@/lib/utils';
 
-const initialRoles = [
-  {
-    name: 'SUPER_ADMIN',
-    level: 'Level 5 (Platform Owner)',
-    users: 2,
-    writeAccess: true,
-    permissions: ['Audit Log', 'Moderation', 'Billing', 'System Config'],
-  },
-  {
-    name: 'MASTER_ADMIN',
-    level: 'Level 4 (Regional Operator)',
-    users: 8,
-    writeAccess: true,
-    permissions: ['Audit Log', 'Moderation', 'Billing'],
-  },
-  {
-    name: 'GOVERNMENT_ADMIN',
-    level: 'Level 3 (Public Official)',
-    users: 15,
-    writeAccess: true,
-    permissions: ['Audit Log', 'Moderation'],
-  },
-  {
-    name: 'BUSINESS_ADMIN',
-    level: 'Level 2 (Merchant Owner)',
-    users: 1204,
-    writeAccess: true,
-    permissions: ['Billing'],
-  },
-  { name: 'USER', level: 'Level 1 (Consumer)', users: 34100, writeAccess: false, permissions: [] },
+const ROLE_OPTIONS = [
+  { value: 'MASTER_ADMIN', label: 'Portal Admin', description: 'Can manage registrations, approvals, reports, and categories' },
+  { value: 'PORTAL_ADMIN', label: 'Portal Admin (Alt)', description: 'Same as Portal Admin — alternate label' },
 ];
 
-export default function SuperAdminRolesPage() {
-  const [roles, setRoles] = useState(initialRoles);
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [configuringRole, setConfiguringRole] = useState<any>(null);
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
+  lastLoginAt?: string;
+}
 
-  // Create role state
+function formatDate(d?: string) {
+  if (!d) return '—';
+  try {
+    return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch { return '—'; }
+}
+
+function roleLabel(role: string) {
+  if (role === 'SUPER_ADMIN') return { label: 'Super Admin', color: 'text-violet-400 bg-violet-500/10 border-violet-500/20' };
+  if (role === 'MASTER_ADMIN') return { label: 'Portal Admin', color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' };
+  return { label: role, color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' };
+}
+
+export default function AdminManagementPage() {
+  const [admins, setAdmins] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
   const [name, setName] = useState('');
-  const [level, setLevel] = useState('');
-  const [writeAccess, setWriteAccess] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'MASTER_ADMIN' | 'PORTAL_ADMIN'>('MASTER_ADMIN');
 
-  const handleAddRole = (e: React.FormEvent) => {
+  const fetchAdmins = async () => {
+    setLoading(true);
+    const res = await apiService.get<any>('/v1/users/admin/list');
+    if (res.data && !res.error) {
+      setAdmins(Array.isArray(res.data) ? res.data : res.data?.data ?? []);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchAdmins(); }, []);
+
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return;
-    const newRole = {
-      name: name.toUpperCase().replace(/\s+/g, '_'),
-      level: level || 'Level 1',
-      users: 0,
-      writeAccess,
-      permissions: [],
-    };
-    setRoles([...roles, newRole]);
-    setIsAddOpen(false);
-    setName('');
-    setLevel('');
-  };
+    if (!name.trim() || !email.trim() || !password.trim()) return;
+    setSaving(true);
+    setError('');
+    setSuccess('');
 
-  const handleTogglePermission = (roleName: string, perm: string) => {
-    setRoles(
-      roles.map((r) => {
-        if (r.name === roleName) {
-          const nextPerms = r.permissions.includes(perm)
-            ? r.permissions.filter((p) => p !== perm)
-            : [...r.permissions, perm];
-          if (configuringRole && configuringRole.name === roleName) {
-            setConfiguringRole({ ...configuringRole, permissions: nextPerms });
-          }
-          return { ...r, permissions: nextPerms };
-        }
-        return r;
-      }),
-    );
-  };
+    const res = await apiService.post<any>('/v1/users/admin/create', {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password,
+      role,
+    });
 
-  const handleToggleWriteAccess = (roleName: string) => {
-    setRoles(
-      roles.map((r) => {
-        if (r.name === roleName) {
-          const nextWrite = !r.writeAccess;
-          if (configuringRole && configuringRole.name === roleName) {
-            setConfiguringRole({ ...configuringRole, writeAccess: nextWrite });
-          }
-          return { ...r, writeAccess: nextWrite };
-        }
-        return r;
-      }),
-    );
-  };
+    setSaving(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
 
-  const handleDeleteRole = (roleName: string) => {
-    setRoles(roles.filter((r) => r.name !== roleName));
-    setConfiguringRole(null);
+    setSuccess(`Admin account created for ${email}`);
+    setName(''); setEmail(''); setPassword('');
+    setIsOpen(false);
+    fetchAdmins();
   };
 
   return (
     <SuperAdminLayout>
-      <div className="space-y-8">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6 max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Role Permissions (RBAC)</h1>
-            <p className="text-muted-foreground">
-              Adjust system role hierarchies, access levels, and user distributions
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Shield className="h-6 w-6 text-violet-400" />
+              Admin Management
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Create and manage Portal Admin accounts for platform operations.
             </p>
           </div>
           <Button
-            onClick={() => setIsAddOpen(true)}
-            className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground"
+            onClick={() => { setIsOpen(true); setError(''); setSuccess(''); }}
+            className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white gap-2 font-semibold cursor-pointer"
           >
-            <Plus className="h-4 w-4" /> Add Role
+            <Plus className="h-4 w-4" />
+            Add Admin
           </Button>
         </div>
 
-        <div className="space-y-4">
-          {roles.map((role) => (
-            <Card
-              key={role.name}
-              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-violet-500/10 text-violet-400 rounded-xl h-11 w-11 flex items-center justify-center border border-violet-500/20">
-                    <Shield className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground text-base">{role.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{role.level}</p>
-                  </div>
-                </div>
+        {success && (
+          <div className="flex items-center gap-2 text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            {success}
+          </div>
+        )}
 
-                <div className="flex items-center gap-6 text-sm border-t sm:border-t-0 pt-4 sm:pt-0 border-border">
-                  <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-                    <UserCheck className="h-4 w-4" />
-                    {role.users.toLocaleString()} accounts
+        {/* Admin list */}
+        {loading ? (
+          <div className="flex items-center justify-center h-40">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : admins.length === 0 ? (
+          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+            <Shield className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
+            <p className="text-foreground font-semibold mb-1">No admin accounts yet</p>
+            <p className="text-xs text-muted-foreground">Create your first Portal Admin account above.</p>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {admins.map((admin) => {
+              const { label, color } = roleLabel(admin.role);
+              return (
+                <Card
+                  key={admin.id}
+                  className="p-5 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-violet-500/20 to-cyan-500/20 flex items-center justify-center text-sm font-bold text-violet-300 shrink-0">
+                        {admin.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-semibold text-foreground">{admin.name}</p>
+                          <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full border', color)}>
+                            {label}
+                          </span>
+                          {!admin.isActive && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-rose-500/20 bg-rose-500/10 text-rose-400">
+                              Inactive
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">{admin.email}</p>
+                      </div>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-5 text-xs text-muted-foreground shrink-0">
+                      <div className="text-right">
+                        <p className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" /> Created
+                        </p>
+                        <p className="text-foreground font-medium">{formatDate(admin.createdAt)}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> Last Login
+                        </p>
+                        <p className="text-foreground font-medium">{formatDate(admin.lastLoginAt)}</p>
+                      </div>
+                    </div>
                   </div>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                      role.writeAccess
-                        ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
-                        : 'bg-secondary/40 text-muted-foreground border border-border'
-                    }`}
-                  >
-                    {role.writeAccess ? 'Write Access' : 'Read Only'}
-                  </span>
-                  <Button
-                    onClick={() => setConfiguringRole(role)}
-                    size="sm"
-                    variant="ghost"
-                    className="rounded-lg h-8 text-xs font-semibold hover:bg-muted"
-                  >
-                    Configure
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
 
-        {/* ── ADD ROLE MODAL ─────────────────────────────── */}
-        {isAddOpen && (
+        {/* Create Admin Modal */}
+        {isOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
-              <button
-                onClick={() => setIsAddOpen(false)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-              <h3 className="text-xl font-bold text-foreground mb-4">Add Custom Role</h3>
-              <form onSubmit={handleAddRole} className="space-y-4">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-violet-400" />
+                  Create Admin Account
+                </h3>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {error && (
+                <p className="mb-4 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2">
+                  {error}
+                </p>
+              )}
+
+              <form onSubmit={handleCreate} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Role ID Name
+                  <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+                    <User className="h-3 w-3" /> Full Name
                   </label>
                   <Input
-                    placeholder="e.g. MARKETING_AGENT"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    placeholder="Portal Admin Name"
                     required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
+                    className="rounded-xl border-white/10 bg-white/5"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Role Level Description
+                  <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+                    <Mail className="h-3 w-3" /> Email Address
                   </label>
                   <Input
-                    placeholder="e.g. Level 2 (Promotional Access)"
-                    value={level}
-                    onChange={(e) => setLevel(e.target.value)}
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@whtzup.city"
+                    required
+                    className="rounded-xl border-white/10 bg-white/5"
+                    autoComplete="off"
                   />
                 </div>
-                <div className="flex items-center justify-between p-3 bg-secondary/40 rounded-xl border border-border">
-                  <div>
-                    <p className="text-xs font-semibold text-foreground">Write Access Allowed</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      Allows mutation requests like creation, update, and deletions
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => setWriteAccess(!writeAccess)}
-                    variant={writeAccess ? 'default' : 'outline'}
-                    className="h-7 text-xs rounded-lg"
-                  >
-                    {writeAccess ? 'Enabled' : 'Disabled'}
-                  </Button>
+                <div>
+                  <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+                    <KeyRound className="h-3 w-3" /> Password
+                  </label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min 8 characters"
+                    required
+                    minLength={8}
+                    className="rounded-xl border-white/10 bg-white/5"
+                    autoComplete="new-password"
+                  />
                 </div>
-                <div className="flex justify-end gap-3 pt-4">
+                <div>
+                  <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+                    <UserCheck className="h-3 w-3" /> Role
+                  </label>
+                  <div className="space-y-2">
+                    {ROLE_OPTIONS.map((opt) => (
+                      <label
+                        key={opt.value}
+                        className={cn(
+                          'flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors',
+                          role === opt.value
+                            ? 'border-violet-500/40 bg-violet-500/10'
+                            : 'border-white/10 bg-white/5 hover:bg-white/10',
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          name="role"
+                          value={opt.value}
+                          checked={role === opt.value}
+                          onChange={() => setRole(opt.value as any)}
+                          className="mt-0.5 accent-violet-500"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{opt.label}</p>
+                          <p className="text-xs text-muted-foreground">{opt.description}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setIsAddOpen(false)}
-                    className="rounded-xl border-border hover:bg-muted text-foreground"
+                    onClick={() => setIsOpen(false)}
+                    className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
-                    className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold"
+                    disabled={saving}
+                    className="flex-1 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold cursor-pointer"
                   >
-                    Create Role
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Admin'}
                   </Button>
                 </div>
               </form>
-            </Card>
-          </div>
-        )}
-
-        {/* ── CONFIGURE ROLE MODAL ───────────────────────── */}
-        {configuringRole && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[85vh] overflow-y-auto">
-              <button
-                onClick={() => setConfiguringRole(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-primary/10 text-primary rounded-xl">
-                  <Settings className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-foreground">
-                    Configure {configuringRole.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">{configuringRole.level}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <h4 className="text-sm font-semibold text-foreground">Modify Write Privileges</h4>
-                <div className="flex items-center justify-between p-4 bg-secondary/40 rounded-xl border border-border">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">
-                      Global Mutate Permission
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Allows database create/update/delete operations
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => handleToggleWriteAccess(configuringRole.name)}
-                    variant={configuringRole.writeAccess ? 'default' : 'outline'}
-                    className="rounded-xl font-semibold"
-                  >
-                    {configuringRole.writeAccess ? 'Write Access Active' : 'Read Only Active'}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <h4 className="text-sm font-semibold text-foreground">
-                  Feature Access Permissions
-                </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  {['Audit Log', 'Moderation', 'Billing', 'System Config'].map((perm) => {
-                    const hasPerm = configuringRole.permissions.includes(perm);
-                    return (
-                      <div
-                        key={perm}
-                        onClick={() => handleTogglePermission(configuringRole.name, perm)}
-                        className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-colors ${
-                          hasPerm
-                            ? 'bg-primary/10 border-primary text-foreground'
-                            : 'bg-secondary/40 border-border text-muted-foreground hover:bg-secondary/80'
-                        }`}
-                      >
-                        <span className="text-xs font-semibold">{perm}</span>
-                        {hasPerm && <Check className="h-4 w-4 text-primary" />}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center border-t border-border pt-6 mt-6">
-                <Button
-                  onClick={() => handleDeleteRole(configuringRole.name)}
-                  variant="outline"
-                  className="rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 gap-1"
-                >
-                  <Trash2 className="h-4 w-4" /> Delete Role
-                </Button>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => setConfiguringRole(null)}
-                    variant="outline"
-                    className="rounded-xl border-border hover:bg-muted text-foreground"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() => setConfiguringRole(null)}
-                    className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold"
-                  >
-                    Save Changes
-                  </Button>
-                </div>
-              </div>
             </Card>
           </div>
         )}

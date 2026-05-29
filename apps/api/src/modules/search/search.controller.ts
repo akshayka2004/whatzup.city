@@ -1,12 +1,13 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { SearchService } from './search.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Search & Discovery')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard) // Can be public depending on business requirements, assumed tenant protected for now
+@UseGuards(JwtAuthGuard)
 @Controller('search')
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
@@ -35,7 +36,7 @@ export class SearchController {
     @CurrentUser('tenantId') tenantId: string,
     @Query('lat') lat: number,
     @Query('lng') lng: number,
-    @Query('radius') radius: number = 10, // Defaults to 10 miles/km
+    @Query('radius') radius: number = 10,
     @Query('page') page?: number,
   ) {
     return this.searchService.nearbyBusinesses(tenantId, lat, lng, radius, page);
@@ -51,5 +52,19 @@ export class SearchController {
   @ApiOperation({ summary: 'Get recommended businesses for current user' })
   async recommended(@CurrentUser('tenantId') tenantId: string, @CurrentUser('id') userId: string) {
     return this.searchService.getRecommendations(tenantId, userId);
+  }
+
+  @Get('suggestions')
+  @Public()
+  @ApiOperation({ summary: 'Type-ahead suggestions after 2+ characters' })
+  @ApiQuery({ name: 'q', required: true, description: 'Search prefix (min 2 chars)' })
+  @ApiQuery({ name: 'tenantId', required: false })
+  async suggestions(
+    @Query('q') q: string,
+    @Query('tenantId') tenantId?: string,
+    @CurrentUser('tenantId') userTenantId?: string,
+  ) {
+    const tid = userTenantId || tenantId || 'default';
+    return this.searchService.getSuggestions(tid, q || '');
   }
 }

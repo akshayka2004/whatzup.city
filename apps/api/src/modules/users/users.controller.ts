@@ -97,6 +97,16 @@ export class UsersController {
     return this.usersService.update(userId, data);
   }
 
+  @Post('me/change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change own password (requires current password)' })
+  async changePassword(
+    @CurrentUser('id') userId: string,
+    @Body() data: { currentPassword: string; newPassword: string },
+  ) {
+    return this.usersService.changePassword(userId, data);
+  }
+
   @Delete(':id')
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'Soft-delete a user (admin only)' })
@@ -110,5 +120,22 @@ export class UsersController {
   @ApiOperation({ summary: 'Top referrers leaderboard (admin only)' })
   async referralLeaderboard(@CurrentUser() currentUser: any) {
     return this.usersService.getReferralLeaderboard(currentUser.tenantId);
+  }
+
+  @Post('admin/create')
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Super Admin creates a Portal Admin or Master Admin account' })
+  async createAdmin(
+    @CurrentUser('tenantId') tenantId: string,
+    @Body() body: { name: string; email: string; password: string; role: 'MASTER_ADMIN' | 'PORTAL_ADMIN' },
+  ) {
+    return this.usersService.createAdminUser(tenantId, body);
+  }
+
+  @Get('admin/list')
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'List all portal admin accounts' })
+  async listAdmins(@CurrentUser('tenantId') tenantId: string) {
+    return this.usersService.listAdminUsers(tenantId);
   }
 }

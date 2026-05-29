@@ -172,10 +172,26 @@ export default function AnalyticsPage() {
     {
       label: 'Customers',
       value: loading ? '…' : (kpis.customerCount ?? 0).toLocaleString(),
-      sub: 'unique offer claimers',
+      sub: 'unique customers tracked',
       icon: Heart,
       color: 'text-rose-400',
       bg: 'bg-rose-500/10',
+    },
+    {
+      label: 'Total Claims',
+      value: loading ? '…' : (kpis.totalClaims ?? 0).toLocaleString(),
+      sub: 'offer claims via CRM',
+      icon: Tag,
+      color: 'text-orange-400',
+      bg: 'bg-orange-500/10',
+    },
+    {
+      label: 'Redemption Rate',
+      value: loading ? '…' : `${kpis.redemptionRate ?? 0}%`,
+      sub: 'claims → redemptions',
+      icon: TrendingUp,
+      color: 'text-teal-400',
+      bg: 'bg-teal-500/10',
     },
   ];
 

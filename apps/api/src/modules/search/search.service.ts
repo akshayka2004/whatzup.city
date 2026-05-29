@@ -71,7 +71,9 @@ export class SearchService implements OnApplicationBootstrap {
     try {
       const searchParams: any = {
         q: query,
-        query_by: 'name,description,categoryName',
+        // Ranking priority: name → categoryName → subcategoryName → tags → offerTitles → branchNames → description
+        query_by: 'name,categoryName,subcategoryName,tags,offerTitles,branchNames,productNames,description',
+        query_by_weights: '10,7,6,5,4,3,2,1',
         filter_by: isPublic ? '' : `tenantId:=${tenantId}`,
         page,
         per_page: limit,
@@ -119,6 +121,12 @@ export class SearchService implements OnApplicationBootstrap {
       where.OR = [
         { name: { contains: query, mode: 'insensitive' } },
         { description: { contains: query, mode: 'insensitive' } },
+        { subcategory: { contains: query, mode: 'insensitive' } },
+        { category: { is: { name: { contains: query, mode: 'insensitive' } } } },
+        { branches: { some: { name: { contains: query, mode: 'insensitive' } } } },
+        { offers: { some: { title: { contains: query, mode: 'insensitive' }, deletedAt: null } } },
+        { offers: { some: { description: { contains: query, mode: 'insensitive' }, deletedAt: null } } },
+        { businessTags: { some: { tag: { contains: query, mode: 'insensitive' } } } },
       ];
     }
     if (filters?.categoryId) where.categoryId = filters.categoryId;
@@ -257,5 +265,86 @@ export class SearchService implements OnApplicationBootstrap {
       id: businessId,
       tenantId,
     });
+  }
+
+  /**
+   * Type-ahead suggestions — returns businesses, categories, and subcategories
+   * matching the prefix query (minimum 2 characters).
+   */
+  async getSuggestions(tenantId: string, query: string): Promise<any> {
+    if (!query || query.length < 2) return { businesses: [], categories: [], subcategories: [] };
+
+    const cacheKey = `suggest:${tenantId}:${query.toLowerCase()}`;
+    const cached = await this.redis.get<any>(cacheKey);
+    if (cached) return cached;
+
+    // Try Typesense first for fast prefix matching
+    if (this.typesenseService.getEnabled()) {
+      try {
+        const res = await this.typesenseService.search('businesses', {
+          q: query,
+          query_by: 'name,categoryName,subcategoryName,offerTitles,branchNames',
+          per_page: 8,
+          highlight_full_fields: 'name,categoryName',
+        });
+        if (res?.hits?.length) {
+          const businesses = res.hits.map((h: any) => ({
+            id: h.document.id,
+            name: h.document.name,
+            categoryName: h.document.categoryName,
+            city: h.document.city,
+          }));
+          // Extract unique category/subcategory suggestions from hits
+          const categoriesSet = new Set<string>();
+          const subcategoriesSet = new Set<string>();
+          for (const h of res.hits) {
+            const doc = h.document as any;
+            if (doc.categoryName) categoriesSet.add(doc.categoryName);
+            if (doc.subcategoryName) subcategoriesSet.add(doc.subcategoryName);
+          }
+          const result = {
+            businesses,
+            categories: Array.from(categoriesSet).slice(0, 5),
+            subcategories: Array.from(subcategoriesSet).slice(0, 5),
+          };
+          await this.redis.set(cacheKey, result, 60); // 1 min TTL for suggestions
+          return result;
+        }
+      } catch (_) { /* fall through to Postgres */ }
+    }
+
+    // Postgres fallback for suggestions
+    const [businesses, categories] = await Promise.all([
+      this.db.business.findMany({
+        where: {
+          deletedAt: null,
+          OR: [
+            { name: { startsWith: query, mode: 'insensitive' } },
+            { name: { contains: query, mode: 'insensitive' } },
+          ],
+        },
+        select: { id: true, name: true, city: true, category: { select: { name: true } } },
+        take: 8,
+        orderBy: { averageRating: 'desc' },
+      }),
+      this.db.category.findMany({
+        where: { name: { contains: query, mode: 'insensitive' } },
+        select: { id: true, name: true },
+        take: 5,
+      }),
+    ]);
+
+    const result = {
+      businesses: businesses.map((b: any) => ({
+        id: b.id,
+        name: b.name,
+        categoryName: b.category?.name,
+        city: b.city,
+      })),
+      categories: categories.map((c: any) => c.name),
+      subcategories: [],
+    };
+    await this.redis.set(cacheKey, result, 60);
+    return result;
   }
 }

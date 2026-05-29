@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Users, Lock, Activity, Settings, Flag, Database, LogOut, Folder, Tag, Share2, AlertTriangle, UserPlus, CheckCircle, Bell, FileText, CreditCard } from 'lucide-react';
+import { Users, Lock, Activity, Settings, Flag, Database, LogOut, Folder, Tag, Share2, AlertTriangle, UserPlus, CheckCircle, Bell, FileText, CreditCard, UserCog } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -19,7 +19,7 @@ const menuItems = [
   { label: 'Platform Offers', href: '/super-admin/offers', icon: Tag },
   { label: 'Security', href: '/super-admin/security', icon: Lock },
   { label: 'System Health', href: '/super-admin/health', icon: Activity },
-  { label: 'Roles', href: '/super-admin/roles', icon: Settings },
+  { label: 'Admins', href: '/super-admin/roles', icon: UserCog },
   { label: 'Feature Flags', href: '/super-admin/flags', icon: Flag },
   { label: 'Infrastructure', href: '/super-admin/infrastructure', icon: Database },
 ];
@@ -75,6 +75,19 @@ export function SuperAdminSidebar() {
 
       {/* Bottom items */}
       <div className="border-t border-sidebar-border space-y-2 px-4 py-4">
+        <Link href="/super-admin/profile">
+          <Button
+            variant={pathname === '/super-admin/profile' ? 'default' : 'ghost'}
+            className={cn(
+              'w-full justify-start gap-3 rounded-xl',
+              pathname === '/super-admin/profile' &&
+                'bg-sidebar-primary text-sidebar-primary-foreground',
+            )}
+          >
+            <UserCog className="h-5 w-5" />
+            <span>My Profile</span>
+          </Button>
+        </Link>
         <Link href="/super-admin/settings">
           <Button
             variant={pathname === '/super-admin/settings' ? 'default' : 'ghost'}

@@ -36,29 +36,50 @@ export class TypesenseService implements OnModuleInit {
     }
   }
 
+  /** Full field list for the businesses collection */
+  static readonly BUSINESS_FIELDS = [
+    { name: 'id', type: 'string' },
+    { name: 'tenantId', type: 'string' },
+    { name: 'name', type: 'string' },
+    { name: 'description', type: 'string', optional: true },
+    { name: 'categoryId', type: 'string' },
+    { name: 'categoryName', type: 'string', optional: true },
+    { name: 'subcategoryName', type: 'string', optional: true },
+    { name: 'tags', type: 'string[]', optional: true },
+    { name: 'branchNames', type: 'string', optional: true },
+    { name: 'offerTitles', type: 'string', optional: true },
+    { name: 'productNames', type: 'string', optional: true },
+    { name: 'city', type: 'string', facet: true, optional: true },
+    { name: 'location', type: 'geopoint', optional: true },
+    { name: 'averageRating', type: 'float', optional: true },
+    { name: 'totalReviews', type: 'int32', optional: true },
+    { name: 'status', type: 'string', facet: true },
+    { name: 'createdAt', type: 'int64' },
+  ] as const;
+
   private async initSchemas() {
-    // Business Collection Schema
     const businessSchema = {
       name: 'businesses',
-      fields: [
-        { name: 'id', type: 'string' },
-        { name: 'tenantId', type: 'string' },
-        { name: 'name', type: 'string' },
-        { name: 'description', type: 'string', optional: true },
-        { name: 'categoryId', type: 'string' },
-        { name: 'categoryName', type: 'string', optional: true },
-        { name: 'city', type: 'string', facet: true, optional: true },
-        { name: 'location', type: 'geopoint', optional: true },
-        { name: 'averageRating', type: 'float', optional: true },
-        { name: 'totalReviews', type: 'int32', optional: true },
-        { name: 'status', type: 'string', facet: true },
-        { name: 'createdAt', type: 'int64' },
-      ],
+      fields: TypesenseService.BUSINESS_FIELDS,
       default_sorting_field: 'createdAt',
     };
 
     try {
       await this.client.collections('businesses').retrieve();
+      // Collection exists — add any missing optional fields (graceful migration)
+      const newOptionalFields = ['subcategoryName', 'tags', 'branchNames', 'offerTitles', 'productNames'];
+      try {
+        await this.client.collections('businesses').update({
+          fields: newOptionalFields.map((name) =>
+            name === 'tags'
+              ? { name, type: 'string[]', optional: true }
+              : { name, type: 'string', optional: true },
+          ),
+        } as any);
+        this.logger.log('Typesense businesses schema migrated with new search fields.');
+      } catch (_) {
+        // Fields may already exist — ignore errors
+      }
     } catch (e) {
       await this.client.collections().create(businessSchema as any);
       this.logger.log('Typesense businesses schema created.');

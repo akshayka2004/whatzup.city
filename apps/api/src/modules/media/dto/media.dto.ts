@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsUUID, Matches, IsNumber, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, Matches, IsNumber, Min, IsOptional, IsArray, MaxLength } from 'class-validator';
 
 export class GetUploadUrlDto {
   @IsUUID()
@@ -41,4 +41,18 @@ export class CreateMediaDto {
   @IsString()
   @IsNotEmpty()
   mimeType!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 }

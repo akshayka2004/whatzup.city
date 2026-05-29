@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,6 +68,12 @@ export default function ProfilePage() {
   const [referralCount, setReferralCount] = useState<number | null>(null);
   const [referralCopied, setReferralCopied] = useState(false);
 
+  // ── Avatar upload ────────────────────────────────────────────
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState('');
+
   /* ── Redirect if logged out ──────────────────────────────────── */
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -106,6 +112,7 @@ export default function ProfilePage() {
         };
         setProfile(next);
         setTempProfile(next);
+        if (next.avatar) setAvatarUrl(next.avatar);
         // Secondary referral code source — only if /v1/users/me/referrals returned nothing
         if (u.referralCode) setReferralCode((prev) => prev || u.referralCode);
       } else if (!cancelled) {
@@ -153,6 +160,38 @@ export default function ProfilePage() {
     }
     await signOut();
     router.push('/');
+  };
+
+  /* ── Avatar upload handler ───────────────────────────────────── */
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarError('');
+    setAvatarUploading(true);
+    try {
+      // Step 1: get signed upload URL
+      const urlRes = await apiService.post<{ uploadUrl: string; fileKey: string }>(
+        '/v1/storage/upload-url',
+        { category: 'avatar', filename: file.name, mimeType: file.type, entityId: user?.id },
+      );
+      if (urlRes.error || !urlRes.data?.uploadUrl) throw new Error(urlRes.error || 'Failed to get upload URL');
+      const { uploadUrl, fileKey } = urlRes.data;
+      // Step 2: PUT file to Supabase
+      const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      if (!put.ok) throw new Error(`Upload failed: ${put.status}`);
+      // Step 3: save ref to user profile
+      const patch = await apiService.patch<any>('/v1/users/me', { avatar: fileKey });
+      if (patch.error) throw new Error(patch.error);
+      // Show preview
+      const preview = URL.createObjectURL(file);
+      setAvatarUrl(preview);
+      await refreshUser();
+    } catch (err: any) {
+      setAvatarError(err.message || 'Avatar upload failed');
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
   };
 
   /* ── Save handler ────────────────────────────────────────────── */
@@ -221,13 +260,36 @@ export default function ProfilePage() {
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
               {/* Avatar */}
               <div className="relative shrink-0">
-                <div className="w-24 h-24 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center text-3xl font-extrabold shadow-lg shadow-primary/20 ring-4 ring-primary/15">
-                  {initials}
-                </div>
-                <button className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md cursor-pointer">
-                  <Camera className="h-3.5 w-3.5" />
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Profile"
+                    className="w-24 h-24 rounded-2xl object-cover shadow-lg ring-4 ring-primary/15"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center text-3xl font-extrabold shadow-lg shadow-primary/20 ring-4 ring-primary/15">
+                    {initials}
+                  </div>
+                )}
+                <button
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={avatarUploading}
+                  className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md cursor-pointer disabled:opacity-60"
+                  title="Change profile picture"
+                >
+                  {avatarUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
                 </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
               </div>
+              {avatarError && (
+                <p className="text-xs text-rose-400 mt-1">{avatarError}</p>
+              )}
 
               {/* Name + meta */}
               <div className="flex-1 text-center sm:text-left">

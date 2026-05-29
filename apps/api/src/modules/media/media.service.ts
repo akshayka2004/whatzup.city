@@ -248,7 +248,7 @@ export class MediaService implements OnModuleInit {
   async createRecord(
     tenantId: string,
     businessId: string,
-    data: { url: string; type: string; filename: string; size: number; mimeType: string },
+    data: { url: string; type: string; filename: string; size: number; mimeType: string; title?: string; description?: string; tags?: string[] },
     userContext?: { userId: string; role: string },
   ) {
     // Enforce BOLA checks on create if userContext is provided
@@ -268,8 +268,14 @@ export class MediaService implements OnModuleInit {
       data: {
         tenantId,
         businessId,
-        ...data,
         url: dbUrl,
+        type: data.type,
+        filename: data.filename,
+        size: data.size,
+        mimeType: data.mimeType,
+        title: data.title || null,
+        description: data.description || null,
+        tags: data.tags || [],
       },
     });
   }
