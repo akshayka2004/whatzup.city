@@ -1,268 +1,494 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, ChevronDown, Eye, Mail, Download, X, ArrowUpDown, Loader2, Users } from 'lucide-react';
+import {
+  Search,
+  Users,
+  UserCheck,
+  TrendingUp,
+  Tag,
+  BadgeCheck,
+  RefreshCw,
+  Star,
+  GitBranch,
+  UserPlus,
+  Loader2,
+  Mail,
+  Phone,
+  Calendar,
+  Activity,
+  X,
+  Download,
+  BarChart3,
+  ArrowUpRight,
+  ArrowDownRight,
+} from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
+import { cn } from '@/lib/utils';
 
-type SortKey = 'name' | 'totalSpent' | 'purchases' | 'lastVisit';
+const FILTERS = [
+  { key: 'all', label: 'All Customers', icon: Users },
+  { key: 'claimed', label: 'Claimed Offer', icon: Tag },
+  { key: 'redeemed', label: 'Redeemed Offer', icon: BadgeCheck },
+  { key: 'active_month', label: 'Active This Month', icon: Activity },
+  { key: 'new_month', label: 'New This Month', icon: UserPlus },
+  { key: 'repeat', label: 'Repeat Customers', icon: RefreshCw },
+  { key: 'high_engagement', label: 'High Engagement', icon: Star },
+  { key: 'branch', label: 'Branch Customers', icon: GitBranch },
+  { key: 'referral', label: 'Referral Customers', icon: UserCheck },
+];
+
+interface CustomerRecord {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  phone: string;
+  offersClaimedCount: number;
+  offersRedeemedCount: number;
+  totalVerifiedPurchases: number;
+  firstInteractionDate: string;
+  lastInteractionDate: string;
+  referralSource?: string;
+  customerStatus: string;
+  branchBusinessId?: string;
+}
+
+interface CustomerStats {
+  totalCustomers: number;
+  newThisMonth: number;
+  activeThisMonth: number;
+  returningCustomers: number;
+  conversionRate: number;
+  offerClaimRate: number;
+  offerRedemptionRate: number;
+  monthlyGrowth: number;
+  customerRetention: number;
+}
+
+function formatDate(d: string) {
+  if (!d) return '—';
+  try {
+    return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch {
+    return '—';
+  }
+}
 
 export default function CustomersPage() {
   const { user } = useAuth();
-  const [allCustomers, setAllCustomers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<SortKey>('totalSpent');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [viewingCustomer, setViewingCustomer] = useState<any>(null);
-  const [activeActionId, setActiveActionId] = useState<any>(null);
-
   const businessId = user?.businessId || user?.entity?.id;
 
+  const [customers, setCustomers] = useState<CustomerRecord[]>([]);
+  const [stats, setStats] = useState<CustomerStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [viewing, setViewing] = useState<CustomerRecord | null>(null);
+
+  const LIMIT = 20;
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Reset page on filter/search change
+  useEffect(() => {
+    setPage(1);
+  }, [activeFilter, debouncedSearch]);
+
+  // Fetch stats
+  useEffect(() => {
+    if (!businessId) return;
+    setStatsLoading(true);
+    apiService
+      .get<any>(`/v1/businesses/${businessId}/customers/stats`)
+      .then((res) => {
+        if (res.data && !res.error) setStats(res.data);
+      })
+      .finally(() => setStatsLoading(false));
+  }, [businessId]);
+
+  // Fetch customers
   useEffect(() => {
     if (!businessId) return;
     setLoading(true);
-    // NOTE: This uses the admin customers endpoint scoped to businessId via query param.
-    // TODO: Replace with a business-scoped customers endpoint when available.
+    const params = new URLSearchParams({
+      filter: activeFilter === 'all' ? '' : activeFilter,
+      page: String(page),
+      limit: String(LIMIT),
+    });
+    if (debouncedSearch) params.set('search', debouncedSearch);
+
     apiService
-      .get<any>(`/v1/customers?businessId=${businessId}&page=1`)
+      .get<any>(`/v1/businesses/${businessId}/customers?${params.toString()}`)
       .then((res) => {
         if (res.data && !res.error) {
-          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.customers ?? [];
-          setAllCustomers(
-            list.map((c: any) => ({
-              id: c.id,
-              name: c.name || c.fullName || `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim() || 'Unknown',
-              email: c.email || '—',
-              purchases: c.purchaseCount ?? c.purchases ?? 0,
-              totalSpent: c.totalSpent ?? 0,
-              lastVisit: c.lastVisit ?? c.lastPurchaseAt ?? c.updatedAt ?? '—',
-            })),
-          );
+          setCustomers(res.data.customers ?? []);
+          setTotal(res.data.total ?? 0);
         }
       })
       .finally(() => setLoading(false));
-  }, [businessId]);
-
-  const toggleSort = (key: SortKey) => {
-    if (sortBy === key) {
-      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(key);
-      setSortDir('desc');
-    }
-  };
-
-  const filteredCustomers = useMemo(() => {
-    let list = [...allCustomers];
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      list = list.filter(
-        (c) => c.name.toLowerCase().includes(term) || c.email.toLowerCase().includes(term),
-      );
-    }
-    list.sort((a, b) => {
-      const mul = sortDir === 'asc' ? 1 : -1;
-      if (sortBy === 'name') return a.name.localeCompare(b.name) * mul;
-      if (sortBy === 'totalSpent') return (a.totalSpent - b.totalSpent) * mul;
-      if (sortBy === 'purchases') return (a.purchases - b.purchases) * mul;
-      if (sortBy === 'lastVisit')
-        return (new Date(a.lastVisit).getTime() - new Date(b.lastVisit).getTime()) * mul;
-      return 0;
-    });
-    return list;
-  }, [allCustomers, searchTerm, sortBy, sortDir]);
+  }, [businessId, activeFilter, debouncedSearch, page]);
 
   const handleExport = () => {
-    const csv = [
-      'Name,Email,Purchases,Total Spent,Last Visit',
-      ...filteredCustomers.map(
-        (c) => `${c.name},${c.email},${c.purchases},$${c.totalSpent},${c.lastVisit}`,
-      ),
-    ].join('\n');
+    const header = 'Name,Email,Phone,Offers Claimed,Offers Redeemed,Verified Purchases,First Interaction,Last Interaction';
+    const rows = customers.map(
+      (c) =>
+        `"${c.name}","${c.email}","${c.phone}",${c.offersClaimedCount},${c.offersRedeemedCount},${c.totalVerifiedPurchases},"${formatDate(c.firstInteractionDate)}","${formatDate(c.lastInteractionDate)}"`,
+    );
+    const csv = [header, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'customers.csv';
+    a.download = `customers-${activeFilter}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const SortHeader = ({ label, sortKey }: { label: string; sortKey: SortKey }) => (
-    <th
-      onClick={() => toggleSort(sortKey)}
-      className="text-left px-6 py-4 font-medium text-muted-foreground cursor-pointer select-none hover:text-foreground transition-colors"
-    >
-      <div className="flex items-center gap-1">
-        {label}
-        <ArrowUpDown
-          className={`h-3.5 w-3.5 ${sortBy === sortKey ? 'text-primary' : 'opacity-40'}`}
-        />
-      </div>
-    </th>
-  );
+  const totalPages = Math.ceil(total / LIMIT);
+
+  const STAT_CARDS = stats
+    ? [
+        {
+          label: 'Total Customers',
+          value: stats.totalCustomers,
+          sub: `+${stats.newThisMonth} this month`,
+          icon: Users,
+          color: 'text-violet-400 bg-violet-500/10',
+          trend: stats.monthlyGrowth,
+        },
+        {
+          label: 'Active This Month',
+          value: stats.activeThisMonth,
+          sub: `${stats.customerRetention}% retention`,
+          icon: Activity,
+          color: 'text-emerald-400 bg-emerald-500/10',
+          trend: null,
+        },
+        {
+          label: 'Claim Rate',
+          value: `${stats.offerClaimRate}%`,
+          sub: 'Offers claimed',
+          icon: Tag,
+          color: 'text-cyan-400 bg-cyan-500/10',
+          trend: null,
+        },
+        {
+          label: 'Redemption Rate',
+          value: `${stats.offerRedemptionRate}%`,
+          sub: 'Of claimed offers',
+          icon: BadgeCheck,
+          color: 'text-amber-400 bg-amber-500/10',
+          trend: null,
+        },
+      ]
+    : [];
 
   return (
     <BusinessLayout>
-      <div>
-        <div className="flex items-center justify-between mb-8">
+      <div className="space-y-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Customers</h1>
-            <p className="text-muted-foreground">Manage and view customer information</p>
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Users className="h-6 w-6 text-violet-400" />
+              Customers
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Track and manage your customer relationships
+            </p>
           </div>
           <Button
             onClick={handleExport}
-            className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground"
+            variant="outline"
+            className="rounded-xl border-white/10 text-slate-300 gap-2 hover:bg-white/5 cursor-pointer"
           >
             <Download className="h-4 w-4" />
-            Export List
+            Export CSV
           </Button>
         </div>
 
-        <div className="mb-6">
+        {/* Stats grid */}
+        {statsLoading ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[0, 1, 2, 3].map((i) => (
+              <Card key={i} className="p-5 rounded-2xl border-white/5 bg-card/40 animate-pulse h-24" />
+            ))}
+          </div>
+        ) : stats ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {STAT_CARDS.map((s) => {
+              const Icon = s.icon;
+              return (
+                <Card key={s.label} className="p-5 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+                  <div className={cn('p-2 rounded-xl inline-flex mb-3', s.color)}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                  <div className="flex items-end gap-2 mt-1">
+                    <h3 className="text-2xl font-extrabold text-foreground">{s.value}</h3>
+                    {s.trend !== null && s.trend !== undefined && (
+                      <span
+                        className={cn(
+                          'text-xs font-semibold flex items-center gap-0.5 mb-0.5',
+                          s.trend >= 0 ? 'text-emerald-400' : 'text-rose-400',
+                        )}
+                      >
+                        {s.trend >= 0 ? (
+                          <ArrowUpRight className="h-3 w-3" />
+                        ) : (
+                          <ArrowDownRight className="h-3 w-3" />
+                        )}
+                        {Math.abs(s.trend)}%
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{s.sub}</p>
+                </Card>
+              );
+            })}
+          </div>
+        ) : null}
+
+        {/* Filter chips + Search */}
+        <div className="space-y-3">
+          <div className="flex gap-2 flex-wrap">
+            {FILTERS.map((f) => {
+              const Icon = f.icon;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setActiveFilter(f.key)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer',
+                    activeFilter === f.key
+                      ? 'bg-violet-600 text-white'
+                      : 'bg-white/5 text-muted-foreground hover:bg-white/10 border border-white/10',
+                  )}
+                >
+                  <Icon className="h-3 w-3" />
+                  {f.label}
+                </button>
+              );
+            })}
+          </div>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search customers..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by name, email, or phone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-10 rounded-xl border-white/10 bg-white/5"
             />
           </div>
         </div>
 
+        {/* Customer list */}
         {loading ? (
           <div className="flex items-center justify-center h-40">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : allCustomers.length === 0 ? (
+        ) : customers.length === 0 ? (
           <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
             <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
-            <p className="text-foreground font-semibold mb-1">No customers yet</p>
-            <p className="text-sm text-muted-foreground">Customer data will appear once purchases are recorded.</p>
+            <p className="text-foreground font-semibold mb-1">No customers found</p>
+            <p className="text-xs text-muted-foreground">
+              {activeFilter !== 'all' || search
+                ? 'Try changing your filters or search term.'
+                : 'Customers appear here when they claim offers, upload bills, or interact with your business.'}
+            </p>
           </Card>
         ) : (
-        <Card className="rounded-2xl overflow-hidden border-white/5 bg-card/40 backdrop-blur-xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-white/10 bg-white/5">
-                  <SortHeader label="Name" sortKey="name" />
-                  <th className="text-left px-6 py-4 font-medium text-muted-foreground">Email</th>
-                  <SortHeader label="Purchases" sortKey="purchases" />
-                  <SortHeader label="Total Spent" sortKey="totalSpent" />
-                  <SortHeader label="Last Visit" sortKey="lastVisit" />
-                  <th className="text-left px-6 py-4 font-medium text-muted-foreground">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCustomers.map((customer) => (
-                  <tr
-                    key={customer.id}
-                    className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors"
-                  >
-                    <td className="px-6 py-4 font-medium text-foreground">{customer.name}</td>
-                    <td className="px-6 py-4 text-muted-foreground">{customer.email}</td>
-                    <td className="px-6 py-4 text-foreground">{customer.purchases}</td>
-                    <td className="px-6 py-4 text-foreground font-semibold">
-                      ${customer.totalSpent.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground">{customer.lastVisit}</td>
-                    <td className="px-6 py-4 relative">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          setActiveActionId(activeActionId === customer.id ? null : customer.id)
-                        }
-                        className="rounded-lg border-white/10 text-slate-300 gap-1 h-8"
-                      >
-                        Actions <ChevronDown className="h-3 w-3" />
-                      </Button>
-                      {activeActionId === customer.id && (
-                        <div className="absolute right-6 top-12 z-20 w-44 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl py-1">
-                          <button
-                            onClick={() => {
-                              setViewingCustomer(customer);
-                              setActiveActionId(null);
-                            }}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-white/5"
-                          >
-                            <Eye className="h-4 w-4" /> View Profile
-                          </button>
-                          <button
-                            onClick={() => {
-                              window.open(`mailto:${customer.email}`);
-                              setActiveActionId(null);
-                            }}
-                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-white/5"
-                          >
-                            <Mail className="h-4 w-4" /> Send Email
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-        )} {/* end allCustomers.length > 0 */}
+          <div className="space-y-2">
+            {customers.map((c) => (
+              <Card
+                key={c.id}
+                className="p-4 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all cursor-pointer"
+                onClick={() => setViewing(c)}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-violet-500/20 to-cyan-500/20 flex items-center justify-center text-sm font-bold text-violet-300 shrink-0">
+                      {(c.name || '?').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{c.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{c.email}</p>
+                    </div>
+                  </div>
 
-        {/* ── VIEW CUSTOMER MODAL ──────────────────────────── */}
-        {viewingCustomer && (
+                  <div className="hidden sm:flex items-center gap-6 shrink-0 text-xs text-muted-foreground">
+                    <div className="text-center">
+                      <p className="text-foreground font-bold text-sm">{c.offersClaimedCount}</p>
+                      <p>Claimed</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-foreground font-bold text-sm">{c.offersRedeemedCount}</p>
+                      <p>Redeemed</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-foreground font-bold text-sm">{c.totalVerifiedPurchases}</p>
+                      <p>Purchases</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-foreground font-semibold text-xs">
+                        {formatDate(c.lastInteractionDate)}
+                      </p>
+                      <p>Last Active</p>
+                    </div>
+                  </div>
+
+                  <span
+                    className={cn(
+                      'text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0',
+                      c.customerStatus === 'ACTIVE'
+                        ? 'bg-emerald-500/10 text-emerald-400'
+                        : 'bg-slate-500/10 text-slate-400',
+                    )}
+                  >
+                    {c.customerStatus}
+                  </span>
+                </div>
+              </Card>
+            ))}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-2 text-xs text-muted-foreground">
+                <p>
+                  Showing {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, total)} of {total}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="rounded-xl border-white/10 text-xs cursor-pointer"
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="rounded-xl border-white/10 text-xs cursor-pointer"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Customer detail modal */}
+        {viewing && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-lg p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative overflow-y-auto max-h-[90vh]">
               <button
-                onClick={() => setViewingCustomer(null)}
+                onClick={() => setViewing(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
+
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary to-accent text-primary-foreground flex items-center justify-center text-xl font-extrabold">
-                  {viewingCustomer.name
-                    .split(' ')
-                    .map((n: string) => n[0])
-                    .join('')}
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-violet-500 to-cyan-500 flex items-center justify-center text-xl font-extrabold text-white">
+                  {viewing.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-foreground">{viewingCustomer.name}</h3>
-                  <p className="text-xs text-muted-foreground">{viewingCustomer.email}</p>
+                  <h3 className="text-lg font-bold text-foreground">{viewing.name}</h3>
+                  <span
+                    className={cn(
+                      'text-[10px] font-semibold px-2 py-0.5 rounded-full',
+                      viewing.customerStatus === 'ACTIVE'
+                        ? 'bg-emerald-500/10 text-emerald-400'
+                        : 'bg-slate-500/10 text-slate-400',
+                    )}
+                  >
+                    {viewing.customerStatus}
+                  </span>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
+
+              {/* Contact info */}
+              <div className="space-y-2 mb-5">
+                {viewing.email && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Mail className="h-4 w-4 shrink-0" />
+                    <a href={`mailto:${viewing.email}`} className="hover:text-foreground">{viewing.email}</a>
+                  </div>
+                )}
+                {viewing.phone && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Phone className="h-4 w-4 shrink-0" />
+                    <span>{viewing.phone}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4 shrink-0" />
+                  <span>Customer since {formatDate(viewing.firstInteractionDate)}</span>
+                </div>
+              </div>
+
+              {/* Metrics */}
+              <div className="grid grid-cols-3 gap-3 mb-5">
+                <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Claimed</p>
+                  <p className="text-xl font-extrabold text-foreground">{viewing.offersClaimedCount}</p>
+                </div>
+                <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Redeemed</p>
+                  <p className="text-xl font-extrabold text-foreground">{viewing.offersRedeemedCount}</p>
+                </div>
+                <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-center">
                   <p className="text-xs text-muted-foreground mb-1">Purchases</p>
-                  <p className="text-xl font-extrabold text-foreground">
-                    {viewingCustomer.purchases}
-                  </p>
-                </div>
-                <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
-                  <p className="text-xs text-muted-foreground mb-1">Total Spent</p>
-                  <p className="text-xl font-extrabold text-foreground">
-                    ${viewingCustomer.totalSpent}
-                  </p>
-                </div>
-                <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
-                  <p className="text-xs text-muted-foreground mb-1">Last Visit</p>
-                  <p className="text-sm font-bold text-foreground">{viewingCustomer.lastVisit}</p>
+                  <p className="text-xl font-extrabold text-foreground">{viewing.totalVerifiedPurchases}</p>
                 </div>
               </div>
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => setViewingCustomer(null)}
-                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold"
-                >
-                  Close
-                </Button>
+
+              {/* Extra info */}
+              <div className="space-y-1.5 text-xs text-muted-foreground mb-5">
+                <div className="flex justify-between">
+                  <span>Last interaction</span>
+                  <span className="text-foreground font-medium">{formatDate(viewing.lastInteractionDate)}</span>
+                </div>
+                {viewing.referralSource && (
+                  <div className="flex justify-between">
+                    <span>Referral source</span>
+                    <span className="text-foreground font-medium">{viewing.referralSource}</span>
+                  </div>
+                )}
+                {viewing.branchBusinessId && (
+                  <div className="flex justify-between">
+                    <span>Branch customer</span>
+                    <span className="text-emerald-400 font-medium">Yes</span>
+                  </div>
+                )}
               </div>
+
+              <Button
+                onClick={() => setViewing(null)}
+                className="w-full rounded-xl bg-violet-600 hover:bg-violet-500 text-white cursor-pointer"
+              >
+                Close
+              </Button>
             </Card>
           </div>
         )}

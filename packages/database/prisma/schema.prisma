@@ -85,6 +85,7 @@ model Tenant {
   verificationRequests    VerificationRequest[]
   plans                   Plan[]
   businessTags            BusinessTag[]
+  businessCustomers       BusinessCustomer[]
 
   @@index([deletedAt])
   @@map("tenants")
@@ -151,6 +152,7 @@ model User {
   customerProfile        Customer?
   entities               Entity[]
   entityVerifications    VerificationRequest[]    @relation("EntityVerifier")
+  businessRelationships  BusinessCustomer[]       @relation("UserBusinessRelationships")
 
 
   @@unique([tenantId, email])
@@ -499,7 +501,8 @@ model Business {
   totalReviews   Int            @default(0) @map("total_reviews")
   isVerified     Boolean        @default(false) @map("is_verified")
   verifiedAt     DateTime?      @map("verified_at")
-  featuredUntil  DateTime?      @map("featured_until")
+  featuredUntil    DateTime?      @map("featured_until")
+  parentBusinessId String?        @map("parent_business_id") @db.Uuid
 
   // Trial & Introductory Offer
   trialStatus             TrialStatus @default(NOT_STARTED) @map("trial_status")
@@ -540,8 +543,10 @@ model Business {
   bills             Bill[]
   subscriptions     Subscription[]
   payments          Payment[]
-
   businessTags      BusinessTag[]
+  customerRelationships BusinessCustomer[] @relation("BusinessCustomers")
+  parentBusiness    Business?  @relation("BranchParent", fields: [parentBusinessId], references: [id])
+  childBusinesses   Business[] @relation("BranchParent")
 
   @@unique([tenantId, slug])
   @@unique([tenantId, email])
@@ -572,6 +577,40 @@ model BusinessTag {
   @@index([businessId])
   @@index([tenantId, tag])
   @@map("business_tags")
+}
+
+// ── CUSTOMER-BUSINESS RELATIONSHIP ──────────────────────────
+
+model BusinessCustomer {
+  id                     String    @id @default(uuid()) @db.Uuid
+  tenantId               String    @map("tenant_id") @db.Uuid
+  userId                 String    @map("user_id") @db.Uuid
+  businessId             String    @map("business_id") @db.Uuid
+  parentBusinessId       String?   @map("parent_business_id") @db.Uuid
+  branchBusinessId       String?   @map("branch_business_id") @db.Uuid
+  firstInteractionDate   DateTime  @default(now()) @map("first_interaction_date")
+  lastInteractionDate    DateTime  @default(now()) @map("last_interaction_date")
+  offersClaimedCount     Int       @default(0) @map("offers_claimed_count")
+  offersRedeemedCount    Int       @default(0) @map("offers_redeemed_count")
+  totalVerifiedPurchases Int       @default(0) @map("total_verified_purchases")
+  referralSource         String?   @map("referral_source") @db.VarChar(100)
+  customerStatus         String    @default("ACTIVE") @map("customer_status") @db.VarChar(50)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user     User     @relation("UserBusinessRelationships", fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation("BusinessCustomers", fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, businessId])
+  @@index([tenantId, businessId])
+  @@index([tenantId, userId])
+  @@index([tenantId, businessId, customerStatus])
+  @@index([lastInteractionDate])
+  @@index([deletedAt])
+  @@map("business_customers")
 }
 
 enum BusinessStatus {

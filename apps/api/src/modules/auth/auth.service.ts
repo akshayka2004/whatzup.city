@@ -385,12 +385,30 @@ export class AuthService {
     // For staff/moderator accounts without an entity, resolve businessId via BusinessStaff
     let staffBusinessId: string | undefined;
     if (!activeEntity) {
-      const staffRecord = await this.db.businessStaff.findFirst({
-        where: { userId: user.id, deletedAt: null },
+      // Prefer isActive staff records; fallback without filter for robustness
+      let staffRecord = await this.db.businessStaff.findFirst({
+        where: { userId: user.id, deletedAt: null, isActive: true },
         include: { business: { select: { id: true } } },
         orderBy: { createdAt: 'desc' },
       });
+      if (!staffRecord) {
+        staffRecord = await this.db.businessStaff.findFirst({
+          where: { userId: user.id, deletedAt: null },
+          include: { business: { select: { id: true } } },
+          orderBy: { createdAt: 'desc' },
+        });
+      }
       staffBusinessId = staffRecord?.business?.id;
+
+      // Further fallback: owner lookup
+      if (!staffBusinessId) {
+        const ownerRecord = await this.db.business.findFirst({
+          where: { ownerId: user.id, deletedAt: null },
+          select: { id: true },
+          orderBy: { createdAt: 'desc' },
+        });
+        staffBusinessId = ownerRecord?.id;
+      }
     }
 
     return {
@@ -717,11 +735,20 @@ export class AuthService {
     // Resolve associated businessId so the frontend can use it directly.
     let staffBusinessId: string | undefined;
     if (!activeEntity) {
-      const staffRecord = await this.db.businessStaff.findFirst({
+      // Try active staff record first; fallback without isActive filter
+      // in case isActive column has a null value (schema default may not apply retroactively)
+      let staffRecord = await this.db.businessStaff.findFirst({
         where: { userId: user.id, deletedAt: null, isActive: true },
         include: { business: { select: { id: true } } },
         orderBy: { createdAt: 'desc' },
       });
+      if (!staffRecord) {
+        staffRecord = await this.db.businessStaff.findFirst({
+          where: { userId: user.id, deletedAt: null },
+          include: { business: { select: { id: true } } },
+          orderBy: { createdAt: 'desc' },
+        });
+      }
       staffBusinessId = staffRecord?.business?.id;
 
       if (!staffBusinessId) {

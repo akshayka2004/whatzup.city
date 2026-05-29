@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { AuditService } from '../audit/audit.service';
 import { PasswordService } from '../auth/password.service';
@@ -7,6 +7,8 @@ type StaffRole = 'BUSINESS_OWNER' | 'BUSINESS_ADMIN' | 'BUSINESS_MODERATOR' | 'B
 
 @Injectable()
 export class TeamService {
+  private readonly logger = new Logger(TeamService.name);
+
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
@@ -119,6 +121,7 @@ export class TeamService {
         businessId: business.id,
         userId: user.id,
         role: memberRole as any,
+        isActive: true,
       },
     });
 
@@ -159,6 +162,140 @@ export class TeamService {
       tenantId,
       userId: actingUserId,
       action: 'REMOVE_TEAM_MEMBER',
+      resource: 'BUSINESS_STAFF',
+      resourceId: staffId,
+    });
+
+    return { success: true };
+  }
+
+  async updateMember(
+    tenantId: string,
+    staffId: string,
+    actingUserId: string,
+    data: { name?: string; email?: string; phone?: string; role?: StaffRole; branchId?: string },
+  ) {
+    const staff = await this.db.businessStaff.findFirst({
+      where: { id: staffId, tenantId, deletedAt: null },
+      include: { user: true },
+    });
+    if (!staff) throw new NotFoundException('Team member not found');
+    await this.resolveBusinessForOwner(tenantId, staff.businessId, actingUserId);
+
+    // Email uniqueness check
+    if (data.email && data.email.toLowerCase() !== staff.user.email) {
+      const emailNorm = data.email.trim().toLowerCase();
+      const dup = await this.db.user.findFirst({
+        where: { email: emailNorm, deletedAt: null, NOT: { id: staff.userId } },
+      });
+      if (dup) throw new ConflictException('Email already in use');
+    }
+
+    // Update User fields
+    const userUpdate: any = {};
+    if (data.name) userUpdate.name = data.name.trim();
+    if (data.email) userUpdate.email = data.email.trim().toLowerCase();
+    if (data.phone !== undefined) userUpdate.phone = data.phone || null;
+
+    if (Object.keys(userUpdate).length > 0) {
+      await this.db.user.update({ where: { id: staff.userId }, data: userUpdate });
+    }
+
+    // Update BusinessStaff role if provided
+    const staffUpdate: any = {};
+    if (data.role) {
+      const memberRole = data.role === 'BUSINESS_OWNER' || data.role === 'BUSINESS_ADMIN'
+        ? 'OWNER'
+        : data.role === 'BUSINESS_MODERATOR' ? 'MODERATOR' : 'STAFF';
+      staffUpdate.role = memberRole;
+
+      // Also update User.role
+      const userRoleEnum = memberRole === 'OWNER'
+        ? 'BUSINESS_OWNER'
+        : memberRole === 'MODERATOR' ? 'BUSINESS_MODERATOR' : 'BUSINESS_STAFF';
+      await this.db.user.update({ where: { id: staff.userId }, data: { role: userRoleEnum as any } });
+    }
+
+    if (Object.keys(staffUpdate).length > 0) {
+      await this.db.businessStaff.update({ where: { id: staffId }, data: staffUpdate });
+    }
+
+    await this.audit.log({
+      tenantId,
+      userId: actingUserId,
+      action: 'UPDATE_TEAM_MEMBER',
+      resource: 'BUSINESS_STAFF',
+      resourceId: staffId,
+      newData: { ...userUpdate, ...staffUpdate },
+    });
+
+    const updated = await this.db.businessStaff.findFirst({
+      where: { id: staffId },
+      include: { user: { select: { id: true, name: true, email: true, avatar: true, lastLoginAt: true, isActive: true } } },
+    });
+
+    return {
+      id: updated!.id,
+      userId: updated!.userId,
+      role: updated!.role,
+      isActive: updated!.isActive,
+      name: updated!.user?.name || '',
+      email: updated!.user?.email || '',
+      avatar: updated!.user?.avatar || '',
+      lastActive: updated!.user?.lastLoginAt,
+      createdAt: updated!.createdAt,
+    };
+  }
+
+  async toggleMember(tenantId: string, staffId: string, actingUserId: string, enable: boolean) {
+    const staff = await this.db.businessStaff.findFirst({
+      where: { id: staffId, tenantId, deletedAt: null },
+    });
+    if (!staff) throw new NotFoundException('Team member not found');
+    await this.resolveBusinessForOwner(tenantId, staff.businessId, actingUserId);
+
+    await Promise.all([
+      this.db.businessStaff.update({ where: { id: staffId }, data: { isActive: enable } }),
+      this.db.user.update({ where: { id: staff.userId }, data: { isActive: enable } }),
+    ]);
+
+    await this.audit.log({
+      tenantId,
+      userId: actingUserId,
+      action: enable ? 'ENABLE_TEAM_MEMBER' : 'DISABLE_TEAM_MEMBER',
+      resource: 'BUSINESS_STAFF',
+      resourceId: staffId,
+    });
+
+    return { success: true, isActive: enable };
+  }
+
+  async resetMemberPassword(
+    tenantId: string,
+    staffId: string,
+    actingUserId: string,
+    newPassword: string,
+  ) {
+    if (!newPassword || newPassword.length < 8) {
+      throw new BadRequestException('Password must be at least 8 characters');
+    }
+
+    const staff = await this.db.businessStaff.findFirst({
+      where: { id: staffId, tenantId, deletedAt: null },
+    });
+    if (!staff) throw new NotFoundException('Team member not found');
+    await this.resolveBusinessForOwner(tenantId, staff.businessId, actingUserId);
+
+    const passwordHash = await this.passwordService.hash(newPassword);
+    await this.db.user.update({ where: { id: staff.userId }, data: { passwordHash } });
+
+    // Invalidate all active sessions for this user
+    await this.db.session.deleteMany({ where: { userId: staff.userId } });
+
+    await this.audit.log({
+      tenantId,
+      userId: actingUserId,
+      action: 'RESET_TEAM_MEMBER_PASSWORD',
       resource: 'BUSINESS_STAFF',
       resourceId: staffId,
     });
