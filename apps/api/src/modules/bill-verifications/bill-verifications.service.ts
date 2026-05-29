@@ -55,8 +55,13 @@ export class BillVerificationsService {
     pagination.sortOrder = SortOrder.ASC;
 
     const filters: Record<string, any> = { businessId };
-    if (status) filters.status = status;
-    else filters.status = 'PENDING';
+    if (status && status !== 'ALL') {
+      filters.status = status;
+    } else if (!status) {
+      // Default to PENDING for the moderation queue (no explicit status means "show pending work")
+      filters.status = 'PENDING';
+    }
+    // status === 'ALL' → no status filter → return all bills for the business
 
     const result = await this.verificationRepo.findMany(tenantId, filters, pagination, {
       include: {

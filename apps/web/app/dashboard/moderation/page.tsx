@@ -41,29 +41,43 @@ type TabKey = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FLAGGED' | 'RE_UPLOAD_REQUE
 type ActionModal = 'approve' | 'reject' | 'reupload' | 'flag' | 'override' | null;
 
 function mapApiBill(b: any) {
+  // API returns BillVerification with nested `bill` containing Bill + User + Business
+  const bill = b.bill || {};
+  const customerName = b.customer?.name || b.user?.name || bill.user?.name || b.customerName || 'Customer';
+  const customerEmail = b.customer?.email || b.user?.email || bill.user?.email || b.customerEmail || '';
+  const businessName = b.business?.name || bill.business?.name || b.businessName || '';
+  const amount = parseFloat(b.amount ?? bill.amount ?? '0');
+  const billDate = b.billDate || bill.billDate || '';
+  const fraudScore = parseFloat(String(b.fraudScore ?? '0.1'));
+
   return {
     id: b.id,
-    billId: b.billId || b.id,
+    billId: b.billId || bill.id || b.id,
     customer: {
-      name: b.customer?.name || b.user?.name || b.customerName || 'Customer',
-      email: b.customer?.email || b.user?.email || b.customerEmail || '',
-      avatar: (b.customer?.name || b.user?.name || 'CU').substring(0, 2).toUpperCase(),
+      name: customerName,
+      email: customerEmail,
+      avatar: customerName.substring(0, 2).toUpperCase(),
     },
-    business: b.business?.name || b.businessName || '',
-    amount: parseFloat(b.amount || b.bill?.amount || '0'),
-    billDate: b.billDate || b.bill?.billDate || '',
-    billNumber: b.billNumber || b.bill?.billNumber || b.id.substring(0, 8).toUpperCase(),
+    business: businessName,
+    amount,
+    billDate,
+    billNumber: b.billNumber || bill.billNumber || b.id.substring(0, 8).toUpperCase(),
     status: (b.status || 'PENDING') as BillStatus,
-    ocrConfidence: b.ocrConfidence ?? 75,
-    fraudScore: b.fraudScore ?? 0.1,
+    ocrConfidence: b.ocrConfidence ?? (b.ocrMetadata?.confidence ?? 75),
+    fraudScore: isNaN(fraudScore) ? 0.1 : fraudScore,
     escalationLevel: b.escalationLevel || 'NONE',
-    ocrData: b.ocrData || {
-      merchant: b.business?.name || '',
-      total: `₹${b.amount || 0}`,
-      date: b.billDate || '',
+    ocrData: b.ocrData || (b.ocrMetadata ? {
+      merchant: businessName,
+      total: `₹${amount}`,
+      date: billDate,
+      items: b.ocrMetadata?.lineItems || [],
+    } : {
+      merchant: businessName,
+      total: `₹${amount}`,
+      date: billDate,
       items: [],
-    },
-    receiptUrl: b.receiptUrl || b.bill?.billImage || '',
+    }),
+    receiptUrl: b.receiptUrl || bill.billImage || '',
     uploadedAt: b.createdAt || new Date().toISOString(),
   };
 }

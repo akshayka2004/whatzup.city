@@ -4,6 +4,7 @@ import {
   Logger,
   BadRequestException,
   InternalServerErrorException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -16,11 +17,20 @@ export class StorageService {
   private readonly supabaseUrl: string;
 
   constructor(
-    @Inject(SUPABASE_CLIENT) private readonly supabaseClient: SupabaseClient,
+    @Inject(SUPABASE_CLIENT) private readonly supabaseClient: SupabaseClient | null,
     private readonly config: ConfigService,
     private readonly redis: RedisService,
   ) {
     this.supabaseUrl = this.config.get<string>('SUPABASE_URL', '').replace(/\/$/, '');
+  }
+
+  private ensureClient(): void {
+    if (!this.supabaseClient) {
+      throw new ServiceUnavailableException(
+        'File storage is not configured. ' +
+        'Contact the platform administrator to set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
+      );
+    }
   }
 
   /**
@@ -51,8 +61,9 @@ export class StorageService {
     bucket: string,
     fileKey: string,
   ): Promise<{ uploadUrl: string; fileKey: string }> {
+    this.ensureClient();
     try {
-      const { data, error } = await this.supabaseClient.storage
+      const { data, error } = await this.supabaseClient!.storage
         .from(bucket)
         .createSignedUploadUrl(fileKey);
 
@@ -76,6 +87,7 @@ export class StorageService {
     fileKey: string,
     expiresInSeconds = 60,
   ): Promise<string> {
+    this.ensureClient();
     const cacheKey = `signed-url:${bucket}:${fileKey}`;
     try {
       const cachedUrl = await this.redis.get<string>(cacheKey);
@@ -87,7 +99,7 @@ export class StorageService {
     }
 
     try {
-      const { data, error } = await this.supabaseClient.storage
+      const { data, error } = await this.supabaseClient!.storage
         .from(bucket)
         .createSignedUrl(fileKey, expiresInSeconds);
 
@@ -125,7 +137,8 @@ export class StorageService {
     file: Buffer,
     mimeType: string,
   ): Promise<string> {
-    const { error } = await this.supabaseClient.storage
+    this.ensureClient();
+    const { error } = await this.supabaseClient!.storage
       .from(bucket)
       .upload(fileKey, file, { contentType: mimeType, upsert: true });
 
@@ -146,7 +159,8 @@ export class StorageService {
     file: Buffer,
     mimeType: string,
   ): Promise<{ bucket: string; path: string }> {
-    const { error } = await this.supabaseClient.storage
+    this.ensureClient();
+    const { error } = await this.supabaseClient!.storage
       .from(bucket)
       .upload(fileKey, file, { contentType: mimeType, upsert: true });
 
@@ -162,7 +176,8 @@ export class StorageService {
    * Deletes a file from a storage bucket
    */
   async deleteFile(bucket: string, fileKey: string): Promise<void> {
-    const { error } = await this.supabaseClient.storage
+    this.ensureClient();
+    const { error } = await this.supabaseClient!.storage
       .from(bucket)
       .remove([fileKey]);
 

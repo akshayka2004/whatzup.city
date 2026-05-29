@@ -68,17 +68,17 @@ export function validateEnv(config: Record<string, any>) {
 
   // Enterprise security check: Enforce strong secrets in production
   if (validatedConfig.NODE_ENV === Environment.Production) {
-    if (
-      !validatedConfig.SUPABASE_URL ||
-      !validatedConfig.SUPABASE_SERVICE_ROLE_KEY
-    ) {
-      throw new Error(
-        'CRITICAL CONFIGURATION ERROR: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required in production mode.',
+    // Supabase is optional — warn but don't crash. Storage endpoints will return 503 when unconfigured.
+    if (!validatedConfig.SUPABASE_URL || !validatedConfig.SUPABASE_SERVICE_ROLE_KEY) {
+      console.warn(
+        '[CONFIG WARNING] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set. ' +
+        'File upload and storage features will be disabled.',
       );
     }
     if (
-      validatedConfig.SUPABASE_URL.includes('localhost') ||
-      validatedConfig.SUPABASE_URL.includes('127.0.0.1')
+      validatedConfig.SUPABASE_URL &&
+      (validatedConfig.SUPABASE_URL.includes('localhost') ||
+       validatedConfig.SUPABASE_URL.includes('127.0.0.1'))
     ) {
       throw new Error(
         'CRITICAL CONFIGURATION ERROR: SUPABASE_URL cannot point to localhost or loopback addresses in production mode.',

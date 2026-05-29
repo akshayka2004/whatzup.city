@@ -46,8 +46,10 @@ export class BillsService {
     });
 
     // 2. Automatically create a Pending Verification tracker
+    // IMPORTANT: businessId must be set so getBusinessQueue() can find the verification.
     await this.verificationRepo.create(tenantId, {
       billId: bill.id,
+      businessId: data.businessId,
       status: 'PENDING',
     });
 

@@ -31,7 +31,7 @@ export class MediaService implements OnModuleInit {
     private readonly db: DatabaseService,
     private readonly config: ConfigService,
     private readonly storageService: StorageService,
-    @Inject(SUPABASE_CLIENT) private readonly supabaseClient: SupabaseClient,
+    @Inject(SUPABASE_CLIENT) private readonly supabaseClient: SupabaseClient | null,
   ) {}
 
   onModuleInit() {
@@ -54,6 +54,10 @@ export class MediaService implements OnModuleInit {
    * Scans Supabase Storage for orphaned files and removes them.
    */
   async cleanOrphanedFiles() {
+    if (!this.supabaseClient) {
+      this.logger.warn('Storage not configured — skipping orphaned file cleanup.');
+      return;
+    }
     this.logger.log('Starting orphaned files cleanup job...');
     try {
       const { data: files, error } = await this.supabaseClient.storage
