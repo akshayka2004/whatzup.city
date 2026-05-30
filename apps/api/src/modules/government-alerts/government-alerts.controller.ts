@@ -15,10 +15,17 @@ import { CreateAlertDto } from './dto/create-alert.dto';
 export class GovernmentAlertsController {
   constructor(private readonly alertsService: GovernmentAlertsService) {}
 
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(
+    UserRole.MASTER_ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.GOVERNMENT_ADMIN,
+    UserRole.NGO_ADMIN,
+    UserRole.COMMUNITY_ADMIN,
+    UserRole.NEWS_FORUM_ADMIN,
+  )
   @UseGuards(RolesGuard)
   @Post()
-  @ApiOperation({ summary: 'Create a government alert (Admin only)' })
+  @ApiOperation({ summary: 'Create a civic / government alert' })
   async create(
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') adminId: string,

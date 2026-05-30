@@ -46,6 +46,7 @@ import { SearchAnalyticsModule } from './modules/search-analytics/search-analyti
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { CampaignsModule } from './modules/campaigns/campaigns.module';
 import { GovernmentAlertsModule } from './modules/government-alerts/government-alerts.module';
+import { CivicModule } from './modules/civic/civic.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
 import { SegmentationModule } from './modules/segmentation/segmentation.module';
@@ -157,6 +158,7 @@ import { TrialsModule } from './modules/trials/trials.module';
     RealtimeModule,
     CampaignsModule,
     GovernmentAlertsModule,
+    CivicModule,
     PreferencesModule,
     MetricsModule,
     SegmentationModule,

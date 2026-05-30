@@ -14,9 +14,12 @@ import {
   Image as ImageIcon,
   X,
   Loader2,
+  ExternalLink,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 
+interface SocialLink { label: string; url: string; }
+interface Publisher { organizationName: string; organizationType?: string; logoUrl?: string | null; }
 interface Notice {
   id: string;
   title: string;
@@ -24,6 +27,8 @@ interface Notice {
   date: string;
   type: string;
   attachments: { name: string; type: 'pdf' | 'image'; size: string; url?: string }[];
+  socialLinks: SocialLink[];
+  publisher: Publisher | null;
 }
 
 const typeColors: Record<string, string> = {
@@ -48,7 +53,31 @@ function mapApiNotice(n: any): Notice {
       size: a.fileSize ? `${(a.fileSize / 1024).toFixed(0)} KB` : '—',
       url: a.url || a.fileUrl,
     })),
+    socialLinks: Array.isArray(n.socialLinks)
+      ? n.socialLinks.filter((l: any) => l && l.label && l.url)
+      : [],
+    publisher: n.publisher || null,
   };
+}
+
+function SocialButtons({ links }: { links: SocialLink[] }) {
+  if (!links.length) return null;
+  return (
+    <div className="flex items-center gap-2 flex-wrap mt-3">
+      {links.map((l, i) => (
+        <a
+          key={i}
+          href={l.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-medium transition-colors cursor-pointer"
+        >
+          <ExternalLink className="h-3 w-3" />
+          {l.label}
+        </a>
+      ))}
+    </div>
+  );
 }
 
 export default function GovernmentPage() {
@@ -147,7 +176,13 @@ export default function GovernmentPage() {
                         ))}
                       </div>
                     )}
-                    <div className="flex items-center gap-4">
+                    {notice.publisher && (
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Published by <span className="font-semibold text-foreground">{notice.publisher.organizationName}</span>
+                      </p>
+                    )}
+                    <SocialButtons links={notice.socialLinks} />
+                    <div className="flex items-center gap-4 mt-3">
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Calendar className="h-4 w-4" /> {notice.date}
                       </div>
@@ -197,6 +232,20 @@ export default function GovernmentPage() {
               <div className="bg-white/5 p-4 rounded-xl border border-white/5 mb-6">
                 <p className="text-sm text-slate-300 leading-relaxed">{viewingNotice.description}</p>
               </div>
+
+              {(viewingNotice.publisher || viewingNotice.socialLinks.length > 0) && (
+                <div className="mb-6">
+                  {viewingNotice.publisher && (
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Published by{' '}
+                      <span className="font-semibold text-foreground">
+                        {viewingNotice.publisher.organizationName}
+                      </span>
+                    </p>
+                  )}
+                  <SocialButtons links={viewingNotice.socialLinks} />
+                </div>
+              )}
 
               {viewingNotice.attachments.length > 0 && (
                 <div className="mb-6">

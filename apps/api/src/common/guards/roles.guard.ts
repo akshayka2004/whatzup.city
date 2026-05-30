@@ -17,6 +17,10 @@ const ROLE_HIERARCHY: Record<string, number> = {
   [UserRole.PROFESSIONAL]: 4,
   [UserRole.EVENT_ORGANIZER]: 4,
   [UserRole.ORGANIZATION_ADMIN]: 4,
+  // Civic registration roles — same tier as entity owners
+  [UserRole.NGO_ADMIN]: 4,
+  [UserRole.COMMUNITY_ADMIN]: 4,
+  [UserRole.NEWS_FORUM_ADMIN]: 4,
   [UserRole.GOVERNMENT_ADMIN]: 5,
   [UserRole.MASTER_ADMIN]: 6,
   [UserRole.SUPER_ADMIN]: 7,

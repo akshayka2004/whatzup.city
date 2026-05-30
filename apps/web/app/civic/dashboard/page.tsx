@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Bell, Megaphone, Heart, Plus, Send, Trash2,
   X, CheckCircle2, Clock, Globe, LogOut, AlertTriangle,
-  FileText, Loader2, Users, Newspaper,
+  FileText, Loader2, Users, Newspaper, UserCog, Gift,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -60,6 +60,13 @@ export default function CivicDashboardPage() {
 
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loadingNotices, setLoadingNotices] = useState(true);
+  const [referralCount, setReferralCount] = useState<number>(0);
+
+  useEffect(() => {
+    apiService.get<{ count: number }>('/v1/civic/referrals').then((res) => {
+      if (res.data && !res.error) setReferralCount(res.data.count ?? 0);
+    });
+  }, []);
 
   useEffect(() => {
     setLoadingNotices(true);
@@ -109,12 +116,19 @@ export default function CivicDashboardPage() {
     if (!formTitle.trim() || !formBody.trim()) return;
     setSubmitting(true);
 
-    // Post to government-alerts endpoint (shared civic notification infra)
+    // Post to government-alerts endpoint (shared civic notification infra).
+    // API expects: title, body, category, priority (+ optional expiresAt).
+    const priorityMap: Record<NoticeType, string> = {
+      ALERT: 'HIGH',
+      ANNOUNCEMENT: 'MEDIUM',
+      NOTICE: 'LOW',
+    };
     const res = await apiService.post<any>('/v1/government-alerts', {
       title: formTitle,
-      content: formBody,
-      type: formType,
-      expiresAt: formExpiresAt || undefined,
+      body: formBody,
+      category: formType,
+      priority: priorityMap[formType],
+      expiresAt: formExpiresAt ? new Date(formExpiresAt).toISOString() : undefined,
     });
 
     if (!res.error) {
@@ -172,6 +186,15 @@ export default function CivicDashboardPage() {
               <span className="hidden sm:inline">Publish</span>
             </Button>
             <Button
+              onClick={() => router.push('/civic/profile')}
+              variant="outline"
+              size="sm"
+              className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer gap-1.5 h-9"
+            >
+              <UserCog className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Profile</span>
+            </Button>
+            <Button
               onClick={handleSignOut}
               variant="outline"
               size="sm"
@@ -217,15 +240,16 @@ export default function CivicDashboardPage() {
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
-            { label: 'Total Published', value: notices.length, icon: Bell },
-            { label: 'Active Now',      value: visible.length, icon: Globe },
-            { label: 'Alerts',          value: visible.filter((n) => n.type === 'ALERT').length, icon: AlertTriangle },
-          ].map(({ label, value, icon: Icon }) => (
+            { label: 'Total Published', value: notices.length, icon: Bell, accent: 'text-muted-foreground' },
+            { label: 'Active Now',      value: visible.length, icon: Globe, accent: 'text-muted-foreground' },
+            { label: 'Alerts',          value: visible.filter((n) => n.type === 'ALERT').length, icon: AlertTriangle, accent: 'text-muted-foreground' },
+            { label: 'Referrals',       value: referralCount, icon: Gift, accent: 'text-emerald-400' },
+          ].map(({ label, value, icon: Icon, accent }) => (
             <Card key={label} className="p-4 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl">
               <div className="flex items-center gap-2 mb-2">
-                <Icon className="h-4 w-4 text-muted-foreground" />
+                <Icon className={`h-4 w-4 ${accent}`} />
               </div>
               <h3 className="text-2xl font-extrabold text-foreground">{value}</h3>
               <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>

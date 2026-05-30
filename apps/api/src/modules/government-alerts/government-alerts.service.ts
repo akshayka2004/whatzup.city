@@ -125,12 +125,46 @@ export class GovernmentAlertsService {
     ]);
 
     const result = {
-      data,
+      data: await this.attachPublishers(data),
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
 
     await this.redis.set(cacheKey, result, 600);
     return result;
+  }
+
+  /** Attach publishing civic org social links + logo to each alert. */
+  private async attachPublishers(alerts: any[]): Promise<any[]> {
+    if (!alerts?.length) return alerts;
+    const agencyIds = Array.from(new Set(alerts.map((a) => a.agencyId).filter(Boolean)));
+    if (!agencyIds.length) return alerts;
+
+    const entities = await (this.db as any).entity.findMany({
+      where: { userId: { in: agencyIds }, deletedAt: null },
+      include: { civicProfile: true },
+    });
+    const byUser = new Map<string, any>();
+    for (const e of entities) {
+      if (e.civicProfile) byUser.set(e.userId, e);
+    }
+
+    return alerts.map((a) => {
+      const profile = byUser.get(a.agencyId)?.civicProfile;
+      const socialLinks = Array.isArray(profile?.socialLinks)
+        ? profile.socialLinks.filter((l: any) => l && l.label && l.url)
+        : [];
+      return {
+        ...a,
+        socialLinks,
+        publisher: profile
+          ? {
+              organizationName: profile.organizationName,
+              organizationType: profile.organizationType,
+              logoUrl: profile.logoUrl ?? null,
+            }
+          : null,
+      };
+    });
   }
 
   async incrementViewCount(tenantId: string, id: string) {

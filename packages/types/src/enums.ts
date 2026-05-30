@@ -14,6 +14,10 @@ export enum UserRole {
   PROFESSIONAL = 'PROFESSIONAL',
   EVENT_ORGANIZER = 'EVENT_ORGANIZER',
   ORGANIZATION_ADMIN = 'ORGANIZATION_ADMIN',
+  // Civic registration roles
+  NGO_ADMIN = 'NGO_ADMIN',
+  COMMUNITY_ADMIN = 'COMMUNITY_ADMIN',
+  NEWS_FORUM_ADMIN = 'NEWS_FORUM_ADMIN',
   // Legacy alias — kept for DB migration compatibility
   BUSINESS_ADMIN = 'BUSINESS_ADMIN',
 }
@@ -26,6 +30,9 @@ export enum EntityType {
   EVENT_ORGANIZER = 'EVENT_ORGANIZER',
   ORGANIZATION = 'ORGANIZATION',
   GOVERNMENT = 'GOVERNMENT',
+  NGO = 'NGO',
+  COMMUNITY = 'COMMUNITY',
+  NEWS_FORUM = 'NEWS_FORUM',
 }
 
 export enum EntityStatus {
