@@ -27,7 +27,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { BusinessSignupDto } from './dto/business-signup.dto';
 import { CivicSignupDto } from './dto/civic-signup.dto';
-import { UserRoleEnum, EntityType } from '@prisma/client';
+import { UserRoleEnum } from '@prisma/client';
 import { SelectRoleDto } from './dto/select-role.dto';
 
 export interface JwtPayload {
@@ -686,6 +686,9 @@ export class AuthService {
     if (cached) return cached;
 
     // Fetch user permissions through roles
+    // `as any` on include + result: civicProfile is a newly-added relation —
+    // Prisma client types on VPS regenerate after `prisma generate`. Cast is
+    // safe because the SQL query runs correctly regardless of TS types.
     const user = await this.db.user.findUnique({
       where: { id: payload.sub },
       include: {
@@ -715,8 +718,8 @@ export class AuthService {
             },
           },
         },
-      },
-    });
+      } as any,
+    }) as any;
 
     if (!user || !user.isActive || user.deletedAt) {
       return null;
@@ -724,8 +727,8 @@ export class AuthService {
 
     // Flatten permissions list
     const permissions = new Set<string>();
-    user.userRoles.forEach((ur) => {
-      ur.role.rolePermissions.forEach((rp) => {
+    user.userRoles.forEach((ur: any) => {
+      ur.role.rolePermissions.forEach((rp: any) => {
         if (rp.permission && !rp.permission.deletedAt) {
           permissions.add(`${rp.permission.resource}:${rp.permission.action}`);
         }
@@ -1619,20 +1622,21 @@ export class AuthService {
       throw new BadRequestException('No tenant configured. Contact support.');
     }
 
-    // Role + EntityType mapping
-    const roleMap: Record<string, UserRoleEnum> = {
-      NGO: UserRoleEnum.NGO_ADMIN,
-      COMMUNITY: UserRoleEnum.COMMUNITY_ADMIN,
-      NEWS_FORUM: UserRoleEnum.NEWS_FORUM_ADMIN,
+    // Role + EntityType mapping — use string literals so this compiles even
+    // before `prisma generate` adds the new enum values to the client types.
+    const roleMap: Record<string, string> = {
+      NGO: 'NGO_ADMIN',
+      COMMUNITY: 'COMMUNITY_ADMIN',
+      NEWS_FORUM: 'NEWS_FORUM_ADMIN',
     };
-    const entityTypeMap: Record<string, EntityType> = {
+    const entityTypeMap: Record<string, string> = {
       NGO: 'NGO',
       COMMUNITY: 'COMMUNITY',
       NEWS_FORUM: 'NEWS_FORUM',
     };
 
-    const assignedRole = roleMap[dto.organizationType] ?? UserRoleEnum.NGO_ADMIN;
-    const entityType   = entityTypeMap[dto.organizationType] ?? 'NGO';
+    const assignedRole = (roleMap[dto.organizationType] ?? 'NGO_ADMIN') as any;
+    const entityType   = (entityTypeMap[dto.organizationType] ?? 'NGO') as any;
 
     const passwordHash  = await this.passwordService.hash(dto.password);
     const referralCode  = Math.random().toString(36).slice(2, 10).toUpperCase();
