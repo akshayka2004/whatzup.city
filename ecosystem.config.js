@@ -30,9 +30,10 @@ module.exports = {
     {
       name: 'saas-web',
       cwd: './apps/web',
-      // standalone output requires node server.js, NOT next start
+      // standalone output requires node server.js, NOT next start.
+      // pnpm monorepo emits server at .next/standalone/apps/web/server.js
       script: 'node',
-      args: '.next/standalone/server.js',
+      args: '.next/standalone/apps/web/server.js',
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
