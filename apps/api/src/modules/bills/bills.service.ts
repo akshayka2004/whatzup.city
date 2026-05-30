@@ -7,6 +7,7 @@ import { AuditService } from '../audit/audit.service';
 import { StorageService } from '../../common/storage/storage.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 import { BusinessCustomerService } from '../customers/business-customer.service';
+import { AnalyticsSummaryService } from '../analytics/analytics-summary.service';
 
 @Injectable()
 export class BillsService {
@@ -19,6 +20,7 @@ export class BillsService {
     private readonly storageService: StorageService,
     @InjectQueue('ocr-queue') private readonly ocrQueue: Queue,
     private readonly businessCustomerService: BusinessCustomerService,
+    private readonly analyticsSummary: AnalyticsSummaryService,
   ) {}
 
   async upload(
@@ -91,6 +93,10 @@ export class BillsService {
       data.businessId,
       'BILL_UPLOAD',
     );
+
+    // 6. Fire-and-forget summary refresh (non-blocking)
+    void this.analyticsSummary.refreshUserSpending(tenantId, userId).catch(() => {});
+    void this.analyticsSummary.refreshBusinessSummary(tenantId, data.businessId).catch(() => {});
 
     return bill;
   }

@@ -20,7 +20,7 @@ const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false 
 const CartesianGrid = dynamic(() => import('recharts').then(m => m.CartesianGrid), { ssr: false });
 const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false });
 const Legend = dynamic(() => import('recharts').then(m => m.Legend), { ssr: false });
-import { apiService } from '@/lib/services/api-service';
+import { analyticsService } from '@/lib/services/analytics-service';
 import { useAuth } from '@/hooks/use-auth';
 
 const RANGES = ['7D', '30D', '90D'] as const;
@@ -85,11 +85,9 @@ export default function AnalyticsPage() {
     setLoading(true);
     setError(false);
     try {
-      const res = await apiService.get<any>(
-        `/v1/analytics/business/${businessId}/summary?days=${rangeToDays[range]}`,
-      );
-      if (res.data && !res.error) {
-        setData(res.data);
+      const result = await analyticsService.getBusinessSummary(businessId, rangeToDays[range]);
+      if (result) {
+        setData(result);
       } else {
         setError(true);
       }

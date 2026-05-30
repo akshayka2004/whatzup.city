@@ -11,6 +11,7 @@ import { AuditService } from '../audit/audit.service';
 import { VerifiedPurchasesService } from '../verified-purchases/verified-purchases.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
+import { AnalyticsSummaryService } from '../analytics/analytics-summary.service';
 
 // Business-level owner roles (string-literal comparison for forward compat)
 const OWNER_ROLES = ['BUSINESS_OWNER', 'BUSINESS_ADMIN', 'SUPER_ADMIN'] as const;
@@ -32,6 +33,7 @@ export class BillVerificationsService {
     private readonly auditService: AuditService,
     private readonly verifiedPurchasesService: VerifiedPurchasesService,
     private readonly notificationsService: NotificationsService,
+    private readonly analyticsSummary: AnalyticsSummaryService,
   ) {}
 
   // ── BUSINESS-SCOPED QUEUE ─────────────────────────────────────────
@@ -202,6 +204,10 @@ export class BillVerificationsService {
       resourceId: verificationId,
       metadata: { billId: verification.billId, actorRole, isOwnerAction },
     });
+
+    // Fire-and-forget summary refresh — bill is now verified so spend totals change
+    void this.analyticsSummary.refreshUserSpending(tenantId, verification.bill.userId).catch(() => {});
+    void this.analyticsSummary.refreshBusinessSummary(tenantId, verification.bill.businessId).catch(() => {});
 
     return updated;
   }

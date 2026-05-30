@@ -1553,7 +1553,7 @@ model ModerationReport {
 model AuditLog {
   id         String   @id @default(uuid()) @db.Uuid
   tenantId   String   @map("tenant_id") @db.Uuid
-  userId     String   @map("user_id") @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
   action     String   @db.VarChar(50)
   resource   String   @db.VarChar(100)
   resourceId String?  @map("resource_id") @db.Uuid
@@ -1566,7 +1566,7 @@ model AuditLog {
 
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id])
+  user   User?  @relation(fields: [userId], references: [id])
 
   @@index([tenantId])
   @@index([userId])
@@ -1995,5 +1995,90 @@ model LaunchBusinessInterest {
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("launch_business_interests")
+}
+
+// ─── Analytics Aggregation Summary Tables ───────────────────────────────────
+// Pre-aggregated summaries updated via event triggers.
+// Dashboards read from these — never from transactional tables directly.
+
+model UserSpendingSummary {
+  id                   String    @id @default(uuid()) @db.Uuid
+  userId               String    @unique @map("user_id") @db.Uuid
+  tenantId             String    @map("tenant_id") @db.Uuid
+  totalSpend           Decimal   @default(0) @map("total_spend") @db.Decimal(14, 2)
+  spendLast30Days      Decimal   @default(0) @map("spend_last_30_days") @db.Decimal(14, 2)
+  spendLast90Days      Decimal   @default(0) @map("spend_last_90_days") @db.Decimal(14, 2)
+  spendLast365Days     Decimal   @default(0) @map("spend_last_365_days") @db.Decimal(14, 2)
+  verifiedBillCount    Int       @default(0) @map("verified_bill_count")
+  offersClaimedCount   Int       @default(0) @map("offers_claimed_count")
+  offersRedeemedCount  Int       @default(0) @map("offers_redeemed_count")
+  primarySpendCategory String?   @map("primary_spend_category") @db.VarChar(100)
+  engagementScore      Float     @default(0) @map("engagement_score")
+  categoryBreakdown    Json      @default("{}") @map("category_breakdown")
+  lastActivityAt       DateTime? @map("last_activity_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([tenantId, totalSpend])
+  @@index([tenantId, engagementScore])
+  @@map("user_spending_summaries")
+}
+
+model ReferralAnalyticsSummary {
+  id                     String    @id @default(uuid()) @db.Uuid
+  entityId               String    @unique @map("entity_id") @db.Uuid
+  entityType             String    @map("entity_type") @db.VarChar(50)
+  referralCode           String    @map("referral_code") @db.VarChar(20)
+  totalReferrals         Int       @default(0) @map("total_referrals")
+  successfulReferrals    Int       @default(0) @map("successful_referrals")
+  activeReferrals        Int       @default(0) @map("active_referrals")
+  referralConversionRate Float     @default(0) @map("referral_conversion_rate")
+  lastReferralAt         DateTime? @map("last_referral_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@index([entityType, successfulReferrals])
+  @@index([referralCode])
+  @@map("referral_analytics_summaries")
+}
+
+model BusinessAnalyticsSummary {
+  id                 String    @id @default(uuid()) @db.Uuid
+  businessId         String    @unique @map("business_id") @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  customerCount      Int       @default(0) @map("customer_count")
+  newCustomers       Int       @default(0) @map("new_customers")
+  returningCustomers Int       @default(0) @map("returning_customers")
+  offerClaims        Int       @default(0) @map("offer_claims")
+  offerRedemptions   Int       @default(0) @map("offer_redemptions")
+  conversionRate     Float     @default(0) @map("conversion_rate")
+  verifiedBillCount  Int       @default(0) @map("verified_bill_count")
+  estimatedSpend     Decimal   @default(0) @map("estimated_spend") @db.Decimal(14, 2)
+  branchCount        Int       @default(0) @map("branch_count")
+  referralCount      Int       @default(0) @map("referral_count")
+  lastActivityAt     DateTime? @map("last_activity_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([tenantId, customerCount])
+  @@map("business_analytics_summaries")
+}
+
+model BranchAnalyticsSummary {
+  id                String    @id @default(uuid()) @db.Uuid
+  branchId          String    @unique @map("branch_id") @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  customerCount     Int       @default(0) @map("customer_count")
+  offerClaims       Int       @default(0) @map("offer_claims")
+  offerRedemptions  Int       @default(0) @map("offer_redemptions")
+  verifiedBillCount Int       @default(0) @map("verified_bill_count")
+  estimatedSpend    Decimal   @default(0) @map("estimated_spend") @db.Decimal(14, 2)
+  referralCount     Int       @default(0) @map("referral_count")
+  lastActivityAt    DateTime? @map("last_activity_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@map("branch_analytics_summaries")
 }
 

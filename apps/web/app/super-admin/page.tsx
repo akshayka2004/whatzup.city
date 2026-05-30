@@ -33,6 +33,7 @@ import {
   Area,
 } from 'recharts';
 import { apiService } from '@/lib/services/api-service';
+import { analyticsService } from '@/lib/services/analytics-service';
 
 export default function SuperAdminDashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -42,10 +43,10 @@ export default function SuperAdminDashboardPage() {
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      apiService.get<any>('/v1/analytics/overview'),
+      analyticsService.getOverview(),
       apiService.get<any>('/v1/trials/admin/stats'),
-    ]).then(([overviewRes, trialRes]) => {
-      if (overviewRes.data && !overviewRes.error) setOverview(overviewRes.data);
+    ]).then(([overviewData, trialRes]) => {
+      if (overviewData) setOverview(overviewData);
       if (trialRes.data && !trialRes.error) setTrialStats(trialRes.data);
     }).finally(() => setLoading(false));
   }, []);

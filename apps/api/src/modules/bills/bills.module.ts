@@ -4,6 +4,7 @@ import { BillsController } from './bills.controller';
 import { BillsService } from './bills.service';
 import { AuditModule } from '../audit/audit.module';
 import { CustomersModule } from '../customers/customers.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { CustomersModule } from '../customers/customers.module';
     }),
     AuditModule,
     CustomersModule,
+    AnalyticsModule,
   ],
   controllers: [BillsController],
   providers: [BillsService],

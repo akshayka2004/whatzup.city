@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
+import { AnalyticsSummaryService } from './analytics-summary.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -12,7 +13,10 @@ import { TrackEventDto } from './dto/track-event.dto';
 @ApiTags('Analytics')
 @Controller('analytics')
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    private readonly summaryService: AnalyticsSummaryService,
+  ) {}
 
   @Public()
   @Post('track')
@@ -69,5 +73,31 @@ export class AnalyticsController {
       businessId,
       days ? Number(days) : undefined,
     );
+  }
+
+  // ── Summary table endpoints ───────────────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Get('top-spenders')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Top spenders leaderboard from pre-aggregated summary (Admin only)' })
+  async getTopSpenders(
+    @CurrentUser('tenantId') tenantId: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.summaryService.getTopSpenders(tenantId, limit ? Number(limit) : 10);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Get('top-referrers')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Top referrers leaderboard from pre-aggregated summary (Admin only)' })
+  async getTopReferrers(
+    @Query('entityType') entityType?: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.summaryService.getTopReferrers(entityType, limit ? Number(limit) : 10);
   }
 }

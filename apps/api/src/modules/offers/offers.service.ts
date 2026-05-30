@@ -7,6 +7,7 @@ import { DatabaseService } from '../../common/database/database.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 import { PaginatedResult } from '../../common/database/pagination';
 import { BusinessCustomerService } from '../customers/business-customer.service';
+import { AnalyticsSummaryService } from '../analytics/analytics-summary.service';
 
 @Injectable()
 export class OffersService {
@@ -17,6 +18,7 @@ export class OffersService {
     private readonly tenantResolver: TenantResolverService,
     private readonly db: DatabaseService,
     private readonly businessCustomerService: BusinessCustomerService,
+    private readonly analyticsSummary: AnalyticsSummaryService,
   ) {}
 
   /**
@@ -229,6 +231,10 @@ export class OffersService {
       resource: 'OFFER',
       resourceId: id,
     });
+
+    // Fire-and-forget summary refresh
+    void this.analyticsSummary.refreshUserSpending(tenantId, userId).catch(() => {});
+    void this.analyticsSummary.refreshBusinessSummary(tenantId, redeemed.businessId).catch(() => {});
 
     return redeemed;
   }

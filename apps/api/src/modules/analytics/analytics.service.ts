@@ -1,6 +1,7 @@
 import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
+import { AnalyticsSummaryService } from './analytics-summary.service';
 
 @Injectable()
 export class AnalyticsService {
@@ -9,6 +10,7 @@ export class AnalyticsService {
   constructor(
     private readonly db: DatabaseService,
     private readonly redis: RedisService,
+    private readonly summaryService: AnalyticsSummaryService,
   ) {}
 
   /**
@@ -67,9 +69,10 @@ export class AnalyticsService {
       totalReviews,
       totalOffers,
       offerCustomerIds,
-      totalRedemptions,
-      totalClaims,
       totalComplaints,
+      // Pre-aggregated — read from summary tables (fast, no full-scan)
+      spendAgg,
+      businessSummaryAgg,
     ] = await Promise.all([
       this.db.user.count({ where: { tenantId, deletedAt: null } }),
       this.db.business.count({ where: { tenantId, deletedAt: null } }),
@@ -89,16 +92,26 @@ export class AnalyticsService {
         FROM offer_redemptions
         WHERE tenant_id = ${tenantId}::uuid AND deleted_at IS NULL
       `,
-      this.db.offerRedemption.count({ where: { tenantId, deletedAt: null } }),
-      // Total claims tracked in CRM
-      dbAny.businessCustomer
-        ? dbAny.businessCustomer.aggregate({
-            where: { tenantId, deletedAt: null },
-            _sum: { offersClaimedCount: true },
-          }).then((r: any) => r._sum?.offersClaimedCount ?? 0).catch(() => 0)
-        : Promise.resolve(0),
       this.db.moderationReport.count({ where: { tenantId } }),
+      // Aggregate spend from summary table (fast indexed scan)
+      dbAny.userSpendingSummary
+        ? dbAny.userSpendingSummary.aggregate({
+            where: { tenantId },
+            _sum: { totalSpend: true },
+          }).catch(() => ({ _sum: { totalSpend: 0 } }))
+        : Promise.resolve({ _sum: { totalSpend: 0 } }),
+      // Aggregate CRM totals from business summary table
+      dbAny.businessAnalyticsSummary
+        ? dbAny.businessAnalyticsSummary.aggregate({
+            where: { tenantId },
+            _sum: { offerClaims: true, offerRedemptions: true, verifiedBillCount: true },
+          }).catch(() => ({ _sum: { offerClaims: 0, offerRedemptions: 0, verifiedBillCount: 0 } }))
+        : Promise.resolve({ _sum: { offerClaims: 0, offerRedemptions: 0, verifiedBillCount: 0 } }),
     ]);
+
+    const totalClaims      = Number(businessSummaryAgg._sum?.offerClaims      ?? 0);
+    const totalRedemptions = Number(businessSummaryAgg._sum?.offerRedemptions  ?? 0);
+    const totalPlatformSpend = Number(spendAgg._sum?.totalSpend ?? 0);
 
     const overview = {
       totalUsers,
@@ -111,6 +124,7 @@ export class AnalyticsService {
       totalRedemptions,
       totalClaims,
       totalComplaints,
+      totalPlatformSpend,
       revenueThisMonth: 0,
       growthRate: 12.5,
     };
@@ -296,10 +310,21 @@ export class AnalyticsService {
       count: ratingDistribution.find((r) => r.rating === stars)?._count ?? 0,
     }));
 
-    const crmCustomers = (crmStats as any)._count?._all ?? 0;
-    const crmClaims = (crmStats as any)._sum?.offersClaimedCount ?? 0;
+    const crmCustomers   = (crmStats as any)._count?._all ?? 0;
+    const crmClaims      = (crmStats as any)._sum?.offersClaimedCount  ?? 0;
     const crmRedemptions = (crmStats as any)._sum?.offersRedeemedCount ?? 0;
     const redemptionRate = crmClaims > 0 ? Math.round((crmRedemptions / crmClaims) * 100) : 0;
+
+    // Overlay with pre-aggregated summary if available (more accurate, already maintained)
+    const summaryRow = await this.summaryService.getBusinessSummaryFromTable(actualId).catch(() => null);
+
+    const finalCustomerCount = summaryRow?.customerCount
+      ?? Math.max(Number((customerIds as any)[0]?.count ?? 0), crmCustomers);
+    const finalClaims        = summaryRow?.offerClaims       ?? crmClaims;
+    const finalRedemptions   = summaryRow?.offerRedemptions  ?? crmRedemptions;
+    const finalConvRate      = summaryRow
+      ? Math.round(summaryRow.conversionRate * 100)
+      : redemptionRate;
 
     const result = {
       kpis: {
@@ -310,11 +335,10 @@ export class AnalyticsService {
         totalReviews: business.totalReviews,
         teamCount,
         impressions,
-        customerCount: Math.max(Number((customerIds as any)[0]?.count ?? 0), crmCustomers),
-        // CRM-sourced metrics
-        totalClaims: crmClaims,
-        totalCrmRedemptions: crmRedemptions,
-        redemptionRate,
+        customerCount:       finalCustomerCount,
+        totalClaims:         finalClaims,
+        totalCrmRedemptions: finalRedemptions,
+        redemptionRate:      finalConvRate,
       },
       offerPerformance,
       redemptionTrend,
