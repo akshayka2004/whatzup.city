@@ -216,6 +216,9 @@ enum UserRoleEnum {
   PROFESSIONAL
   EVENT_ORGANIZER
   ORGANIZATION_ADMIN
+  NGO_ADMIN
+  COMMUNITY_ADMIN
+  NEWS_FORUM_ADMIN
   // Legacy value kept for migration compatibility
   BUSINESS_ADMIN
 }
@@ -234,6 +237,9 @@ enum EntityType {
   EVENT_ORGANIZER
   ORGANIZATION
   GOVERNMENT
+  NGO
+  COMMUNITY
+  NEWS_FORUM
 }
 
 enum EntityStatus {
@@ -1803,6 +1809,7 @@ model Entity {
   eventOrganizerProfile EventOrganizerProfile?
   organizationProfile  OrganizationProfile?
   governmentProfile    GovernmentProfile?
+  civicProfile         CivicProfile?
   onboardingProgress   OnboardingProgress[]
   onboardingEvents     OnboardingEvent[]
 
@@ -1970,6 +1977,29 @@ model GovernmentProfile {
   entity         Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
 
   @@map("government_profiles")
+}
+
+model CivicProfile {
+  id                 String    @id @default(uuid()) @db.Uuid
+  entityId           String    @unique @map("entity_id") @db.Uuid
+  organizationType   String    @map("organization_type") @db.VarChar(50)
+  organizationName   String    @map("organization_name") @db.VarChar(255)
+  contactName        String?   @map("contact_name") @db.VarChar(255)
+  registrationNumber String?   @map("registration_number") @db.VarChar(100)
+  description        String?   @db.Text
+  address            String?   @db.Text
+  district           String?   @db.VarChar(100)
+  website            String?   @db.Text
+  socialLinks        Json      @default("{}") @map("social_links")
+  logoUrl            String?   @map("logo_url") @db.Text
+  bannerUrl          String?   @map("banner_url") @db.Text
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  entity             Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@index([organizationType])
+  @@map("civic_profiles")
 }
 
 model LaunchIndividualInterest {

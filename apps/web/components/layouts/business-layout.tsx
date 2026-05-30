@@ -42,7 +42,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   // accounts are all permitted past the gate; admin/super-admin too (they
   // bypass verification check below).
   const { user, loading: authLoading } = useRequireAuth([
-    'business', 'admin', 'super-admin', 'government',
+    'business', 'admin', 'super-admin', 'government', 'civic',
     'influencer', 'professional', 'event-organizer', 'event_organizer',
     'organization', 'organization_admin', 'business_moderator', 'business_staff',
   ]);

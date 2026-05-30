@@ -35,6 +35,7 @@ function mapRbacToRole(rbac: string): string {
   if (rbac === 'MASTER_ADMIN' || rbac === 'PORTAL_ADMIN') return 'admin';
   if (rbac === 'SUPER_ADMIN') return 'super-admin';
   if (rbac === 'GOVERNMENT_ADMIN') return 'government';
+  if (['NGO_ADMIN', 'COMMUNITY_ADMIN', 'NEWS_FORUM_ADMIN'].includes(rbac)) return 'civic';
   return rbac.toLowerCase();
 }
 

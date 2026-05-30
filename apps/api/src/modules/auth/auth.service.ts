@@ -26,6 +26,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { BusinessSignupDto } from './dto/business-signup.dto';
+import { CivicSignupDto } from './dto/civic-signup.dto';
 import { UserRoleEnum, EntityType } from '@prisma/client';
 import { SelectRoleDto } from './dto/select-role.dto';
 
@@ -695,6 +696,7 @@ export class AuthService {
             eventOrganizerProfile: true,
             organizationProfile: true,
             governmentProfile: true,
+            civicProfile: true,
             business: true,
           },
           orderBy: { createdAt: 'desc' },
@@ -782,6 +784,7 @@ export class AuthService {
                  activeEntity.eventOrganizerProfile ||
                  activeEntity.organizationProfile ||
                  activeEntity.governmentProfile ||
+                 (activeEntity as any).civicProfile ||
                  activeEntity.business ||
                  null,
       } : null,
@@ -1589,6 +1592,152 @@ export class AuthService {
       const tokens = await this.generateTokens(result);
       return tokens;
     }
+  }
+
+  // ── NGO / Community / News Forum signup ─────────────────────────────────
+
+  async civicSignup(dto: CivicSignupDto) {
+    if (!this.passwordService.isStrongPassword(dto.password)) {
+      throw new BadRequestException(
+        'Password is too weak. Must contain uppercase, lowercase, numbers, and special characters.',
+      );
+    }
+
+    const emailNormalized = dto.email.toLowerCase().trim();
+
+    const existingUser = await this.db.user.findFirst({
+      where: { email: emailNormalized, deletedAt: null },
+      select: { id: true },
+    });
+    if (existingUser) {
+      throw new ConflictException('Email already registered');
+    }
+
+    // Use the default platform tenant (same as government/customer signups)
+    const defaultTenant = await this.db.tenant.findFirst({ select: { id: true } });
+    if (!defaultTenant) {
+      throw new BadRequestException('No tenant configured. Contact support.');
+    }
+
+    // Role + EntityType mapping
+    const roleMap: Record<string, UserRoleEnum> = {
+      NGO: UserRoleEnum.NGO_ADMIN,
+      COMMUNITY: UserRoleEnum.COMMUNITY_ADMIN,
+      NEWS_FORUM: UserRoleEnum.NEWS_FORUM_ADMIN,
+    };
+    const entityTypeMap: Record<string, EntityType> = {
+      NGO: 'NGO',
+      COMMUNITY: 'COMMUNITY',
+      NEWS_FORUM: 'NEWS_FORUM',
+    };
+
+    const assignedRole = roleMap[dto.organizationType] ?? UserRoleEnum.NGO_ADMIN;
+    const entityType   = entityTypeMap[dto.organizationType] ?? 'NGO';
+
+    const passwordHash  = await this.passwordService.hash(dto.password);
+    const referralCode  = Math.random().toString(36).slice(2, 10).toUpperCase();
+
+    // Resolve referrer if a code was supplied
+    let referrerId: string | undefined;
+    if (dto.referralCode) {
+      const referrer = await this.db.user.findFirst({
+        where: { referralCode: dto.referralCode, deletedAt: null },
+        select: { id: true },
+      });
+      if (referrer) referrerId = referrer.id;
+    }
+
+    const { user, entity } = await this.db.$transaction(
+      async (tx) => {
+        const userRecord = await tx.user.create({
+          data: {
+            tenantId: defaultTenant.id,
+            email: emailNormalized,
+            passwordHash,
+            name: dto.contactName,
+            phone: dto.phone,
+            role: assignedRole,
+            emailVerified: true,
+            isActive: true,
+            referralCode,
+            ...(referrerId ? { referredBy: referrerId } : {}),
+            ...(dto.acceptedTerms ? { acceptedTermsAt: new Date(), termsVersion: '1.0' } : {}),
+            ...(dto.acceptedPrivacyPolicy ? { acceptedPrivacyAt: new Date(), privacyPolicyVersion: '1.0' } : {}),
+          },
+        });
+
+        const entityRecord = await tx.entity.create({
+          data: {
+            tenantId: defaultTenant.id,
+            userId: userRecord.id,
+            type: entityType,
+            status: 'PENDING_VERIFICATION',
+            name: dto.organizationName,
+            email: emailNormalized,
+            phone: dto.phone,
+          },
+        });
+
+        // Civic-specific profile
+        await (tx as any).civicProfile.create({
+          data: {
+            entityId: entityRecord.id,
+            organizationType: dto.organizationType,
+            organizationName: dto.organizationName,
+            contactName: dto.contactName,
+            description: dto.description ?? null,
+            address: dto.address ?? null,
+            district: dto.district ?? 'Thiruvananthapuram',
+            website: dto.website ?? null,
+          },
+        });
+
+        // Put in admin verification queue
+        await tx.verificationRequest.create({
+          data: {
+            tenantId: defaultTenant.id,
+            entityId: entityRecord.id,
+            status: 'PENDING',
+          },
+        });
+
+        // Onboarding progress
+        await tx.onboardingProgress.create({
+          data: {
+            tenantId: defaultTenant.id,
+            entityType,
+            entityId: entityRecord.id,
+            currentStep: 1,
+            status: 'PENDING_VERIFICATION',
+            stepsCompleted: ['SIGNUP'],
+            metadata: { organizationType: dto.organizationType },
+          },
+        });
+
+        // Audit log
+        await tx.auditLog.create({
+          data: {
+            tenantId: defaultTenant.id,
+            userId: userRecord.id,
+            action: 'CIVIC_SIGNUP',
+            resource: entityType,
+            resourceId: entityRecord.id,
+            metadata: { organizationType: dto.organizationType, email: emailNormalized },
+          },
+        });
+
+        return { user: userRecord, entity: entityRecord };
+      },
+      { maxWait: 10000, timeout: 30000 },
+    );
+
+    const tokens = await this.generateTokens(user);
+
+    return {
+      ...tokens,
+      entityId: entity.id,
+      message: 'Organisation account created. Pending admin verification.',
+    };
   }
 
   async getTenantBySlug(slug: string) {

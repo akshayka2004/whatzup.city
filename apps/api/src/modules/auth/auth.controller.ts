@@ -27,6 +27,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { BusinessSignupDto } from './dto/business-signup.dto';
+import { CivicSignupDto } from './dto/civic-signup.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
 import { ConfigService } from '@nestjs/config';
 
@@ -210,6 +211,18 @@ export class AuthController {
   @ApiOperation({ summary: 'Verify email address with verification token' })
   async verifyEmail(@Body() dto: VerifyEmailDto) {
     return this.authService.verifyEmail(dto);
+  }
+
+  @Public()
+  @Post('civic/signup')
+  @ApiOperation({ summary: 'Register NGO / Community / News Forum account' })
+  async civicSignup(
+    @Body() dto: CivicSignupDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.civicSignup(dto);
+    this.setCookies(res, result.accessToken, result.refreshToken);
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)

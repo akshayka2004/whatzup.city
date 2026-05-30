@@ -62,6 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (u.role === 'government' || u.rbacRole === 'GOVERNMENT_ADMIN') {
       return '/government/dashboard';
     }
+    if (
+      u.role === 'civic' ||
+      ['NGO_ADMIN', 'COMMUNITY_ADMIN', 'NEWS_FORUM_ADMIN'].includes(u.rbacRole || '')
+    ) {
+      return '/civic/dashboard';
+    }
     
     // Check for Business and other specialized entity roles
     const isBusinessOrEntity = 
@@ -82,7 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         'INFLUENCER',
         'PROFESSIONAL',
         'EVENT_ORGANIZER',
-        'ORGANIZATION_ADMIN'
+        'ORGANIZATION_ADMIN',
+        'NGO_ADMIN',
+        'COMMUNITY_ADMIN',
+        'NEWS_FORUM_ADMIN',
       ].includes(u.rbacRole || '');
 
     if (isBusinessOrEntity) {

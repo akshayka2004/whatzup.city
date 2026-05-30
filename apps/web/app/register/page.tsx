@@ -32,9 +32,13 @@ import {
   FileCheck,
   MapPin,
   Layers,
+  Heart,
+  Users,
+  Newspaper,
 } from 'lucide-react';
 
-type RegisterRole = 'CUSTOMER' | 'BUSINESS' | 'GOVERNMENT';
+type RegisterRole = 'CUSTOMER' | 'BUSINESS' | 'GOVERNMENT' | 'NGO_COMMUNITY';
+type CivicOrgType = 'NGO' | 'COMMUNITY' | 'NEWS_FORUM';
 
 const KERALA_DISTRICTS = [
   'Thiruvananthapuram',
@@ -192,6 +196,10 @@ export default function UnifiedRegisterPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
 
+  // Civic-specific fields
+  const [civicOrgType, setCivicOrgType] = useState<CivicOrgType>('NGO');
+  const [organizationName, setOrganizationName] = useState('');
+
   const [tenantId, setTenantId] = useState('');
   const [businessId, setBusinessId] = useState('');
 
@@ -290,6 +298,41 @@ export default function UnifiedRegisterPage() {
 
         setSuccess('Business account created! Complete your profile below to submit for verification.');
         setCurrentStep(3);
+      } else if (role === 'NGO_COMMUNITY') {
+        // Civic signup — NGO / Community / News Forum
+        if (!organizationName.trim()) {
+          setError('Organisation name is required.');
+          setLoading(false);
+          return;
+        }
+
+        const res = await apiService.post<any>('/v1/auth/civic/signup', {
+          organizationType: civicOrgType,
+          organizationName: organizationName.trim(),
+          contactName: name,
+          email,
+          phone,
+          password,
+          ...(referralCode.trim() ? { referralCode: referralCode.trim() } : {}),
+          acceptedTerms,
+          acceptedPrivacyPolicy: acceptedPrivacy,
+        });
+
+        if (res.error || !res.data) {
+          setError(res.error || 'Registration failed. Please try again.');
+          return;
+        }
+
+        const refreshedUser = await refreshUser();
+        if (!refreshedUser) {
+          setError('Account created but session could not be established. Please log in manually.');
+          setTimeout(() => router.push('/login'), 2000);
+          return;
+        }
+
+        setSuccess('Organisation registered! Redirecting to your dashboard...');
+        setTimeout(() => router.push('/civic/dashboard'), 1500);
+
       } else {
         // Customer / Government signup — tenantId auto-resolved by API
         const res = await apiService.post<any>('/v1/auth/signup', {
@@ -616,7 +659,7 @@ export default function UnifiedRegisterPage() {
         {/* Form Card */}
         <Card className="backdrop-blur-xl p-6 md:p-8 rounded-2xl shadow-2xl relative overflow-hidden"
               >
-          
+
           {/* STEP 1: Account Type Selection */}
           {currentStep === 1 && (
             <div className="space-y-6">
@@ -627,7 +670,7 @@ export default function UnifiedRegisterPage() {
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {[
                   {
                     type: 'CUSTOMER',
@@ -653,6 +696,14 @@ export default function UnifiedRegisterPage() {
                     color: 'from-amber-600/20 to-amber-500/5 hover:border-amber-500/50',
                     iconColor: 'text-amber-400',
                   },
+                  {
+                    type: 'NGO_COMMUNITY',
+                    title: 'NGO / Community',
+                    description: 'Register NGOs, community groups, and news forums. Publish notices and alerts.',
+                    icon: Heart,
+                    color: 'from-rose-600/20 to-rose-500/5 hover:border-rose-500/50',
+                    iconColor: 'text-rose-400',
+                  },
                 ].map((item) => {
                   const Icon = item.icon;
                   const isSelected = role === item.type;
@@ -661,28 +712,57 @@ export default function UnifiedRegisterPage() {
                       key={item.type}
                       type="button"
                       onClick={() => setRole(item.type as RegisterRole)}
-                      className={`p-6 rounded-2xl border text-left bg-gradient-to-b ${item.color} transition cursor-pointer flex flex-col gap-4 relative ${
+                      className={`p-4 sm:p-5 rounded-2xl border text-left bg-gradient-to-b ${item.color} transition cursor-pointer flex flex-col gap-3 relative ${
                         isSelected ? 'border-white scale-[1.02] shadow-xl' : 'border-border'
                       }`}
                     >
                       <div className="flex justify-between items-start">
-                        <div className={`p-3 rounded-xl bg-background`}>
-                          <Icon className={`h-6 w-6 ${item.iconColor}`} />
+                        <div className="p-2.5 rounded-xl bg-background">
+                          <Icon className={`h-5 w-5 ${item.iconColor}`} />
                         </div>
                         {isSelected && (
                           <span className="p-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
-                            <CheckCircle className="h-4 w-4" />
+                            <CheckCircle className="h-3.5 w-3.5" />
                           </span>
                         )}
                       </div>
                       <div>
-                        <h3 className="font-bold text-foreground mb-1">{item.title}</h3>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
+                        <h3 className="font-bold text-foreground mb-1 text-sm">{item.title}</h3>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">{item.description}</p>
                       </div>
                     </button>
                   );
                 })}
               </div>
+
+              {/* Civic org sub-type selector */}
+              {role === 'NGO_COMMUNITY' && (
+                <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/20 space-y-3">
+                  <p className="text-xs font-semibold text-rose-400">Select Organisation Type</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: 'NGO', label: 'NGO', icon: Heart, desc: 'Non-Governmental' },
+                      { value: 'COMMUNITY', label: 'Community', icon: Users, desc: 'Community Group' },
+                      { value: 'NEWS_FORUM', label: 'News Forum', icon: Newspaper, desc: 'Media / Press' },
+                    ].map(({ value, label, icon: OIcon, desc }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setCivicOrgType(value as CivicOrgType)}
+                        className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1.5 cursor-pointer transition ${
+                          civicOrgType === value
+                            ? 'border-rose-400/60 bg-rose-500/10 text-rose-400'
+                            : 'border-border text-muted-foreground hover:border-rose-500/30'
+                        }`}
+                      >
+                        <OIcon className="h-4 w-4" />
+                        <span className="text-[11px] font-semibold">{label}</span>
+                        <span className="text-[9px] opacity-60">{desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-between pt-4 border-t border-border">
                 <Link href="/login" className="text-muted-foreground hover:text-foreground text-sm font-semibold flex items-center gap-1.5">
@@ -691,7 +771,7 @@ export default function UnifiedRegisterPage() {
 
                 <Button
                   onClick={() => setCurrentStep(2)}
-                  className="rounded-xl h-11 px-6 font-semibold text-[#D3DAD9] hover:opacity-90 transition-opacity" 
+                  className="rounded-xl h-11 px-6 font-semibold text-[#D3DAD9] hover:opacity-90 transition-opacity"
                 >
                   Continue <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Button>
@@ -713,7 +793,7 @@ export default function UnifiedRegisterPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-muted-foreground">
-                      {role === 'BUSINESS' ? 'Owner Full Name' : role === 'GOVERNMENT' ? 'Department Official Name' : 'Full Name'}
+                      {role === 'BUSINESS' ? 'Owner Full Name' : role === 'GOVERNMENT' ? 'Department Official Name' : role === 'NGO_COMMUNITY' ? 'Contact Person Name' : 'Full Name'}
                     </label>
                     <div className="relative">
                       <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -806,6 +886,32 @@ export default function UnifiedRegisterPage() {
                       <p className={hasLowercase ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one lowercase letter</p>
                       <p className={hasDigit ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one number digit</p>
                       <p className={hasSpecialChar ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one special character</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* CIVIC Additional Fields */}
+                {role === 'NGO_COMMUNITY' && (
+                  <div className="space-y-4 pt-3 border-t border-border">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        {civicOrgType === 'NGO' ? 'NGO Name' : civicOrgType === 'COMMUNITY' ? 'Community Name' : 'Forum / Publication Name'}
+                      </label>
+                      <div className="relative">
+                        <Heart className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="text"
+                          placeholder={
+                            civicOrgType === 'NGO' ? 'e.g. Kerala Welfare Foundation' :
+                            civicOrgType === 'COMMUNITY' ? 'e.g. Trivandrum Residents Forum' :
+                            'e.g. Kerala Times Digital'
+                          }
+                          value={organizationName}
+                          onChange={(e) => setOrganizationName(e.target.value)}
+                          className="pl-10 h-11 bg-background border-input text-sm text-foreground rounded-xl"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -950,7 +1056,7 @@ export default function UnifiedRegisterPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 text-[#D3DAD9] hover:opacity-90 transition-opacity" 
+                  className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 text-[#D3DAD9] hover:opacity-90 transition-opacity"
                 >
                   {loading ? (
                     <>
@@ -1104,7 +1210,7 @@ export default function UnifiedRegisterPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition text-[#D3DAD9]" 
+                  className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition text-[#D3DAD9]"
                 >
                   {loading ? (
                     <>
