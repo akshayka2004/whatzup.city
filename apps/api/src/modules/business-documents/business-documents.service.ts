@@ -66,19 +66,41 @@ export class BusinessDocumentsService {
 
     const dbUrl = JSON.stringify({ bucket: 'verification-documents', path: fileKey });
 
-    // Save PENDING document record to DB
-    const document = await this.db.businessDocument.create({
-      data: {
+    // Idempotent: re-uploading the same document type updates the existing row
+    // (and re-points it at the new file) instead of hitting the unique
+    // constraint (tenantId, businessId, documentType, documentNumber).
+    const existing = await this.db.businessDocument.findFirst({
+      where: {
         tenantId,
         businessId,
         documentType: dto.documentType,
-        fileUrl: dbUrl,
-        status: 'PENDING',
-        documentNumber: dto.documentNumber,
-        issuedAuthority: dto.issuedAuthority,
-        expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
+        documentNumber: dto.documentNumber ?? null,
+        deletedAt: null,
       },
     });
+
+    const document = existing
+      ? await this.db.businessDocument.update({
+          where: { id: existing.id },
+          data: {
+            fileUrl: dbUrl,
+            status: 'PENDING',
+            issuedAuthority: dto.issuedAuthority,
+            expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
+          },
+        })
+      : await this.db.businessDocument.create({
+          data: {
+            tenantId,
+            businessId,
+            documentType: dto.documentType,
+            fileUrl: dbUrl,
+            status: 'PENDING',
+            documentNumber: dto.documentNumber,
+            issuedAuthority: dto.issuedAuthority,
+            expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
+          },
+        });
 
     await this.audit.log({
       tenantId,
@@ -90,90 +112,6 @@ export class BusinessDocumentsService {
     });
 
     return { uploadUrl, fileKey, documentId: document.id };
-  }
-
-  /**
-   * Server-side upload: receives the raw file (multipart), pushes it straight
-   * to Supabase via the service role, and records a PENDING BusinessDocument.
-   * Bypasses fragile browser→Supabase signed-URL PUTs and guarantees the file
-   * lands in the verification-documents bucket.
-   */
-  async uploadDocumentDirect(
-    userId: string,
-    tenantId: string,
-    businessId: string,
-    file: { originalname?: string; buffer?: Buffer; mimetype?: string; size?: number } | undefined,
-    meta: { documentType: string; documentNumber?: string; issuedAuthority?: string },
-  ) {
-    if (!file || !file.buffer) {
-      throw new BadRequestException('No file was provided in the upload.');
-    }
-
-    const business = await this.db.business.findFirst({
-      where: { id: businessId, tenantId },
-    });
-    if (!business) throw new NotFoundException('Business not found');
-    if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
-
-    const mimeType = file.mimetype || 'application/octet-stream';
-    const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-    this.storageService.validateMimeType(mimeType, allowedMimeTypes);
-    this.storageService.validateFileSize(file.size || file.buffer.length, 10 * 1024 * 1024);
-
-    const fileKey = this.storageService.generateStoragePath(
-      tenantId,
-      businessId,
-      'document',
-      file.originalname || 'document.pdf',
-    );
-
-    // Upload straight to the private verification-documents bucket.
-    const { bucket, path } = await this.storageService.uploadPrivateFile(
-      'verification-documents',
-      fileKey,
-      file.buffer,
-      mimeType,
-    );
-
-    const dbUrl = JSON.stringify({ bucket, path });
-
-    // Upsert-style: avoid unique-constraint clash on re-upload of same type.
-    const existing = await this.db.businessDocument.findFirst({
-      where: { tenantId, businessId, documentType: meta.documentType, deletedAt: null },
-    });
-
-    const document = existing
-      ? await this.db.businessDocument.update({
-          where: { id: existing.id },
-          data: {
-            fileUrl: dbUrl,
-            status: 'PENDING',
-            documentNumber: meta.documentNumber,
-            issuedAuthority: meta.issuedAuthority,
-          },
-        })
-      : await this.db.businessDocument.create({
-          data: {
-            tenantId,
-            businessId,
-            documentType: meta.documentType,
-            fileUrl: dbUrl,
-            status: 'PENDING',
-            documentNumber: meta.documentNumber,
-            issuedAuthority: meta.issuedAuthority,
-          },
-        });
-
-    await this.audit.log({
-      tenantId,
-      userId,
-      action: 'DOCUMENT_UPLOAD',
-      resource: 'BUSINESS_DOCUMENT',
-      resourceId: document.id,
-      metadata: { documentType: meta.documentType, fileKey },
-    });
-
-    return { documentId: document.id, bucket, path, status: 'PENDING' };
   }
 
   async getBusinessDocuments(userId: string, tenantId: string, businessId: string) {

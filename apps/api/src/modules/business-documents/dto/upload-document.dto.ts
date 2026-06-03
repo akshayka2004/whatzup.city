@@ -1,6 +1,9 @@
-import { IsEnum, IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+// Reference list of common document types. Kept for documentation; the field
+// accepts any non-empty label so registration flows (REGISTRATION_CERTIFICATE,
+// TAX_DOCUMENT, UTILITY_BILL, …) are not rejected. Stored as free text.
 export enum BusinessDocumentType {
   GST_CERTIFICATE = 'GST_CERTIFICATE',
   TRADE_LICENSE = 'TRADE_LICENSE',
@@ -11,10 +14,10 @@ export enum BusinessDocumentType {
 }
 
 export class UploadDocumentDto {
-  @ApiProperty({ example: 'GST_CERTIFICATE', description: 'Type of document being uploaded' })
-  @IsEnum(BusinessDocumentType)
+  @ApiProperty({ example: 'BUSINESS_REGISTRATION_PROOF', description: 'Type/label of document' })
+  @IsString()
   @IsNotEmpty()
-  documentType!: BusinessDocumentType;
+  documentType!: string;
 
   @ApiProperty({ example: 'gst-cert.pdf', description: 'Original filename' })
   @IsString()

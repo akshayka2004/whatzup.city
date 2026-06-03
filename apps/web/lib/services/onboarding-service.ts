@@ -110,22 +110,61 @@ class OnboardingService {
   }
 
   /**
-   * Server-side document upload — sends the raw file to the API which stores it
-   * in the verification-documents bucket and records a BusinessDocument. This
-   * is the reliable path (no browser→Supabase signed-URL PUT, no bucket guess).
+   * Verification document upload. The API issues a Supabase signed upload URL
+   * and records a PENDING BusinessDocument; the raw file is then PUT DIRECTLY to
+   * Supabase (absolute URL), bypassing the Next.js proxy so the bytes are never
+   * re-encoded or corrupted. Uses the exact multipart shape Supabase's
+   * signed-upload endpoint expects (field '' = file, plus cacheControl).
    */
   async uploadBusinessDocument(
     businessId: string,
     file: File,
     documentType: string = 'REGISTRATION_CERTIFICATE',
     extra?: { documentNumber?: string; issuedAuthority?: string },
-  ): Promise<ApiResponse<{ documentId: string; bucket: string; path: string; status: string }>> {
-    const form = new FormData();
-    form.append('file', file);
-    form.append('documentType', documentType);
-    if (extra?.documentNumber) form.append('documentNumber', extra.documentNumber);
-    if (extra?.issuedAuthority) form.append('issuedAuthority', extra.issuedAuthority);
-    return apiService.upload(`/v1/businesses/${businessId}/documents/upload`, form);
+  ): Promise<ApiResponse<{ documentId: string }>> {
+    // 1. Signed URL + PENDING record (small JSON call through the API).
+    const presign = await this.getBusinessDocumentUploadUrl(businessId, {
+      documentType,
+      filename: file.name,
+      mimeType: file.type,
+      documentNumber: extra?.documentNumber,
+      issuedAuthority: extra?.issuedAuthority,
+    });
+    if (!presign.data || presign.error) {
+      return {
+        data: null as any,
+        error: presign.error || 'Failed to create upload URL',
+        status: presign.status,
+      };
+    }
+
+    // 2. Upload raw bytes straight to Supabase — no proxy, no compression.
+    try {
+      const form = new FormData();
+      form.append('cacheControl', '3600');
+      form.append('', file);
+      const res = await fetch(presign.data.uploadUrl, {
+        method: 'PUT',
+        headers: { 'x-upsert': 'true' },
+        body: form,
+      });
+      if (!res.ok) {
+        let msg = `Upload failed (HTTP ${res.status})`;
+        try {
+          const b = await res.json();
+          msg = b.message || b.error || msg;
+        } catch {}
+        return { data: null as any, error: msg, status: res.status };
+      }
+    } catch (e) {
+      return {
+        data: null as any,
+        error: e instanceof Error ? e.message : 'Upload failed',
+        status: 0,
+      };
+    }
+
+    return { data: { documentId: presign.data.documentId }, error: null, status: 200 };
   }
 
   async uploadFile(uploadUrl: string, file: File): Promise<boolean> {
