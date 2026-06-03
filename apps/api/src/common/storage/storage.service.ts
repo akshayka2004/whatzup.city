@@ -5,14 +5,23 @@ import {
   BadRequestException,
   InternalServerErrorException,
   ServiceUnavailableException,
+  OnApplicationBootstrap,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../supabase/supabase.client';
 import { RedisService } from '../redis/redis.service';
 
+// Buckets the platform relies on. Missing buckets are auto-created on boot so
+// uploads never silently fail with "Bucket not found".
+const REQUIRED_BUCKETS: { name: string; public: boolean }[] = [
+  { name: 'verification-documents', public: false },
+  { name: 'business-media', public: true },
+  { name: 'civic', public: true },
+];
+
 @Injectable()
-export class StorageService {
+export class StorageService implements OnApplicationBootstrap {
   private readonly logger = new Logger(StorageService.name);
   private readonly supabaseUrl: string;
 
@@ -22,6 +31,38 @@ export class StorageService {
     private readonly redis: RedisService,
   ) {
     this.supabaseUrl = this.config.get<string>('SUPABASE_URL', '').replace(/\/$/, '');
+  }
+
+  /**
+   * Ensure every required storage bucket exists. Best-effort and non-fatal —
+   * logs and continues so a transient Supabase error never blocks API startup.
+   */
+  async onApplicationBootstrap(): Promise<void> {
+    if (!this.supabaseClient) {
+      this.logger.warn('Supabase client not configured — skipping bucket bootstrap.');
+      return;
+    }
+    try {
+      const { data: existing, error } = await this.supabaseClient.storage.listBuckets();
+      if (error) {
+        this.logger.warn(`Could not list storage buckets: ${error.message}`);
+        return;
+      }
+      const existingNames = new Set((existing || []).map((b) => b.name));
+      for (const bucket of REQUIRED_BUCKETS) {
+        if (existingNames.has(bucket.name)) continue;
+        const { error: createErr } = await this.supabaseClient.storage.createBucket(bucket.name, {
+          public: bucket.public,
+        });
+        if (createErr) {
+          this.logger.warn(`Failed to create bucket "${bucket.name}": ${createErr.message}`);
+        } else {
+          this.logger.log(`Created missing storage bucket "${bucket.name}" (public=${bucket.public}).`);
+        }
+      }
+    } catch (err: any) {
+      this.logger.warn(`Bucket bootstrap skipped due to error: ${err.message}`);
+    }
   }
 
   private ensureClient(): void {

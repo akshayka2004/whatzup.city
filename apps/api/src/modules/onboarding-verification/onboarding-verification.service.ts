@@ -3,6 +3,7 @@ import { DatabaseService } from '../../common/database/database.service';
 import { SearchService } from '../search/search.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService, NotificationPriority } from '../notifications/notifications.service';
+import { StorageService } from '../../common/storage/storage.service';
 import { ApproveOnboardingDto, RejectOnboardingDto } from './dto/verification-action.dto';
 import { EntityType } from '@prisma/client';
 
@@ -15,7 +16,63 @@ export class OnboardingVerificationService {
     private readonly searchService: SearchService,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
+    private readonly storage: StorageService,
   ) {}
+
+  /**
+   * Normalize a document row (UploadedDocument or BusinessDocument) into the
+   * shape the admin review UI expects. Converts a stored {bucket,path} JSON
+   * fileUrl into a short-lived signed download URL so the file is viewable.
+   */
+  private async normalizeDocument(doc: any): Promise<any> {
+    let fileUrl: string = doc.fileUrl || '#';
+    let name: string = doc.documentType || 'Document';
+    try {
+      if (typeof fileUrl === 'string' && fileUrl.startsWith('{')) {
+        const parsed = JSON.parse(fileUrl);
+        if (parsed?.bucket && parsed?.path) {
+          name = String(parsed.path).split('/').pop() || name;
+          // 10-minute signed URL — long enough for admin review session.
+          fileUrl = await this.storage.createSignedDownloadUrl(parsed.bucket, parsed.path, 600);
+        }
+      }
+    } catch (err: any) {
+      this.logger.warn(`Failed to sign document ${doc.id}: ${err.message}`);
+      fileUrl = '#';
+    }
+    return {
+      id: doc.id,
+      name,
+      documentType: doc.documentType,
+      documentNumber: doc.documentNumber ?? null,
+      issuedAuthority: doc.issuedAuthority ?? null,
+      status: doc.status,
+      fileUrl,
+    };
+  }
+
+  /**
+   * Merge entity-level UploadedDocuments and business-level BusinessDocuments
+   * into a single signed `entity.documents` array for the review panel.
+   * Business onboarding stores verification files in BusinessDocument (keyed by
+   * businessId), which the entity.documents include alone would miss.
+   */
+  private async attachDocuments(req: any): Promise<any> {
+    if (!req.entity) return req;
+    const rawDocs: any[] = [...(req.entity.documents || [])];
+
+    const businessId = req.entity.business?.id;
+    if (businessId) {
+      const bizDocs = await this.db.businessDocument.findMany({
+        where: { businessId, deletedAt: null },
+        orderBy: { createdAt: 'asc' },
+      });
+      rawDocs.push(...bizDocs);
+    }
+
+    const documents = await Promise.all(rawDocs.map((d) => this.normalizeDocument(d)));
+    return { ...req, entity: { ...req.entity, documents } };
+  }
 
   async getPending(
     tenantId: string,
@@ -107,8 +164,12 @@ export class OnboardingVerificationService {
       });
     }
 
+    // Enrich each request with merged + signed document URLs (entity-level
+    // UploadedDocuments + business-level BusinessDocuments).
+    const enriched = await Promise.all(finalData.map((req: any) => this.attachDocuments(req)));
+
     return {
-      data: finalData,
+      data: enriched,
       meta: {
         total,
         page,
@@ -171,6 +232,12 @@ export class OnboardingVerificationService {
             isVerified: true,
             verifiedAt: now,
           },
+        });
+
+        // Mark this business's verification documents approved
+        await this.db.businessDocument.updateMany({
+          where: { businessId: business.id, status: 'PENDING' },
+          data: { status: 'APPROVED' },
         });
 
         // Sync to Search index
@@ -290,6 +357,12 @@ export class OnboardingVerificationService {
         await this.db.business.update({
           where: { id: business.id },
           data: { status: 'REJECTED' },
+        });
+
+        // Mark this business's verification documents rejected
+        await this.db.businessDocument.updateMany({
+          where: { businessId: business.id, status: 'PENDING' },
+          data: { status: 'REJECTED', rejectionReason: dto.reason },
         });
 
         // Remove from index if exists

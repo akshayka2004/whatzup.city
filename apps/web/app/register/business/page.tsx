@@ -47,6 +47,7 @@ function RegisterBusinessWizardContent() {
 
   // Step 3 Contact & Location States
   // City/state locked to Thiruvananthapuram for Release 1
+  const [ownerName, setOwnerName] = useState('');
   const [address, setAddress] = useState('');
   const city = 'Thiruvananthapuram';
   const state = 'Kerala';
@@ -89,6 +90,7 @@ function RegisterBusinessWizardContent() {
           const draft = response.data.business;
           setBusinessDraft(draft);
           setDescription(draft.description || '');
+          setOwnerName(draft.ownerName || '');
           setAddress(draft.address || '');
           // city/state are locked to Thiruvananthapuram/Kerala for Release 1
           setPostalCode(draft.zipCode || '');
@@ -171,6 +173,7 @@ function RegisterBusinessWizardContent() {
 
     try {
       const response = await onboardingService.updateStep(businessId, 3, {
+        ownerName,
         address,
         city,
         state,
@@ -538,6 +541,17 @@ function RegisterBusinessWizardContent() {
               </div>
 
               <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">Owner Name</label>
+                  <Input
+                    placeholder="e.g. Priya Menon"
+                    value={ownerName}
+                    onChange={(e) => setOwnerName(e.target.value)}
+                    className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
+                    required
+                  />
+                </div>
+
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-muted-foreground">Street Address</label>
                   <Input

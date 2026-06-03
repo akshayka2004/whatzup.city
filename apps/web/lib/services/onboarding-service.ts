@@ -16,6 +16,7 @@ export interface BusinessDraft {
   name: string;
   slug: string;
   description: string;
+  ownerName?: string;
   address: string;
   city: string;
   state: string;
