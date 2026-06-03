@@ -138,15 +138,19 @@ class OnboardingService {
       };
     }
 
-    // 2. Upload raw bytes straight to Supabase — no proxy, no compression.
+    // 2. Upload the raw file bytes straight to Supabase — no proxy, no multipart
+    //    envelope, no compression. The body is the File itself and Content-Type
+    //    is set explicitly so the stored object keeps its real type (e.g.
+    //    application/pdf) and renders inline in the admin viewer.
     try {
-      const form = new FormData();
-      form.append('cacheControl', '3600');
-      form.append('', file);
       const res = await fetch(presign.data.uploadUrl, {
         method: 'PUT',
-        headers: { 'x-upsert': 'true' },
-        body: form,
+        headers: {
+          'content-type': file.type || 'application/octet-stream',
+          'cache-control': 'max-age=3600',
+          'x-upsert': 'true',
+        },
+        body: file,
       });
       if (!res.ok) {
         let msg = `Upload failed (HTTP ${res.status})`;
