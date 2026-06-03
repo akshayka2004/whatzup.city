@@ -171,6 +171,32 @@ const CATEGORIES = [
       { slug: 'provision_store', label: 'Provision Store' },
     ],
   },
+  // ── Iteration 2: Business Category & Discovery Expansion ──
+  // Additive only. Standardized names: "Salons" (not Saloons),
+  // "Diagnostic Centers" (not Diagnosis Centers), "Home Care Services".
+  {
+    slug: 'personal_care',
+    label: 'Personal Care',
+    subcategories: [
+      { slug: 'salons', label: 'Salons' },
+    ],
+  },
+  {
+    slug: 'retail_gifts',
+    label: 'Retail & Gifts',
+    subcategories: [
+      { slug: 'gift_shops', label: 'Gift Shops' },
+    ],
+  },
+  {
+    slug: 'automotive_services',
+    label: 'Automotive Services',
+    subcategories: [
+      { slug: 'tyre_shops', label: 'Tyre Shops' },
+      { slug: 'puncture_repair_shops', label: 'Puncture Repair Shops' },
+      { slug: 'mobile_puncture_services', label: 'Mobile Puncture Services' },
+    ],
+  },
 ];
 
 export default function UnifiedRegisterPage() {

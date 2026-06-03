@@ -5,9 +5,61 @@ import { TypesenseService } from '../typesense/typesense.service';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 
+// ── Iteration 2: search synonym groups ──────────────────────
+// Additive query expansion so colloquial/variant spellings resolve to the
+// canonical category & subcategory taxonomy. Each group is a set of equivalent
+// terms; if a query matches any member, the remaining members are appended to
+// the search query (Typesense) and OR-clauses (Postgres fallback). Never
+// restricts results — only broadens them.
+const SEARCH_SYNONYM_GROUPS: string[][] = [
+  ['salon', 'salons', 'saloon', 'saloons', 'beauty parlour', 'beauty parlor', 'parlour'],
+  ['gift shop', 'gift shops', 'gift store', 'gift stores', 'gifts', 'gift'],
+  ['tyre', 'tyres', 'tire', 'tires', 'tyre shop', 'tire shop'],
+  ['puncture', 'puncture repair', 'flat tyre', 'mobile puncture', 'puncture service'],
+  [
+    'diagnostic center',
+    'diagnostic centre',
+    'diagnostic centers',
+    'diagnostics center',
+    'diagnostics centers',
+    'diagnostic',
+    'diagnostics',
+    'diagnostic lab',
+    'diagnostic labs',
+  ],
+  [
+    'home care',
+    'home care services',
+    'home healthcare',
+    'home health',
+    'home health care',
+    'home nursing',
+  ],
+  ['resort', 'resorts'],
+  ['hotel', 'hotels'],
+  ['venue', 'venues', 'venue spots', 'auditorium', 'mandapam', 'mandapams'],
+];
+
 @Injectable()
 export class SearchService implements OnApplicationBootstrap {
   private readonly logger = new Logger(SearchService.name);
+
+  /**
+   * Returns extra search terms implied by synonym groups for the given query.
+   * Excludes terms already present in the query. Empty for blank / wildcard.
+   */
+  private expandSynonyms(query: string): string[] {
+    if (!query || query === '*') return [];
+    const q = query.trim().toLowerCase();
+    if (q.length < 3) return [];
+    const extras = new Set<string>();
+    for (const group of SEARCH_SYNONYM_GROUPS) {
+      const hit = group.some((term) => q === term || q.includes(term) || term.includes(q));
+      if (hit) group.forEach((term) => extras.add(term));
+    }
+    // Drop terms already contained in the original query.
+    return Array.from(extras).filter((term) => !q.includes(term));
+  }
 
   constructor(
     private readonly typesenseService: TypesenseService,
@@ -68,9 +120,15 @@ export class SearchService implements OnApplicationBootstrap {
     const cached = await this.redis.get<any>(cacheKey);
     if (cached) return cached;
 
+    const synonymExtras = this.expandSynonyms(query);
+    const expandedQuery =
+      synonymExtras.length && query && query !== '*'
+        ? `${query} ${synonymExtras.join(' ')}`
+        : query;
+
     try {
       const searchParams: any = {
-        q: query,
+        q: expandedQuery,
         // Ranking priority: name → categoryName → subcategoryName → tags → offerTitles → branchNames → description
         query_by: 'name,categoryName,subcategoryName,tags,offerTitles,branchNames,productNames,description',
         query_by_weights: '10,7,6,5,4,3,2,1',
@@ -118,16 +176,18 @@ export class SearchService implements OnApplicationBootstrap {
       ? { deletedAt: null }
       : { tenantId, deletedAt: null };
     if (query && query !== '*') {
-      where.OR = [
-        { name: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-        { subcategory: { contains: query, mode: 'insensitive' } },
-        { category: { is: { name: { contains: query, mode: 'insensitive' } } } },
-        { branches: { some: { name: { contains: query, mode: 'insensitive' } } } },
-        { offers: { some: { title: { contains: query, mode: 'insensitive' }, deletedAt: null } } },
-        { offers: { some: { description: { contains: query, mode: 'insensitive' }, deletedAt: null } } },
-        { businessTags: { some: { tag: { contains: query, mode: 'insensitive' } } } },
-      ];
+      // Original query + synonym expansions broaden the OR across every field.
+      const terms = [query, ...synonymExtras];
+      where.OR = terms.flatMap((term) => [
+        { name: { contains: term, mode: 'insensitive' } },
+        { description: { contains: term, mode: 'insensitive' } },
+        { subcategory: { contains: term, mode: 'insensitive' } },
+        { category: { is: { name: { contains: term, mode: 'insensitive' } } } },
+        { branches: { some: { name: { contains: term, mode: 'insensitive' } } } },
+        { offers: { some: { title: { contains: term, mode: 'insensitive' }, deletedAt: null } } },
+        { offers: { some: { description: { contains: term, mode: 'insensitive' }, deletedAt: null } } },
+        { businessTags: { some: { tag: { contains: term, mode: 'insensitive' } } } },
+      ]);
     }
     if (filters?.categoryId) where.categoryId = filters.categoryId;
     if (filters?.city) where.city = { contains: filters.city, mode: 'insensitive' };
@@ -278,11 +338,14 @@ export class SearchService implements OnApplicationBootstrap {
     const cached = await this.redis.get<any>(cacheKey);
     if (cached) return cached;
 
+    const synonymExtras = this.expandSynonyms(query);
+    const expandedQuery = synonymExtras.length ? `${query} ${synonymExtras.join(' ')}` : query;
+
     // Try Typesense first for fast prefix matching
     if (this.typesenseService.getEnabled()) {
       try {
         const res = await this.typesenseService.search('businesses', {
-          q: query,
+          q: expandedQuery,
           query_by: 'name,categoryName,subcategoryName,offerTitles,branchNames',
           per_page: 8,
           highlight_full_fields: 'name,categoryName',
@@ -314,21 +377,24 @@ export class SearchService implements OnApplicationBootstrap {
     }
 
     // Postgres fallback for suggestions
+    const terms = [query, ...synonymExtras];
     const [businesses, categories] = await Promise.all([
       this.db.business.findMany({
         where: {
           deletedAt: null,
-          OR: [
-            { name: { startsWith: query, mode: 'insensitive' } },
-            { name: { contains: query, mode: 'insensitive' } },
-          ],
+          OR: terms.flatMap((term) => [
+            { name: { startsWith: term, mode: 'insensitive' } },
+            { name: { contains: term, mode: 'insensitive' } },
+            { subcategory: { contains: term, mode: 'insensitive' } },
+            { businessTags: { some: { tag: { contains: term, mode: 'insensitive' } } } },
+          ]),
         },
         select: { id: true, name: true, city: true, category: { select: { name: true } } },
         take: 8,
         orderBy: { averageRating: 'desc' },
       }),
       this.db.category.findMany({
-        where: { name: { contains: query, mode: 'insensitive' } },
+        where: { OR: terms.map((term) => ({ name: { contains: term, mode: 'insensitive' } })) },
         select: { id: true, name: true },
         take: 5,
       }),

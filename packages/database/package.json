@@ -11,6 +11,7 @@
     "db:migrate:prod": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:seed": "ts-node prisma/seed.ts",
+    "db:expand-categories": "ts-node prisma/expand-categories-iteration2.ts",
     "db:reset": "ts-node prisma/reset-and-seed.ts",
     "db:wait": "ts-node scripts/wait-for-db.ts",
     "db:studio": "prisma studio"
