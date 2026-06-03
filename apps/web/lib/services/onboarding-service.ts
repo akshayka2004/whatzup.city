@@ -109,6 +109,25 @@ class OnboardingService {
     );
   }
 
+  /**
+   * Server-side document upload — sends the raw file to the API which stores it
+   * in the verification-documents bucket and records a BusinessDocument. This
+   * is the reliable path (no browser→Supabase signed-URL PUT, no bucket guess).
+   */
+  async uploadBusinessDocument(
+    businessId: string,
+    file: File,
+    documentType: string = 'REGISTRATION_CERTIFICATE',
+    extra?: { documentNumber?: string; issuedAuthority?: string },
+  ): Promise<ApiResponse<{ documentId: string; bucket: string; path: string; status: string }>> {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('documentType', documentType);
+    if (extra?.documentNumber) form.append('documentNumber', extra.documentNumber);
+    if (extra?.issuedAuthority) form.append('issuedAuthority', extra.issuedAuthority);
+    return apiService.upload(`/v1/businesses/${businessId}/documents/upload`, form);
+  }
+
   async uploadFile(uploadUrl: string, file: File): Promise<boolean> {
     try {
       const response = await fetch(uploadUrl, {

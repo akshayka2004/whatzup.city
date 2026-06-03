@@ -479,18 +479,21 @@ export default function UnifiedRegisterPage() {
           await onboardingService.assignSubscription(businessId, 'LISTING_BASIC', 30);
         } catch (e) { console.warn('Subscription assign failed:', e); }
 
-        // 3. Upload & Register Registration Certificate — best-effort
-        try {
-          const certData = await uploadFileToServer(certFile!);
-          await onboardingService.registerDocument(businessId, {
-            name: certFile!.name,
-            documentType: 'REGISTRATION_CERTIFICATE',
-            fileUrl: certData.fileUrl,
-            fileKey: certData.fileKey,
-            mimeType: certFile!.type,
-            fileSize: certFile!.size,
-          });
-        } catch (e) { console.warn('Cert upload failed (continuing):', e); }
+        // 3. Upload Registration Certificate via reliable server-side upload.
+        //    Stores in verification-documents bucket + BusinessDocument table so
+        //    it appears in the admin review panel. CRITICAL — surface failures.
+        if (certFile) {
+          setUploadProgress(20);
+          const certRes = await onboardingService.uploadBusinessDocument(
+            businessId,
+            certFile,
+            'REGISTRATION_CERTIFICATE',
+          );
+          if (certRes.error) {
+            throw new Error(`Verification document upload failed: ${certRes.error}`);
+          }
+          setUploadProgress(100);
+        }
 
         // 4. Upload & Register Business Logo — best-effort
         try {

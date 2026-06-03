@@ -139,6 +139,53 @@ class ApiService {
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>('DELETE', endpoint);
   }
+
+  /**
+   * Multipart upload. Sends FormData WITHOUT a Content-Type header so the
+   * browser sets the correct multipart boundary. Shares the 401→refresh→retry
+   * behaviour of request().
+   */
+  async upload<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+    const url = `${this.baseURL}${endpoint}`;
+    const init: RequestInit = {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    };
+
+    try {
+      let response = await fetch(url, init);
+
+      if (response.status === 401) {
+        const refreshed = await this.tryRefresh();
+        if (refreshed) {
+          response = await fetch(url, init);
+        }
+      }
+
+      if (!response.ok) {
+        let errorMsg = `HTTP ${response.status}`;
+        try {
+          const errBody = await response.json();
+          errorMsg = errBody.message || errBody.error || errorMsg;
+        } catch {}
+        return { data: null as unknown as T, error: errorMsg, status: response.status };
+      }
+
+      if (response.status === 204) {
+        return { data: null as unknown as T, error: null, status: 204 };
+      }
+
+      const data = await response.json();
+      return { data, error: null, status: response.status };
+    } catch (error) {
+      return {
+        data: null as unknown as T,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        status: 0,
+      };
+    }
+  }
 }
 
 export const apiService = new ApiService();

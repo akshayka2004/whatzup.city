@@ -233,24 +233,26 @@ function RegisterBusinessWizardContent() {
       }
     }
 
+    // DOC → reliable server-side upload. Stores in the verification-documents
+    // bucket + BusinessDocument table so the admin review panel can display it.
+    if (type === 'DOC') {
+      progressCallback(30);
+      const docRes = await onboardingService.uploadBusinessDocument(
+        businessId,
+        fileToUpload,
+        verificationDocType || 'REGISTRATION_CERTIFICATE',
+      );
+      if (docRes.error) {
+        throw new Error(docRes.error || `Failed to upload ${fileToUpload.name}`);
+      }
+      progressCallback(100);
+      return true;
+    }
+
+    // LOGO/BANNER → signed URL upload to the business-media bucket.
     let uploadUrl = '';
     let fileKey = '';
-
-    if (type === 'DOC') {
-      // 1. Get signed upload URL and register in BusinessDocument table at once
-      const docRes = await onboardingService.getBusinessDocumentUploadUrl(businessId, {
-        documentType: verificationDocType || 'BUSINESS_REGISTRATION_PROOF',
-        filename: fileToUpload.name,
-        mimeType: fileToUpload.type,
-      });
-
-      if (!docRes.data || docRes.error) {
-        throw new Error(docRes.error || `Failed to fetch upload URL for ${fileToUpload.name}`);
-      }
-      uploadUrl = docRes.data.uploadUrl;
-      fileKey = docRes.data.fileKey;
-    } else {
-      // 1. Get signed upload URL for media (LOGO/BANNER)
+    {
       const category = type === 'LOGO' ? 'logo' : 'banner';
       const signedRes = await onboardingService.getSignedUrl(businessId, fileToUpload.name, fileToUpload.type, category);
       if (!signedRes.data || signedRes.error) {

@@ -1,5 +1,16 @@
-import { Controller, Get, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { BusinessDocumentsService } from './business-documents.service';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -21,6 +32,27 @@ export class BusinessDocumentsController {
     @Body() dto: UploadDocumentDto,
   ) {
     return this.documentsService.createUploadUrl(userId, tenantId, businessId, dto);
+  }
+
+  @Post(':id/documents/upload')
+  @ApiOperation({
+    summary: 'Server-side upload of a verification document (multipart). Stores file in the ' +
+      'verification-documents bucket and records it in BusinessDocument.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadDocumentDirect(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('id') businessId: string,
+    @UploadedFile() file: any,
+    @Body() body: { documentType?: string; documentNumber?: string; issuedAuthority?: string },
+  ) {
+    return this.documentsService.uploadDocumentDirect(userId, tenantId, businessId, file, {
+      documentType: body?.documentType || 'REGISTRATION_CERTIFICATE',
+      documentNumber: body?.documentNumber,
+      issuedAuthority: body?.issuedAuthority,
+    });
   }
 
   @Get(':id/documents')
