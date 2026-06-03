@@ -115,7 +115,10 @@ export class AuthService {
       let referrerId: string | undefined;
       if ((dto as any).referralCode) {
         const referrer = await this.db.user.findFirst({
-          where: { referralCode: (dto as any).referralCode, deletedAt: null },
+          where: {
+            referralCode: String((dto as any).referralCode).trim().toUpperCase(),
+            deletedAt: null,
+          },
           select: { id: true },
         });
         if (referrer) referrerId = referrer.id;
@@ -1022,6 +1025,19 @@ export class AuthService {
       // 5. Create the User
       const passwordHash = await this.passwordService.hash(dto.password);
       const bizReferralCode = Math.random().toString(36).slice(2, 10).toUpperCase();
+
+      // Resolve the referrer from the supplied referral code so referredBy is
+      // stored. Referral codes are uppercase; the referrer usually lives in the
+      // default tenant (cross-tenant lookup — referredBy is a plain uuid).
+      let bizReferredBy: string | undefined;
+      if (dto.referralCode) {
+        const referrer = await tx.user.findFirst({
+          where: { referralCode: dto.referralCode.trim().toUpperCase(), deletedAt: null },
+          select: { id: true },
+        });
+        if (referrer) bizReferredBy = referrer.id;
+      }
+
       const userRecord = await tx.user.create({
         data: {
           tenantId: tenant.id,
@@ -1033,6 +1049,7 @@ export class AuthService {
           emailVerified: true,
           isActive: true,
           referralCode: bizReferralCode,
+          ...(bizReferredBy ? { referredBy: bizReferredBy } : {}),
           ...(dto.acceptedTerms ? { acceptedTermsAt: new Date(), termsVersion: '1.0' } : {}),
           ...(dto.acceptedPrivacyPolicy ? { acceptedPrivacyAt: new Date(), privacyPolicyVersion: '1.0' } : {}),
         },
@@ -1645,7 +1662,7 @@ export class AuthService {
     let referrerId: string | undefined;
     if (dto.referralCode) {
       const referrer = await this.db.user.findFirst({
-        where: { referralCode: dto.referralCode, deletedAt: null },
+        where: { referralCode: dto.referralCode.trim().toUpperCase(), deletedAt: null },
         select: { id: true },
       });
       if (referrer) referrerId = referrer.id;
