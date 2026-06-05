@@ -66,6 +66,18 @@ export class BusinessOnboardingService {
       throw new ConflictException('A draft for this business already exists');
     }
 
+    // Block duplicate company name across all owners (case-insensitive)
+    const globalDuplicate = await this.db.business.findFirst({
+      where: {
+        name: { equals: dto.businessName.trim(), mode: 'insensitive' },
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+    if (globalDuplicate) {
+      throw new ConflictException('A company with this name is already registered');
+    }
+
     const subcategories = dto.subcategorySlugs?.length
       ? await this.db.category.findMany({
           where: {

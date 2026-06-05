@@ -870,6 +870,36 @@ export class AuthService {
     };
   }
 
+  /**
+   * Guards against duplicate company registrations. Company name match is
+   * case-insensitive ("Acme" == "acme"); phone is checked against both users
+   * and businesses. Throws ConflictException on any collision.
+   */
+  private async assertCompanyUnique(params: { name?: string; phone?: string }): Promise<void> {
+    const name = params.name?.trim();
+    const phone = params.phone?.trim();
+
+    if (name) {
+      const dupName = await this.db.business.findFirst({
+        where: { name: { equals: name, mode: 'insensitive' }, deletedAt: null },
+        select: { id: true },
+      });
+      if (dupName) {
+        throw new ConflictException('A company with this name is already registered');
+      }
+    }
+
+    if (phone) {
+      const [userPhone, bizPhone] = await Promise.all([
+        this.db.user.findFirst({ where: { phone, deletedAt: null }, select: { id: true } }),
+        this.db.business.findFirst({ where: { phone, deletedAt: null }, select: { id: true } }),
+      ]);
+      if (userPhone || bizPhone) {
+        throw new ConflictException('Phone number already registered');
+      }
+    }
+  }
+
   async businessSignup(dto: BusinessSignupDto) {
     if (!this.passwordService.isStrongPassword(dto.password)) {
       throw new BadRequestException(
@@ -890,6 +920,9 @@ export class AuthService {
     if (existingUser) {
       throw new ConflictException('Email already registered');
     }
+
+    // Block duplicate company name (case-insensitive) and phone
+    await this.assertCompanyUnique({ name: dto.businessName, phone: dto.phone });
 
     // Resolve default tenant
     const defaultTenant = await this.db.tenant.findUnique({
@@ -1240,6 +1273,10 @@ export class AuthService {
       }
 
       const businessName = dto.name || `${user.name}'s Business`;
+
+      // Block duplicate company name (case-insensitive)
+      await this.assertCompanyUnique({ name: businessName });
+
       const tenantSlug =
         businessName
           .toLowerCase()
