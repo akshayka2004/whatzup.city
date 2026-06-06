@@ -66,6 +66,9 @@ export default function ProfilePage() {
   const [deleting, setDeleting] = useState(false);
   const [referralCode, setReferralCode] = useState('');
   const [referralCount, setReferralCount] = useState<number | null>(null);
+  const [referralList, setReferralList] = useState<
+    { id: string; name: string; email: string; createdAt: string }[]
+  >([]);
   const [referralCopied, setReferralCopied] = useState(false);
 
   // ── Avatar upload ────────────────────────────────────────────
@@ -93,6 +96,7 @@ export default function ProfilePage() {
       if (!cancelled && refRes.data) {
         if (refRes.data.referralCode) setReferralCode(refRes.data.referralCode);
         if (typeof refRes.data.count === 'number') setReferralCount(refRes.data.count);
+        if (Array.isArray(refRes.data.referrals)) setReferralList(refRes.data.referrals);
       }
 
       // Fetch customer profile (phone, city, etc.)
@@ -389,6 +393,41 @@ export default function ProfilePage() {
           <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium flex items-center gap-2">
             <X className="h-4 w-4" /> {saveErr}
           </div>
+        )}
+
+        {/* Referred Users */}
+        {referralCount !== null && referralCount > 0 && (
+          <Card className="p-6 rounded-2xl border-border bg-card">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Users className="h-4 w-4 text-emerald-400" />
+                Referred Users
+              </h3>
+              <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
+                {referralCount}
+              </span>
+            </div>
+            {referralList.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No referred users to display.</p>
+            ) : (
+              <div className="space-y-2">
+                {referralList.map((r) => (
+                  <div
+                    key={r.id}
+                    className="flex items-center justify-between p-3 rounded-xl bg-secondary/50 border border-border"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{r.name || 'Unnamed'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{r.email}</p>
+                    </div>
+                    <span className="text-[11px] text-muted-foreground whitespace-nowrap ml-3">
+                      {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
         )}
 
         {/* Personal Information */}

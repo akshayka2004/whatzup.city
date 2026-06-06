@@ -248,8 +248,11 @@ export class UsersService {
     return { referralCode: user?.referralCode ?? null, count: referrals.length, referrals };
   }
 
-  async getReferralLeaderboard(tenantId: string) {
-    const cacheKey = `referral:leaderboard:${tenantId}`;
+  // Platform-wide referral leaderboard. Intentionally GLOBAL (not tenant-scoped):
+  // each business signup creates its own tenant, so referrers and referred users
+  // span tenants. Tenant scoping here undercounts. Used by the super-admin panel.
+  async getReferralLeaderboard(_tenantId?: string) {
+    const cacheKey = `referral:leaderboard:global`;
     const cached = await this.redis.get<any>(cacheKey);
     if (cached) return cached;
 
@@ -260,19 +263,19 @@ export class UsersService {
                COUNT(r.id)::int as "referralCount"
         FROM users u
         LEFT JOIN users r ON r.referred_by = u.id AND r.deleted_at IS NULL
-        WHERE u.tenant_id = ${tenantId}::uuid AND u.deleted_at IS NULL
+        WHERE u.deleted_at IS NULL
         GROUP BY u.id, u.name, u.email, u.referral_code
         HAVING COUNT(r.id) > 0
         ORDER BY "referralCount" DESC
         LIMIT 50
       `,
       this.db.user.count({
-        where: { tenantId, deletedAt: null, referredBy: { not: null } },
+        where: { deletedAt: null, referredBy: { not: null } },
       }),
     ]);
 
     const data = { leaderboard: result, totalReferredUsers: total };
-    await this.redis.set(cacheKey, data, 600); // 10-min cache
+    await this.redis.set(cacheKey, data, 60); // 60s cache — fast reflection of new referrals
     return data;
   }
 
