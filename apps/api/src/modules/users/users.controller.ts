@@ -45,8 +45,10 @@ export class UsersController {
     @Query('role') role?: string,
     @Query('search') search?: string,
     @Query('tenantId') tenantId?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
   ) {
-    return this.usersService.findAllRegistrations({ page, limit, role, search, tenantId });
+    return this.usersService.findAllRegistrations({ page, limit, role, search, tenantId, sortBy, sortOrder });
   }
 
   @Get('tenant/registrations')

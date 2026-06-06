@@ -12,8 +12,11 @@ import {
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { OffersService } from './offers.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { UserRole } from '@saas/types';
 
 @ApiTags('Offers')
 @Controller('offers')
@@ -24,6 +27,23 @@ export class OffersController {
   @Get()
   async findActive(@Query('tenantId') tenantId: string = 'default', @Query('page') page?: number) {
     return this.offersService.findActive(tenantId, page, 20, true);
+  }
+
+  // ── Super-admin: platform-wide offers (all tenants) ──
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN)
+  @Get('admin/all')
+  @ApiBearerAuth()
+  async adminAll(@Query('page') page?: number) {
+    return this.offersService.findAllForAdmin(page);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN)
+  @Delete('admin/:id')
+  @ApiBearerAuth()
+  async adminRemove(@CurrentUser('id') adminId: string, @Param('id') id: string) {
+    return this.offersService.adminDelete(id, adminId);
   }
 
   @Public()

@@ -123,7 +123,7 @@ export function MobileNav() {
   } else if (isSuperAdmin) {
     primaryTabs = [
       { label: 'Tenants', href: '/super-admin', icon: Users },
-      { label: 'Registrations', href: '/super-admin/registrations', icon: UserPlus },
+      { label: 'Users', href: '/super-admin/registrations', icon: UserPlus },
       { label: 'Platform Offers', href: '/super-admin/offers', icon: Tag },
       { label: 'System Health', href: '/super-admin/health', icon: Activity },
     ];

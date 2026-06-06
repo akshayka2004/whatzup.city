@@ -150,6 +150,8 @@ export class UsersService {
     limit?: number;
     role?: string;
     search?: string;
+    sortBy?: string;
+    sortOrder?: string;
   }) {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.min(Number(params.limit) || 30, 100);
@@ -166,12 +168,17 @@ export class UsersService {
       ];
     }
 
+    // Whitelisted sortable columns → safe orderBy
+    const SORTABLE = new Set(['name', 'email', 'role', 'createdAt', 'lastLoginAt', 'isActive']);
+    const sortBy = SORTABLE.has(params.sortBy || '') ? (params.sortBy as string) : 'createdAt';
+    const sortOrder = params.sortOrder === 'asc' ? 'asc' : 'desc';
+
     const [data, total] = await Promise.all([
       this.db.user.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sortBy]: sortOrder },
         select: {
           id: true,
           tenantId: true,

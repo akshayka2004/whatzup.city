@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 
 const menuItems = [
   { label: 'Tenants', href: '/super-admin', icon: Users, exact: true },
-  { label: 'Registrations', href: '/super-admin/registrations', icon: UserPlus },
+  { label: 'Users', href: '/super-admin/registrations', icon: UserPlus },
   { label: 'Approvals', href: '/super-admin/approvals', icon: CheckCircle },
   { label: 'Reports', href: '/super-admin/reports', icon: AlertTriangle },
   { label: 'Notices', href: '/super-admin/notices', icon: Bell },

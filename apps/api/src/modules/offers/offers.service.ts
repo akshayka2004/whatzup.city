@@ -254,4 +254,67 @@ export class OffersService {
       resourceId: id,
     });
   }
+
+  /**
+   * Super-admin: list every currently-running offer across ALL tenants
+   * (each business registers its own tenant). Live data, no tenant scope.
+   */
+  async findAllForAdmin(page = 1, limit = 50) {
+    const pageVal = Math.max(1, Number(page) || 1);
+    const limitVal = Math.min(Number(limit) || 50, 100);
+    const now = new Date();
+    const where: any = {
+      deletedAt: null,
+      status: 'ACTIVE',
+      startDate: { lte: now },
+      endDate: { gte: now },
+    };
+
+    const [data, total] = await Promise.all([
+      this.offerRepo.model.findMany({
+        where,
+        skip: (pageVal - 1) * limitVal,
+        take: limitVal,
+        orderBy: { endDate: 'asc' },
+        include: {
+          business: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              logo: true,
+              city: true,
+              tenant: { select: { name: true } },
+            },
+          },
+        },
+      }),
+      this.offerRepo.model.count({ where }),
+    ]);
+
+    return PaginatedResult.create(data, total, pageVal, limitVal);
+  }
+
+  /**
+   * Super-admin: delete any offer regardless of tenant/owner. Soft-delete,
+   * cache-busted, and audited.
+   */
+  async adminDelete(id: string, adminId: string) {
+    const offer = await this.offerRepo.model.findFirst({ where: { id, deletedAt: null } });
+    if (!offer) throw new NotFoundException('Offer not found');
+
+    await this.offerRepo.softDelete(offer.tenantId, id);
+    await this.redis.delPattern(`offers:${offer.tenantId}:*`);
+
+    await this.auditService.log({
+      tenantId: offer.tenantId,
+      userId: adminId,
+      action: 'ADMIN_DELETE_OFFER',
+      resource: 'OFFER',
+      resourceId: id,
+      oldData: offer,
+    });
+
+    return { success: true };
+  }
 }

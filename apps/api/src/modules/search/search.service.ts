@@ -132,7 +132,9 @@ export class SearchService implements OnApplicationBootstrap {
         // Ranking priority: name → categoryName → subcategoryName → tags → offerTitles → branchNames → description
         query_by: 'name,categoryName,subcategoryName,tags,offerTitles,branchNames,productNames,description',
         query_by_weights: '10,7,6,5,4,3,2,1',
-        filter_by: isPublic ? '' : `tenantId:=${tenantId}`,
+        // Public discovery spans all tenants but only APPROVED businesses;
+        // internal search is scoped to the caller's tenant.
+        filter_by: isPublic ? 'status:=APPROVED' : `tenantId:=${tenantId}`,
         page,
         per_page: limit,
       };
@@ -173,7 +175,7 @@ export class SearchService implements OnApplicationBootstrap {
 
     // Postgres Fallback
     const where: any = isPublic
-      ? { deletedAt: null }
+      ? { deletedAt: null, status: 'APPROVED' }
       : { tenantId, deletedAt: null };
     if (query && query !== '*') {
       // Original query + synonym expansions broaden the OR across every field.

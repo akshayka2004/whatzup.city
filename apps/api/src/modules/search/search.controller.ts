@@ -13,20 +13,25 @@ export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
   @Get('discover')
-  @ApiOperation({ summary: 'Discover businesses with filters and caching' })
+  @Public()
+  @ApiOperation({ summary: 'Discover approved businesses platform-wide with filters' })
   async discover(
-    @CurrentUser('tenantId') tenantId: string,
     @Query('q') q?: string,
     @Query('categoryId') categoryId?: string,
     @Query('city') city?: string,
     @Query('minRating') minRating?: number,
     @Query('page') page?: number,
+    @Query('tenantId') tenantId?: string,
   ) {
+    // Public discovery: search APPROVED businesses across ALL tenants (each
+    // business registers its own tenant), not just the caller's tenant.
     return this.searchService.searchBusinesses(
-      tenantId,
+      tenantId || 'default',
       q || '*',
       { categoryId, city, minRating },
       page,
+      20,
+      true, // isPublic — cross-tenant, APPROVED only
     );
   }
 
