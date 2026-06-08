@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 // Reference list of common document types. Kept for documentation; the field
@@ -43,4 +43,9 @@ export class UploadDocumentDto {
   @IsOptional()
   @IsString()
   expiryDate?: string;
+
+  @ApiProperty({ example: 1048576, description: 'File size in bytes (max 10MB)', required: false })
+  @IsOptional()
+  @IsNumber()
+  fileSize?: number;
 }

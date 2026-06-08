@@ -101,6 +101,7 @@ class OnboardingService {
       documentNumber?: string;
       issuedAuthority?: string;
       expiryDate?: string;
+      fileSize?: number;
     },
   ): Promise<ApiResponse<{ uploadUrl: string; fileKey: string; documentId: string }>> {
     return apiService.post<{ uploadUrl: string; fileKey: string; documentId: string }>(
@@ -122,6 +123,16 @@ class OnboardingService {
     documentType: string = 'REGISTRATION_CERTIFICATE',
     extra?: { documentNumber?: string; issuedAuthority?: string },
   ): Promise<ApiResponse<{ documentId: string }>> {
+    // 0. Enforce the 10MB bucket limit up-front with a clear message.
+    const MAX_BYTES = 10 * 1024 * 1024;
+    if (file.size > MAX_BYTES) {
+      return {
+        data: null as any,
+        error: `File is ${(file.size / 1024 / 1024).toFixed(1)}MB — exceeds the 10MB limit. Please upload a smaller file.`,
+        status: 413,
+      };
+    }
+
     // 1. Signed URL + PENDING record (small JSON call through the API).
     const presign = await this.getBusinessDocumentUploadUrl(businessId, {
       documentType,
@@ -129,6 +140,7 @@ class OnboardingService {
       mimeType: file.type,
       documentNumber: extra?.documentNumber,
       issuedAuthority: extra?.issuedAuthority,
+      fileSize: file.size,
     });
     if (!presign.data || presign.error) {
       return {

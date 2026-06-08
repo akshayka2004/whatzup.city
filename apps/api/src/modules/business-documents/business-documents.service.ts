@@ -26,20 +26,29 @@ export class BusinessDocumentsService {
     businessId: string,
     dto: UploadDocumentDto,
   ) {
+    // Accept either business.id OR entity.id — the onboarding wizard stores the
+    // entity.id in `businessId`, so matching on business.id alone failed and no
+    // BusinessDocument row was ever created.
     const business = await this.db.business.findFirst({
-      where: { id: businessId, tenantId },
+      where: { tenantId, OR: [{ id: businessId }, { entityId: businessId }], deletedAt: null },
     });
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
+    const actualBusinessId = business.id;
 
     const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
     this.storageService.validateMimeType(dto.mimeType, allowedMimeTypes);
+
+    // Enforce the 10MB bucket limit when the client reports a size.
+    if (dto.fileSize !== undefined && dto.fileSize !== null) {
+      this.storageService.validateFileSize(Number(dto.fileSize), 10 * 1024 * 1024);
+    }
 
     if (dto.documentNumber) {
       const existingDocument = await this.db.businessDocument.findFirst({
         where: {
           tenantId,
-          businessId,
+          businessId: actualBusinessId,
           documentType: dto.documentType,
           documentNumber: dto.documentNumber,
           deletedAt: null,
@@ -53,7 +62,7 @@ export class BusinessDocumentsService {
     // Generate structured storage path using StorageService
     const fileKey = this.storageService.generateStoragePath(
       tenantId,
-      businessId,
+      actualBusinessId,
       'document', // category: document => maps to verification-documents bucket
       dto.filename,
     );
@@ -72,7 +81,7 @@ export class BusinessDocumentsService {
     const existing = await this.db.businessDocument.findFirst({
       where: {
         tenantId,
-        businessId,
+        businessId: actualBusinessId,
         documentType: dto.documentType,
         documentNumber: dto.documentNumber ?? null,
         deletedAt: null,
@@ -92,7 +101,7 @@ export class BusinessDocumentsService {
       : await this.db.businessDocument.create({
           data: {
             tenantId,
-            businessId,
+            businessId: actualBusinessId,
             documentType: dto.documentType,
             fileUrl: dbUrl,
             status: 'PENDING',
