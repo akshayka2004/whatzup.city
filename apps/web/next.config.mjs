@@ -1,3 +1,11 @@
+// Pin a stable Server Actions encryption key so action IDs stay constant across
+// rebuilds. Without it, every `next build` mints new IDs and any browser tab left
+// open from a prior deploy fails with "Failed to find Server Action". Prefer an
+// env-provided key; fall back to a fixed constant (the app ships no sensitive
+// server actions, so a static key is safe here).
+process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY ||=
+  'whtzup-city-stable-server-actions-key-v1';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
