@@ -4,12 +4,16 @@ import { ThemeProvider } from 'next-themes';
 import { ReactNode } from 'react';
 
 export function ThemeProviderClient({ children }: { children: ReactNode }) {
-  // App is dark-first: all surfaces (cards, modals/popups) are styled for the
-  // dark palette. `enableSystem` previously let a light OS flip the app to the
-  // light theme, which left popup text (hardcoded light colors) unreadable on
-  // the now-light backgrounds. Force dark so every popup renders as designed.
+  // Dark-first default, but the header toggle must work, so do NOT force a theme.
+  // `enableSystem` is off so the OS can't silently flip the app to light; the
+  // user explicitly switches light/dark via the header and the choice persists.
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" disableTransitionOnChange>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem={false}
+      disableTransitionOnChange
+    >
       {children}
     </ThemeProvider>
   );
