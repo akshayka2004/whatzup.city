@@ -48,4 +48,23 @@ export class UploadDocumentDto {
   @IsOptional()
   @IsNumber()
   fileSize?: number;
+
+  @ApiProperty({ example: 'food', description: 'Business category slug this doc belongs to', required: false })
+  @IsOptional()
+  @IsString()
+  documentCategory?: string;
+
+  @ApiProperty({ example: 'FSSAI_LICENSE', description: 'Category-specific document subtype', required: false })
+  @IsOptional()
+  @IsString()
+  documentSubtype?: string;
+
+  @ApiProperty({ example: '2025-01-01T00:00:00.000Z', required: false })
+  @IsOptional()
+  @IsString()
+  issueDate?: string;
+
+  @ApiProperty({ example: true, description: 'Whether this document is mandatory', required: false })
+  @IsOptional()
+  isMandatory?: boolean;
 }

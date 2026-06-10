@@ -73,11 +73,35 @@ export class BusinessDocumentsService {
       fileKey,
     );
 
-    const dbUrl = JSON.stringify({ bucket: 'verification-documents', path: fileKey });
+    const bucketName = 'verification-documents';
+    const dbUrl = JSON.stringify({ bucket: bucketName, path: fileKey });
+
+    // Iteration-2 category-aware metadata. Stored alongside the legacy fileUrl
+    // (kept for backward compatibility). A re-upload resets the review state so
+    // the document goes back to PENDING for re-moderation.
+    const meta: any = {
+      fileUrl: dbUrl,
+      status: 'PENDING',
+      verificationStatus: 'PENDING',
+      verificationNotes: null,
+      reviewedBy: null,
+      reviewedAt: null,
+      uploadedBy: userId,
+      bucketName,
+      storageKey: fileKey,
+      documentPath: fileKey,
+      documentCategory: dto.documentCategory ?? null,
+      documentSubtype: dto.documentSubtype ?? null,
+      issuedAuthority: dto.issuedAuthority,
+      issueDate: dto.issueDate ? new Date(dto.issueDate) : null,
+      expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
+      isMandatory: dto.isMandatory ?? true,
+      isActive: true,
+    };
 
     // Idempotent: re-uploading the same document type updates the existing row
-    // (and re-points it at the new file) instead of hitting the unique
-    // constraint (tenantId, businessId, documentType, documentNumber).
+    // instead of hitting the unique constraint
+    // (tenantId, businessId, documentType, documentNumber).
     const existing = await this.db.businessDocument.findFirst({
       where: {
         tenantId,
@@ -91,23 +115,15 @@ export class BusinessDocumentsService {
     const document = existing
       ? await this.db.businessDocument.update({
           where: { id: existing.id },
-          data: {
-            fileUrl: dbUrl,
-            status: 'PENDING',
-            issuedAuthority: dto.issuedAuthority,
-            expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
-          },
+          data: meta,
         })
       : await this.db.businessDocument.create({
           data: {
             tenantId,
             businessId: actualBusinessId,
             documentType: dto.documentType,
-            fileUrl: dbUrl,
-            status: 'PENDING',
             documentNumber: dto.documentNumber,
-            issuedAuthority: dto.issuedAuthority,
-            expiryDate: dto.expiryDate ? new Date(dto.expiryDate) : null,
+            ...meta,
           },
         });
 
@@ -121,6 +137,92 @@ export class BusinessDocumentsService {
     });
 
     return { uploadUrl, fileKey, documentId: document.id };
+  }
+
+  /**
+   * Admin per-document review — approve / reject / request re-upload. Records
+   * reviewer, timestamp, and notes, and audit-logs the action. Each document is
+   * actioned individually (no DB access required for moderators).
+   */
+  async reviewDocument(
+    adminId: string,
+    docId: string,
+    action: 'APPROVE' | 'REJECT' | 'REQUEST_REUPLOAD',
+    notes?: string,
+  ) {
+    const doc = await this.db.businessDocument.findFirst({
+      where: { id: docId, deletedAt: null },
+    });
+    if (!doc) throw new NotFoundException('Document not found');
+
+    const STATUS: Record<string, string> = {
+      APPROVE: 'APPROVED',
+      REJECT: 'REJECTED',
+      REQUEST_REUPLOAD: 'REUPLOAD_REQUESTED',
+    };
+    const status = STATUS[action];
+    if (!status) throw new BadRequestException('Invalid review action');
+
+    const updated = await this.db.businessDocument.update({
+      where: { id: docId },
+      data: {
+        status,
+        verificationStatus: status,
+        verificationNotes: notes ?? doc.verificationNotes,
+        rejectionReason: action === 'REJECT' ? (notes ?? doc.rejectionReason) : doc.rejectionReason,
+        reviewedBy: adminId,
+        reviewedAt: new Date(),
+      },
+    });
+
+    await this.audit.log({
+      tenantId: doc.tenantId,
+      userId: adminId,
+      action: `DOCUMENT_${action}`,
+      resource: 'BUSINESS_DOCUMENT',
+      resourceId: docId,
+      metadata: { notes, status },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Admin: generate a short-lived signed download URL for one document and log
+   * the access. Never returns a public URL.
+   */
+  async getDocumentDownloadUrl(adminId: string, docId: string) {
+    const doc = await this.db.businessDocument.findFirst({
+      where: { id: docId, deletedAt: null },
+    });
+    if (!doc) throw new NotFoundException('Document not found');
+
+    let bucket = doc.bucketName || undefined;
+    let key = doc.storageKey || undefined;
+    if (!bucket || !key) {
+      try {
+        const parsed = JSON.parse(doc.fileUrl);
+        bucket = parsed?.bucket;
+        key = parsed?.path;
+      } catch {
+        /* legacy/plain URL */
+      }
+    }
+    if (!bucket || !key) {
+      throw new BadRequestException('Document has no resolvable storage location');
+    }
+
+    const url = await this.storageService.createSignedDownloadUrl(bucket, key, 600);
+
+    await this.audit.log({
+      tenantId: doc.tenantId,
+      userId: adminId,
+      action: 'DOCUMENT_VIEW',
+      resource: 'BUSINESS_DOCUMENT',
+      resourceId: docId,
+    });
+
+    return { url };
   }
 
   async getBusinessDocuments(userId: string, tenantId: string, businessId: string) {

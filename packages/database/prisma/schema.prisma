@@ -690,7 +690,22 @@ model BusinessDocument {
   documentNumber  String?   @map("document_number") @db.VarChar(100)
   issuedAuthority String?   @map("issued_authority") @db.VarChar(255)
   expiryDate      DateTime? @map("expiry_date")
-  
+
+  // ── Iteration 2: category-aware verification metadata (all additive) ──
+  documentCategory   String?   @map("document_category") @db.VarChar(100)   // business category slug, e.g. "food"
+  documentSubtype    String?   @map("document_subtype") @db.VarChar(100)    // e.g. "FSSAI_LICENSE"
+  verificationStatus String?   @map("verification_status") @db.VarChar(50)  // mirrors `status` for clarity/future
+  verificationNotes  String?   @map("verification_notes") @db.Text          // moderator notes, separate from rejectionReason
+  uploadedBy         String?   @map("uploaded_by") @db.Uuid
+  reviewedBy         String?   @map("reviewed_by") @db.Uuid
+  reviewedAt         DateTime? @map("reviewed_at")
+  issueDate          DateTime? @map("issue_date")
+  documentPath       String?   @map("document_path") @db.Text              // storage path within the bucket
+  bucketName         String?   @map("bucket_name") @db.VarChar(100)
+  storageKey         String?   @map("storage_key") @db.Text
+  isMandatory        Boolean   @default(true) @map("is_mandatory")
+  isActive           Boolean   @default(true) @map("is_active")
+
   // Core Audit Fields
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")

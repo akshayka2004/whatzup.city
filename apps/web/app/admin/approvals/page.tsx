@@ -48,6 +48,47 @@ export default function ApprovalsPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [approveNotes, setApproveNotes] = useState('');
 
+  // Per-document review
+  const [docActionLoading, setDocActionLoading] = useState(false);
+
+  const reviewDocument = async (
+    docId: string,
+    action: 'APPROVE' | 'REJECT' | 'REQUEST_REUPLOAD',
+    notes?: string,
+  ) => {
+    setDocActionLoading(true);
+    const res = await apiService.post<any>(`/v1/businesses/documents/${docId}/review`, { action, notes });
+    setDocActionLoading(false);
+    if (!res.error) {
+      const newStatus =
+        action === 'APPROVE' ? 'APPROVED' : action === 'REJECT' ? 'REJECTED' : 'REUPLOAD_REQUESTED';
+      // Reflect immediately in the open viewer + list
+      setSelectedDoc((d: any) => (d && d.id === docId ? { ...d, status: newStatus } : d));
+      setReviewingItem((item: any) =>
+        item
+          ? {
+              ...item,
+              entity: {
+                ...item.entity,
+                documents: (item.entity?.documents || []).map((dc: any) =>
+                  dc.id === docId ? { ...dc, status: newStatus } : dc,
+                ),
+              },
+            }
+          : item,
+      );
+    }
+  };
+
+  const docStatusClass = (status?: string): string => {
+    switch (status) {
+      case 'APPROVED': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+      case 'REJECTED': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+      case 'REUPLOAD_REQUESTED': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+      default: return 'bg-slate-500/10 text-slate-300 border-slate-500/20';
+    }
+  };
+
   const fetchApprovals = async (entityType: string) => {
     setLoading(true);
     setError('');
@@ -753,6 +794,53 @@ export default function ApprovalsPage() {
                             </div>
                           );
                         })()}
+                      </div>
+
+                      {/* Per-document review — actioned individually */}
+                      <div className="shrink-0 border-t border-white/5 pt-3 mt-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-slate-500 uppercase tracking-wider">Document status</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${docStatusClass(selectedDoc.status)}`}>
+                            {selectedDoc.status || 'PENDING'}
+                          </span>
+                        </div>
+                        {(selectedDoc.documentCategory || selectedDoc.documentSubtype) && (
+                          <p className="text-[10px] text-slate-500">
+                            {selectedDoc.documentCategory || ''}
+                            {selectedDoc.documentSubtype ? ` • ${selectedDoc.documentSubtype}` : ''}
+                          </p>
+                        )}
+                        {selectedDoc.verificationNotes && (
+                          <p className="text-[10px] text-amber-300/80 italic">Note: {selectedDoc.verificationNotes}</p>
+                        )}
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => reviewDocument(selectedDoc.id, 'APPROVE')}
+                            disabled={docActionLoading}
+                            size="sm"
+                            className="flex-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs gap-1 cursor-pointer"
+                          >
+                            <Check className="h-3.5 w-3.5" /> Approve
+                          </Button>
+                          <Button
+                            onClick={() => reviewDocument(selectedDoc.id, 'REQUEST_REUPLOAD')}
+                            disabled={docActionLoading}
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 rounded-lg border-amber-500/30 text-amber-300 hover:bg-amber-500/10 text-xs cursor-pointer"
+                          >
+                            Reupload
+                          </Button>
+                          <Button
+                            onClick={() => reviewDocument(selectedDoc.id, 'REJECT')}
+                            disabled={docActionLoading}
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 rounded-lg border-rose-500/30 text-rose-400 hover:bg-rose-500/10 text-xs gap-1 cursor-pointer"
+                          >
+                            <X className="h-3.5 w-3.5" /> Reject
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ) : (

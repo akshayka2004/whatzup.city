@@ -48,6 +48,13 @@ export class OnboardingVerificationService {
       issuedAuthority: doc.issuedAuthority ?? null,
       status: doc.status,
       fileUrl,
+      // Iteration-2 metadata for the verification center (null on legacy rows)
+      documentCategory: doc.documentCategory ?? null,
+      documentSubtype: doc.documentSubtype ?? null,
+      verificationNotes: doc.verificationNotes ?? null,
+      isMandatory: doc.isMandatory ?? null,
+      reviewedAt: doc.reviewedAt ?? null,
+      expiryDate: doc.expiryDate ?? null,
     };
   }
 
