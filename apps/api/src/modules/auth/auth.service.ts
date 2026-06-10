@@ -1154,6 +1154,10 @@ export class AuthService {
           subcategoryIds: subcategories.map((category) => category.id),
           tags: [],
           socialLinks: {},
+          // Halal flag applies to food businesses only.
+          ...(dto.categorySlug === 'food' && dto.halalStatus
+            ? { halalStatus: dto.halalStatus === 'HALAL' ? 'HALAL' : 'NON_HALAL' }
+            : {}),
           entityId: entityRecord.id,
         },
       });

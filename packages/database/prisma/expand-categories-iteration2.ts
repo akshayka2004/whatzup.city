@@ -65,6 +65,23 @@ const EXPANSION: CategoryDef[] = [
       { name: 'Mobile Puncture Services', slug: 'mobile_puncture_services' },
     ],
   },
+  {
+    name: 'Business Services',
+    slug: 'business_services',
+    description: 'Insurance & loan services',
+    icon: 'Briefcase',
+    sortOrder: 23,
+    subcategories: [
+      { name: 'Health Insurance', slug: 'health_insurance' },
+      { name: 'Life Insurance', slug: 'life_insurance' },
+      { name: 'Travel Insurance', slug: 'travel_insurance' },
+      { name: 'Group Health Insurance', slug: 'group_health_insurance' },
+      { name: 'Fire Insurance', slug: 'fire_insurance' },
+      { name: 'Personal Loan', slug: 'personal_loan' },
+      { name: 'Home Loan', slug: 'home_loan' },
+      { name: 'Vehicle Loan', slug: 'vehicle_loan' },
+    ],
+  },
 ];
 
 // ── Report accumulator ──────────────────────────────────────

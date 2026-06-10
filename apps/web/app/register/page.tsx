@@ -197,6 +197,20 @@ const CATEGORIES = [
       { slug: 'mobile_puncture_services', label: 'Mobile Puncture Services' },
     ],
   },
+  {
+    slug: 'business_services',
+    label: 'Business Services',
+    subcategories: [
+      { slug: 'health_insurance', label: 'Health Insurance' },
+      { slug: 'life_insurance', label: 'Life Insurance' },
+      { slug: 'travel_insurance', label: 'Travel Insurance' },
+      { slug: 'group_health_insurance', label: 'Group Health Insurance' },
+      { slug: 'fire_insurance', label: 'Fire Insurance' },
+      { slug: 'personal_loan', label: 'Personal Loan' },
+      { slug: 'home_loan', label: 'Home Loan' },
+      { slug: 'vehicle_loan', label: 'Vehicle Loan' },
+    ],
+  },
 ];
 
 export default function UnifiedRegisterPage() {
@@ -218,6 +232,7 @@ export default function UnifiedRegisterPage() {
   const [companyName, setCompanyName] = useState('');
   const [categorySlug, setCategorySlug] = useState('food');
   const [subcategorySlug, setSubcategorySlug] = useState('restaurants');
+  const [halalStatus, setHalalStatus] = useState(''); // food businesses only
   const [referralCode, setReferralCode] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
@@ -302,6 +317,7 @@ export default function UnifiedRegisterPage() {
           ownerName: name, email, phone, password,
           businessName: companyName, categorySlug, profileType: 'OWNER',
           ...(referralCode.trim() ? { referralCode: referralCode.trim() } : {}),
+          ...(categorySlug === 'food' && halalStatus ? { halalStatus } : {}),
           acceptedTerms,
           acceptedPrivacyPolicy: acceptedPrivacy,
         });
@@ -1004,6 +1020,33 @@ export default function UnifiedRegisterPage() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Halal / Non-Halal — Food businesses only */}
+                    {categorySlug === 'food' && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">Halal Status</label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { val: 'HALAL', label: 'Halal' },
+                            { val: 'NON_HALAL', label: 'Non-Halal' },
+                          ].map((opt) => (
+                            <button
+                              type="button"
+                              key={opt.val}
+                              onClick={() => setHalalStatus(opt.val)}
+                              className={`h-11 rounded-xl border text-sm font-medium transition cursor-pointer ${
+                                halalStatus === opt.val
+                                  ? 'bg-violet-600/20 border-violet-500 text-violet-300'
+                                  : 'bg-background border-input text-muted-foreground hover:bg-muted/40'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">Displayed as a tag on your business profile.</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

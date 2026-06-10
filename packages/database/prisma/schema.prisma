@@ -499,6 +499,7 @@ model Business {
   socialLinks    Json           @default("{}") @map("social_links")
   tags           Json           @default("[]")
   subcategoryIds Json           @default("[]") @map("subcategory_ids")
+  halalStatus    String?        @map("halal_status") @db.VarChar(20)
   profileType    BusinessProfileType @default(OWNER) @map("profile_type")
   logo           String?        @db.Text
   coverImage     String?        @map("cover_image") @db.Text

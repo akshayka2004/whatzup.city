@@ -292,6 +292,18 @@ export default function BusinessDetailPage() {
                           Verified Merchant
                         </span>
                       )}
+                      {biz.halalStatus && (
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border',
+                            biz.halalStatus === 'HALAL'
+                              ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                              : 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+                          )}
+                        >
+                          {biz.halalStatus === 'HALAL' ? 'Halal' : 'Non-Halal'}
+                        </span>
+                      )}
                     </div>
                     <p className="text-muted-foreground mb-4">
                       {biz.category?.name || ''}

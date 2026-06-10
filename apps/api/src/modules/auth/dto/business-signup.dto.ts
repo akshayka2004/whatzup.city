@@ -33,6 +33,11 @@ export class BusinessSignupDto {
   @IsArray()
   subcategorySlugs?: string[];
 
+  @ApiProperty({ example: 'HALAL', enum: ['HALAL', 'NON_HALAL'], required: false, description: 'Food businesses only' })
+  @IsOptional()
+  @IsString()
+  halalStatus?: string;
+
   @ApiProperty({ enum: BusinessProfileType, default: BusinessProfileType.OWNER, required: false })
   @IsOptional()
   @IsEnum(BusinessProfileType)
