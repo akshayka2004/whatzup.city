@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
+import { KERALA_CITIES } from '@/lib/constants';
 import { LegalFooter } from '@/components/common/legal-footer';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
 import { authService } from '@/lib/services/auth-service';
@@ -245,9 +246,9 @@ export default function UnifiedRegisterPage() {
   const [businessId, setBusinessId] = useState('');
 
   // Form states: Kerala Entity Profile details & Doc uploads (Step 4)
-  // Locked to Thiruvananthapuram for Release 1 — multi-city UI hidden, DB architecture preserved
-  const [district] = useState('Thiruvananthapuram');
-  const [city] = useState('Thiruvananthapuram');
+  // City is selectable from the serviceable Kerala cities. District mirrors city.
+  const [district, setDistrict] = useState('Thiruvananthapuram');
+  const [city, setCity] = useState('Thiruvananthapuram');
   const [address, setAddress] = useState('');
   const [deptType, setDeptType] = useState('Local');
 
@@ -1158,13 +1159,19 @@ export default function UnifiedRegisterPage() {
               </div>
 
               <div className="space-y-4">
-                {/* City locked to Thiruvananthapuram for Release 1 */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">City / District</label>
-                  <div className="flex items-center gap-2 h-11 px-3 rounded-xl border border-input bg-muted/30 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4 shrink-0" />
-                    <span>Thiruvananthapuram, Kerala</span>
-                    <span className="ml-auto text-[10px] text-muted-foreground/50 font-mono">Release 1</span>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <select
+                      value={city}
+                      onChange={(e) => { setCity(e.target.value); setDistrict(e.target.value); }}
+                      className="w-full h-11 pl-10 pr-4 border border-input bg-background text-foreground rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer"
+                    >
+                      {KERALA_CITIES.map((c) => (
+                        <option key={c} value={c}>{c}, Kerala</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 

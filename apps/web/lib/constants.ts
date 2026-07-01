@@ -28,6 +28,44 @@ export const BUSINESS_CATEGORIES = [
   'Real Estate',
 ] as const;
 
+// Serviceable cities (Kerala). Single source used by registration, filters,
+// and city-targeting for offers/announcements/events.
+export const KERALA_CITIES = [
+  'Thiruvananthapuram',
+  'Kochi',
+  'Kozhikkodu',
+  'Kollam',
+  'Thrissur',
+  'Kannur',
+  'Palakkad',
+  'Alappuzha',
+  'Kottayam',
+  'Thalassery',
+  'Payyannur',
+  'Malappuram',
+  'Guruvayoor',
+  'Irinjalakkuda',
+  'Ottappalam',
+  'Thiruvalla',
+  'Thodupuzha',
+  'Ettumanoor',
+  'Chalakkudy',
+  'Changanacherry',
+  'Punalur',
+  'Sulthan Bathery',
+  'Kattappana',
+  'Varkala',
+  'Kothamangalam',
+  'Angamali',
+  'Kalpetta',
+  'Adoor',
+  'Chengannur',
+  'Aluva',
+  'Pala',
+] as const;
+
+export type KeralaCity = (typeof KERALA_CITIES)[number];
+
 // Navigation items
 export const PUBLIC_NAV_ITEMS = [
   { label: 'Browse', href: '/category', icon: 'Grid' },

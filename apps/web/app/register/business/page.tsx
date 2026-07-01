@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { onboardingService, BusinessDraft } from '@/lib/services/onboarding-service';
+import { KERALA_CITIES } from '@/lib/constants';
 import { optimizeImage } from '@/lib/utils/image-optimizer';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,7 +50,7 @@ function RegisterBusinessWizardContent() {
   // City/state locked to Thiruvananthapuram for Release 1
   const [ownerName, setOwnerName] = useState('');
   const [address, setAddress] = useState('');
-  const city = 'Thiruvananthapuram';
+  const [city, setCity] = useState('Thiruvananthapuram');
   const state = 'Kerala';
   const [postalCode, setPostalCode] = useState('');
   const [website, setWebsite] = useState('');
@@ -92,6 +93,7 @@ function RegisterBusinessWizardContent() {
           setDescription(draft.description || '');
           setOwnerName(draft.ownerName || '');
           setAddress(draft.address || '');
+          if (draft.city) setCity(draft.city);
           // city/state are locked to Thiruvananthapuram/Kerala for Release 1
           setPostalCode(draft.zipCode || '');
           setWebsite(draft.socialLinks?.website || '');
@@ -566,12 +568,17 @@ function RegisterBusinessWizardContent() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {/* City/State locked to Thiruvananthapuram, Kerala for Release 1 */}
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">City / District</label>
-                    <div className="flex items-center h-11 px-3 rounded-xl border border-input bg-muted/30 text-sm text-muted-foreground">
-                      Thiruvananthapuram, Kerala
-                    </div>
+                    <select
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full h-11 px-3 rounded-xl border border-input bg-background text-foreground text-sm appearance-none cursor-pointer focus:ring-1 focus:outline-none"
+                    >
+                      {KERALA_CITIES.map((c) => (
+                        <option key={c} value={c}>{c}, Kerala</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">Postal Code</label>

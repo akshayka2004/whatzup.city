@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,6 +61,8 @@ function mapApiOffer(o: any): Offer {
 }
 
 export default function OffersPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
@@ -92,10 +96,19 @@ export default function OffersPage() {
   }, [typeFilter, offers]);
 
   const handleClaim = async (offer: Offer) => {
-    // Best-effort API call; always mark claimed locally
-    try {
-      await apiService.post(`/v1/offers/${offer.id}/redeem`);
-    } catch (_) {}
+    // Only logged-in users may claim — guests go to registration.
+    if (!user) {
+      router.push('/register?redirect=/offers');
+      return;
+    }
+    // Server-side redemption is authoritative (JWT-guarded). Only mark claimed
+    // locally when it actually succeeds.
+    const res = await apiService.post<any>(`/v1/offers/${offer.id}/redeem`, {});
+    if (res.status === 401) {
+      router.push('/register?redirect=/offers');
+      return;
+    }
+    if (res.error) return; // surfaced elsewhere; don't fake a claim
     const existing = getClaimedOffers();
     if (!existing.includes(offer.id)) {
       const updated = [...existing, offer.id];

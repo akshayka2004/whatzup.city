@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,6 +58,8 @@ function timeAgo(dateStr: string): string {
 
 export default function BusinessDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const { user } = useAuth();
   const businessId = (params?.id as string) || '';
 
   const [biz, setBiz] = useState<any>(null);
@@ -146,10 +149,34 @@ export default function BusinessDetailPage() {
   const [billFile, setBillFile] = useState<File | null>(null);
   const [billSubmitting, setBillSubmitting] = useState(false);
 
-  const handleConfirmClaim = () => {
+  // Only logged-in users may claim. Guests are redirected to registration.
+  const handleClaimClick = (offer: any) => {
+    if (!user) {
+      router.push(`/register?redirect=/business/${businessId}`);
+      return;
+    }
+    setClaimingOffer(offer);
+  };
+
+  const [claiming, setClaiming] = useState(false);
+  const handleConfirmClaim = async () => {
     if (!claimingOffer) return;
-    const randomCode = `CLAIM-${Math.floor(1000 + Math.random() * 9000)}`;
-    setClaimedCode(randomCode);
+    if (!user) {
+      setClaimingOffer(null);
+      router.push(`/register?redirect=/business/${businessId}`);
+      return;
+    }
+    setClaiming(true);
+    // Server-side redemption (JWT-guarded) — records the claim + returns a code.
+    const res = await apiService.post<any>(`/v1/offers/${claimingOffer.id}/redeem`, {});
+    setClaiming(false);
+    if (res.status === 401) {
+      setClaimingOffer(null);
+      router.push(`/register?redirect=/business/${businessId}`);
+      return;
+    }
+    const code = res.data?.code || `CLAIM-${Math.floor(1000 + Math.random() * 9000)}`;
+    setClaimedCode(code);
     setClaimingOffer(null);
   };
 
@@ -556,7 +583,7 @@ export default function BusinessDetailPage() {
                         {expiry && <p className="text-xs text-muted-foreground mb-2">{expiry}</p>}
                         <Button
                           variant="outline"
-                          onClick={() => setClaimingOffer(o)}
+                          onClick={() => handleClaimClick(o)}
                           className="w-full rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
                           size="sm"
                         >
@@ -786,9 +813,10 @@ export default function BusinessDetailPage() {
               </Button>
               <Button
                 onClick={handleConfirmClaim}
-                className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold px-4 cursor-pointer"
+                disabled={claiming}
+                className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold px-4 cursor-pointer disabled:opacity-60"
               >
-                Confirm Claim
+                {claiming ? 'Claiming…' : 'Confirm Claim'}
               </Button>
             </div>
           </Card>
