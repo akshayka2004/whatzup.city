@@ -25,6 +25,7 @@ import {
   MessageSquare,
   Package,
   Flag,
+  CalendarDays,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,7 @@ const OWNER_MENU = [
   { label: 'Customers', href: '/dashboard/customers', icon: Users },
   { label: 'Campaigns', href: '/dashboard/campaigns', icon: Megaphone },
   { label: 'Offers', href: '/dashboard/offers', icon: Tag },
+  { label: 'Events', href: '/dashboard/events', icon: CalendarDays },
   { label: 'Products', href: '/dashboard/products', icon: Package },
   { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
   { label: 'Branches', href: '/dashboard/branches', icon: GitBranch },

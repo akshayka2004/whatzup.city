@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Users, Lock, Activity, Settings, Flag, Database, LogOut, Folder, Tag, Share2, AlertTriangle, UserPlus, CheckCircle, Bell, FileText, CreditCard, UserCog, Building2 } from 'lucide-react';
+import { Users, Lock, Activity, Settings, Flag, Database, LogOut, Folder, Tag, Share2, AlertTriangle, UserPlus, CheckCircle, Bell, FileText, CreditCard, UserCog, Building2, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -18,6 +18,7 @@ const menuItems = [
   { label: 'Subscriptions', href: '/super-admin/subscriptions', icon: CreditCard },
   { label: 'Referrals', href: '/super-admin/referrals', icon: Share2 },
   { label: 'Platform Offers', href: '/super-admin/offers', icon: Tag },
+  { label: 'Events', href: '/super-admin/events', icon: CalendarDays },
   { label: 'Security', href: '/super-admin/security', icon: Lock },
   { label: 'System Health', href: '/super-admin/health', icon: Activity },
   { label: 'Admins', href: '/super-admin/roles', icon: UserCog },
