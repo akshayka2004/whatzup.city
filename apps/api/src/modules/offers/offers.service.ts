@@ -63,6 +63,7 @@ export class OffersService {
     if (data.code !== undefined) payload.code = data.code;
     if (data.maxRedemptions !== undefined) payload.maxRedemptions = data.maxRedemptions;
     if (data.terms !== undefined) payload.terms = data.terms;
+    payload.targetCities = Array.isArray(data.targetCities) ? data.targetCities : [];
 
     const offer = await this.offerRepo.create(tenantId, { businessId: actualBusinessId, ...payload });
     await this.redis.delPattern(`offers:${tenantId}:*`);
@@ -79,7 +80,7 @@ export class OffersService {
     return offer;
   }
 
-  async findActive(tenantId: string, page = 1, limit = 20, isPublic = false) {
+  async findActive(tenantId: string, page = 1, limit = 20, isPublic = false, city?: string) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const pagination = new PaginationParamsDto();
     pagination.page = page;
@@ -98,7 +99,13 @@ export class OffersService {
       const pageVal = page || 1;
       const skipVal = (pageVal - 1) * limitVal;
 
-      const where = { ...criteria, deletedAt: null };
+      const where: any = { ...criteria, deletedAt: null };
+      if (city) {
+        where.OR = [
+          { targetCities: { equals: [] } },
+          { targetCities: { array_contains: city } },
+        ];
+      }
 
       const [data, total] = await Promise.all([
         this.offerRepo.model.findMany({
@@ -181,6 +188,7 @@ export class OffersService {
     if (data.code !== undefined) payload.code = data.code;
     if (data.maxRedemptions !== undefined) payload.maxRedemptions = data.maxRedemptions;
     if (data.terms !== undefined) payload.terms = data.terms;
+    if (data.targetCities !== undefined) payload.targetCities = Array.isArray(data.targetCities) ? data.targetCities : [];
 
     const offer = await this.offerRepo.update(tenantId, id, payload);
     await this.redis.delPattern(`offers:${tenantId}:*`);

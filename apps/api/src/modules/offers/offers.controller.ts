@@ -25,8 +25,12 @@ export class OffersController {
 
   @Public()
   @Get()
-  async findActive(@Query('tenantId') tenantId: string = 'default', @Query('page') page?: number) {
-    return this.offersService.findActive(tenantId, page, 20, true);
+  async findActive(
+    @Query('tenantId') tenantId: string = 'default',
+    @Query('page') page?: number,
+    @Query('city') city?: string,
+  ) {
+    return this.offersService.findActive(tenantId, page, 20, true, city);
   }
 
   // ── Super-admin: platform-wide offers (all tenants) ──

@@ -859,7 +859,8 @@ model Offer {
   maxRedemptions     Int?        @map("max_redemptions")
   currentRedemptions Int         @default(0) @map("current_redemptions")
   terms              String?     @db.Text
-  
+  targetCities       Json        @default("[]") @map("target_cities")
+
   // Core Audit Fields
   createdAt          DateTime    @default(now()) @map("created_at")
   updatedAt          DateTime    @updatedAt @map("updated_at")
