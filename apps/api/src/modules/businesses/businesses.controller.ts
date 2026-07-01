@@ -99,6 +99,32 @@ export class BusinessesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Get('admin/all')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List all businesses across tenants (super-admin)' })
+  async adminAll(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+  ) {
+    return this.businessesService.adminFindAll(page, limit, search);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Patch('admin/:id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Edit any business profile (super-admin)' })
+  async adminUpdate(
+    @Param('id') id: string,
+    @CurrentUser('id') adminId: string,
+    @Body() data: any,
+  ) {
+    return this.businessesService.adminUpdate(id, adminId, data);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @Patch(':id/status')
   @ApiBearerAuth()

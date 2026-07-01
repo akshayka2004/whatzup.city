@@ -229,6 +229,75 @@ export class BusinessesService {
     return updated;
   }
 
+  // Super-admin: list every business across all tenants (any status).
+  async adminFindAll(page = 1, limit = 25, search?: string) {
+    const pageVal = Math.max(1, Number(page) || 1);
+    const limitVal = Math.min(Number(limit) || 25, 100);
+    const where: any = { deletedAt: null };
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { city: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    const [data, total] = await Promise.all([
+      this.businessRepo.model.findMany({
+        where,
+        skip: (pageVal - 1) * limitVal,
+        take: limitVal,
+        orderBy: { createdAt: 'desc' },
+        include: { category: { select: { id: true, name: true, slug: true } } },
+      }),
+      this.businessRepo.model.count({ where }),
+    ]);
+    return {
+      data,
+      meta: {
+        total,
+        page: pageVal,
+        limit: limitVal,
+        totalPages: Math.ceil(total / limitVal),
+        hasNext: pageVal * limitVal < total,
+        hasPrev: pageVal > 1,
+      },
+    };
+  }
+
+  // Super-admin: edit any business's profile (cross-tenant, whitelisted fields).
+  async adminUpdate(id: string, adminId: string, data: any) {
+    const business = await this.businessRepo.model.findFirst({ where: { id, deletedAt: null } });
+    if (!business) throw new NotFoundException('Business not found');
+
+    const ALLOWED = [
+      'name', 'description', 'categoryId', 'ownerName', 'phone', 'email', 'website',
+      'address', 'city', 'state', 'zipCode', 'district', 'googleMapsUrl', 'socialLinks',
+      'tags', 'logo', 'coverImage', 'status', 'isVerified', 'halalStatus',
+    ];
+    const payload: any = {};
+    for (const k of ALLOWED) if (data[k] !== undefined) payload[k] = data[k];
+
+    const updated = await this.businessRepo.model.update({ where: { id }, data: payload });
+    await this.redis.del(`business:${id}`);
+
+    await this.auditService.log({
+      tenantId: business.tenantId,
+      userId: adminId,
+      action: 'ADMIN_UPDATE_BUSINESS',
+      resource: 'BUSINESS',
+      resourceId: id,
+      oldData: business,
+      newData: updated,
+    });
+
+    try {
+      await this.searchService.indexBusiness(id, business.tenantId);
+    } catch { /* non-fatal */ }
+
+    return updated;
+  }
+
   async getOwnerBusinesses(tenantId: string, ownerId: string) {
     return this.businessRepo.findMany(
       tenantId,
