@@ -225,11 +225,28 @@ export class UsersService {
       this.db.user.count({ where }),
     ]);
 
+    // Per-user bill aggregate (submitted count + total amount spent).
+    const userIds = data.map((u: any) => u.id);
+    const billAgg = userIds.length
+      ? await this.db.bill.groupBy({
+          by: ['userId'],
+          where: { userId: { in: userIds }, deletedAt: null },
+          _count: { _all: true },
+          _sum: { amount: true },
+        })
+      : [];
+    const billMap = new Map(
+      billAgg.map((b: any) => [b.userId, { count: b._count._all, total: Number(b._sum.amount ?? 0) }]),
+    );
+
     return {
       data: data.map((u: any) => ({
         ...u,
         business: u.businesses?.[0] ?? null,
         businesses: undefined,
+        billCount: billMap.get(u.id)?.count ?? 0,
+        totalSpent: billMap.get(u.id)?.total ?? 0,
+        categoryName: u.businesses?.[0]?.category?.name ?? null,
       })),
       meta: {
         total,

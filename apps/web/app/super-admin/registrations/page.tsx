@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
   Users, Search, ChevronLeft, ChevronRight, RefreshCw,
-  ArrowUp, ArrowDown, ArrowUpDown, ShieldCheck, ShieldX,
+  ArrowUp, ArrowDown, ArrowUpDown, ShieldCheck, ShieldX, Receipt,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import {
@@ -28,6 +28,9 @@ interface UserRow {
   lastLoginAt?: string | null;
   tenant?: { name?: string; slug?: string } | null;
   business?: { name?: string; status?: string } | null;
+  billCount?: number;
+  totalSpent?: number;
+  categoryName?: string | null;
 }
 
 const ROLE_OPTIONS = [
@@ -57,6 +60,30 @@ export default function SuperAdminUsersPage() {
   const [rows, setRows] = useState<UserRow[]>([]);
   const [meta, setMeta] = useState<any>({ total: 0, totalPages: 1, page: 1 });
   const [loading, setLoading] = useState(true);
+
+  // Client-side sort for aggregate columns (bills / spend / category) on the
+  // loaded page — these aren't server-sortable columns.
+  const [clientSort, setClientSort] = useState<{
+    key: 'billCount' | 'totalSpent' | 'categoryName' | null;
+    dir: 'asc' | 'desc';
+  }>({ key: null, dir: 'desc' });
+
+  const displayRows = useMemo(() => {
+    if (!clientSort.key) return rows;
+    const k = clientSort.key;
+    const dir = clientSort.dir === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const av: any = k === 'categoryName' ? (a.categoryName || '') : (a[k] ?? 0);
+      const bv: any = k === 'categoryName' ? (b.categoryName || '') : (b[k] ?? 0);
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }, [rows, clientSort]);
+
+  const toggleClientSort = (key: 'billCount' | 'totalSpent' | 'categoryName') => {
+    setClientSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'desc' }));
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 350);
@@ -182,14 +209,28 @@ export default function SuperAdminUsersPage() {
                     <SortHeader label="Name" sortKey="name" />
                     <SortHeader label="Email" sortKey="email" />
                     <SortHeader label="Role" sortKey="role" />
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground select-none">
+                      <button onClick={() => toggleClientSort('categoryName')} className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer">
+                        Category {clientSort.key === 'categoryName' ? (clientSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                      </button>
+                    </th>
                     <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Tenant / Business</th>
+                    <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground select-none">
+                      <button onClick={() => toggleClientSort('billCount')} className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer flex-row-reverse">
+                        Bills {clientSort.key === 'billCount' ? (clientSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                      </button>
+                    </th>
+                    <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground select-none">
+                      <button onClick={() => toggleClientSort('totalSpent')} className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer flex-row-reverse">
+                        Total Spent {clientSort.key === 'totalSpent' ? (clientSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                      </button>
+                    </th>
                     <SortHeader label="Joined" sortKey="createdAt" />
-                    <SortHeader label="Last Login" sortKey="lastLoginAt" />
                     <SortHeader label="Status" sortKey="isActive" align="right" />
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((u) => (
+                  {displayRows.map((u) => (
                     <tr key={u.id} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
                       <td className="px-5 py-3">
                         <p className="font-semibold text-foreground">{u.name || '—'}</p>
@@ -206,14 +247,22 @@ export default function SuperAdminUsersPage() {
                           {u.role}
                         </span>
                       </td>
+                      <td className="px-5 py-3 text-muted-foreground text-xs">{u.categoryName || '—'}</td>
                       <td className="px-5 py-3 text-muted-foreground">
                         <p className="text-foreground text-xs font-medium">{u.business?.name || u.tenant?.name || '—'}</p>
                         {u.business?.status && (
                           <p className="text-[10px] text-muted-foreground">{u.business.status}</p>
                         )}
                       </td>
+                      <td className="px-5 py-3 text-right">
+                        <span className="inline-flex items-center gap-1 text-foreground font-semibold">
+                          <Receipt className="h-3 w-3 text-cyan-400" /> {u.billCount ?? 0}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-right font-semibold text-emerald-400 whitespace-nowrap">
+                        ₹{(u.totalSpent ?? 0).toLocaleString('en-IN')}
+                      </td>
                       <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{fmtDate(u.createdAt)}</td>
-                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{fmtDate(u.lastLoginAt)}</td>
                       <td className="px-5 py-3 text-right">
                         {u.isActive ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
