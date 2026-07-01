@@ -72,6 +72,7 @@ export const PUBLIC_NAV_ITEMS = [
   { label: 'Nearby', href: '/nearby', icon: 'MapPin' },
   { label: 'Search', href: '/search', icon: 'Search' },
   { label: 'Offers', href: '/offers', icon: 'Ticket' },
+  { label: 'Events', href: '/events', icon: 'Calendar' },
   { label: 'Announcements', href: '/government', icon: 'FileText' },
   { label: 'Favorites', href: '/favorites', icon: 'Heart' },
   { label: 'Notifications', href: '/notifications', icon: 'Bell' },

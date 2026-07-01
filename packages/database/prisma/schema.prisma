@@ -50,6 +50,8 @@ model Tenant {
   products                Product[]
   offers                  Offer[]
   offerRedemptions        OfferRedemption[]
+  events                  Event[]
+  eventClicks             EventClick[]
   coupons                 Coupon[]
   reviews                 Review[]
   reviewMedia             ReviewMedia[]
@@ -539,6 +541,7 @@ model Business {
   productCategories ProductCategory[]
   products          Product[]
   offers            Offer[]
+  events            Event[]
   coupons           Coupon[]
   reviews           Review[]
   bookmarks         Bookmark[]
@@ -2126,5 +2129,55 @@ model BranchAnalyticsSummary {
 
   @@index([tenantId])
   @@map("branch_analytics_summaries")
+}
+
+// ── Iteration: Events (public listing + external register/ticket + click tracking) ──
+model Event {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  businessId         String    @map("business_id") @db.Uuid
+  title              String    @db.VarChar(255)
+  description        String    @db.Text
+  posterImage        String?   @map("poster_image") @db.Text
+  venue              String?   @db.VarChar(255)
+  city               String?   @db.VarChar(100)
+  targetCities       Json      @default("[]") @map("target_cities")
+  startDate          DateTime  @map("start_date")
+  endDate            DateTime  @map("end_date")
+  registrationUrl    String?   @map("registration_url") @db.Text
+  ticketUrl          String?   @map("ticket_url") @db.Text
+  registrationClicks Int       @default(0) @map("registration_clicks")
+  ticketClicks       Int       @default(0) @map("ticket_clicks")
+  status             String    @default("ACTIVE") @db.VarChar(30)
+
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  clicks   EventClick[]
+
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([status, endDate])
+  @@index([deletedAt])
+  @@map("events")
+}
+
+model EventClick {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  eventId   String   @map("event_id") @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  type      String   @db.VarChar(20) // REGISTER | TICKET
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@index([tenantId])
+  @@map("event_clicks")
 }
 
