@@ -50,6 +50,7 @@ export default function BusinessDashboardPage() {
   // State
   const [loading, setLoading] = useState(true);
   const [offers, setOffers] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [business, setBusiness] = useState<any>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -72,9 +73,10 @@ export default function BusinessDashboardPage() {
     if (!businessId) { setLoading(false); return; }
     setLoading(true);
     try {
-      const [bizRes, offersRes] = await Promise.allSettled([
+      const [bizRes, offersRes, eventsRes] = await Promise.allSettled([
         apiService.get<any>('/v1/businesses/owner/mine'),
         apiService.get<any>(`/v1/offers/my/${businessId}`),
+        apiService.get<any>(`/v1/events/mine/${businessId}`),
       ]);
 
       // Business: owner/mine works for OWNER; staff need a direct ID lookup
@@ -99,6 +101,14 @@ export default function BusinessDashboardPage() {
         setOffers(list);
       } else {
         setOffers([]);
+      }
+
+      if (eventsRes.status === 'fulfilled' && eventsRes.value.data) {
+        const d: any = eventsRes.value.data;
+        const list = Array.isArray(d) ? d : d?.data ?? d?.items ?? [];
+        setEvents(list);
+      } else {
+        setEvents([]);
       }
     } catch (_) {}
     setLoading(false);
@@ -370,6 +380,29 @@ export default function BusinessDashboardPage() {
             );
           })}
         </div>
+
+        {/* ── Published content counts (per-company) ── */}
+        {!isModerator && !isStaff && (
+          <Card className="p-4 md:p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
+            <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Published content</span>
+              <Link href="/dashboard/offers" className="flex items-center gap-2 group">
+                <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400"><Tag className="h-4 w-4" /></span>
+                <span className="text-lg font-extrabold text-foreground group-hover:text-primary transition-colors">
+                  {loading ? '…' : offers.length}
+                </span>
+                <span className="text-xs text-muted-foreground">Offers</span>
+              </Link>
+              <Link href="/dashboard/events" className="flex items-center gap-2 group">
+                <span className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400"><Clock className="h-4 w-4" /></span>
+                <span className="text-lg font-extrabold text-foreground group-hover:text-primary transition-colors">
+                  {loading ? '…' : events.length}
+                </span>
+                <span className="text-xs text-muted-foreground">Events</span>
+              </Link>
+            </div>
+          </Card>
+        )}
 
         {/* ── Staff quick-access ── */}
         {isStaff && (

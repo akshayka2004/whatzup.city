@@ -5,7 +5,7 @@ import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Building2, Search, RefreshCw, Pencil, X, Loader2, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Building2, Search, RefreshCw, Pencil, X, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Tag, CalendarDays } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES } from '@/lib/constants';
 
@@ -30,6 +30,7 @@ interface Biz {
   halalStatus?: string | null;
   logo?: string | null;
   coverImage?: string | null;
+  _count?: { offers?: number; events?: number };
 }
 
 export default function SuperAdminBusinessesPage() {
@@ -136,6 +137,7 @@ export default function SuperAdminBusinessesPage() {
                     <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Business</th>
                     <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Category</th>
                     <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">City</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Published</th>
                     <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
                     <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">Edit</th>
                   </tr>
@@ -149,6 +151,10 @@ export default function SuperAdminBusinessesPage() {
                       </td>
                       <td className="px-5 py-3 text-muted-foreground text-xs">{b.category?.name || '—'}</td>
                       <td className="px-5 py-3 text-muted-foreground text-xs">{b.city || '—'}</td>
+                      <td className="px-5 py-3 text-xs">
+                        <span className="inline-flex items-center gap-1 mr-2 text-emerald-400"><Tag className="h-3 w-3" />{b._count?.offers ?? 0}</span>
+                        <span className="inline-flex items-center gap-1 text-cyan-400"><CalendarDays className="h-3 w-3" />{b._count?.events ?? 0}</span>
+                      </td>
                       <td className="px-5 py-3"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/15 text-slate-300">{b.status}</span></td>
                       <td className="px-5 py-3 text-right">
                         <Button onClick={() => openEdit(b)} variant="outline" size="sm" className="rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer">

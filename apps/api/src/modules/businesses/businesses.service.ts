@@ -248,7 +248,15 @@ export class BusinessesService {
         skip: (pageVal - 1) * limitVal,
         take: limitVal,
         orderBy: { createdAt: 'desc' },
-        include: { category: { select: { id: true, name: true, slug: true } } },
+        include: {
+          category: { select: { id: true, name: true, slug: true } },
+          _count: {
+            select: {
+              offers: { where: { deletedAt: null } },
+              events: { where: { deletedAt: null } },
+            },
+          },
+        },
       }),
       this.businessRepo.model.count({ where }),
     ]);
