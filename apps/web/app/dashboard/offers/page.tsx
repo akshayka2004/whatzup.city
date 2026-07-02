@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Plus, Tag, Eye, Edit, Trash2, X, AlertTriangle, Clock, Calendar, Loader2 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
+import { KERALA_CITIES } from '@/lib/constants';
 
 interface Offer {
   id: string;
@@ -17,6 +18,7 @@ interface Offer {
   views: number;
   clicks: number;
   tags: string[];
+  targetCities: string[];
   startsAt?: string;   // ISO date string
   expiresAt?: string;  // ISO date string — filtered out automatically when past
 }
@@ -123,6 +125,7 @@ export default function OffersPage() {
           views: o.views ?? 0,
           clicks: o.clicks ?? 0,
           tags: Array.isArray(o.tags) ? o.tags : [],
+          targetCities: Array.isArray(o.targetCities) ? o.targetCities : [],
           startsAt: o.startDate || o.startsAt || undefined,
           expiresAt: o.endDate || o.expiresAt || undefined,
         })),
@@ -148,10 +151,14 @@ export default function OffersPage() {
   const [formTags, setFormTags] = useState<string[]>([]);
   const [formStartsAt, setFormStartsAt] = useState('');
   const [formExpiresAt, setFormExpiresAt] = useState('');
+  const [formCities, setFormCities] = useState<string[]>([]);
+
+  const toggleCity = (c: string) =>
+    setFormCities((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
 
   const resetForm = () => {
     setTitle(''); setDiscount(0); setActive(true);
-    setFormTags([]); setFormStartsAt(''); setFormExpiresAt('');
+    setFormTags([]); setFormStartsAt(''); setFormExpiresAt(''); setFormCities([]);
   };
 
   const handleOpenCreate = () => {
@@ -176,6 +183,7 @@ export default function OffersPage() {
         status: active ? 'ACTIVE' : 'PAUSED',
         startDate: formStartsAt ? new Date(formStartsAt).toISOString() : now,
         endDate: formExpiresAt ? new Date(formExpiresAt).toISOString() : defaultEnd,
+        targetCities: formCities,
       });
       if (res.data && !res.error) {
         // Refetch to get fresh list with whatever the DB returned
@@ -198,6 +206,7 @@ export default function OffersPage() {
     setFormTags([...offer.tags]);
     setFormStartsAt(offer.startsAt || '');
     setFormExpiresAt(offer.expiresAt || '');
+    setFormCities([...(offer.targetCities || [])]);
   };
 
   const handleEdit = async (e: React.FormEvent) => {
@@ -211,6 +220,7 @@ export default function OffersPage() {
         description: desc,
         discountPercent: Number(discount),
         status: active ? 'ACTIVE' : 'PAUSED',
+        targetCities: formCities,
       };
       if (formStartsAt) body.startDate = new Date(formStartsAt).toISOString();
       if (formExpiresAt) body.endDate = new Date(formExpiresAt).toISOString();
@@ -219,6 +229,7 @@ export default function OffersPage() {
         setOffers(offers.map((o) =>
           o.id === editingOffer.id
             ? { ...o, title, discount: Number(discount), active, tags: formTags,
+                targetCities: formCities,
                 startsAt: formStartsAt || undefined, expiresAt: formExpiresAt || undefined }
             : o,
         ));
@@ -455,6 +466,27 @@ export default function OffersPage() {
                     />
                   </div>
                 </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
+                    Show in cities <span className="text-xs font-normal">(none = all cities)</span>
+                  </label>
+                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                    {KERALA_CITIES.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => toggleCity(c)}
+                        className={`px-2 py-1 rounded-lg text-[11px] border cursor-pointer ${
+                          formCities.includes(c)
+                            ? 'bg-primary/20 border-primary text-primary'
+                            : 'bg-background border-input text-muted-foreground'
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex items-center gap-2 pt-2">
                   <input
                     type="checkbox"
@@ -541,6 +573,27 @@ export default function OffersPage() {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground block mb-2">Expires On</label>
                     <Input type="date" value={formExpiresAt} onChange={(e) => setFormExpiresAt(e.target.value)} min={formStartsAt || today} className="rounded-xl border-input bg-background text-foreground text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">
+                    Show in cities <span className="text-xs font-normal">(none = all cities)</span>
+                  </label>
+                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                    {KERALA_CITIES.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => toggleCity(c)}
+                        className={`px-2 py-1 rounded-lg text-[11px] border cursor-pointer ${
+                          formCities.includes(c)
+                            ? 'bg-primary/20 border-primary text-primary'
+                            : 'bg-background border-input text-muted-foreground'
+                        }`}
+                      >
+                        {c}
+                      </button>
+                    ))}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 pt-2">
