@@ -206,8 +206,22 @@ export class OffersService {
     return offer;
   }
 
-  async redeem(tenantId: string, id: string, userId: string) {
-    const redeemed = await this.offerRepo.incrementRedemptions(tenantId, id);
+  async redeem(_claimerTenantId: string, id: string, userId: string) {
+    // Offers are cross-tenant — each business registers its OWN tenant, but the
+    // claimer usually belongs to a different tenant. Resolve the offer globally
+    // and use the offer's OWN tenantId for every write. (Scoping to the
+    // claimer's tenant previously threw "Offer not found or access denied".)
+    const offer = await this.offerRepo.model.findFirst({ where: { id, deletedAt: null } });
+    if (!offer) throw new NotFoundException('Offer not found');
+    if (offer.maxRedemptions && offer.currentRedemptions >= offer.maxRedemptions) {
+      throw new BadRequestException('Offer has reached its maximum redemption capacity');
+    }
+    const tenantId = offer.tenantId;
+
+    const redeemed = await this.offerRepo.model.update({
+      where: { id },
+      data: { currentRedemptions: { increment: 1 } },
+    });
 
     // Write OfferRedemption record — claimer becomes a customer of this business
     try {
@@ -224,13 +238,17 @@ export class OffersService {
       // Non-fatal — counter already incremented above
     }
 
-    // Track customer-business relationship
-    await this.businessCustomerService.trackInteraction(
-      tenantId,
-      userId,
-      redeemed.businessId,
-      'OFFER_REDEEM',
-    );
+    // Track customer-business relationship (non-fatal — claim already counted)
+    try {
+      await this.businessCustomerService.trackInteraction(
+        tenantId,
+        userId,
+        redeemed.businessId,
+        'OFFER_REDEEM',
+      );
+    } catch (_) {
+      /* non-fatal */
+    }
 
     await this.auditService.log({
       tenantId,
