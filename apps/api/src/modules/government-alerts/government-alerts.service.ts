@@ -28,6 +28,7 @@ export class GovernmentAlertsService {
       publishAt?: string;
       expiresAt?: string;
       targetAudience?: any;
+      targetCities?: string[];
     },
   ) {
     const alert = await this.db.governmentAnnouncement.create({
@@ -42,6 +43,7 @@ export class GovernmentAlertsService {
         publishAt: data.publishAt ? new Date(data.publishAt) : null,
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
         targetAudience: data.targetAudience || {},
+        targetCities: Array.isArray(data.targetCities) ? data.targetCities : [],
       },
     });
 

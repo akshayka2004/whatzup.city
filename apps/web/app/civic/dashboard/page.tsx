@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
+import { KERALA_CITIES } from '@/lib/constants';
 
 interface Notice {
   id: number | string;
@@ -100,8 +101,12 @@ export default function CivicDashboardPage() {
   const [formBody, setFormBody] = useState('');
   const [formType, setFormType] = useState<NoticeType>('NOTICE');
   const [formExpiresAt, setFormExpiresAt] = useState('');
+  const [formCities, setFormCities] = useState<string[]>([]);
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const toggleCity = (c: string) =>
+    setFormCities((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
 
   const handleSignOut = () => {
     if (typeof window !== 'undefined') {
@@ -129,6 +134,7 @@ export default function CivicDashboardPage() {
       category: formType,
       priority: priorityMap[formType],
       expiresAt: formExpiresAt ? new Date(formExpiresAt).toISOString() : undefined,
+      targetCities: formCities,
     });
 
     if (!res.error) {
@@ -144,7 +150,7 @@ export default function CivicDashboardPage() {
       setNotices([newNotice, ...notices]);
     }
 
-    setFormTitle(''); setFormBody(''); setFormType('NOTICE'); setFormExpiresAt('');
+    setFormTitle(''); setFormBody(''); setFormType('NOTICE'); setFormExpiresAt(''); setFormCities([]);
     setShowForm(false);
     setSuccess('Published successfully!');
     setTimeout(() => setSuccess(''), 3000);
@@ -310,6 +316,27 @@ export default function CivicDashboardPage() {
                   className="bg-background border-input text-sm text-foreground rounded-xl resize-none"
                   required
                 />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Show in cities <span className="font-normal">(none = all cities)</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                  {KERALA_CITIES.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => toggleCity(c)}
+                      className={`px-2 py-1 rounded-lg text-[11px] border cursor-pointer ${
+                        formCities.includes(c)
+                          ? 'bg-primary/20 border-primary text-primary'
+                          : 'bg-background border-input text-muted-foreground'
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="flex justify-end gap-2">
                 <Button

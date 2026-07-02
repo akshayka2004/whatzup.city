@@ -14,15 +14,30 @@ export class AnnouncementsService {
     return this.db.governmentAnnouncement.create({ data: { tenantId, agencyId, ...data } });
   }
 
-  async findPublished(tenantId: string, page = 1, limit = 20) {
-    tenantId = await this.tenantResolver.resolveTenantId(tenantId);
+  /**
+   * Public read — cross-tenant. Each civic/government org registers its OWN
+   * tenant, so scoping to a single tenant would hide their notices. Filters:
+   * published, not soft-deleted, publish window open, NOT expired, excludes
+   * CAMPAIGN, and (optionally) matches the viewer's city (empty targetCities =
+   * all cities). `tenantId` param kept for route compatibility but intentionally
+   * NOT used for scoping.
+   */
+  async findPublished(_tenantId: string, page = 1, limit = 20, city?: string) {
     const now = new Date();
-    const where = {
-      tenantId,
+    const where: any = {
       isPublished: true,
       deletedAt: null,
-      OR: [{ publishAt: null }, { publishAt: { lte: now } }],
+      category: { not: 'CAMPAIGN' },
+      AND: [
+        { OR: [{ publishAt: null }, { publishAt: { lte: now } }] },
+        { OR: [{ expiresAt: null }, { expiresAt: { gte: now } }] },
+      ],
     };
+    if (city) {
+      where.AND.push({
+        OR: [{ targetCities: { equals: [] } }, { targetCities: { array_contains: city } }],
+      });
+    }
     const [data, total] = await Promise.all([
       this.db.governmentAnnouncement.findMany({
         where,

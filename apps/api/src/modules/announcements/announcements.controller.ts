@@ -18,8 +18,9 @@ export class AnnouncementsController {
   async findPublished(
     @Query('tenantId') tenantId: string = 'default',
     @Query('page') page?: number,
+    @Query('city') city?: string,
   ): Promise<any> {
-    return this.announcementsService.findPublished(tenantId, page);
+    return this.announcementsService.findPublished(tenantId, page, 20, city);
   }
 
   @Public()

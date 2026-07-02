@@ -1369,6 +1369,7 @@ model GovernmentAnnouncement {
   publishAt      DateTime? @map("publish_at")
   expiresAt      DateTime? @map("expires_at")
   targetAudience Json?     @map("target_audience")
+  targetCities   Json      @default("[]") @map("target_cities")
   attachments    Json      @default("[]")
   viewCount      Int       @default(0) @map("view_count")
   

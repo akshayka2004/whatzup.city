@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString, IsObject, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsObject, IsEnum, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum AlertPriority {
@@ -46,4 +46,13 @@ export class CreateAlertDto {
   @IsObject()
   @IsOptional()
   targetAudience?: Record<string, any>;
+
+  @ApiProperty({
+    description: 'Cities to show this in. Empty = all cities.',
+    required: false,
+    type: [String],
+  })
+  @IsArray()
+  @IsOptional()
+  targetCities?: string[];
 }
