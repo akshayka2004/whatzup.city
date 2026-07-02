@@ -66,6 +66,29 @@ export const KERALA_CITIES = [
 
 export type KeralaCity = (typeof KERALA_CITIES)[number];
 
+// Viewer's chosen city — persisted so the public offers/events/announcements
+// feeds stay filtered to one location as the visitor navigates. Empty = all.
+export const VIEWER_CITY_KEY = 'viewer_city';
+
+export function getViewerCity(): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    return localStorage.getItem(VIEWER_CITY_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function setViewerCity(city: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (city) localStorage.setItem(VIEWER_CITY_KEY, city);
+    else localStorage.removeItem(VIEWER_CITY_KEY);
+  } catch {
+    /* ignore quota / privacy-mode errors */
+  }
+}
+
 // Navigation items
 export const PUBLIC_NAV_ITEMS = [
   { label: 'Browse', href: '/category', icon: 'Grid' },

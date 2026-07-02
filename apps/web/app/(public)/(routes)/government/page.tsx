@@ -16,7 +16,15 @@ import {
   Loader2,
   ExternalLink,
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { apiService } from '@/lib/services/api-service';
+import { KERALA_CITIES, getViewerCity, setViewerCity } from '@/lib/constants';
 
 interface SocialLink { label: string; url: string; }
 interface Publisher { organizationName: string; organizationType?: string; logoUrl?: string | null; }
@@ -84,11 +92,16 @@ export default function GovernmentPage() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingNotice, setViewingNotice] = useState<Notice | null>(null);
+  const [city, setCity] = useState('');
+
+  useEffect(() => {
+    setCity(getViewerCity());
+  }, []);
 
   useEffect(() => {
     setLoading(true);
     apiService
-      .get<any>('/v1/announcements')
+      .get<any>(`/v1/announcements${city ? `?city=${encodeURIComponent(city)}` : ''}`)
       .then((res) => {
         if (res.data && !res.error) {
           const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.items ?? [];
@@ -98,7 +111,13 @@ export default function GovernmentPage() {
         }
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [city]);
+
+  const handleCityChange = (v: string) => {
+    const next = v === 'all' ? '' : v;
+    setCity(next);
+    setViewerCity(next);
+  };
 
   const downloadFile = (att: { name: string; url?: string }) => {
     if (att.url) {
@@ -120,9 +139,23 @@ export default function GovernmentPage() {
     <PublicLayout>
       <div>
         <h1 className="text-3xl font-bold mb-2">Government Announcements</h1>
-        <p className="text-muted-foreground mb-8">
+        <p className="text-muted-foreground mb-6">
           Stay informed with official notices and announcements
         </p>
+
+        <div className="mb-8">
+          <Select value={city || 'all'} onValueChange={handleCityChange}>
+            <SelectTrigger className="w-52 rounded-xl border-white/10">
+              <SelectValue placeholder="Filter by city" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Cities</SelectItem>
+              {KERALA_CITIES.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">

@@ -5,7 +5,15 @@ import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Ticket, ExternalLink, Loader2, CalendarDays } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { apiService } from '@/lib/services/api-service';
+import { KERALA_CITIES, getViewerCity, setViewerCity } from '@/lib/constants';
 
 interface Ev {
   id: string;
@@ -28,17 +36,28 @@ function fmt(d?: string) {
 export default function EventsPage() {
   const [events, setEvents] = useState<Ev[]>([]);
   const [loading, setLoading] = useState(true);
+  const [city, setCity] = useState('');
+
+  useEffect(() => {
+    setCity(getViewerCity());
+  }, []);
 
   useEffect(() => {
     setLoading(true);
     apiService
-      .get<any>('/v1/events')
+      .get<any>(`/v1/events${city ? `?city=${encodeURIComponent(city)}` : ''}`)
       .then((res) => {
         const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
         setEvents(res.error ? [] : list);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [city]);
+
+  const handleCityChange = (v: string) => {
+    const next = v === 'all' ? '' : v;
+    setCity(next);
+    setViewerCity(next);
+  };
 
   // Record the outbound click, then open the publisher's page in a new tab.
   const go = async (ev: Ev, type: 'REGISTER' | 'TICKET') => {
@@ -53,7 +72,21 @@ export default function EventsPage() {
     <PublicLayout>
       <div>
         <h1 className="text-3xl font-bold mb-2">Events</h1>
-        <p className="text-muted-foreground mb-8">Discover events near you — register or grab tickets.</p>
+        <p className="text-muted-foreground mb-6">Discover events near you — register or grab tickets.</p>
+
+        <div className="mb-8">
+          <Select value={city || 'all'} onValueChange={handleCityChange}>
+            <SelectTrigger className="w-52 rounded-xl border-white/10">
+              <SelectValue placeholder="Filter by city" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Cities</SelectItem>
+              {KERALA_CITIES.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">

@@ -14,7 +14,15 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { apiService } from '@/lib/services/api-service';
+import { KERALA_CITIES, getViewerCity, setViewerCity } from '@/lib/constants';
 
 /* ────────────── STATIC LABELS / ICONS ────────────── */
 const FEATURES = [
@@ -73,14 +81,35 @@ export default function HomePage() {
   const [featuredOffer, setFeaturedOffer] = useState<any>(null);
   const [latestAnnouncement, setLatestAnnouncement] = useState<any>(null);
   const [loaded, setLoaded] = useState(false);
+  const [city, setCity] = useState('');
+
+  useEffect(() => {
+    setCity(getViewerCity());
+  }, []);
+
+  // Latest civic announcement — refetched when the viewer's city changes so the
+  // hero notice reflects their location (empty targetCities = shown everywhere).
+  useEffect(() => {
+    apiService
+      .get<any>(`/v1/announcements?limit=1${city ? `&city=${encodeURIComponent(city)}` : ''}`)
+      .then((res) => {
+        const list = res.data?.items ?? res.data?.data ?? res.data ?? [];
+        setLatestAnnouncement(Array.isArray(list) && list.length > 0 ? list[0] : null);
+      });
+  }, [city]);
+
+  const handleCityChange = (v: string) => {
+    const next = v === 'all' ? '' : v;
+    setCity(next);
+    setViewerCity(next);
+  };
 
   useEffect(() => {
     Promise.allSettled([
       apiService.get<any>('/v1/trending/businesses?limit=1'),
       apiService.get<any>('/v1/trending/offers?limit=1'),
       apiService.get<any>('/v1/trending/categories'),
-      apiService.get<any>('/v1/announcements?limit=1'),
-    ]).then(([bizRes, offRes, catRes, annRes]) => {
+    ]).then(([bizRes, offRes, catRes]) => {
       // Featured business + total count
       if (bizRes.status === 'fulfilled' && bizRes.value.data) {
         const list = bizRes.value.data.items ?? bizRes.value.data.data ?? bizRes.value.data ?? [];
@@ -99,11 +128,6 @@ export default function HomePage() {
       if (catRes.status === 'fulfilled' && catRes.value.data) {
         const list = catRes.value.data.items ?? catRes.value.data.data ?? catRes.value.data ?? [];
         setStats((s) => ({ ...s, categories: Array.isArray(list) ? list.length : 0 }));
-      }
-      // Latest civic announcement
-      if (annRes.status === 'fulfilled' && annRes.value.data) {
-        const list = annRes.value.data.items ?? annRes.value.data.data ?? annRes.value.data ?? [];
-        if (Array.isArray(list) && list.length > 0) setLatestAnnouncement(list[0]);
       }
       setLoaded(true);
     });
@@ -160,6 +184,24 @@ export default function HomePage() {
               >
                 Search
               </Button>
+            </div>
+
+            <div className="flex items-center gap-2 max-w-lg">
+              <MapPin className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 shrink-0">
+                Your city:
+              </span>
+              <Select value={city || 'all'} onValueChange={handleCityChange}>
+                <SelectTrigger className="h-9 w-48 rounded-xl border-border bg-background text-sm">
+                  <SelectValue placeholder="All Cities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Cities</SelectItem>
+                  {KERALA_CITIES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">

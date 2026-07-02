@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { apiService } from '@/lib/services/api-service';
+import { KERALA_CITIES, getViewerCity, setViewerCity } from '@/lib/constants';
 
 interface Offer {
   id: string;
@@ -68,14 +69,19 @@ export default function OffersPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [viewingOffer, setViewingOffer] = useState<Offer | null>(null);
   const [typeFilter, setTypeFilter] = useState('all');
+  const [city, setCity] = useState('');
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [justClaimed, setJustClaimed] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCity(getViewerCity());
+  }, []);
 
   useEffect(() => {
     setClaimedIds(getClaimedOffers());
     setLoading(true);
     apiService
-      .get<any>('/v1/offers')
+      .get<any>(`/v1/offers${city ? `?city=${encodeURIComponent(city)}` : ''}`)
       .then((res) => {
         if (res.data && !res.error) {
           const list = Array.isArray(res.data)
@@ -88,7 +94,13 @@ export default function OffersPage() {
         }
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [city]);
+
+  const handleCityChange = (v: string) => {
+    const next = v === 'all' ? '' : v;
+    setCity(next);
+    setViewerCity(next);
+  };
 
   const filtered = useMemo(() => {
     if (typeFilter === 'all') return offers;
@@ -145,8 +157,19 @@ export default function OffersPage() {
           </div>
         )}
 
-        {categories.length > 0 && (
-          <div className="mb-6">
+        <div className="mb-6 flex flex-wrap gap-3">
+          <Select value={city || 'all'} onValueChange={handleCityChange}>
+            <SelectTrigger className="w-52 rounded-xl border-white/10">
+              <SelectValue placeholder="Filter by city" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Cities</SelectItem>
+              {KERALA_CITIES.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {categories.length > 0 && (
             <Select value={typeFilter} onValueChange={setTypeFilter}>
               <SelectTrigger className="w-52 rounded-xl border-white/10">
                 <SelectValue placeholder="Filter by category" />
@@ -158,8 +181,8 @@ export default function OffersPage() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-        )}
+          )}
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
