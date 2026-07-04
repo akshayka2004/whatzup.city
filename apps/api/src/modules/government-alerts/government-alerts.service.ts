@@ -90,8 +90,10 @@ export class GovernmentAlertsService {
         .catch((err) => this.logger.error('Bulk alert send failed', err));
     }
 
-    // Invalidate cached alerts
-    await this.redis.del(`gov-alerts:${tenantId}`);
+    // Invalidate cached alerts. getPublished caches per page under
+    // `gov-alerts:${tenantId}:${page}`, so a plain del of `gov-alerts:${tenantId}`
+    // never matched — the new notice stayed hidden behind stale cache for 600s.
+    await this.redis.delPattern(`gov-alerts:${tenantId}:*`);
 
     return alert;
   }
