@@ -177,4 +177,34 @@ export class GovernmentAlertsService {
       data: { viewCount: { increment: 1 } },
     });
   }
+
+  /**
+   * Soft-delete a notice. Notices are cross-tenant (each civic org has its own
+   * tenant), so resolve the row globally by id and bust the cache for the
+   * notice's OWN tenant — not the admin's.
+   */
+  async remove(id: string, adminId: string) {
+    const alert = await this.db.governmentAnnouncement.findFirst({
+      where: { id, deletedAt: null },
+    });
+    if (!alert) throw new NotFoundException('Notice not found');
+
+    await this.db.governmentAnnouncement.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    await this.redis.delPattern(`gov-alerts:${alert.tenantId}:*`);
+
+    await this.auditService.log({
+      tenantId: alert.tenantId,
+      userId: adminId,
+      action: 'DELETE_GOVERNMENT_ALERT',
+      resource: 'GOVERNMENT_ANNOUNCEMENT',
+      resourceId: id,
+      oldData: alert,
+    });
+
+    return { success: true };
+  }
 }

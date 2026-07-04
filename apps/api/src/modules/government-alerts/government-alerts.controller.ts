@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Param, Query, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { GovernmentAlertsService } from './government-alerts.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -45,5 +45,15 @@ export class GovernmentAlertsController {
   async trackView(@CurrentUser('tenantId') tenantId: string, @Param('id') id: string) {
     await this.alertsService.incrementViewCount(tenantId, id);
     return { tracked: true };
+  }
+
+  // Platform admins only — notices are cross-tenant, so restrict deletion to
+  // MASTER_ADMIN / SUPER_ADMIN to avoid one civic org deleting another's notice.
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @UseGuards(RolesGuard)
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a civic / government notice (admin)' })
+  async remove(@CurrentUser('id') adminId: string, @Param('id') id: string) {
+    return this.alertsService.remove(id, adminId);
   }
 }

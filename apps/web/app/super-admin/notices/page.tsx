@@ -126,8 +126,13 @@ export default function SuperAdminNoticesPage() {
     fetchNotices();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deletingNotice) return;
+    const res = await apiService.delete<any>(`/v1/government-alerts/${deletingNotice.id}`);
+    if (res.error) {
+      alert(`Failed to delete: ${res.error}`);
+      return;
+    }
     setNotices(notices.filter((n) => n.id !== deletingNotice.id));
     setDeletingNotice(null);
   };
