@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Plus, Bell, Eye, Trash2, X, AlertTriangle, Tag, Loader2 } from 'lucide-
 import { apiService } from '@/lib/services/api-service';
 
 interface Notice {
-  id: number;
+  id: number | string;
   title: string;
   sender: string;
   status: string;
@@ -17,6 +17,13 @@ interface Notice {
   body: string;
   tags: string[];
 }
+
+type NoticeCategory = 'NOTICE' | 'ALERT' | 'ANNOUNCEMENT';
+const PRIORITY_BY_CATEGORY: Record<NoticeCategory, string> = {
+  ALERT: 'HIGH',
+  ANNOUNCEMENT: 'MEDIUM',
+  NOTICE: 'LOW',
+};
 
 
 // ── Reusable tag input ──────────────────────────────────────────────────────
@@ -85,62 +92,65 @@ export default function AdminNoticesPage() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchNotices = useCallback(async () => {
     setLoading(true);
-    apiService
-      .get<any[]>('/v1/government-alerts')
-      .then((res) => {
-        if (res.data && !res.error) {
-          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
-          setNotices(
-            list.map((n: any) => ({
-              id: n.id,
-              title: n.title || '',
-              sender: n.publishedBy || n.sender || n.issuedBy || 'Platform Admin',
-              status: n.isActive !== false ? 'BROADCASTING' : 'EXPIRED',
-              date: n.createdAt
-                ? new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                : n.date || '—',
-              body: n.content || n.body || n.message || '',
-              tags: Array.isArray(n.tags) ? n.tags : [],
-            })),
-          );
-        }
-      })
-      .finally(() => setLoading(false));
+    const res = await apiService.get<any>('/v1/government-alerts');
+    if (res.data && !res.error) {
+      const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      setNotices(
+        list.map((n: any) => ({
+          id: n.id,
+          title: n.title || '',
+          sender: n.targetAudience?.sender || n.publishedBy || n.sender || n.issuedBy || 'Platform Admin',
+          status: n.isActive !== false ? 'BROADCASTING' : 'EXPIRED',
+          date: n.createdAt
+            ? new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : n.date || '—',
+          body: n.body || n.content || n.message || '',
+          tags: Array.isArray(n.targetAudience?.tags) ? n.targetAudience.tags : Array.isArray(n.tags) ? n.tags : [],
+        })),
+      );
+    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => { fetchNotices(); }, [fetchNotices]);
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [viewingNotice, setViewingNotice] = useState<Notice | null>(null);
   const [deletingNotice, setDeletingNotice] = useState<Notice | null>(null);
   const [title, setTitle] = useState('');
   const [sender, setSender] = useState('');
   const [body, setBody] = useState('');
+  const [category, setCategory] = useState<NoticeCategory>('ANNOUNCEMENT');
   const [formTags, setFormTags] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title) return;
-    setNotices([
-      {
-        id: Date.now(),
-        title,
-        sender: sender || 'Platform Admin',
-        status: 'BROADCASTING',
-        date: new Date().toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        }),
-        body,
-        tags: formTags,
-      },
-      ...notices,
-    ]);
+    setSubmitting(true);
+    // Persist to government-alerts (governmentAnnouncement table). Sender + tags
+    // ride along in targetAudience since the model has no dedicated columns.
+    const res = await apiService.post<any>('/v1/government-alerts', {
+      title,
+      body,
+      category,
+      priority: PRIORITY_BY_CATEGORY[category],
+      targetAudience: { sender: sender || 'Platform Admin', tags: formTags },
+    });
+    setSubmitting(false);
+    if (res.error) {
+      alert(`Failed to publish: ${res.error}`);
+      return;
+    }
     setIsCreateOpen(false);
     setTitle('');
     setSender('');
     setBody('');
+    setCategory('ANNOUNCEMENT');
     setFormTags([]);
+    fetchNotices();
   };
 
   const handleDelete = () => {
@@ -153,6 +163,7 @@ export default function AdminNoticesPage() {
     setTitle('');
     setSender('');
     setBody('');
+    setCategory('ANNOUNCEMENT');
     setFormTags([]);
     setIsCreateOpen(true);
   };
@@ -338,6 +349,18 @@ export default function AdminNoticesPage() {
                   />
                 </div>
                 <div>
+                  <label className="text-sm font-medium text-slate-300 block mb-2">Type</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as NoticeCategory)}
+                    className="w-full h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-foreground text-sm focus:border-primary focus:outline-none cursor-pointer"
+                  >
+                    <option value="ANNOUNCEMENT">Announcement</option>
+                    <option value="ALERT">Alert</option>
+                    <option value="NOTICE">Notice</option>
+                  </select>
+                </div>
+                <div>
                   <label className="text-sm font-medium text-slate-300 block mb-2">
                     Sender Authority
                   </label>
@@ -381,8 +404,10 @@ export default function AdminNoticesPage() {
                   </Button>
                   <Button
                     type="submit"
-                    className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
+                    disabled={submitting}
+                    className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer gap-1.5"
                   >
+                    {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                     Publish Alert
                   </Button>
                 </div>
