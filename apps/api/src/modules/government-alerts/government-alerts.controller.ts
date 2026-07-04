@@ -47,13 +47,25 @@ export class GovernmentAlertsController {
     return { tracked: true };
   }
 
-  // Platform admins only — notices are cross-tenant, so restrict deletion to
-  // MASTER_ADMIN / SUPER_ADMIN to avoid one civic org deleting another's notice.
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  // Platform admins delete any notice; civic / government owners delete only
+  // their own (enforced in the service WHERE clause).
+  @Roles(
+    UserRole.MASTER_ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.GOVERNMENT_ADMIN,
+    UserRole.NGO_ADMIN,
+    UserRole.COMMUNITY_ADMIN,
+    UserRole.NEWS_FORUM_ADMIN,
+  )
   @UseGuards(RolesGuard)
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a civic / government notice (admin)' })
-  async remove(@CurrentUser('id') adminId: string, @Param('id') id: string) {
-    return this.alertsService.remove(id, adminId);
+  @ApiOperation({ summary: 'Delete a civic / government notice' })
+  async remove(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('role') role: string,
+    @Param('id') id: string,
+  ) {
+    return this.alertsService.remove(id, userId, tenantId, role);
   }
 }

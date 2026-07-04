@@ -1,11 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 
 @Injectable()
 export class AuditService {
+  private readonly logger = new Logger(AuditService.name);
+
   constructor(private readonly db: DatabaseService) {}
 
-  async log(data: {
+  /**
+   * Fire-and-forget. Audit is a best-effort side-effect and must never add a
+   * network round-trip to (or fail) the user's request. Callers may still
+   * `await` this — it resolves immediately; the INSERT runs in the background
+   * and only logs on failure. This removes one remote-DB round-trip from every
+   * create / update / delete.
+   */
+  log(data: {
     tenantId: string;
     userId: string;
     action: string;
@@ -16,8 +25,10 @@ export class AuditService {
     metadata?: any;
     ipAddress?: string;
     userAgent?: string;
-  }): Promise<any> {
-    return this.db.auditLog.create({ data });
+  }): void {
+    void this.db.auditLog
+      .create({ data })
+      .catch((e) => this.logger.warn(`audit log failed (${data.action}): ${e?.message ?? e}`));
   }
 
   async findAll(

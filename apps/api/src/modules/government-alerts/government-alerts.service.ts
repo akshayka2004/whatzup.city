@@ -179,30 +179,35 @@ export class GovernmentAlertsService {
   }
 
   /**
-   * Soft-delete a notice. Notices are cross-tenant (each civic org has its own
-   * tenant), so resolve the row globally by id and bust the cache for the
-   * notice's OWN tenant — not the admin's.
+   * Soft-delete a notice in a single round-trip. Ownership is enforced inside
+   * the WHERE clause: platform admins (MASTER/SUPER) may delete any notice;
+   * civic / government owners may delete only their own (agencyId === userId).
+   * `updateMany` with that filter is atomic — no separate read, no TOCTOU gap —
+   * and `count === 0` means "not found or not permitted".
    */
-  async remove(id: string, adminId: string) {
-    const alert = await this.db.governmentAnnouncement.findFirst({
-      where: { id, deletedAt: null },
-    });
-    if (!alert) throw new NotFoundException('Notice not found');
+  async remove(id: string, userId: string, tenantId: string, role: string) {
+    const isPlatformAdmin = role === 'MASTER_ADMIN' || role === 'SUPER_ADMIN';
+    const where: any = { id, deletedAt: null };
+    if (!isPlatformAdmin) where.agencyId = userId;
 
-    await this.db.governmentAnnouncement.update({
-      where: { id },
+    const res = await this.db.governmentAnnouncement.updateMany({
+      where,
       data: { deletedAt: new Date() },
     });
+    if (res.count === 0) {
+      throw new NotFoundException('Notice not found or not permitted');
+    }
 
-    await this.redis.delPattern(`gov-alerts:${alert.tenantId}:*`);
+    // Notices are cross-tenant + this cache is tiny; one SCAN clears all pages.
+    await this.redis.delPattern('gov-alerts:*');
 
-    await this.auditService.log({
-      tenantId: alert.tenantId,
-      userId: adminId,
+    // Non-blocking audit under the actor's tenant.
+    this.auditService.log({
+      tenantId,
+      userId,
       action: 'DELETE_GOVERNMENT_ALERT',
       resource: 'GOVERNMENT_ANNOUNCEMENT',
       resourceId: id,
-      oldData: alert,
     });
 
     return { success: true };

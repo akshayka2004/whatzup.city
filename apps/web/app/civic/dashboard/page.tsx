@@ -158,7 +158,12 @@ export default function CivicDashboardPage() {
     setSubmitting(false);
   };
 
-  const handleDelete = (id: number | string) => {
+  const handleDelete = async (id: number | string) => {
+    const res = await apiService.delete<any>(`/v1/government-alerts/${id}`);
+    if (res.error) {
+      alert(`Failed to delete: ${res.error}`);
+      return;
+    }
     setNotices((prev) => prev.filter((n) => n.id !== id));
   };
 
