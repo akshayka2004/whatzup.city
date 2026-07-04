@@ -34,6 +34,10 @@ import {
   UserCog,
   CreditCard,
   LifeBuoy,
+  CalendarDays,
+  Building2,
+  Megaphone,
+  Grid,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -79,33 +83,53 @@ export function MobileNav() {
     return pathname.startsWith(href);
   };
 
-  // Bottom Tabs Generation
+  // Bottom Tabs Generation. Primary tabs are quick-access; the Menu drawer
+  // lists EVERY remaining item from the matching desktop sidebar so nothing is
+  // unreachable on mobile. Kept in sync with the *-sidebar.tsx menus.
+  const isModerator = activeRole === 'BUSINESS_MODERATOR';
   let primaryTabs: NavItem[] = [];
   let drawerItems: { label: string; href: string; icon: React.ElementType; action?: () => void }[] = [];
 
   if (isDashboard) {
-    primaryTabs = [
-      { label: 'Overview', href: '/dashboard', icon: Home },
-      { label: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp },
-      { label: 'Offers', href: '/dashboard/offers', icon: Tag },
-      { label: 'Products', href: '/dashboard/products', icon: Package },
-    ];
-
-    drawerItems = [
-      { label: 'Bill Moderation', href: '/dashboard/moderation', icon: CheckCircle },
-      { label: 'Customers', href: '/dashboard/customers', icon: Users },
-      { label: 'Registrations', href: '/dashboard/registrations', icon: UserPlus },
-      { label: 'Campaigns', href: '/dashboard/campaigns', icon: Tag },
-      { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
-      { label: 'Branches', href: '/dashboard/branches', icon: GitBranch },
-      { label: 'Media', href: '/dashboard/media', icon: ImageIcon },
-      { label: 'Team', href: '/dashboard/team', icon: UserCog },
-      { label: 'Subscriptions', href: '/dashboard/subscriptions', icon: CreditCard },
-      { label: 'Support', href: '/dashboard/support', icon: LifeBuoy },
-      { label: 'Report Issue', href: '/report', icon: Flag },
-      { label: 'Settings', href: '/dashboard/settings', icon: Settings },
-    ];
+    if (isModerator) {
+      // BUSINESS_MODERATOR — restricted menu (mirrors MODERATOR_MENU)
+      primaryTabs = [
+        { label: 'Overview', href: '/dashboard', icon: Home },
+        { label: 'Bill Queue', href: '/dashboard/moderation', icon: CheckCircle },
+        { label: 'Offers', href: '/dashboard/offers', icon: Tag },
+        { label: 'Media', href: '/dashboard/media', icon: ImageIcon },
+      ];
+      drawerItems = [
+        { label: 'Review Moderation', href: '/dashboard/reviews', icon: Star },
+        { label: 'Customer Reports', href: '/dashboard/customers', icon: Users },
+        { label: 'Profile', href: '/profile', icon: UserCog },
+      ];
+    } else {
+      // BUSINESS_OWNER / other business roles (mirrors OWNER_MENU)
+      primaryTabs = [
+        { label: 'Overview', href: '/dashboard', icon: Home },
+        { label: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp },
+        { label: 'Offers', href: '/dashboard/offers', icon: Tag },
+        { label: 'Products', href: '/dashboard/products', icon: Package },
+      ];
+      drawerItems = [
+        { label: 'Bill Moderation', href: '/dashboard/moderation', icon: CheckCircle },
+        { label: 'Customers', href: '/dashboard/customers', icon: Users },
+        { label: 'Campaigns', href: '/dashboard/campaigns', icon: Megaphone },
+        { label: 'Events', href: '/dashboard/events', icon: CalendarDays },
+        { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
+        { label: 'Branches', href: '/dashboard/branches', icon: GitBranch },
+        { label: 'Media', href: '/dashboard/media', icon: ImageIcon },
+        { label: 'Team', href: '/dashboard/team', icon: UserCog },
+        { label: 'Subscriptions', href: '/dashboard/subscriptions', icon: CreditCard },
+        { label: 'Support', href: '/dashboard/support', icon: LifeBuoy },
+        { label: 'Report Issue', href: '/report', icon: Flag },
+        { label: 'Settings', href: '/dashboard/settings', icon: Settings },
+        { label: 'Profile', href: '/profile', icon: UserCog },
+      ];
+    }
   } else if (isAdmin) {
+    // mirrors admin-sidebar menuItems
     primaryTabs = [
       { label: 'Dashboard', href: '/admin', icon: BarChart3 },
       { label: 'Registrations', href: '/admin/registrations', icon: UserPlus },
@@ -116,29 +140,39 @@ export function MobileNav() {
     drawerItems = [
       { label: 'Notices', href: '/admin/notices', icon: Bell },
       { label: 'Audit Logs', href: '/admin/audit', icon: FileText },
-      { label: 'Categories', href: '/admin/categories', icon: Folder },
+      { label: 'Categories', href: '/admin/categories', icon: Building2 },
       { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
+      { label: 'My Profile', href: '/admin/profile', icon: UserCog },
       { label: 'Settings', href: '/admin/settings', icon: Settings },
     ];
   } else if (isSuperAdmin) {
+    // mirrors super-admin-sidebar menuItems
     primaryTabs = [
       { label: 'Tenants', href: '/super-admin', icon: Users },
       { label: 'Users', href: '/super-admin/registrations', icon: UserPlus },
-      { label: 'Platform Offers', href: '/super-admin/offers', icon: Tag },
-      { label: 'System Health', href: '/super-admin/health', icon: Activity },
+      { label: 'Offers', href: '/super-admin/offers', icon: Tag },
+      { label: 'Health', href: '/super-admin/health', icon: Activity },
     ];
 
     drawerItems = [
+      { label: 'Businesses', href: '/super-admin/businesses', icon: Building2 },
+      { label: 'Approvals', href: '/super-admin/approvals', icon: CheckCircle },
+      { label: 'Reports', href: '/super-admin/reports', icon: AlertTriangle },
+      { label: 'Notices', href: '/super-admin/notices', icon: Bell },
+      { label: 'Audit Logs', href: '/super-admin/audit', icon: FileText },
       { label: 'Categories', href: '/super-admin/categories', icon: Folder },
+      { label: 'Subscriptions', href: '/super-admin/subscriptions', icon: CreditCard },
       { label: 'Referrals', href: '/super-admin/referrals', icon: Share2 },
+      { label: 'Events', href: '/super-admin/events', icon: CalendarDays },
       { label: 'Security', href: '/super-admin/security', icon: Lock },
-      { label: 'Roles', href: '/super-admin/roles', icon: Settings },
+      { label: 'Admins', href: '/super-admin/roles', icon: UserCog },
       { label: 'Feature Flags', href: '/super-admin/flags', icon: Flag },
       { label: 'Infrastructure', href: '/super-admin/infrastructure', icon: Database },
+      { label: 'My Profile', href: '/super-admin/profile', icon: UserCog },
       { label: 'Settings', href: '/super-admin/settings', icon: Settings },
     ];
   } else {
-    // Public User context
+    // Public User context (mirrors public-sidebar menuItems)
     primaryTabs = [
       { label: 'Home', href: '/', icon: Home },
       { label: 'Search', href: '/search', icon: Search },
@@ -146,17 +180,23 @@ export function MobileNav() {
       { label: 'Saved', href: '/favorites', icon: Heart },
     ];
 
-    drawerItems = user
-      ? [
-          { label: 'Profile Settings', href: '/profile', icon: Settings },
-          { label: 'Help & Support', href: '/support', icon: LifeBuoy },
-          { label: 'Report Platform Issue', href: '/report', icon: Flag },
-        ]
-      : [
-          { label: 'Sign In / Register', href: '/login', icon: UserPlus },
-          { label: 'Help & Support', href: '/support', icon: LifeBuoy },
-          { label: 'Report Platform Issue', href: '/report', icon: Flag },
-        ];
+    drawerItems = [
+      { label: 'Browse', href: '/category', icon: Grid },
+      { label: 'Offers', href: '/offers', icon: Tag },
+      { label: 'Events', href: '/events', icon: CalendarDays },
+      { label: 'Announcements', href: '/government', icon: FileText },
+      { label: 'Notifications', href: '/notifications', icon: Bell },
+      { label: 'Report Issue', href: '/report', icon: Flag },
+      ...(user
+        ? [
+            { label: 'Profile Settings', href: '/profile', icon: Settings },
+            { label: 'Help & Support', href: '/support', icon: LifeBuoy },
+          ]
+        : [
+            { label: 'Sign In / Register', href: '/login', icon: UserPlus },
+            { label: 'Help & Support', href: '/support', icon: LifeBuoy },
+          ]),
+    ];
   }
 
   const handleDrawerItemClick = (href: string, action?: () => void) => {
@@ -205,7 +245,7 @@ export function MobileNav() {
         </SheetTrigger>
         <SheetContent
           side="bottom"
-          className="rounded-t-[32px] max-h-[80vh] overflow-y-auto pb-8 bg-card border-t border-border text-foreground z-50"
+          className="rounded-t-[32px] max-h-[85vh] overflow-y-auto pb-10 bg-card border-t border-border text-foreground z-50"
         >
           <SheetHeader className="text-left pb-4 border-b border-border">
             <SheetTitle className="text-lg font-bold text-foreground tracking-tight flex items-center gap-2">

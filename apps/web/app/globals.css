@@ -125,3 +125,29 @@
     @apply bg-background text-foreground;
   }
 }
+
+/*
+ * Always-dark overlay surfaces (modals / dialogs / confirm cards) are hardcoded
+ * to a dark zinc background regardless of the active theme. Their descendants
+ * use theme foreground tokens (text-foreground, text-card-foreground,
+ * text-muted-foreground, ...) which flip to near-black in light mode and vanish
+ * against the dark card. Pin the foreground tokens to their light values on any
+ * such surface so text stays legible in BOTH themes. Backgrounds are untouched,
+ * so the visual design is unchanged.
+ */
+.bg-zinc-950,
+.bg-zinc-900,
+.bg-zinc-800,
+.bg-\[\#0f0f13\],
+.bg-\[\#0c0c10\],
+.bg-\[\#0d0d12\],
+.bg-\[\#0d0d12\]\/30,
+.bg-\[\#0d0d12\]\/80,
+.bg-\[\#0d0d12\]\/90,
+.bg-\[\#08080c\] {
+  --foreground: oklch(0.872 0.009 185);
+  --card-foreground: oklch(0.872 0.009 185);
+  --popover-foreground: oklch(0.872 0.009 185);
+  --secondary-foreground: oklch(0.872 0.009 185);
+  --muted-foreground: oklch(0.655 0.008 185);
+}
