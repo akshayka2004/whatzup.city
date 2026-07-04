@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { apiService } from '@/lib/services/api-service';
+import { KERALA_CITIES } from '@/lib/constants';
 
 interface Notice {
   id: number | string;
@@ -42,38 +43,44 @@ export default function GovDashboardPage() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loadingNotices, setLoadingNotices] = useState(true);
 
-  useEffect(() => {
+  const fetchNotices = useCallback(async () => {
     setLoadingNotices(true);
-    apiService
-      .get<any>('/v1/government-alerts')
-      .then((res) => {
-        if (res.data && !res.error) {
-          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
-          setNotices(
-            list.map((a: any) => ({
-              id: a.id,
-              title: a.title || '—',
-              type: (['ALERT', 'ANNOUNCEMENT', 'NOTICE'].includes(a.type?.toUpperCase())
-                ? a.type.toUpperCase()
-                : 'NOTICE') as NoticeType,
-              body: a.content || a.message || a.body || '',
-              publishedAt: a.createdAt
-                ? new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                : a.publishedAt || '—',
-              status: a.isActive !== false ? 'ACTIVE' : 'EXPIRED',
-              expiresAt: a.expiresAt || a.validUntil || undefined,
-            })),
-          );
-        }
-      })
-      .finally(() => setLoadingNotices(false));
+    const res = await apiService.get<any>('/v1/government-alerts');
+    if (res.data && !res.error) {
+      const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      setNotices(
+        list.map((a: any) => {
+          const cat = (a.category || a.type || '').toString().toUpperCase();
+          return {
+            id: a.id,
+            title: a.title || '—',
+            type: (['ALERT', 'ANNOUNCEMENT', 'NOTICE'].includes(cat) ? cat : 'NOTICE') as NoticeType,
+            body: a.body || a.content || a.message || '',
+            publishedAt: a.createdAt
+              ? new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+              : a.publishedAt || '—',
+            status: a.isActive !== false ? 'ACTIVE' : 'EXPIRED',
+            expiresAt: a.expiresAt || a.validUntil || undefined,
+          };
+        }),
+      );
+    }
+    setLoadingNotices(false);
   }, []);
+
+  useEffect(() => { fetchNotices(); }, [fetchNotices]);
+
   const [showForm, setShowForm] = useState(false);
   const [formTitle, setFormTitle] = useState('');
   const [formBody, setFormBody] = useState('');
   const [formType, setFormType] = useState<NoticeType>('NOTICE');
   const [formExpiresAt, setFormExpiresAt] = useState('');
+  const [formCities, setFormCities] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState('');
+
+  const toggleCity = (c: string) =>
+    setFormCities((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
 
   const handleSignOut = () => {
     if (typeof window !== 'undefined') {
@@ -85,26 +92,43 @@ export default function GovDashboardPage() {
     router.push('/login');
   };
 
-  const handlePublish = (e: React.FormEvent) => {
+  const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTitle.trim() || !formBody.trim()) return;
-    const newNotice: Notice = {
-      id: Date.now(),
-      title: formTitle,
-      type: formType,
-      body: formBody,
-      publishedAt: new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
-      status: 'ACTIVE',
-      expiresAt: formExpiresAt || undefined,
+    setSubmitting(true);
+
+    // Persist to government-alerts (governmentAnnouncement table). API expects
+    // title, body, category, priority (+ optional expiresAt, targetCities).
+    const priorityMap: Record<NoticeType, string> = {
+      ALERT: 'HIGH',
+      ANNOUNCEMENT: 'MEDIUM',
+      NOTICE: 'LOW',
     };
-    setNotices([newNotice, ...notices]);
-    setFormTitle(''); setFormBody(''); setFormType('NOTICE'); setFormExpiresAt('');
+    const res = await apiService.post<any>('/v1/government-alerts', {
+      title: formTitle,
+      body: formBody,
+      category: formType,
+      priority: priorityMap[formType],
+      expiresAt: formExpiresAt ? new Date(formExpiresAt).toISOString() : undefined,
+      targetCities: formCities,
+    });
+    setSubmitting(false);
+
+    if (res.error) {
+      setSuccess('');
+      alert(`Failed to publish: ${res.error}`);
+      return;
+    }
+
+    setFormTitle(''); setFormBody(''); setFormType('NOTICE'); setFormExpiresAt(''); setFormCities([]);
     setShowForm(false);
     setSuccess('Notice published successfully!');
     setTimeout(() => setSuccess(''), 3000);
+    // Re-read from DB so the list reflects the persisted record.
+    fetchNotices();
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: number | string) => {
     setNotices((prev) => prev.filter((n) => n.id !== id));
   };
 
@@ -331,6 +355,28 @@ export default function GovDashboardPage() {
                 />
               </div>
 
+              <div>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                  Show in cities <span className="font-normal">(none = all cities)</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                  {KERALA_CITIES.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => toggleCity(c)}
+                      className={`px-2 py-1 rounded-lg text-[11px] border cursor-pointer ${
+                        formCities.includes(c)
+                          ? 'bg-primary/20 border-primary text-primary'
+                          : 'bg-white/5 border-white/10 text-muted-foreground'
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <Button
                   type="button"
@@ -342,9 +388,10 @@ export default function GovDashboardPage() {
                 </Button>
                 <Button
                   type="submit"
+                  disabled={submitting}
                   className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer gap-2"
                 >
-                  <Send className="h-4 w-4" />
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   Publish
                 </Button>
               </div>

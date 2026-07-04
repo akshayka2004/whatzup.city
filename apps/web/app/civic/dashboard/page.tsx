@@ -77,19 +77,20 @@ export default function CivicDashboardPage() {
         if (res.data && !res.error) {
           const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
           setNotices(
-            list.map((a: any) => ({
-              id: a.id,
-              title: a.title || '—',
-              type: (['ALERT', 'ANNOUNCEMENT', 'NOTICE'].includes(a.type?.toUpperCase())
-                ? a.type.toUpperCase()
-                : 'NOTICE') as NoticeType,
-              body: a.content || a.message || a.body || '',
-              publishedAt: a.createdAt
-                ? new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-                : a.publishedAt || '—',
-              status: a.isActive !== false ? 'ACTIVE' : 'EXPIRED',
-              expiresAt: a.expiresAt || a.validUntil || undefined,
-            })),
+            list.map((a: any) => {
+              const cat = (a.category || a.type || '').toString().toUpperCase();
+              return {
+                id: a.id,
+                title: a.title || '—',
+                type: (['ALERT', 'ANNOUNCEMENT', 'NOTICE'].includes(cat) ? cat : 'NOTICE') as NoticeType,
+                body: a.body || a.content || a.message || '',
+                publishedAt: a.createdAt
+                  ? new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                  : a.publishedAt || '—',
+                status: a.isActive !== false ? 'ACTIVE' : 'EXPIRED',
+                expiresAt: a.expiresAt || a.validUntil || undefined,
+              };
+            }),
           );
         }
       })
