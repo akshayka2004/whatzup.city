@@ -59,17 +59,22 @@ export class CategoriesService {
     return walk(categories);
   }
 
-  async create(
-    tenantId: string,
-    data: { name: string; slug: string; description?: string; icon?: string; parentId?: string },
-  ) {
+  private pick(data: any) {
+    const out: any = {};
+    for (const k of ['name', 'slug', 'description', 'icon', 'parentId', 'sortOrder', 'isActive']) {
+      if (data[k] !== undefined) out[k] = k === 'sortOrder' ? Number(data[k]) || 0 : data[k];
+    }
+    return out;
+  }
+
+  async create(tenantId: string, data: any) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const existing = await this.categoryRepo.findBySlug(tenantId, data.slug);
     if (existing) {
       throw new ConflictException('Category with this slug already exists');
     }
 
-    const cat = await this.categoryRepo.create(tenantId, data);
+    const cat = await this.categoryRepo.create(tenantId, this.pick(data));
     await this.redis.del(`categories:${tenantId}`);
     return cat;
   }
@@ -88,7 +93,7 @@ export class CategoriesService {
       }
     }
 
-    const cat = await this.categoryRepo.update(tenantId, id, data);
+    const cat = await this.categoryRepo.update(tenantId, id, this.pick(data));
     await this.redis.del(`categories:${tenantId}`);
     return cat;
   }

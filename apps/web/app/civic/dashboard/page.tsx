@@ -102,6 +102,8 @@ export default function CivicDashboardPage() {
   const [formBody, setFormBody] = useState('');
   const [formType, setFormType] = useState<NoticeType>('NOTICE');
   const [formExpiresAt, setFormExpiresAt] = useState('');
+  const [formStartAt, setFormStartAt] = useState('');
+  const [formLink, setFormLink] = useState('');
   const [formCities, setFormCities] = useState<string[]>([]);
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -135,6 +137,8 @@ export default function CivicDashboardPage() {
       category: formType,
       priority: priorityMap[formType],
       expiresAt: formExpiresAt ? new Date(formExpiresAt).toISOString() : undefined,
+      startAt: formStartAt ? new Date(formStartAt).toISOString() : undefined,
+      linkUrl: formLink || undefined,
       targetCities: formCities,
     });
 
@@ -151,7 +155,7 @@ export default function CivicDashboardPage() {
       setNotices([newNotice, ...notices]);
     }
 
-    setFormTitle(''); setFormBody(''); setFormType('NOTICE'); setFormExpiresAt(''); setFormCities([]);
+    setFormTitle(''); setFormBody(''); setFormType('NOTICE'); setFormExpiresAt(''); setFormStartAt(''); setFormLink(''); setFormCities([]);
     setShowForm(false);
     setSuccess('Published successfully!');
     setTimeout(() => setSuccess(''), 3000);
@@ -300,6 +304,16 @@ export default function CivicDashboardPage() {
                     onChange={(e) => setFormExpiresAt(e.target.value)}
                     className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
                   />
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Start / Issue date (optional)</label>
+                  <Input type="date" value={formStartAt} onChange={(e) => setFormStartAt(e.target.value)} className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Link (optional)</label>
+                  <Input placeholder="https://…" value={formLink} onChange={(e) => setFormLink(e.target.value)} className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
                 </div>
               </div>
               <div className="space-y-1.5">

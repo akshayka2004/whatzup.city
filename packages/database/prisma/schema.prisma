@@ -104,6 +104,7 @@ model User {
   phone         String?      @db.VarChar(50)
   avatar        String?      @db.Text
   role          UserRoleEnum @default(USER)
+  profession    String?      @db.VarChar(50)
   isActive      Boolean      @default(true) @map("is_active")
   emailVerified Boolean      @default(false) @map("email_verified")
   lastLoginAt   DateTime?    @map("last_login_at")
@@ -1370,6 +1371,8 @@ model GovernmentAnnouncement {
   expiresAt      DateTime? @map("expires_at")
   targetAudience Json?     @map("target_audience")
   targetCities   Json      @default("[]") @map("target_cities")
+  linkUrl        String?   @map("link_url") @db.Text
+  startAt        DateTime? @map("start_at")
   attachments    Json      @default("[]")
   viewCount      Int       @default(0) @map("view_count")
   

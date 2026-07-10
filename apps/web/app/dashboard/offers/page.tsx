@@ -14,6 +14,7 @@ interface Offer {
   id: string;
   title: string;
   discount: number;
+  discountAmount?: number;
   active: boolean;
   views: number;
   clicks: number;
@@ -121,6 +122,7 @@ export default function OffersPage() {
           id: o.id,
           title: o.title || o.name || '',
           discount: o.discountPercent ?? o.discount ?? 0,
+          discountAmount: o.discountAmount != null ? Number(o.discountAmount) : 0,
           active: o.status === 'ACTIVE',
           views: o.views ?? 0,
           clicks: o.clicks ?? 0,
@@ -147,6 +149,8 @@ export default function OffersPage() {
   // Form states
   const [title, setTitle] = useState('');
   const [discount, setDiscount] = useState(0);
+  const [discountType, setDiscountType] = useState<'PERCENT' | 'AMOUNT'>('PERCENT');
+  const [discountAmount, setDiscountAmount] = useState(0);
   const [active, setActive] = useState(true);
   const [formTags, setFormTags] = useState<string[]>([]);
   const [formStartsAt, setFormStartsAt] = useState('');
@@ -157,9 +161,28 @@ export default function OffersPage() {
     setFormCities((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
 
   const resetForm = () => {
-    setTitle(''); setDiscount(0); setActive(true);
+    setTitle(''); setDiscount(0); setDiscountType('PERCENT'); setDiscountAmount(0); setActive(true);
     setFormTags([]); setFormStartsAt(''); setFormExpiresAt(''); setFormCities([]);
   };
+
+  // A reusable discount-type selector + value input for the create/edit modals.
+  const DiscountField = () => (
+    <div>
+      <label className="text-sm font-medium text-muted-foreground block mb-2">Discount</label>
+      <div className="flex gap-2">
+        <div className="flex rounded-xl border border-input overflow-hidden shrink-0">
+          <button type="button" onClick={() => setDiscountType('PERCENT')} className={`px-3 text-sm font-semibold cursor-pointer ${discountType === 'PERCENT' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground'}`}>%</button>
+          <button type="button" onClick={() => setDiscountType('AMOUNT')} className={`px-3 text-sm font-semibold cursor-pointer ${discountType === 'AMOUNT' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground'}`}>₹</button>
+        </div>
+        {discountType === 'PERCENT' ? (
+          <Input key="pct" type="number" min="1" max="100" value={discount || ''} onChange={(e) => setDiscount(Number(e.target.value))} placeholder="e.g. 20" className="rounded-xl border-input bg-background focus:border-primary text-foreground" />
+        ) : (
+          <Input key="amt" type="number" min="1" value={discountAmount || ''} onChange={(e) => setDiscountAmount(Number(e.target.value))} placeholder="e.g. 500" className="rounded-xl border-input bg-background focus:border-primary text-foreground" />
+        )}
+      </div>
+      <p className="text-[10px] text-muted-foreground mt-1">{discountType === 'PERCENT' ? 'Percentage off the bill.' : 'Flat amount (₹) off the bill.'}</p>
+    </div>
+  );
 
   const handleOpenCreate = () => {
     resetForm();
@@ -179,7 +202,8 @@ export default function OffersPage() {
         businessId,
         title,
         description: desc,
-        discountPercent: Number(discount),
+        discountPercent: discountType === 'PERCENT' ? Number(discount) : null,
+        discountAmount: discountType === 'AMOUNT' ? Number(discountAmount) : null,
         status: active ? 'ACTIVE' : 'PAUSED',
         startDate: formStartsAt ? new Date(formStartsAt).toISOString() : now,
         endDate: formExpiresAt ? new Date(formExpiresAt).toISOString() : defaultEnd,
@@ -202,6 +226,8 @@ export default function OffersPage() {
     setEditingOffer(offer);
     setTitle(offer.title);
     setDiscount(offer.discount);
+    if (offer.discountAmount && !offer.discount) { setDiscountType('AMOUNT'); setDiscountAmount(offer.discountAmount); }
+    else { setDiscountType('PERCENT'); setDiscountAmount(offer.discountAmount || 0); }
     setActive(offer.active);
     setFormTags([...offer.tags]);
     setFormStartsAt(offer.startsAt || '');
@@ -218,7 +244,8 @@ export default function OffersPage() {
       const body: Record<string, unknown> = {
         title,
         description: desc,
-        discountPercent: Number(discount),
+        discountPercent: discountType === 'PERCENT' ? Number(discount) : null,
+        discountAmount: discountType === 'AMOUNT' ? Number(discountAmount) : null,
         status: active ? 'ACTIVE' : 'PAUSED',
         targetCities: formCities,
       };
@@ -423,20 +450,7 @@ export default function OffersPage() {
                     className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Discount Percentage
-                  </label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={discount || ''}
-                    onChange={(e) => setDiscount(Number(e.target.value))}
-                    required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                  />
-                </div>
+                {DiscountField()}
                 <div>
                   <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Tags
@@ -544,20 +558,7 @@ export default function OffersPage() {
                     className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Discount Percentage
-                  </label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={discount || ''}
-                    onChange={(e) => setDiscount(Number(e.target.value))}
-                    required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                  />
-                </div>
+                {DiscountField()}
                 <div>
                   <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Tags

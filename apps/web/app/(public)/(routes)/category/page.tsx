@@ -1,13 +1,16 @@
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
-import Link from 'next/link';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Star, MapPin, Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { apiService } from '@/lib/services/api-service';
+import { BusinessCard } from '@/components/business-card';
+import { KERALA_CITIES, getViewerCity, setViewerCity } from '@/lib/constants';
 
 function CategoryContent() {
   const searchParams = useSearchParams();
@@ -17,12 +20,14 @@ function CategoryContent() {
 
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [city, setCity] = useState('');
+
+  useEffect(() => { setCity(getViewerCity()); }, []);
 
   useEffect(() => {
     async function fetchBusinesses() {
       setLoading(true);
       try {
-        // Step 1: Try to resolve category ID from slug/name
         let categoryId: string | undefined;
         if (rawType && rawType !== 'all') {
           const catRes = await apiService.get<any>('/v1/categories');
@@ -40,16 +45,12 @@ function CategoryContent() {
           }
         }
 
-        // Step 2: Fetch businesses — filter by categoryId if resolved, else search by type name
         const params = new URLSearchParams();
-        if (categoryId) {
-          params.set('categoryId', categoryId);
-        } else if (rawType && rawType !== 'all') {
-          params.set('search', rawType);
-        }
+        if (categoryId) params.set('categoryId', categoryId);
+        else if (rawType && rawType !== 'all') params.set('search', rawType);
+        if (city) params.set('city', city);
         params.set('limit', '24');
-        const qs = params.toString();
-        const bizRes = await apiService.get<any>(`/v1/businesses${qs ? '?' + qs : ''}`);
+        const bizRes = await apiService.get<any>(`/v1/businesses?${params.toString()}`);
         if (bizRes.data && !bizRes.error) {
           const list: any[] = Array.isArray(bizRes.data)
             ? bizRes.data
@@ -65,68 +66,44 @@ function CategoryContent() {
       }
     }
     fetchBusinesses();
-  }, [rawType]);
+  }, [rawType, city]);
+
+  const handleCityChange = (v: string) => {
+    const next = v === 'all' ? '' : v;
+    setCity(next);
+    setViewerCity(next);
+  };
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-2">{categoryTitle}</h1>
-      <p className="text-muted-foreground mb-8">Browse businesses in this category</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">{categoryTitle}</h1>
+          <p className="text-muted-foreground">Browse verified businesses in this category</p>
+        </div>
+        <Select value={city || 'all'} onValueChange={handleCityChange}>
+          <SelectTrigger className="w-52 rounded-xl border-border">
+            <SelectValue placeholder="Filter by city" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Cities</SelectItem>
+            {KERALA_CITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : businesses.length === 0 ? (
-        <Card className="p-12 rounded-2xl text-center border-dashed border-white/10 bg-white/5">
-          <p className="text-muted-foreground text-sm">No businesses found in this category.</p>
+        <Card className="p-12 rounded-2xl text-center border-dashed border-border bg-secondary/20">
+          <p className="text-muted-foreground text-sm">No businesses found in this category{city ? ` in ${city}` : ''}.</p>
         </Card>
       ) : (
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {businesses.map((business: any) => (
-            <Card
-              key={business.id}
-              className="p-4 rounded-2xl overflow-hidden hover:shadow-md transition-shadow border-white/5 bg-card/40 backdrop-blur-xl"
-            >
-              <div className="w-full h-40 bg-gradient-to-br from-white/5 to-white/[0.02] rounded-xl mb-4 border border-white/5 flex items-center justify-center">
-                <span className="text-3xl font-extrabold text-white/10">
-                  {(business.name || 'B').charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                <h3 className="font-semibold text-foreground truncate">{business.name}</h3>
-                {business.isVerified && (
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
-                    <CheckCircle2 className="h-3 w-3" />
-                    Verified
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mb-2 truncate">
-                {business.category?.name || business.categoryName || ''}
-              </p>
-              <div className="flex items-center gap-2 text-sm mb-2">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <span className="font-medium">
-                  {business.avgRating != null ? Number(business.avgRating).toFixed(1) : '—'}
-                </span>
-                <span className="text-muted-foreground">({business.reviewCount ?? 0})</span>
-              </div>
-              {business.city && (
-                <div className="flex items-center gap-1 text-sm text-muted-foreground mb-4">
-                  <MapPin className="h-4 w-4" />
-                  {business.city}
-                </div>
-              )}
-              <Link href={`/business/${business.id}`}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
-                >
-                  View Business
-                </Button>
-              </Link>
-            </Card>
+            <BusinessCard key={business.id} business={business} />
           ))}
         </div>
       )}

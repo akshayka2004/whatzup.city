@@ -67,6 +67,10 @@ export default function AdminRegistrationsPage() {
   const [tab, setTab] = useState<TabId>('businesses');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setSearch(q);
+  }, []);
   const [page, setPage] = useState(1);
   const [data, setData] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>({ total: 0, totalPages: 1 });

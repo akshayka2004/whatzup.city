@@ -5,7 +5,7 @@ import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Building2, Search, RefreshCw, Pencil, X, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Tag, CalendarDays } from 'lucide-react';
+import { Building2, Search, RefreshCw, Pencil, X, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Tag, CalendarDays, ArrowUpDown, Wallet, Star } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES } from '@/lib/constants';
 
@@ -31,6 +31,7 @@ interface Biz {
   logo?: string | null;
   coverImage?: string | null;
   _count?: { offers?: number; events?: number };
+  totalBillAmount?: number;
 }
 
 export default function SuperAdminBusinessesPage() {
@@ -42,6 +43,21 @@ export default function SuperAdminBusinessesPage() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
+  // Filters + sort
+  const [catFilter, setCatFilter] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [verifiedFilter, setVerifiedFilter] = useState('');
+  const [halalFilter, setHalalFilter] = useState('');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const toggleSort = (col: string) => {
+    if (sortBy === col) setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    else { setSortBy(col); setSortOrder(col === 'name' || col === 'city' ? 'asc' : 'desc'); }
+    setPage(1);
+  };
+
   const [editing, setEditing] = useState<Biz | null>(null);
   const [form, setForm] = useState<Biz | null>(null);
   const [saving, setSaving] = useState(false);
@@ -51,7 +67,12 @@ export default function SuperAdminBusinessesPage() {
     const t = setTimeout(() => setDebounced(search), 350);
     return () => clearTimeout(t);
   }, [search]);
-  useEffect(() => { setPage(1); }, [debounced]);
+  // Seed search from header ?q= (role-aware global search lands here).
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setSearch(q);
+  }, []);
+  useEffect(() => { setPage(1); }, [debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter]);
 
   // Flat category list for the edit dropdown
   useEffect(() => {
@@ -65,8 +86,13 @@ export default function SuperAdminBusinessesPage() {
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), limit: '25' });
+    const params = new URLSearchParams({ page: String(page), limit: '25', sortBy, sortOrder });
     if (debounced) params.set('search', debounced);
+    if (catFilter) params.set('categoryId', catFilter);
+    if (cityFilter) params.set('city', cityFilter);
+    if (statusFilter) params.set('status', statusFilter);
+    if (verifiedFilter) params.set('isVerified', verifiedFilter);
+    if (halalFilter) params.set('halalStatus', halalFilter);
     const res = await apiService.get<any>(`/v1/businesses/admin/all?${params}`);
     if (res.data && !res.error) {
       setRows(res.data.data || []);
@@ -75,7 +101,7 @@ export default function SuperAdminBusinessesPage() {
       setRows([]);
     }
     setLoading(false);
-  }, [page, debounced]);
+  }, [page, debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter, sortBy, sortOrder]);
 
   useEffect(() => { fetchRows(); }, [fetchRows]);
 
@@ -106,6 +132,18 @@ export default function SuperAdminBusinessesPage() {
 
   const set = (k: keyof Biz, v: any) => setForm((f) => (f ? { ...f, [k]: v } : f));
 
+  const SortTh = ({ label, col }: { label: string; col: string }) => (
+    <th className="px-5 py-3 text-left">
+      <button
+        onClick={() => toggleSort(col)}
+        className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
+      >
+        {label}
+        <ArrowUpDown className={`h-3 w-3 ${sortBy === col ? 'text-primary' : 'opacity-40'}`} />
+      </button>
+    </th>
+  );
+
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
@@ -119,9 +157,33 @@ export default function SuperAdminBusinessesPage() {
           </Button>
         </div>
 
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, email, phone, city…" className="pl-9 h-9 rounded-xl border-border bg-card text-sm text-foreground" />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[220px] max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, email, phone, city…" className="pl-9 h-9 rounded-xl border-border bg-card text-sm text-foreground" />
+          </div>
+          <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className={selCls}>
+            <option value="">All categories</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <select value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} className={selCls}>
+            <option value="">All cities</option>
+            {KERALA_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selCls}>
+            <option value="">Any status</option>
+            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select value={verifiedFilter} onChange={(e) => setVerifiedFilter(e.target.value)} className={selCls}>
+            <option value="">Any verification</option>
+            <option value="true">Verified</option>
+            <option value="false">Unverified</option>
+          </select>
+          <select value={halalFilter} onChange={(e) => setHalalFilter(e.target.value)} className={selCls}>
+            <option value="">Any halal</option>
+            <option value="HALAL">Halal</option>
+            <option value="NON_HALAL">Non-Halal</option>
+          </select>
         </div>
 
         <Card className="rounded-2xl border-border bg-card overflow-hidden">
@@ -134,11 +196,13 @@ export default function SuperAdminBusinessesPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-secondary/40">
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Business</th>
+                    <SortTh label="Business" col="name" />
                     <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Category</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">City</th>
+                    <SortTh label="City" col="city" />
+                    <SortTh label="Rating" col="rating" />
                     <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Published</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Total Received</th>
+                    <SortTh label="Status" col="status" />
                     <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">Edit</th>
                   </tr>
                 </thead>
@@ -152,8 +216,14 @@ export default function SuperAdminBusinessesPage() {
                       <td className="px-5 py-3 text-muted-foreground text-xs">{b.category?.name || '—'}</td>
                       <td className="px-5 py-3 text-muted-foreground text-xs">{b.city || '—'}</td>
                       <td className="px-5 py-3 text-xs">
+                        <span className="inline-flex items-center gap-1 text-amber-400"><Star className="h-3 w-3 fill-amber-400" />{(b as any).averageRating != null ? Number((b as any).averageRating).toFixed(1) : '—'}</span>
+                      </td>
+                      <td className="px-5 py-3 text-xs">
                         <span className="inline-flex items-center gap-1 mr-2 text-emerald-400"><Tag className="h-3 w-3" />{b._count?.offers ?? 0}</span>
                         <span className="inline-flex items-center gap-1 text-cyan-400"><CalendarDays className="h-3 w-3" />{b._count?.events ?? 0}</span>
+                      </td>
+                      <td className="px-5 py-3 text-xs font-semibold text-foreground">
+                        <span className="inline-flex items-center gap-1"><Wallet className="h-3 w-3 text-primary" />₹{Number(b.totalBillAmount || 0).toLocaleString('en-IN')}</span>
                       </td>
                       <td className="px-5 py-3"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/15 text-slate-300">{b.status}</span></td>
                       <td className="px-5 py-3 text-right">
@@ -247,6 +317,7 @@ export default function SuperAdminBusinessesPage() {
 }
 
 const inp = 'w-full h-10 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:ring-1 focus:outline-none';
+const selCls = 'h-9 px-3 rounded-xl border border-border bg-card text-sm text-foreground cursor-pointer';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

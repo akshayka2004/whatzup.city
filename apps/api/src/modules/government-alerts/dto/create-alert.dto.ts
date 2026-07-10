@@ -55,4 +55,14 @@ export class CreateAlertDto {
   @IsArray()
   @IsOptional()
   targetCities?: string[];
+
+  @ApiProperty({ description: 'Optional external link / URL', required: false })
+  @IsString()
+  @IsOptional()
+  linkUrl?: string;
+
+  @ApiProperty({ description: 'Effective / start date (ISO string)', required: false })
+  @IsDateString()
+  @IsOptional()
+  startAt?: string;
 }

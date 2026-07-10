@@ -61,7 +61,7 @@ export default function DashboardEventsPage() {
     setForm({
       title: ev.title, description: ev.description || '', posterImage: ev.posterImage || '',
       venue: ev.venue || '', city: ev.city || '',
-      startDate: ev.startDate?.slice(0, 10) || '', endDate: ev.endDate?.slice(0, 10) || '',
+      startDate: ev.startDate?.slice(0, 16) || '', endDate: ev.endDate?.slice(0, 16) || '',
       registrationUrl: ev.registrationUrl || '', ticketUrl: ev.ticketUrl || '',
     });
     setTargetCities(ev.targetCities || []);
@@ -167,8 +167,8 @@ export default function DashboardEventsPage() {
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="text-[11px] text-muted-foreground">Start date</label><Input type="date" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
-                <div><label className="text-[11px] text-muted-foreground">End date</label><Input type="date" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
+                <div><label className="text-[11px] text-muted-foreground">Start date &amp; time</label><Input type="datetime-local" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
+                <div><label className="text-[11px] text-muted-foreground">End date &amp; time</label><Input type="datetime-local" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
               </div>
               <Input placeholder="Registration URL (external)" value={form.registrationUrl} onChange={(e) => set('registrationUrl', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
               <Input placeholder="Ticket / booking URL (external)" value={form.ticketUrl} onChange={(e) => set('ticketUrl', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />

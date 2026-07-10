@@ -124,6 +124,9 @@ export default function AdminNoticesPage() {
   const [body, setBody] = useState('');
   const [category, setCategory] = useState<NoticeCategory>('ANNOUNCEMENT');
   const [formTags, setFormTags] = useState<string[]>([]);
+  const [formStartAt, setFormStartAt] = useState('');
+  const [formExpiresAt, setFormExpiresAt] = useState('');
+  const [formLink, setFormLink] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -137,6 +140,9 @@ export default function AdminNoticesPage() {
       body,
       category,
       priority: PRIORITY_BY_CATEGORY[category],
+      startAt: formStartAt ? new Date(formStartAt).toISOString() : undefined,
+      expiresAt: formExpiresAt ? new Date(formExpiresAt).toISOString() : undefined,
+      linkUrl: formLink || undefined,
       targetAudience: { sender: sender || 'Platform Admin', tags: formTags },
     });
     setSubmitting(false);
@@ -150,6 +156,7 @@ export default function AdminNoticesPage() {
     setBody('');
     setCategory('ANNOUNCEMENT');
     setFormTags([]);
+    setFormStartAt(''); setFormExpiresAt(''); setFormLink('');
     fetchNotices();
   };
 
@@ -170,6 +177,7 @@ export default function AdminNoticesPage() {
     setBody('');
     setCategory('ANNOUNCEMENT');
     setFormTags([]);
+    setFormStartAt(''); setFormExpiresAt(''); setFormLink('');
     setIsCreateOpen(true);
   };
 
@@ -397,6 +405,20 @@ export default function AdminNoticesPage() {
                   <p className="text-[10px] text-muted-foreground mt-1">
                     Create custom tags relevant to this alert (e.g. weather, road-closure, health)
                   </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-slate-300 block mb-2">Start / Issue date</label>
+                    <Input type="date" value={formStartAt} onChange={(e) => setFormStartAt(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-300 block mb-2">Expires On</label>
+                    <Input type="date" value={formExpiresAt} onChange={(e) => setFormExpiresAt(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-300 block mb-2">Link (optional)</label>
+                  <Input placeholder="https://…" value={formLink} onChange={(e) => setFormLink(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground" />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                   <Button

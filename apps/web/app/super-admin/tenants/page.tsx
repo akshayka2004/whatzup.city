@@ -26,10 +26,9 @@ export default function TenantsPage() {
 
   useEffect(() => {
     setLoading(true);
-    // TODO: Replace with dedicated /v1/tenants endpoint when available.
-    // Using /v1/businesses?page=1 as a proxy for now (each business represents a tenant).
+    // Live cross-tenant data from the admin endpoint (real _count + billed total).
     apiService
-      .get<any>('/v1/businesses?page=1')
+      .get<any>('/v1/businesses/admin/all?limit=100&sortBy=createdAt&sortOrder=desc')
       .then((res) => {
         if (res.data && !res.error) {
           const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
@@ -38,15 +37,16 @@ export default function TenantsPage() {
               id: b.id,
               name: b.name || b.businessName || 'Unknown',
               plan: b.subscriptionPlan || b.plan || 'Standard',
-              users: b.userCount ?? b.staffCount ?? 0,
-              status: b.isActive !== false ? 'Active' : 'Suspended',
+              status: b.status === 'SUSPENDED' ? 'Suspended' : b.isActive === false ? 'Suspended' : 'Active',
               signupDate: b.createdAt
                 ? new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
                 : '—',
-              sales: b.totalRevenue ? `$${b.totalRevenue.toLocaleString()}` : '—',
-              offersCount: b.offersCount ?? b._count?.offers ?? 0,
-              announcementsCount: b.announcementsCount ?? b._count?.announcements ?? 0,
-              convertedSales: b.convertedSales ?? b.billVerificationsCount ?? b._count?.billVerifications ?? 0,
+              sales: `₹${Number(b.totalBillAmount || 0).toLocaleString('en-IN')}`,
+              offersCount: b._count?.offers ?? 0,
+              eventsCount: b._count?.events ?? 0,
+              totalReceived: Number(b.totalBillAmount || 0),
+              city: b.city || '—',
+              category: b.category?.name || '—',
             })),
           );
         }
@@ -118,17 +118,17 @@ export default function TenantsPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground text-lg">{tenant.name}</h3>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1 flex-wrap">
                       <span>
                         Plan: <span className="text-primary font-semibold">{tenant.plan}</span>
                       </span>
                       <span className="flex items-center gap-1">
-                        <Users className="h-4 w-4" />
-                        {tenant.users} users
+                        <Tag className="h-3.5 w-3.5" />
+                        {tenant.offersCount} offers
                       </span>
-                      <span className="flex items-center gap-1 text-cyan-400 font-semibold">
+                      <span className="flex items-center gap-1 text-emerald-400 font-semibold">
                         <Receipt className="h-3.5 w-3.5" />
-                        {tenant.convertedSales} converted
+                        {tenant.sales}
                       </span>
                     </div>
                   </div>
@@ -205,12 +205,12 @@ export default function TenantsPage() {
                 <div className="bg-secondary/50 p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
                     <span className="text-[10px] uppercase font-bold tracking-wider">
-                      Notices Sent
+                      Events Published
                     </span>
                     <FileText className="h-4 w-4 text-violet-400" />
                   </div>
                   <p className="text-lg font-extrabold text-foreground">
-                    {managingTenant.announcementsCount}
+                    {managingTenant.eventsCount}
                   </p>
                 </div>
               </div>
@@ -218,23 +218,24 @@ export default function TenantsPage() {
                 <div className="bg-secondary/50 p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
                     <span className="text-[10px] uppercase font-bold tracking-wider">
-                      Active Users
+                      Location
                     </span>
-                    <Users className="h-4 w-4 text-cyan-400" />
+                    <Building2 className="h-4 w-4 text-cyan-400" />
                   </div>
-                  <p className="text-lg font-extrabold text-foreground">{managingTenant.users}</p>
+                  <p className="text-lg font-extrabold text-foreground">{managingTenant.city}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">{managingTenant.category}</p>
                 </div>
-                <div className="bg-cyan-500/5 p-4 rounded-xl border border-cyan-500/20">
+                <div className="bg-emerald-500/5 p-4 rounded-xl border border-emerald-500/20">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-cyan-400">
-                      Converted Sales
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">
+                      Total Received
                     </span>
-                    <TrendingUp className="h-4 w-4 text-cyan-400" />
+                    <TrendingUp className="h-4 w-4 text-emerald-400" />
                   </div>
-                  <p className="text-lg font-extrabold text-cyan-400">
-                    {managingTenant.convertedSales}
+                  <p className="text-lg font-extrabold text-emerald-400">
+                    ₹{Number(managingTenant.totalReceived || 0).toLocaleString('en-IN')}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-1">Verified bill submissions</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Verified bill total</p>
                 </div>
               </div>
 

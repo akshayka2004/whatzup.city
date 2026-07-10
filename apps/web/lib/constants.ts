@@ -33,7 +33,7 @@ export const BUSINESS_CATEGORIES = [
 export const KERALA_CITIES = [
   'Thiruvananthapuram',
   'Kochi',
-  'Kozhikkodu',
+  'Kozhikode',
   'Kollam',
   'Thrissur',
   'Kannur',
@@ -65,6 +65,40 @@ export const KERALA_CITIES = [
 ] as const;
 
 export type KeralaCity = (typeof KERALA_CITIES)[number];
+
+// Professions offered on the user profile + super-admin user editor.
+export const PROFESSIONS = [
+  'Student',
+  'IT / Software (Techie)',
+  'Doctor / Healthcare',
+  'Teacher / Educator',
+  'Engineer',
+  'Business Owner',
+  'Government Employee',
+  'Lawyer',
+  'Accountant / Finance',
+  'Artist / Creator',
+  'Homemaker',
+  'Retired',
+  'Other',
+] as const;
+
+// Assignable roles in the super-admin user editor (label + enum value).
+export const USER_ROLE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'USER', label: 'Public User' },
+  { value: 'BUSINESS_OWNER', label: 'Business Owner' },
+  { value: 'BUSINESS_MODERATOR', label: 'Business Moderator' },
+  { value: 'BUSINESS_STAFF', label: 'Business Staff' },
+  { value: 'INFLUENCER', label: 'Influencer / Content Creator' },
+  { value: 'PROFESSIONAL', label: 'Professional' },
+  { value: 'EVENT_ORGANIZER', label: 'Event Organizer' },
+  { value: 'GOVERNMENT_ADMIN', label: 'Government Admin' },
+  { value: 'NGO_ADMIN', label: 'NGO Admin' },
+  { value: 'COMMUNITY_ADMIN', label: 'Community Admin' },
+  { value: 'NEWS_FORUM_ADMIN', label: 'News Forum Admin' },
+  { value: 'MASTER_ADMIN', label: 'Master Admin' },
+  { value: 'SUPER_ADMIN', label: 'Super Admin' },
+];
 
 // Viewer's chosen city — persisted so the public offers/events/announcements
 // feeds stay filtered to one location as the visitor navigates. Empty = all.

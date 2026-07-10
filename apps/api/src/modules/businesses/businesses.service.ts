@@ -192,7 +192,17 @@ export class BusinessesService {
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== ownerId) throw new ForbiddenException('Not authorized');
 
-    const updated = await this.businessRepo.update(tenantId, id, data);
+    // Whitelist owner-editable fields. Never let an owner self-approve
+    // (status / isVerified) or reassign ownership / tenant via this route.
+    const ALLOWED = [
+      'name', 'description', 'categoryId', 'ownerName', 'phone', 'email', 'website',
+      'address', 'city', 'state', 'zipCode', 'district', 'googleMapsUrl', 'socialLinks',
+      'tags', 'logo', 'coverImage', 'halalStatus', 'operatingHours',
+    ];
+    const payload: any = {};
+    for (const k of ALLOWED) if (data[k] !== undefined) payload[k] = data[k];
+
+    const updated = await this.businessRepo.update(tenantId, id, payload);
 
     await this.redis.del(`business:${id}`);
 
@@ -229,10 +239,27 @@ export class BusinessesService {
     return updated;
   }
 
-  // Super-admin: list every business across all tenants (any status).
-  async adminFindAll(page = 1, limit = 25, search?: string) {
+  // Super-admin: list every business across all tenants (any status), with
+  // filters, sortable columns, per-business published counts, and the total
+  // billed amount each business has received.
+  async adminFindAll(
+    page = 1,
+    limit = 25,
+    opts: {
+      search?: string;
+      categoryId?: string;
+      city?: string;
+      status?: string;
+      isVerified?: boolean;
+      halalStatus?: string;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+    } = {},
+  ) {
     const pageVal = Math.max(1, Number(page) || 1);
     const limitVal = Math.min(Number(limit) || 25, 100);
+    const { search, categoryId, city, status, isVerified, halalStatus, sortBy, sortOrder } = opts;
+
     const where: any = { deletedAt: null };
     if (search) {
       where.OR = [
@@ -242,12 +269,29 @@ export class BusinessesService {
         { city: { contains: search, mode: 'insensitive' } },
       ];
     }
+    if (categoryId) where.categoryId = categoryId;
+    if (city) where.city = { contains: city, mode: 'insensitive' };
+    if (status) where.status = status;
+    if (typeof isVerified === 'boolean') where.isVerified = isVerified;
+    if (halalStatus) where.halalStatus = halalStatus;
+
+    const SORTABLE: Record<string, string> = {
+      name: 'name',
+      city: 'city',
+      status: 'status',
+      createdAt: 'createdAt',
+      rating: 'averageRating',
+    };
+    const col = SORTABLE[sortBy || ''] || 'createdAt';
+    const dir: 'asc' | 'desc' = sortOrder === 'asc' ? 'asc' : 'desc';
+    const orderBy = { [col]: dir };
+
     const [data, total] = await Promise.all([
       this.businessRepo.model.findMany({
         where,
         skip: (pageVal - 1) * limitVal,
         take: limitVal,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: {
           category: { select: { id: true, name: true, slug: true } },
           _count: {
@@ -260,6 +304,19 @@ export class BusinessesService {
       }),
       this.businessRepo.model.count({ where }),
     ]);
+
+    // Total billed amount per business on this page (single grouped query).
+    const ids = (data as any[]).map((b) => b.id);
+    if (ids.length) {
+      const sums = await this.db.bill.groupBy({
+        by: ['businessId'],
+        where: { businessId: { in: ids }, deletedAt: null },
+        _sum: { amount: true },
+      });
+      const byId = new Map(sums.map((s: any) => [s.businessId, Number(s._sum.amount || 0)]));
+      (data as any[]).forEach((b) => { b.totalBillAmount = byId.get(b.id) || 0; });
+    }
+
     return {
       data,
       meta: {
@@ -312,7 +369,7 @@ export class BusinessesService {
       { ownerId },
       { page: 1, limit: 100 },
       {
-        include: { category: { select: { id: true, name: true } } },
+        include: { category: { select: { id: true, name: true, slug: true } } },
       },
     );
   }

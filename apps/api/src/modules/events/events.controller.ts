@@ -39,6 +39,31 @@ export class EventsController {
     return this.eventsService.adminRegistrations(eventId, page);
   }
 
+  // ── Super-admin CRUD (declared before :id routes) ──
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Post('admin')
+  @ApiBearerAuth()
+  async adminCreate(@CurrentUser('id') userId: string, @Body() dto: any) {
+    return this.eventsService.adminCreate(userId, dto.businessId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Patch('admin/:id')
+  @ApiBearerAuth()
+  async adminUpdate(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: any) {
+    return this.eventsService.adminUpdate(id, userId, dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Delete('admin/:id')
+  @ApiBearerAuth()
+  async adminRemove(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.eventsService.adminRemove(id, userId);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('mine/:businessId')
   @ApiBearerAuth()

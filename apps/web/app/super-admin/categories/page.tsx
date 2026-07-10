@@ -5,33 +5,53 @@ import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Folder, Edit, Trash2, X, AlertTriangle, Loader2 } from 'lucide-react';
+import { Plus, Folder, Edit, Trash2, X, AlertTriangle, Loader2, CornerDownRight } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadCategories = () => {
     setLoading(true);
     apiService
       .get<any[]>('/v1/categories?tenantId=default')
       .then((res) => {
         if (res.data && !res.error) {
-          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
-          setCategories(
-            list.map((c: any) => ({
-              id: c.id,
-              name: c.name || '',
-              slug: c.slug || c.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-') || '',
-              listingsCount: c.listingsCount ?? c._count?.businesses ?? 0,
-              active: c.isActive !== false,
-            })),
-          );
+          const list = Array.isArray(res.data) ? res.data : (res.data as any)?.data ?? [];
+          // Flatten parent → children so every node is sortable/editable, but
+          // keep the parent relationship for display + the parent picker.
+          const flat: any[] = [];
+          const walk = (nodes: any[], parent?: any) => {
+            (nodes || [])
+              .slice()
+              .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+              .forEach((c: any) => {
+                flat.push({
+                  id: c.id,
+                  name: c.name || '',
+                  slug: c.slug || '',
+                  listingsCount: c.listingsCount ?? c._count?.businesses ?? 0,
+                  active: c.isActive !== false,
+                  sortOrder: c.sortOrder ?? 0,
+                  parentId: c.parentId ?? parent?.id ?? '',
+                  parentName: parent?.name ?? '',
+                  isChild: !!parent,
+                });
+                if (Array.isArray(c.children) && c.children.length) walk(c.children, c);
+              });
+          };
+          walk(list);
+          setCategories(flat);
         }
       })
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadCategories(); }, []);
+
+  const parentOptions = categories.filter((c) => !c.isChild);
+
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [deletingCategory, setDeletingCategory] = useState<any>(null);
@@ -40,11 +60,15 @@ export default function AdminCategoriesPage() {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [active, setActive] = useState(true);
+  const [sortOrder, setSortOrder] = useState(0);
+  const [parentId, setParentId] = useState('');
 
   const handleOpenAdd = () => {
     setName('');
     setSlug('');
     setActive(true);
+    setSortOrder(0);
+    setParentId('');
     setIsAddOpen(true);
   };
 
@@ -53,17 +77,11 @@ export default function AdminCategoriesPage() {
     if (!name) return;
     const finalSlug =
       slug ||
-      name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-    const res = await apiService.post<any>('/v1/categories', { name, slug: finalSlug });
-    if (res.data && !res.error) {
-      setCategories([
-        ...categories,
-        { id: res.data.id, name: res.data.name, slug: res.data.slug, listingsCount: 0, active: res.data.isActive !== false },
-      ]);
-    }
+      name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const res = await apiService.post<any>('/v1/categories', {
+      name, slug: finalSlug, sortOrder, isActive: active, parentId: parentId || undefined,
+    });
+    if (res.data && !res.error) loadCategories();
     setIsAddOpen(false);
   };
 
@@ -72,6 +90,8 @@ export default function AdminCategoriesPage() {
     setName(cat.name);
     setSlug(cat.slug);
     setActive(cat.active);
+    setSortOrder(cat.sortOrder ?? 0);
+    setParentId(cat.parentId ?? '');
   };
 
   const handleEdit = async (e: React.FormEvent) => {
@@ -79,22 +99,12 @@ export default function AdminCategoriesPage() {
     if (!name || !editingCategory) return;
     const finalSlug =
       slug ||
-      name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
+      name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const res = await apiService.patch<any>(`/v1/categories/${editingCategory.id}`, {
-      name,
-      slug: finalSlug,
-      isActive: active,
+      name, slug: finalSlug, isActive: active, sortOrder,
+      parentId: parentId || null,
     });
-    if (res.data && !res.error) {
-      setCategories(
-        categories.map((c) =>
-          c.id === editingCategory.id ? { ...c, name, slug: finalSlug, active } : c,
-        ),
-      );
-    }
+    if (res.data && !res.error) loadCategories();
     setEditingCategory(null);
   };
 
@@ -161,8 +171,14 @@ export default function AdminCategoriesPage() {
                       <Folder className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground text-base">{cat.name}</h3>
-                      <p className="text-xs text-muted-foreground">Slug: /{cat.slug}</p>
+                      <h3 className="font-semibold text-foreground text-base flex items-center gap-1.5">
+                        {cat.isChild && <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {cat.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        /{cat.slug}
+                        {cat.isChild && cat.parentName ? ` · under ${cat.parentName}` : ''} · order {cat.sortOrder}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6 text-xs mt-4">
@@ -253,6 +269,19 @@ export default function AdminCategoriesPage() {
                     className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground block mb-2">Sort Order</label>
+                    <Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value) || 0)} className="rounded-xl border-input bg-background text-foreground" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground block mb-2">Parent Category</label>
+                    <select value={parentId} onChange={(e) => setParentId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-input bg-background text-foreground text-sm cursor-pointer">
+                      <option value="">None (top-level)</option>
+                      {parentOptions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2 pt-2">
                   <input
                     type="checkbox"
@@ -319,6 +348,19 @@ export default function AdminCategoriesPage() {
                     required
                     className="rounded-xl border-input bg-background focus:border-primary text-foreground"
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground block mb-2">Sort Order</label>
+                    <Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value) || 0)} className="rounded-xl border-input bg-background text-foreground" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground block mb-2">Parent Category</label>
+                    <select value={parentId} onChange={(e) => setParentId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-input bg-background text-foreground text-sm cursor-pointer">
+                      <option value="">None (top-level)</option>
+                      {parentOptions.filter((p) => p.id !== editingCategory?.id).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 pt-2">
                   <input

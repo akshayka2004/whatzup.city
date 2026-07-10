@@ -33,11 +33,16 @@ interface Notice {
   title: string;
   description: string;
   date: string;
+  startAt?: string;
+  expiresAt?: string;
+  linkUrl?: string;
   type: string;
   attachments: { name: string; type: 'pdf' | 'image'; size: string; url?: string }[];
   socialLinks: SocialLink[];
   publisher: Publisher | null;
 }
+
+const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 
 const typeColors: Record<string, string> = {
   Announcement: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
@@ -54,6 +59,9 @@ function mapApiNotice(n: any): Notice {
     title: n.title || 'Untitled',
     description: n.body || n.description || '',
     date: (n.publishedAt || n.createdAt || '').slice(0, 10),
+    startAt: n.startAt || undefined,
+    expiresAt: n.expiresAt || undefined,
+    linkUrl: n.linkUrl || undefined,
     type: n.category || n.type || 'Announcement',
     attachments: atts.map((a: any) => ({
       name: a.name || a.filename || 'document',
@@ -189,7 +197,7 @@ export default function GovernmentPage() {
                         {notice.type}
                       </span>
                     </div>
-                    <p className="text-muted-foreground text-sm mb-3">{notice.description}</p>
+                    <p className="text-muted-foreground text-sm mb-3 whitespace-pre-wrap break-words">{notice.description}</p>
                     {notice.attachments.length > 0 && (
                       <div className="flex items-center gap-2 mb-3 flex-wrap">
                         {notice.attachments.map((a, idx) => (
@@ -215,10 +223,17 @@ export default function GovernmentPage() {
                       </p>
                     )}
                     <SocialButtons links={notice.socialLinks} />
-                    <div className="flex items-center gap-4 mt-3">
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" /> {notice.date}
-                      </div>
+                    <div className="flex items-center gap-x-4 gap-y-1 mt-3 flex-wrap text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" /> Issued {notice.date}
+                      </span>
+                      {(notice.startAt || notice.expiresAt) && (
+                        <span className="flex items-center gap-1 text-cyan-400">
+                          {notice.startAt ? fmtDate(notice.startAt) : '—'} → {notice.expiresAt ? fmtDate(notice.expiresAt) : 'Open'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-3">
                       <Button
                         onClick={() => setViewingNotice(notice)}
                         variant="outline"
@@ -227,6 +242,12 @@ export default function GovernmentPage() {
                       >
                         <Eye className="h-3.5 w-3.5" /> View Details
                       </Button>
+                      {notice.linkUrl && (
+                        <a href={notice.linkUrl.startsWith('http') ? notice.linkUrl : `https://${notice.linkUrl}`} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-medium transition-colors cursor-pointer">
+                          <ExternalLink className="h-3 w-3" /> Open Link
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -263,7 +284,7 @@ export default function GovernmentPage() {
                 </div>
               </div>
               <div className="bg-white/5 p-4 rounded-xl border border-white/5 mb-6">
-                <p className="text-sm text-slate-300 leading-relaxed">{viewingNotice.description}</p>
+                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap break-words">{viewingNotice.description}</p>
               </div>
 
               {(viewingNotice.publisher || viewingNotice.socialLinks.length > 0) && (

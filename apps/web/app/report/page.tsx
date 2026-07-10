@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
@@ -42,10 +42,37 @@ export default function ReportPage() {
   const [submittedId, setSubmittedId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [targetType, setTargetType] = useState('');
+  const [targetId, setTargetId] = useState('');
+
+  // Prefill from query (?type=&business=&subject=&targetType=&targetId=) so the
+  // Report buttons on business / offer cards land on a ready-filled form.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const t = q.get('type') as IssueType | null;
+    const biz = q.get('business');
+    const subj = q.get('subject');
+    if (biz) setBusinessName(biz);
+    if (subj) setSubject(subj);
+    if (q.get('targetType')) setTargetType(q.get('targetType') || '');
+    if (q.get('targetId')) setTargetId(q.get('targetId') || '');
+    if (t && ISSUE_TYPES.some((x) => x.id === t)) {
+      setSelectedType(t);
+      setStep('details');
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedType || !description.trim()) return;
+
+    // Reports must be attributable — guests are sent to sign in, then back here.
+    if (!user) {
+      const back = encodeURIComponent('/report' + (typeof window !== 'undefined' ? window.location.search : ''));
+      router.push(`/login?redirect=${back}`);
+      return;
+    }
+
     setError('');
     setSubmitting(true);
 
@@ -54,23 +81,17 @@ export default function ReportPage() {
       subject: subject.trim() || ISSUE_TYPES.find((t) => t.id === selectedType)!.label,
       description: description.trim(),
       targetName: businessName.trim() || undefined,
+      targetType: targetType || undefined,
+      targetId: targetId || undefined,
     };
 
-    if (user) {
-      // Authenticated — send to API
-      const res = await apiService.post<any>('/v1/reports', payload);
-      setSubmitting(false);
-      if (res.error) {
-        setError(res.error || 'Failed to submit report. Please try again.');
-        return;
-      }
-      setSubmittedId(res.data?.id || `RPT-${Date.now().toString(36).toUpperCase().slice(-6)}`);
-    } else {
-      // Unauthenticated — save locally + prompt to sign in
-      setSubmitting(false);
-      const id = `RPT-${Date.now().toString(36).toUpperCase().slice(-6)}`;
-      setSubmittedId(id);
+    const res = await apiService.post<any>('/v1/reports', payload);
+    setSubmitting(false);
+    if (res.error) {
+      setError(res.error || 'Failed to submit report. Please try again.');
+      return;
     }
+    setSubmittedId(res.data?.id || `RPT-${Date.now().toString(36).toUpperCase().slice(-6)}`);
     setStep('success');
   };
 

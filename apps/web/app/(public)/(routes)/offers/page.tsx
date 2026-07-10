@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES, getViewerCity, setViewerCity } from '@/lib/constants';
+import { ReportButton } from '@/components/report-button';
 
 interface Offer {
   id: string;
@@ -24,6 +25,8 @@ interface Offer {
   business: string;
   businessType: string;
   discount: number;
+  discountAmount?: number;
+  discountLabel: string;
   expiresAt?: string;
   expiresIn?: number;
   terms?: string;
@@ -55,6 +58,11 @@ function mapApiOffer(o: any): Offer {
     business: o.business?.name || o.businessName || '',
     businessType: o.business?.category?.name || o.category || '',
     discount: o.discountPercent ?? o.discount ?? 0,
+    discountAmount: o.discountAmount != null ? Number(o.discountAmount) : 0,
+    discountLabel:
+      o.discountAmount != null && Number(o.discountAmount) > 0 && !(o.discountPercent > 0)
+        ? `₹${Number(o.discountAmount).toLocaleString('en-IN')}`
+        : `${o.discountPercent ?? o.discount ?? 0}%`,
     expiresAt: o.expiresAt || o.endDate,
     expiresIn: days ?? undefined,
     terms: o.terms || o.conditions || '',
@@ -216,7 +224,7 @@ export default function OffersPage() {
                       )}
                     </div>
                     <div className={`px-3 py-1 rounded-lg font-bold text-lg ${claimed ? 'bg-emerald-500/10 text-emerald-400' : 'bg-primary/10 text-primary'}`}>
-                      {claimed ? <CheckCircle2 className="h-5 w-5" /> : `${offer.discount}%`}
+                      {claimed ? <CheckCircle2 className="h-5 w-5" /> : offer.discountLabel}
                     </div>
                   </div>
                   {offer.description && (
@@ -237,6 +245,7 @@ export default function OffersPage() {
                     >
                       <Eye className="h-4 w-4" /> View Details
                     </Button>
+                    <ReportButton kind="offer" targetId={offer.id} targetName={offer.title} />
                     {claimed ? (
                       <div className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold px-3 py-2">
                         <CheckCircle2 className="h-4 w-4" /> Claimed
@@ -277,7 +286,7 @@ export default function OffersPage() {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
                   <p className="text-xs text-muted-foreground mb-1">Discount</p>
-                  <p className="text-3xl font-extrabold text-foreground">{viewingOffer.discount}%</p>
+                  <p className="text-3xl font-extrabold text-foreground">{viewingOffer.discountLabel}</p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
                   <p className="text-xs text-muted-foreground mb-1">Expires In</p>

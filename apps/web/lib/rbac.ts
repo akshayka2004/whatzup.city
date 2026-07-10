@@ -185,6 +185,7 @@ export function getRoleLabel(role: string): string {
     [UserRole.BUSINESS_MODERATOR]: 'Moderator',
     [UserRole.BUSINESS_ADMIN]: 'Business Owner',
     [UserRole.GOVERNMENT_ADMIN]: 'Government',
+    [UserRole.INFLUENCER]: 'Influencer / Content Creator',
     [UserRole.USER]: 'Customer',
   };
   return labels[role] ?? role;

@@ -94,9 +94,20 @@ export class UsersController {
   @ApiOperation({ summary: 'Update current user profile' })
   async updateProfile(
     @CurrentUser('id') userId: string,
-    @Body() data: { name?: string; phone?: string; avatar?: string },
+    @Body() data: { name?: string; phone?: string; avatar?: string; profession?: string },
   ) {
     return this.usersService.update(userId, data);
+  }
+
+  @Patch('admin/:id')
+  @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Super-admin: edit any user account' })
+  async adminUpdate(
+    @Param('id') id: string,
+    @CurrentUser('id') adminId: string,
+    @Body() data: any,
+  ) {
+    return this.usersService.adminUpdate(id, adminId, data);
   }
 
   @Post('me/change-password')

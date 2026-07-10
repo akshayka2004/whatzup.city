@@ -26,6 +26,7 @@ export class UsersService {
           phone: true,
           avatar: true,
           role: true,
+          profession: true,
           isActive: true,
           emailVerified: true,
           createdAt: true,
@@ -111,10 +112,16 @@ export class UsersService {
     };
   }
 
-  async update(id: string, data: { name?: string; phone?: string; avatar?: string }) {
-    const updateData = { ...data };
-    if (updateData.avatar && !updateData.avatar.trim().startsWith('{')) {
-      updateData.avatar = JSON.stringify({ bucket: 'profile-media', path: updateData.avatar });
+  async update(id: string, data: { name?: string; phone?: string; avatar?: string; profession?: string }) {
+    // Whitelist self-editable fields only — never let /me set role, status, etc.
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.profession !== undefined) updateData.profession = data.profession || null;
+    if (data.avatar !== undefined) {
+      updateData.avatar = data.avatar && !data.avatar.trim().startsWith('{')
+        ? JSON.stringify({ bucket: 'profile-media', path: data.avatar })
+        : data.avatar;
     }
     const user = await this.db.user.update({ where: { id }, data: updateData });
     await this.redis.del(`user:${id}`);
@@ -124,6 +131,42 @@ export class UsersService {
   async softDelete(id: string) {
     await this.db.user.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } });
     await this.redis.del(`user:${id}`);
+  }
+
+  /**
+   * Super-admin edit of any user account: name, email, phone, profession, role,
+   * active status, and optional password reset. Email uniqueness is enforced.
+   */
+  async adminUpdate(id: string, _adminId: string, data: any) {
+    const user = await this.db.user.findFirst({ where: { id, deletedAt: null } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const payload: any = {};
+    if (data.name !== undefined) payload.name = String(data.name).trim();
+    if (data.phone !== undefined) payload.phone = data.phone || null;
+    if (data.profession !== undefined) payload.profession = data.profession || null;
+    if (typeof data.isActive === 'boolean') payload.isActive = data.isActive;
+    if (data.role !== undefined) payload.role = data.role;
+    if (data.email !== undefined) {
+      const email = String(data.email).trim().toLowerCase();
+      if (email && email !== user.email) {
+        const clash = await this.db.user.findFirst({ where: { email, deletedAt: null, NOT: { id } } });
+        if (clash) throw new ConflictException('Email already in use');
+        payload.email = email;
+      }
+    }
+    if (data.password) {
+      if (String(data.password).length < 8) throw new BadRequestException('Password must be at least 8 characters');
+      payload.passwordHash = await this.passwordService.hash(data.password);
+    }
+
+    const updated = await this.db.user.update({
+      where: { id },
+      data: payload,
+      select: { id: true, email: true, name: true, phone: true, role: true, isActive: true, profession: true, createdAt: true },
+    });
+    await this.redis.del(`user:${id}`);
+    return updated;
   }
 
   /** Self-service account deletion — soft-deletes user + deactivates entities */

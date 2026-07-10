@@ -75,6 +75,8 @@ export default function GovDashboardPage() {
   const [formBody, setFormBody] = useState('');
   const [formType, setFormType] = useState<NoticeType>('NOTICE');
   const [formExpiresAt, setFormExpiresAt] = useState('');
+  const [formStartAt, setFormStartAt] = useState('');
+  const [formLink, setFormLink] = useState('');
   const [formCities, setFormCities] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState('');
@@ -110,6 +112,8 @@ export default function GovDashboardPage() {
       category: formType,
       priority: priorityMap[formType],
       expiresAt: formExpiresAt ? new Date(formExpiresAt).toISOString() : undefined,
+      startAt: formStartAt ? new Date(formStartAt).toISOString() : undefined,
+      linkUrl: formLink || undefined,
       targetCities: formCities,
     });
     setSubmitting(false);
@@ -120,7 +124,7 @@ export default function GovDashboardPage() {
       return;
     }
 
-    setFormTitle(''); setFormBody(''); setFormType('NOTICE'); setFormExpiresAt(''); setFormCities([]);
+    setFormTitle(''); setFormBody(''); setFormType('NOTICE'); setFormExpiresAt(''); setFormStartAt(''); setFormLink(''); setFormCities([]);
     setShowForm(false);
     setSuccess('Notice published successfully!');
     setTimeout(() => setSuccess(''), 3000);
@@ -358,6 +362,17 @@ export default function GovDashboardPage() {
                   min={new Date().toISOString().slice(0, 10)}
                   className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Start / Issue date</label>
+                  <Input type="date" value={formStartAt} onChange={(e) => setFormStartAt(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Link (optional)</label>
+                  <Input placeholder="https://…" value={formLink} onChange={(e) => setFormLink(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
+                </div>
               </div>
 
               <div>

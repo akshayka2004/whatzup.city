@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import {
   Instagram, Facebook, Linkedin, Twitter, Youtube,
   Globe, Phone, Plus, Trash2, Check, Edit2, X,
-  Building2, User, Loader2, MapPin, Mail,
+  Building2, User, Loader2, MapPin, Mail, Tag, Upload, Image as ImageIcon,
 } from 'lucide-react';
 
 /* ── Social platform config ───────────────────────────────────── */
@@ -44,6 +44,11 @@ interface BusinessRecord {
   city?: string;
   state?: string;
   zipCode?: string;
+  logo?: string | null;
+  description?: string | null;
+  tags?: string[];
+  halalStatus?: string | null;
+  category?: { id: string; name: string; slug: string } | null;
   socialLinks?: Record<string, string>;
 }
 
@@ -56,6 +61,7 @@ interface BusinessProfileForm {
   state: string;
   ownerName: string;
   ownerPhone: string;
+  description: string;
 }
 
 export default function BusinessSettingsPage() {
@@ -66,13 +72,22 @@ export default function BusinessSettingsPage() {
   const [business, setBusiness] = useState<BusinessRecord | null>(null);
   const [profile, setProfile] = useState<BusinessProfileForm>({
     businessName: '', businessEmail: '', businessPhone: '', address: '', city: '', state: '',
-    ownerName: '', ownerPhone: '',
+    ownerName: '', ownerPhone: '', description: '',
   });
   const [tempProfile, setTempProfile] = useState<BusinessProfileForm>(profile);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
   const [errMsg, setErrMsg] = useState('');
+
+  // Logo / tags / halal
+  const [logoUrl, setLogoUrl] = useState<string>('');
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [halalStatus, setHalalStatus] = useState<string>('');
+  const [categorySlug, setCategorySlug] = useState<string>('');
+  const isFood = categorySlug === 'food' || /food|restaurant|cafe|bakery/i.test(categorySlug);
 
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [addingLink, setAddingLink] = useState(false);
@@ -109,9 +124,14 @@ export default function BusinessSettingsPage() {
             state: biz.state || '',
             ownerName: user.name || '',
             ownerPhone: (user as any).phone || biz.phone || '',
+            description: biz.description || '',
           };
           setProfile(next);
           setTempProfile(next);
+          setLogoUrl(biz.logo || '');
+          setTags(Array.isArray(biz.tags) ? biz.tags : []);
+          setHalalStatus(biz.halalStatus || '');
+          setCategorySlug(biz.category?.slug || '');
 
           // Hydrate social links from business record if API has them, else localStorage
           const sl = biz.socialLinks;
@@ -139,6 +159,7 @@ export default function BusinessSettingsPage() {
             state: '',
             ownerName: user.name || '',
             ownerPhone: (user as any).phone || '',
+            description: '',
           };
           setProfile(next);
           setTempProfile(next);
@@ -168,6 +189,9 @@ export default function BusinessSettingsPage() {
       address: tempProfile.address || undefined,
       city: tempProfile.city || undefined,
       state: tempProfile.state || undefined,
+      description: tempProfile.description || '',
+      tags,
+      ...(isFood ? { halalStatus: halalStatus || null } : {}),
     });
 
     setSaving(false);
@@ -233,6 +257,43 @@ export default function BusinessSettingsPage() {
 
   const getPlatformConfig = (id: PlatformId) => PLATFORM_OPTIONS.find((p) => p.id === id)!;
 
+  /* ── Logo upload (business-media is a public bucket) ──────────────── */
+  const handleLogoUpload = async (file: File) => {
+    if (!business?.id) { setErrMsg('Save your business profile first.'); return; }
+    if (!file.type.startsWith('image/')) { setErrMsg('Logo must be an image.'); return; }
+    setLogoUploading(true);
+    setErrMsg('');
+    try {
+      const signed = await apiService.post<{ uploadUrl: string; fileKey: string; bucket: string }>(
+        '/v1/storage/upload-url',
+        { category: 'logo', filename: file.name, mimeType: file.type, entityId: business.id },
+      );
+      if (signed.error || !signed.data?.uploadUrl) throw new Error(signed.error || 'Upload URL failed');
+      const { uploadUrl, fileKey, bucket } = signed.data;
+      const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
+      // business-media is public → deterministic public URL from the signed host.
+      const publicUrl = `${new URL(uploadUrl).origin}/storage/v1/object/public/${bucket}/${fileKey}`;
+      const patch = await apiService.patch(`/v1/businesses/${business.id}`, { logo: publicUrl });
+      if (patch.error) throw new Error(patch.error);
+      setLogoUrl(publicUrl);
+      setBusiness((b) => (b ? { ...b, logo: publicUrl } : b));
+      setSavedMsg('Logo updated');
+      setTimeout(() => setSavedMsg(''), 2500);
+    } catch (e: any) {
+      setErrMsg(e?.message || 'Logo upload failed');
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const addTag = (raw: string) => {
+    const t = raw.trim().toLowerCase();
+    if (t && !tags.includes(t) && tags.length < 12) setTags((prev) => [...prev, t]);
+    setTagInput('');
+  };
+  const removeTag = (t: string) => setTags((prev) => prev.filter((x) => x !== t));
+
   /* ── Render ───────────────────────────────────────────────────── */
   if (authLoading || businessLoading) {
     return (
@@ -266,6 +327,36 @@ export default function BusinessSettingsPage() {
             {errMsg}
           </div>
         )}
+
+        {/* Business Logo */}
+        <Card className="p-6 rounded-2xl border-border bg-card">
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2 mb-5">
+            <ImageIcon className="h-4 w-4 text-primary" /> Business Logo
+          </h2>
+          <div className="flex items-center gap-5">
+            <div className="h-20 w-20 rounded-2xl border border-border bg-secondary/60 overflow-hidden flex items-center justify-center shrink-0">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Business logo" className="h-full w-full object-contain" />
+              ) : (
+                <Building2 className="h-8 w-8 text-muted-foreground" />
+              )}
+            </div>
+            <div className="space-y-2">
+              <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold ${logoUploading ? 'opacity-60 pointer-events-none' : 'cursor-pointer'}`}>
+                {logoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {logoUrl ? 'Replace Logo' : 'Upload Logo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={logoUploading}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); e.target.value = ''; }}
+                />
+              </label>
+              <p className="text-xs text-muted-foreground">PNG, JPG or WebP. Shown on your storefront and listing cards.</p>
+            </div>
+          </div>
+        </Card>
 
         {/* Business Profile */}
         <Card className="p-6 rounded-2xl border-border bg-card">
@@ -346,6 +437,75 @@ export default function BusinessSettingsPage() {
                 </div>
               )}
             </div>
+
+            {/* Description */}
+            <div className="sm:col-span-2">
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">Short Description</label>
+              {editing ? (
+                <textarea
+                  value={tempProfile.description}
+                  onChange={(e) => setTempProfile({ ...tempProfile, description: e.target.value })}
+                  rows={3}
+                  placeholder="A short line shown on your listing cards and storefront."
+                  className="w-full rounded-xl border border-border bg-secondary/60 text-foreground text-sm p-3 focus:border-primary resize-none"
+                />
+              ) : (
+                <div className="px-3 py-2.5 rounded-xl bg-secondary/60 border border-border text-sm text-foreground whitespace-pre-wrap">{profile.description || '—'}</div>
+              )}
+            </div>
+
+            {/* Tags */}
+            <div className="sm:col-span-2">
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                Tags <span className="font-normal">(shown on your listing cards)</span>
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {tags.map((t) => (
+                  <span key={t} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-medium">
+                    <Tag className="h-3 w-3" />{t}
+                    {editing && (
+                      <button type="button" onClick={() => removeTag(t)} className="ml-0.5 hover:text-primary/70 cursor-pointer"><X className="h-3 w-3" /></button>
+                    )}
+                  </span>
+                ))}
+                {tags.length === 0 && !editing && <span className="text-sm text-muted-foreground">—</span>}
+              </div>
+              {editing && (
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(tagInput); } }}
+                  onBlur={() => { if (tagInput.trim()) addTag(tagInput); }}
+                  placeholder="Type a tag, press Enter"
+                  className="mt-2 rounded-xl border-border bg-secondary/60 text-foreground text-sm focus:border-primary"
+                />
+              )}
+            </div>
+
+            {/* Halal — food businesses only */}
+            {isFood && (
+              <div className="sm:col-span-2">
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Halal Status</label>
+                {editing ? (
+                  <div className="grid grid-cols-3 gap-2 max-w-md">
+                    {[{ v: '', l: 'Not specified' }, { v: 'HALAL', l: 'Halal' }, { v: 'NON_HALAL', l: 'Non-Halal' }].map((o) => (
+                      <button
+                        type="button"
+                        key={o.l}
+                        onClick={() => setHalalStatus(o.v)}
+                        className={`h-10 rounded-xl border text-xs font-medium cursor-pointer transition ${halalStatus === o.v ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300' : 'bg-secondary/60 border-border text-muted-foreground hover:bg-secondary'}`}
+                      >
+                        {o.l}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-3 py-2.5 rounded-xl bg-secondary/60 border border-border text-sm text-foreground">
+                    {halalStatus === 'HALAL' ? 'Halal' : halalStatus === 'NON_HALAL' ? 'Non-Halal' : '—'}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </Card>
 

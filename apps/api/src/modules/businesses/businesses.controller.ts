@@ -107,8 +107,24 @@ export class BusinessesController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('search') search?: string,
+    @Query('categoryId') categoryId?: string,
+    @Query('city') city?: string,
+    @Query('status') status?: string,
+    @Query('isVerified') isVerified?: string,
+    @Query('halalStatus') halalStatus?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
   ) {
-    return this.businessesService.adminFindAll(page, limit, search);
+    return this.businessesService.adminFindAll(page, limit, {
+      search,
+      categoryId,
+      city,
+      status,
+      isVerified: isVerified === undefined ? undefined : isVerified === 'true',
+      halalStatus,
+      sortBy,
+      sortOrder,
+    });
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

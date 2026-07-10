@@ -103,6 +103,9 @@ export default function SuperAdminNoticesPage() {
   const [body, setBody] = useState('');
   const [category, setCategory] = useState<NoticeCategory>('ANNOUNCEMENT');
   const [formTags, setFormTags] = useState<string[]>([]);
+  const [formStartAt, setFormStartAt] = useState('');
+  const [formExpiresAt, setFormExpiresAt] = useState('');
+  const [formLink, setFormLink] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -114,6 +117,9 @@ export default function SuperAdminNoticesPage() {
       body,
       category,
       priority: PRIORITY_BY_CATEGORY[category],
+      startAt: formStartAt ? new Date(formStartAt).toISOString() : undefined,
+      expiresAt: formExpiresAt ? new Date(formExpiresAt).toISOString() : undefined,
+      linkUrl: formLink || undefined,
       targetAudience: { sender: sender || 'Platform Admin', tags: formTags },
     });
     setSubmitting(false);
@@ -122,7 +128,7 @@ export default function SuperAdminNoticesPage() {
       return;
     }
     setIsCreateOpen(false);
-    setTitle(''); setSender(''); setBody(''); setCategory('ANNOUNCEMENT'); setFormTags([]);
+    setTitle(''); setSender(''); setBody(''); setCategory('ANNOUNCEMENT'); setFormTags([]); setFormStartAt(''); setFormExpiresAt(''); setFormLink('');
     fetchNotices();
   };
 
@@ -146,7 +152,7 @@ export default function SuperAdminNoticesPage() {
             <p className="text-muted-foreground">Broadcast official notices, government safety alerts, and system bulletin news</p>
           </div>
           <Button
-            onClick={() => { setTitle(''); setSender(''); setBody(''); setCategory('ANNOUNCEMENT'); setFormTags([]); setIsCreateOpen(true); }}
+            onClick={() => { setTitle(''); setSender(''); setBody(''); setCategory('ANNOUNCEMENT'); setFormTags([]); setFormStartAt(''); setFormExpiresAt(''); setFormLink(''); setIsCreateOpen(true); }}
             className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground cursor-pointer"
           >
             <Plus className="h-4 w-4" /> Create Alert
@@ -287,6 +293,20 @@ export default function SuperAdminNoticesPage() {
                     Tags <span className="ml-1 text-xs text-muted-foreground font-normal">(press Enter or comma to add)</span>
                   </label>
                   <TagInput tags={formTags} onChange={setFormTags} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-slate-300 block mb-2">Start / Issue date</label>
+                    <Input type="date" value={formStartAt} onChange={(e) => setFormStartAt(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-300 block mb-2">Expires On</label>
+                    <Input type="date" value={formExpiresAt} onChange={(e) => setFormExpiresAt(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-300 block mb-2">Link (optional)</label>
+                  <Input placeholder="https://…" value={formLink} onChange={(e) => setFormLink(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground" />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
                   <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)} className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer">

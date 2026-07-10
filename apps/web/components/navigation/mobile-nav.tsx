@@ -155,6 +155,7 @@ export function MobileNav() {
     ];
 
     drawerItems = [
+      { label: 'Manage Users', href: '/super-admin/users', icon: UserCog },
       { label: 'Businesses', href: '/super-admin/businesses', icon: Building2 },
       { label: 'Approvals', href: '/super-admin/approvals', icon: CheckCircle },
       { label: 'Reports', href: '/super-admin/reports', icon: AlertTriangle },

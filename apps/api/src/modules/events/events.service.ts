@@ -127,6 +127,60 @@ export class EventsService {
     return { success: true };
   }
 
+  // ── Super-admin CRUD (cross-tenant; resolves the business/event globally) ──
+  async adminCreate(userId: string, businessId: string, dto: any) {
+    if (!businessId) throw new BadRequestException('businessId is required');
+    if (!dto.title || !dto.startDate || !dto.endDate) {
+      throw new BadRequestException('title, startDate and endDate are required');
+    }
+    const biz = await this.db.business.findFirst({
+      where: { OR: [{ id: businessId }, { entityId: businessId }], deletedAt: null },
+      select: { id: true, tenantId: true },
+    });
+    if (!biz) throw new BadRequestException('Business not found');
+    const event = await this.db.event.create({
+      data: {
+        tenantId: biz.tenantId,
+        businessId: biz.id,
+        title: dto.title,
+        description: dto.description || '',
+        posterImage: dto.posterImage || null,
+        venue: dto.venue || null,
+        city: dto.city || null,
+        targetCities: Array.isArray(dto.targetCities) ? dto.targetCities : [],
+        startDate: new Date(dto.startDate),
+        endDate: new Date(dto.endDate),
+        registrationUrl: dto.registrationUrl || null,
+        ticketUrl: dto.ticketUrl || null,
+        status: 'ACTIVE',
+      },
+    });
+    await this.audit.log({ tenantId: biz.tenantId, userId, action: 'ADMIN_CREATE_EVENT', resource: 'EVENT', resourceId: event.id });
+    return event;
+  }
+
+  async adminUpdate(id: string, userId: string, dto: any) {
+    const e = await this.db.event.findFirst({ where: { id, deletedAt: null } });
+    if (!e) throw new NotFoundException('Event not found');
+    const payload: any = {};
+    for (const k of ['title', 'description', 'posterImage', 'venue', 'city', 'targetCities', 'registrationUrl', 'ticketUrl', 'status']) {
+      if (dto[k] !== undefined) payload[k] = dto[k];
+    }
+    if (dto.startDate) payload.startDate = new Date(dto.startDate);
+    if (dto.endDate) payload.endDate = new Date(dto.endDate);
+    const updated = await this.db.event.update({ where: { id }, data: payload });
+    await this.audit.log({ tenantId: e.tenantId, userId, action: 'ADMIN_UPDATE_EVENT', resource: 'EVENT', resourceId: id });
+    return updated;
+  }
+
+  async adminRemove(id: string, userId: string) {
+    const e = await this.db.event.findFirst({ where: { id, deletedAt: null } });
+    if (!e) throw new NotFoundException('Event not found');
+    await this.db.event.update({ where: { id }, data: { deletedAt: new Date() } });
+    await this.audit.log({ tenantId: e.tenantId, userId, action: 'ADMIN_DELETE_EVENT', resource: 'EVENT', resourceId: id });
+    return { success: true };
+  }
+
   // Super-admin: every event + total click count.
   async adminFindAll(page = 1, limit = 50) {
     const pageVal = Math.max(1, Number(page) || 1);

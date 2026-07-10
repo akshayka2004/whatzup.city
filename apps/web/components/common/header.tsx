@@ -74,9 +74,17 @@ export function Header() {
   };
 
   const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchVal.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchVal)}`);
-    }
+    if (e.key !== 'Enter' || !searchVal.trim()) return;
+    const q = encodeURIComponent(searchVal.trim());
+    // Role-aware: keep privileged users inside their own portal instead of
+    // dumping them onto the public /search page.
+    const dest =
+      user?.role === 'super-admin'
+        ? `/super-admin/businesses?q=${q}`
+        : user?.role === 'admin'
+          ? `/admin/registrations?q=${q}`
+          : `/search?q=${q}`;
+    router.push(dest);
   };
 
   const getInitials = (name: string) => {

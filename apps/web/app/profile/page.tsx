@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
 import { useRouter } from 'next/navigation';
+import { PROFESSIONS } from '@/lib/constants';
 import {
   Edit2, Mail, Phone, MapPin, LogOut, Check, X,
   Sparkles, Receipt, Heart, Tag, Building2, CalendarDays,
@@ -23,6 +24,7 @@ interface CustomerProfile {
   city?: string | null;
   district?: string | null;
   state?: string | null;
+  profession?: string | null;
 }
 
 interface BillRow {
@@ -113,6 +115,7 @@ export default function ProfilePage() {
           city: cust.city || '',
           district: cust.district || '',
           state: cust.state || '',
+          profession: u.profession || (user as any).profession || '',
         };
         setProfile(next);
         setTempProfile(next);
@@ -218,6 +221,11 @@ export default function ProfilePage() {
     if (res.error) {
       setSaveErr(res.error);
       return;
+    }
+
+    // Profession lives on the User record — save it separately (best-effort).
+    if (tempProfile.profession !== profile.profession) {
+      await apiService.patch('/v1/users/me', { profession: tempProfile.profession || null });
     }
 
     setProfile(tempProfile);
@@ -489,6 +497,24 @@ export default function ProfilePage() {
                 setTempProfile({ ...tempProfile, district: d || '', state: s || '' });
               }}
             />
+            <div className="flex items-center gap-3 p-3.5 bg-secondary/60 rounded-xl border border-border">
+              <Users className="h-5 w-5 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-muted-foreground">Profession</p>
+                {isEditing ? (
+                  <select
+                    value={tempProfile.profession || ''}
+                    onChange={(e) => setTempProfile({ ...tempProfile, profession: e.target.value })}
+                    className="h-8 mt-0.5 rounded-lg border border-border bg-transparent text-sm px-1 focus:border-primary text-foreground w-full cursor-pointer"
+                  >
+                    <option value="">Not specified</option>
+                    {PROFESSIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                ) : (
+                  <p className="font-semibold text-foreground text-sm mt-0.5 truncate">{profile.profession || '—'}</p>
+                )}
+              </div>
+            </div>
           </div>
         </Card>
 
