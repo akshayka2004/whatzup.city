@@ -18,6 +18,12 @@ const REQUIRED_BUCKETS: { name: string; public: boolean }[] = [
   { name: 'verification-documents', public: false },
   { name: 'business-media', public: true },
   { name: 'civic', public: true },
+  // Bill receipts — private (sensitive). Was missing, so bill uploads failed
+  // with "Failed to upload file to storage" (PUT 404 on a non-existent bucket).
+  { name: 'bill-uploads', public: false },
+  // Avatars + notification media referenced by CATEGORY_CONFIG.
+  { name: 'profile-media', public: true },
+  { name: 'notification-media', public: true },
 ];
 
 @Injectable()
