@@ -22,9 +22,10 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />
 
-        {/* Content */}
+        {/* Content — extra bottom padding on mobile so the fixed bottom nav
+            never covers the last controls (buttons, forms). */}
         <main className="flex-1 overflow-auto">
-          <div className="container mx-auto px-4 py-6">{children}</div>
+          <div className={`container mx-auto px-4 pt-6 ${isMobile ? 'pb-28' : 'pb-6'}`}>{children}</div>
         </main>
       </div>
 

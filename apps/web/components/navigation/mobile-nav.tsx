@@ -215,7 +215,7 @@ export function MobileNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/90 backdrop-blur-md px-2 py-1 flex items-center justify-around z-50 h-16 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/90 backdrop-blur-md px-2 py-1 flex items-center justify-around z-40 h-16 pb-safe">
       {primaryTabs.map((item) => {
         const Icon = item.icon;
         const active = isActive(item.href);

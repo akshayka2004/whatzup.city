@@ -325,7 +325,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
           ) : null}
 
           <div
-            className={`container mx-auto px-4 py-6 ${showOverlay ? 'blur-sm pointer-events-none' : ''}`}
+            className={`container mx-auto px-4 pt-6 ${isMobile ? 'pb-28' : 'pb-6'} ${showOverlay ? 'blur-sm pointer-events-none' : ''}`}
           >
             {children}
           </div>
