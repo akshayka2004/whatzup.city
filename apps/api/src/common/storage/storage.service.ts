@@ -31,6 +31,19 @@ const BUCKET_PUBLIC: Record<string, boolean> = Object.fromEntries(
   REQUIRED_BUCKETS.map((b) => [b.name, b.public]),
 );
 
+const IMG = ['image/jpeg', 'image/png', 'image/webp'];
+const IMG_PDF = [...IMG, 'application/pdf'];
+// Allowed MIME + size per bucket. Applied on create AND to existing buckets so
+// a too-narrow bucket (e.g. bill-uploads rejecting image/webp) gets widened.
+const BUCKET_MIME: Record<string, { mime: string[]; size: number }> = {
+  'verification-documents': { mime: IMG_PDF, size: 10 * 1024 * 1024 },
+  'business-media': { mime: IMG, size: 5 * 1024 * 1024 },
+  civic: { mime: IMG, size: 5 * 1024 * 1024 },
+  'bill-uploads': { mime: IMG_PDF, size: 10 * 1024 * 1024 },
+  'profile-media': { mime: IMG, size: 3 * 1024 * 1024 },
+  'notification-media': { mime: IMG, size: 5 * 1024 * 1024 },
+};
+
 @Injectable()
 export class StorageService implements OnApplicationBootstrap {
   private readonly logger = new Logger(StorageService.name);
@@ -87,13 +100,21 @@ export class StorageService implements OnApplicationBootstrap {
    */
   private async ensureBucket(bucket: string): Promise<void> {
     if (!this.supabaseClient || this.ensuredBuckets.has(bucket)) return;
+    const cfg = BUCKET_MIME[bucket];
+    const opts = {
+      public: BUCKET_PUBLIC[bucket] ?? false,
+      ...(cfg ? { allowedMimeTypes: cfg.mime, fileSizeLimit: cfg.size } : {}),
+    };
     try {
-      const { error } = await this.supabaseClient.storage.createBucket(bucket, {
-        public: BUCKET_PUBLIC[bucket] ?? false,
-      });
-      // "already exists" is success for our purposes.
+      const { error } = await this.supabaseClient.storage.createBucket(bucket, opts as any);
       if (error && !/exist/i.test(error.message)) {
-        this.logger.warn(`ensureBucket("${bucket}") failed: ${error.message}`);
+        this.logger.warn(`ensureBucket create("${bucket}") failed: ${error.message}`);
+      }
+      // Widen an existing bucket's allowed MIME / size in case it was created
+      // too narrowly (bill-uploads was rejecting image/webp with a 415).
+      if (cfg) {
+        const { error: upErr } = await this.supabaseClient.storage.updateBucket(bucket, opts as any);
+        if (upErr) this.logger.warn(`ensureBucket update("${bucket}") failed: ${upErr.message}`);
       }
     } catch (err: any) {
       this.logger.warn(`ensureBucket("${bucket}") threw: ${err?.message ?? err}`);

@@ -8,6 +8,8 @@ export interface OptimizationOptions {
   maxHeight?: number;
   quality?: number;
   convertToWebP?: boolean;
+  /** Force a specific output type. 'jpeg' for buckets that reject webp. */
+  outputType?: 'webp' | 'jpeg';
 }
 
 export async function optimizeImage(
@@ -19,6 +21,7 @@ export async function optimizeImage(
     maxHeight = 1200,
     quality = 0.8,
     convertToWebP = true,
+    outputType,
   } = options;
 
   // Skip optimization if not an image or if it's a GIF/SVG (to preserve animations/vectors)
@@ -61,8 +64,10 @@ export async function optimizeImage(
         ctx.drawImage(img, 0, 0, width, height);
 
         // Determine output mime type
-        const outputMime = convertToWebP ? 'image/webp' : file.type;
-        const extension = convertToWebP ? 'webp' : file.name.split('.').pop();
+        const outputMime =
+          outputType === 'jpeg' ? 'image/jpeg' : convertToWebP ? 'image/webp' : file.type;
+        const extension =
+          outputType === 'jpeg' ? 'jpg' : convertToWebP ? 'webp' : file.name.split('.').pop();
         const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
         const newFileName = `${baseName}.${extension}`;
 

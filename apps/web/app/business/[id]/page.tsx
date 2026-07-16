@@ -188,7 +188,7 @@ export default function BusinessDetailPage() {
       // 1. Optimize image client-side if it's an image
       let fileToUpload = billFile;
       try {
-        fileToUpload = await optimizeImage(billFile, { quality: 0.8 });
+        fileToUpload = await optimizeImage(billFile, { quality: 0.8, outputType: 'jpeg' });
       } catch (err) {
         console.error('Image optimization failed:', err);
       }
