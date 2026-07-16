@@ -26,6 +26,11 @@ const REQUIRED_BUCKETS: { name: string; public: boolean }[] = [
   { name: 'notification-media', public: true },
 ];
 
+// Public/private flag per bucket, used by the on-demand ensure at sign time.
+const BUCKET_PUBLIC: Record<string, boolean> = Object.fromEntries(
+  REQUIRED_BUCKETS.map((b) => [b.name, b.public]),
+);
+
 @Injectable()
 export class StorageService implements OnApplicationBootstrap {
   private readonly logger = new Logger(StorageService.name);
@@ -71,6 +76,32 @@ export class StorageService implements OnApplicationBootstrap {
     }
   }
 
+  // Buckets confirmed to exist this process — avoids a create call per upload.
+  private readonly ensuredBuckets = new Set<string>();
+
+  /**
+   * Guarantee a bucket exists right before we sign an upload URL. Boot-time
+   * provisioning is best-effort and can fail (transient error, race), which
+   * left `bill-uploads` missing and made the signed PUT 404. This closes that
+   * gap on demand.
+   */
+  private async ensureBucket(bucket: string): Promise<void> {
+    if (!this.supabaseClient || this.ensuredBuckets.has(bucket)) return;
+    try {
+      const { error } = await this.supabaseClient.storage.createBucket(bucket, {
+        public: BUCKET_PUBLIC[bucket] ?? false,
+      });
+      // "already exists" is success for our purposes.
+      if (error && !/exist/i.test(error.message)) {
+        this.logger.warn(`ensureBucket("${bucket}") failed: ${error.message}`);
+      }
+    } catch (err: any) {
+      this.logger.warn(`ensureBucket("${bucket}") threw: ${err?.message ?? err}`);
+    } finally {
+      this.ensuredBuckets.add(bucket);
+    }
+  }
+
   private ensureClient(): void {
     if (!this.supabaseClient) {
       throw new ServiceUnavailableException(
@@ -109,6 +140,7 @@ export class StorageService implements OnApplicationBootstrap {
     fileKey: string,
   ): Promise<{ uploadUrl: string; fileKey: string }> {
     this.ensureClient();
+    await this.ensureBucket(bucket);
     try {
       const { data, error } = await this.supabaseClient!.storage
         .from(bucket)

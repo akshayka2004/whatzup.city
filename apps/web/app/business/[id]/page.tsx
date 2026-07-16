@@ -218,7 +218,10 @@ export default function BusinessDetailPage() {
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file to storage');
+        const detail = await uploadResponse.text().catch(() => '');
+        throw new Error(
+          `Failed to upload file to storage (${uploadResponse.status}). ${detail.slice(0, 180) || uploadResponse.statusText}`,
+        );
       }
 
       // 4. Send JSON-serialized reference to backend
