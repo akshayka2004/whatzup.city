@@ -570,6 +570,8 @@ model Business {
   @@index([district])
   @@index([averageRating])
   @@index([deletedAt])
+  @@index([categoryId, city])
+  @@index([status, averageRating])
   @@map("businesses")
 }
 
@@ -879,6 +881,7 @@ model Offer {
   @@index([status])
   @@index([startDate, endDate])
   @@index([deletedAt])
+  @@index([status, endDate])
   @@map("offers")
 }
 
@@ -983,6 +986,7 @@ model Review {
   @@index([status])
   @@index([rating])
   @@index([deletedAt])
+  @@index([businessId, status])
   @@map("reviews")
 }
 
@@ -1158,6 +1162,7 @@ model Bill {
   @@index([businessId])
   @@index([status])
   @@index([deletedAt])
+  @@index([businessId, status])
   @@map("bills")
 }
 
@@ -1390,6 +1395,8 @@ model GovernmentAnnouncement {
   @@index([isPublished, publishAt])
   @@index([category])
   @@index([deletedAt])
+  @@index([isPublished, expiresAt])
+  @@index([tenantId, isPublished, expiresAt])
   @@map("government_announcements")
 }
 
@@ -2167,6 +2174,7 @@ model Event {
   @@index([businessId])
   @@index([status, endDate])
   @@index([deletedAt])
+  @@index([status, startDate])
   @@map("events")
 }
 
