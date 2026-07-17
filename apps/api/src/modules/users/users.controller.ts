@@ -69,6 +69,16 @@ export class UsersController {
     });
   }
 
+  // NOTE: literal GET routes MUST be declared before the `:id` param route —
+  // NestJS matches in declaration order, so `:id` would otherwise swallow
+  // e.g. `/users/referral-leaderboard` (→ findById('referral-leaderboard')).
+  @Get('referral-leaderboard')
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Top referrers leaderboard (admin only)' })
+  async referralLeaderboard(@CurrentUser() currentUser: any) {
+    return this.usersService.getReferralLeaderboard(currentUser.tenantId);
+  }
+
   @Get(':id')
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get user by ID (admin only)' })
@@ -126,13 +136,6 @@ export class UsersController {
   async remove(@Param('id') id: string) {
     await this.usersService.softDelete(id);
     return { message: 'User deactivated' };
-  }
-
-  @Get('referral-leaderboard')
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Top referrers leaderboard (admin only)' })
-  async referralLeaderboard(@CurrentUser() currentUser: any) {
-    return this.usersService.getReferralLeaderboard(currentUser.tenantId);
   }
 
   @Post('admin/create')
