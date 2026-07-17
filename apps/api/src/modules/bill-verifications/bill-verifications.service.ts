@@ -56,17 +56,22 @@ export class BillVerificationsService {
     pagination.sortBy = 'createdAt';
     pagination.sortOrder = SortOrder.ASC;
 
-    const filters: Record<string, any> = { businessId };
+    const statusFilter: Record<string, any> = {};
     if (status && status !== 'ALL') {
-      filters.status = status;
+      statusFilter.status = status;
     } else if (!status) {
       // Default to PENDING for the moderation queue (no explicit status means "show pending work")
-      filters.status = 'PENDING';
+      statusFilter.status = 'PENDING';
     }
     // status === 'ALL' → no status filter → return all bills for the business
 
-    const result = await this.verificationRepo.findMany(tenantId, filters, pagination, {
-      include: {
+    // Business-scoped (NOT tenant-scoped): bills are uploaded under the
+    // customer's tenant, so filtering by the owner's tenant would hide them.
+    const result = await this.verificationRepo.findManyByBusiness(
+      businessId,
+      statusFilter,
+      { page: pagination.page, limit: pagination.limit, sortBy: 'createdAt', sortOrder: 'asc' },
+      {
         bill: {
           include: {
             user: { select: { id: true, name: true, email: true } },
@@ -75,7 +80,7 @@ export class BillVerificationsService {
           },
         },
       },
-    });
+    );
 
     if (actorRole !== 'SUPER_ADMIN' && result?.data) {
       result.data = result.data.map((v: any) => {
@@ -98,32 +103,46 @@ export class BillVerificationsService {
     return result;
   }
 
+  /**
+   * Resolve a verification by its unique id. When a businessId is supplied
+   * (business-owner actions) we verify the verification belongs to that
+   * business — this avoids tenant-mismatch failures because the bill lives in
+   * the customer's tenant, not the owner's. Returns the row incl. its own
+   * tenantId, which callers must use for downstream tenant-scoped writes.
+   */
+  private async resolveVerification(verificationId: string, businessId?: string, include?: any) {
+    const verification = await this.verificationRepo.findByIdUnsafe(verificationId, include);
+    if (!verification) throw new NotFoundException('Verification not found');
+    if (businessId && verification.businessId !== businessId) {
+      throw new NotFoundException('Verification not found');
+    }
+    return verification;
+  }
+
   // ── FRAUD ANALYSIS ────────────────────────────────────────────────
 
   async calculateFraud(tenantId: string, verificationId: string) {
-    const verification = await this.verificationRepo.findOne(tenantId, verificationId, {
-      include: { bill: true },
-    });
-    if (!verification) throw new NotFoundException('Verification not found');
+    const verification = await this.resolveVerification(verificationId, undefined, { bill: true });
+    const tid = verification.tenantId;
 
     const score = await this.fraudService.analyzeBill(
-      tenantId,
+      tid,
       verification.bill.businessId,
       verification.bill.userId,
       verification.ocrMetadata,
     );
 
-    await this.verificationRepo.update(tenantId, verification.id, { fraudScore: score });
+    await this.verificationRepo.update(tid, verification.id, { fraudScore: score });
 
     // Auto-escalate if fraud score exceeds thresholds
     if (score >= FRAUD_ESCALATE_TO_PLATFORM_THRESHOLD) {
-      await this.verificationRepo.update(tenantId, verification.id, {
+      await this.verificationRepo.update(tid, verification.id, {
         escalationLevel: 'PLATFORM',
         status: 'ESCALATED',
       });
       this.logger.warn(`Bill ${verification.billId} auto-escalated to PLATFORM (fraud score: ${score})`);
     } else if (score >= FRAUD_ESCALATE_TO_OWNER_THRESHOLD) {
-      await this.verificationRepo.update(tenantId, verification.id, {
+      await this.verificationRepo.update(tid, verification.id, {
         escalationLevel: 'BUSINESS',
       });
       this.logger.warn(`Bill ${verification.billId} escalated to BUSINESS_OWNER (fraud score: ${score})`);
@@ -146,10 +165,8 @@ export class BillVerificationsService {
     businessId?: string,
     notes?: string,
   ) {
-    const verification = await this.verificationRepo.findOne(tenantId, verificationId, {
-      include: { bill: true },
-    });
-    if (!verification) throw new NotFoundException('Verification not found');
+    const verification = await this.resolveVerification(verificationId, businessId, { bill: true });
+    const tid = verification.tenantId;
 
     const allowedStatuses = ['PENDING', 'FLAGGED', 'RE_UPLOAD_REQUESTED', 'ESCALATED'];
     if (!allowedStatuses.includes(verification.status)) {
@@ -172,12 +189,12 @@ export class BillVerificationsService {
       updateData.moderatorId = actorId;
     }
 
-    const updated = await this.verificationRepo.update(tenantId, verificationId, updateData);
-    await this.billRepo.verifyBill(tenantId, verification.billId, 'APPROVED', actorId);
+    const updated = await this.verificationRepo.update(tid, verificationId, updateData);
+    await this.billRepo.verifyBill(tid, verification.billId, 'APPROVED', actorId);
 
     // Create verified purchase record
     await this.verifiedPurchasesService.createVerifiedPurchase(
-      tenantId,
+      tid,
       verification.bill.userId,
       verification.bill.businessId,
       verification.billId,
@@ -187,7 +204,7 @@ export class BillVerificationsService {
 
     // Notify customer
     await this.notificationsService.send({
-      tenantId,
+      tenantId: tid,
       userId: verification.bill.userId,
       title: 'Bill Approved ✓',
       body: `Your bill has been verified successfully.`,
@@ -197,7 +214,7 @@ export class BillVerificationsService {
     }).catch(() => {/* non-blocking */});
 
     await this.auditService.log({
-      tenantId,
+      tenantId: tid,
       userId: actorId,
       action: 'APPROVE_BILL_VERIFICATION',
       resource: 'BILL_VERIFICATION',
@@ -206,8 +223,8 @@ export class BillVerificationsService {
     });
 
     // Fire-and-forget summary refresh — bill is now verified so spend totals change
-    void this.analyticsSummary.refreshUserSpending(tenantId, verification.bill.userId).catch(() => {});
-    void this.analyticsSummary.refreshBusinessSummary(tenantId, verification.bill.businessId).catch(() => {});
+    void this.analyticsSummary.refreshUserSpending(tid, verification.bill.userId).catch(() => {});
+    void this.analyticsSummary.refreshBusinessSummary(tid, verification.bill.businessId).catch(() => {});
 
     return updated;
   }
@@ -222,10 +239,8 @@ export class BillVerificationsService {
     businessId?: string,
     reason?: string,
   ) {
-    const verification = await this.verificationRepo.findOne(tenantId, verificationId, {
-      include: { bill: true },
-    });
-    if (!verification) throw new NotFoundException('Verification not found');
+    const verification = await this.resolveVerification(verificationId, businessId, { bill: true });
+    const tid = verification.tenantId;
 
     const isOwnerAction = OWNER_ROLES.includes(actorRole as any);
 
@@ -243,12 +258,12 @@ export class BillVerificationsService {
       updateData.moderatorId = actorId;
     }
 
-    const updated = await this.verificationRepo.update(tenantId, verificationId, updateData);
-    await this.billRepo.verifyBill(tenantId, verification.billId, 'REJECTED', actorId, reason);
+    const updated = await this.verificationRepo.update(tid, verificationId, updateData);
+    await this.billRepo.verifyBill(tid, verification.billId, 'REJECTED', actorId, reason);
 
     // Notify customer
     await this.notificationsService.send({
-      tenantId,
+      tenantId: tid,
       userId: verification.bill.userId,
       title: 'Bill Rejected',
       body: `Your bill submission was rejected. Reason: ${reason ?? 'Not provided'}`,
@@ -258,7 +273,7 @@ export class BillVerificationsService {
     }).catch(() => {/* non-blocking */});
 
     await this.auditService.log({
-      tenantId,
+      tenantId: tid,
       userId: actorId,
       action: 'REJECT_BILL_VERIFICATION',
       resource: 'BILL_VERIFICATION',
@@ -279,17 +294,15 @@ export class BillVerificationsService {
     businessId?: string,
     reason?: string,
   ) {
-    const verification = await this.verificationRepo.findOne(tenantId, verificationId, {
-      include: { bill: true },
-    });
-    if (!verification) throw new NotFoundException('Verification not found');
+    const verification = await this.resolveVerification(verificationId, businessId, { bill: true });
+    const tid = verification.tenantId;
 
     // Determine escalation level
     const isOwner = OWNER_ROLES.includes(actorRole as any);
     const newEscalationLevel = isOwner ? 'PLATFORM' : 'BUSINESS';
     const newStatus = isOwner ? 'ESCALATED' : 'FLAGGED';
 
-    const updated = await this.verificationRepo.update(tenantId, verificationId, {
+    const updated = await this.verificationRepo.update(tid, verificationId, {
       status: newStatus,
       rejectionReason: reason,
       escalationLevel: newEscalationLevel,
@@ -300,7 +313,7 @@ export class BillVerificationsService {
     );
 
     await this.auditService.log({
-      tenantId,
+      tenantId: tid,
       userId: actorId,
       action: 'FLAG_BILL_VERIFICATION',
       resource: 'BILL_VERIFICATION',
@@ -320,21 +333,19 @@ export class BillVerificationsService {
     businessId: string,
     reason: string,
   ) {
-    const verification = await this.verificationRepo.findOne(tenantId, verificationId, {
-      include: { bill: true },
-    });
-    if (!verification) throw new NotFoundException('Verification not found');
+    const verification = await this.resolveVerification(verificationId, businessId, { bill: true });
+    const tid = verification.tenantId;
 
-    const updated = await this.verificationRepo.update(tenantId, verificationId, {
+    const updated = await this.verificationRepo.update(tid, verificationId, {
       status: 'RE_UPLOAD_REQUESTED',
       rejectionReason: reason,
       reUploadRequestedAt: new Date(),
     });
 
-    await this.billRepo.update(tenantId, verification.billId, { status: 'RE_UPLOAD_REQUESTED' });
+    await this.billRepo.update(tid, verification.billId, { status: 'RE_UPLOAD_REQUESTED' });
 
     await this.notificationsService.send({
-      tenantId,
+      tenantId: tid,
       userId: verification.bill.userId,
       title: 'Re-Upload Required',
       body: `Please re-upload your bill. Reason: ${reason}`,
@@ -345,7 +356,7 @@ export class BillVerificationsService {
 
 
     await this.auditService.log({
-      tenantId,
+      tenantId: tid,
       userId: actorId,
       action: 'REQUEST_REUPLOAD_BILL',
       resource: 'BILL_VERIFICATION',
@@ -370,12 +381,10 @@ export class BillVerificationsService {
     decision: 'APPROVED' | 'REJECTED',
     reason?: string,
   ) {
-    const verification = await this.verificationRepo.findOne(tenantId, verificationId, {
-      include: { bill: true },
-    });
-    if (!verification) throw new NotFoundException('Verification not found');
+    const verification = await this.resolveVerification(verificationId, businessId, { bill: true });
+    const tid = verification.tenantId;
 
-    const updated = await this.verificationRepo.update(tenantId, verificationId, {
+    const updated = await this.verificationRepo.update(tid, verificationId, {
       status: decision,
       ownerOverrideBy: ownerId,
       ownerOverrideAt: new Date(),
@@ -386,7 +395,7 @@ export class BillVerificationsService {
     });
 
     await this.billRepo.verifyBill(
-      tenantId,
+      tid,
       verification.billId,
       decision === 'APPROVED' ? 'APPROVED' : 'REJECTED',
       ownerId,
@@ -395,7 +404,7 @@ export class BillVerificationsService {
 
     if (decision === 'APPROVED') {
       await this.verifiedPurchasesService.createVerifiedPurchase(
-        tenantId,
+        tid,
         verification.bill.userId,
         verification.bill.businessId,
         verification.billId,
@@ -405,7 +414,7 @@ export class BillVerificationsService {
     }
 
     await this.auditService.log({
-      tenantId,
+      tenantId: tid,
       userId: ownerId,
       action: 'OWNER_OVERRIDE_BILL_VERIFICATION',
       resource: 'BILL_VERIFICATION',

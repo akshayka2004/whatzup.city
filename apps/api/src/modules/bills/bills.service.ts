@@ -8,6 +8,8 @@ import { StorageService } from '../../common/storage/storage.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 import { BusinessCustomerService } from '../customers/business-customer.service';
 import { AnalyticsSummaryService } from '../analytics/analytics-summary.service';
+import { DatabaseService } from '../../common/database/database.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class BillsService {
@@ -21,6 +23,8 @@ export class BillsService {
     @InjectQueue('ocr-queue') private readonly ocrQueue: Queue,
     private readonly businessCustomerService: BusinessCustomerService,
     private readonly analyticsSummary: AnalyticsSummaryService,
+    private readonly db: DatabaseService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async upload(
@@ -56,6 +60,28 @@ export class BillsService {
       businessId: data.businessId,
       status: 'PENDING',
     });
+
+    // 2b. Notify the business owner (in the business's own tenant so it lands
+    // in their notification feed) that a bill awaits moderation.
+    try {
+      const biz = await this.db.business.findFirst({
+        where: { OR: [{ id: data.businessId }, { entityId: data.businessId }] },
+        select: { id: true, ownerId: true, tenantId: true },
+      });
+      if (biz?.ownerId) {
+        await this.notifications.send({
+          tenantId: biz.tenantId,
+          userId: biz.ownerId,
+          title: 'New Bill Submitted',
+          body: `A customer submitted a bill of ₹${data.amount} for verification.`,
+          type: 'IN_APP',
+          channel: 'BUSINESS',
+          metadata: { billId: bill.id, businessId: biz.id },
+        });
+      }
+    } catch {
+      /* non-blocking — notification failure must not fail the upload */
+    }
 
     // Generate signed download URL for background OCR worker to access private file
     let signedUrl = '';
