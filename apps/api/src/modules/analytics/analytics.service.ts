@@ -54,12 +54,19 @@ export class AnalyticsService {
   /**
    * Platform-wide statistics overview
    */
-  async getOverview(tenantId: string) {
-    const cacheKey = `analytics:overview:${tenantId}`;
+  async getOverview(tenantId: string, role?: string) {
+    // Platform admins (super/master) see global, cross-tenant totals.
+    // Regular tenant admins stay scoped to their own tenant.
+    const isPlatform = role === 'SUPER_ADMIN' || role === 'MASTER_ADMIN';
+    const cacheKey = `analytics:overview:${isPlatform ? 'platform' : tenantId}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) return cached;
 
     const dbAny = this.db as any;
+
+    // Scope filters — empty (global) for platform admins, else tenant-bound.
+    const tScope = isPlatform ? {} : { tenantId };
+    const bizRel = isPlatform ? {} : { tenantId };
 
     const [
       totalUsers,
@@ -70,40 +77,48 @@ export class AnalyticsService {
       totalOffers,
       offerCustomerIds,
       totalComplaints,
+      totalTenants,
       // Pre-aggregated — read from summary tables (fast, no full-scan)
       spendAgg,
       businessSummaryAgg,
     ] = await Promise.all([
-      this.db.user.count({ where: { tenantId, deletedAt: null } }),
-      this.db.business.count({ where: { tenantId, deletedAt: null } }),
-      this.db.business.count({ where: { tenantId, status: 'APPROVED', deletedAt: null } }),
+      this.db.user.count({ where: { ...tScope, deletedAt: null } }),
+      this.db.business.count({ where: { ...tScope, deletedAt: null } }),
+      this.db.business.count({ where: { ...tScope, status: 'APPROVED', deletedAt: null } }),
       this.db.business.count({
         where: {
-          tenantId,
+          ...tScope,
           status: { in: ['PENDING_VERIFICATION', 'UNDER_REVIEW'] },
           deletedAt: null,
         },
       }),
-      this.db.review.count({ where: { business: { tenantId }, deletedAt: null } }),
-      this.db.offer.count({ where: { business: { tenantId }, status: 'ACTIVE', deletedAt: null } }),
+      this.db.review.count({ where: { business: bizRel, deletedAt: null } }),
+      this.db.offer.count({ where: { business: bizRel, status: 'ACTIVE', deletedAt: null } }),
       // COUNT(DISTINCT user_id) — orders of magnitude faster than fetching all rows
-      this.db.$queryRaw<[{ count: bigint }]>`
-        SELECT COUNT(DISTINCT user_id) AS count
-        FROM offer_redemptions
-        WHERE tenant_id = ${tenantId}::uuid AND deleted_at IS NULL
-      `,
-      this.db.moderationReport.count({ where: { tenantId } }),
+      isPlatform
+        ? this.db.$queryRaw<[{ count: bigint }]>`
+            SELECT COUNT(DISTINCT user_id) AS count
+            FROM offer_redemptions
+            WHERE deleted_at IS NULL
+          `
+        : this.db.$queryRaw<[{ count: bigint }]>`
+            SELECT COUNT(DISTINCT user_id) AS count
+            FROM offer_redemptions
+            WHERE tenant_id = ${tenantId}::uuid AND deleted_at IS NULL
+          `,
+      this.db.moderationReport.count({ where: isPlatform ? {} : { tenantId } }),
+      isPlatform ? this.db.tenant.count() : Promise.resolve(1),
       // Aggregate spend from summary table (fast indexed scan)
       dbAny.userSpendingSummary
         ? dbAny.userSpendingSummary.aggregate({
-            where: { tenantId },
+            where: tScope,
             _sum: { totalSpend: true },
           }).catch(() => ({ _sum: { totalSpend: 0 } }))
         : Promise.resolve({ _sum: { totalSpend: 0 } }),
       // Aggregate CRM totals from business summary table
       dbAny.businessAnalyticsSummary
         ? dbAny.businessAnalyticsSummary.aggregate({
-            where: { tenantId },
+            where: tScope,
             _sum: { offerClaims: true, offerRedemptions: true, verifiedBillCount: true },
           }).catch(() => ({ _sum: { offerClaims: 0, offerRedemptions: 0, verifiedBillCount: 0 } }))
         : Promise.resolve({ _sum: { offerClaims: 0, offerRedemptions: 0, verifiedBillCount: 0 } }),
@@ -120,6 +135,8 @@ export class AnalyticsService {
       pendingApprovals,
       totalReviews,
       totalOffers,
+      activeOffers: totalOffers,
+      totalTenants,
       totalOfferCustomers: Number((offerCustomerIds as any)[0]?.count ?? 0),
       totalRedemptions,
       totalClaims,

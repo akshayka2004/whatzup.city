@@ -55,7 +55,7 @@ export default function SuperAdminDashboardPage() {
     {
       label: 'Active Tenants',
       value: overview?.totalTenants ?? overview?.activeTenants ?? '—',
-      change: overview?.tenantGrowth ?? 'Loading...',
+      change: overview?.tenantGrowth ?? '—',
       icon: Building2,
       color: 'text-violet-500 bg-violet-500/10',
     },

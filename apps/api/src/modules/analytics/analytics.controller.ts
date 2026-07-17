@@ -30,8 +30,11 @@ export class AnalyticsController {
   @Get('overview')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get overview dashboard metrics (Admin only)' })
-  async getOverview(@CurrentUser('tenantId') tenantId: string) {
-    return this.analyticsService.getOverview(tenantId);
+  async getOverview(
+    @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('role') role: string,
+  ) {
+    return this.analyticsService.getOverview(tenantId, role);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
