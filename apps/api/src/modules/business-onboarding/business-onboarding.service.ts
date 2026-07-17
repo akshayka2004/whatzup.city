@@ -454,6 +454,22 @@ export class BusinessOnboardingService {
       where: { tenantId, entityType: 'BUSINESS', entityId: business.entityId || business.id },
     });
 
+    // Surface the admin's rejection remark so the workspace gate can show it.
+    // Stored on the verification request, not on the progress row.
+    if (progress && business.status === 'REJECTED') {
+      const vr = await this.db.verificationRequest.findFirst({
+        where: { entityId: business.entityId || undefined, status: 'REJECTED' },
+        orderBy: { verifiedAt: 'desc' },
+        select: { rejectionReason: true },
+      });
+      if (vr?.rejectionReason) {
+        (progress as any).metadata = {
+          ...((progress.metadata as any) || {}),
+          rejectionReason: vr.rejectionReason,
+        };
+      }
+    }
+
     return { business, onboardingProgress: progress };
   }
 }

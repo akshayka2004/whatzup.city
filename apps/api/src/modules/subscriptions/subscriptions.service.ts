@@ -16,11 +16,14 @@ export class SubscriptionsService {
   ) {}
 
   async assignPackage(userId: string, tenantId: string, businessId: string, dto: AssignPackageDto) {
+    // Accept either business.id or entity.id — the onboarding resubmit flow
+    // passes entityId, matching the other onboarding endpoints.
     const business = await this.db.business.findFirst({
-      where: { id: businessId, tenantId },
+      where: { tenantId, OR: [{ id: businessId }, { entityId: businessId }] },
     });
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
+    businessId = business.id;
 
     const packageConfig = this.getPackageConfig(dto.packageName);
 

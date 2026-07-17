@@ -17,7 +17,6 @@ import {
   XCircle,
   ArrowRight,
   Loader2,
-  Lock,
   Clock,
   CreditCard,
 } from 'lucide-react';
@@ -78,10 +77,16 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
       if (user.role === 'business' && user.businessId) {
         try {
           const res = await onboardingService.getProgress(user.businessId);
-          if (res.data && res.data.onboardingProgress) {
-            setVerificationStatus(res.data.onboardingProgress.status);
-            if (res.data.onboardingProgress.status === 'REJECTED') {
-              const metadata = res.data.onboardingProgress.metadata || {};
+          if (res.data) {
+            // business.status is authoritative (submit sets PENDING_VERIFICATION
+            // on the business, not on the progress row).
+            const status =
+              (res.data as any).business?.status ||
+              res.data.onboardingProgress?.status ||
+              'DRAFT';
+            setVerificationStatus(status);
+            if (status === 'REJECTED') {
+              const metadata = (res.data.onboardingProgress as any)?.metadata || {};
               setRejectionReason(metadata.rejectionReason || 'Documents did not meet criteria');
             }
           } else {
@@ -140,12 +145,11 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
     return `/register/select-role`;
   };
 
-  const isRestrictedPath =
-    pathname.includes('/analytics') ||
-    pathname.includes('/campaigns') ||
-    pathname.includes('/support');
-
-  const showOverlay = verificationStatus !== 'APPROVED' && isRestrictedPath;
+  // Any non-approved workspace is fully gated — no dashboard page is usable
+  // until an admin approves. The gate shows current status + (if rejected)
+  // the admin's remark and a resubmit action.
+  const GATE_STATUSES = ['DRAFT', 'PENDING_VERIFICATION', 'UNDER_REVIEW', 'REJECTED'];
+  const isGated = GATE_STATUSES.includes(verificationStatus);
 
   // Trial expiry: block all paths except the allowed list when trial is EXPIRED
   const trialExpired = trialStatus === 'EXPIRED';
@@ -165,6 +169,90 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   const activeEntityType = user?.entity?.type || 'BUSINESS';
   const onboardingPath = getOnboardingPath(user?.role || 'user', activeEntityId, activeEntityType);
 
+  // ── Full-screen verification gate ─────────────────────────────────────────
+  // Non-approved workspaces cannot use any dashboard page. Show status + CTA.
+  if (isGated) {
+    const gate =
+      verificationStatus === 'REJECTED'
+        ? {
+            icon: XCircle,
+            tone: 'rose',
+            title: 'Onboarding Rejected',
+            body:
+              'Your registration was not approved. Review the reason below, update your details, and resubmit for verification.',
+            cta: 'Resubmit Application',
+          }
+        : verificationStatus === 'PENDING_VERIFICATION' || verificationStatus === 'UNDER_REVIEW'
+        ? {
+            icon: FileClock,
+            tone: 'cyan',
+            title: 'Verification Pending',
+            body:
+              'Your documents are under review by our moderators. You will get full access once approved. Please check back soon.',
+            cta: '',
+          }
+        : {
+            icon: AlertTriangle,
+            tone: 'amber',
+            title: 'Setup Incomplete',
+            body:
+              'Your workspace is still in draft. Complete the onboarding wizard to submit your business for verification.',
+            cta: 'Complete Setup',
+          };
+    const GateIcon = gate.icon;
+    const toneMap: Record<string, string> = {
+      rose: 'bg-rose-500/10 border-rose-500/20 text-rose-400',
+      cyan: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
+      amber: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+    };
+    const btnMap: Record<string, string> = {
+      rose: 'bg-rose-600 hover:bg-rose-500',
+      amber: 'bg-amber-600 hover:bg-amber-500',
+      cyan: 'bg-cyan-600 hover:bg-cyan-500',
+    };
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md p-8 rounded-3xl border border-white/10 bg-[#0d0d12]/90 shadow-2xl text-center space-y-6">
+          <div className={`w-20 h-20 rounded-full border flex items-center justify-center mx-auto ${toneMap[gate.tone]}`}>
+            <GateIcon className="h-8 w-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-extrabold text-foreground tracking-tight">{gate.title}</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">{gate.body}</p>
+          </div>
+
+          {verificationStatus === 'REJECTED' && (
+            <div className="text-left rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-rose-400 mb-1">
+                Reason for rejection
+              </p>
+              <p className="text-sm text-rose-200/90 whitespace-pre-wrap">
+                {rejectionReason || 'Documents did not meet criteria.'}
+              </p>
+            </div>
+          )}
+
+          {gate.cta && (
+            <Button
+              onClick={() => router.push(onboardingPath)}
+              className={`w-full h-12 rounded-xl text-white font-bold text-base cursor-pointer ${btnMap[gate.tone]}`}
+            >
+              {gate.cta}
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          )}
+
+          <p className="text-[10px] text-muted-foreground/60">
+            Questions? Contact{' '}
+            <a href="mailto:support@lifeartgroup.in" className="text-primary underline">
+              support@lifeartgroup.in
+            </a>
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen w-full bg-background relative overflow-hidden">
       {/* Sidebar - Hidden on mobile */}
@@ -172,59 +260,6 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
 
       {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Verification Status Warning Banner */}
-        {verificationStatus !== 'APPROVED' && (
-          <div className="w-full relative z-50">
-            {verificationStatus === 'DRAFT' && (
-              <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex items-center justify-between text-xs text-amber-300">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400 animate-pulse" />
-                  <span>
-                    <strong>Setup Incomplete:</strong> Your workspace is currently in draft
-                    mode. Complete the onboarding wizard to list your services.
-                  </span>
-                </div>
-                <Button
-                  onClick={() => router.push(onboardingPath)}
-                  className="h-7 px-3 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  Complete Setup
-                  <ArrowRight className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
-
-            {verificationStatus === 'PENDING_VERIFICATION' && (
-              <div className="bg-cyan-500/10 border-b border-cyan-500/20 px-4 py-2.5 flex items-center gap-2 text-xs text-cyan-300">
-                <FileClock className="h-4 w-4 shrink-0 text-cyan-400 animate-pulse" />
-                <span>
-                  <strong>Verification Pending:</strong> Your official registry documents are
-                  currently under review by system moderators. Access is limited.
-                </span>
-              </div>
-            )}
-
-            {verificationStatus === 'REJECTED' && (
-              <div className="bg-rose-500/10 border-b border-rose-500/20 px-4 py-2.5 flex items-center justify-between text-xs text-rose-300">
-                <div className="flex items-center gap-2">
-                  <XCircle className="h-4 w-4 shrink-0 text-rose-400" />
-                  <span>
-                    <strong>Onboarding Rejected:</strong>{' '}
-                    {rejectionReason || 'Please review and modify your registration details.'}
-                  </span>
-                </div>
-                <Button
-                  onClick={() => router.push(onboardingPath)}
-                  className="h-7 px-3 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  Modify Details
-                  <ArrowRight className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
         <Header />
 
         {/* ── Trial expiry banner (ACTIVE trial, days remaining) ── */}
@@ -289,43 +324,8 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
             </div>
           )}
 
-          {showOverlay ? (
-            // Premium full-page glass overlay
-            <div className="absolute inset-0 bg-background/40 backdrop-blur-md z-40 flex items-center justify-center p-6">
-              <Card className="max-w-md p-8 bg-[#0d0d12]/80 border border-border shadow-2xl rounded-3xl text-center space-y-6">
-                <div className="w-16 h-16 rounded-full bg-violet-600/10 border border-violet-500/20 flex items-center justify-center mx-auto">
-                  <Lock className="h-6 w-6 text-violet-400" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-foreground">Verification Required</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    This sub-panel is restricted. Your account is currently pending administrator
-                    approval. Once verified, you will unlock full analytics, marketing campaigns,
-                    and partner support.
-                  </p>
-                </div>
-                <div className="flex justify-center gap-4">
-                  <Button
-                    onClick={() => router.push('/dashboard')}
-                    className="bg-muted/40 border border-border hover:bg-muted/80 text-muted-foreground rounded-xl px-5 py-2 text-xs font-semibold cursor-pointer"
-                  >
-                    Return to Dashboard
-                  </Button>
-                  {(verificationStatus === 'DRAFT' || verificationStatus === 'REJECTED') && (
-                    <Button
-                      onClick={() => router.push(onboardingPath)}
-                      className="bg-violet-600 hover:bg-violet-500 text-white rounded-xl px-5 py-2 text-xs font-semibold cursor-pointer"
-                    >
-                      {verificationStatus === 'DRAFT' ? 'Complete Setup' : 'Modify Details'}
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            </div>
-          ) : null}
-
           <div
-            className={`container mx-auto px-4 pt-6 ${isMobile ? 'pb-28' : 'pb-6'} ${showOverlay ? 'blur-sm pointer-events-none' : ''}`}
+            className={`container mx-auto px-4 pt-6 ${isMobile ? 'pb-28' : 'pb-6'}`}
           >
             {children}
           </div>

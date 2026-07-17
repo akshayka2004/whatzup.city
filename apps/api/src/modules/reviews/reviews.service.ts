@@ -40,6 +40,7 @@ export class ReviewsService {
         rating: data.rating,
         title: data.title,
         comment: data.comment,
+        status: 'APPROVED', // Auto-publish so rating reflects immediately (moderate-after)
         isVerifiedPurchase, // Tag as verified if eligible
         media:
           data.images && data.images.length > 0
