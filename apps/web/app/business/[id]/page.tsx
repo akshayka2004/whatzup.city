@@ -235,6 +235,28 @@ export default function BusinessDetailPage() {
         description: billReview || undefined,
       });
 
+      // Post the star rating as a review so it reflects on the business.
+      // (The bill form collects a rating but it was never being submitted.)
+      if (billRating > 0) {
+        const reviewRes = await apiService.post('/v1/reviews', {
+          businessId,
+          rating: billRating,
+          comment: billReview?.trim() || 'Rated via bill submission.',
+        });
+        if (!reviewRes.error) {
+          // Refresh rating + review list so the new rating reflects immediately
+          try {
+            const refreshed = await apiService.get<any>(`/v1/businesses/${businessId}`);
+            if (refreshed.data && !refreshed.error) setBiz(refreshed.data);
+            const rev = await apiService.get<any>(`/v1/reviews/business/${businessId}`);
+            const list = Array.isArray(rev.data) ? rev.data : rev.data?.data ?? [];
+            if (!rev.error) setReviews(list.slice(0, 6));
+          } catch {
+            /* non-fatal — values refresh on next page load */
+          }
+        }
+      }
+
       setBillSubmitted(true);
       setBillModalOpen(false);
     } catch (err: any) {
