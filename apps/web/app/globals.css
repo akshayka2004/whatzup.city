@@ -151,3 +151,30 @@
   --secondary-foreground: oklch(0.872 0.009 185);
   --muted-foreground: oklch(0.655 0.008 185);
 }
+
+/* ── Auth pages (login / forgot-password) ─────────────────────── */
+@keyframes lpFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes lpZoom { from { transform: scale(1); } to { transform: scale(1.06); } }
+@keyframes lpFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes lpPulse { 0%,100% { opacity: .25; transform: scale(1); } 50% { opacity: .8; transform: scale(1.35); } }
+.lp-root { animation: lpFadeIn .7s ease-out both; }
+.lp-hero-img { animation: lpZoom 18s ease-out forwards; }
+.lp-float { animation: lpFloat 6s ease-in-out infinite; }
+.lp-node { animation: lpPulse 4s ease-in-out infinite; }
+.lp-card { animation: lpFadeIn .7s ease-out .1s both; }
+.lp-feature { transition: transform .2s ease, background .2s ease; }
+.lp-feature:hover { transform: translateY(-4px); background: rgba(255,255,255,0.04); }
+.lp-input { background: #46444F; border: 1px solid rgba(255,255,255,0.06); color: #F4F5F7; }
+.lp-input::placeholder { color: rgba(183,184,195,0.5); }
+.lp-input:focus { border-color: #8A6A63; box-shadow: 0 0 0 3px rgba(138,106,99,0.25); }
+.lp-cta { background: linear-gradient(135deg, #8A6A63, #A67C73); transition: transform .2s ease, box-shadow .2s ease, filter .2s ease; box-shadow: 0 8px 24px rgba(138,106,99,0.25); }
+.lp-cta:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 12px 30px rgba(138,106,99,0.35); }
+.lp-cta:hover:not(:disabled) .lp-arrow { transform: translateX(4px); }
+.lp-arrow { transition: transform .2s ease; }
+.lp-reg { position: relative; }
+.lp-reg::after { content: ''; position: absolute; left: 0; bottom: -2px; height: 1px; width: 0; background: #A67C73; transition: width .25s ease; }
+.lp-reg:hover::after { width: 100%; }
+@media (prefers-reduced-motion: reduce) {
+  .lp-root, .lp-hero-img, .lp-float, .lp-node, .lp-card { animation: none !important; }
+  .lp-feature:hover, .lp-cta:hover:not(:disabled) { transform: none !important; }
+}

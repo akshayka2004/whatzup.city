@@ -4,7 +4,7 @@
 > engineer understand, run, scale, rebuild, or rework any part of this platform
 > without prior context. Keep it current — see [Maintaining this document](#18-maintaining-this-document).
 >
-> **Last updated:** 2026-07-18 (commit `db863fe`)
+> **Last updated:** 2026-07-19 (login/forgot-password redesign)
 
 ---
 
@@ -577,6 +577,7 @@ describe intent, data flow, and the non-obvious.
 
 ### Change log (notable behavioural changes)
 
+- login/forgot-password redesign — premium split-layout `/login` (city image at `apps/web/public/login-hero.png`, palette `#2F2C36`/`#8A6A63`); new `/forgot-password` page → `POST /v1/auth/forgot-password`. `ForgotPasswordDto.tenantId` made optional (matches by email like login). Auth-page CSS lives in `globals.css` (`.lp-*`); do NOT use inline `<style>` in client components (React 19 flags it). Reset flow needs a `/reset-password` page (not built yet; API `POST /v1/auth/reset-password` exists).
 - `db863fe` — reviews: bust business cache on rating change; recompute centralised.
 - `f64369f` — reviews: submit the star rating captured in the bill form.
 - `70a0d25` — bills: business moderation queue scoped by `businessId` (cross-tenant); owner/customer notifications.
