@@ -126,7 +126,7 @@ export default function AdminProfilePage() {
       <div className="max-w-3xl mx-auto space-y-6">
 
         {/* Hero Profile Card */}
-        <Card className="rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl relative overflow-hidden">
+        <Card className="rounded-2xl border-border bg-card/40 backdrop-blur-xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-primary/10 via-transparent to-transparent pointer-events-none" />
           <div className="p-7 pt-9">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -135,7 +135,7 @@ export default function AdminProfilePage() {
                 <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-accent text-primary-foreground flex items-center justify-center text-3xl font-extrabold shadow-lg ring-4 ring-primary/15">
                   {initials}
                 </div>
-                <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-amber-500 flex items-center justify-center shadow-md">
+                <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-warning flex items-center justify-center shadow-md">
                   <ShieldAlert className="h-3.5 w-3.5 text-black" />
                 </div>
               </div>
@@ -146,7 +146,7 @@ export default function AdminProfilePage() {
                   <h2 className="text-2xl font-extrabold text-foreground">
                     {profile.firstName} {profile.lastName}
                   </h2>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wide">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-warning/10 text-warning border border-warning/20 uppercase tracking-wide">
                     {(user as any).role || 'Admin'}
                   </span>
                 </div>
@@ -165,14 +165,14 @@ export default function AdminProfilePage() {
                         className="text-primary hover:text-primary/70 cursor-pointer transition-colors"
                         title="Copy referral code"
                       >
-                        {referralCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                        {referralCopied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
                       </button>
                     </div>
                     {referralCount !== null && (
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                        <Users className="h-3.5 w-3.5 text-emerald-400" />
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 border border-success/20">
+                        <Users className="h-3.5 w-3.5 text-success" />
                         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Referrals</span>
-                        <span className="text-sm font-bold text-emerald-400">{referralCount}</span>
+                        <span className="text-sm font-bold text-success">{referralCount}</span>
                       </div>
                     )}
                   </div>
@@ -192,7 +192,7 @@ export default function AdminProfilePage() {
                   <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className="rounded-xl gap-2 bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer disabled:opacity-60"
+                    className="rounded-xl gap-2 bg-success hover:bg-success text-white cursor-pointer disabled:opacity-60"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                     Save
@@ -200,7 +200,7 @@ export default function AdminProfilePage() {
                   <Button
                     onClick={() => { setTempProfile({ ...profile }); setIsEditing(false); setSaveErr(''); }}
                     variant="outline"
-                    className="rounded-xl gap-2 border-white/10 hover:bg-white/5 text-foreground cursor-pointer"
+                    className="rounded-xl gap-2 border-border hover:bg-secondary text-foreground cursor-pointer"
                   >
                     <X className="h-4 w-4" /> Cancel
                   </Button>
@@ -212,18 +212,18 @@ export default function AdminProfilePage() {
 
         {/* Save banners */}
         {saveMsg && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-success/10 border border-success/20 text-success text-sm font-medium flex items-center gap-2">
             <Check className="h-4 w-4" /> {saveMsg}
           </div>
         )}
         {saveErr && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium flex items-center gap-2">
             <X className="h-4 w-4" /> {saveErr}
           </div>
         )}
 
         {/* Personal Information */}
-        <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
           <h3 className="text-base font-bold text-foreground mb-5">Personal Information</h3>
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -231,7 +231,7 @@ export default function AdminProfilePage() {
               <Input
                 value={isEditing ? tempProfile.firstName : profile.firstName}
                 onChange={(e) => setTempProfile({ ...tempProfile, firstName: e.target.value })}
-                className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground disabled:opacity-70"
+                className="rounded-xl border-border bg-secondary focus:border-primary text-foreground disabled:opacity-70"
                 disabled={!isEditing}
               />
             </div>
@@ -240,7 +240,7 @@ export default function AdminProfilePage() {
               <Input
                 value={isEditing ? tempProfile.lastName : profile.lastName}
                 onChange={(e) => setTempProfile({ ...tempProfile, lastName: e.target.value })}
-                className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground disabled:opacity-70"
+                className="rounded-xl border-border bg-secondary focus:border-primary text-foreground disabled:opacity-70"
                 disabled={!isEditing}
               />
             </div>
@@ -259,20 +259,20 @@ export default function AdminProfilePage() {
         </Card>
 
         {/* Account Settings */}
-        <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
           <h3 className="text-base font-bold text-foreground mb-4">Account Settings</h3>
           <div className="space-y-2">
             <Button
               variant="outline"
               onClick={() => router.push('/forgot-password')}
-              className="w-full rounded-xl justify-start border-white/10 hover:bg-white/5 text-foreground cursor-pointer"
+              className="w-full rounded-xl justify-start border-border hover:bg-secondary text-foreground cursor-pointer"
             >
               Change Password
             </Button>
             <Button
               variant="outline"
               onClick={() => signOut()}
-              className="w-full rounded-xl justify-start border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
+              className="w-full rounded-xl justify-start border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
             >
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
@@ -281,7 +281,7 @@ export default function AdminProfilePage() {
         </Card>
 
         {/* Support & Legal */}
-        <Card className="p-5 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+        <Card className="p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
           <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <HeadphonesIcon className="h-4 w-4 text-primary" />
             Help & Support
@@ -324,7 +324,7 @@ function ContactRow({
   onChange?: (v: string) => void;
 }) {
   return (
-    <div className="flex items-center gap-3 p-3.5 bg-white/[0.03] rounded-xl border border-white/5">
+    <div className="flex items-center gap-3 p-3.5 bg-secondary rounded-xl border border-border">
       <Icon className="h-5 w-5 text-primary shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-[10px] text-muted-foreground">{label}</p>
@@ -332,7 +332,7 @@ function ContactRow({
           <Input
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="h-7 mt-0.5 rounded-lg border-white/10 bg-transparent text-sm px-1 focus:border-primary text-foreground"
+            className="h-7 mt-0.5 rounded-lg border-border bg-transparent text-sm px-1 focus:border-primary text-foreground"
           />
         ) : (
           <p className="font-semibold text-foreground text-sm mt-0.5 truncate">{value}</p>

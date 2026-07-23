@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,9 +31,11 @@ export function Header() {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
   const router = useRouter();
-  const [searchVal, setSearchVal] = useState('');
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  const openPalette = () =>
+    typeof window !== 'undefined' && window.dispatchEvent(new Event('open-command-palette'));
 
   // ── Notifications ─────────────────────────────────────────────
   const [notifs, setNotifs] = useState<any[]>([]);
@@ -71,20 +72,6 @@ export function Header() {
     await apiService.patch(`/v1/notifications/${id}/read`, {});
     setNotifs((prev) => prev.map((n) => n.id === id ? { ...n, isRead: true } : n));
     setUnreadCount((c) => Math.max(0, c - 1));
-  };
-
-  const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter' || !searchVal.trim()) return;
-    const q = encodeURIComponent(searchVal.trim());
-    // Role-aware: keep privileged users inside their own portal instead of
-    // dumping them onto the public /search page.
-    const dest =
-      user?.role === 'super-admin'
-        ? `/super-admin/businesses?q=${q}`
-        : user?.role === 'admin'
-          ? `/admin/registrations?q=${q}`
-          : `/search?q=${q}`;
-    router.push(dest);
   };
 
   const getInitials = (name: string) => {
@@ -134,21 +121,34 @@ export function Header() {
         </Link>
       </div>
 
-      {/* Desktop Search Input */}
+      {/* Desktop command-bar trigger — opens the ⌘K palette (Spotlight) */}
       <div className="hidden md:flex items-center gap-4 flex-1 max-w-lg">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            className="pl-10 rounded-lg border-input bg-secondary"
-            value={searchVal}
-            onChange={(e) => setSearchVal(e.target.value)}
-            onKeyDown={handleSearchSubmit}
-          />
-        </div>
+        <button
+          type="button"
+          onClick={openPalette}
+          aria-label="Search businesses, offers, events, and services"
+          className="group flex h-11 w-full items-center gap-2.5 rounded-xl border border-border bg-background px-3.5 text-left text-sm text-muted-foreground shadow-sm transition-colors hover:border-primary/40 hover:text-foreground cursor-pointer"
+        >
+          <Search className="h-4 w-4 shrink-0 transition-colors group-hover:text-primary" />
+          <span className="flex-1">Search everything…</span>
+          <kbd className="hidden items-center gap-0.5 rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] font-semibold lg:inline-flex">
+            Ctrl K
+          </kbd>
+        </button>
       </div>
 
       <div className="flex items-center gap-2 md:gap-4">
+        {/* Mobile search trigger */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={openPalette}
+          aria-label="Search"
+          className="md:hidden rounded-lg h-11 w-11 flex items-center justify-center"
+        >
+          <Search className="h-5 w-5" />
+        </Button>
+
         {/* Active Role Indicator */}
         {user && (
           <div
@@ -283,7 +283,7 @@ export function Header() {
           <Link href="/login">
             <Button
               size="sm"
-              className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-sm h-10 px-4 md:h-9 md:px-3 cursor-pointer"
+              className="gap-2 font-semibold shadow-sm h-10 px-4 md:h-9 md:px-3"
             >
               <LogIn className="h-4 w-4" />
               Sign In

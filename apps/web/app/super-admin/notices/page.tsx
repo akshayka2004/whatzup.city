@@ -42,14 +42,14 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[
 
   return (
     <div
-      className="min-h-[42px] flex flex-wrap gap-1.5 items-center border border-white/10 bg-white/5 rounded-xl px-3 py-2 cursor-text focus-within:border-primary transition-colors"
+      className="min-h-[42px] flex flex-wrap gap-1.5 items-center border border-border bg-secondary rounded-xl px-3 py-2 cursor-text focus-within:border-primary transition-colors"
       onClick={() => inputRef.current?.focus()}
     >
       {tags.map((tag) => (
-        <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-medium">
+        <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20 text-xs font-medium">
           <Tag className="h-2.5 w-2.5" />
           {tag}
-          <button type="button" onClick={(e) => { e.stopPropagation(); onChange(tags.filter((t) => t !== tag)); }} className="ml-0.5 text-amber-400/60 hover:text-amber-400 cursor-pointer">
+          <button type="button" onClick={(e) => { e.stopPropagation(); onChange(tags.filter((t) => t !== tag)); }} className="ml-0.5 text-warning/60 hover:text-warning cursor-pointer">
             <X className="h-3 w-3" />
           </button>
         </span>
@@ -164,7 +164,7 @@ export default function SuperAdminNoticesPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : notices.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
             <Bell className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No notices yet</p>
             <p className="text-sm text-muted-foreground">Published alerts and notices will appear here.</p>
@@ -173,10 +173,10 @@ export default function SuperAdminNoticesPage() {
 
         <div className="space-y-4">
           {notices.map((note) => (
-            <Card key={note.id} className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors">
+            <Card key={note.id} className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex items-start gap-4 flex-1 min-w-0">
-                  <div className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center shrink-0 ${note.status === 'BROADCASTING' ? 'bg-amber-500/10 text-amber-400' : 'bg-white/5 text-slate-400'}`}>
+                  <div className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center shrink-0 ${note.status === 'BROADCASTING' ? 'bg-warning/10 text-warning' : 'bg-secondary text-muted-foreground'}`}>
                     <Bell className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
@@ -185,7 +185,7 @@ export default function SuperAdminNoticesPage() {
                     {note.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {note.tags.map((tag) => (
-                          <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium">
+                          <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/20 text-warning text-[10px] font-medium">
                             <Tag className="h-2.5 w-2.5" />{tag}
                           </span>
                         ))}
@@ -194,14 +194,14 @@ export default function SuperAdminNoticesPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4 text-sm shrink-0">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${note.status === 'BROADCASTING' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-white/5 text-muted-foreground border border-white/10'}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${note.status === 'BROADCASTING' ? 'bg-warning/10 text-warning border border-warning/20' : 'bg-secondary text-muted-foreground border border-border'}`}>
                     {note.status}
                   </span>
                   <div className="flex gap-2">
-                    <Button onClick={() => setViewingNotice(note)} size="icon" variant="outline" className="h-8 w-8 rounded-lg border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">
+                    <Button onClick={() => setViewingNotice(note)} size="icon" variant="outline" className="h-8 w-8 rounded-lg border-border text-foreground hover:bg-secondary cursor-pointer">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button onClick={() => setDeletingNotice(note)} size="icon" variant="outline" className="h-8 w-8 rounded-lg border-rose-500/20 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 cursor-pointer">
+                    <Button onClick={() => setDeletingNotice(note)} size="icon" variant="outline" className="h-8 w-8 rounded-lg border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -214,26 +214,26 @@ export default function SuperAdminNoticesPage() {
         {/* VIEW MODAL */}
         {viewingNotice && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button onClick={() => setViewingNotice(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl"><Bell className="h-6 w-6" /></div>
+                <div className="p-3 bg-warning/10 text-warning rounded-xl"><Bell className="h-6 w-6" /></div>
                 <div>
                   <h3 className="text-xl font-bold text-foreground">{viewingNotice.title}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{viewingNotice.sender} • {viewingNotice.date}</p>
                 </div>
               </div>
-              <div className="bg-white/5 p-4 rounded-xl border border-white/5 mb-4">
-                <p className="text-sm text-slate-300 leading-relaxed">{viewingNotice.body}</p>
+              <div className="bg-secondary p-4 rounded-xl border border-border mb-4">
+                <p className="text-sm text-foreground leading-relaxed">{viewingNotice.body}</p>
               </div>
               {viewingNotice.tags.length > 0 && (
                 <div className="mb-5">
                   <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Tags</p>
                   <div className="flex flex-wrap gap-1.5">
                     {viewingNotice.tags.map((tag) => (
-                      <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium">
+                      <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/20 text-warning text-xs font-medium">
                         <Tag className="h-2.5 w-2.5" />{tag}
                       </span>
                     ))}
@@ -252,22 +252,22 @@ export default function SuperAdminNoticesPage() {
         {/* CREATE MODAL */}
         {isCreateOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button onClick={() => setIsCreateOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
               <h3 className="text-xl font-bold text-foreground mb-4">Create New Alert</h3>
               <form onSubmit={handleCreate} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Alert Title</label>
-                  <Input placeholder="e.g. Weather Advisory" value={title} onChange={(e) => setTitle(e.target.value)} required className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground" />
+                  <label className="text-sm font-medium text-foreground block mb-2">Alert Title</label>
+                  <Input placeholder="e.g. Weather Advisory" value={title} onChange={(e) => setTitle(e.target.value)} required className="rounded-xl border-border bg-secondary focus:border-primary text-foreground" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Type</label>
+                  <label className="text-sm font-medium text-foreground block mb-2">Type</label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as NoticeCategory)}
-                    className="w-full h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-foreground text-sm focus:border-primary focus:outline-none cursor-pointer"
+                    className="w-full h-10 px-3 rounded-xl border border-border bg-secondary text-foreground text-sm focus:border-primary focus:outline-none cursor-pointer"
                   >
                     <option value="ANNOUNCEMENT">Announcement</option>
                     <option value="ALERT">Alert</option>
@@ -275,41 +275,41 @@ export default function SuperAdminNoticesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Sender Authority</label>
-                  <Input placeholder="e.g. Civic Authority" value={sender} onChange={(e) => setSender(e.target.value)} className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground" />
+                  <label className="text-sm font-medium text-foreground block mb-2">Sender Authority</label>
+                  <Input placeholder="e.g. Civic Authority" value={sender} onChange={(e) => setSender(e.target.value)} className="rounded-xl border-border bg-secondary focus:border-primary text-foreground" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Alert Body</label>
+                  <label className="text-sm font-medium text-foreground block mb-2">Alert Body</label>
                   <textarea
                     placeholder="Describe the alert..."
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
                     rows={4}
-                    className="w-full rounded-xl border border-white/10 bg-white/5 text-foreground px-3 py-2 text-sm focus:border-primary focus:outline-none resize-none"
+                    className="w-full rounded-xl border border-border bg-secondary text-foreground px-3 py-2 text-sm focus:border-primary focus:outline-none resize-none"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
+                  <label className="text-sm font-medium text-foreground block mb-2">
                     Tags <span className="ml-1 text-xs text-muted-foreground font-normal">(press Enter or comma to add)</span>
                   </label>
                   <TagInput tags={formTags} onChange={setFormTags} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium text-slate-300 block mb-2">Start / Issue date</label>
-                    <Input type="date" value={formStartAt} onChange={(e) => setFormStartAt(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
+                    <label className="text-sm font-medium text-foreground block mb-2">Start / Issue date</label>
+                    <Input type="date" value={formStartAt} onChange={(e) => setFormStartAt(e.target.value)} className="rounded-xl border-border bg-secondary text-foreground text-sm" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-slate-300 block mb-2">Expires On</label>
-                    <Input type="date" value={formExpiresAt} onChange={(e) => setFormExpiresAt(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
+                    <label className="text-sm font-medium text-foreground block mb-2">Expires On</label>
+                    <Input type="date" value={formExpiresAt} onChange={(e) => setFormExpiresAt(e.target.value)} className="rounded-xl border-border bg-secondary text-foreground text-sm" />
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">Link (optional)</label>
-                  <Input placeholder="https://…" value={formLink} onChange={(e) => setFormLink(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground" />
+                  <label className="text-sm font-medium text-foreground block mb-2">Link (optional)</label>
+                  <Input placeholder="https://…" value={formLink} onChange={(e) => setFormLink(e.target.value)} className="rounded-xl border-border bg-secondary text-foreground" />
                 </div>
                 <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)} className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer">
+                  <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)} className="rounded-xl border-border hover:bg-secondary text-foreground cursor-pointer">
                     Cancel
                   </Button>
                   <Button type="submit" disabled={submitting} className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer gap-1.5">
@@ -325,11 +325,11 @@ export default function SuperAdminNoticesPage() {
         {/* DELETE MODAL */}
         {deletingNotice && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
               <button onClick={() => setDeletingNotice(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
-              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Delete Notice</h3>
@@ -337,10 +337,10 @@ export default function SuperAdminNoticesPage() {
                 Delete <span className="font-semibold text-foreground">"{deletingNotice.title}"</span>?
               </p>
               <div className="flex justify-center gap-3">
-                <Button onClick={() => setDeletingNotice(null)} variant="outline" className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 px-4 cursor-pointer">
+                <Button onClick={() => setDeletingNotice(null)} variant="outline" className="rounded-xl border-border hover:bg-secondary text-foreground px-4 cursor-pointer">
                   Cancel
                 </Button>
-                <Button onClick={handleDelete} className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4 cursor-pointer">
+                <Button onClick={handleDelete} className="rounded-xl bg-destructive hover:bg-destructive text-white px-4 cursor-pointer">
                   Delete
                 </Button>
               </div>

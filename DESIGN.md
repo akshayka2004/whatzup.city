@@ -5,41 +5,46 @@ Source of truth in code: `apps/web/app/globals.css`.
 
 ## Theme
 
-**Dark-first.** `ThemeProviderClient` sets `defaultTheme="dark"`, `enableSystem={false}`;
-the header toggle switches and the choice persists. Light mode is supported and
-must stay legible, but dark is the designed default.
+**Light-first** (the "City Experience Platform" direction): warm neutral canvas,
+white surfaces, muted terracotta accent. `ThemeProviderClient` sets
+`defaultTheme="light"`, `enableSystem={false}`; the header toggle switches to a
+warm-charcoal dark variant and the choice persists.
 
-Why dark: the platform is used in long moderation sessions and on phones in the
-evening; the content is mostly dense text + status, not photography. The dark
-neutral is violet-leaning (not blue, not warm-cream), which keeps it from reading
-as "generic dark SaaS" while staying calm.
+Why light warm-neutral: the product is a civic front-door — citizens, businesses,
+and government should feel it's calm, trustworthy, and "official but human"
+(Apple / Stripe / Airbnb / gov-digital-services register), not a dark admin tool.
+The neutral is warm (not cool-grey, not stark white) so it reads considered.
 
-Color strategy: **restrained** — tinted neutrals carry the surface, one bronze
-accent stays under ~10% of any screen and is reserved for primary action, active
-nav, and focus.
+Color strategy: **restrained** — warm neutrals carry the surface; the terracotta
+accent stays reserved for primary action, active nav, and focus. Green = trust /
+verified. Blue = information only. Accent never overpowers content.
 
-## Palette
-
-Anchor (established on `/login`, now the global token set):
+## Palette (light — the default)
 
 | Role | Hex | OKLCH | Use |
 |---|---|---|---|
-| Background | `#2F2C36` | `oklch(0.300 0.018 299)` | App canvas |
-| Surface | `#3B3943` | `oklch(0.350 0.017 295)` | Cards, popovers |
-| Surface raised | `#46444F` | `oklch(0.393 0.019 294)` | Inputs, secondary/muted fills |
-| Accent (primary) | `#8A6A63` | `oklch(0.554 0.043 32)` | Primary buttons, active state |
-| Accent hover | `#A67C73` | `oklch(0.625 0.054 32)` | Hover, focus ring |
-| Heading / ink | `#F4F5F7` | `oklch(0.970 0.003 265)` | Headings, body |
-| Paragraph / muted ink | `#B7B8C3` | `oklch(0.785 0.015 282)` | Secondary text, labels |
-| Border | `rgba(255,255,255,0.06)` | — | Hairlines |
+| Background | `#F7F5F2` | `oklch(0.971 0.005 78)` | App canvas |
+| Surface | `#FFFFFF` | `oklch(1 0 0)` | Cards, popovers |
+| Sidebar | `#FBFAF8` | `oklch(0.985 0.003 85)` | Sidebar |
+| Border | `#EAE5DE` | `oklch(0.924 0.011 77)` | Hairlines |
+| Primary (terracotta) | `#B86F50` | `oklch(0.615 0.103 43)` | Primary action, active, focus |
+| Primary hover | `#A56045` | `oklch(0.561 0.099 42)` | Hover |
+| Ink | `#20242F` | `oklch(0.261 0.022 269)` | Headings, body |
+| Muted ink | `#667085` | `oklch(0.544 0.035 265)` | Secondary text, labels |
+| Verified / success | `#35C48B` | `oklch(0.732 0.146 162)` | Verified, success |
+| Warning | `#E6A03C` | `oklch(0.757 0.139 72)` | Warning |
+| Danger | `#E75A5A` | `oklch(0.651 0.176 23)` | Destructive, error |
 
-**Contrast contract:** `--muted-foreground` is deliberately light (`0.785`) so
-secondary text clears 4.5:1 on both `--background` and `--card`. Do not darken it
-"for elegance" — that is the failure mode this system is guarding against.
+**Contrast contract (verified):** ink/bg 14.2:1 · muted/bg 4.6:1 · muted/surface
+5.0:1 · ink/verified 7.0:1 — all pass AA. White-on-terracotta ≈ 3.9:1 → valid for
+**bold/large button labels only** (never small body text on terracotta). Do not
+darken `--muted-foreground` further; it only just clears 4.5:1.
 
-Status hues (never hue-only — always icon or label too):
-success `oklch(0.72 0.14 155)` · warning `oklch(0.78 0.13 75)` ·
-danger `oklch(0.63 0.19 25)` · info `oklch(0.70 0.10 235)`.
+Dark mode: same terracotta + status hues on a warm-charcoal neutral, all text
+pairs ≥4.5:1 — kept coherent for the toggle, but light is the designed default.
+
+Status (never hue-only — icon or label always): success `#35C48B` ·
+warning `#E6A03C` · danger `#E75A5A` · info reserved blue `oklch(0.560 0.110 235)`.
 
 ## Typography
 
@@ -53,8 +58,9 @@ danger `oklch(0.63 0.19 25)` · info `oklch(0.70 0.10 235)`.
 
 ## Radius & elevation
 
-- `--radius: 0.75rem`. Cards `rounded-2xl`, inputs/buttons `rounded-xl`,
-  pills `rounded-full`, auth containers `rounded-[28px]`.
+- `--radius: 1rem` (16px). Buttons/inputs `rounded-xl` (16), cards `rounded-2xl`
+  (`--radius-card` 20), hero/large sections `rounded-3xl` (`--radius-hero` 32),
+  pills `rounded-full`. 8-point spacing system.
 - Elevation is border-first: hairline `--border` + a soft shadow only where
   something genuinely floats (modal, popover, sticky bar). No glow borders.
 - Glass/backdrop-blur is reserved for true overlays (modals, gates). Not decoration.

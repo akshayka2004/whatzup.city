@@ -91,12 +91,12 @@ const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
 ];
 
 const STATUS_CONFIG: Record<BillStatus, { label: string; color: string; bg: string }> = {
-  PENDING: { label: 'Pending', color: 'text-amber-400', bg: 'bg-amber-500/10' },
-  APPROVED: { label: 'Approved', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-  REJECTED: { label: 'Rejected', color: 'text-rose-400', bg: 'bg-rose-500/10' },
-  FLAGGED: { label: 'Flagged', color: 'text-orange-400', bg: 'bg-orange-500/10' },
-  RE_UPLOAD_REQUESTED: { label: 'Re-Upload Requested', color: 'text-blue-400', bg: 'bg-blue-500/10' },
-  ESCALATED: { label: 'Escalated', color: 'text-red-400', bg: 'bg-red-500/10' },
+  PENDING: { label: 'Pending', color: 'text-warning', bg: 'bg-warning/10' },
+  APPROVED: { label: 'Approved', color: 'text-success', bg: 'bg-success/10' },
+  REJECTED: { label: 'Rejected', color: 'text-destructive', bg: 'bg-destructive/10' },
+  FLAGGED: { label: 'Flagged', color: 'text-warning', bg: 'bg-warning/10' },
+  RE_UPLOAD_REQUESTED: { label: 'Re-Upload Requested', color: 'text-info', bg: 'bg-info/10' },
+  ESCALATED: { label: 'Escalated', color: 'text-destructive', bg: 'bg-destructive/10' },
 };
 
 // ── FRAUD SCORE BADGE ─────────────────────────────────────────────────
@@ -105,17 +105,17 @@ const STATUS_CONFIG: Record<BillStatus, { label: string; color: string; bg: stri
 function FraudBadge({ score }: { score: number }) {
   const pct = Math.round(score * 100);
   if (pct >= 70) return (
-    <span className="flex items-center gap-1 text-rose-400 font-bold text-sm">
+    <span className="flex items-center gap-1 text-destructive font-bold text-sm">
       <ShieldAlert className="h-3.5 w-3.5" /> {pct}% HIGH
     </span>
   );
   if (pct >= 40) return (
-    <span className="flex items-center gap-1 text-amber-400 font-semibold text-sm">
+    <span className="flex items-center gap-1 text-warning font-semibold text-sm">
       <AlertTriangle className="h-3.5 w-3.5" /> {pct}% MED
     </span>
   );
   return (
-    <span className="flex items-center gap-1 text-emerald-400 font-semibold text-sm">
+    <span className="flex items-center gap-1 text-success font-semibold text-sm">
       <ShieldCheck className="h-3.5 w-3.5" /> {pct}% LOW
     </span>
   );
@@ -217,7 +217,7 @@ export default function BillModerationPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <ShieldCheck className="h-6 w-6 text-violet-400" />
+              <ShieldCheck className="h-6 w-6 text-primary" />
               Bill Moderation
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
@@ -229,7 +229,7 @@ export default function BillModerationPage() {
           <div className="flex items-center gap-2">
             <div className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold',
-              isOwner ? 'bg-violet-500/15 text-violet-400' : 'bg-amber-500/15 text-amber-400',
+              isOwner ? 'bg-primary/15 text-primary' : 'bg-warning/15 text-warning',
             )}>
               <Shield className="h-3 w-3" />
               {getRoleLabel(userRole)}
@@ -240,12 +240,12 @@ export default function BillModerationPage() {
         {/* ── STATS ROW ──────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Pending Review', value: loading ? '…' : pendingCount, icon: Clock, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-            { label: 'Approved', value: loading ? '…' : approvedCount, icon: CheckCircle2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-            { label: 'Rejected', value: loading ? '…' : rejectedCount, icon: XCircle, color: 'text-rose-400', bg: 'bg-rose-500/10' },
-            { label: 'Fraud Flagged', value: loading ? '…' : flaggedCount, icon: ShieldAlert, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+            { label: 'Pending Review', value: loading ? '…' : pendingCount, icon: Clock, color: 'text-warning', bg: 'bg-warning/10' },
+            { label: 'Approved', value: loading ? '…' : approvedCount, icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10' },
+            { label: 'Rejected', value: loading ? '…' : rejectedCount, icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10' },
+            { label: 'Fraud Flagged', value: loading ? '…' : flaggedCount, icon: ShieldAlert, color: 'text-warning', bg: 'bg-warning/10' },
           ].map((stat) => (
-            <Card key={stat.label} className="p-4 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+            <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs text-muted-foreground">{stat.label}</span>
                 <div className={cn('h-7 w-7 rounded-lg flex items-center justify-center', stat.bg)}>
@@ -259,7 +259,7 @@ export default function BillModerationPage() {
 
         {/* ── TABS + SEARCH ──────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="flex gap-1 bg-card/40 p-1 rounded-xl border border-white/5">
+          <div className="flex gap-1 bg-card/40 p-1 rounded-xl border border-border">
             {TABS.map((tab) => {
               const count = tab.key === 'PENDING' ? pendingCount : tab.key === 'FLAGGED' ? flaggedCount : undefined;
               return (
@@ -270,13 +270,13 @@ export default function BillModerationPage() {
                     'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer',
                     activeTab === tab.key
                       ? 'bg-primary text-primary-foreground shadow'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-white/5',
+                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary',
                   )}
                 >
                   <tab.icon className="h-3.5 w-3.5" />
                   {tab.label}
                   {count !== undefined && count > 0 && (
-                    <span className="ml-0.5 h-4 min-w-4 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center px-1">
+                    <span className="ml-0.5 h-4 min-w-4 rounded-full bg-destructive text-[9px] font-bold text-white flex items-center justify-center px-1">
                       {count}
                     </span>
                   )}
@@ -290,7 +290,7 @@ export default function BillModerationPage() {
               placeholder="Search customer or bill #..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-9 rounded-xl border-white/10 bg-card/40 text-sm"
+              className="pl-8 h-9 rounded-xl border-border bg-card/40 text-sm"
             />
           </div>
         </div>
@@ -301,8 +301,8 @@ export default function BillModerationPage() {
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : filteredBills.length === 0 ? (
-          <Card className="p-12 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
-            <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto mb-3 opacity-50" />
+          <Card className="p-12 rounded-2xl border-dashed border-border bg-secondary text-center">
+            <CheckCircle2 className="h-10 w-10 text-success mx-auto mb-3 opacity-50" />
             <h3 className="text-base font-semibold text-foreground mb-1">Queue Clear</h3>
             <p className="text-sm text-muted-foreground">No bills in this category.</p>
           </Card>
@@ -314,16 +314,16 @@ export default function BillModerationPage() {
                 <Card
                   key={bill.id}
                   className={cn(
-                    'p-5 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all cursor-pointer',
-                    selectedBill?.id === bill.id && 'ring-1 ring-violet-500/50 bg-violet-500/5',
-                    bill.fraudScore >= 0.6 && 'border-l-2 border-l-rose-500/50',
+                    'p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all cursor-pointer',
+                    selectedBill?.id === bill.id && 'ring-1 ring-primary/50 bg-primary/5',
+                    bill.fraudScore >= 0.6 && 'border-l-2 border-l-destructive/50',
                   )}
                   onClick={() => setSelectedBill(selectedBill?.id === bill.id ? null : bill)}
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                     {/* Left: Bill info */}
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className="h-10 w-10 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-400 shrink-0 text-xs font-bold">
+                      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 text-xs font-bold">
                         {bill.customer.avatar}
                       </div>
                       <div className="min-w-0">
@@ -333,7 +333,7 @@ export default function BillModerationPage() {
                             {statusCfg.label}
                           </span>
                           {bill.escalationLevel !== 'NONE' && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-400 flex items-center gap-0.5">
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive flex items-center gap-0.5">
                               <ArrowUpRight className="h-3 w-3" />
                               Escalated to {bill.escalationLevel}
                             </span>
@@ -352,14 +352,14 @@ export default function BillModerationPage() {
                     {/* Right: Metrics + Actions */}
                     <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6 w-full lg:w-auto">
                       {/* Metrics Group */}
-                      <div className="grid grid-cols-3 gap-2 lg:flex lg:items-center lg:gap-6 w-full lg:w-auto border-t border-white/5 pt-3 lg:border-t-0 lg:pt-0">
+                      <div className="grid grid-cols-3 gap-2 lg:flex lg:items-center lg:gap-6 w-full lg:w-auto border-t border-border pt-3 lg:border-t-0 lg:pt-0">
                         <div className="text-center lg:text-left">
                           <p className="text-[10px] text-muted-foreground mb-0.5">Amount</p>
                           <p className="font-bold text-foreground text-sm">₹{bill.amount.toLocaleString('en-IN')}</p>
                         </div>
                         <div className="text-center lg:text-left">
                           <p className="text-[10px] text-muted-foreground mb-0.5">OCR Conf</p>
-                          <p className={cn('font-semibold text-sm', bill.ocrConfidence >= 80 ? 'text-emerald-400' : bill.ocrConfidence >= 60 ? 'text-amber-400' : 'text-rose-400')}>
+                          <p className={cn('font-semibold text-sm', bill.ocrConfidence >= 80 ? 'text-success' : bill.ocrConfidence >= 60 ? 'text-warning' : 'text-destructive')}>
                             {bill.ocrConfidence}%
                           </p>
                         </div>
@@ -371,12 +371,12 @@ export default function BillModerationPage() {
 
                       {/* Action buttons */}
                       {canVerify && bill.status === 'PENDING' && (
-                        <div className="flex gap-2 w-full lg:w-auto justify-end border-t border-white/5 pt-3 lg:border-t-0 lg:pt-0" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-2 w-full lg:w-auto justify-end border-t border-border pt-3 lg:border-t-0 lg:pt-0" onClick={(e) => e.stopPropagation()}>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => { setSelectedBill(bill); setActionModal('reupload'); }}
-                            className="h-9 rounded-xl border-blue-500/20 text-blue-400 hover:bg-blue-500/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
+                            className="h-9 rounded-xl border-info/20 text-info hover:bg-info/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                           >
                             <RefreshCw className="h-3.5 w-3.5 mr-1" /> Re-upload
                           </Button>
@@ -384,14 +384,14 @@ export default function BillModerationPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => { setSelectedBill(bill); setActionModal('reject'); }}
-                            className="h-9 rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
+                            className="h-9 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                           >
                             <X className="h-3.5 w-3.5 mr-1" /> Reject
                           </Button>
                           <Button
                             size="sm"
                             onClick={() => { setSelectedBill(bill); setActionModal('approve'); }}
-                            className="h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 cursor-pointer flex-1 lg:flex-none"
+                            className="h-9 rounded-xl bg-success hover:bg-success text-white text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                           >
                             <Check className="h-3.5 w-3.5 mr-1" /> Approve
                           </Button>
@@ -399,12 +399,12 @@ export default function BillModerationPage() {
                       )}
 
                       {canVerify && bill.status === 'FLAGGED' && (
-                        <div className="flex gap-2 w-full lg:w-auto justify-end border-t border-white/5 pt-3 lg:border-t-0 lg:pt-0" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-2 w-full lg:w-auto justify-end border-t border-border pt-3 lg:border-t-0 lg:pt-0" onClick={(e) => e.stopPropagation()}>
                           {canOverride && (
                             <Button
                               size="sm"
                               onClick={() => { setSelectedBill(bill); setActionModal('override'); }}
-                              className="h-9 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs px-3 cursor-pointer flex-1 lg:flex-none"
+                              className="h-9 rounded-xl bg-primary hover:bg-primary text-white text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                             >
                               <Shield className="h-3.5 w-3.5 mr-1" /> Override
                             </Button>
@@ -413,7 +413,7 @@ export default function BillModerationPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => { setSelectedBill(bill); setActionModal('reject'); }}
-                            className="h-9 rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
+                            className="h-9 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                           >
                             <X className="h-3.5 w-3.5 mr-1" /> Reject
                           </Button>
@@ -424,13 +424,13 @@ export default function BillModerationPage() {
 
                   {/* ── EXPANDED DETAIL PANEL ───────────────── */}
                   {selectedBill?.id === bill.id && (
-                    <div className="mt-5 pt-5 border-t border-white/5 grid md:grid-cols-2 gap-6">
+                    <div className="mt-5 pt-5 border-t border-border grid md:grid-cols-2 gap-6">
                       {/* Receipt Image */}
                       <div>
                         <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
                           Uploaded Receipt
                         </h4>
-                        <div className="h-56 rounded-xl overflow-hidden border border-white/5 bg-black">
+                        <div className="h-56 rounded-xl overflow-hidden border border-border bg-black">
                           <img
                             src={bill.receiptUrl}
                             alt="Receipt"
@@ -445,11 +445,11 @@ export default function BillModerationPage() {
                           <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
                             OCR Extraction
                           </h4>
-                          <div className="rounded-xl border border-white/5 bg-white/5 p-3 space-y-1.5">
+                          <div className="rounded-xl border border-border bg-secondary p-3 space-y-1.5">
                             <p className="text-xs"><span className="text-muted-foreground">Merchant: </span><span className="text-foreground font-medium">{bill.ocrData.merchant}</span></p>
                             <p className="text-xs"><span className="text-muted-foreground">Total: </span><span className="text-foreground font-bold">{bill.ocrData.total}</span></p>
                             <p className="text-xs"><span className="text-muted-foreground">Date: </span><span className="text-foreground">{bill.ocrData.date}</span></p>
-                            <div className="pt-1.5 border-t border-white/5">
+                            <div className="pt-1.5 border-t border-border">
                               <p className="text-[10px] text-muted-foreground mb-1">Line Items:</p>
                               {(bill.ocrData.items as string[]).map((item: string, i: number) => (
                                 <p key={i} className="text-xs text-foreground/80">• {item}</p>
@@ -462,19 +462,19 @@ export default function BillModerationPage() {
                           <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
                             Fraud Analysis
                           </h4>
-                          <div className={cn('rounded-xl border p-3', bill.fraudScore >= 0.7 ? 'border-rose-500/20 bg-rose-500/5' : bill.fraudScore >= 0.4 ? 'border-amber-500/20 bg-amber-500/5' : 'border-emerald-500/20 bg-emerald-500/5')}>
+                          <div className={cn('rounded-xl border p-3', bill.fraudScore >= 0.7 ? 'border-destructive/20 bg-destructive/5' : bill.fraudScore >= 0.4 ? 'border-warning/20 bg-warning/5' : 'border-success/20 bg-success/5')}>
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-xs text-muted-foreground">Overall Risk Score</span>
                               <FraudBadge score={bill.fraudScore} />
                             </div>
-                            <div className="w-full bg-white/5 rounded-full h-1.5">
+                            <div className="w-full bg-secondary rounded-full h-1.5">
                               <div
-                                className={cn('h-1.5 rounded-full transition-all', bill.fraudScore >= 0.7 ? 'bg-rose-500' : bill.fraudScore >= 0.4 ? 'bg-amber-500' : 'bg-emerald-500')}
+                                className={cn('h-1.5 rounded-full transition-all', bill.fraudScore >= 0.7 ? 'bg-destructive' : bill.fraudScore >= 0.4 ? 'bg-warning' : 'bg-success')}
                                 style={{ width: `${bill.fraudScore * 100}%` }}
                               />
                             </div>
                             {bill.fraudScore >= 0.6 && (
-                              <p className="text-[10px] text-rose-400 mt-2 flex items-center gap-1">
+                              <p className="text-[10px] text-destructive mt-2 flex items-center gap-1">
                                 <AlertTriangle className="h-3 w-3" />
                                 High risk — manual review recommended
                               </p>
@@ -486,7 +486,7 @@ export default function BillModerationPage() {
                         <div>
                           <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Customer</h4>
                           <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 text-xs font-bold">
+                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
                               {bill.customer.avatar}
                             </div>
                             <div>
@@ -510,10 +510,10 @@ export default function BillModerationPage() {
             <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl">
               <div className={cn(
                 'mx-auto h-12 w-12 rounded-full flex items-center justify-center mb-4',
-                actionModal === 'approve' || actionModal === 'override' ? 'bg-emerald-500/10 text-emerald-400'
-                  : actionModal === 'reject' ? 'bg-rose-500/10 text-rose-400'
-                  : actionModal === 'reupload' ? 'bg-blue-500/10 text-blue-400'
-                  : 'bg-orange-500/10 text-orange-400',
+                actionModal === 'approve' || actionModal === 'override' ? 'bg-success/10 text-success'
+                  : actionModal === 'reject' ? 'bg-destructive/10 text-destructive'
+                  : actionModal === 'reupload' ? 'bg-info/10 text-info'
+                  : 'bg-warning/10 text-warning',
               )}>
                 {actionModal === 'approve' && <Check className="h-6 w-6" />}
                 {actionModal === 'override' && <Shield className="h-6 w-6" />}
@@ -560,10 +560,10 @@ export default function BillModerationPage() {
                   disabled={actionLoading}
                   className={cn(
                     'rounded-xl text-sm font-semibold cursor-pointer',
-                    actionModal === 'approve' || actionModal === 'override' ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                      : actionModal === 'reject' ? 'bg-rose-600 hover:bg-rose-500 text-white'
-                      : actionModal === 'reupload' ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                      : 'bg-orange-600 hover:bg-orange-500 text-white',
+                    actionModal === 'approve' || actionModal === 'override' ? 'bg-success hover:bg-success text-white'
+                      : actionModal === 'reject' ? 'bg-destructive hover:bg-destructive text-white'
+                      : actionModal === 'reupload' ? 'bg-info hover:bg-info text-white'
+                      : 'bg-warning hover:bg-warning text-white',
                   )}
                 >
                   Confirm

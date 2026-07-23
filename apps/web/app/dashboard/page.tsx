@@ -131,28 +131,28 @@ export default function BusinessDashboardPage() {
       value: loading ? '…' : activeOffers.toString(),
       sub: loading ? '' : `${offers.length} total · ${pausedOffers} paused`,
       icon: Tag,
-      color: 'text-emerald-500 bg-emerald-500/10',
+      color: 'text-success bg-success/10',
     },
     {
       label: 'Total Redemptions',
       value: loading ? '…' : totalClaims.toLocaleString(),
       sub: loading ? '' : 'across all offers',
       icon: ShoppingBag,
-      color: 'text-violet-500 bg-violet-500/10',
+      color: 'text-primary bg-primary/10',
     },
     {
       label: 'Avg Rating',
       value: loading ? '…' : avgRating ? `${avgRating} ★` : '—',
       sub: loading ? '' : totalReviews > 0 ? `${totalReviews} reviews` : 'No reviews yet',
       icon: Star,
-      color: 'text-amber-500 bg-amber-500/10',
+      color: 'text-warning bg-warning/10',
     },
     {
       label: 'Total Reviews',
       value: loading ? '…' : totalReviews.toLocaleString(),
       sub: loading ? '' : avgRating ? `${avgRating} avg rating` : 'Awaiting reviews',
       icon: Users,
-      color: 'text-cyan-500 bg-cyan-500/10',
+      color: 'text-info bg-info/10',
     },
   ];
 
@@ -289,11 +289,11 @@ export default function BusinessDashboardPage() {
 
         {/* ── Moderator quick widget ── */}
         {isModerator && (
-          <Card className="p-5 rounded-2xl border-amber-500/20 bg-amber-500/5">
+          <Card className="p-5 rounded-2xl border-warning/20 bg-warning/5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
-                  <ShieldCheck className="h-5 w-5 text-amber-400" />
+                <div className="h-10 w-10 rounded-xl bg-warning/15 flex items-center justify-center">
+                  <ShieldCheck className="h-5 w-5 text-warning" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-foreground">Bill Moderation Queue</h3>
@@ -301,7 +301,7 @@ export default function BusinessDashboardPage() {
                 </div>
               </div>
               <Link href="/dashboard/moderation">
-                <Button size="sm" className="rounded-xl bg-amber-600 hover:bg-amber-500 text-white gap-1.5 text-xs">
+                <Button size="sm" className="rounded-xl bg-warning hover:bg-warning text-white gap-1.5 text-xs">
                   Review Queue <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
@@ -317,9 +317,9 @@ export default function BusinessDashboardPage() {
               <span className={cn(
                 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border',
                 business.status === 'APPROVED'
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  ? 'bg-success/10 text-success border-success/20'
                   : business.status === 'PENDING_VERIFICATION' || business.status === 'UNDER_REVIEW'
-                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                    ? 'bg-warning/10 text-warning border-warning/20'
                     : 'bg-muted/40 text-muted-foreground border-border',
               )}>
                 {business.status === 'APPROVED'
@@ -387,14 +387,14 @@ export default function BusinessDashboardPage() {
             <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Published content</span>
               <Link href="/dashboard/offers" className="flex items-center gap-2 group">
-                <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400"><Tag className="h-4 w-4" /></span>
+                <span className="p-1.5 rounded-lg bg-success/10 text-success"><Tag className="h-4 w-4" /></span>
                 <span className="text-lg font-extrabold text-foreground group-hover:text-primary transition-colors">
                   {loading ? '…' : offers.length}
                 </span>
                 <span className="text-xs text-muted-foreground">Offers</span>
               </Link>
               <Link href="/dashboard/events" className="flex items-center gap-2 group">
-                <span className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400"><Clock className="h-4 w-4" /></span>
+                <span className="p-1.5 rounded-lg bg-info/10 text-info"><Clock className="h-4 w-4" /></span>
                 <span className="text-lg font-extrabold text-foreground group-hover:text-primary transition-colors">
                   {loading ? '…' : events.length}
                 </span>
@@ -408,9 +408,9 @@ export default function BusinessDashboardPage() {
         {isStaff && (
           <div className="grid sm:grid-cols-3 gap-4">
             {[
-              { label: 'Active Offers', value: activeOffers.toString(), icon: Tag, href: '/dashboard/offers', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-              { label: 'Listed Products', value: '—', icon: FileText, href: '/dashboard/products', color: 'text-violet-400', bg: 'bg-violet-500/10' },
-              { label: 'Pending Media', value: '—', icon: Clock, href: '/dashboard/media', color: 'text-amber-400', bg: 'bg-amber-500/10' },
+              { label: 'Active Offers', value: activeOffers.toString(), icon: Tag, href: '/dashboard/offers', color: 'text-success', bg: 'bg-success/10' },
+              { label: 'Listed Products', value: '—', icon: FileText, href: '/dashboard/products', color: 'text-primary', bg: 'bg-primary/10' },
+              { label: 'Pending Media', value: '—', icon: Clock, href: '/dashboard/media', color: 'text-warning', bg: 'bg-warning/10' },
             ].map((s) => (
               <Link key={s.label} href={s.href}>
                 <Card className="p-4 rounded-2xl border-border bg-card/40 hover:bg-card/60 transition-all cursor-pointer">
@@ -498,7 +498,7 @@ export default function BusinessDashboardPage() {
                           onClick={() => toggleActive(offer)}
                           className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold hover:opacity-85 transition-opacity ${
                             offer.status === 'ACTIVE'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-success/10 text-success border border-success/20'
                               : 'bg-muted/40 text-muted-foreground border border-border'
                           }`}
                         >
@@ -700,7 +700,7 @@ export default function BusinessDashboardPage() {
               >
                 <X className="h-5 w-5" />
               </button>
-              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Delete Offer</h3>
@@ -715,7 +715,7 @@ export default function BusinessDashboardPage() {
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleDelete} className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4">
+                <Button onClick={handleDelete} className="rounded-xl bg-destructive hover:bg-destructive text-white px-4">
                   Delete
                 </Button>
               </div>
@@ -741,7 +741,7 @@ export default function BusinessDashboardPage() {
                   <h3 className="text-xl font-bold text-foreground">{viewingOffer.title}</h3>
                   <span className={`inline-block px-2 py-0.5 mt-1 rounded-full text-xs font-semibold ${
                     viewingOffer.status === 'ACTIVE'
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      ? 'bg-success/10 text-success border border-success/20'
                       : 'bg-secondary/40 text-muted-foreground border border-border'
                   }`}>
                     {viewingOffer.status === 'ACTIVE' ? 'Active' : viewingOffer.status}

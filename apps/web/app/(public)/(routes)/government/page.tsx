@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { PublicLayout } from '@/components/layouts/public-layout';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Bell,
@@ -45,11 +44,11 @@ interface Notice {
 const fmtDate = (d?: string) => (d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 
 const typeColors: Record<string, string> = {
-  Announcement: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-  Health: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
-  Infrastructure: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
-  Legal: 'bg-violet-500/10 text-violet-400 border border-violet-500/20',
-  Event: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+  Announcement: 'bg-info/10 text-info border border-info/20',
+  Health: 'bg-destructive/10 text-destructive border border-destructive/20',
+  Infrastructure: 'bg-warning/12 text-warning border border-warning/25',
+  Legal: 'bg-secondary text-muted-foreground border border-border',
+  Event: 'bg-success/12 text-success border border-success/25',
 };
 
 function mapApiNotice(n: any): Notice {
@@ -146,14 +145,14 @@ export default function GovernmentPage() {
   return (
     <PublicLayout>
       <div>
-        <h1 className="text-3xl font-bold mb-2">Government Announcements</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-1">Government Announcements</h1>
         <p className="text-muted-foreground mb-6">
-          Stay informed with official notices and announcements
+          Stay informed with official notices and civic updates.
         </p>
 
         <div className="mb-8">
           <Select value={city || 'all'} onValueChange={handleCityChange}>
-            <SelectTrigger className="w-52 rounded-xl border-white/10">
+            <SelectTrigger className="w-52 rounded-xl">
               <SelectValue placeholder="Filter by city" />
             </SelectTrigger>
             <SelectContent>
@@ -170,20 +169,20 @@ export default function GovernmentPage() {
             <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
           </div>
         ) : notices.length === 0 ? (
-          <Card className="p-12 rounded-2xl text-center border-dashed border-white/10 bg-white/5">
+          <div className="p-12 rounded-2xl text-center border border-dashed border-border bg-secondary">
             <Bell className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-50" />
-            <h3 className="text-base font-semibold text-foreground mb-1">No Announcements</h3>
+            <h3 className="text-base font-semibold text-foreground mb-1">No announcements</h3>
             <p className="text-sm text-muted-foreground">Check back later for official updates.</p>
-          </Card>
+          </div>
         ) : (
           <div className="space-y-4">
             {notices.map((notice) => (
-              <Card
+              <div
                 key={notice.id}
-                className="p-6 rounded-2xl hover:shadow-md transition-all border-white/5 bg-card/40 backdrop-blur-xl"
+                className="rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:border-primary/25 hover:shadow-lg"
               >
                 <div className="flex items-start gap-4">
-                  <div className="rounded-xl bg-white/5 p-3 border border-white/5">
+                  <div className="rounded-xl bg-primary/10 p-3 border border-primary/20">
                     <AlertCircle className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex-1">
@@ -204,15 +203,15 @@ export default function GovernmentPage() {
                           <button
                             key={idx}
                             onClick={() => downloadFile(a)}
-                            className="inline-flex items-center gap-1 px-2 py-1 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-foreground rounded-lg text-xs border border-white/5 hover:border-white/10 transition-colors cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-secondary hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg text-xs border border-border transition-colors cursor-pointer"
                           >
                             {a.type === 'image' ? (
-                              <ImageIcon className="h-3 w-3 text-cyan-400" />
+                              <ImageIcon className="h-3 w-3 text-primary" />
                             ) : (
-                              <FileText className="h-3 w-3 text-violet-400" />
+                              <FileText className="h-3 w-3 text-primary" />
                             )}
                             <span>{a.name}</span>
-                            <Download className="h-2.5 w-2.5 ml-1 text-slate-400" />
+                            <Download className="h-2.5 w-2.5 ml-1" />
                           </button>
                         ))}
                       </div>
@@ -228,7 +227,7 @@ export default function GovernmentPage() {
                         <Calendar className="h-3.5 w-3.5" /> Issued {notice.date}
                       </span>
                       {(notice.startAt || notice.expiresAt) && (
-                        <span className="flex items-center gap-1 text-cyan-400">
+                        <span className="flex items-center gap-1 text-primary">
                           {notice.startAt ? fmtDate(notice.startAt) : '—'} → {notice.expiresAt ? fmtDate(notice.expiresAt) : 'Open'}
                         </span>
                       )}
@@ -238,9 +237,9 @@ export default function GovernmentPage() {
                         onClick={() => setViewingNotice(notice)}
                         variant="outline"
                         size="sm"
-                        className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 gap-1 cursor-pointer"
+                        className="gap-1"
                       >
-                        <Eye className="h-3.5 w-3.5" /> View Details
+                        <Eye className="h-3.5 w-3.5" /> View details
                       </Button>
                       {notice.linkUrl && (
                         <a href={notice.linkUrl.startsWith('http') ? notice.linkUrl : `https://${notice.linkUrl}`} target="_blank" rel="noopener noreferrer"
@@ -251,16 +250,17 @@ export default function GovernmentPage() {
                     </div>
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         )}
 
         {viewingNotice && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-lg p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
+            <div className="relative w-full max-w-lg p-6 rounded-2xl border border-border bg-card shadow-2xl max-h-[85vh] overflow-y-auto">
               <button
                 onClick={() => setViewingNotice(null)}
+                aria-label="Close"
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="h-5 w-5" />
@@ -283,8 +283,8 @@ export default function GovernmentPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-white/5 p-4 rounded-xl border border-white/5 mb-6">
-                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap break-words">{viewingNotice.description}</p>
+              <div className="bg-secondary p-4 rounded-xl border border-border mb-6">
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">{viewingNotice.description}</p>
               </div>
 
               {(viewingNotice.publisher || viewingNotice.socialLinks.length > 0) && (
@@ -310,25 +310,20 @@ export default function GovernmentPage() {
                     {viewingNotice.attachments.map((a, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors"
+                        className="flex items-center justify-between p-3 bg-secondary rounded-xl border border-border hover:bg-muted transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           {a.type === 'image' ? (
-                            <ImageIcon className="h-5 w-5 text-cyan-400" />
+                            <ImageIcon className="h-5 w-5 text-primary" />
                           ) : (
-                            <FileText className="h-5 w-5 text-violet-400" />
+                            <FileText className="h-5 w-5 text-primary" />
                           )}
                           <div>
                             <p className="text-sm font-semibold text-foreground">{a.name}</p>
                             <p className="text-[10px] text-muted-foreground">{a.size}</p>
                           </div>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => downloadFile(a)}
-                          className="rounded-lg border-white/10 text-slate-300 hover:bg-white/5 gap-1 h-8 cursor-pointer"
-                        >
+                        <Button size="sm" variant="outline" onClick={() => downloadFile(a)} className="gap-1 h-8">
                           <Download className="h-3.5 w-3.5" /> Download
                         </Button>
                       </div>
@@ -338,14 +333,9 @@ export default function GovernmentPage() {
               )}
 
               <div className="flex justify-end">
-                <Button
-                  onClick={() => setViewingNotice(null)}
-                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold"
-                >
-                  Close
-                </Button>
+                <Button onClick={() => setViewingNotice(null)}>Close</Button>
               </div>
-            </Card>
+            </div>
           </div>
         )}
       </div>

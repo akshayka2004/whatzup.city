@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ThemeProviderClient } from '@/components/theme-provider-client';
 import { AuthProvider } from '@/hooks/use-auth';
+import { CommandPalette } from '@/components/common/command-palette';
 
 const _geist = Geist({ subsets: ['latin'] });
 const _geistMono = Geist_Mono({ subsets: ['latin'] });
@@ -42,7 +43,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased bg-background text-foreground">
         <AuthProvider>
-          <ThemeProviderClient>{children}</ThemeProviderClient>
+          <ThemeProviderClient>
+            <CommandPalette />
+            {children}
+          </ThemeProviderClient>
         </AuthProvider>
       </body>
     </html>

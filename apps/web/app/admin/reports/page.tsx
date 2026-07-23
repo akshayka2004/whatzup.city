@@ -14,10 +14,10 @@ const ISSUE_REPORTS_KEY = 'issue_reports';
 type ReportStatus = 'Pending' | 'Under Review' | 'Resolved' | 'Dismissed';
 
 const statusColors: Record<string, string> = {
-  Pending: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
-  'Under Review': 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-  Resolved: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-  Dismissed: 'bg-slate-500/10 text-slate-400 border border-slate-500/20',
+  Pending: 'bg-warning/10 text-warning border border-warning/20',
+  'Under Review': 'bg-info/10 text-info border border-info/20',
+  Resolved: 'bg-success/10 text-success border border-success/20',
+  Dismissed: 'bg-muted text-muted-foreground border border-border',
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -127,13 +127,13 @@ export default function ReportsPage() {
               placeholder="Search reports…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-9 w-52 rounded-xl border-white/10 bg-white/5 text-sm"
+              className="pl-8 h-9 w-52 rounded-xl border-border bg-secondary text-sm"
             />
           </div>
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value as any)}
-            className="h-9 rounded-xl border border-white/10 bg-card text-sm text-foreground px-2 cursor-pointer"
+            className="h-9 rounded-xl border border-border bg-card text-sm text-foreground px-2 cursor-pointer"
           >
             <option value="all">All Status</option>
             <option value="Pending">Pending</option>
@@ -142,7 +142,7 @@ export default function ReportsPage() {
             <option value="Dismissed">Dismissed</option>
           </select>
           {pending > 0 && (
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl">
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-warning bg-warning/10 border border-warning/20 px-3 py-1.5 rounded-xl">
               <AlertTriangle className="h-3.5 w-3.5" />
               {pending} pending review
             </span>
@@ -151,8 +151,8 @@ export default function ReportsPage() {
 
         <div className="space-y-4">
           {filtered.length === 0 ? (
-            <Card className="p-8 text-center border-dashed border-white/10 bg-white/5">
-              <Check className="mx-auto h-12 w-12 text-emerald-400 mb-3" />
+            <Card className="p-8 text-center border-dashed border-border bg-secondary">
+              <Check className="mx-auto h-12 w-12 text-success mb-3" />
               <h3 className="text-lg font-bold text-foreground mb-1">Queue Clear</h3>
               <p className="text-sm text-muted-foreground">All content reports resolved.</p>
             </Card>
@@ -160,19 +160,19 @@ export default function ReportsPage() {
             filtered.map((report) => (
               <Card
                 key={report.id}
-                className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:shadow-md transition-all duration-300 relative overflow-hidden group"
+                className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all duration-300 relative overflow-hidden group"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4 flex-1">
-                    <div className="rounded-xl bg-rose-500/10 p-3 text-rose-400">
+                    <div className="rounded-xl bg-destructive/10 p-3 text-destructive">
                       <AlertTriangle className="h-5 w-5" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-foreground text-base">{report.type}</h3>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         Reported Target:{' '}
-                        <span className="text-slate-300 font-semibold">{report.reported}</span> •
+                        <span className="text-foreground font-semibold">{report.reported}</span> •
                         Received {report.date}
                       </p>
                     </div>
@@ -187,7 +187,7 @@ export default function ReportsPage() {
                       onClick={() => setViewingReport(report)}
                       size="icon"
                       variant="outline"
-                      className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 h-9 w-9"
+                      className="rounded-xl border-border text-foreground hover:bg-secondary h-9 w-9"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -195,7 +195,7 @@ export default function ReportsPage() {
                       onClick={() => setDeletingReport(report)}
                       size="icon"
                       variant="outline"
-                      className="rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 h-9 w-9"
+                      className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -209,7 +209,7 @@ export default function ReportsPage() {
         {/* ── INVESTIGATE/VIEW REPORT MODAL ────────────────────────── */}
         {viewingReport && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button
                 onClick={() => setViewingReport(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -217,7 +217,7 @@ export default function ReportsPage() {
                 <X className="h-5 w-5" />
               </button>
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-rose-500/10 text-rose-400 rounded-xl">
+                <div className="p-3 bg-destructive/10 text-destructive rounded-xl">
                   <ShieldAlert className="h-6 w-6" />
                 </div>
                 <div>
@@ -226,27 +226,27 @@ export default function ReportsPage() {
                 </div>
               </div>
               <div className="space-y-4 mb-6">
-                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                  <p className="text-xs text-slate-400 font-semibold mb-1">
+                <div className="bg-secondary p-4 rounded-xl border border-border">
+                  <p className="text-xs text-muted-foreground font-semibold mb-1">
                     Target Entity Under Report
                   </p>
                   <p className="text-sm font-bold text-foreground">{viewingReport.reported}</p>
                 </div>
-                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                  <p className="text-xs text-slate-400 font-semibold mb-1">
+                <div className="bg-secondary p-4 rounded-xl border border-border">
+                  <p className="text-xs text-muted-foreground font-semibold mb-1">
                     Report Description & Evidence
                   </p>
-                  <p className="text-sm text-slate-300 leading-relaxed">{viewingReport.details}</p>
+                  <p className="text-sm text-foreground leading-relaxed">{viewingReport.details}</p>
                 </div>
-                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                  <p className="text-xs text-slate-400 font-semibold mb-2">Resolution Status</p>
+                <div className="bg-secondary p-4 rounded-xl border border-border">
+                  <p className="text-xs text-muted-foreground font-semibold mb-2">Resolution Status</p>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleUpdateStatus(viewingReport.id, 'Pending')}
                       className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
                         viewingReport.status === 'Pending'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                          : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
+                          ? 'bg-warning/10 text-warning border-warning/30'
+                          : 'bg-secondary text-muted-foreground border-border hover:bg-secondary'
                       }`}
                     >
                       Pending
@@ -255,8 +255,8 @@ export default function ReportsPage() {
                       onClick={() => handleUpdateStatus(viewingReport.id, 'Under Review')}
                       className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
                         viewingReport.status === 'Under Review'
-                          ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                          : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
+                          ? 'bg-info/10 text-info border-info/30'
+                          : 'bg-secondary text-muted-foreground border-border hover:bg-secondary'
                       }`}
                     >
                       Under Review
@@ -265,8 +265,8 @@ export default function ReportsPage() {
                       onClick={() => handleUpdateStatus(viewingReport.id, 'Resolved')}
                       className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
                         viewingReport.status === 'Resolved'
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                          : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
+                          ? 'bg-success/10 text-success border-success/30'
+                          : 'bg-secondary text-muted-foreground border-border hover:bg-secondary'
                       }`}
                     >
                       Resolved
@@ -275,8 +275,8 @@ export default function ReportsPage() {
                       onClick={() => handleUpdateStatus(viewingReport.id, 'Dismissed')}
                       className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
                         viewingReport.status === 'Dismissed'
-                          ? 'bg-slate-500/10 text-slate-400 border-slate-500/30'
-                          : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
+                          ? 'bg-muted text-muted-foreground border-border'
+                          : 'bg-secondary text-muted-foreground border-border hover:bg-secondary'
                       }`}
                     >
                       Dismissed
@@ -299,14 +299,14 @@ export default function ReportsPage() {
         {/* ── DISMISS REPORT MODAL ─────────────────────────────────── */}
         {deletingReport && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
               <button
                 onClick={() => setDeletingReport(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
-              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Dismiss / Delete Report</h3>
@@ -318,13 +318,13 @@ export default function ReportsPage() {
                 <Button
                   onClick={() => setDeletingReport(null)}
                   variant="outline"
-                  className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 px-4"
+                  className="rounded-xl border-border hover:bg-secondary text-foreground px-4"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleDeleteReport}
-                  className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4"
+                  className="rounded-xl bg-destructive hover:bg-destructive text-white px-4"
                 >
                   Delete Report
                 </Button>

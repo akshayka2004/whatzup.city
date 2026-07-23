@@ -39,9 +39,9 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (t: string[]) 
       onClick={() => ref.current?.focus()}
     >
       {tags.map((tag) => (
-        <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 text-xs font-medium">
+        <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-medium">
           <Tag className="h-2.5 w-2.5" />{tag}
-          <button type="button" onClick={(e) => { e.stopPropagation(); onChange(tags.filter((t) => t !== tag)); }} className="ml-0.5 text-violet-400/60 hover:text-violet-400 cursor-pointer">
+          <button type="button" onClick={(e) => { e.stopPropagation(); onChange(tags.filter((t) => t !== tag)); }} className="ml-0.5 text-primary/60 hover:text-primary cursor-pointer">
             <X className="h-3 w-3" />
           </button>
         </span>
@@ -239,7 +239,7 @@ export default function ProductsPage() {
                       <h3 className="font-semibold text-foreground text-lg">{product.name}</h3>
                       <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
                         product.isAvailable
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          ? 'bg-success/10 text-success border-success/20'
                           : 'bg-secondary/40 text-muted-foreground border-border'
                       }`}>
                         {product.isAvailable ? 'Available' : 'Unavailable'}
@@ -264,7 +264,7 @@ export default function ProductsPage() {
                     <Button onClick={() => handleOpenEdit(product)} size="icon" variant="outline" className="rounded-xl border-border hover:bg-muted text-foreground h-9 w-9 cursor-pointer">
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button onClick={() => setDeletingProduct(product)} size="icon" variant="outline" className="rounded-xl border-rose-500/20 hover:bg-rose-500/10 text-rose-400 hover:text-rose-300 h-9 w-9 cursor-pointer">
+                    <Button onClick={() => setDeletingProduct(product)} size="icon" variant="outline" className="rounded-xl border-destructive/20 hover:bg-destructive/10 text-destructive hover:text-destructive h-9 w-9 cursor-pointer">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -317,7 +317,7 @@ export default function ProductsPage() {
                   <label htmlFor="add-available" className="text-sm text-muted-foreground">Available immediately</label>
                 </div>
                 {formError && (
-                  <div className="flex items-start gap-2 text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2">
+                  <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2">
                     <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                     <span>{formError}</span>
                   </div>
@@ -374,7 +374,7 @@ export default function ProductsPage() {
                   <label htmlFor="edit-available" className="text-sm text-muted-foreground">Available</label>
                 </div>
                 {formError && (
-                  <div className="flex items-start gap-2 text-sm text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2">
+                  <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2">
                     <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                     <span>{formError}</span>
                   </div>
@@ -398,7 +398,7 @@ export default function ProductsPage() {
               <button onClick={() => setDeletingProduct(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
-              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Delete Product</h3>
@@ -407,7 +407,7 @@ export default function ProductsPage() {
               </p>
               <div className="flex justify-center gap-3">
                 <Button onClick={() => setDeletingProduct(null)} variant="outline" className="rounded-xl border-border hover:bg-muted text-foreground px-4 cursor-pointer">Cancel</Button>
-                <Button onClick={handleDelete} disabled={submitting} className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4 cursor-pointer flex items-center gap-1.5">
+                <Button onClick={handleDelete} disabled={submitting} className="rounded-xl bg-destructive hover:bg-destructive text-white px-4 cursor-pointer flex items-center gap-1.5">
                   {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Delete
                 </Button>
@@ -431,7 +431,7 @@ export default function ProductsPage() {
                   <h3 className="text-xl font-bold text-foreground">{viewingProduct.name}</h3>
                   <span className={`inline-block px-2 py-0.5 mt-1 rounded-full text-xs font-semibold border ${
                     viewingProduct.isAvailable
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      ? 'bg-success/10 text-success border-success/20'
                       : 'bg-secondary/40 text-muted-foreground border-border'
                   }`}>
                     {viewingProduct.isAvailable ? 'Available' : 'Unavailable'}

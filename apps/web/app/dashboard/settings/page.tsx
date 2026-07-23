@@ -16,14 +16,14 @@ import {
 
 /* ── Social platform config ───────────────────────────────────── */
 const PLATFORM_OPTIONS = [
-  { id: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-pink-400', placeholder: '@handle or URL' },
-  { id: 'facebook', label: 'Facebook', icon: Facebook, color: 'text-blue-400', placeholder: 'Page URL' },
-  { id: 'linkedin', label: 'LinkedIn', icon: Linkedin, color: 'text-sky-400', placeholder: 'Company page URL' },
+  { id: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-primary', placeholder: '@handle or URL' },
+  { id: 'facebook', label: 'Facebook', icon: Facebook, color: 'text-info', placeholder: 'Page URL' },
+  { id: 'linkedin', label: 'LinkedIn', icon: Linkedin, color: 'text-info', placeholder: 'Company page URL' },
   { id: 'x', label: 'X / Twitter', icon: Twitter, color: 'text-foreground/80', placeholder: '@handle' },
-  { id: 'youtube', label: 'YouTube', icon: Youtube, color: 'text-red-400', placeholder: 'Channel URL' },
-  { id: 'website', label: 'Website', icon: Globe, color: 'text-cyan-400', placeholder: 'https://example.com' },
-  { id: 'whatsapp', label: 'WhatsApp', icon: Phone, color: 'text-emerald-400', placeholder: '+91 98765 43210' },
-  { id: 'custom', label: 'Custom Platform', icon: Globe, color: 'text-violet-400', placeholder: 'Platform name or URL' },
+  { id: 'youtube', label: 'YouTube', icon: Youtube, color: 'text-destructive', placeholder: 'Channel URL' },
+  { id: 'website', label: 'Website', icon: Globe, color: 'text-info', placeholder: 'https://example.com' },
+  { id: 'whatsapp', label: 'WhatsApp', icon: Phone, color: 'text-success', placeholder: '+91 98765 43210' },
+  { id: 'custom', label: 'Custom Platform', icon: Globe, color: 'text-primary', placeholder: 'Platform name or URL' },
 ] as const;
 
 type PlatformId = typeof PLATFORM_OPTIONS[number]['id'];
@@ -316,13 +316,13 @@ export default function BusinessSettingsPage() {
         </div>
 
         {savedMsg && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold">
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-success/10 border border-success/20 text-success text-sm font-semibold">
             <Check className="h-4 w-4" />
             {savedMsg}
           </div>
         )}
         {errMsg && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-semibold">
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-semibold">
             <X className="h-4 w-4" />
             {errMsg}
           </div>
@@ -380,7 +380,7 @@ export default function BusinessSettingsPage() {
                   onClick={handleSaveProfile}
                   disabled={saving}
                   size="sm"
-                  className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5 cursor-pointer disabled:opacity-60"
+                  className="rounded-xl bg-success hover:bg-success text-white gap-1.5 cursor-pointer disabled:opacity-60"
                 >
                   {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                   Save
@@ -493,7 +493,7 @@ export default function BusinessSettingsPage() {
                         type="button"
                         key={o.l}
                         onClick={() => setHalalStatus(o.v)}
-                        className={`h-10 rounded-xl border text-xs font-medium cursor-pointer transition ${halalStatus === o.v ? 'bg-emerald-600/20 border-emerald-500 text-emerald-300' : 'bg-secondary/60 border-border text-muted-foreground hover:bg-secondary'}`}
+                        className={`h-10 rounded-xl border text-xs font-medium cursor-pointer transition ${halalStatus === o.v ? 'bg-success/20 border-success text-success' : 'bg-secondary/60 border-border text-muted-foreground hover:bg-secondary'}`}
                       >
                         {o.l}
                       </button>
@@ -554,7 +554,7 @@ export default function BusinessSettingsPage() {
                   </div>
                   <button
                     onClick={() => handleRemoveLink(link.id)}
-                    className="text-rose-400 hover:text-rose-300 cursor-pointer shrink-0"
+                    className="text-destructive hover:text-destructive cursor-pointer shrink-0"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

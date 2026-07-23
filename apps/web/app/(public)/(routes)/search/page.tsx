@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { PublicLayout } from '@/components/layouts/public-layout';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Star, MapPin, Globe, Instagram, Heart, Loader2, CheckCircle2, Tag, Building2 } from 'lucide-react';
@@ -179,7 +178,7 @@ function SearchContent() {
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); }}
             onFocus={() => { if (searchTerm.length >= 2) setShowSuggestions(true); }}
-            className="pl-10 py-3 rounded-xl text-base border-white/10 bg-white/5"
+            className="pl-10 h-12 rounded-xl text-base"
             autoComplete="off"
           />
           {/* Suggestions dropdown */}
@@ -240,7 +239,7 @@ function SearchContent() {
         </div>
         <div className="flex gap-4 flex-wrap">
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-44 rounded-xl border-white/10">
+            <SelectTrigger className="w-44 rounded-xl">
               <SelectValue placeholder="Sort" />
             </SelectTrigger>
             <SelectContent>
@@ -261,27 +260,27 @@ function SearchContent() {
           <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
         </div>
       ) : sorted.length === 0 ? (
-        <Card className="p-12 rounded-2xl text-center border-dashed border-white/10 bg-white/5">
+        <div className="p-12 rounded-2xl text-center border border-dashed border-border bg-secondary">
           <Search className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-50" />
           <h3 className="text-base font-semibold text-foreground mb-1">No businesses found</h3>
           <p className="text-sm text-muted-foreground">Try a different search term or city.</p>
-        </Card>
+        </div>
       ) : (
         <div className="space-y-4">
           {sorted.map((result) => (
-            <Card
+            <div
               key={result.id}
-              className="p-6 rounded-2xl hover:shadow-md transition-all border-white/5 bg-card/40 backdrop-blur-xl"
+              className="rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:border-primary/25 hover:shadow-lg"
             >
               <div className="flex gap-6">
-                <div className="w-32 h-32 rounded-xl bg-white/5 flex-shrink-0 border border-white/5"></div>
+                <div className="w-32 h-32 rounded-xl bg-secondary flex-shrink-0 border border-border"></div>
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <h3 className="text-lg font-semibold text-foreground">{result.name}</h3>
                         {result.isVerified && (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold">
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-success/12 border border-success/25 text-success text-[10px] font-semibold">
                             <CheckCircle2 className="h-3 w-3" />
                             Verified
                           </span>
@@ -292,8 +291,8 @@ function SearchContent() {
                   </div>
                   <div className="flex items-center gap-4 text-sm mb-3">
                     <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">{result.rating != null ? result.rating.toFixed(1) : '—'}</span>
+                      <Star className="h-4 w-4 fill-warning text-warning" />
+                      <span className="font-medium tabular-nums">{result.rating != null ? result.rating.toFixed(1) : '—'}</span>
                       <span className="text-muted-foreground">({result.reviews})</span>
                     </div>
                     {result.city && (
@@ -306,7 +305,7 @@ function SearchContent() {
                   <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3 flex-wrap">
                     {result.location && (
                       <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3 text-violet-400" />
+                        <MapPin className="h-3 w-3 text-muted-foreground" />
                         {result.location}
                       </span>
                     )}
@@ -315,7 +314,7 @@ function SearchContent() {
                         href={`https://instagram.com/${result.instagram.replace('@', '')}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1 text-pink-400 hover:underline"
+                        className="flex items-center gap-1 text-primary hover:underline"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Instagram className="h-3 w-3" />
@@ -327,7 +326,7 @@ function SearchContent() {
                         href={result.website.startsWith('http') ? result.website : `https://${result.website}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1 text-cyan-400 hover:underline"
+                        className="flex items-center gap-1 text-primary hover:underline"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Globe className="h-3 w-3" />
@@ -337,23 +336,20 @@ function SearchContent() {
                   </div>
                   <div className="flex gap-2">
                     <Link href={`/business/${result.id}`}>
-                      <Button
-                        variant="outline"
-                        className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
-                        size="sm"
-                      >
-                        View Details
+                      <Button variant="outline" size="sm">
+                        View details
                       </Button>
                     </Link>
                     <Button
                       onClick={() => handleToggleFav(result)}
                       variant="outline"
                       size="sm"
-                      className={`rounded-xl cursor-pointer ${
+                      aria-pressed={favIds.includes(result.id)}
+                      className={
                         favIds.includes(result.id)
-                          ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
-                          : 'border-white/10 text-slate-400 hover:bg-white/5'
-                      }`}
+                          ? 'border-rose-500/30 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20'
+                          : ''
+                      }
                       title={favIds.includes(result.id) ? 'Remove from favorites' : 'Save to favorites'}
                     >
                       <Heart className={`h-4 w-4 ${favIds.includes(result.id) ? 'fill-rose-500 text-rose-500' : ''}`} />
@@ -361,7 +357,7 @@ function SearchContent() {
                   </div>
                 </div>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
       )}

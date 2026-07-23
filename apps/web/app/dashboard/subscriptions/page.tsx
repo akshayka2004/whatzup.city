@@ -22,9 +22,9 @@ const PLANS = [
     priceMonthly: 300,
     priceAnnual: 2500,
     icon: Zap,
-    color: 'text-cyan-400',
-    bg: 'bg-cyan-500/10',
-    border: 'border-cyan-500/20',
+    color: 'text-info',
+    bg: 'bg-info/10',
+    border: 'border-info/20',
     highlight: false,
     features: [
       '30 Offers per month',
@@ -41,9 +41,9 @@ const PLANS = [
     priceMonthly: 600,
     priceAnnual: 5000,
     icon: Star,
-    color: 'text-violet-400',
-    bg: 'bg-violet-500/10',
-    border: 'border-violet-500/30',
+    color: 'text-primary',
+    bg: 'bg-primary/10',
+    border: 'border-primary/30',
     highlight: true,
     features: [
       '50 Offers per month',
@@ -60,9 +60,9 @@ const PLANS = [
     priceMonthly: 1200,
     priceAnnual: 10000,
     icon: Rocket,
-    color: 'text-amber-400',
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/20',
+    color: 'text-warning',
+    bg: 'bg-warning/10',
+    border: 'border-warning/20',
     highlight: false,
     features: [
       '100 Offers per month',
@@ -258,7 +258,7 @@ export default function BusinessSubscriptionsPage() {
         </div>
 
         {successMsg && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold">
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-success/10 border border-success/20 text-success text-sm font-semibold">
             <Check className="h-4 w-4" />
             {successMsg}
           </div>
@@ -269,17 +269,17 @@ export default function BusinessSubscriptionsPage() {
           <Card className={cn(
             'p-5 rounded-2xl border flex items-center justify-between gap-4',
             trialStatus === 'ACTIVE'
-              ? 'bg-cyan-500/5 border-cyan-500/20'
+              ? 'bg-info/5 border-info/20'
               : trialStatus === 'EXPIRED'
-              ? 'bg-rose-500/5 border-rose-500/20'
-              : 'bg-emerald-500/5 border-emerald-500/20',
+              ? 'bg-destructive/5 border-destructive/20'
+              : 'bg-success/5 border-success/20',
           )}>
             <div className="flex items-center gap-3">
               <div className={cn(
                 'p-2.5 rounded-xl',
-                trialStatus === 'ACTIVE' ? 'bg-cyan-500/10' : trialStatus === 'EXPIRED' ? 'bg-rose-500/10' : 'bg-emerald-500/10',
+                trialStatus === 'ACTIVE' ? 'bg-info/10' : trialStatus === 'EXPIRED' ? 'bg-destructive/10' : 'bg-success/10',
               )}>
-                <Timer className={cn('h-5 w-5', trialStatus === 'ACTIVE' ? 'text-cyan-400' : trialStatus === 'EXPIRED' ? 'text-rose-400' : 'text-emerald-400')} />
+                <Timer className={cn('h-5 w-5', trialStatus === 'ACTIVE' ? 'text-info' : trialStatus === 'EXPIRED' ? 'text-destructive' : 'text-success')} />
               </div>
               <div>
                 <p className="font-bold text-foreground text-sm">
@@ -297,9 +297,9 @@ export default function BusinessSubscriptionsPage() {
             </div>
             <span className={cn(
               'text-[11px] font-bold px-3 py-1 rounded-full',
-              trialStatus === 'ACTIVE' && 'bg-cyan-500/15 text-cyan-400',
-              trialStatus === 'EXPIRED' && 'bg-rose-500/15 text-rose-400',
-              trialStatus === 'CONVERTED' && 'bg-emerald-500/15 text-emerald-400',
+              trialStatus === 'ACTIVE' && 'bg-info/15 text-info',
+              trialStatus === 'EXPIRED' && 'bg-destructive/15 text-destructive',
+              trialStatus === 'CONVERTED' && 'bg-success/15 text-success',
             )}>
               {trialStatus === 'ACTIVE' ? 'Active' : trialStatus === 'EXPIRED' ? 'Expired' : 'Converted'}
             </span>
@@ -308,46 +308,46 @@ export default function BusinessSubscriptionsPage() {
 
         {/* ── Introductory Offer Banner ───────────────────────── */}
         {offerMsg && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-sm font-semibold">
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-primary/10 border border-primary/20 text-primary text-sm font-semibold">
             <Gift className="h-4 w-4 shrink-0" />
             {offerMsg}
           </div>
         )}
         {!hasIntroOffer && trialStatus !== 'NOT_STARTED' && (
-          <Card className="p-5 rounded-2xl border border-violet-500/20 bg-violet-500/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <Card className="p-5 rounded-2xl border border-primary/20 bg-primary/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-violet-500/10">
-                <Gift className="h-5 w-5 text-violet-400" />
+              <div className="p-2.5 rounded-xl bg-primary/10">
+                <Gift className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="font-bold text-foreground text-sm">Claim Your Introductory Offer</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Get <span className="text-violet-400 font-bold">20% off</span> your first subscription purchase. One-time offer — applies when billing activates.
+                  Get <span className="text-primary font-bold">20% off</span> your first subscription purchase. One-time offer — applies when billing activates.
                 </p>
               </div>
             </div>
             <Button
               onClick={handleClaimIntroOffer}
               disabled={claimingOffer}
-              className="shrink-0 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold px-4 cursor-pointer"
+              className="shrink-0 rounded-xl bg-primary hover:bg-primary text-white text-xs font-bold px-4 cursor-pointer"
             >
               {claimingOffer ? 'Claiming…' : 'Claim 20% Off'}
             </Button>
           </Card>
         )}
         {hasIntroOffer && (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-violet-500/10 border border-violet-500/20">
-            <Gift className="h-4 w-4 text-violet-400 shrink-0" />
-            <p className="text-sm text-violet-300 font-semibold">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/10 border border-primary/20">
+            <Gift className="h-4 w-4 text-primary shrink-0" />
+            <p className="text-sm text-primary font-semibold">
               🎉 <strong>20% Introductory Discount Available</strong> — applies to your first subscription when billing activates.
             </p>
           </div>
         )}
 
         {/* ── Coming Soon Notice ──────────────────────────────── */}
-        <Card className="p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 flex items-center gap-4">
-          <div className="p-2.5 rounded-xl bg-amber-500/10 shrink-0">
-            <Lock className="h-5 w-5 text-amber-400" />
+        <Card className="p-5 rounded-2xl border border-warning/20 bg-warning/5 flex items-center gap-4">
+          <div className="p-2.5 rounded-xl bg-warning/10 shrink-0">
+            <Lock className="h-5 w-5 text-warning" />
           </div>
           <div>
             <p className="font-bold text-foreground text-sm">Coming Soon</p>
@@ -358,7 +358,7 @@ export default function BusinessSubscriptionsPage() {
         </Card>
 
         {/* ── Current Plan Card ────────────────────────────────── */}
-        <Card className="p-6 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl">
+        <Card className="p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
             <div className="flex items-center gap-4">
               <div className={`p-3 rounded-2xl ${currentPlanDef.bg}`}>
@@ -378,7 +378,7 @@ export default function BusinessSubscriptionsPage() {
               <p className="text-xs text-muted-foreground">
                 ₹{currentPlanDef.priceAnnual.toLocaleString()}/yr
               </p>
-              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
                 ● Active
               </span>
             </div>
@@ -393,13 +393,13 @@ export default function BusinessSubscriptionsPage() {
                 <div key={key}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="text-xs text-muted-foreground capitalize">{key}</span>
-                    <span className={cn('text-xs font-semibold', overLimit ? 'text-rose-400' : 'text-foreground')}>
+                    <span className={cn('text-xs font-semibold', overLimit ? 'text-destructive' : 'text-foreground')}>
                       {used}/{limit || '—'}
                     </span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
                     <div
-                      className={cn('h-full rounded-full transition-all', overLimit ? 'bg-rose-500' : 'bg-primary')}
+                      className={cn('h-full rounded-full transition-all', overLimit ? 'bg-destructive' : 'bg-primary')}
                       style={{ width: `${Math.min(pct, 100)}%` }}
                     />
                   </div>
@@ -411,8 +411,8 @@ export default function BusinessSubscriptionsPage() {
 
         {/* ── Pending Request Banner ───────────────────────────── */}
         {pendingRequest && (
-          <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-            <div className="flex items-center gap-2 text-amber-400 text-sm font-semibold">
+          <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-warning/10 border border-warning/20">
+            <div className="flex items-center gap-2 text-warning text-sm font-semibold">
               <Clock className="h-4 w-4" />
               {pendingRequest.type === 'upgrade' ? 'Upgrade' : 'Downgrade'} to{' '}
               <strong>{getPlanName(pendingRequest.toPlan)}</strong> pending admin approval
@@ -422,7 +422,7 @@ export default function BusinessSubscriptionsPage() {
             </div>
             <button
               onClick={() => handleCancelRequest(pendingRequest.id)}
-              className="text-rose-400 hover:text-rose-300 cursor-pointer"
+              className="text-destructive hover:text-destructive cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -434,7 +434,7 @@ export default function BusinessSubscriptionsPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-base font-bold text-foreground">Available Plans</h2>
             {/* Billing toggle */}
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary border border-border">
               <button
                 onClick={() => setBillingPeriod('monthly')}
                 className={cn(
@@ -458,7 +458,7 @@ export default function BusinessSubscriptionsPage() {
                 Annual
                 <span className={cn(
                   'text-[9px] font-bold px-1.5 py-0.5 rounded-full',
-                  billingPeriod === 'annual' ? 'bg-emerald-500 text-white' : 'bg-emerald-500/20 text-emerald-400',
+                  billingPeriod === 'annual' ? 'bg-success text-white' : 'bg-success/20 text-success',
                 )}>
                   Save
                 </span>
@@ -485,12 +485,12 @@ export default function BusinessSubscriptionsPage() {
                       ? 'border-primary/40 bg-primary/5'
                       : plan.highlight
                       ? `border ${plan.border} ${plan.bg}`
-                      : 'border-white/5 bg-card/40',
+                      : 'border-border bg-card/40',
                   )}
                 >
                   {plan.highlight && !isCurrent && (
                     <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                      <span className="text-[10px] font-bold bg-violet-600 text-white px-2.5 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold bg-primary text-white px-2.5 py-0.5 rounded-full">
                         Most Popular
                       </span>
                     </div>
@@ -521,7 +521,7 @@ export default function BusinessSubscriptionsPage() {
                             ₹{price.toLocaleString()}
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold text-violet-400 bg-violet-500/10 px-1.5 py-0.5 rounded-full">
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
                           {introOfferDiscountPct}% intro discount
                         </span>
                       </>
@@ -545,7 +545,7 @@ export default function BusinessSubscriptionsPage() {
                   <ul className="space-y-1.5 flex-1">
                     {plan.features.map((f) => (
                       <li key={f} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Check className="h-3 w-3 text-emerald-400 shrink-0" />
+                        <Check className="h-3 w-3 text-success shrink-0" />
                         {f}
                       </li>
                     ))}
@@ -556,7 +556,7 @@ export default function BusinessSubscriptionsPage() {
                     size="sm"
                     variant="outline"
                     disabled
-                    className="w-full rounded-xl text-xs border-white/10 text-muted-foreground cursor-not-allowed opacity-60"
+                    className="w-full rounded-xl text-xs border-border text-muted-foreground cursor-not-allowed opacity-60"
                   >
                     <Lock className="h-3.5 w-3.5 mr-1" />
                     Coming Soon
@@ -569,7 +569,7 @@ export default function BusinessSubscriptionsPage() {
 
         {/* ── Request History ──────────────────────────────────── */}
         {requests.length > 0 && (
-          <Card className="p-6 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl">
+          <Card className="p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl">
             <h2 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
               <RefreshCw className="h-4 w-4 text-primary" />
               Request History
@@ -578,13 +578,13 @@ export default function BusinessSubscriptionsPage() {
               {[...requests].reverse().map((req) => (
                 <div
                   key={req.id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5"
+                  className="flex items-center justify-between p-3 rounded-xl bg-secondary border border-border"
                 >
                   <div className="flex items-center gap-3">
                     {req.type === 'upgrade' ? (
-                      <ArrowUpRight className="h-4 w-4 text-emerald-400" />
+                      <ArrowUpRight className="h-4 w-4 text-success" />
                     ) : (
-                      <ArrowDownRight className="h-4 w-4 text-amber-400" />
+                      <ArrowDownRight className="h-4 w-4 text-warning" />
                     )}
                     <div>
                       <p className="text-sm font-semibold text-foreground capitalize">
@@ -598,9 +598,9 @@ export default function BusinessSubscriptionsPage() {
                   <span
                     className={cn(
                       'text-[10px] font-bold px-2 py-0.5 rounded-full',
-                      req.status === 'pending' && 'bg-amber-500/15 text-amber-400',
-                      req.status === 'approved' && 'bg-emerald-500/15 text-emerald-400',
-                      req.status === 'rejected' && 'bg-rose-500/15 text-rose-400',
+                      req.status === 'pending' && 'bg-warning/15 text-warning',
+                      req.status === 'approved' && 'bg-success/15 text-success',
+                      req.status === 'rejected' && 'bg-destructive/15 text-destructive',
                     )}
                   >
                     {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
@@ -615,14 +615,14 @@ export default function BusinessSubscriptionsPage() {
       {/* ── Confirm Modal ─────────────────────────────────────── */}
       {confirmTarget && confirmPlanDef && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-card space-y-4 mx-4">
+          <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card space-y-4 mx-4">
             <h3 className="text-lg font-bold text-foreground">Confirm Request</h3>
             <p className="text-sm text-muted-foreground">
               Request a plan change from{' '}
               <strong className="text-foreground">{getPlanName(currentPlan)}</strong> to{' '}
               <strong className="text-foreground">{getPlanName(confirmTarget)}</strong>?
             </p>
-            <div className="px-3 py-2.5 rounded-xl bg-white/5 border border-white/10">
+            <div className="px-3 py-2.5 rounded-xl bg-secondary border border-border">
               <p className="text-xs text-muted-foreground mb-0.5">New plan pricing</p>
               <p className="text-lg font-extrabold text-foreground">
                 ₹{confirmPlanDef.priceMonthly.toLocaleString()}<span className="text-sm font-normal text-muted-foreground">/mo</span>
@@ -635,7 +635,7 @@ export default function BusinessSubscriptionsPage() {
               <Button
                 onClick={() => setConfirmTarget(null)}
                 variant="outline"
-                className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
+                className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer"
               >
                 Cancel
               </Button>

@@ -25,16 +25,16 @@ interface PendingRequest {
 }
 
 const PLANS = [
-  { id: 'free', name: 'Free', price: 0, color: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20', badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20', features: ['1 listing', '5 offers/mo'], maxListings: 1, maxOffers: 5 },
-  { id: 'starter', name: 'Starter', price: 499, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', badge: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20', features: ['3 listings', '20 offers/mo'], maxListings: 3, maxOffers: 20 },
-  { id: 'growth', name: 'Growth', price: 1299, color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20', badge: 'bg-violet-500/10 text-violet-400 border-violet-500/20', features: ['10 listings', '100 offers/mo'], maxListings: 10, maxOffers: 100, popular: true },
-  { id: 'enterprise', name: 'Enterprise', price: 3999, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20', features: ['Unlimited listings', 'Unlimited offers'], maxListings: -1, maxOffers: -1 },
+  { id: 'free', name: 'Free', price: 0, color: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border', badge: 'bg-muted text-muted-foreground border-border', features: ['1 listing', '5 offers/mo'], maxListings: 1, maxOffers: 5 },
+  { id: 'starter', name: 'Starter', price: 499, color: 'text-info', bg: 'bg-info/10', border: 'border-info/20', badge: 'bg-info/10 text-info border-info/20', features: ['3 listings', '20 offers/mo'], maxListings: 3, maxOffers: 20 },
+  { id: 'growth', name: 'Growth', price: 1299, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', badge: 'bg-primary/10 text-primary border-primary/20', features: ['10 listings', '100 offers/mo'], maxListings: 10, maxOffers: 100, popular: true },
+  { id: 'enterprise', name: 'Enterprise', price: 3999, color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/20', badge: 'bg-warning/10 text-warning border-warning/20', features: ['Unlimited listings', 'Unlimited offers'], maxListings: -1, maxOffers: -1 },
 ];
 
 const STATUS_STYLE: Record<string, string> = {
-  active: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  past_due: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  cancelled: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  active: 'bg-success/10 text-success border-success/20',
+  past_due: 'bg-warning/10 text-warning border-warning/20',
+  cancelled: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 const STATUS_LABEL: Record<string, string> = { active: 'Active', past_due: 'Past Due', cancelled: 'Cancelled' };
 
@@ -136,7 +136,7 @@ export default function SuperAdminSubscriptionsPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/10 w-fit">
+        <div className="flex gap-1 p-1 rounded-xl bg-secondary border border-border w-fit">
           {[
             { id: 'subscribers', label: 'Subscribers' },
             { id: 'requests', label: 'Plan Requests', badge: pendingCount },
@@ -150,7 +150,7 @@ export default function SuperAdminSubscriptionsPage() {
             >
               {tab.label}
               {tab.badge !== undefined && tab.badge > 0 && (
-                <span className="h-4 w-4 rounded-full bg-amber-500 text-[9px] font-bold text-black flex items-center justify-center">{tab.badge}</span>
+                <span className="h-4 w-4 rounded-full bg-warning text-[9px] font-bold text-black flex items-center justify-center">{tab.badge}</span>
               )}
             </button>
           ))}
@@ -158,18 +158,18 @@ export default function SuperAdminSubscriptionsPage() {
 
         {/* Plan Requests Tab */}
         {activeTab === 'requests' && (
-          <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+          <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
             <h3 className="text-base font-bold text-foreground mb-5 flex items-center gap-2">
-              <Bell className="h-4 w-4 text-amber-400" /> Plan Change Requests
+              <Bell className="h-4 w-4 text-warning" /> Plan Change Requests
             </h3>
             {pendingRequests.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground py-8">No plan change requests yet.</p>
             ) : (
               <div className="space-y-3">
                 {[...pendingRequests].reverse().map((req) => (
-                  <div key={req.id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
+                  <div key={req.id} className="flex items-center justify-between p-4 rounded-xl bg-secondary border border-border">
                     <div className="flex items-center gap-3">
-                      {req.type === 'upgrade' ? <ArrowUpRight className="h-5 w-5 text-emerald-400 shrink-0" /> : <ArrowDownRight className="h-5 w-5 text-amber-400 shrink-0" />}
+                      {req.type === 'upgrade' ? <ArrowUpRight className="h-5 w-5 text-success shrink-0" /> : <ArrowDownRight className="h-5 w-5 text-warning shrink-0" />}
                       <div>
                         <p className="text-sm font-semibold text-foreground capitalize">
                           {req.businessName || 'Business'} — {req.type} to {getPlanName(req.toPlan)}
@@ -182,11 +182,11 @@ export default function SuperAdminSubscriptionsPage() {
                     <div className="flex items-center gap-2">
                       {req.status === 'pending' ? (
                         <>
-                          <Button size="sm" onClick={() => handleRejectRequest(req)} variant="outline" className="rounded-lg border-rose-500/20 text-rose-400 hover:bg-rose-500/10 cursor-pointer text-xs h-7 px-3">Reject</Button>
-                          <Button size="sm" onClick={() => handleApproveRequest(req)} className="rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer text-xs h-7 px-3">Approve</Button>
+                          <Button size="sm" onClick={() => handleRejectRequest(req)} variant="outline" className="rounded-lg border-destructive/20 text-destructive hover:bg-destructive/10 cursor-pointer text-xs h-7 px-3">Reject</Button>
+                          <Button size="sm" onClick={() => handleApproveRequest(req)} className="rounded-lg bg-success hover:bg-success text-white cursor-pointer text-xs h-7 px-3">Approve</Button>
                         </>
                       ) : (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${req.status === 'approved' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'}`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${req.status === 'approved' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
                           {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                         </span>
                       )}
@@ -207,14 +207,14 @@ export default function SuperAdminSubscriptionsPage() {
             {/* Stats */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
-                { label: 'Monthly Recurring Revenue', value: `₹${mrr.toLocaleString()}`, icon: DollarSign, color: 'text-emerald-400 bg-emerald-500/10', change: '+12.4% MoM' },
-                { label: 'Active Subscribers', value: activeSubs, icon: Users, color: 'text-violet-400 bg-violet-500/10', change: `${paidSubs} paid plans` },
-                { label: 'Past Due Accounts', value: pastDue, icon: AlertCircle, color: 'text-amber-400 bg-amber-500/10', change: 'Needs attention' },
-                { label: 'Avg Revenue / Business', value: `₹${paidSubs > 0 ? Math.round(mrr / paidSubs).toLocaleString() : 0}`, icon: TrendingUp, color: 'text-cyan-400 bg-cyan-500/10', change: 'Paid subs only' },
+                { label: 'Monthly Recurring Revenue', value: `₹${mrr.toLocaleString()}`, icon: DollarSign, color: 'text-success bg-success/10', change: '+12.4% MoM' },
+                { label: 'Active Subscribers', value: activeSubs, icon: Users, color: 'text-primary bg-primary/10', change: `${paidSubs} paid plans` },
+                { label: 'Past Due Accounts', value: pastDue, icon: AlertCircle, color: 'text-warning bg-warning/10', change: 'Needs attention' },
+                { label: 'Avg Revenue / Business', value: `₹${paidSubs > 0 ? Math.round(mrr / paidSubs).toLocaleString() : 0}`, icon: TrendingUp, color: 'text-info bg-info/10', change: 'Paid subs only' },
               ].map((stat) => {
                 const Icon = stat.icon;
                 return (
-                  <Card key={stat.label} className="p-6 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl relative overflow-hidden group">
+                  <Card key={stat.label} className="p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
                     <div className="flex items-center justify-between mb-3">
                       <div className={`p-2.5 rounded-xl ${stat.color}`}><Icon className="h-4 w-4" /></div>
@@ -229,7 +229,7 @@ export default function SuperAdminSubscriptionsPage() {
 
             {/* Plan Breakdown */}
             <div className="grid lg:grid-cols-12 gap-6">
-              <Card className="lg:col-span-8 p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+              <Card className="lg:col-span-8 p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
                 <h3 className="text-base font-bold text-foreground mb-5">Plan Distribution</h3>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {planBreakdown.map((plan) => {
@@ -239,7 +239,7 @@ export default function SuperAdminSubscriptionsPage() {
                         <div className="flex items-center gap-2">
                           <Icon className={`h-4 w-4 ${plan.color}`} />
                           <span className={`text-xs font-bold ${plan.color}`}>{plan.name}</span>
-                          {(plan as any).popular && <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300">HOT</span>}
+                          {(plan as any).popular && <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/20 text-primary">HOT</span>}
                         </div>
                         <p className="text-2xl font-extrabold text-foreground">{plan.count}</p>
                         <p className="text-[10px] text-muted-foreground">{plan.price === 0 ? 'Free' : `₹${plan.price}/mo`}</p>
@@ -253,13 +253,13 @@ export default function SuperAdminSubscriptionsPage() {
                     {planBreakdown.map((plan) => {
                       const pct = subscribers.length > 0 ? (plan.count / subscribers.length) * 100 : 0;
                       if (pct === 0) return null;
-                      const barColor = plan.id === 'enterprise' ? 'bg-amber-400' : plan.id === 'growth' ? 'bg-violet-400' : plan.id === 'starter' ? 'bg-cyan-400' : 'bg-slate-500';
+                      const barColor = plan.id === 'enterprise' ? 'bg-warning' : plan.id === 'growth' ? 'bg-primary' : plan.id === 'starter' ? 'bg-info' : 'bg-slate-500';
                       return <div key={plan.id} className={`${barColor} rounded-full transition-all`} style={{ width: `${pct}%` }} title={`${plan.name}: ${plan.count}`} />;
                     })}
                   </div>
                 </div>
               </Card>
-              <Card className="lg:col-span-4 p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+              <Card className="lg:col-span-4 p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
                 <h3 className="text-base font-bold text-foreground mb-5">Plan Tiers</h3>
                 <div className="space-y-3">
                   {PLANS.map((plan) => {
@@ -282,19 +282,19 @@ export default function SuperAdminSubscriptionsPage() {
             </div>
 
             {/* Subscriber Table */}
-            <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+            <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
               <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
                 <h3 className="text-base font-bold text-foreground">All Subscribers</h3>
                 <div className="flex gap-2 flex-wrap">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                    <Input placeholder="Search business..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8 h-8 w-44 rounded-lg border-white/10 bg-white/5 text-sm" />
+                    <Input placeholder="Search business..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8 h-8 w-44 rounded-lg border-border bg-secondary text-sm" />
                   </div>
-                  <select value={planFilter} onChange={(e) => setPlanFilter(e.target.value)} className="h-8 rounded-lg border border-white/10 bg-card text-sm text-foreground px-2 cursor-pointer">
+                  <select value={planFilter} onChange={(e) => setPlanFilter(e.target.value)} className="h-8 rounded-lg border border-border bg-card text-sm text-foreground px-2 cursor-pointer">
                     <option value="all">All Plans</option>
                     {PLANS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
-                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-8 rounded-lg border border-white/10 bg-card text-sm text-foreground px-2 cursor-pointer">
+                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-8 rounded-lg border border-border bg-card text-sm text-foreground px-2 cursor-pointer">
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
                     <option value="past_due">Past Due</option>
@@ -305,7 +305,7 @@ export default function SuperAdminSubscriptionsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-white/5 text-muted-foreground text-xs">
+                    <tr className="border-b border-border text-muted-foreground text-xs">
                       <th className="pb-3 text-left font-semibold">Business</th>
                       <th className="pb-3 text-left font-semibold">Plan</th>
                       <th className="pb-3 text-left font-semibold">Status</th>
@@ -318,7 +318,7 @@ export default function SuperAdminSubscriptionsPage() {
                     {filtered.map((biz) => {
                       const plan = PLANS.find((p) => p.id === biz.plan)!;
                       return (
-                        <tr key={biz.id} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors">
+                        <tr key={biz.id} className="border-b border-border hover:bg-foreground/[0.04] transition-colors">
                           <td className="py-3 pr-4">
                             <div className="flex items-center gap-2">
                               <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">{biz.name.charAt(0)}</div>
@@ -342,11 +342,11 @@ export default function SuperAdminSubscriptionsPage() {
                           </td>
                           <td className="py-3">
                             <div className="flex gap-1">
-                              <Button size="sm" variant="outline" onClick={() => { setSelectedBiz(biz); setTargetPlan(biz.plan); setModal('upgrade'); }} className="h-7 rounded-lg border-white/10 text-xs text-slate-300 hover:bg-white/5 cursor-pointer px-2">
+                              <Button size="sm" variant="outline" onClick={() => { setSelectedBiz(biz); setTargetPlan(biz.plan); setModal('upgrade'); }} className="h-7 rounded-lg border-border text-xs text-foreground hover:bg-secondary cursor-pointer px-2">
                                 <ArrowUpRight className="h-3 w-3 mr-1" /> Change
                               </Button>
                               {biz.status !== 'cancelled' && (
-                                <Button size="sm" variant="outline" onClick={() => { setSelectedBiz(biz); setModal('cancel'); }} className="h-7 rounded-lg border-rose-500/20 text-rose-400 hover:bg-rose-500/10 cursor-pointer px-2 text-xs">
+                                <Button size="sm" variant="outline" onClick={() => { setSelectedBiz(biz); setModal('cancel'); }} className="h-7 rounded-lg border-destructive/20 text-destructive hover:bg-destructive/10 cursor-pointer px-2 text-xs">
                                   <X className="h-3 w-3" />
                                 </Button>
                               )}
@@ -367,7 +367,7 @@ export default function SuperAdminSubscriptionsPage() {
       {/* Change Plan Modal */}
       {modal === 'upgrade' && selectedBiz && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl">
+          <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-bold text-foreground">Change Plan — {selectedBiz.name}</h3>
               <button onClick={() => setModal(null)} className="text-muted-foreground hover:text-foreground cursor-pointer"><X className="h-5 w-5" /></button>
@@ -377,20 +377,20 @@ export default function SuperAdminSubscriptionsPage() {
                 const Icon = plan.id === 'enterprise' ? Crown : plan.id === 'growth' ? Sparkles : plan.id === 'starter' ? Zap : Building2;
                 const selected = targetPlan === plan.id;
                 return (
-                  <button key={plan.id} onClick={() => setTargetPlan(plan.id)} className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer ${selected ? `${plan.border} ${plan.bg}` : 'border-white/10 hover:bg-white/5'}`}>
+                  <button key={plan.id} onClick={() => setTargetPlan(plan.id)} className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer ${selected ? `${plan.border} ${plan.bg}` : 'border-border hover:bg-secondary'}`}>
                     <Icon className={`h-4 w-4 ${plan.color} shrink-0`} />
                     <div className="flex-1">
                       <p className={`text-sm font-bold ${selected ? plan.color : 'text-foreground'}`}>{plan.name}</p>
                       <p className="text-[10px] text-muted-foreground">{plan.features.slice(0, 2).join(' · ')}</p>
                     </div>
                     <p className="text-sm font-bold text-foreground shrink-0">{plan.price === 0 ? 'Free' : `₹${plan.price}/mo`}</p>
-                    {selected && <Check className="h-4 w-4 text-emerald-400 shrink-0" />}
+                    {selected && <Check className="h-4 w-4 text-success shrink-0" />}
                   </button>
                 );
               })}
             </div>
             <div className="flex gap-3">
-              <Button onClick={() => setModal(null)} variant="outline" className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">Cancel</Button>
+              <Button onClick={() => setModal(null)} variant="outline" className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer">Cancel</Button>
               <Button onClick={handleChangePlan} disabled={targetPlan === selectedBiz.plan} className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer disabled:opacity-40">Apply Change</Button>
             </div>
           </Card>
@@ -400,15 +400,15 @@ export default function SuperAdminSubscriptionsPage() {
       {/* Cancel Modal */}
       {modal === 'cancel' && selectedBiz && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl text-center">
-            <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4"><AlertCircle className="h-6 w-6" /></div>
+          <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl text-center">
+            <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4"><AlertCircle className="h-6 w-6" /></div>
             <h3 className="text-base font-bold text-foreground mb-2">Cancel Subscription?</h3>
             <p className="text-sm text-muted-foreground mb-6">
               This will cancel the subscription for <span className="font-bold text-foreground">"{selectedBiz.name}"</span>.
             </p>
             <div className="flex gap-3 justify-center">
-              <Button onClick={() => setModal(null)} variant="outline" className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">Keep</Button>
-              <Button onClick={handleCancel} className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white cursor-pointer">Cancel Sub</Button>
+              <Button onClick={() => setModal(null)} variant="outline" className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer">Keep</Button>
+              <Button onClick={handleCancel} className="flex-1 rounded-xl bg-destructive hover:bg-destructive text-white cursor-pointer">Cancel Sub</Button>
             </div>
           </Card>
         </div>

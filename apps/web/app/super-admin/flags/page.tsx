@@ -107,15 +107,15 @@ export default function SuperAdminFlagsPage() {
               {items.map((flag) => (
                 <Card
                   key={flag.key}
-                  className="p-5 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+                  className="p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-4">
                       <div
                         className={`p-2.5 rounded-xl h-10 w-10 flex items-center justify-center shrink-0 ${
                           flag.enabled
-                            ? 'bg-emerald-500/10 text-emerald-400'
-                            : 'bg-slate-500/10 text-slate-400'
+                            ? 'bg-success/10 text-success'
+                            : 'bg-muted text-muted-foreground'
                         }`}
                       >
                         <Flag className="h-4 w-4" />
@@ -131,7 +131,7 @@ export default function SuperAdminFlagsPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm border-t sm:border-t-0 pt-3 sm:pt-0 border-white/5">
+                    <div className="flex items-center gap-4 text-sm border-t sm:border-t-0 pt-3 sm:pt-0 border-border">
                       <div className="text-right">
                         <p className="text-[10px] text-muted-foreground">Rollout</p>
                         <p className="font-bold text-foreground text-sm mt-0.5">{flag.rollout}</p>
@@ -139,8 +139,8 @@ export default function SuperAdminFlagsPage() {
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
                           flag.enabled
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : 'bg-white/5 text-muted-foreground border border-white/10'
+                            ? 'bg-success/10 text-success border border-success/20'
+                            : 'bg-secondary text-muted-foreground border border-border'
                         }`}
                       >
                         {flag.enabled ? 'Enabled' : 'Disabled'}

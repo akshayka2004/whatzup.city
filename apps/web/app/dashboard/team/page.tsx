@@ -16,13 +16,13 @@ import { canAccess } from '@/lib/rbac';
 import { useAuth } from '@/hooks/use-auth';
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
-  OWNER: { label: 'Owner', color: 'text-violet-400', bg: 'bg-violet-500/10', icon: ShieldCheck },
-  BUSINESS_OWNER: { label: 'Owner', color: 'text-violet-400', bg: 'bg-violet-500/10', icon: ShieldCheck },
-  BUSINESS_ADMIN: { label: 'Owner', color: 'text-violet-400', bg: 'bg-violet-500/10', icon: ShieldCheck },
-  MODERATOR: { label: 'Moderator', color: 'text-amber-400', bg: 'bg-amber-500/10', icon: Shield },
-  BUSINESS_MODERATOR: { label: 'Moderator', color: 'text-amber-400', bg: 'bg-amber-500/10', icon: Shield },
-  STAFF: { label: 'Staff', color: 'text-slate-400', bg: 'bg-slate-500/10', icon: Store },
-  BUSINESS_STAFF: { label: 'Staff', color: 'text-slate-400', bg: 'bg-slate-500/10', icon: Store },
+  OWNER: { label: 'Owner', color: 'text-primary', bg: 'bg-primary/10', icon: ShieldCheck },
+  BUSINESS_OWNER: { label: 'Owner', color: 'text-primary', bg: 'bg-primary/10', icon: ShieldCheck },
+  BUSINESS_ADMIN: { label: 'Owner', color: 'text-primary', bg: 'bg-primary/10', icon: ShieldCheck },
+  MODERATOR: { label: 'Moderator', color: 'text-warning', bg: 'bg-warning/10', icon: Shield },
+  BUSINESS_MODERATOR: { label: 'Moderator', color: 'text-warning', bg: 'bg-warning/10', icon: Shield },
+  STAFF: { label: 'Staff', color: 'text-muted-foreground', bg: 'bg-muted', icon: Store },
+  BUSINESS_STAFF: { label: 'Staff', color: 'text-muted-foreground', bg: 'bg-muted', icon: Store },
 };
 
 interface TeamMember {
@@ -106,8 +106,8 @@ export default function TeamManagementPage() {
     return (
       <BusinessLayout>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
-          <div className="h-14 w-14 rounded-full bg-rose-500/10 flex items-center justify-center">
-            <AlertTriangle className="h-7 w-7 text-rose-400" />
+          <div className="h-14 w-14 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertTriangle className="h-7 w-7 text-destructive" />
           </div>
           <h2 className="text-lg font-semibold text-foreground">Access Restricted</h2>
           <p className="text-sm text-muted-foreground text-center max-w-xs">
@@ -206,7 +206,7 @@ export default function TeamManagementPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <UserCog className="h-6 w-6 text-violet-400" />
+              <UserCog className="h-6 w-6 text-primary" />
               Team Management
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -215,7 +215,7 @@ export default function TeamManagementPage() {
           </div>
           <Button
             onClick={openCreateModal}
-            className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white gap-2 cursor-pointer"
+            className="rounded-xl bg-primary hover:bg-primary text-white gap-2 cursor-pointer"
           >
             <UserPlus className="h-4 w-4" />
             Create Account
@@ -231,7 +231,7 @@ export default function TeamManagementPage() {
           ].map((stat) => {
             const cfg = ROLE_CONFIG[stat.role];
             return (
-              <Card key={stat.label} className="p-4 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl text-center">
+              <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl text-center">
                 <div className={cn('h-8 w-8 rounded-lg flex items-center justify-center mx-auto mb-2', cfg.bg)}>
                   <cfg.icon className={cn('h-4 w-4', cfg.color)} />
                 </div>
@@ -250,7 +250,7 @@ export default function TeamManagementPage() {
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : team.length === 0 ? (
-            <Card className="p-8 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+            <Card className="p-8 rounded-2xl border-dashed border-border bg-secondary text-center">
               <UserCog className="h-8 w-8 mx-auto text-muted-foreground mb-2 opacity-40" />
               <p className="text-foreground font-semibold text-sm mb-1">No team members yet</p>
               <p className="text-xs text-muted-foreground">Create an account using the button above.</p>
@@ -260,7 +260,7 @@ export default function TeamManagementPage() {
             const cfg = ROLE_CONFIG[member.role] || ROLE_CONFIG.STAFF;
             const isOwner = ['OWNER', 'BUSINESS_OWNER', 'BUSINESS_ADMIN'].includes(member.role);
             return (
-              <Card key={member.id} className="p-4 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all">
+              <Card key={member.id} className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn('h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0', cfg.bg, cfg.color)}>
@@ -276,8 +276,8 @@ export default function TeamManagementPage() {
                         <span className={cn(
                           'text-[10px] px-1.5 py-0.5 rounded-full font-medium',
                           member.isActive
-                            ? 'bg-emerald-500/10 text-emerald-400'
-                            : 'bg-rose-500/10 text-rose-400',
+                            ? 'bg-success/10 text-success'
+                            : 'bg-destructive/10 text-destructive',
                         )}>
                           {member.isActive ? 'Active' : 'Disabled'}
                         </span>
@@ -300,7 +300,7 @@ export default function TeamManagementPage() {
                           size="sm"
                           title="Edit member"
                           onClick={() => openEdit(member)}
-                          className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-violet-400 hover:bg-violet-500/10 cursor-pointer"
+                          className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 cursor-pointer"
                         >
                           <Edit2 className="h-3.5 w-3.5" />
                         </Button>
@@ -309,7 +309,7 @@ export default function TeamManagementPage() {
                           size="sm"
                           title="Reset password"
                           onClick={() => openReset(member)}
-                          className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-cyan-400 hover:bg-cyan-500/10 cursor-pointer"
+                          className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-info hover:bg-info/10 cursor-pointer"
                         >
                           <Lock className="h-3.5 w-3.5" />
                         </Button>
@@ -321,8 +321,8 @@ export default function TeamManagementPage() {
                           className={cn(
                             'h-8 w-8 p-0 rounded-xl cursor-pointer',
                             member.isActive
-                              ? 'text-muted-foreground hover:text-amber-400 hover:bg-amber-500/10'
-                              : 'text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10',
+                              ? 'text-muted-foreground hover:text-warning hover:bg-warning/10'
+                              : 'text-muted-foreground hover:text-success hover:bg-success/10',
                           )}
                         >
                           {member.isActive ? (
@@ -336,14 +336,14 @@ export default function TeamManagementPage() {
                           size="sm"
                           title="Remove member"
                           onClick={() => setConfirmRemove(member)}
-                          className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+                          className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </>
                     )}
                     {isOwner && (
-                      <span className="text-[10px] text-muted-foreground px-2 py-1 rounded-lg border border-white/5">You</span>
+                      <span className="text-[10px] text-muted-foreground px-2 py-1 rounded-lg border border-border">You</span>
                     )}
                   </div>
                 </div>
@@ -355,10 +355,10 @@ export default function TeamManagementPage() {
         {/* ── CREATE MODAL ────────────────────────────────────── */}
         {showCreateModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl overflow-y-auto max-h-[90vh]">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <UserPlus className="h-4 w-4 text-violet-400" />
+                  <UserPlus className="h-4 w-4 text-primary" />
                   Create Team Account
                 </h3>
                 <button onClick={() => setShowCreateModal(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
@@ -369,29 +369,29 @@ export default function TeamManagementPage() {
                 Set up login credentials for your team member. Share the credentials after creation.
               </p>
               {createError && (
-                <p className="mb-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">{createError}</p>
+                <p className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">{createError}</p>
               )}
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Full Name</label>
-                  <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Jane Doe" className="rounded-xl border-white/10 bg-white/5 text-sm" />
+                  <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Jane Doe" className="rounded-xl border-border bg-secondary text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Email Address</label>
-                  <Input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="jane@yourbusiness.com" className="rounded-xl border-white/10 bg-white/5 text-sm" />
+                  <Input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="jane@yourbusiness.com" className="rounded-xl border-border bg-secondary text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Password</label>
                   <div className="flex gap-2">
-                    <Input value={formPassword} onChange={(e) => setFormPassword(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-sm font-mono" />
-                    <Button type="button" onClick={() => setFormPassword(generatePassword())} variant="outline" size="sm" className="rounded-xl border-white/10 cursor-pointer" title="Regenerate">
+                    <Input value={formPassword} onChange={(e) => setFormPassword(e.target.value)} className="rounded-xl border-border bg-secondary text-sm font-mono" />
+                    <Button type="button" onClick={() => setFormPassword(generatePassword())} variant="outline" size="sm" className="rounded-xl border-border cursor-pointer" title="Regenerate">
                       <Key className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Phone (optional)</label>
-                  <Input value={formPhone} onChange={(e) => setFormPhone(e.target.value)} placeholder="+91 91234 56789" className="rounded-xl border-white/10 bg-white/5 text-sm" />
+                  <Input value={formPhone} onChange={(e) => setFormPhone(e.target.value)} placeholder="+91 91234 56789" className="rounded-xl border-border bg-secondary text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Role</label>
@@ -401,7 +401,7 @@ export default function TeamManagementPage() {
                       return (
                         <button key={role} type="button" onClick={() => setFormRole(role)}
                           className={cn('flex flex-col items-start p-3 rounded-xl border transition-all text-left cursor-pointer',
-                            formRole === role ? 'border-violet-500/50 bg-violet-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10')}>
+                            formRole === role ? 'border-primary/50 bg-primary/10' : 'border-border bg-secondary hover:bg-secondary')}>
                           <div className="flex items-center gap-1.5 mb-1.5">
                             <cfg.icon className={cn('h-3.5 w-3.5', cfg.color)} />
                             <span className={cn('text-xs font-semibold', cfg.color)}>{cfg.label}</span>
@@ -415,7 +415,7 @@ export default function TeamManagementPage() {
                   </div>
                 </div>
                 <Button onClick={handleCreate} disabled={!formName || !formEmail || !formPassword || creating}
-                  className="w-full rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold gap-2 cursor-pointer">
+                  className="w-full rounded-xl bg-primary hover:bg-primary text-white text-sm font-semibold gap-2 cursor-pointer">
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserPlus className="h-4 w-4" /> Create Account</>}
                 </Button>
               </div>
@@ -426,10 +426,10 @@ export default function TeamManagementPage() {
         {/* ── EDIT MODAL ──────────────────────────────────────── */}
         {editingMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl overflow-y-auto max-h-[90vh]">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <Edit2 className="h-4 w-4 text-violet-400" />
+                  <Edit2 className="h-4 w-4 text-primary" />
                   Edit Team Member
                 </h3>
                 <button onClick={() => setEditingMember(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
@@ -437,20 +437,20 @@ export default function TeamManagementPage() {
                 </button>
               </div>
               {editError && (
-                <p className="mb-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">{editError}</p>
+                <p className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">{editError}</p>
               )}
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Full Name</label>
-                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-sm" />
+                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="rounded-xl border-border bg-secondary text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Email Address</label>
-                  <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-sm" />
+                  <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="rounded-xl border-border bg-secondary text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Phone (optional)</label>
-                  <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="Leave blank to keep current" className="rounded-xl border-white/10 bg-white/5 text-sm" />
+                  <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="Leave blank to keep current" className="rounded-xl border-border bg-secondary text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Role</label>
@@ -460,7 +460,7 @@ export default function TeamManagementPage() {
                       return (
                         <button key={role} type="button" onClick={() => setEditRole(role)}
                           className={cn('flex flex-col items-start p-3 rounded-xl border transition-all text-left cursor-pointer',
-                            editRole === role ? 'border-violet-500/50 bg-violet-500/10' : 'border-white/10 bg-white/5 hover:bg-white/10')}>
+                            editRole === role ? 'border-primary/50 bg-primary/10' : 'border-border bg-secondary hover:bg-secondary')}>
                           <div className="flex items-center gap-1.5 mb-1.5">
                             <cfg.icon className={cn('h-3.5 w-3.5', cfg.color)} />
                             <span className={cn('text-xs font-semibold', cfg.color)}>{cfg.label}</span>
@@ -474,8 +474,8 @@ export default function TeamManagementPage() {
                   </div>
                 </div>
                 <div className="flex gap-2 pt-1">
-                  <Button variant="outline" onClick={() => setEditingMember(null)} className="flex-1 rounded-xl border-white/10 cursor-pointer">Cancel</Button>
-                  <Button onClick={handleEdit} disabled={editSaving} className="flex-1 rounded-xl bg-violet-600 hover:bg-violet-500 text-white cursor-pointer">
+                  <Button variant="outline" onClick={() => setEditingMember(null)} className="flex-1 rounded-xl border-border cursor-pointer">Cancel</Button>
+                  <Button onClick={handleEdit} disabled={editSaving} className="flex-1 rounded-xl bg-primary hover:bg-primary text-white cursor-pointer">
                     {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
                   </Button>
                 </div>
@@ -487,10 +487,10 @@ export default function TeamManagementPage() {
         {/* ── RESET PASSWORD MODAL ─────────────────────────────── */}
         {resetMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <Lock className="h-4 w-4 text-cyan-400" />
+                  <Lock className="h-4 w-4 text-info" />
                   Reset Password
                 </h3>
                 <button onClick={() => setResetMember(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
@@ -502,21 +502,21 @@ export default function TeamManagementPage() {
                 Their current sessions will be invalidated.
               </p>
               {resetError && (
-                <p className="mb-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">{resetError}</p>
+                <p className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">{resetError}</p>
               )}
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">New Password</label>
                   <div className="flex gap-2">
-                    <Input value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-sm font-mono" />
-                    <Button type="button" onClick={() => setResetPassword(generatePassword())} variant="outline" size="sm" className="rounded-xl border-white/10 cursor-pointer">
+                    <Input value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} className="rounded-xl border-border bg-secondary text-sm font-mono" />
+                    <Button type="button" onClick={() => setResetPassword(generatePassword())} variant="outline" size="sm" className="rounded-xl border-border cursor-pointer">
                       <Key className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setResetMember(null)} className="flex-1 rounded-xl border-white/10 cursor-pointer">Cancel</Button>
-                  <Button onClick={handleReset} disabled={resetSaving || !resetPassword} className="flex-1 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer">
+                  <Button variant="outline" onClick={() => setResetMember(null)} className="flex-1 rounded-xl border-border cursor-pointer">Cancel</Button>
+                  <Button onClick={handleReset} disabled={resetSaving || !resetPassword} className="flex-1 rounded-xl bg-info hover:bg-info text-white cursor-pointer">
                     {resetSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reset'}
                   </Button>
                 </div>
@@ -528,9 +528,9 @@ export default function TeamManagementPage() {
         {/* ── CREATED CREDENTIALS DISPLAY ─────────────────────── */}
         {createdCredentials && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-emerald-500/20 bg-zinc-900 shadow-2xl">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-success/20 bg-card shadow-2xl">
               <div className="flex items-center gap-2 mb-4">
-                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                <CheckCircle2 className="h-5 w-5 text-success" />
                 <h3 className="text-base font-bold text-foreground">Credentials Ready</h3>
               </div>
               <p className="text-xs text-muted-foreground mb-4">
@@ -538,22 +538,22 @@ export default function TeamManagementPage() {
                 Copy them now — the password will not be shown again.
               </p>
               <div className="space-y-2 mb-4">
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                <div className="bg-secondary border border-border rounded-lg p-3">
                   <p className="text-[10px] text-muted-foreground uppercase mb-0.5">Email</p>
                   <p className="text-sm font-mono text-foreground">{createdCredentials.email}</p>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                <div className="bg-secondary border border-border rounded-lg p-3">
                   <p className="text-[10px] text-muted-foreground uppercase mb-0.5">Password</p>
                   <p className="text-sm font-mono text-foreground">{createdCredentials.password}</p>
                 </div>
               </div>
               <div className="flex gap-2">
                 <Button onClick={() => copyAll(createdCredentials)} variant="outline"
-                  className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 gap-2 cursor-pointer">
+                  className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary gap-2 cursor-pointer">
                   <Copy className="h-3.5 w-3.5" /> Copy All
                 </Button>
                 <Button onClick={() => setCreatedCredentials(null)}
-                  className="flex-1 rounded-xl bg-violet-600 hover:bg-violet-500 text-white cursor-pointer">
+                  className="flex-1 rounded-xl bg-primary hover:bg-primary text-white cursor-pointer">
                   Done
                 </Button>
               </div>
@@ -564,9 +564,9 @@ export default function TeamManagementPage() {
         {/* ── REMOVE CONFIRM ──────────────────────────────────── */}
         {confirmRemove && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-xs p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl text-center">
-              <div className="h-12 w-12 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="h-6 w-6 text-rose-400" />
+            <Card className="w-full max-w-xs p-6 rounded-2xl border-border bg-card shadow-2xl text-center">
+              <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="h-6 w-6 text-destructive" />
               </div>
               <h3 className="text-base font-bold text-foreground mb-2">Remove Member</h3>
               <p className="text-xs text-muted-foreground mb-5">
@@ -574,8 +574,8 @@ export default function TeamManagementPage() {
                 access immediately.
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setConfirmRemove(null)} className="flex-1 rounded-xl border-white/10 text-sm cursor-pointer">Cancel</Button>
-                <Button onClick={() => handleRemove(confirmRemove)} className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm cursor-pointer">Remove</Button>
+                <Button variant="outline" onClick={() => setConfirmRemove(null)} className="flex-1 rounded-xl border-border text-sm cursor-pointer">Cancel</Button>
+                <Button onClick={() => handleRemove(confirmRemove)} className="flex-1 rounded-xl bg-destructive hover:bg-destructive text-white text-sm cursor-pointer">Remove</Button>
               </div>
             </Card>
           </div>

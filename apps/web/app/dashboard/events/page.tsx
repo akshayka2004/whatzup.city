@@ -136,12 +136,12 @@ export default function DashboardEventsPage() {
                   </div>
                   <div className="flex gap-1 shrink-0">
                     <Button onClick={() => openEdit(ev)} variant="outline" size="icon" className="h-8 w-8 rounded-lg border-border cursor-pointer"><Edit className="h-3.5 w-3.5" /></Button>
-                    <Button onClick={() => remove(ev)} variant="outline" size="icon" className="h-8 w-8 rounded-lg border-rose-500/30 text-rose-400 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></Button>
+                    <Button onClick={() => remove(ev)} variant="outline" size="icon" className="h-8 w-8 rounded-lg border-destructive/30 text-destructive cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
                 </div>
                 <div className="flex gap-3 mt-3">
                   <span className="inline-flex items-center gap-1 text-xs text-foreground"><ExternalLink className="h-3.5 w-3.5 text-primary" /> {ev.registrationClicks ?? 0} registrations</span>
-                  <span className="inline-flex items-center gap-1 text-xs text-foreground"><Ticket className="h-3.5 w-3.5 text-emerald-400" /> {ev.ticketClicks ?? 0} ticket clicks</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-foreground"><Ticket className="h-3.5 w-3.5 text-success" /> {ev.ticketClicks ?? 0} ticket clicks</span>
                 </div>
               </Card>
             ))}
@@ -185,7 +185,7 @@ export default function DashboardEventsPage() {
                 </div>
               </div>
 
-              {err && <p className="text-xs text-rose-400">{err}</p>}
+              {err && <p className="text-xs text-destructive">{err}</p>}
             </div>
 
             <div className="flex justify-end gap-2 mt-5">

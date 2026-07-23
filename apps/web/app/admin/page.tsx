@@ -115,7 +115,7 @@ export default function AdminDashboardPage() {
       value: loading ? '…' : pendingCount.toLocaleString(),
       change: 'Awaiting review',
       icon: CheckSquare,
-      color: 'text-blue-500 bg-blue-500/10',
+      color: 'text-info bg-info/10',
       href: '/admin/approvals',
     },
     {
@@ -123,7 +123,7 @@ export default function AdminDashboardPage() {
       value: loading ? '…' : businessCount.toLocaleString(),
       change: 'Approved listings',
       icon: Users,
-      color: 'text-purple-500 bg-purple-500/10',
+      color: 'text-primary bg-primary/10',
       href: null,
     },
     {
@@ -131,7 +131,7 @@ export default function AdminDashboardPage() {
       value: loading ? '…' : (funnelData?.businessFunnel?.started ?? 0).toLocaleString(),
       change: `${funnelData?.businessFunnel?.approved ?? 0} approved`,
       icon: Sparkles,
-      color: 'text-emerald-500 bg-emerald-500/10',
+      color: 'text-success bg-success/10',
       href: '/admin/approvals',
     },
     {
@@ -139,7 +139,7 @@ export default function AdminDashboardPage() {
       value: loading ? '…' : successRate,
       change: 'Approve / (approve+reject)',
       icon: TrendingUp,
-      color: 'text-cyan-500 bg-cyan-500/10',
+      color: 'text-info bg-info/10',
       href: null,
     },
     {
@@ -147,7 +147,7 @@ export default function AdminDashboardPage() {
       value: loading ? '…' : (auditLogs.length > 0 ? auditLogs.length + '+' : '0'),
       change: 'Recent actions',
       icon: ShieldAlert,
-      color: 'text-rose-500 bg-rose-500/10',
+      color: 'text-destructive bg-destructive/10',
       href: '/admin/audit',
     },
     {
@@ -155,7 +155,7 @@ export default function AdminDashboardPage() {
       value: loading ? '…' : (overviewData?.totalOfferCustomers ?? 0).toLocaleString(),
       change: 'Users who claimed offers',
       icon: AlertTriangle,
-      color: 'text-amber-500 bg-amber-500/10',
+      color: 'text-warning bg-warning/10',
       href: null,
     },
   ];
@@ -237,7 +237,7 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
                 {successRate !== '—' && (
-                  <div className="flex items-center gap-2 text-xs font-semibold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-success bg-success/10 px-3 py-1 rounded-full">
                     <TrendingUp className="h-3.5 w-3.5" />
                     {successRate} approval rate
                   </div>

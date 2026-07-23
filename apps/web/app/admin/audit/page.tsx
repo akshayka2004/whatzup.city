@@ -51,13 +51,13 @@ const CATEGORY_CONFIG: Record<
   EventCategory,
   { label: string; color: string; bg: string; border: string; icon: React.ElementType }
 > = {
-  BILL: { label: 'Bill', color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', icon: Receipt },
-  OFFER: { label: 'Offer', color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20', icon: Tag },
-  BUSINESS: { label: 'Business', color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: Building2 },
-  USER: { label: 'User', color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: UserCheck },
-  MODERATION: { label: 'Moderation', color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', icon: ShieldAlert },
-  SYSTEM: { label: 'System', color: 'text-slate-400', bg: 'bg-white/5', border: 'border-white/10', icon: Settings },
-  NOTICE: { label: 'Notice', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Bell },
+  BILL: { label: 'Bill', color: 'text-info', bg: 'bg-info/10', border: 'border-info/20', icon: Receipt },
+  OFFER: { label: 'Offer', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', icon: Tag },
+  BUSINESS: { label: 'Business', color: 'text-success', bg: 'bg-success/10', border: 'border-success/20', icon: Building2 },
+  USER: { label: 'User', color: 'text-info', bg: 'bg-info/10', border: 'border-info/20', icon: UserCheck },
+  MODERATION: { label: 'Moderation', color: 'text-destructive', bg: 'bg-destructive/10', border: 'border-destructive/20', icon: ShieldAlert },
+  SYSTEM: { label: 'System', color: 'text-muted-foreground', bg: 'bg-secondary', border: 'border-border', icon: Settings },
+  NOTICE: { label: 'Notice', color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/20', icon: Bell },
 };
 
 interface AuditLogEntry {
@@ -165,7 +165,7 @@ export default function AdminAuditPage() {
           <Button
             onClick={handleExport}
             variant="outline"
-            className="rounded-xl border-white/10 text-foreground hover:bg-white/5 gap-2 cursor-pointer shrink-0"
+            className="rounded-xl border-border text-foreground hover:bg-secondary gap-2 cursor-pointer shrink-0"
           >
             <Download className="h-4 w-4" />
             Export CSV
@@ -182,11 +182,11 @@ export default function AdminAuditPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: 'Total Events', value: allLogs.length, color: 'text-foreground' },
-            { label: 'Bill Events', value: allLogs.filter((l) => l.category === 'BILL').length, color: 'text-cyan-400' },
-            { label: 'Moderation', value: allLogs.filter((l) => l.category === 'MODERATION').length, color: 'text-rose-400' },
-            { label: 'Business Events', value: allLogs.filter((l) => l.category === 'BUSINESS').length, color: 'text-emerald-400' },
+            { label: 'Bill Events', value: allLogs.filter((l) => l.category === 'BILL').length, color: 'text-info' },
+            { label: 'Moderation', value: allLogs.filter((l) => l.category === 'MODERATION').length, color: 'text-destructive' },
+            { label: 'Business Events', value: allLogs.filter((l) => l.category === 'BUSINESS').length, color: 'text-success' },
           ].map((stat) => (
-            <Card key={stat.label} className="p-4 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+            <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
               <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
               <p className={cn('text-2xl font-bold', stat.color)}>{stat.value}</p>
             </Card>
@@ -202,7 +202,7 @@ export default function AdminAuditPage() {
               placeholder="Search actions, users, details..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="pl-8 h-9 rounded-xl border-white/10 bg-card/40 text-sm"
+              className="pl-8 h-9 rounded-xl border-border bg-card/40 text-sm"
             />
           </div>
 
@@ -216,7 +216,7 @@ export default function AdminAuditPage() {
                   'px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer',
                   filterCategory === opt.value
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10 border border-white/5',
+                    : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary border border-border',
                 )}
               >
                 {opt.label}
@@ -225,7 +225,7 @@ export default function AdminAuditPage() {
             {(search || filterCategory !== 'ALL') && (
               <button
                 onClick={resetFilters}
-                className="px-3 py-1.5 rounded-xl text-xs font-medium text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/15 transition-all cursor-pointer flex items-center gap-1"
+                className="px-3 py-1.5 rounded-xl text-xs font-medium text-destructive bg-destructive/10 border border-destructive/20 hover:bg-destructive/15 transition-all cursor-pointer flex items-center gap-1"
               >
                 <RefreshCw className="h-3 w-3" /> Reset
               </button>
@@ -239,11 +239,11 @@ export default function AdminAuditPage() {
         </p>
 
         {/* Table */}
-        <Card className="p-0 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden">
+        <Card className="p-0 rounded-2xl border-border bg-card/40 backdrop-blur-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-left text-muted-foreground bg-white/[0.02]">
+                <tr className="border-b border-border text-left text-muted-foreground bg-secondary">
                   <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Timestamp</th>
                   <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider">User / Operator</th>
                   <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Category</th>
@@ -265,7 +265,7 @@ export default function AdminAuditPage() {
                     return (
                       <tr
                         key={log.id}
-                        className="border-b border-white/5 last:border-0 hover:bg-white/[0.03] transition-colors"
+                        className="border-b border-border last:border-0 hover:bg-foreground/[0.04] transition-colors"
                       >
                         <td className="px-5 py-3.5 text-muted-foreground font-mono text-xs whitespace-nowrap">
                           {log.date}
@@ -287,11 +287,11 @@ export default function AdminAuditPage() {
                           </span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] font-mono font-bold text-slate-300 whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded bg-secondary border border-border text-[10px] font-mono font-bold text-foreground whitespace-nowrap">
                             {log.action}
                           </span>
                         </td>
-                        <td className="px-5 py-3.5 text-slate-300 text-xs max-w-[300px]">
+                        <td className="px-5 py-3.5 text-foreground text-xs max-w-[300px]">
                           <span className="line-clamp-2">{log.details}</span>
                         </td>
                       </tr>
@@ -315,7 +315,7 @@ export default function AdminAuditPage() {
                 size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 text-xs disabled:opacity-40 cursor-pointer"
+                className="rounded-xl border-border text-foreground hover:bg-secondary text-xs disabled:opacity-40 cursor-pointer"
               >
                 Previous
               </Button>
@@ -324,7 +324,7 @@ export default function AdminAuditPage() {
                 size="sm"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 text-xs disabled:opacity-40 cursor-pointer"
+                className="rounded-xl border-border text-foreground hover:bg-secondary text-xs disabled:opacity-40 cursor-pointer"
               >
                 Next
               </Button>

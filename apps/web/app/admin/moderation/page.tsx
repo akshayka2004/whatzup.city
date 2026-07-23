@@ -13,9 +13,9 @@ const initialViolators = [
 ];
 
 const severityColors: Record<string, string> = {
-  High: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
-  Medium: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
-  Low: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+  High: 'bg-destructive/10 text-destructive border border-destructive/20',
+  Medium: 'bg-warning/10 text-warning border border-warning/20',
+  Low: 'bg-info/10 text-info border border-info/20',
 };
 
 export default function ModerationPage() {
@@ -45,8 +45,8 @@ export default function ModerationPage() {
 
         <div className="space-y-4">
           {violators.length === 0 ? (
-            <Card className="p-8 text-center border-dashed border-white/10 bg-white/5">
-              <Check className="mx-auto h-12 w-12 text-emerald-400 mb-3" />
+            <Card className="p-8 text-center border-dashed border-border bg-secondary">
+              <Check className="mx-auto h-12 w-12 text-success mb-3" />
               <h3 className="text-lg font-bold text-foreground mb-1">Queue Clear</h3>
               <p className="text-sm text-muted-foreground">All flagged user accounts moderated.</p>
             </Card>
@@ -54,12 +54,12 @@ export default function ModerationPage() {
             violators.map((violator) => (
               <Card
                 key={violator.id}
-                className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:shadow-md transition-all duration-300 relative overflow-hidden group"
+                className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all duration-300 relative overflow-hidden group"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4 flex-1">
-                    <div className="rounded-xl bg-white/5 p-3 text-slate-300 border border-white/5">
+                    <div className="rounded-xl bg-secondary p-3 text-foreground border border-border">
                       <User className="h-5 w-5" />
                     </div>
                     <div>
@@ -82,7 +82,7 @@ export default function ModerationPage() {
                       onClick={() => setPardoningUser(violator)}
                       size="icon"
                       variant="outline"
-                      className="rounded-xl border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 h-9 w-9"
+                      className="rounded-xl border-success/20 text-success hover:bg-success/10 hover:text-success h-9 w-9"
                     >
                       <CheckCircle className="h-4 w-4" />
                     </Button>
@@ -90,7 +90,7 @@ export default function ModerationPage() {
                       onClick={() => setBanningUser(violator)}
                       size="icon"
                       variant="outline"
-                      className="rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 h-9 w-9"
+                      className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9"
                     >
                       <XCircle className="h-4 w-4" />
                     </Button>
@@ -104,14 +104,14 @@ export default function ModerationPage() {
         {/* ── PARDON USER MODAL ────────────────────────────────────── */}
         {pardoningUser && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
               <button
                 onClick={() => setPardoningUser(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
-              <div className="mx-auto w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-success/10 flex items-center justify-center text-success mb-4">
                 <CheckCircle className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Pardon Flagged User</h3>
@@ -124,13 +124,13 @@ export default function ModerationPage() {
                 <Button
                   onClick={() => setPardoningUser(null)}
                   variant="outline"
-                  className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 px-4"
+                  className="rounded-xl border-border hover:bg-secondary text-foreground px-4"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handlePardon}
-                  className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white px-4"
+                  className="rounded-xl bg-success hover:bg-success text-white px-4"
                 >
                   Dismiss Flags
                 </Button>
@@ -142,14 +142,14 @@ export default function ModerationPage() {
         {/* ── BAN USER MODAL ───────────────────────────────────────── */}
         {banningUser && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
               <button
                 onClick={() => setBanningUser(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
-              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <ShieldAlert className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Ban User Account</h3>
@@ -162,13 +162,13 @@ export default function ModerationPage() {
                 <Button
                   onClick={() => setBanningUser(null)}
                   variant="outline"
-                  className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 px-4"
+                  className="rounded-xl border-border hover:bg-secondary text-foreground px-4"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleBan}
-                  className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4"
+                  className="rounded-xl bg-destructive hover:bg-destructive text-white px-4"
                 >
                   Ban User
                 </Button>

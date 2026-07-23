@@ -32,8 +32,8 @@ function InitialsAvatar({ name, type }: { name: string; type: 'business' | 'indi
       className={cn(
         'h-9 w-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0',
         type === 'business'
-          ? 'bg-cyan-500/20 text-cyan-300'
-          : 'bg-violet-500/20 text-violet-300',
+          ? 'bg-info/20 text-info'
+          : 'bg-primary/20 text-primary',
       )}
     >
       {initials}
@@ -128,7 +128,7 @@ export default function AdminRegistrationsPage() {
             onClick={fetchData}
             variant="outline"
             size="sm"
-            className="rounded-xl border-white/10 text-muted-foreground hover:text-foreground gap-2"
+            className="rounded-xl border-border text-muted-foreground hover:text-foreground gap-2"
           >
             <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
             Refresh
@@ -139,12 +139,12 @@ export default function AdminRegistrationsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: 'Total Submissions', value: stats.total, icon: Users, color: 'text-primary' },
-            { label: 'Business Interests', value: stats.businesses, icon: Building2, color: 'text-cyan-400' },
-            { label: 'Individual Interests', value: stats.individuals, icon: UserCheck, color: 'text-violet-400' },
+            { label: 'Business Interests', value: stats.businesses, icon: Building2, color: 'text-info' },
+            { label: 'Individual Interests', value: stats.individuals, icon: UserCheck, color: 'text-primary' },
           ].map((stat) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.label} className="p-4 rounded-2xl border-white/5 bg-card/60">
+              <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/60">
                 <div className="flex items-center gap-3">
                   <Icon className={`h-5 w-5 ${stat.color}`} />
                   <div>
@@ -159,7 +159,7 @@ export default function AdminRegistrationsPage() {
 
         {/* Filter bar */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
+          <div className="flex gap-1 p-1 rounded-xl bg-secondary border border-border">
             {TABS.map((t) => {
               const Icon = t.icon;
               return (
@@ -189,13 +189,13 @@ export default function AdminRegistrationsPage() {
                   ? 'Search business, contact, email…'
                   : 'Search name, email, phone…'
               }
-              className="pl-9 h-9 rounded-xl border-white/10 bg-white/5 text-sm"
+              className="pl-9 h-9 rounded-xl border-border bg-secondary text-sm"
             />
           </div>
         </div>
 
         {/* List */}
-        <Card className="rounded-2xl border-white/5 bg-card/60 overflow-hidden">
+        <Card className="rounded-2xl border-border bg-card/60 overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-16 text-muted-foreground text-sm gap-2">
               <RefreshCw className="h-4 w-4 animate-spin" /> Loading…
@@ -206,7 +206,7 @@ export default function AdminRegistrationsPage() {
               <p className="text-sm">No submissions found</p>
             </div>
           ) : (
-            <div className="divide-y divide-white/5">
+            <div className="divide-y divide-border">
               {tab === 'businesses'
                 ? data.map((item) => (
                     <BusinessRow key={item.id} item={item} expanded={expanded} setExpanded={setExpanded} />
@@ -230,7 +230,7 @@ export default function AdminRegistrationsPage() {
                 disabled={!meta.hasPrev}
                 variant="outline"
                 size="sm"
-                className="rounded-xl border-white/10 text-muted-foreground"
+                className="rounded-xl border-border text-muted-foreground"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -239,7 +239,7 @@ export default function AdminRegistrationsPage() {
                 disabled={!meta.hasNext}
                 variant="outline"
                 size="sm"
-                className="rounded-xl border-white/10 text-muted-foreground"
+                className="rounded-xl border-border text-muted-foreground"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -265,7 +265,7 @@ function BusinessRow({
     <div>
       <button
         onClick={() => setExpanded(isOpen ? null : item.id)}
-        className="w-full text-left px-5 py-4 hover:bg-white/[0.03] transition-colors"
+        className="w-full text-left px-5 py-4 hover:bg-foreground/[0.04] transition-colors"
       >
         <div className="flex items-center gap-4 min-w-0">
           <InitialsAvatar name={item.businessName || '?'} type="business" />
@@ -273,7 +273,7 @@ function BusinessRow({
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-sm text-foreground truncate">{item.businessName}</span>
               {item.category && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-info/15 text-info">
                   {item.category}
                 </span>
               )}
@@ -297,7 +297,7 @@ function BusinessRow({
         </div>
       </button>
       {isOpen && (
-        <div className="bg-white/[0.02] border-t border-white/5 px-5 py-5">
+        <div className="bg-secondary border-t border-border px-5 py-5">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
             <div className="space-y-3">
               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Business Info</p>
@@ -346,7 +346,7 @@ function IndividualRow({
     <div>
       <button
         onClick={() => setExpanded(isOpen ? null : item.id)}
-        className="w-full text-left px-5 py-4 hover:bg-white/[0.03] transition-colors"
+        className="w-full text-left px-5 py-4 hover:bg-foreground/[0.04] transition-colors"
       >
         <div className="flex items-center gap-4 min-w-0">
           <InitialsAvatar name={item.name || '?'} type="individual" />
@@ -373,7 +373,7 @@ function IndividualRow({
         </div>
       </button>
       {isOpen && (
-        <div className="bg-white/[0.02] border-t border-white/5 px-5 py-5">
+        <div className="bg-secondary border-t border-border px-5 py-5">
           <div className="grid sm:grid-cols-2 gap-6 text-sm">
             <div className="space-y-3">
               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Personal Details</p>

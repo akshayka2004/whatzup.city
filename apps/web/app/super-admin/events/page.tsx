@@ -128,10 +128,10 @@ export default function SuperAdminEventsPage() {
                           <td className="px-5 py-3 text-muted-foreground text-xs">{e.business?.name || '—'}</td>
                           <td className="px-5 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmt(e.startDate)} → {fmt(e.endDate)}</td>
                           <td className="px-5 py-3 text-right"><span className="inline-flex items-center gap-1 text-foreground font-semibold"><ExternalLink className="h-3 w-3 text-primary" /> {e.registrationClicks ?? 0}</span></td>
-                          <td className="px-5 py-3 text-right"><span className="inline-flex items-center gap-1 text-foreground font-semibold"><Ticket className="h-3 w-3 text-emerald-400" /> {e.ticketClicks ?? 0}</span></td>
+                          <td className="px-5 py-3 text-right"><span className="inline-flex items-center gap-1 text-foreground font-semibold"><Ticket className="h-3 w-3 text-success" /> {e.ticketClicks ?? 0}</span></td>
                           <td className="px-5 py-3 text-right whitespace-nowrap">
                             <Button onClick={() => openEdit(e)} variant="outline" size="icon" className="h-8 w-8 rounded-lg border-border mr-1 cursor-pointer"><Pencil className="h-3.5 w-3.5" /></Button>
-                            <Button onClick={() => remove(e)} variant="outline" size="icon" className="h-8 w-8 rounded-lg border-rose-500/30 text-rose-400 cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></Button>
+                            <Button onClick={() => remove(e)} variant="outline" size="icon" className="h-8 w-8 rounded-lg border-destructive/30 text-destructive cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></Button>
                           </td>
                         </tr>
                       ))}
@@ -157,7 +157,7 @@ export default function SuperAdminEventsPage() {
                         <p className="text-xs text-muted-foreground">{r.event?.business?.name || ''}</p>
                       </div>
                       <div className="text-right shrink-0 ml-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${r.type === 'TICKET' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-primary/10 text-primary'}`}>{r.type}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${r.type === 'TICKET' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>{r.type}</span>
                         <p className="text-[10px] text-muted-foreground mt-0.5">{fmt(r.createdAt)}</p>
                       </div>
                     </div>
@@ -199,7 +199,7 @@ export default function SuperAdminEventsPage() {
               </div>
               <Input placeholder="Registration URL (external)" value={form.registrationUrl} onChange={(e) => set('registrationUrl', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
               <Input placeholder="Ticket / booking URL (external)" value={form.ticketUrl} onChange={(e) => set('ticketUrl', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
-              {err && <p className="text-xs text-rose-400">{err}</p>}
+              {err && <p className="text-xs text-destructive">{err}</p>}
             </div>
             <div className="flex justify-end gap-2 mt-5">
               <Button onClick={() => setOpen(false)} variant="outline" className="rounded-xl border-border text-muted-foreground">Cancel</Button>

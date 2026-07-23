@@ -167,7 +167,7 @@ export default function CustomersPage() {
           value: stats.totalCustomers,
           sub: `+${stats.newThisMonth} this month`,
           icon: Users,
-          color: 'text-violet-400 bg-violet-500/10',
+          color: 'text-primary bg-primary/10',
           trend: stats.monthlyGrowth,
         },
         {
@@ -175,7 +175,7 @@ export default function CustomersPage() {
           value: stats.activeThisMonth,
           sub: `${stats.customerRetention}% retention`,
           icon: Activity,
-          color: 'text-emerald-400 bg-emerald-500/10',
+          color: 'text-success bg-success/10',
           trend: null,
         },
         {
@@ -183,7 +183,7 @@ export default function CustomersPage() {
           value: `${stats.offerClaimRate}%`,
           sub: 'Offers claimed',
           icon: Tag,
-          color: 'text-cyan-400 bg-cyan-500/10',
+          color: 'text-info bg-info/10',
           trend: null,
         },
         {
@@ -191,7 +191,7 @@ export default function CustomersPage() {
           value: `${stats.offerRedemptionRate}%`,
           sub: 'Of claimed offers',
           icon: BadgeCheck,
-          color: 'text-amber-400 bg-amber-500/10',
+          color: 'text-warning bg-warning/10',
           trend: null,
         },
       ]
@@ -204,7 +204,7 @@ export default function CustomersPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Users className="h-6 w-6 text-violet-400" />
+              <Users className="h-6 w-6 text-primary" />
               Customers
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -214,7 +214,7 @@ export default function CustomersPage() {
           <Button
             onClick={handleExport}
             variant="outline"
-            className="rounded-xl border-white/10 text-slate-300 gap-2 hover:bg-white/5 cursor-pointer"
+            className="rounded-xl border-border text-foreground gap-2 hover:bg-secondary cursor-pointer"
           >
             <Download className="h-4 w-4" />
             Export CSV
@@ -225,7 +225,7 @@ export default function CustomersPage() {
         {statsLoading ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[0, 1, 2, 3].map((i) => (
-              <Card key={i} className="p-5 rounded-2xl border-white/5 bg-card/40 animate-pulse h-24" />
+              <Card key={i} className="p-5 rounded-2xl border-border bg-card/40 animate-pulse h-24" />
             ))}
           </div>
         ) : stats ? (
@@ -233,7 +233,7 @@ export default function CustomersPage() {
             {STAT_CARDS.map((s) => {
               const Icon = s.icon;
               return (
-                <Card key={s.label} className="p-5 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+                <Card key={s.label} className="p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
                   <div className={cn('p-2 rounded-xl inline-flex mb-3', s.color)}>
                     <Icon className="h-4 w-4" />
                   </div>
@@ -244,7 +244,7 @@ export default function CustomersPage() {
                       <span
                         className={cn(
                           'text-xs font-semibold flex items-center gap-0.5 mb-0.5',
-                          s.trend >= 0 ? 'text-emerald-400' : 'text-rose-400',
+                          s.trend >= 0 ? 'text-success' : 'text-destructive',
                         )}
                       >
                         {s.trend >= 0 ? (
@@ -275,8 +275,8 @@ export default function CustomersPage() {
                   className={cn(
                     'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer',
                     activeFilter === f.key
-                      ? 'bg-violet-600 text-white'
-                      : 'bg-white/5 text-muted-foreground hover:bg-white/10 border border-white/10',
+                      ? 'bg-primary text-white'
+                      : 'bg-secondary text-muted-foreground hover:bg-secondary border border-border',
                   )}
                 >
                   <Icon className="h-3 w-3" />
@@ -292,7 +292,7 @@ export default function CustomersPage() {
               placeholder="Search by name, email, or phone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 rounded-xl border-white/10 bg-white/5"
+              className="pl-10 rounded-xl border-border bg-secondary"
             />
           </div>
         </div>
@@ -303,7 +303,7 @@ export default function CustomersPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : customers.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
             <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No customers found</p>
             <p className="text-xs text-muted-foreground">
@@ -317,12 +317,12 @@ export default function CustomersPage() {
             {customers.map((c) => (
               <Card
                 key={c.id}
-                className="p-4 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all cursor-pointer"
+                className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all cursor-pointer"
                 onClick={() => setViewing(c)}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-violet-500/20 to-cyan-500/20 flex items-center justify-center text-sm font-bold text-violet-300 shrink-0">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-primary/20 to-info/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
                       {(c.name || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
@@ -356,8 +356,8 @@ export default function CustomersPage() {
                     className={cn(
                       'text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0',
                       c.customerStatus === 'ACTIVE'
-                        ? 'bg-emerald-500/10 text-emerald-400'
-                        : 'bg-slate-500/10 text-slate-400',
+                        ? 'bg-success/10 text-success'
+                        : 'bg-muted text-muted-foreground',
                     )}
                   >
                     {c.customerStatus}
@@ -378,7 +378,7 @@ export default function CustomersPage() {
                     size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="rounded-xl border-white/10 text-xs cursor-pointer"
+                    className="rounded-xl border-border text-xs cursor-pointer"
                   >
                     Prev
                   </Button>
@@ -387,7 +387,7 @@ export default function CustomersPage() {
                     size="sm"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="rounded-xl border-white/10 text-xs cursor-pointer"
+                    className="rounded-xl border-border text-xs cursor-pointer"
                   >
                     Next
                   </Button>
@@ -400,7 +400,7 @@ export default function CustomersPage() {
         {/* Customer detail modal */}
         {viewing && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-lg p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative overflow-y-auto max-h-[90vh]">
+            <Card className="w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative overflow-y-auto max-h-[90vh]">
               <button
                 onClick={() => setViewing(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -409,7 +409,7 @@ export default function CustomersPage() {
               </button>
 
               <div className="flex items-center gap-4 mb-6">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-violet-500 to-cyan-500 flex items-center justify-center text-xl font-extrabold text-white">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-primary to-info flex items-center justify-center text-xl font-extrabold text-white">
                   {viewing.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
@@ -418,8 +418,8 @@ export default function CustomersPage() {
                     className={cn(
                       'text-[10px] font-semibold px-2 py-0.5 rounded-full',
                       viewing.customerStatus === 'ACTIVE'
-                        ? 'bg-emerald-500/10 text-emerald-400'
-                        : 'bg-slate-500/10 text-slate-400',
+                        ? 'bg-success/10 text-success'
+                        : 'bg-muted text-muted-foreground',
                     )}
                   >
                     {viewing.customerStatus}
@@ -449,15 +449,15 @@ export default function CustomersPage() {
 
               {/* Metrics */}
               <div className="grid grid-cols-3 gap-3 mb-5">
-                <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-center">
+                <div className="bg-secondary border border-border rounded-xl p-3 text-center">
                   <p className="text-xs text-muted-foreground mb-1">Claimed</p>
                   <p className="text-xl font-extrabold text-foreground">{viewing.offersClaimedCount}</p>
                 </div>
-                <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-center">
+                <div className="bg-secondary border border-border rounded-xl p-3 text-center">
                   <p className="text-xs text-muted-foreground mb-1">Redeemed</p>
                   <p className="text-xl font-extrabold text-foreground">{viewing.offersRedeemedCount}</p>
                 </div>
-                <div className="bg-white/5 border border-white/5 rounded-xl p-3 text-center">
+                <div className="bg-secondary border border-border rounded-xl p-3 text-center">
                   <p className="text-xs text-muted-foreground mb-1">Purchases</p>
                   <p className="text-xl font-extrabold text-foreground">{viewing.totalVerifiedPurchases}</p>
                 </div>
@@ -478,14 +478,14 @@ export default function CustomersPage() {
                 {viewing.branchBusinessId && (
                   <div className="flex justify-between">
                     <span>Branch customer</span>
-                    <span className="text-emerald-400 font-medium">Yes</span>
+                    <span className="text-success font-medium">Yes</span>
                   </div>
                 )}
               </div>
 
               <Button
                 onClick={() => setViewing(null)}
-                className="w-full rounded-xl bg-violet-600 hover:bg-violet-500 text-white cursor-pointer"
+                className="w-full rounded-xl bg-primary hover:bg-primary text-white cursor-pointer"
               >
                 Close
               </Button>

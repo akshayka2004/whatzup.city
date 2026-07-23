@@ -28,9 +28,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { canAccess, getRoleLabel } from '@/lib/rbac';
+import { getRoleLabel } from '@/lib/rbac';
 
 // ── MENU DEFINITIONS PER ROLE TIER ───────────────────────────────────
 
@@ -67,14 +65,6 @@ function getMenuForRole(role: string) {
   if (role === 'BUSINESS_MODERATOR') return MODERATOR_MENU;
   // BUSINESS_OWNER, BUSINESS_ADMIN, or any other business role → owner menu
   return OWNER_MENU;
-}
-
-// ── ROLE BADGE COLORS ─────────────────────────────────────────────────
-
-function getRoleBadgeVariant(role: string): 'default' | 'secondary' | 'outline' {
-  if (role === 'BUSINESS_OWNER' || role === 'BUSINESS_ADMIN') return 'default';
-  if (role === 'BUSINESS_MODERATOR') return 'secondary';
-  return 'outline';
 }
 
 // ── COMPONENT ─────────────────────────────────────────────────────────
@@ -130,97 +120,118 @@ export function BusinessSidebar() {
   const isModerator = userRole === 'BUSINESS_MODERATOR';
   const isOwner = userRole === 'BUSINESS_OWNER' || userRole === 'BUSINESS_ADMIN';
 
+  const NavRow = ({
+    href,
+    label,
+    icon: Icon,
+    active,
+    highlight,
+    badge,
+  }: {
+    href: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    active: boolean;
+    highlight?: boolean;
+    badge?: boolean;
+  }) => (
+    <Link
+      href={href}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150',
+        active
+          ? 'bg-primary/10 text-primary'
+          : highlight
+            ? 'text-warning hover:bg-warning/10'
+            : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground',
+      )}
+    >
+      <Icon
+        className={cn(
+          'h-[18px] w-[18px] shrink-0 transition-colors',
+          active
+            ? 'text-primary'
+            : highlight
+              ? 'text-warning'
+              : 'text-muted-foreground group-hover:text-foreground',
+        )}
+      />
+      <span className="flex-1 text-left">{label}</span>
+      {badge && (
+        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1 text-[10px] font-bold text-warning-foreground">
+          !
+        </span>
+      )}
+    </Link>
+  );
+
   return (
-    <aside className="w-64 border-r border-border bg-sidebar text-sidebar-foreground flex flex-col">
-      {/* Header */}
-      <div className="border-b border-sidebar-border px-6 py-4">
-        <div className="flex items-center gap-3 mb-2">
-          <img src="/logo.png" alt="Whtzup.city Logo" className="h-16 w-auto object-contain" />
-          <div className="flex flex-col min-w-0">
-            <span className="text-sm font-semibold text-sidebar-primary leading-tight truncate">
-              {businessName}
-            </span>
-          </div>
-        </div>
-        {/* Role badge */}
-        <div className="flex items-center gap-1.5">
-          <div
+    <aside className="flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+      {/* Brand + workspace */}
+      <div className="px-5 py-5">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <img src="/logo.png" alt="Whtzup.city" className="h-9 w-auto object-contain" />
+          <span className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground">
+            {businessName}
+          </span>
+        </Link>
+        <div className="mt-3">
+          <span
             className={cn(
-              'flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold',
-              isOwner && 'bg-violet-500/15 text-violet-400',
-              isModerator && 'bg-amber-500/15 text-amber-400',
-              !isOwner && !isModerator && 'bg-slate-500/15 text-slate-400',
+              'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+              isOwner && 'bg-primary/10 text-primary',
+              isModerator && 'bg-warning/15 text-warning',
+              !isOwner && !isModerator && 'bg-muted text-muted-foreground',
             )}
           >
             {isOwner && <ShieldCheck className="h-2.5 w-2.5" />}
             {isModerator && <Shield className="h-2.5 w-2.5" />}
             {getRoleLabel(userRole)}
-          </div>
+          </span>
         </div>
       </div>
 
       {/* Moderator info banner */}
       {isModerator && (
-        <div className="mx-4 mt-3 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
-          <p className="text-[10px] text-amber-400 font-medium flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3" />
-            Moderator access — Analytics & financials restricted
+        <div className="mx-3 mb-1 rounded-xl border border-warning/20 bg-warning/10 px-3 py-2">
+          <p className="flex items-center gap-1 text-[10px] font-medium text-warning">
+            <AlertTriangle className="h-3 w-3 shrink-0" />
+            Moderator access — analytics & financials restricted
           </p>
         </div>
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const active = isItemActive(item.href, item.exact);
-          const isHighlighted = (item as any).highlight;
-
-          return (
-            <Link key={item.href} href={item.href}>
-              <Button
-                variant={active ? 'default' : 'ghost'}
-                className={cn(
-                  'w-full justify-start gap-3 rounded-xl h-9 px-3',
-                  active && 'bg-sidebar-primary text-sidebar-primary-foreground',
-                  !active && isHighlighted && 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10',
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="flex-1 text-left text-sm">{item.label}</span>
-                {(item as any).badge === 'pending' && (
-                  <span className="ml-auto h-4 w-4 rounded-full bg-amber-500 text-[9px] font-bold text-black flex items-center justify-center">
-                    !
-                  </span>
-                )}
-              </Button>
-            </Link>
-          );
-        })}
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
+        {menuItems.map((item) => (
+          <NavRow
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={item.icon}
+            active={isItemActive(item.href, item.exact)}
+            highlight={(item as any).highlight}
+            badge={(item as any).badge === 'pending'}
+          />
+        ))}
       </nav>
 
-      {/* Bottom items */}
-      <div className="border-t border-sidebar-border space-y-1 px-4 py-4">
-        <Link href="/profile">
-          <Button
-            variant={pathname === '/profile' ? 'default' : 'ghost'}
-            className={cn(
-              'w-full justify-start gap-3 rounded-xl h-9 px-3',
-              pathname === '/profile' && 'bg-sidebar-primary text-sidebar-primary-foreground',
-            )}
-          >
-            <Settings className="h-4 w-4" />
-            <span className="text-sm">Settings</span>
-          </Button>
-        </Link>
-        <Button
-          variant="ghost"
+      {/* Footer */}
+      <div className="space-y-1 border-t border-sidebar-border px-3 py-3">
+        <NavRow
+          href="/profile"
+          label="Settings"
+          icon={Settings}
+          active={pathname === '/profile'}
+        />
+        <button
           onClick={handleSignOut}
-          className="w-full justify-start gap-3 rounded-xl h-9 px-3 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive"
         >
-          <LogOut className="h-4 w-4" />
-          <span className="text-sm">Sign Out</span>
-        </Button>
+          <LogOut className="h-[18px] w-[18px] shrink-0" />
+          <span>Sign out</span>
+        </button>
       </div>
     </aside>
   );

@@ -135,17 +135,17 @@ export default function AdminProfilePage() {
       <div className="space-y-6 max-w-2xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Shield className="h-6 w-6 text-violet-400" />
+            <Shield className="h-6 w-6 text-primary" />
             My Profile
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Manage your admin account details</p>
         </div>
 
         {/* Avatar + basic info */}
-        <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
           <div className="flex items-center gap-5 mb-6">
             <div className="relative">
-              <div className="h-16 w-16 rounded-2xl overflow-hidden bg-gradient-to-tr from-violet-500 to-cyan-500 flex items-center justify-center text-2xl font-extrabold text-white">
+              <div className="h-16 w-16 rounded-2xl overflow-hidden bg-gradient-to-tr from-primary to-info flex items-center justify-center text-2xl font-extrabold text-white">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="avatar" className="h-full w-full object-cover" />
                 ) : (
@@ -155,7 +155,7 @@ export default function AdminProfilePage() {
               <button
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={avatarUploading}
-                className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-violet-600 hover:bg-violet-500 flex items-center justify-center cursor-pointer border-2 border-background"
+                className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-primary hover:bg-primary flex items-center justify-center cursor-pointer border-2 border-background"
               >
                 {avatarUploading ? (
                   <Loader2 className="h-3 w-3 text-white animate-spin" />
@@ -168,21 +168,21 @@ export default function AdminProfilePage() {
             <div>
               <p className="text-lg font-bold text-foreground">{user?.name}</p>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
-              <span className="mt-1 inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400">
+              <span className="mt-1 inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
                 {roleLabel}
               </span>
             </div>
           </div>
 
           {avatarError && (
-            <p className="mb-4 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2">
+            <p className="mb-4 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2">
               {avatarError}
             </p>
           )}
 
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+              <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
                 <User className="h-3 w-3" /> Full Name
               </label>
               <Input
@@ -190,44 +190,44 @@ export default function AdminProfilePage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name"
                 required
-                className="rounded-xl border-white/10 bg-white/5"
+                className="rounded-xl border-border bg-secondary"
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+              <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
                 <Mail className="h-3 w-3" /> Email (read-only)
               </label>
               <Input
                 value={user?.email || ''}
                 disabled
-                className="rounded-xl border-white/10 bg-white/5 opacity-60"
+                className="rounded-xl border-border bg-secondary opacity-60"
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+              <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
                 <Phone className="h-3 w-3" /> Phone
               </label>
               <Input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+91 98765 43210"
-                className="rounded-xl border-white/10 bg-white/5"
+                className="rounded-xl border-border bg-secondary"
               />
             </div>
 
             {saveMsg && (
-              <p className="text-xs text-emerald-400 flex items-center gap-1">
+              <p className="text-xs text-success flex items-center gap-1">
                 <Check className="h-3.5 w-3.5" /> {saveMsg}
               </p>
             )}
             {saveErr && (
-              <p className="text-xs text-rose-400">{saveErr}</p>
+              <p className="text-xs text-destructive">{saveErr}</p>
             )}
 
             <Button
               type="submit"
               disabled={saving}
-              className="w-full rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold cursor-pointer"
+              className="w-full rounded-xl bg-primary hover:bg-primary text-white font-semibold cursor-pointer"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Profile'}
             </Button>
@@ -235,15 +235,15 @@ export default function AdminProfilePage() {
         </Card>
 
         {/* Password change */}
-        <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
           <h3 className="text-base font-bold text-foreground flex items-center gap-2 mb-5">
-            <KeyRound className="h-4 w-4 text-amber-400" />
+            <KeyRound className="h-4 w-4 text-warning" />
             Change Password
           </h3>
 
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-slate-300 block mb-1.5">Current Password</label>
+              <label className="text-xs font-medium text-foreground block mb-1.5">Current Password</label>
               <div className="relative">
                 <Input
                   type={showCurrent ? 'text' : 'password'}
@@ -251,7 +251,7 @@ export default function AdminProfilePage() {
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Your current password"
                   required
-                  className="rounded-xl border-white/10 bg-white/5 pr-10"
+                  className="rounded-xl border-border bg-secondary pr-10"
                 />
                 <button
                   type="button"
@@ -263,7 +263,7 @@ export default function AdminProfilePage() {
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-300 block mb-1.5">New Password</label>
+              <label className="text-xs font-medium text-foreground block mb-1.5">New Password</label>
               <div className="relative">
                 <Input
                   type={showNew ? 'text' : 'password'}
@@ -272,7 +272,7 @@ export default function AdminProfilePage() {
                   placeholder="Min 8 characters"
                   required
                   minLength={8}
-                  className="rounded-xl border-white/10 bg-white/5 pr-10"
+                  className="rounded-xl border-border bg-secondary pr-10"
                 />
                 <button
                   type="button"
@@ -284,30 +284,30 @@ export default function AdminProfilePage() {
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-300 block mb-1.5">Confirm New Password</label>
+              <label className="text-xs font-medium text-foreground block mb-1.5">Confirm New Password</label>
               <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repeat new password"
                 required
-                className="rounded-xl border-white/10 bg-white/5"
+                className="rounded-xl border-border bg-secondary"
               />
             </div>
 
             {pwMsg && (
-              <p className="text-xs text-emerald-400 flex items-center gap-1">
+              <p className="text-xs text-success flex items-center gap-1">
                 <Check className="h-3.5 w-3.5" /> {pwMsg}
               </p>
             )}
             {pwErr && (
-              <p className="text-xs text-rose-400">{pwErr}</p>
+              <p className="text-xs text-destructive">{pwErr}</p>
             )}
 
             <Button
               type="submit"
               disabled={pwSaving}
-              className="w-full rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold cursor-pointer"
+              className="w-full rounded-xl bg-warning hover:bg-warning text-white font-semibold cursor-pointer"
             >
               {pwSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update Password'}
             </Button>

@@ -39,15 +39,15 @@ export default function SuperAdminSecurityPage() {
           {tenantThreats.map((item) => (
             <Card
               key={item.id}
-              className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div
                     className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center ${
                       item.severity === 'HIGH'
-                        ? 'bg-rose-500/10 text-rose-400'
-                        : 'bg-slate-500/10 text-slate-400'
+                        ? 'bg-destructive/10 text-destructive'
+                        : 'bg-muted text-muted-foreground'
                     }`}
                   >
                     <Shield className="h-5 w-5" />
@@ -58,12 +58,12 @@ export default function SuperAdminSecurityPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 text-sm border-t sm:border-t-0 pt-4 sm:pt-0 border-white/5">
+                <div className="flex items-center gap-6 text-sm border-t sm:border-t-0 pt-4 sm:pt-0 border-border">
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                       item.severity === 'HIGH'
-                        ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                        : 'bg-white/5 text-muted-foreground border border-white/10'
+                        ? 'bg-destructive/10 text-destructive border border-destructive/20'
+                        : 'bg-secondary text-muted-foreground border border-border'
                     }`}
                   >
                     {item.severity} Risk
@@ -72,13 +72,13 @@ export default function SuperAdminSecurityPage() {
                     <Button
                       size="icon"
                       variant="outline"
-                      className="h-8 w-8 rounded-lg border-white/10 text-slate-300"
+                      className="h-8 w-8 rounded-lg border-border text-foreground"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
                     <Button
                       size="sm"
-                      className="rounded-lg h-8 px-3 py-1 bg-violet-600 hover:bg-violet-500 text-white font-medium text-xs"
+                      className="rounded-lg h-8 px-3 py-1 bg-primary hover:bg-primary text-white font-medium text-xs"
                     >
                       Block Tenant
                     </Button>

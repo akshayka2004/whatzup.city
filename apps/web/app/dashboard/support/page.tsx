@@ -34,10 +34,10 @@ interface Ticket {
 }
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string }> = {
-  open: { label: 'Open', color: 'bg-amber-500/15 text-amber-400 border-amber-500/20' },
-  in_progress: { label: 'In Progress', color: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/20' },
-  resolved: { label: 'Resolved', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' },
-  closed: { label: 'Closed', color: 'bg-slate-500/15 text-slate-400 border-slate-500/20' },
+  open: { label: 'Open', color: 'bg-warning/15 text-warning border-warning/20' },
+  in_progress: { label: 'In Progress', color: 'bg-info/15 text-info border-info/20' },
+  resolved: { label: 'Resolved', color: 'bg-success/15 text-success border-success/20' },
+  closed: { label: 'Closed', color: 'bg-muted text-muted-foreground border-border' },
 };
 
 const STORAGE_KEY = 'business_tickets';
@@ -121,11 +121,11 @@ export default function BusinessSupportPage() {
         {/* Summary */}
         <div className="grid sm:grid-cols-3 gap-4">
           {[
-            { label: 'Open', value: open, color: 'text-amber-400 bg-amber-500/10' },
-            { label: 'In Progress', value: inProgress, color: 'text-cyan-400 bg-cyan-500/10' },
-            { label: 'Resolved', value: resolved, color: 'text-emerald-400 bg-emerald-500/10' },
+            { label: 'Open', value: open, color: 'text-warning bg-warning/10' },
+            { label: 'In Progress', value: inProgress, color: 'text-info bg-info/10' },
+            { label: 'Resolved', value: resolved, color: 'text-success bg-success/10' },
           ].map((s) => (
-            <Card key={s.label} className="p-4 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl flex items-center gap-3">
+            <Card key={s.label} className="p-4 rounded-2xl border-border bg-card/60 backdrop-blur-xl flex items-center gap-3">
               <div className={`p-2 rounded-xl ${s.color}`}>
                 <MessageSquare className="h-4 w-4" />
               </div>
@@ -147,13 +147,13 @@ export default function BusinessSupportPage() {
                   placeholder="Search…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8 h-9 rounded-xl border-white/10 bg-white/5 text-sm"
+                  className="pl-8 h-9 rounded-xl border-border bg-secondary text-sm"
                 />
               </div>
               <select
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as any)}
-                className="h-9 rounded-xl border border-white/10 bg-card text-xs text-foreground px-2 cursor-pointer"
+                className="h-9 rounded-xl border border-border bg-card text-xs text-foreground px-2 cursor-pointer"
               >
                 <option value="all">All</option>
                 {Object.entries(STATUS_CONFIG).map(([id, cfg]) => (
@@ -175,7 +175,7 @@ export default function BusinessSupportPage() {
                   onClick={() => setSelected(ticket)}
                   className={cn(
                     'p-4 rounded-2xl border cursor-pointer transition-all',
-                    active ? 'border-primary/40 bg-primary/5' : 'border-white/5 bg-card/60 hover:bg-white/5',
+                    active ? 'border-primary/40 bg-primary/5' : 'border-border bg-card/60 hover:bg-secondary',
                   )}
                 >
                   <div className="flex items-start justify-between gap-2 mb-1.5">
@@ -198,9 +198,9 @@ export default function BusinessSupportPage() {
           {/* Thread */}
           <div className="lg:col-span-2">
             {selected ? (
-              <Card className="rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl flex flex-col h-full">
+              <Card className="rounded-2xl border-border bg-card/60 backdrop-blur-xl flex flex-col h-full">
                 {/* Header */}
-                <div className="p-5 border-b border-white/5">
+                <div className="p-5 border-b border-border">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-xs text-muted-foreground mb-0.5">{selected.id} · {selected.customerName}</p>
@@ -211,7 +211,7 @@ export default function BusinessSupportPage() {
                         <Button
                           size="sm"
                           onClick={() => handleStatusChange('resolved')}
-                          className="h-7 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer text-xs px-3 gap-1"
+                          className="h-7 rounded-lg bg-success hover:bg-success text-white cursor-pointer text-xs px-3 gap-1"
                         >
                           <CheckCircle2 className="h-3 w-3" />
                           Resolve
@@ -222,7 +222,7 @@ export default function BusinessSupportPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleStatusChange('closed')}
-                          className="h-7 rounded-lg border-white/10 text-slate-400 hover:bg-white/5 cursor-pointer text-xs px-2"
+                          className="h-7 rounded-lg border-border text-muted-foreground hover:bg-secondary cursor-pointer text-xs px-2"
                         >
                           <X className="h-3.5 w-3.5" />
                         </Button>
@@ -239,7 +239,7 @@ export default function BusinessSupportPage() {
                         'max-w-[80%] rounded-2xl px-4 py-3',
                         msg.from === 'support'
                           ? 'bg-primary/20 text-foreground rounded-tr-sm'
-                          : 'bg-white/5 text-foreground rounded-tl-sm',
+                          : 'bg-secondary text-foreground rounded-tl-sm',
                       )}>
                         <p className="text-xs font-semibold mb-1 text-muted-foreground">
                           {msg.from === 'support' ? 'You (Business)' : selected.customerName}
@@ -253,12 +253,12 @@ export default function BusinessSupportPage() {
 
                 {/* Reply */}
                 {selected.status !== 'closed' && (
-                  <form onSubmit={handleReply} className="p-4 border-t border-white/5 flex gap-2">
+                  <form onSubmit={handleReply} className="p-4 border-t border-border flex gap-2">
                     <Input
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
                       placeholder="Reply to customer…"
-                      className="flex-1 rounded-xl border-white/10 bg-white/5 text-sm"
+                      className="flex-1 rounded-xl border-border bg-secondary text-sm"
                     />
                     <Button
                       type="submit"
@@ -272,7 +272,7 @@ export default function BusinessSupportPage() {
                 )}
               </Card>
             ) : (
-              <Card className="p-12 rounded-2xl border-white/5 bg-card/40 text-center flex flex-col items-center justify-center h-full">
+              <Card className="p-12 rounded-2xl border-border bg-card/40 text-center flex flex-col items-center justify-center h-full">
                 <MessageSquare className="h-10 w-10 text-muted-foreground mb-3" />
                 <p className="text-base font-semibold text-foreground">Select a ticket</p>
               </Card>

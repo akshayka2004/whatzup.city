@@ -126,7 +126,7 @@ export default function TenantsPage() {
                         <Tag className="h-3.5 w-3.5" />
                         {tenant.offersCount} offers
                       </span>
-                      <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+                      <span className="flex items-center gap-1 text-success font-semibold">
                         <Receipt className="h-3.5 w-3.5" />
                         {tenant.sales}
                       </span>
@@ -137,8 +137,8 @@ export default function TenantsPage() {
                   <span
                     className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                       tenant.status === 'Active'
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                        ? 'bg-success/10 text-success border border-success/20'
+                        : 'bg-destructive/10 text-destructive border border-destructive/20'
                     }`}
                   >
                     {tenant.status}
@@ -146,7 +146,7 @@ export default function TenantsPage() {
                   <Button
                     onClick={() => setManagingTenant(tenant)}
                     variant="outline"
-                    className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
+                    className="rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer"
                     size="sm"
                   >
                     Manage
@@ -187,7 +187,7 @@ export default function TenantsPage() {
                     <span className="text-[10px] uppercase font-bold tracking-wider">
                       Total Sales
                     </span>
-                    <BarChart3 className="h-4 w-4 text-emerald-400" />
+                    <BarChart3 className="h-4 w-4 text-success" />
                   </div>
                   <p className="text-lg font-extrabold text-foreground">{managingTenant.sales}</p>
                 </div>
@@ -207,7 +207,7 @@ export default function TenantsPage() {
                     <span className="text-[10px] uppercase font-bold tracking-wider">
                       Events Published
                     </span>
-                    <FileText className="h-4 w-4 text-violet-400" />
+                    <FileText className="h-4 w-4 text-primary" />
                   </div>
                   <p className="text-lg font-extrabold text-foreground">
                     {managingTenant.eventsCount}
@@ -220,19 +220,19 @@ export default function TenantsPage() {
                     <span className="text-[10px] uppercase font-bold tracking-wider">
                       Location
                     </span>
-                    <Building2 className="h-4 w-4 text-cyan-400" />
+                    <Building2 className="h-4 w-4 text-info" />
                   </div>
                   <p className="text-lg font-extrabold text-foreground">{managingTenant.city}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">{managingTenant.category}</p>
                 </div>
-                <div className="bg-emerald-500/5 p-4 rounded-xl border border-emerald-500/20">
+                <div className="bg-success/5 p-4 rounded-xl border border-success/20">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-400">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-success">
                       Total Received
                     </span>
-                    <TrendingUp className="h-4 w-4 text-emerald-400" />
+                    <TrendingUp className="h-4 w-4 text-success" />
                   </div>
-                  <p className="text-lg font-extrabold text-emerald-400">
+                  <p className="text-lg font-extrabold text-success">
                     ₹{Number(managingTenant.totalReceived || 0).toLocaleString('en-IN')}
                   </p>
                   <p className="text-[10px] text-muted-foreground mt-1">Verified bill total</p>
@@ -277,8 +277,8 @@ export default function TenantsPage() {
                     onClick={() => handleToggleStatus(managingTenant.id)}
                     className={`rounded-xl font-semibold gap-1 text-white text-xs ${
                       managingTenant.status === 'Active'
-                        ? 'bg-rose-600 hover:bg-rose-500'
-                        : 'bg-emerald-600 hover:bg-emerald-500'
+                        ? 'bg-destructive hover:bg-destructive'
+                        : 'bg-success hover:bg-success'
                     }`}
                   >
                     <ShieldAlert className="h-4 w-4" />

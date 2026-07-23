@@ -57,28 +57,28 @@ export default function SuperAdminDashboardPage() {
       value: overview?.totalTenants ?? overview?.activeTenants ?? '—',
       change: overview?.tenantGrowth ?? '—',
       icon: Building2,
-      color: 'text-violet-500 bg-violet-500/10',
+      color: 'text-primary bg-primary/10',
     },
     {
       label: 'Total Businesses',
       value: overview?.totalBusinesses ?? '—',
       change: overview?.businessGrowth ?? '—',
       icon: Key,
-      color: 'text-cyan-500 bg-cyan-500/10',
+      color: 'text-info bg-info/10',
     },
     {
       label: 'Total Users',
       value: overview?.totalUsers ?? '—',
       change: overview?.userGrowth ?? '—',
       icon: Cpu,
-      color: 'text-emerald-500 bg-emerald-500/10',
+      color: 'text-success bg-success/10',
     },
     {
       label: 'Active Offers',
       value: overview?.activeOffers ?? '—',
       change: overview?.offersGrowth ?? '—',
       icon: HardDrive,
-      color: 'text-rose-500 bg-rose-500/10',
+      color: 'text-destructive bg-destructive/10',
     },
   ];
 
@@ -114,7 +114,7 @@ export default function SuperAdminDashboardPage() {
             return (
               <Card
                 key={stat.label}
-                className="p-6 rounded-2xl hover:shadow-lg transition-all duration-300 border-white/5 bg-card/60 backdrop-blur-xl relative overflow-hidden group"
+                className="p-6 rounded-2xl hover:shadow-lg transition-all duration-300 border-border bg-card/60 backdrop-blur-xl relative overflow-hidden group"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors pointer-events-none"></div>
                 <div className="flex items-center justify-between mb-4">
@@ -144,38 +144,38 @@ export default function SuperAdminDashboardPage() {
                 label: 'Businesses On Trial',
                 value: trialStats?.onTrial ?? '—',
                 icon: Timer,
-                color: 'text-cyan-500 bg-cyan-500/10',
+                color: 'text-info bg-info/10',
               },
               {
                 label: 'Expiring In 7 Days',
                 value: trialStats?.expiringIn7Days ?? '—',
                 icon: AlertTriangle,
-                color: 'text-amber-500 bg-amber-500/10',
+                color: 'text-warning bg-warning/10',
               },
               {
                 label: 'Expired Trials',
                 value: trialStats?.expired ?? '—',
                 icon: Clock,
-                color: 'text-rose-500 bg-rose-500/10',
+                color: 'text-destructive bg-destructive/10',
               },
               {
                 label: 'Intro Offer Claimed',
                 value: trialStats?.introClaimed ?? '—',
                 icon: Gift,
-                color: 'text-violet-500 bg-violet-500/10',
+                color: 'text-primary bg-primary/10',
               },
               {
                 label: 'Intro Offer Redeemed',
                 value: trialStats?.introRedeemed ?? '—',
                 icon: BadgeCheck,
-                color: 'text-emerald-500 bg-emerald-500/10',
+                color: 'text-success bg-success/10',
               },
             ].map((stat) => {
               const Icon = stat.icon;
               return (
                 <Card
                   key={stat.label}
-                  className="p-5 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl"
+                  className="p-5 rounded-2xl border-border bg-card/60 backdrop-blur-xl"
                 >
                   <div className={`p-2.5 rounded-xl ${stat.color} inline-flex mb-3`}>
                     <Icon className="h-4 w-4" />
@@ -189,7 +189,7 @@ export default function SuperAdminDashboardPage() {
         </div>
 
         {/* No time-series data available from analytics/overview — show placeholder */}
-        <Card className="p-8 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl text-center">
+        <Card className="p-8 rounded-2xl border-border bg-card/40 backdrop-blur-xl text-center">
           <TrendingUp className="h-8 w-8 mx-auto text-muted-foreground mb-3 opacity-40" />
           <p className="text-sm text-muted-foreground">
             Tenant growth charts require a time-series analytics endpoint.

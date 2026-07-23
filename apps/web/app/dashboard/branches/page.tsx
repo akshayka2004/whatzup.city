@@ -51,99 +51,99 @@ function BranchFormFields({
     <>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-xs font-medium text-slate-300 block mb-1.5">Branch Name *</label>
+          <label className="text-xs font-medium text-foreground block mb-1.5">Branch Name *</label>
           <Input
             value={form.name}
             onChange={(e) => setField('name', e.target.value)}
             placeholder="Downtown Branch"
             required
-            className="rounded-xl border-white/10 bg-white/5"
+            className="rounded-xl border-border bg-secondary"
           />
         </div>
         <div>
-          <label className="text-xs font-medium text-slate-300 block mb-1.5">Phone Number *</label>
+          <label className="text-xs font-medium text-foreground block mb-1.5">Phone Number *</label>
           <Input
             value={form.phone}
             onChange={(e) => setField('phone', e.target.value)}
             placeholder="+91 98765 43210"
             required
-            className="rounded-xl border-white/10 bg-white/5"
+            className="rounded-xl border-border bg-secondary"
           />
         </div>
       </div>
       <div>
-        <label className="text-xs font-medium text-slate-300 block mb-1.5">Address *</label>
+        <label className="text-xs font-medium text-foreground block mb-1.5">Address *</label>
         <Input
           value={form.address}
           onChange={(e) => setField('address', e.target.value)}
           placeholder="123 Main St, City 400001"
           required
-          className="rounded-xl border-white/10 bg-white/5"
+          className="rounded-xl border-border bg-secondary"
         />
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-xs font-medium text-slate-300 block mb-1.5">Operating Hours</label>
+          <label className="text-xs font-medium text-foreground block mb-1.5">Operating Hours</label>
           <Input
             value={form.hours}
             onChange={(e) => setField('hours', e.target.value)}
             placeholder="Mon-Sat 9AM-9PM"
-            className="rounded-xl border-white/10 bg-white/5"
+            className="rounded-xl border-border bg-secondary"
           />
         </div>
         <div>
-          <label className="text-xs font-medium text-slate-300 block mb-1.5">Geo Coordinates</label>
+          <label className="text-xs font-medium text-foreground block mb-1.5">Geo Coordinates</label>
           <Input
             value={form.geoCoords}
             onChange={(e) => setField('geoCoords', e.target.value)}
             placeholder="19.0760, 72.8777"
-            className="rounded-xl border-white/10 bg-white/5"
+            className="rounded-xl border-border bg-secondary"
           />
         </div>
       </div>
-      <div className="pt-2 border-t border-white/5">
+      <div className="pt-2 border-t border-border">
         <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Branch Manager</p>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-medium text-slate-300 block mb-1.5">Manager Name</label>
+            <label className="text-xs font-medium text-foreground block mb-1.5">Manager Name</label>
             <Input
               value={form.managerName}
               onChange={(e) => setField('managerName', e.target.value)}
               placeholder="Ravi Kumar"
-              className="rounded-xl border-white/10 bg-white/5"
+              className="rounded-xl border-border bg-secondary"
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-300 block mb-1.5">Manager Phone</label>
+            <label className="text-xs font-medium text-foreground block mb-1.5">Manager Phone</label>
             <Input
               value={form.managerPhone}
               onChange={(e) => setField('managerPhone', e.target.value)}
               placeholder="+91 91234 56789"
-              className="rounded-xl border-white/10 bg-white/5"
+              className="rounded-xl border-border bg-secondary"
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-slate-300 block mb-1.5">Manager Email</label>
+            <label className="text-xs font-medium text-foreground block mb-1.5">Manager Email</label>
             <Input
               type="email"
               value={form.managerEmail}
               onChange={(e) => setField('managerEmail', e.target.value)}
               placeholder="manager@business.com"
-              className="rounded-xl border-white/10 bg-white/5"
+              className="rounded-xl border-border bg-secondary"
             />
           </div>
         </div>
       </div>
       {/* Branch Admin Login Credentials — only shown when creating */}
       {!isEdit && (
-        <div className="pt-2 border-t border-white/5">
+        <div className="pt-2 border-t border-border">
           <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Branch Admin Account</p>
           <p className="text-[11px] text-muted-foreground/60 mb-3">
             Optional — creates a staff login account for this branch admin so they can access the dashboard immediately.
           </p>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+              <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
                 <Mail className="h-3 w-3" /> Login Email
               </label>
               <Input
@@ -151,12 +151,12 @@ function BranchFormFields({
                 value={form.adminEmail}
                 onChange={(e) => setField('adminEmail', e.target.value)}
                 placeholder="branch@yourbusiness.com"
-                className="rounded-xl border-white/10 bg-white/5"
+                className="rounded-xl border-border bg-secondary"
                 autoComplete="off"
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+              <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
                 <KeyRound className="h-3 w-3" /> Password
               </label>
               <Input
@@ -164,7 +164,7 @@ function BranchFormFields({
                 value={form.adminPassword}
                 onChange={(e) => setField('adminPassword', e.target.value)}
                 placeholder="Min 8 characters"
-                className="rounded-xl border-white/10 bg-white/5"
+                className="rounded-xl border-border bg-secondary"
                 autoComplete="new-password"
               />
             </div>
@@ -351,7 +351,7 @@ export default function BranchesPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : branches.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
             <MapPin className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No branches yet</p>
             <p className="text-sm text-muted-foreground">Add your first branch location to get started.</p>
@@ -362,7 +362,7 @@ export default function BranchesPage() {
           {branches.map((branch) => (
             <Card
               key={branch.id}
-              className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:shadow-md transition-all group relative overflow-hidden"
+              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all group relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
 
@@ -374,8 +374,8 @@ export default function BranchesPage() {
                       onClick={() => toggleStatus(branch.id)}
                       className={`px-2 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-opacity hover:opacity-75 ${
                         branch.status === 'Active'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : 'bg-white/5 text-muted-foreground border border-white/10'
+                          ? 'bg-success/10 text-success border border-success/20'
+                          : 'bg-secondary text-muted-foreground border border-border'
                       }`}
                     >
                       {branch.status === 'Active' && <CheckCircle2 className="h-3 w-3 inline mr-0.5" />}
@@ -385,34 +385,34 @@ export default function BranchesPage() {
 
                   <div className="grid sm:grid-cols-2 gap-y-1.5 gap-x-6 text-sm">
                     <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <MapPin className="h-3.5 w-3.5 text-violet-400 shrink-0" />
+                      <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
                       <span className="truncate">{branch.address}</span>
                     </span>
                     <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <Phone className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+                      <Phone className="h-3.5 w-3.5 text-info shrink-0" />
                       {branch.phone}
                     </span>
                     {branch.hours && (
                       <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                        <Clock className="h-3.5 w-3.5 text-warning shrink-0" />
                         {branch.hours}
                       </span>
                     )}
                     {branch.managerName && (
                       <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <User className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        <User className="h-3.5 w-3.5 text-success shrink-0" />
                         {branch.managerName}
                       </span>
                     )}
                     {branch.managerPhone && (
                       <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <Phone className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        <Phone className="h-3.5 w-3.5 text-success shrink-0" />
                         {branch.managerPhone}
                       </span>
                     )}
                     {branch.geoCoords && (
                       <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <Navigation className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+                        <Navigation className="h-3.5 w-3.5 text-destructive shrink-0" />
                         {branch.geoCoords}
                       </span>
                     )}
@@ -434,7 +434,7 @@ export default function BranchesPage() {
                     onClick={() => handleOpenEdit(branch)}
                     variant="outline"
                     size="sm"
-                    className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 gap-1.5 cursor-pointer"
+                    className="rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer"
                   >
                     <Edit className="h-3.5 w-3.5" />
                     Edit
@@ -443,7 +443,7 @@ export default function BranchesPage() {
                     onClick={() => setDeletingBranch(branch)}
                     variant="outline"
                     size="sm"
-                    className="rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+                    className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 cursor-pointer"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -456,7 +456,7 @@ export default function BranchesPage() {
         {/* Add modal */}
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-xl p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <Card className="w-full max-w-xl p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-lg font-bold text-foreground">Add Branch Location</h3>
                 <button onClick={() => setIsAddOpen(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
@@ -464,12 +464,12 @@ export default function BranchesPage() {
                 </button>
               </div>
               {error && (
-                <p className="mb-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">{error}</p>
+                <p className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">{error}</p>
               )}
               <form onSubmit={handleAdd} className="space-y-4">
                 <BranchFormFields form={form} setField={setField} isEdit={false} />
                 <div className="flex gap-3 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">Cancel</Button>
+                  <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer">Cancel</Button>
                   <Button type="submit" disabled={saving} className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add Branch'}
                   </Button>
@@ -482,7 +482,7 @@ export default function BranchesPage() {
         {/* Edit modal */}
         {editingBranch && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-xl p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <Card className="w-full max-w-xl p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-lg font-bold text-foreground">Edit Branch</h3>
                 <button onClick={() => setEditingBranch(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
@@ -490,12 +490,12 @@ export default function BranchesPage() {
                 </button>
               </div>
               {error && (
-                <p className="mb-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">{error}</p>
+                <p className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">{error}</p>
               )}
               <form onSubmit={handleEdit} className="space-y-4">
                 <BranchFormFields form={form} setField={setField} isEdit={true} />
                 <div className="flex gap-3 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setEditingBranch(null)} className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">Cancel</Button>
+                  <Button type="button" variant="outline" onClick={() => setEditingBranch(null)} className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer">Cancel</Button>
                   <Button type="submit" disabled={saving} className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
                   </Button>
@@ -508,8 +508,8 @@ export default function BranchesPage() {
         {/* Delete confirm */}
         {deletingBranch && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="text-base font-bold text-foreground mb-2">Delete Branch?</h3>
@@ -517,8 +517,8 @@ export default function BranchesPage() {
                 Permanently delete <span className="font-bold text-foreground">&quot;{deletingBranch.name}&quot;</span>?
               </p>
               <div className="flex gap-3">
-                <Button onClick={() => setDeletingBranch(null)} variant="outline" className="flex-1 rounded-xl border-white/10 text-slate-300 cursor-pointer hover:bg-white/5">Cancel</Button>
-                <Button onClick={handleDelete} disabled={saving} className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white cursor-pointer">
+                <Button onClick={() => setDeletingBranch(null)} variant="outline" className="flex-1 rounded-xl border-border text-foreground cursor-pointer hover:bg-secondary">Cancel</Button>
+                <Button onClick={handleDelete} disabled={saving} className="flex-1 rounded-xl bg-destructive hover:bg-destructive text-white cursor-pointer">
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
                 </Button>
               </div>

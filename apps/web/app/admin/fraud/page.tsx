@@ -47,17 +47,17 @@ export default function AdminFraudPage() {
           {flaggedAccounts.map((item) => (
             <Card
               key={item.id}
-              className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-4">
                   <div
                     className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center flex-shrink-0 ${
                       item.riskLevel === 'HIGH'
-                        ? 'bg-rose-500/10 text-rose-400'
+                        ? 'bg-destructive/10 text-destructive'
                         : item.riskLevel === 'MEDIUM'
-                          ? 'bg-amber-500/10 text-amber-400'
-                          : 'bg-blue-500/10 text-blue-400'
+                          ? 'bg-warning/10 text-warning'
+                          : 'bg-info/10 text-info'
                     }`}
                   >
                     <ShieldAlert className="h-5 w-5" />
@@ -68,10 +68,10 @@ export default function AdminFraudPage() {
                       <span
                         className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
                           item.riskLevel === 'HIGH'
-                            ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                            ? 'bg-destructive/10 text-destructive border border-destructive/20'
                             : item.riskLevel === 'MEDIUM'
-                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                              : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                              ? 'bg-warning/10 text-warning border border-warning/20'
+                              : 'bg-info/10 text-info border border-info/20'
                         }`}
                       >
                         {item.riskLevel} Risk
@@ -81,7 +81,7 @@ export default function AdminFraudPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 text-sm border-t md:border-t-0 pt-4 md:pt-0 border-white/5">
+                <div className="flex items-center gap-6 text-sm border-t md:border-t-0 pt-4 md:pt-0 border-border">
                   <div>
                     <p className="text-xs text-muted-foreground">Confidence Score</p>
                     <p className="font-bold text-foreground text-base mt-0.5">{item.score}</p>
@@ -89,7 +89,7 @@ export default function AdminFraudPage() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      className="rounded-lg bg-rose-600 hover:bg-rose-500 text-white gap-1 px-3 py-1.5 h-8"
+                      className="rounded-lg bg-destructive hover:bg-destructive text-white gap-1 px-3 py-1.5 h-8"
                     >
                       <AlertTriangle className="h-4 w-4" />
                       Ban Resource
@@ -97,7 +97,7 @@ export default function AdminFraudPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="rounded-lg border-white/10 text-slate-300 hover:bg-white/5 gap-1 px-3 py-1.5 h-8"
+                      className="rounded-lg border-border text-foreground hover:bg-secondary gap-1 px-3 py-1.5 h-8"
                     >
                       <Check className="h-4 w-4" />
                       Dismiss

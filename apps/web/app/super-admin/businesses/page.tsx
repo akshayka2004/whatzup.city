@@ -210,22 +210,22 @@ export default function SuperAdminBusinessesPage() {
                   {rows.map((b) => (
                     <tr key={b.id} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
                       <td className="px-5 py-3">
-                        <p className="font-semibold text-foreground flex items-center gap-1.5">{b.name}{b.isVerified && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />}</p>
+                        <p className="font-semibold text-foreground flex items-center gap-1.5">{b.name}{b.isVerified && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}</p>
                         {b.email && <p className="text-xs text-muted-foreground">{b.email}</p>}
                       </td>
                       <td className="px-5 py-3 text-muted-foreground text-xs">{b.category?.name || '—'}</td>
                       <td className="px-5 py-3 text-muted-foreground text-xs">{b.city || '—'}</td>
                       <td className="px-5 py-3 text-xs">
-                        <span className="inline-flex items-center gap-1 text-amber-400"><Star className="h-3 w-3 fill-amber-400" />{(b as any).averageRating != null ? Number((b as any).averageRating).toFixed(1) : '—'}</span>
+                        <span className="inline-flex items-center gap-1 text-warning"><Star className="h-3 w-3 fill-warning" />{(b as any).averageRating != null ? Number((b as any).averageRating).toFixed(1) : '—'}</span>
                       </td>
                       <td className="px-5 py-3 text-xs">
-                        <span className="inline-flex items-center gap-1 mr-2 text-emerald-400"><Tag className="h-3 w-3" />{b._count?.offers ?? 0}</span>
-                        <span className="inline-flex items-center gap-1 text-cyan-400"><CalendarDays className="h-3 w-3" />{b._count?.events ?? 0}</span>
+                        <span className="inline-flex items-center gap-1 mr-2 text-success"><Tag className="h-3 w-3" />{b._count?.offers ?? 0}</span>
+                        <span className="inline-flex items-center gap-1 text-info"><CalendarDays className="h-3 w-3" />{b._count?.events ?? 0}</span>
                       </td>
                       <td className="px-5 py-3 text-xs font-semibold text-foreground">
                         <span className="inline-flex items-center gap-1"><Wallet className="h-3 w-3 text-primary" />₹{Number(b.totalBillAmount || 0).toLocaleString('en-IN')}</span>
                       </td>
-                      <td className="px-5 py-3"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/15 text-slate-300">{b.status}</span></td>
+                      <td className="px-5 py-3"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-foreground">{b.status}</span></td>
                       <td className="px-5 py-3 text-right">
                         <Button onClick={() => openEdit(b)} variant="outline" size="sm" className="rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer">
                           <Pencil className="h-3.5 w-3.5" /> Edit
@@ -297,11 +297,11 @@ export default function SuperAdminBusinessesPage() {
             </Field>
 
             <label className="flex items-center gap-2 mt-3 cursor-pointer">
-              <input type="checkbox" checked={!!form.isVerified} onChange={(e) => set('isVerified', e.target.checked)} className="accent-emerald-500" />
+              <input type="checkbox" checked={!!form.isVerified} onChange={(e) => set('isVerified', e.target.checked)} className="accent-success" />
               <span className="text-sm text-foreground">Verified merchant</span>
             </label>
 
-            {saveErr && <p className="text-xs text-rose-400 mt-3">{saveErr}</p>}
+            {saveErr && <p className="text-xs text-destructive mt-3">{saveErr}</p>}
 
             <div className="flex justify-end gap-2 mt-5">
               <Button onClick={() => setEditing(null)} variant="outline" className="rounded-xl border-border text-muted-foreground hover:bg-secondary">Cancel</Button>

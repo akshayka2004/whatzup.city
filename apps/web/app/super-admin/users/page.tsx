@@ -116,7 +116,7 @@ export default function SuperAdminUsersPage() {
         </div>
 
         {okMsg && (
-          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold">
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-success/10 border border-success/20 text-success text-sm font-semibold">
             <CheckCircle2 className="h-4 w-4" /> {okMsg}
           </div>
         )}
@@ -153,7 +153,7 @@ export default function SuperAdminUsersPage() {
                       <td className="px-5 py-3 text-xs text-muted-foreground">{roleLabel(u.role)}</td>
                       <td className="px-5 py-3 text-xs text-muted-foreground">{u.profession || '—'}</td>
                       <td className="px-5 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${u.isActive ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${u.isActive ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
                           {u.isActive ? 'Active' : 'Suspended'}
                         </span>
                       </td>
@@ -208,14 +208,14 @@ export default function SuperAdminUsersPage() {
             </div>
 
             <label className="flex items-center gap-2 mt-3 cursor-pointer">
-              <input type="checkbox" checked={!!form.isActive} onChange={(e) => set('isActive', e.target.checked)} className="accent-emerald-500" />
+              <input type="checkbox" checked={!!form.isActive} onChange={(e) => set('isActive', e.target.checked)} className="accent-success" />
               <span className="text-sm text-foreground">Active account</span>
             </label>
 
             {form.role === 'SUPER_ADMIN' && (
-              <p className="mt-3 text-[11px] text-amber-400 flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5" /> Granting Super Admin gives full platform control.</p>
+              <p className="mt-3 text-[11px] text-warning flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5" /> Granting Super Admin gives full platform control.</p>
             )}
-            {err && <p className="text-xs text-rose-400 mt-3">{err}</p>}
+            {err && <p className="text-xs text-destructive mt-3">{err}</p>}
 
             <div className="flex justify-end gap-2 mt-5">
               <Button onClick={() => setEditing(null)} variant="outline" className="rounded-xl border-border text-muted-foreground hover:bg-secondary">Cancel</Button>

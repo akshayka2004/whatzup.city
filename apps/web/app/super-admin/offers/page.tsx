@@ -103,7 +103,7 @@ export default function SuperAdminOffersPage() {
         </div>
 
         {error && (
-          <div className="px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm">
+          <div className="px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
             {error}
           </div>
         )}
@@ -149,7 +149,7 @@ export default function SuperAdminOffersPage() {
                         )}
                       </td>
                       <td className="px-5 py-3">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 text-xs font-bold">
                           <Percent className="h-3 w-3" /> {discountLabel(o)}
                         </span>
                       </td>
@@ -163,7 +163,7 @@ export default function SuperAdminOffersPage() {
                           onClick={() => setConfirm(o)}
                           variant="outline"
                           size="sm"
-                          className="rounded-xl border-rose-500/30 text-rose-400 hover:bg-rose-500/10 gap-1.5 cursor-pointer"
+                          className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 gap-1.5 cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" /> Delete
                         </Button>
@@ -188,7 +188,7 @@ export default function SuperAdminOffersPage() {
               <X className="h-5 w-5" />
             </button>
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-xl bg-rose-500/10 text-rose-400">
+              <div className="p-3 rounded-xl bg-destructive/10 text-destructive">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <div>
@@ -211,7 +211,7 @@ export default function SuperAdminOffersPage() {
               <Button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold gap-1.5"
+                className="rounded-xl bg-destructive hover:bg-destructive text-white font-semibold gap-1.5"
               >
                 {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 Delete

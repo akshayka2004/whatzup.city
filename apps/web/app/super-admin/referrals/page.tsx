@@ -31,9 +31,9 @@ export default function SuperAdminReferralsPage() {
       {/* KPI strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
-          { label: 'Total Referred Users', value: loading ? '…' : totalReferred.toLocaleString(), icon: Users, color: 'text-violet-400 bg-violet-500/10' },
-          { label: 'Active Referrers', value: loading ? '…' : leaderboard.length.toLocaleString(), icon: Share2, color: 'text-cyan-400 bg-cyan-500/10' },
-          { label: 'Top Referral Count', value: loading ? '…' : (leaderboard[0]?.referralCount ?? 0).toLocaleString(), icon: TrendingUp, color: 'text-emerald-400 bg-emerald-500/10' },
+          { label: 'Total Referred Users', value: loading ? '…' : totalReferred.toLocaleString(), icon: Users, color: 'text-primary bg-primary/10' },
+          { label: 'Active Referrers', value: loading ? '…' : leaderboard.length.toLocaleString(), icon: Share2, color: 'text-info bg-info/10' },
+          { label: 'Top Referral Count', value: loading ? '…' : (leaderboard[0]?.referralCount ?? 0).toLocaleString(), icon: TrendingUp, color: 'text-success bg-success/10' },
         ].map((stat) => {
           const Icon = stat.icon;
           return (
@@ -92,7 +92,7 @@ export default function SuperAdminReferralsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-3 text-right">
-                      <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
+                      <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 text-xs font-bold">
                         {row.referralCount}
                       </span>
                     </td>

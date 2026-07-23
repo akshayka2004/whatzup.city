@@ -44,9 +44,9 @@ function formatDate(d?: string) {
 }
 
 function roleLabel(role: string) {
-  if (role === 'SUPER_ADMIN') return { label: 'Super Admin', color: 'text-violet-400 bg-violet-500/10 border-violet-500/20' };
-  if (role === 'MASTER_ADMIN') return { label: 'Portal Admin', color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' };
-  return { label: role, color: 'text-slate-400 bg-slate-500/10 border-slate-500/20' };
+  if (role === 'SUPER_ADMIN') return { label: 'Super Admin', color: 'text-primary bg-primary/10 border-primary/20' };
+  if (role === 'MASTER_ADMIN') return { label: 'Portal Admin', color: 'text-info bg-info/10 border-info/20' };
+  return { label: role, color: 'text-muted-foreground bg-muted border-border' };
 }
 
 export default function AdminManagementPage() {
@@ -106,7 +106,7 @@ export default function AdminManagementPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Shield className="h-6 w-6 text-violet-400" />
+              <Shield className="h-6 w-6 text-primary" />
               Admin Management
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -115,7 +115,7 @@ export default function AdminManagementPage() {
           </div>
           <Button
             onClick={() => { setIsOpen(true); setError(''); setSuccess(''); }}
-            className="rounded-xl bg-violet-600 hover:bg-violet-500 text-white gap-2 font-semibold cursor-pointer"
+            className="rounded-xl bg-primary hover:bg-primary text-white gap-2 font-semibold cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             Add Admin
@@ -123,7 +123,7 @@ export default function AdminManagementPage() {
         </div>
 
         {success && (
-          <div className="flex items-center gap-2 text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-success bg-success/10 border border-success/20 rounded-xl px-4 py-3">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             {success}
           </div>
@@ -135,7 +135,7 @@ export default function AdminManagementPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : admins.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
             <Shield className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No admin accounts yet</p>
             <p className="text-xs text-muted-foreground">Create your first Portal Admin account above.</p>
@@ -147,11 +147,11 @@ export default function AdminManagementPage() {
               return (
                 <Card
                   key={admin.id}
-                  className="p-5 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl"
+                  className="p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-violet-500/20 to-cyan-500/20 flex items-center justify-center text-sm font-bold text-violet-300 shrink-0">
+                      <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-primary/20 to-info/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
                         {admin.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
@@ -161,7 +161,7 @@ export default function AdminManagementPage() {
                             {label}
                           </span>
                           {!admin.isActive && (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-rose-500/20 bg-rose-500/10 text-rose-400">
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-destructive/20 bg-destructive/10 text-destructive">
                               Inactive
                             </span>
                           )}
@@ -193,10 +193,10 @@ export default function AdminManagementPage() {
         {/* Create Admin Modal */}
         {isOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-violet-400" />
+                  <Shield className="h-5 w-5 text-primary" />
                   Create Admin Account
                 </h3>
                 <button
@@ -208,14 +208,14 @@ export default function AdminManagementPage() {
               </div>
 
               {error && (
-                <p className="mb-4 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2">
+                <p className="mb-4 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2">
                   {error}
                 </p>
               )}
 
               <form onSubmit={handleCreate} className="space-y-4">
                 <div>
-                  <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+                  <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
                     <User className="h-3 w-3" /> Full Name
                   </label>
                   <Input
@@ -223,11 +223,11 @@ export default function AdminManagementPage() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Portal Admin Name"
                     required
-                    className="rounded-xl border-white/10 bg-white/5"
+                    className="rounded-xl border-border bg-secondary"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+                  <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
                     <Mail className="h-3 w-3" /> Email Address
                   </label>
                   <Input
@@ -236,12 +236,12 @@ export default function AdminManagementPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@whtzup.city"
                     required
-                    className="rounded-xl border-white/10 bg-white/5"
+                    className="rounded-xl border-border bg-secondary"
                     autoComplete="off"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+                  <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
                     <KeyRound className="h-3 w-3" /> Password
                   </label>
                   <Input
@@ -251,12 +251,12 @@ export default function AdminManagementPage() {
                     placeholder="Min 8 characters"
                     required
                     minLength={8}
-                    className="rounded-xl border-white/10 bg-white/5"
+                    className="rounded-xl border-border bg-secondary"
                     autoComplete="new-password"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+                  <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
                     <UserCheck className="h-3 w-3" /> Role
                   </label>
                   <div className="space-y-2">
@@ -266,8 +266,8 @@ export default function AdminManagementPage() {
                         className={cn(
                           'flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors',
                           role === opt.value
-                            ? 'border-violet-500/40 bg-violet-500/10'
-                            : 'border-white/10 bg-white/5 hover:bg-white/10',
+                            ? 'border-primary/40 bg-primary/10'
+                            : 'border-border bg-secondary hover:bg-secondary',
                         )}
                       >
                         <input
@@ -276,7 +276,7 @@ export default function AdminManagementPage() {
                           value={opt.value}
                           checked={role === opt.value}
                           onChange={() => setRole(opt.value as any)}
-                          className="mt-0.5 accent-violet-500"
+                          className="mt-0.5 accent-primary"
                         />
                         <div>
                           <p className="text-sm font-medium text-foreground">{opt.label}</p>
@@ -291,14 +291,14 @@ export default function AdminManagementPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsOpen(false)}
-                    className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
+                    className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
                     disabled={saving}
-                    className="flex-1 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold cursor-pointer"
+                    className="flex-1 rounded-xl bg-primary hover:bg-primary text-white font-semibold cursor-pointer"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Admin'}
                   </Button>

@@ -23,9 +23,9 @@ export default function AdminSettingsPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl space-y-6">
+          <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl space-y-6">
             <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <Shield className="h-5 w-5 text-violet-400" />
+              <Shield className="h-5 w-5 text-primary" />
               Verification Rules
             </h3>
             <div className="space-y-4">
@@ -36,7 +36,7 @@ export default function AdminSettingsPage() {
                 <input
                   type="text"
                   defaultValue="95%"
-                  className="w-full bg-secondary border border-white/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:border-primary"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:border-primary"
                 />
               </div>
               <div>
@@ -46,15 +46,15 @@ export default function AdminSettingsPage() {
                 <input
                   type="text"
                   defaultValue="70%"
-                  className="w-full bg-secondary border border-white/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:border-primary"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:border-primary"
                 />
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl space-y-6">
+          <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl space-y-6">
             <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <Hammer className="h-5 w-5 text-emerald-400" />
+              <Hammer className="h-5 w-5 text-success" />
               Rate Limiting Parameters
             </h3>
             <div className="space-y-4">
@@ -65,7 +65,7 @@ export default function AdminSettingsPage() {
                 <input
                   type="text"
                   defaultValue="100 reqs/min"
-                  className="w-full bg-secondary border border-white/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:border-primary"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:border-primary"
                 />
               </div>
               <div>
@@ -75,7 +75,7 @@ export default function AdminSettingsPage() {
                 <input
                   type="text"
                   defaultValue="24 Hours"
-                  className="w-full bg-secondary border border-white/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:border-primary"
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:border-primary"
                 />
               </div>
             </div>

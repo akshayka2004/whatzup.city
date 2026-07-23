@@ -167,7 +167,7 @@ export default function AdminCategoriesPage() {
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
-                    <div className="p-2 bg-violet-500/10 text-violet-400 rounded-lg">
+                    <div className="p-2 bg-primary/10 text-primary rounded-lg">
                       <Folder className="h-5 w-5" />
                     </div>
                     <div>
@@ -193,7 +193,7 @@ export default function AdminCategoriesPage() {
                       <button
                         onClick={() => toggleActive(cat.id)}
                         className={`font-semibold mt-0.5 text-xs hover:opacity-80 transition-opacity ${
-                          cat.active ? 'text-emerald-400' : 'text-muted-foreground'
+                          cat.active ? 'text-success' : 'text-muted-foreground'
                         }`}
                       >
                         {cat.active ? 'Active' : 'Inactive'}
@@ -214,7 +214,7 @@ export default function AdminCategoriesPage() {
                     onClick={() => setDeletingCategory(cat)}
                     size="icon"
                     variant="outline"
-                    className="h-9 w-9 rounded-xl border-rose-500/20 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                    className="h-9 w-9 rounded-xl border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -405,7 +405,7 @@ export default function AdminCategoriesPage() {
               >
                 <X className="h-5 w-5" />
               </button>
-              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Delete Directory Category</h3>
@@ -424,7 +424,7 @@ export default function AdminCategoriesPage() {
                 </Button>
                 <Button
                   onClick={handleDelete}
-                  className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4"
+                  className="rounded-xl bg-destructive hover:bg-destructive text-white px-4"
                 >
                   Delete
                 </Button>

@@ -180,7 +180,7 @@ export default function MediaPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : media.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
             <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No media files yet</p>
             <p className="text-sm text-muted-foreground">Upload your first image to build your gallery.</p>
@@ -196,7 +196,7 @@ export default function MediaPage() {
               return (
                 <Card
                   key={item.id}
-                  className="rounded-2xl overflow-hidden border-white/5 bg-card/40 backdrop-blur-xl group hover:shadow-lg transition-all duration-300"
+                  className="rounded-2xl overflow-hidden border-border bg-card/40 backdrop-blur-xl group hover:shadow-lg transition-all duration-300"
                 >
                   <div className="h-48 w-full relative overflow-hidden bg-secondary">
                     {itemUrl ? (
@@ -219,7 +219,7 @@ export default function MediaPage() {
                       {item.tags && item.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {item.tags.slice(0, 3).map((t: string) => (
-                            <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">{t}</span>
+                            <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">{t}</span>
                           ))}
                         </div>
                       )}
@@ -229,7 +229,7 @@ export default function MediaPage() {
                         onClick={() => setViewingMedia({ ...item, name: itemName, url: itemUrl, size: itemSize })}
                         size="icon"
                         variant="outline"
-                        className="h-8 w-8 rounded-lg border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
+                        className="h-8 w-8 rounded-lg border-border text-foreground hover:bg-secondary cursor-pointer"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -237,7 +237,7 @@ export default function MediaPage() {
                         onClick={() => setDeletingMedia({ ...item, name: itemName })}
                         size="icon"
                         variant="outline"
-                        className="h-8 w-8 rounded-lg border-rose-500/20 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 cursor-pointer"
+                        className="h-8 w-8 rounded-lg border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -252,7 +252,7 @@ export default function MediaPage() {
         {/* ── UPLOAD MODAL ───────────────────────────────── */}
         {isUploadOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button
                 onClick={() => { setIsUploadOpen(false); setSelectedFile(null); setUploadTitle(''); setUploadDesc(''); setUploadTagsStr(''); setUploadError(''); setUploadSuccess(false); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -263,20 +263,20 @@ export default function MediaPage() {
 
               {uploadSuccess ? (
                 <div className="flex flex-col items-center justify-center py-8 gap-3">
-                  <CheckCircle2 className="h-12 w-12 text-emerald-400" />
-                  <p className="text-emerald-400 font-semibold text-lg">Uploaded successfully!</p>
+                  <CheckCircle2 className="h-12 w-12 text-success" />
+                  <p className="text-success font-semibold text-lg">Uploaded successfully!</p>
                 </div>
               ) : (
                 <form onSubmit={handleUpload} className="space-y-4">
                   {/* File picker */}
                   <div>
-                    <label className="text-sm font-medium text-slate-300 block mb-2">Select File</label>
+                    <label className="text-sm font-medium text-foreground block mb-2">Select File</label>
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                      className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
                     >
                       {selectedFile ? (
-                        <div className="flex items-center justify-center gap-2 text-emerald-400">
+                        <div className="flex items-center justify-center gap-2 text-success">
                           <CheckCircle2 className="h-5 w-5" />
                           <span className="text-sm font-medium truncate max-w-xs">{selectedFile.name}</span>
                           <span className="text-xs text-muted-foreground">({(selectedFile.size / 1024).toFixed(0)} KB)</span>
@@ -300,38 +300,38 @@ export default function MediaPage() {
 
                   {/* Metadata fields */}
                   <div>
-                    <label className="text-xs font-medium text-slate-300 block mb-1.5">Title</label>
+                    <label className="text-xs font-medium text-foreground block mb-1.5">Title</label>
                     <Input
                       value={uploadTitle}
                       onChange={(e) => setUploadTitle(e.target.value)}
                       placeholder="Image title (optional)"
-                      className="rounded-xl border-white/10 bg-white/5"
+                      className="rounded-xl border-border bg-secondary"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-slate-300 block mb-1.5">Description</label>
+                    <label className="text-xs font-medium text-foreground block mb-1.5">Description</label>
                     <textarea
                       value={uploadDesc}
                       onChange={(e) => setUploadDesc(e.target.value)}
                       placeholder="Short description (optional)"
                       rows={2}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-violet-500 resize-none"
+                      className="w-full rounded-xl border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-slate-300 block mb-1.5 flex items-center gap-1">
+                    <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
                       <Tag className="h-3 w-3" /> Tags (comma separated)
                     </label>
                     <Input
                       value={uploadTagsStr}
                       onChange={(e) => setUploadTagsStr(e.target.value)}
                       placeholder="interior, product, team"
-                      className="rounded-xl border-white/10 bg-white/5"
+                      className="rounded-xl border-border bg-secondary"
                     />
                   </div>
 
                   {uploadError && (
-                    <div className="flex items-start gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
+                    <div className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
                       <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                       {uploadError}
                     </div>
@@ -342,7 +342,7 @@ export default function MediaPage() {
                       type="button"
                       variant="outline"
                       onClick={() => { setIsUploadOpen(false); setSelectedFile(null); setUploadTitle(''); setUploadDesc(''); setUploadTagsStr(''); setUploadError(''); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                      className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer"
+                      className="rounded-xl border-border hover:bg-secondary text-foreground cursor-pointer"
                       disabled={uploading}
                     >
                       Cancel
@@ -365,7 +365,7 @@ export default function MediaPage() {
         {/* ── VIEW MODAL ─────────────────────────────────── */}
         {viewingMedia && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-2xl p-2 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-2xl p-2 rounded-2xl border-border bg-card shadow-2xl relative">
               <button
                 onClick={() => setViewingMedia(null)}
                 className="absolute top-3 right-3 z-10 bg-black/50 rounded-full p-1 text-white hover:bg-black/70 cursor-pointer"
@@ -388,14 +388,14 @@ export default function MediaPage() {
         {/* ── DELETE MODAL ────────────────────────────────── */}
         {deletingMedia && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
               <button
                 onClick={() => setDeletingMedia(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
-              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Delete Media Asset</h3>
@@ -406,13 +406,13 @@ export default function MediaPage() {
                 <Button
                   onClick={() => setDeletingMedia(null)}
                   variant="outline"
-                  className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 px-4 cursor-pointer"
+                  className="rounded-xl border-border hover:bg-secondary text-foreground px-4 cursor-pointer"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleDelete}
-                  className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4 cursor-pointer"
+                  className="rounded-xl bg-destructive hover:bg-destructive text-white px-4 cursor-pointer"
                 >
                   Delete
                 </Button>

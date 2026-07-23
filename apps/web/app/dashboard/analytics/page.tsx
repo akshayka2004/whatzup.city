@@ -51,7 +51,7 @@ function StatCard({
   loading: boolean;
 }) {
   return (
-    <Card className="p-4 md:p-5 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all group relative overflow-hidden">
+    <Card className="p-4 md:p-5 rounded-2xl border-border bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all group relative overflow-hidden">
       <div className="absolute top-0 right-0 w-28 h-28 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
       <div className={`inline-flex p-2 md:p-2.5 rounded-xl mb-2 md:mb-3 ${bg}`}>
         <Icon className={`h-4 w-4 ${color}`} />
@@ -122,24 +122,24 @@ export default function AnalyticsPage() {
       value: loading ? '…' : (kpis.impressions ?? 0).toLocaleString(),
       sub: `past ${rangeToDays[range]} days`,
       icon: Eye,
-      color: 'text-indigo-400',
-      bg: 'bg-indigo-500/10',
+      color: 'text-info',
+      bg: 'bg-info/10',
     },
     {
       label: 'Active Offers',
       value: loading ? '…' : `${kpis.activeOffers ?? 0} / ${kpis.totalOffers ?? 0}`,
       sub: 'active / total',
       icon: Tag,
-      color: 'text-amber-400',
-      bg: 'bg-amber-500/10',
+      color: 'text-warning',
+      bg: 'bg-warning/10',
     },
     {
       label: 'Total Redemptions',
       value: loading ? '…' : (kpis.totalRedemptions ?? 0).toLocaleString(),
       sub: 'all-time across all offers',
       icon: ShoppingBag,
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-500/10',
+      color: 'text-success',
+      bg: 'bg-success/10',
     },
     {
       label: 'Avg Rating',
@@ -148,48 +148,48 @@ export default function AnalyticsPage() {
         ? `${kpis.totalReviews} review${kpis.totalReviews !== 1 ? 's' : ''}`
         : 'no reviews yet',
       icon: Star,
-      color: 'text-yellow-400',
-      bg: 'bg-yellow-500/10',
+      color: 'text-warning',
+      bg: 'bg-warning/10',
     },
     {
       label: 'Total Reviews',
       value: loading ? '…' : (kpis.totalReviews ?? 0).toLocaleString(),
       sub: avgRatingDisplay !== '—' ? `${avgRatingDisplay} avg` : undefined,
       icon: Users,
-      color: 'text-violet-400',
-      bg: 'bg-violet-500/10',
+      color: 'text-primary',
+      bg: 'bg-primary/10',
     },
     {
       label: 'Team Members',
       value: loading ? '…' : (kpis.teamCount ?? 0).toLocaleString(),
       sub: 'active staff',
       icon: UserCheck,
-      color: 'text-cyan-400',
-      bg: 'bg-cyan-500/10',
+      color: 'text-info',
+      bg: 'bg-info/10',
     },
     {
       label: 'Customers',
       value: loading ? '…' : (kpis.customerCount ?? 0).toLocaleString(),
       sub: 'unique customers tracked',
       icon: Heart,
-      color: 'text-rose-400',
-      bg: 'bg-rose-500/10',
+      color: 'text-destructive',
+      bg: 'bg-destructive/10',
     },
     {
       label: 'Total Claims',
       value: loading ? '…' : (kpis.totalClaims ?? 0).toLocaleString(),
       sub: 'offer claims via CRM',
       icon: Tag,
-      color: 'text-orange-400',
-      bg: 'bg-orange-500/10',
+      color: 'text-warning',
+      bg: 'bg-warning/10',
     },
     {
       label: 'Redemption Rate',
       value: loading ? '…' : `${kpis.redemptionRate ?? 0}%`,
       sub: 'claims → redemptions',
       icon: TrendingUp,
-      color: 'text-teal-400',
-      bg: 'bg-teal-500/10',
+      color: 'text-success',
+      bg: 'bg-success/10',
     },
   ];
 
@@ -206,7 +206,7 @@ export default function AnalyticsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-white/5 border border-white/10">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary border border-border">
               {RANGES.map((r) => (
                 <button
                   key={r}
@@ -226,7 +226,7 @@ export default function AnalyticsPage() {
               size="sm"
               onClick={fetchSummary}
               disabled={loading}
-              className="rounded-xl border-white/10 gap-1.5 text-slate-300 hover:bg-white/5"
+              className="rounded-xl border-border gap-1.5 text-foreground hover:bg-secondary"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -236,7 +236,7 @@ export default function AnalyticsPage() {
 
         {/* ── No business ── */}
         {!businessId && (
-          <Card className="p-12 rounded-2xl border-white/5 bg-card/40 text-center">
+          <Card className="p-12 rounded-2xl border-border bg-card/40 text-center">
             <TrendingUp className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No business linked</p>
             <p className="text-sm text-muted-foreground">Your account is not linked to a business.</p>
@@ -245,8 +245,8 @@ export default function AnalyticsPage() {
 
         {/* ── Error ── */}
         {!loading && error && businessId && (
-          <Card className="p-12 rounded-2xl border-rose-500/20 bg-rose-500/5 text-center">
-            <TrendingUp className="h-10 w-10 mx-auto text-rose-400 mb-3 opacity-60" />
+          <Card className="p-12 rounded-2xl border-destructive/20 bg-destructive/5 text-center">
+            <TrendingUp className="h-10 w-10 mx-auto text-destructive mb-3 opacity-60" />
             <p className="text-foreground font-semibold mb-1">Failed to load analytics</p>
             <p className="text-sm text-muted-foreground mb-4">Could not fetch analytics data. Try refreshing.</p>
             <Button onClick={fetchSummary} size="sm" className="rounded-xl bg-primary text-primary-foreground">
@@ -265,7 +265,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* ── Redemption Trend Chart ── */}
-            <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+            <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
               <div className="mb-5">
                 <h3 className="text-base font-bold text-foreground">Redemption Activity</h3>
                 <p className="text-xs text-muted-foreground">
@@ -313,7 +313,7 @@ export default function AnalyticsPage() {
             <div className="grid lg:grid-cols-2 gap-6">
 
               {/* Offer Performance */}
-              <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+              <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
                 <div className="mb-5">
                   <h3 className="text-base font-bold text-foreground">Offer Performance</h3>
                   <p className="text-xs text-muted-foreground">Claims and discount % per offer.</p>
@@ -355,7 +355,7 @@ export default function AnalyticsPage() {
               </Card>
 
               {/* Rating Distribution */}
-              <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+              <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
                 <div className="mb-5">
                   <h3 className="text-base font-bold text-foreground">Rating Distribution</h3>
                   <p className="text-xs text-muted-foreground">Approved reviews by star rating.</p>
@@ -378,9 +378,9 @@ export default function AnalyticsPage() {
                           <span className="text-xs font-semibold text-muted-foreground w-8 shrink-0">
                             {r.stars}★
                           </span>
-                          <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
+                          <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
                             <div
-                              className="h-full rounded-full bg-amber-400 transition-all duration-500"
+                              className="h-full rounded-full bg-warning transition-all duration-500"
                               style={{ width: `${pct}%` }}
                             />
                           </div>
@@ -397,13 +397,13 @@ export default function AnalyticsPage() {
 
             {/* ── Recent Reviews ── */}
             {!loading && recentRevs.length > 0 && (
-              <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
+              <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
                 <h3 className="text-base font-bold text-foreground mb-4">Recent Reviews</h3>
                 <div className="space-y-4">
                   {recentRevs.map((rev: any, i: number) => (
                     <div
                       key={i}
-                      className="flex gap-4 p-4 rounded-xl bg-white/3 border border-white/5"
+                      className="flex gap-4 p-4 rounded-xl bg-secondary border border-border"
                     >
                       <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold text-sm">
                         {rev.author?.charAt(0)?.toUpperCase() ?? 'C'}
@@ -411,7 +411,7 @@ export default function AnalyticsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <span className="text-sm font-semibold text-foreground">{rev.author}</span>
-                          <span className="text-amber-400 text-xs">{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</span>
+                          <span className="text-warning text-xs">{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</span>
                           <span className="text-xs text-muted-foreground ml-auto">
                             {new Date(rev.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
@@ -428,7 +428,7 @@ export default function AnalyticsPage() {
             )}
 
             {/* ── Impressions note ── */}
-            <Card className="p-4 rounded-2xl border-white/5 bg-card/20 text-center">
+            <Card className="p-4 rounded-2xl border-border bg-card/20 text-center">
               <p className="text-xs text-muted-foreground">
                 <Eye className="inline h-3.5 w-3.5 mr-1 opacity-60" />
                 Impressions are counted each time a customer opens your business listing. Counts are tracked

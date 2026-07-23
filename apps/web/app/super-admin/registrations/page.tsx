@@ -40,12 +40,12 @@ const ROLE_OPTIONS = [
 ];
 
 const roleColor = (role: string): string => {
-  if (role.includes('SUPER') || role.includes('MASTER')) return 'bg-rose-500/15 text-rose-300';
-  if (role.includes('GOVERNMENT')) return 'bg-amber-500/15 text-amber-300';
-  if (role.includes('BUSINESS')) return 'bg-cyan-500/15 text-cyan-300';
-  if (role.includes('NGO') || role.includes('COMMUNITY') || role.includes('NEWS')) return 'bg-emerald-500/15 text-emerald-300';
-  if (role === 'USER') return 'bg-slate-500/15 text-slate-300';
-  return 'bg-violet-500/15 text-violet-300';
+  if (role.includes('SUPER') || role.includes('MASTER')) return 'bg-destructive/15 text-destructive';
+  if (role.includes('GOVERNMENT')) return 'bg-warning/15 text-warning';
+  if (role.includes('BUSINESS')) return 'bg-info/15 text-info';
+  if (role.includes('NGO') || role.includes('COMMUNITY') || role.includes('NEWS')) return 'bg-success/15 text-success';
+  if (role === 'USER') return 'bg-muted text-foreground';
+  return 'bg-primary/15 text-primary';
 };
 
 type SortKey = 'name' | 'email' | 'role' | 'createdAt' | 'lastLoginAt' | 'isActive';
@@ -239,7 +239,7 @@ export default function SuperAdminUsersPage() {
                       <td className="px-5 py-3 text-muted-foreground">
                         <span className="inline-flex items-center gap-1.5">
                           {u.email}
-                          {u.emailVerified && <ShieldCheck className="h-3 w-3 text-emerald-400" />}
+                          {u.emailVerified && <ShieldCheck className="h-3 w-3 text-success" />}
                         </span>
                       </td>
                       <td className="px-5 py-3">
@@ -256,20 +256,20 @@ export default function SuperAdminUsersPage() {
                       </td>
                       <td className="px-5 py-3 text-right">
                         <span className="inline-flex items-center gap-1 text-foreground font-semibold">
-                          <Receipt className="h-3 w-3 text-cyan-400" /> {u.billCount ?? 0}
+                          <Receipt className="h-3 w-3 text-info" /> {u.billCount ?? 0}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right font-semibold text-emerald-400 whitespace-nowrap">
+                      <td className="px-5 py-3 text-right font-semibold text-success whitespace-nowrap">
                         ₹{(u.totalSpent ?? 0).toLocaleString('en-IN')}
                       </td>
                       <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{fmtDate(u.createdAt)}</td>
                       <td className="px-5 py-3 text-right">
                         {u.isActive ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 text-[10px] font-bold">
                             <ShieldCheck className="h-3 w-3" /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-bold">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20 text-[10px] font-bold">
                             <ShieldX className="h-3 w-3" /> Inactive
                           </span>
                         )}

@@ -58,8 +58,8 @@ export default function ReviewsPage() {
             <h1 className="text-3xl font-bold text-foreground mb-2">Customer Reviews</h1>
             <p className="text-muted-foreground">Monitor customer feedback and ratings</p>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-4 py-2">
-            <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+          <div className="flex items-center gap-2 bg-secondary border border-border rounded-xl px-4 py-2">
+            <Star className="h-5 w-5 fill-warning text-warning" />
             <span className="font-bold text-foreground text-lg">{avgRating}</span>
             <span className="text-xs text-muted-foreground">avg ({reviews.length} reviews)</span>
           </div>
@@ -70,7 +70,7 @@ export default function ReviewsPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : reviews.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
             <Star className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No reviews yet</p>
             <p className="text-sm text-muted-foreground">Customer reviews will appear here once submitted.</p>
@@ -81,7 +81,7 @@ export default function ReviewsPage() {
           {reviews.map((review) => (
             <Card
               key={review.id}
-              className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:shadow-md transition-all duration-300 relative overflow-hidden group"
+              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all duration-300 relative overflow-hidden group"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
               <div className="flex items-start justify-between">
@@ -92,7 +92,7 @@ export default function ReviewsPage() {
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`h-4 w-4 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`}
+                          className={`h-4 w-4 ${i < review.rating ? 'fill-warning text-warning' : 'text-muted-foreground/30'}`}
                         />
                       ))}
                     </div>
@@ -104,7 +104,7 @@ export default function ReviewsPage() {
                   onClick={() => setDeletingReview(review)}
                   size="icon"
                   variant="outline"
-                  className="rounded-xl border-rose-500/20 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 h-9 w-9 flex-shrink-0"
+                  className="rounded-xl border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10 h-9 w-9 flex-shrink-0"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -115,14 +115,14 @@ export default function ReviewsPage() {
 
         {deletingReview && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
               <button
                 onClick={() => setDeletingReview(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
-              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Delete Review</h3>
@@ -134,13 +134,13 @@ export default function ReviewsPage() {
                 <Button
                   onClick={() => setDeletingReview(null)}
                   variant="outline"
-                  className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 px-4"
+                  className="rounded-xl border-border hover:bg-secondary text-foreground px-4"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleDelete}
-                  className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4"
+                  className="rounded-xl bg-destructive hover:bg-destructive text-white px-4"
                 >
                   Delete
                 </Button>

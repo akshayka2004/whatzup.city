@@ -73,13 +73,13 @@ function FraudBar({ score }: { score: number }) {
     <div className="space-y-1">
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">Fraud Score</span>
-        <span className={cn('text-xs font-bold', pct >= 80 ? 'text-red-400' : pct >= 60 ? 'text-orange-400' : 'text-amber-400')}>
+        <span className={cn('text-xs font-bold', pct >= 80 ? 'text-destructive' : pct >= 60 ? 'text-warning' : 'text-warning')}>
           {pct}%
         </span>
       </div>
-      <div className="h-1.5 rounded-full bg-white/10">
+      <div className="h-1.5 rounded-full bg-secondary">
         <div
-          className={cn('h-1.5 rounded-full', pct >= 80 ? 'bg-red-500' : pct >= 60 ? 'bg-orange-500' : 'bg-amber-500')}
+          className={cn('h-1.5 rounded-full', pct >= 80 ? 'bg-destructive' : pct >= 60 ? 'bg-warning' : 'bg-warning')}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -107,9 +107,9 @@ export default function FraudEscalationsPage() {
         {/* ── HEADER ─────────────────────────────────────────── */}
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <ShieldAlert className="h-6 w-6 text-rose-400" />
+            <ShieldAlert className="h-6 w-6 text-destructive" />
             <h1 className="text-2xl font-bold text-foreground">Fraud Escalation Queue</h1>
-            <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-400 text-xs font-semibold">
+            <span className="px-2 py-0.5 rounded-full bg-destructive/15 text-destructive text-xs font-semibold">
               {bills.length} Escalated
             </span>
           </div>
@@ -119,14 +119,14 @@ export default function FraudEscalationsPage() {
         </div>
 
         {/* ── ARCHITECTURE NOTE ───────────────────────────────── */}
-        <Card className="p-4 rounded-2xl border-blue-500/20 bg-blue-500/5">
+        <Card className="p-4 rounded-2xl border-info/20 bg-info/5">
           <div className="flex items-start gap-3">
-            <div className="h-8 w-8 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0">
-              <Info className="h-4 w-4 text-blue-400" />
+            <div className="h-8 w-8 rounded-lg bg-info/15 flex items-center justify-center shrink-0">
+              <Info className="h-4 w-4 text-info" />
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-blue-300 mb-1">Admin Role — Read-Only Monitoring</h4>
-              <p className="text-xs text-blue-400/80 leading-relaxed">
+              <h4 className="text-sm font-semibold text-info mb-1">Admin Role — Read-Only Monitoring</h4>
+              <p className="text-xs text-info/80 leading-relaxed">
                 As Master Admin, you monitor fraud escalations raised by businesses. Bill verification is now
                 managed by Business Owners and Business Moderators within each business. You may intervene
                 via Super Admin override if platform policy requires it.
@@ -138,9 +138,9 @@ export default function FraudEscalationsPage() {
         {/* ── STATS ──────────────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Total Escalated', value: bills.length, icon: ShieldAlert, color: 'text-rose-400', bg: 'bg-rose-500/10' },
-            { label: 'High Risk (>80%)', value: bills.filter((b) => b.fraudScore >= 0.8).length, icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/10' },
-            { label: 'Avg Fraud Score', value: `${Math.round((bills.reduce((a, b) => a + b.fraudScore, 0) / bills.length) * 100)}%`, icon: TrendingUp, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+            { label: 'Total Escalated', value: bills.length, icon: ShieldAlert, color: 'text-destructive', bg: 'bg-destructive/10' },
+            { label: 'High Risk (>80%)', value: bills.filter((b) => b.fraudScore >= 0.8).length, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10' },
+            { label: 'Avg Fraud Score', value: `${Math.round((bills.reduce((a, b) => a + b.fraudScore, 0) / bills.length) * 100)}%`, icon: TrendingUp, color: 'text-warning', bg: 'bg-warning/10' },
           ].map((stat) => (
             <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
               <div className="flex items-center justify-between mb-2">
@@ -168,7 +168,7 @@ export default function FraudEscalationsPage() {
         {/* ── ESCALATED BILL LIST ─────────────────────────────── */}
         {filtered.length === 0 ? (
           <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary/20 text-center">
-            <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto mb-3 opacity-50" />
+            <CheckCircle2 className="h-10 w-10 text-success mx-auto mb-3 opacity-50" />
             <h3 className="text-base font-semibold text-foreground mb-1">No Escalations</h3>
             <p className="text-sm text-muted-foreground">Platform fraud queue is clear.</p>
           </Card>
@@ -181,8 +181,8 @@ export default function FraudEscalationsPage() {
                   key={item.id}
                   className={cn(
                     'p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all',
-                    fraudPct >= 80 && 'border-l-2 border-l-red-500/60',
-                    fraudPct >= 60 && fraudPct < 80 && 'border-l-2 border-l-orange-500/50',
+                    fraudPct >= 80 && 'border-l-2 border-l-destructive/60',
+                    fraudPct >= 60 && fraudPct < 80 && 'border-l-2 border-l-warning/50',
                   )}
                 >
                   <div className="flex flex-col lg:flex-row gap-5">
@@ -192,7 +192,7 @@ export default function FraudEscalationsPage() {
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-sm font-bold text-foreground">{item.business}</h3>
-                            <span className="px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-400 text-[10px] font-semibold flex items-center gap-0.5">
+                            <span className="px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-semibold flex items-center gap-0.5">
                               <ArrowUpRight className="h-3 w-3" />
                               Platform Escalated
                             </span>
@@ -212,10 +212,10 @@ export default function FraudEscalationsPage() {
                       </div>
 
                       {/* Escalation reason */}
-                      <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-rose-500/5 border border-rose-500/10">
-                        <Flag className="h-3.5 w-3.5 text-rose-400 mt-0.5 shrink-0" />
+                      <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-destructive/5 border border-destructive/10">
+                        <Flag className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
                         <div>
-                          <p className="text-[10px] text-rose-400 font-semibold mb-0.5">
+                          <p className="text-[10px] text-destructive font-semibold mb-0.5">
                             Escalated by: {item.escalatedBy} • {item.previousAttempts} submission attempt{item.previousAttempts > 1 ? 's' : ''}
                           </p>
                           <p className="text-xs text-foreground/80">{item.reason}</p>
@@ -239,7 +239,7 @@ export default function FraudEscalationsPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 gap-1.5 text-xs h-8"
+                        className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 gap-1.5 text-xs h-8"
                         disabled
                         title="Super Admin action only"
                       >
@@ -259,7 +259,7 @@ export default function FraudEscalationsPage() {
             <Card className="w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <ShieldAlert className="h-4 w-4 text-rose-400" />
+                  <ShieldAlert className="h-4 w-4 text-destructive" />
                   Escalation Detail
                 </h3>
                 <button onClick={() => setReviewingItem(null)} className="text-muted-foreground hover:text-foreground text-lg leading-none cursor-pointer">×</button>
@@ -291,15 +291,15 @@ export default function FraudEscalationsPage() {
                   <FraudBar score={reviewingItem.fraudScore} />
                 </div>
 
-                <div className="px-3 py-3 rounded-xl bg-rose-500/5 border border-rose-500/10">
-                  <p className="text-[10px] text-rose-400 font-semibold mb-1 flex items-center gap-1">
+                <div className="px-3 py-3 rounded-xl bg-destructive/5 border border-destructive/10">
+                  <p className="text-[10px] text-destructive font-semibold mb-1 flex items-center gap-1">
                     <Flag className="h-3 w-3" /> Escalation Reason
                   </p>
                   <p className="text-xs text-foreground/80">{reviewingItem.reason}</p>
                 </div>
 
-                <div className="px-3 py-3 rounded-xl bg-blue-500/5 border border-blue-500/10">
-                  <p className="text-xs text-blue-400 flex items-center gap-1.5">
+                <div className="px-3 py-3 rounded-xl bg-info/5 border border-info/10">
+                  <p className="text-xs text-info flex items-center gap-1.5">
                     <Info className="h-3.5 w-3.5 shrink-0" />
                     Intervention requires Super Admin authority. Contact your Super Admin or use the Super Admin panel.
                   </p>

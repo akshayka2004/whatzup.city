@@ -150,7 +150,7 @@ export default function BillsPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : bills.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
             <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No bills yet</p>
             <p className="text-sm text-muted-foreground">Customer receipts submitted to this business will appear here.</p>
@@ -164,14 +164,14 @@ export default function BillsPage() {
               return (
                 <Card
                   key={bill.id}
-                  className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+                  className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center ${
-                        bill.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400'
-                          : bill.status === 'REJECTED' ? 'bg-rose-500/10 text-rose-400'
-                          : 'bg-amber-500/10 text-amber-400'
+                        bill.status === 'APPROVED' ? 'bg-success/10 text-success'
+                          : bill.status === 'REJECTED' ? 'bg-destructive/10 text-destructive'
+                          : 'bg-warning/10 text-warning'
                       }`}>
                         <FileText className="h-5 w-5" />
                       </div>
@@ -182,12 +182,12 @@ export default function BillsPage() {
                         <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
                           <User className="h-3 w-3" />
                           {bill.customerName}
-                          <span className="text-white/20">·</span>
+                          <span className="text-muted-foreground/50">·</span>
                           {uploadedDate}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-6 text-sm border-t sm:border-t-0 pt-4 sm:pt-0 border-white/5">
+                    <div className="flex items-center gap-6 text-sm border-t sm:border-t-0 pt-4 sm:pt-0 border-border">
                       <div>
                         <p className="text-xs text-muted-foreground">Amount</p>
                         <p className="font-bold text-foreground text-base mt-0.5">
@@ -196,19 +196,19 @@ export default function BillsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         {bill.status === 'APPROVED' ? (
-                          <span className="flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-semibold">
+                          <span className="flex items-center gap-1 bg-success/10 text-success border border-success/20 px-3 py-1 rounded-full text-xs font-semibold">
                             <CheckCircle2 className="h-3.5 w-3.5" /> Approved
                           </span>
                         ) : bill.status === 'REJECTED' ? (
-                          <span className="flex items-center gap-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 px-3 py-1 rounded-full text-xs font-semibold">
+                          <span className="flex items-center gap-1 bg-destructive/10 text-destructive border border-destructive/20 px-3 py-1 rounded-full text-xs font-semibold">
                             <AlertCircle className="h-3.5 w-3.5" /> Rejected
                           </span>
                         ) : bill.status === 'RE_UPLOAD_REQUESTED' ? (
-                          <span className="flex items-center gap-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full text-xs font-semibold">
+                          <span className="flex items-center gap-1 bg-info/10 text-info border border-info/20 px-3 py-1 rounded-full text-xs font-semibold">
                             <AlertCircle className="h-3.5 w-3.5" /> Re-Upload
                           </span>
                         ) : (
-                          <span className="flex items-center gap-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-xs font-semibold">
+                          <span className="flex items-center gap-1 bg-warning/10 text-warning border border-warning/20 px-3 py-1 rounded-full text-xs font-semibold">
                             <AlertCircle className="h-3.5 w-3.5" /> Pending
                           </span>
                         )}
@@ -224,7 +224,7 @@ export default function BillsPage() {
         {/* ── UPLOAD BILL MODAL ──────────────────────────── */}
         {isUploadOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
               <button
                 onClick={() => { setIsUploadOpen(false); resetForm(); }}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -234,20 +234,20 @@ export default function BillsPage() {
               <h3 className="text-xl font-bold text-foreground mb-4">Submit Bill Receipt</h3>
               <form onSubmit={handleUpload} className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
-                    Bill Date <span className="text-rose-400">*</span>
+                  <label className="text-sm font-medium text-foreground block mb-2">
+                    Bill Date <span className="text-destructive">*</span>
                   </label>
                   <Input
                     type="date"
                     value={billDate}
                     onChange={(e) => setBillDate(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
-                    Amount (₹) <span className="text-rose-400">*</span>
+                  <label className="text-sm font-medium text-foreground block mb-2">
+                    Amount (₹) <span className="text-destructive">*</span>
                   </label>
                   <Input
                     type="number"
@@ -257,30 +257,30 @@ export default function BillsPage() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     required
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
-                    Description <span className="text-slate-500 text-xs">(optional)</span>
+                  <label className="text-sm font-medium text-foreground block mb-2">
+                    Description <span className="text-muted-foreground text-xs">(optional)</span>
                   </label>
                   <Input
                     placeholder="e.g. Grocery purchase"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="rounded-xl border-white/10 bg-white/5 focus:border-primary text-foreground"
+                    className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 block mb-2">
-                    Receipt Image <span className="text-rose-400">*</span>
+                  <label className="text-sm font-medium text-foreground block mb-2">
+                    Receipt Image <span className="text-destructive">*</span>
                   </label>
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                    className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
                   >
                     {selectedFile ? (
-                      <div className="flex items-center justify-center gap-2 text-emerald-400">
+                      <div className="flex items-center justify-center gap-2 text-success">
                         <CheckCircle2 className="h-5 w-5" />
                         <span className="text-sm font-medium truncate max-w-xs">{selectedFile.name}</span>
                         <span className="text-xs text-muted-foreground">({(selectedFile.size / 1024).toFixed(0)} KB)</span>
@@ -303,7 +303,7 @@ export default function BillsPage() {
                 </div>
 
                 {uploadError && (
-                  <div className="flex items-start gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
+                  <div className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
                     <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                     {uploadError}
                   </div>
@@ -314,7 +314,7 @@ export default function BillsPage() {
                     type="button"
                     variant="outline"
                     onClick={() => { setIsUploadOpen(false); resetForm(); }}
-                    className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 cursor-pointer"
+                    className="rounded-xl border-border hover:bg-secondary text-foreground cursor-pointer"
                     disabled={uploading}
                   >
                     Cancel

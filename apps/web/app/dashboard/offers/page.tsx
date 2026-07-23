@@ -70,7 +70,7 @@ function TagInput({
 
   return (
     <div
-      className="min-h-[42px] flex flex-wrap gap-1.5 items-center border border-white/10 bg-white/5 rounded-xl px-3 py-2 cursor-text focus-within:border-primary transition-colors"
+      className="min-h-[42px] flex flex-wrap gap-1.5 items-center border border-border bg-secondary rounded-xl px-3 py-2 cursor-text focus-within:border-primary transition-colors"
       onClick={() => inputRef.current?.focus()}
     >
       {tags.map((tag) => (
@@ -325,7 +325,7 @@ export default function OffersPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : activeOffers.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-white/10 bg-white/5 text-center">
+          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
             <Tag className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No active offers</p>
             <p className="text-sm text-muted-foreground">Create your first promotional offer to attract customers.</p>
@@ -336,7 +336,7 @@ export default function OffersPage() {
           {activeOffers.map((offer) => (
             <Card
               key={offer.id}
-              className="p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-white/5 bg-card/40 backdrop-blur-xl relative overflow-hidden group"
+              className="p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden group"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
               <div className="flex items-start justify-between mb-3">
@@ -347,19 +347,19 @@ export default function OffersPage() {
                       onClick={() => toggleActive(offer.id)}
                       className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold hover:opacity-85 transition-opacity cursor-pointer ${
                         offer.active
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : 'bg-white/5 text-muted-foreground border border-white/10'
+                          ? 'bg-success/10 text-success border border-success/20'
+                          : 'bg-secondary text-muted-foreground border border-border'
                       }`}
                     >
                       {offer.active ? 'Active' : 'Inactive'}
                     </button>
                     {isScheduled(offer) && (
-                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center gap-1">
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-info/10 text-info border border-info/20 flex items-center gap-1">
                         <Clock className="h-2.5 w-2.5" />Scheduled
                       </span>
                     )}
                     {offer.expiresAt && !isExpired(offer) && (
-                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-warning/10 text-warning border border-warning/20 flex items-center gap-1">
                         <Calendar className="h-2.5 w-2.5" />Expires {offer.expiresAt}
                       </span>
                     )}
@@ -371,7 +371,7 @@ export default function OffersPage() {
                       {offer.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] text-slate-400"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-[10px] text-muted-foreground"
                         >
                           <Tag className="h-2.5 w-2.5" />
                           {tag}
@@ -400,7 +400,7 @@ export default function OffersPage() {
                     onClick={() => setViewingOffer(offer)}
                     size="icon"
                     variant="outline"
-                    className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 h-9 w-9 cursor-pointer"
+                    className="rounded-xl border-border hover:bg-secondary text-foreground h-9 w-9 cursor-pointer"
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
@@ -408,7 +408,7 @@ export default function OffersPage() {
                     onClick={() => handleOpenEdit(offer)}
                     size="icon"
                     variant="outline"
-                    className="rounded-xl border-white/10 hover:bg-white/5 text-slate-300 h-9 w-9 cursor-pointer"
+                    className="rounded-xl border-border hover:bg-secondary text-foreground h-9 w-9 cursor-pointer"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -416,7 +416,7 @@ export default function OffersPage() {
                     onClick={() => setDeletingOffer(offer)}
                     size="icon"
                     variant="outline"
-                    className="rounded-xl border-white/10 hover:bg-rose-500/10 text-rose-400 hover:text-rose-300 border-rose-500/20 h-9 w-9 cursor-pointer"
+                    className="rounded-xl border-border hover:bg-destructive/10 text-destructive hover:text-destructive border-destructive/20 h-9 w-9 cursor-pointer"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -641,7 +641,7 @@ export default function OffersPage() {
               >
                 <X className="h-5 w-5" />
               </button>
-              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-500 mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Delete Promotional Offer</h3>
@@ -661,7 +661,7 @@ export default function OffersPage() {
                 <Button
                   onClick={handleDelete}
                   disabled={saving}
-                  className="rounded-xl bg-rose-600 hover:bg-rose-500 text-white px-4 cursor-pointer"
+                  className="rounded-xl bg-destructive hover:bg-destructive text-white px-4 cursor-pointer"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
                 </Button>
@@ -689,7 +689,7 @@ export default function OffersPage() {
                   <span
                     className={`inline-block px-2 py-0.5 mt-1 rounded-full text-xs font-semibold ${
                       viewingOffer.active
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        ? 'bg-success/10 text-success border border-success/20'
                         : 'bg-secondary/40 text-muted-foreground border border-border'
                     }`}
                   >

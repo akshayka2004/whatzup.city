@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { PublicLayout } from '@/components/layouts/public-layout';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, MapPin, Ticket, ExternalLink, Loader2, CalendarDays } from 'lucide-react';
 import {
@@ -71,12 +70,12 @@ export default function EventsPage() {
   return (
     <PublicLayout>
       <div>
-        <h1 className="text-3xl font-bold mb-2">Events</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-1">Events</h1>
         <p className="text-muted-foreground mb-6">Discover events near you — register or grab tickets.</p>
 
         <div className="mb-8">
           <Select value={city || 'all'} onValueChange={handleCityChange}>
-            <SelectTrigger className="w-52 rounded-xl border-white/10">
+            <SelectTrigger className="w-52 rounded-xl">
               <SelectValue placeholder="Filter by city" />
             </SelectTrigger>
             <SelectContent>
@@ -93,20 +92,27 @@ export default function EventsPage() {
             <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
           </div>
         ) : events.length === 0 ? (
-          <Card className="p-12 rounded-2xl text-center border-dashed border-white/10 bg-white/5">
+          <div className="p-12 rounded-2xl text-center border border-dashed border-border bg-secondary">
             <CalendarDays className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-50" />
             <h3 className="text-base font-semibold text-foreground mb-1">No upcoming events</h3>
             <p className="text-sm text-muted-foreground">Check back soon.</p>
-          </Card>
+          </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {events.map((ev) => (
-              <Card key={ev.id} className="rounded-2xl overflow-hidden border-white/5 bg-card/40 backdrop-blur-xl flex flex-col">
-                <div className="h-40 bg-white/5 relative">
+              <div
+                key={ev.id}
+                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl motion-reduce:hover:translate-y-0"
+              >
+                <div className="relative h-40 overflow-hidden bg-secondary">
                   {ev.posterImage ? (
-                    <img src={ev.posterImage} alt={ev.title} className="w-full h-full object-cover" />
+                    <img
+                      src={ev.posterImage}
+                      alt={ev.title}
+                      className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:group-hover:scale-100"
+                    />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
+                    <div className="flex h-full w-full items-center justify-center">
                       <CalendarDays className="h-10 w-10 text-muted-foreground opacity-40" />
                     </div>
                   )}
@@ -136,7 +142,7 @@ export default function EventsPage() {
                     )}
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         )}

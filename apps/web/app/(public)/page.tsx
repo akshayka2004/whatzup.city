@@ -23,6 +23,29 @@ import {
 } from '@/components/ui/select';
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES, getViewerCity, setViewerCity } from '@/lib/constants';
+import { getCityIdentity } from '@/lib/city-identity';
+
+/* Count-up number, animates from 0 on mount; respects reduced-motion */
+function CountUp({ value }: { value: number }) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setN(value);
+      return;
+    }
+    let raf = 0;
+    const start = performance.now();
+    const dur = 1200;
+    const tick = (t: number) => {
+      const p = Math.min((t - start) / dur, 1);
+      setN(Math.round(value * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <>{n.toLocaleString('en-IN')}</>;
+}
 
 /* ────────────── STATIC LABELS / ICONS ────────────── */
 const FEATURES = [
@@ -137,33 +160,42 @@ export default function HomePage() {
     router.push(searchQuery.trim() ? `/search?q=${encodeURIComponent(searchQuery)}` : '/search');
   };
 
+  const identity = getCityIdentity(city);
+
   const statsCards = [
-    { label: 'Registered Businesses', value: stats.businesses.toString(), icon: Building2 },
-    { label: 'Active Promotions',     value: stats.offers.toString(),     icon: Tag },
-    { label: 'Active Categories',     value: stats.categories.toString(), icon: Globe },
-    { label: 'Verified Listings',     value: stats.businesses.toString(), icon: Receipt },
+    { label: 'Registered Businesses', value: stats.businesses, icon: Building2 },
+    { label: 'Active Promotions',     value: stats.offers,     icon: Tag },
+    { label: 'Active Categories',     value: stats.categories, icon: Globe },
+    { label: 'Verified Listings',     value: stats.businesses, icon: Receipt },
   ];
 
   return (
     <PublicLayout>
       {/* ── HERO ─────────────────────────────────────────────────────── */}
-      <section className="relative mb-10 md:mb-14 rounded-2xl overflow-hidden border border-border bg-card">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-transparent pointer-events-none" />
+      <section className="relative mb-10 md:mb-14 rounded-3xl overflow-hidden border border-border bg-card">
+        {/* City-tinted atmosphere — hue shifts with the selected city */}
+        <div
+          className="absolute inset-0 pointer-events-none transition-[background] duration-700"
+          style={{
+            background: `radial-gradient(120% 120% at 100% 0%, oklch(0.62 0.10 ${identity.hue} / 0.14), transparent 55%), linear-gradient(135deg, oklch(0.62 0.10 ${identity.hue} / 0.06), transparent 60%)`,
+          }}
+        />
 
         <div className="relative grid lg:grid-cols-12 gap-6 lg:gap-0 items-stretch min-h-[440px]">
           <div className="lg:col-span-7 flex flex-col justify-center px-6 py-10 lg:px-10 lg:py-14 space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold w-fit">
-              <Sparkles className="h-3.5 w-3.5" />
-              Kerala's Local Business & Civic Platform
+              <MapPin className="h-3.5 w-3.5" />
+              {identity.landmark}
             </div>
 
             <div className="space-y-3">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground leading-tight tracking-tight">
-                Discover Local<br />
-                <span className="text-primary">Businesses & Offers</span>
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-black text-foreground leading-[1.05] tracking-tight text-balance">
+                Stronger Communities,<br />
+                <span className="text-primary">Smarter Connections.</span>
               </h1>
-              <p className="text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
-                Find verified local businesses, claim exclusive deals, verify bills, and stay informed with real-time official civic updates in your neighbourhood.
+              <p className="text-sm md:text-base text-muted-foreground max-w-md leading-relaxed text-pretty">
+                Discover trusted businesses, government services, offers, events, and
+                announcements from across {city || 'Kerala'} — all in one place.
               </p>
             </div>
 
@@ -313,7 +345,9 @@ export default function HomePage() {
                   <Icon className="h-4 w-4 text-primary" />
                 </div>
               </div>
-              <span className="text-2xl font-black text-foreground block">{stat.value}</span>
+              <span className="text-2xl font-black text-foreground block tabular-nums">
+                <CountUp value={stat.value} />+
+              </span>
               <p className="text-xs text-muted-foreground font-medium mt-1">{stat.label}</p>
             </Card>
           );

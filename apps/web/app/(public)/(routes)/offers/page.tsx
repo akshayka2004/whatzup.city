@@ -4,8 +4,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { PublicLayout } from '@/components/layouts/public-layout';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Tag, Calendar, X, Eye, CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
 import {
   Select,
@@ -147,11 +147,11 @@ export default function OffersPage() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Exclusive Offers</h1>
-            <p className="text-muted-foreground">Find the best deals and exclusive offers</p>
+            <h1 className="text-3xl font-bold tracking-tight mb-1">Exclusive Offers</h1>
+            <p className="text-muted-foreground">Find the best deals from businesses near you</p>
           </div>
           {claimedIds.length > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/12 border border-success/25 text-success text-xs font-semibold">
               <CheckCircle2 className="h-3.5 w-3.5" />
               {claimedIds.length} claimed
             </div>
@@ -159,7 +159,10 @@ export default function OffersPage() {
         </div>
 
         {justClaimed && (
-          <div className="fixed top-6 right-6 z-[100] flex items-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-2xl shadow-2xl font-semibold text-sm animate-in fade-in slide-in-from-top-2">
+          <div
+            role="status"
+            className="fixed top-6 right-6 z-[60] flex items-center gap-2 px-4 py-3 bg-success text-success-foreground rounded-2xl shadow-2xl font-semibold text-sm animate-in fade-in slide-in-from-top-2"
+          >
             <CheckCircle2 className="h-4 w-4" />
             Offer claimed successfully!
           </div>
@@ -167,7 +170,7 @@ export default function OffersPage() {
 
         <div className="mb-6 flex flex-wrap gap-3">
           <Select value={city || 'all'} onValueChange={handleCityChange}>
-            <SelectTrigger className="w-52 rounded-xl border-white/10">
+            <SelectTrigger className="w-52 rounded-xl">
               <SelectValue placeholder="Filter by city" />
             </SelectTrigger>
             <SelectContent>
@@ -179,7 +182,7 @@ export default function OffersPage() {
           </Select>
           {categories.length > 0 && (
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-52 rounded-xl border-white/10">
+              <SelectTrigger className="w-52 rounded-xl">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
@@ -197,79 +200,93 @@ export default function OffersPage() {
             <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
           </div>
         ) : filtered.length === 0 ? (
-          <Card className="p-12 rounded-2xl text-center border-dashed border-white/10 bg-white/5">
+          <div className="p-12 rounded-2xl text-center border border-dashed border-border bg-secondary">
             <Tag className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-50" />
-            <h3 className="text-base font-semibold text-foreground mb-1">No Offers Available</h3>
+            <h3 className="text-base font-semibold text-foreground mb-1">No offers available</h3>
             <p className="text-sm text-muted-foreground">Check back later for exclusive deals.</p>
-          </Card>
+          </div>
         ) : (
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-5">
             {filtered.map((offer) => {
               const claimed = isClaimed(offer.id);
+              const urgent = offer.expiresIn != null && offer.expiresIn <= 3;
               return (
-                <Card
+                <div
                   key={offer.id}
-                  className={`p-6 rounded-2xl hover:shadow-md transition-all border-white/5 bg-card/40 backdrop-blur-xl ${claimed ? 'opacity-70' : ''}`}
+                  className={cn(
+                    'flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl motion-reduce:hover:translate-y-0',
+                    claimed && 'opacity-75',
+                  )}
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="font-semibold text-foreground">{offer.title}</h3>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-foreground truncate">{offer.title}</h3>
                       {offer.business && (
-                        <p className="text-sm text-muted-foreground">{offer.business}</p>
+                        <p className="text-sm text-muted-foreground truncate">{offer.business}</p>
                       )}
                       {offer.businessType && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 mt-1 inline-block">
+                        <span className="mt-1 inline-block rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
                           {offer.businessType}
                         </span>
                       )}
                     </div>
-                    <div className={`px-3 py-1 rounded-lg font-bold text-lg ${claimed ? 'bg-emerald-500/10 text-emerald-400' : 'bg-primary/10 text-primary'}`}>
+                    <div
+                      className={cn(
+                        'shrink-0 rounded-xl px-3 py-1 text-lg font-bold',
+                        claimed ? 'bg-success/12 text-success' : 'bg-primary/10 text-primary',
+                      )}
+                    >
                       {claimed ? <CheckCircle2 className="h-5 w-5" /> : offer.discountLabel}
                     </div>
                   </div>
                   {offer.description && (
-                    <p className="text-sm mb-4 text-muted-foreground">{offer.description}</p>
+                    <p className="mb-4 text-sm text-muted-foreground line-clamp-2">{offer.description}</p>
                   )}
                   {offer.expiresIn != null && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                    <div
+                      className={cn(
+                        'mb-4 flex items-center gap-2 text-xs',
+                        urgent ? 'text-warning font-medium' : 'text-muted-foreground',
+                      )}
+                    >
                       <Calendar className="h-4 w-4" />
                       {offer.expiresIn === 0 ? 'Expires today' : `Expires in ${offer.expiresIn} days`}
                     </div>
                   )}
-                  <div className="flex gap-2">
+                  <div className="mt-auto flex gap-2">
                     <Button
                       onClick={() => setViewingOffer(offer)}
                       variant="outline"
-                      className="flex-1 rounded-xl gap-1.5 border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
+                      className="flex-1 gap-1.5"
                       size="sm"
                     >
-                      <Eye className="h-4 w-4" /> View Details
+                      <Eye className="h-4 w-4" /> View details
                     </Button>
                     <ReportButton kind="offer" targetId={offer.id} targetName={offer.title} />
                     {claimed ? (
-                      <div className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold px-3 py-2">
+                      <div className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-success/12 border border-success/25 text-success text-sm font-semibold px-3">
                         <CheckCircle2 className="h-4 w-4" /> Claimed
                       </div>
                     ) : (
-                      <Button
-                        onClick={() => handleClaim(offer)}
-                        className="flex-1 rounded-xl gap-1.5 bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
-                        size="sm"
-                      >
-                        <Sparkles className="h-4 w-4" /> Claim Offer
+                      <Button onClick={() => handleClaim(offer)} className="flex-1 gap-1.5" size="sm">
+                        <Sparkles className="h-4 w-4" /> Claim offer
                       </Button>
                     )}
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
         )}
 
         {viewingOffer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative">
-              <button onClick={() => setViewingOffer(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
+            <div className="relative w-full max-w-md p-6 rounded-2xl border border-border bg-card shadow-2xl">
+              <button
+                onClick={() => setViewingOffer(null)}
+                aria-label="Close"
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
                 <X className="h-5 w-5" />
               </button>
               <div className="flex items-center gap-3 mb-6">
@@ -284,38 +301,38 @@ export default function OffersPage() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
+                <div className="bg-secondary p-4 rounded-xl text-center border border-border">
                   <p className="text-xs text-muted-foreground mb-1">Discount</p>
-                  <p className="text-3xl font-extrabold text-foreground">{viewingOffer.discountLabel}</p>
+                  <p className="text-3xl font-extrabold text-primary">{viewingOffer.discountLabel}</p>
                 </div>
-                <div className="bg-white/5 p-4 rounded-xl text-center border border-white/5">
-                  <p className="text-xs text-muted-foreground mb-1">Expires In</p>
-                  <p className="text-3xl font-extrabold text-foreground">
+                <div className="bg-secondary p-4 rounded-xl text-center border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Expires in</p>
+                  <p className="text-3xl font-extrabold text-foreground tabular-nums">
                     {viewingOffer.expiresIn != null ? `${viewingOffer.expiresIn}d` : '—'}
                   </p>
                 </div>
               </div>
               {viewingOffer.terms && (
-                <div className="bg-white/5 p-4 rounded-xl border border-white/5 mb-6">
-                  <p className="text-xs text-muted-foreground font-semibold mb-1">Terms & Conditions</p>
-                  <p className="text-sm text-slate-300">{viewingOffer.terms}</p>
+                <div className="bg-secondary p-4 rounded-xl border border-border mb-6">
+                  <p className="text-xs text-muted-foreground font-semibold mb-1">Terms & conditions</p>
+                  <p className="text-sm text-foreground">{viewingOffer.terms}</p>
                 </div>
               )}
               {isClaimed(viewingOffer.id) ? (
-                <div className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold py-3">
-                  <CheckCircle2 className="h-5 w-5" /> Already Claimed
+                <div className="w-full flex items-center justify-center gap-2 rounded-xl bg-success/12 border border-success/25 text-success font-semibold py-3">
+                  <CheckCircle2 className="h-5 w-5" /> Already claimed
                 </div>
               ) : (
                 <div className="flex gap-3">
-                  <Button onClick={() => setViewingOffer(null)} variant="outline" className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer">
+                  <Button onClick={() => setViewingOffer(null)} variant="outline" className="flex-1">
                     Close
                   </Button>
-                  <Button onClick={() => handleClaim(viewingOffer)} className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer gap-1.5">
-                    <Sparkles className="h-4 w-4" /> Claim Offer
+                  <Button onClick={() => handleClaim(viewingOffer)} className="flex-1 gap-1.5">
+                    <Sparkles className="h-4 w-4" /> Claim offer
                   </Button>
                 </div>
               )}
-            </Card>
+            </div>
           </div>
         )}
       </div>
