@@ -198,6 +198,10 @@ export class BusinessesService {
       'name', 'description', 'categoryId', 'ownerName', 'phone', 'email', 'website',
       'address', 'city', 'state', 'zipCode', 'district', 'googleMapsUrl', 'socialLinks',
       'tags', 'logo', 'coverImage', 'halalStatus', 'operatingHours',
+      // Registration / KYC details
+      'brandName', 'companyName', 'companyType', 'compliance', 'ownerContact',
+      'billingContact', 'supportContact', 'branchHead', 'categoryAttributes',
+      'subcategoryIds',
     ];
     const payload: any = {};
     for (const k of ALLOWED) if (data[k] !== undefined) payload[k] = data[k];

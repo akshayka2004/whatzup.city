@@ -577,6 +577,10 @@ describe intent, data flow, and the non-obvious.
 
 ### Change log (notable behavioural changes)
 
+- vouchers — spend-gated `Voucher` + `VoucherClaim`; customer unlocks a unique code once cumulative verified spend ≥ threshold, staff redeem in dashboard. Module `modules/vouchers`; UI `/dashboard/vouchers` + business-detail section.
+- business registration/KYC — `Business` gains `brandName/companyName/companyType` + JSON `compliance`(PAN/GST)/`ownerContact`/`billingContact`/`supportContact`/`branchHead`/`categoryAttributes`; collected in onboarding Step 3 + editable in settings via `components/business/registration-details.tsx`; per-category attributes in `lib/category-attributes.ts`.
+- City Experience Platform redesign (light warm-neutral + terracotta) — see `9414a32`.
+
 - login/forgot-password redesign — premium split-layout `/login` (city image at `apps/web/public/login-hero.png`, palette `#2F2C36`/`#8A6A63`); new `/forgot-password` page → `POST /v1/auth/forgot-password`. `ForgotPasswordDto.tenantId` made optional (matches by email like login). Auth-page CSS lives in `globals.css` (`.lp-*`); do NOT use inline `<style>` in client components (React 19 flags it). Reset flow needs a `/reset-password` page (not built yet; API `POST /v1/auth/reset-password` exists).
 - `db863fe` — reviews: bust business cache on rating change; recompute centralised.
 - `f64369f` — reviews: submit the star rating captured in the bill form.

@@ -26,6 +26,7 @@ import {
   Package,
   Flag,
   CalendarDays,
+  Ticket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRoleLabel } from '@/lib/rbac';
@@ -39,6 +40,7 @@ const OWNER_MENU = [
   { label: 'Customers', href: '/dashboard/customers', icon: Users },
   { label: 'Campaigns', href: '/dashboard/campaigns', icon: Megaphone },
   { label: 'Offers', href: '/dashboard/offers', icon: Tag },
+  { label: 'Vouchers', href: '/dashboard/vouchers', icon: Ticket },
   { label: 'Events', href: '/dashboard/events', icon: CalendarDays },
   { label: 'Products', href: '/dashboard/products', icon: Package },
   { label: 'Reviews', href: '/dashboard/reviews', icon: Star },

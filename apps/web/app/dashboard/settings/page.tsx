@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
+import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/business/registration-details';
 import { useRouter } from 'next/navigation';
 import {
   Instagram, Facebook, Linkedin, Twitter, Youtube,
@@ -87,6 +88,11 @@ export default function BusinessSettingsPage() {
   const [tagInput, setTagInput] = useState('');
   const [halalStatus, setHalalStatus] = useState<string>('');
   const [categorySlug, setCategorySlug] = useState<string>('');
+
+  // Registration / KYC details
+  const [regDetails, setRegDetails] = useState<RegistrationDetails>({});
+  const [savingReg, setSavingReg] = useState(false);
+  const [regMsg, setRegMsg] = useState('');
   const isFood = categorySlug === 'food' || /food|restaurant|cafe|bakery/i.test(categorySlug);
 
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
@@ -133,6 +139,19 @@ export default function BusinessSettingsPage() {
           setHalalStatus(biz.halalStatus || '');
           setCategorySlug(biz.category?.slug || '');
 
+          const b = biz as any;
+          setRegDetails({
+            brandName: b.brandName || '',
+            companyName: b.companyName || '',
+            companyType: b.companyType || '',
+            compliance: b.compliance || {},
+            ownerContact: b.ownerContact || {},
+            billingContact: b.billingContact || {},
+            supportContact: b.supportContact || {},
+            branchHead: b.branchHead || {},
+            categoryAttributes: b.categoryAttributes || {},
+          });
+
           // Hydrate social links from business record if API has them, else localStorage
           const sl = biz.socialLinks;
           if (sl && typeof sl === 'object' && Object.keys(sl).length > 0) {
@@ -170,6 +189,26 @@ export default function BusinessSettingsPage() {
 
     return () => { cancelled = true; };
   }, [user]);
+
+  /* ── Save registration / KYC details ─────────────────────────── */
+  const handleSaveReg = async () => {
+    if (!business?.id) return;
+    setSavingReg(true);
+    setRegMsg('');
+    const res = await apiService.patch<any>(`/v1/businesses/${business.id}`, {
+      brandName: regDetails.brandName || undefined,
+      companyName: regDetails.companyName || undefined,
+      companyType: regDetails.companyType || undefined,
+      compliance: regDetails.compliance || {},
+      ownerContact: regDetails.ownerContact || {},
+      billingContact: regDetails.billingContact || {},
+      supportContact: regDetails.supportContact || {},
+      branchHead: regDetails.branchHead || {},
+      categoryAttributes: regDetails.categoryAttributes || {},
+    });
+    setSavingReg(false);
+    setRegMsg(res.error ? res.error : 'Registration details saved.');
+  };
 
   /* ── Save business profile ───────────────────────────────────── */
   const handleSaveProfile = async () => {
@@ -620,6 +659,32 @@ export default function BusinessSettingsPage() {
             </form>
           )}
         </Card>
+
+        {/* ── Registration / KYC details ───────────────────────────── */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-foreground tracking-tight">Registration details</h2>
+              <p className="text-sm text-muted-foreground">Company, PAN/GST, contacts, and category status.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {regMsg && (
+                <span className={cn('text-xs font-medium', /saved/i.test(regMsg) ? 'text-success' : 'text-destructive')}>
+                  {regMsg}
+                </span>
+              )}
+              <Button onClick={handleSaveReg} disabled={savingReg || !business} className="gap-1.5">
+                {savingReg ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Save details
+              </Button>
+            </div>
+          </div>
+          <RegistrationDetailsForm
+            value={regDetails}
+            onChange={setRegDetails}
+            categorySlug={categorySlug}
+          />
+        </div>
 
       </div>
     </BusinessLayout>

@@ -53,6 +53,8 @@ model Tenant {
   events                  Event[]
   eventClicks             EventClick[]
   coupons                 Coupon[]
+  vouchers                Voucher[]
+  voucherClaims           VoucherClaim[]
   reviews                 Review[]
   reviewMedia             ReviewMedia[]
   reviewVotes             ReviewVote[]
@@ -131,6 +133,7 @@ model User {
   businesses             Business[]               @relation("BusinessOwner")
   businessStaff          BusinessStaff[]
   offerRedemptions       OfferRedemption[]
+  voucherClaims          VoucherClaim[]
   reviews                Review[]
   reviewVotes            ReviewVote[]
   bookmarks              Bookmark[]
@@ -503,6 +506,20 @@ model Business {
   tags           Json           @default("[]")
   subcategoryIds Json           @default("[]") @map("subcategory_ids")
   halalStatus    String?        @map("halal_status") @db.VarChar(20)
+  // ── Registration / KYC details (see docs; collected in onboarding wizard) ──
+  brandName          String?  @map("brand_name") @db.VarChar(255)
+  companyName        String?  @map("company_name") @db.VarChar(255)
+  companyType        String?  @map("company_type") @db.VarChar(50)
+  // { pan: { has, number, nameAsPerPan }, gst: { has, gstin, legalName, tradeName, regType } }
+  compliance         Json     @default("{}") @map("compliance")
+  // { email, phone, preference: string[] }  (email | phone | whatsapp)
+  ownerContact       Json     @default("{}") @map("owner_contact")
+  // { fullName, designation, email, phone }
+  billingContact     Json     @default("{}") @map("billing_contact")
+  supportContact     Json     @default("{}") @map("support_contact")
+  branchHead         Json     @default("{}") @map("branch_head")
+  // category-specific attributes, keyed by attribute key -> value(s)
+  categoryAttributes Json     @default("{}") @map("category_attributes")
   profileType    BusinessProfileType @default(OWNER) @map("profile_type")
   logo           String?        @db.Text
   coverImage     String?        @map("cover_image") @db.Text
@@ -542,6 +559,8 @@ model Business {
   productCategories ProductCategory[]
   products          Product[]
   offers            Offer[]
+  vouchers          Voucher[]
+  voucherClaims     VoucherClaim[]
   events            Event[]
   coupons           Coupon[]
   reviews           Review[]
@@ -950,6 +969,83 @@ model Coupon {
   @@index([code])
   @@index([deletedAt])
   @@map("coupons")
+}
+
+// ── VOUCHERS ────────────────────────────────────────────────
+// Spend-gated vouchers: a business publishes a voucher with a spend threshold;
+// a customer whose cumulative VERIFIED spend at that business reaches the
+// threshold can unlock a unique code (VoucherClaim), then show it in-store where
+// staff mark it redeemed. The code is never returned until the customer qualifies.
+
+model Voucher {
+  id              String      @id @default(uuid()) @db.Uuid
+  tenantId        String      @map("tenant_id") @db.Uuid
+  businessId      String      @map("business_id") @db.Uuid
+  title           String      @db.VarChar(255)
+  description     String?     @db.Text
+  // Cumulative verified spend (₹) at this business required to unlock.
+  thresholdAmount Decimal     @map("threshold_amount") @db.Decimal(12, 2)
+  // Reward: PERCENT | AMOUNT | FREEBIE. value used for percent/amount; label is
+  // the human-readable reward (e.g. "Free dessert", "10% off next bill").
+  rewardType      String      @default("AMOUNT") @map("reward_type") @db.VarChar(20)
+  rewardValue     Decimal?    @map("reward_value") @db.Decimal(12, 2)
+  rewardLabel     String?     @map("reward_label") @db.VarChar(255)
+  status          OfferStatus @default(ACTIVE)
+  startDate       DateTime    @map("start_date")
+  endDate         DateTime    @map("end_date")
+  maxRedemptions     Int?     @map("max_redemptions")
+  currentRedemptions Int      @default(0) @map("current_redemptions")
+  terms           String?     @db.Text
+  targetCities    Json        @default("[]") @map("target_cities")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  claims   VoucherClaim[]
+
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([status, endDate])
+  @@index([deletedAt])
+  @@map("vouchers")
+}
+
+model VoucherClaim {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  voucherId     String    @map("voucher_id") @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  businessId    String    @map("business_id") @db.Uuid
+  // Unique per-customer code, generated on unlock.
+  code          String    @db.VarChar(30)
+  // UNLOCKED (visible, not yet used) | REDEEMED (staff marked used)
+  status        String    @default("UNLOCKED") @db.VarChar(20)
+  // Snapshot of cumulative verified spend when the code was unlocked.
+  spendAtUnlock Decimal   @map("spend_at_unlock") @db.Decimal(12, 2)
+  unlockedAt    DateTime  @default(now()) @map("unlocked_at")
+  redeemedAt    DateTime? @map("redeemed_at")
+  redeemedBy    String?   @map("redeemed_by") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  voucher  Voucher  @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // One claim per customer per voucher.
+  @@unique([voucherId, userId])
+  @@unique([tenantId, code])
+  @@index([businessId, status])
+  @@index([userId])
+  @@map("voucher_claims")
 }
 
 // ── REVIEWS & ENGAGEMENT ────────────────────────────────────

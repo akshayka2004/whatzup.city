@@ -22,6 +22,7 @@ import { UsersModule } from './modules/users/users.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
 import { ProductsModule } from './modules/products/products.module';
 import { OffersModule } from './modules/offers/offers.module';
+import { VouchersModule } from './modules/vouchers/vouchers.module';
 import { EventsModule } from './modules/events/events.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { BillsModule } from './modules/bills/bills.module';
@@ -135,6 +136,7 @@ import { TrialsModule } from './modules/trials/trials.module';
     BusinessesModule,
     ProductsModule,
     OffersModule,
+    VouchersModule,
     EventsModule,
     ReviewsModule,
     BillsModule,

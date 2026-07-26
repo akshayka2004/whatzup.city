@@ -20,6 +20,27 @@
 
 ## Recently done (newest first)
 
+- **Business registration / KYC details** (uncommitted at write): added `Business`
+  fields `brandName, companyName, companyType` + JSON `compliance` (PAN/GST),
+  `ownerContact`, `billingContact`, `supportContact`, `branchHead`,
+  `categoryAttributes`. Migration `..._business_registration_details` (ALTER only).
+  Shared UI `components/business/registration-details.tsx` (PAN/GST Yes-No toggles
+  + format validate, company type, owner contact + preference multi, billing
+  [required]/support/branch-head contacts, per-category "status" attributes from
+  `lib/category-attributes.ts`). Wired into onboarding wizard **Step 3** + dashboard
+  **settings**. Whitelists extended in `businesses.service.update` +
+  `business-onboarding.updateStep` (+ DTO). `COMPANY_TYPES`/`CONTACT_PREFERENCES`
+  in constants. Store + format-validate only (no gov API, no doc upload).
+- **Voucher system** (uncommitted at write): spend-gated vouchers. Models
+  `Voucher` + `VoucherClaim` + migration `..._vouchers`. Module `apps/api/src/modules/vouchers`
+  (owner CRUD, staff `POST /v1/vouchers/redeem`, customer `available`/`unlock`/`my`).
+  Spend basis = cumulative `VerifiedPurchase` sum at the business; unique per-customer
+  code generated on unlock; code hidden until spend ≥ threshold. UI:
+  `/dashboard/vouchers` (publish + redeem panel) + business-detail vouchers section
+  (progress + unlock + code reveal) + sidebar link. Cross-tenant safe (data in
+  business tenant). **Both migrations still need `prisma migrate deploy` on VPS.**
+
+
 - `7e5f587` — global design tokens realigned to bronze anchor palette; AA contrast
   fix (`--muted-foreground` was 4.33:1 on cards → ~5.7:1); status + z-index tokens;
   Button/Input polish (44px targets, cursor, motion). PRODUCT.md + DESIGN.md added.
@@ -68,6 +89,8 @@ cd packages/database && pnpm prisma migrate deploy && pnpm prisma generate && cd
 
 ## Open items
 
+- **Apply new migrations on VPS**: `..._vouchers` + `..._business_registration_details` via `prisma migrate deploy`.
+- Voucher customer wallet page (`/vouchers`) — API `GET /v1/vouchers/my` exists, no page yet.
 - `/reset-password` page (API exists).
 - DB perf indexes migration apply on VPS.
 - Social sign-in wiring.

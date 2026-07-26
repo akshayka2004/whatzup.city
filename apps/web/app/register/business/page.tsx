@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { onboardingService, BusinessDraft } from '@/lib/services/onboarding-service';
 import { KERALA_CITIES } from '@/lib/constants';
 import { optimizeImage } from '@/lib/utils/image-optimizer';
+import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/business/registration-details';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +46,9 @@ function RegisterBusinessWizardContent() {
   // Step 2 Form States
   const [description, setDescription] = useState('');
   const [subcategorySlugs, setSubcategorySlugs] = useState<string[]>([]);
+
+  // Registration / KYC details (collected in Step 3)
+  const [regDetails, setRegDetails] = useState<RegistrationDetails>({});
 
   // Step 3 Contact & Location States
   // City/state locked to Thiruvananthapuram for Release 1
@@ -183,6 +187,16 @@ function RegisterBusinessWizardContent() {
         businessWebsite: website,
         googleMapsUrl,
         socialLinks,
+        // Registration / KYC details
+        brandName: regDetails.brandName,
+        companyName: regDetails.companyName,
+        companyType: regDetails.companyType,
+        compliance: regDetails.compliance,
+        ownerContact: regDetails.ownerContact,
+        billingContact: regDetails.billingContact,
+        supportContact: regDetails.supportContact,
+        branchHead: regDetails.branchHead,
+        categoryAttributes: regDetails.categoryAttributes,
       });
 
       if (response.data && !response.error) {
@@ -660,6 +674,15 @@ function RegisterBusinessWizardContent() {
                 </div>
               </div>
 
+              {/* ── Registration / KYC details ───────────────────────── */}
+              <div className="pt-2">
+                <h3 className="text-lg font-bold text-foreground tracking-tight mb-1">Registration details</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Company, PAN/GST, contacts, and category status. Billing contact is required.
+                </p>
+                <RegistrationDetailsForm value={regDetails} onChange={setRegDetails} categorySlug={null} />
+              </div>
+
               <div className="flex justify-between pt-4">
                 <Button
                   type="button"
@@ -675,7 +698,7 @@ function RegisterBusinessWizardContent() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="h-11 px-6 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-semibold cursor-pointer"
+                  className="h-11 px-6 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-semibold cursor-pointer"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

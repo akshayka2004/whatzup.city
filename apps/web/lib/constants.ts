@@ -15,6 +15,23 @@ export const USER_ROLES = {
 } as const;
 
 // Business categories
+// Legal company types (business registration).
+export const COMPANY_TYPES = [
+  'Sole Proprietor',
+  'Partnership',
+  'LLP',
+  'OPC',
+  'Pvt Ltd Company',
+  'Public Limited Company',
+  'HUF',
+  'Trust',
+  'Society',
+  'Govt',
+] as const;
+
+// Owner contact preference (multi-select: any or all).
+export const CONTACT_PREFERENCES = ['Email', 'Phone', 'WhatsApp'] as const;
+
 export const BUSINESS_CATEGORIES = [
   'Restaurants',
   'Shopping',

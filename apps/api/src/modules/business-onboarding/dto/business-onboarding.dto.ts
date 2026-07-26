@@ -120,4 +120,15 @@ export class UpdateBusinessDetailsDto {
   @IsOptional()
   @IsArray()
   subcategorySlugs?: string[];
+
+  // ── Registration / KYC details ──────────────────────────────
+  @IsOptional() @IsString() brandName?: string;
+  @IsOptional() @IsString() companyName?: string;
+  @IsOptional() @IsString() companyType?: string;
+  @IsOptional() @IsObject() compliance?: any;
+  @IsOptional() @IsObject() ownerContact?: any;
+  @IsOptional() @IsObject() billingContact?: any;
+  @IsOptional() @IsObject() supportContact?: any;
+  @IsOptional() @IsObject() branchHead?: any;
+  @IsOptional() @IsObject() categoryAttributes?: any;
 }

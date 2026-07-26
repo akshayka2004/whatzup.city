@@ -31,6 +31,7 @@ import {
   IndianRupee,
   Loader2,
   CheckCircle2,
+  Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/services/api-service';
@@ -106,6 +107,32 @@ export default function BusinessDetailPage() {
       }
     }).finally(() => setLoading(false));
   }, [businessId]);
+
+  // ── Vouchers (spend-gated) — needs a logged-in user for spend + unlock state
+  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [voucherSpend, setVoucherSpend] = useState(0);
+  const [unlockingId, setUnlockingId] = useState<string | null>(null);
+
+  const loadVouchers = async () => {
+    if (!businessId || !user) return;
+    const res = await apiService.get<any>(`/v1/vouchers/available/${businessId}`);
+    if (res.data && !res.error) {
+      setVouchers(res.data.vouchers ?? []);
+      setVoucherSpend(res.data.spend ?? 0);
+    }
+  };
+  useEffect(() => { loadVouchers(); /* eslint-disable-next-line */ }, [businessId, user]);
+
+  const unlockVoucher = async (id: string) => {
+    setUnlockingId(id);
+    const res = await apiService.post<any>(`/v1/vouchers/${id}/unlock`, {});
+    setUnlockingId(null);
+    if (!res.error && res.data?.code) {
+      setVouchers((list) =>
+        list.map((v) => (v.id === id ? { ...v, unlocked: true, code: res.data.code, status: res.data.status } : v)),
+      );
+    }
+  };
 
   const handleToggleFavorite = () => {
     if (!biz) return;
@@ -542,6 +569,74 @@ export default function BusinessDetailPage() {
                 </Button>
               )}
             </Card>
+
+            {/* ── Vouchers (spend-gated) */}
+            {user && vouchers.length > 0 && (
+              <div className="mb-8 rounded-2xl border border-border bg-card p-6">
+                <div className="mb-1 flex items-center gap-2">
+                  <Ticket className="h-5 w-5 text-primary" />
+                  <h2 className="text-2xl font-bold text-foreground">Vouchers</h2>
+                </div>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Your verified spend here:{' '}
+                  <span className="font-semibold text-foreground">₹{voucherSpend.toLocaleString('en-IN')}</span>.
+                  Cross a threshold to unlock the code, then show it in-store.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {vouchers.map((v: any) => (
+                    <div key={v.id} className="rounded-xl border border-border bg-secondary/50 p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-foreground truncate">{v.title}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            Unlocks at ₹{v.thresholdAmount.toLocaleString('en-IN')} spend
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-lg bg-primary/10 px-2 py-1 text-sm font-bold text-primary">
+                          {v.rewardType === 'PERCENT'
+                            ? `${v.rewardValue}% off`
+                            : v.rewardType === 'AMOUNT'
+                              ? `₹${Number(v.rewardValue || 0).toLocaleString('en-IN')} off`
+                              : v.rewardLabel || 'Reward'}
+                        </span>
+                      </div>
+
+                      {/* Progress */}
+                      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${Math.round((v.progress ?? 0) * 100)}%` }}
+                        />
+                      </div>
+
+                      {v.unlocked ? (
+                        <div className="mt-3 flex items-center justify-between rounded-lg border border-success/25 bg-success/12 px-3 py-2">
+                          <span className="font-mono text-sm font-bold tracking-wider text-success">{v.code}</span>
+                          <span className="text-[10px] font-semibold uppercase text-success">
+                            {v.status === 'REDEEMED' ? 'Redeemed' : 'Show in-store'}
+                          </span>
+                        </div>
+                      ) : v.qualified ? (
+                        <Button
+                          onClick={() => unlockVoucher(v.id)}
+                          disabled={unlockingId === v.id}
+                          size="sm"
+                          className="mt-3 w-full gap-1.5"
+                        >
+                          {unlockingId === v.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />}
+                          Unlock code
+                        </Button>
+                      ) : (
+                        <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Lock className="h-3.5 w-3.5" />
+                          Spend ₹{v.remainingToUnlock.toLocaleString('en-IN')} more to unlock
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ── Reviews */}
             <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">

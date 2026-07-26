@@ -222,6 +222,16 @@ export class BusinessOnboardingService {
     if (dto.googleMapsUrl !== undefined) updateData.googleMapsUrl = dto.googleMapsUrl;
     if (dto.socialLinks !== undefined) updateData.socialLinks = dto.socialLinks;
     if (dto.tags !== undefined) updateData.tags = dto.tags;
+    // Registration / KYC details
+    if (dto.brandName !== undefined) updateData.brandName = dto.brandName;
+    if (dto.companyName !== undefined) updateData.companyName = dto.companyName;
+    if (dto.companyType !== undefined) updateData.companyType = dto.companyType;
+    if (dto.compliance !== undefined) updateData.compliance = dto.compliance;
+    if (dto.ownerContact !== undefined) updateData.ownerContact = dto.ownerContact;
+    if (dto.billingContact !== undefined) updateData.billingContact = dto.billingContact;
+    if (dto.supportContact !== undefined) updateData.supportContact = dto.supportContact;
+    if (dto.branchHead !== undefined) updateData.branchHead = dto.branchHead;
+    if (dto.categoryAttributes !== undefined) updateData.categoryAttributes = dto.categoryAttributes;
 
     if (dto.businessEmail && dto.businessEmail !== business.email) {
       const duplicateEmail = await this.db.business.findFirst({
