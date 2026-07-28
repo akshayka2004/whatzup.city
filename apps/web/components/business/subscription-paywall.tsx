@@ -19,7 +19,8 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import {
   SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, RENEWAL_REMINDER_DAYS,
-  getPlan, formatINR, PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
+  getPlan, formatINR, withTax, TAX_PERCENT,
+  PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
 } from '@/lib/subscription-plans';
 import { computeHotelCharge, type HotelAmenities } from '@/lib/hotel-pricing';
 import { Loader2, UploadCloud, X, ShieldCheck } from 'lucide-react';
@@ -80,7 +81,9 @@ export function SubscriptionPaywall() {
   const isHotel = biz?.category?.slug === 'hotel';
   const hotelCharge = computeHotelCharge(biz?.hotelStarRating, biz?.hotelAmenities);
   const plan = getPlan(selectedPlan);
-  const amount = isHotel ? hotelCharge.total : plan?.offerPrice || 0;
+  // Prices are GST-exclusive; tax is added on top, same as registration.
+  const totals = withTax(isHotel ? hotelCharge.total : plan?.offerPrice || 0);
+  const amount = totals.total;
 
   // `getActive` returns a synthetic FREE tier when nothing is active.
   const hasPaidActive = !!sub && sub.status === 'ACTIVE' && Number(sub.pricing ?? 0) > 0;
@@ -201,7 +204,12 @@ export function SubscriptionPaywall() {
             )}
 
             <div className="flex justify-between items-baseline rounded-xl border border-border p-4">
-              <span className="text-sm font-bold text-foreground">Amount payable</span>
+              <div>
+                <span className="text-sm font-bold text-foreground">Amount payable</span>
+                <div className="text-[11px] text-muted-foreground">
+                  {formatINR(totals.base)} + {formatINR(totals.tax)} GST ({TAX_PERCENT}%)
+                </div>
+              </div>
               <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
             </div>
             <p className="text-[11px] text-muted-foreground -mt-4">

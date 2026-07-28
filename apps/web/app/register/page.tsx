@@ -19,7 +19,7 @@ import {
   STAR_OPTIONS, HOTEL_AMENITIES, computeHotelCharge, type HotelAmenities,
 } from '@/lib/hotel-pricing';
 import {
-  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, getPlan, formatINR,
+  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, getPlan, formatINR, withTax, TAX_PERCENT,
   PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
 } from '@/lib/subscription-plans';
 import {
@@ -272,6 +272,16 @@ export default function UnifiedRegisterPage() {
   const [showPayment, setShowPayment] = useState(false);
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [payerRef, setPayerRef] = useState('');
+
+  // Invoice details, collected right after payment (our office raises the invoice).
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [billingName, setBillingName] = useState('');
+  const [billingHasGst, setBillingHasGst] = useState<boolean | null>(null);
+  const [billingGstin, setBillingGstin] = useState('');
+  const [billingPan, setBillingPan] = useState('');
+  const [billingAddress, setBillingAddress] = useState('');
+  const [billingPincode, setBillingPincode] = useState('');
+  const [invoiceEmail, setInvoiceEmail] = useState('');
 
   /**
    * Resume an abandoned registration. Someone who signed up but never finished
@@ -630,7 +640,23 @@ export default function UnifiedRegisterPage() {
       // 3. Record the payment.
       const charge = computeHotelCharge(hotelStarRating, hotelAmenities);
       const plan = getPlan(selectedPlan);
-      const amount = isHotel ? charge.total : plan?.offerPrice || 0;
+      // Amount charged is GST-inclusive; the server recomputes and splits it.
+      const amount = withTax(isHotel ? charge.total : plan?.offerPrice || 0).total;
+
+      // Invoice details first — if this fails the payment isn't recorded, so the
+      // office never ends up with a payment it can't raise an invoice for.
+      const billRes = await onboardingService.saveBillingProfile(businessId, {
+        billingName: billingName.trim(),
+        hasGst: !!billingHasGst,
+        gstin: billingHasGst ? billingGstin.trim().toUpperCase() : undefined,
+        pan: billingPan.trim().toUpperCase() || undefined,
+        addressLine: billingAddress.trim(),
+        city,
+        state: 'Kerala',
+        pincode: billingPincode.trim(),
+        invoiceEmail: invoiceEmail.trim(),
+      });
+      if (billRes.error) throw new Error(billRes.error);
 
       const payRes = await onboardingService.submitPayment(businessId, {
         amount,
@@ -1730,7 +1756,7 @@ export default function UnifiedRegisterPage() {
                     </Button>
                   </div>
                 </>
-              ) : (
+              ) : !showInvoice ? (
                 <>
                   <div>
                     <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
@@ -1745,7 +1771,9 @@ export default function UnifiedRegisterPage() {
                   {(() => {
                     const charge = computeHotelCharge(hotelStarRating, hotelAmenities);
                     const plan = getPlan(selectedPlan);
-                    const amount = isHotel ? charge.total : plan?.offerPrice || 0;
+                    // Plan/hotel prices are GST-exclusive; tax is added on top.
+                    const totals = withTax(isHotel ? charge.total : plan?.offerPrice || 0);
+                    const amount = totals.total;
                     return (
                       <div className="rounded-2xl border border-border p-5 space-y-3">
                         <h3 className="text-sm font-bold text-foreground">Your total</h3>
@@ -1774,12 +1802,22 @@ export default function UnifiedRegisterPage() {
                             </div>
                           </div>
                         )}
+                        <div className="space-y-1.5 border-t border-border pt-3 text-sm">
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Subtotal</span>
+                            <span>{formatINR(totals.base)}</span>
+                          </div>
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>GST ({TAX_PERCENT}%)</span>
+                            <span>{formatINR(totals.tax)}</span>
+                          </div>
+                        </div>
                         <div className="flex justify-between items-baseline border-t border-border pt-3">
                           <span className="text-sm font-bold text-foreground">Amount payable</span>
                           <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
                         </div>
                         <p className="text-[11px] text-muted-foreground">
-                          Valid for {PLAN_DURATION_DAYS} days from activation.
+                          Valid for {PLAN_DURATION_DAYS} days from activation. Inclusive of {TAX_PERCENT}% GST.
                         </p>
                       </div>
                     );
@@ -1843,8 +1881,154 @@ export default function UnifiedRegisterPage() {
                     </Button>
                     <Button
                       type="button"
-                      onClick={handleBusinessFinalSubmit}
+                      onClick={() => setShowInvoice(true)}
                       disabled={loading || !paymentProof}
+                      className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer text-[#D3DAD9]"
+                    >
+                      Continue to Invoice Details <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </>
+              ) : null}
+
+              {/* Invoice details — our office raises the invoice off-platform,
+                  so we only collect what's needed to produce it. */}
+              {showPayment && showInvoice && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                      <FileCheck className="h-5 w-5 text-emerald-400" />
+                      Invoice Details
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Used to raise your GST invoice. Please make sure these are accurate.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Billing name <span className="text-rose-400">*</span>
+                      </label>
+                      <Input
+                        value={billingName}
+                        onChange={(e) => setBillingName(e.target.value)}
+                        placeholder="Registered name for the invoice"
+                        className="h-11 bg-background border-input text-sm rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Do you have GST? <span className="text-rose-400">*</span>
+                      </label>
+                      <div className="inline-flex rounded-xl border border-input p-0.5">
+                        {[{ l: 'Yes', v: true }, { l: 'No', v: false }].map((o) => (
+                          <button
+                            key={o.l}
+                            type="button"
+                            onClick={() => setBillingHasGst(o.v)}
+                            className={`rounded-lg px-5 py-2 text-sm font-medium transition-colors cursor-pointer ${
+                              billingHasGst === o.v
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            {o.l}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {billingHasGst && (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">
+                          GSTIN <span className="text-rose-400">*</span>
+                        </label>
+                        <Input
+                          value={billingGstin}
+                          onChange={(e) => setBillingGstin(e.target.value.toUpperCase())}
+                          placeholder="32ABCDE1234F1Z5"
+                          maxLength={15}
+                          className="h-11 bg-background border-input text-sm rounded-xl"
+                        />
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">PAN</label>
+                      <Input
+                        value={billingPan}
+                        onChange={(e) => setBillingPan(e.target.value.toUpperCase())}
+                        placeholder="ABCDE1234F"
+                        maxLength={10}
+                        className="h-11 bg-background border-input text-sm rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Billing address <span className="text-rose-400">*</span>
+                      </label>
+                      <textarea
+                        value={billingAddress}
+                        onChange={(e) => setBillingAddress(e.target.value)}
+                        rows={3}
+                        placeholder="Full billing address"
+                        className="w-full p-3 border border-input bg-background text-foreground rounded-xl text-sm focus:ring-1 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Pincode <span className="text-rose-400">*</span>
+                      </label>
+                      <Input
+                        value={billingPincode}
+                        onChange={(e) => setBillingPincode(e.target.value.replace(/\D/g, ''))}
+                        placeholder="695001"
+                        maxLength={6}
+                        inputMode="numeric"
+                        className="h-11 bg-background border-input text-sm rounded-xl"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Email for invoice <span className="text-rose-400">*</span>
+                      </label>
+                      <Input
+                        type="email"
+                        value={invoiceEmail}
+                        onChange={(e) => setInvoiceEmail(e.target.value)}
+                        placeholder="accounts@yourcompany.com"
+                        className="h-11 bg-background border-input text-sm rounded-xl"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-6 border-t border-border">
+                    <Button
+                      type="button"
+                      onClick={() => setShowInvoice(false)}
+                      className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <ArrowLeft className="h-4 w-4" /> Back
+                      </span>
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={handleBusinessFinalSubmit}
+                      disabled={
+                        loading ||
+                        !billingName.trim() ||
+                        billingHasGst === null ||
+                        (billingHasGst && !billingGstin.trim()) ||
+                        !billingAddress.trim() ||
+                        billingPincode.trim().length !== 6 ||
+                        !invoiceEmail.trim()
+                      }
                       className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer text-[#D3DAD9]"
                     >
                       {loading ? (
@@ -1858,7 +2042,7 @@ export default function UnifiedRegisterPage() {
                       )}
                     </Button>
                   </div>
-                </>
+                </div>
               )}
             </div>
           )}

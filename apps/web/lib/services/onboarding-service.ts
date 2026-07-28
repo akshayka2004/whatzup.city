@@ -116,6 +116,18 @@ class OnboardingService {
     });
   }
 
+  /** Invoice/billing details our office needs to raise the invoice. */
+  async saveBillingProfile(
+    businessId: string,
+    payload: {
+      billingName: string; hasGst: boolean; gstin?: string; pan?: string;
+      addressLine: string; city?: string; state?: string; pincode: string;
+      invoiceEmail: string;
+    },
+  ): Promise<ApiResponse<any>> {
+    return apiService.post<any>(`/v1/payments/businesses/${businessId}/billing-profile`, payload);
+  }
+
   async assignHotelSubscription(
     businessId: string,
     starRating: number,

@@ -57,6 +57,7 @@ export default function BusinessSubscriptionsPage() {
   const [businessId, setBusinessId] = useState<string>('');
   const [sub, setSub] = useState<Sub | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [billing, setBilling] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -68,9 +69,10 @@ export default function BusinessSubscriptionsPage() {
       if (cancelled || !biz?.id) { setLoading(false); return; }
       setBusinessId(biz.id);
 
-      const [subRes, payRes] = await Promise.allSettled([
+      const [subRes, payRes, billRes] = await Promise.allSettled([
         apiService.get<any>(`/v1/subscriptions/businesses/${biz.id}/active`),
         apiService.get<any>(`/v1/payments/businesses/${biz.id}`),
+        apiService.get<any>(`/v1/payments/businesses/${biz.id}/billing-profile`),
       ]);
       if (cancelled) return;
       if (subRes.status === 'fulfilled' && !subRes.value.error) setSub(subRes.value.data);
@@ -78,6 +80,7 @@ export default function BusinessSubscriptionsPage() {
         const p = Array.isArray(payRes.value.data) ? payRes.value.data : payRes.value.data?.data ?? [];
         setPayments(p);
       }
+      if (billRes.status === 'fulfilled' && !billRes.value.error) setBilling(billRes.value.data);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -198,6 +201,50 @@ export default function BusinessSubscriptionsPage() {
               <p className="text-[11px] text-muted-foreground mt-2">
                 Hotels are billed by star classification and selected services instead of these plans.
               </p>
+            </div>
+
+            {/* Invoice / billing details on file */}
+            <div>
+              <h2 className="text-sm font-bold text-foreground mb-2">Invoice details</h2>
+              {billing ? (
+                <Card className="p-5">
+                  <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                    <div className="text-muted-foreground">
+                      Billing name: <span className="text-foreground font-medium">{billing.billingName}</span>
+                    </div>
+                    <div className="text-muted-foreground">
+                      GST:{' '}
+                      <span className="text-foreground font-medium">
+                        {billing.hasGst ? billing.gstin || 'Yes' : 'Not registered'}
+                      </span>
+                    </div>
+                    <div className="text-muted-foreground">
+                      PAN: <span className="text-foreground font-medium">{billing.pan || '—'}</span>
+                    </div>
+                    <div className="text-muted-foreground">
+                      Invoice email:{' '}
+                      <span className="text-foreground font-medium break-all">{billing.invoiceEmail}</span>
+                    </div>
+                    <div className="text-muted-foreground sm:col-span-2">
+                      Address:{' '}
+                      <span className="text-foreground">
+                        {billing.addressLine}
+                        {billing.city ? `, ${billing.city}` : ''}
+                        {billing.state ? `, ${billing.state}` : ''} — {billing.pincode}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-3">
+                    Invoices are raised by our office and sent to the email above.
+                  </p>
+                </Card>
+              ) : (
+                <Card className="p-5">
+                  <p className="text-xs text-muted-foreground">
+                    No invoice details on file yet. They're collected with your payment.
+                  </p>
+                </Card>
+              )}
             </div>
 
             {/* Payment history */}

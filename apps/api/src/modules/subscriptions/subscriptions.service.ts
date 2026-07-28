@@ -17,6 +17,15 @@ const HOTEL_ADDON_PRICE = 2500;
 /** All plans (and hotel listings) run for one quarter. */
 export const PLAN_DURATION_DAYS = 90;
 
+/** GST added on top of every plan/hotel base price. Mirrors apps/web/lib/subscription-plans.ts. */
+export const TAX_PERCENT = 18;
+
+export function withTax(base: number) {
+  const b = Math.max(0, Math.round(base));
+  const tax = Math.round((b * TAX_PERCENT) / 100);
+  return { base: b, tax, total: b + tax };
+}
+
 @Injectable()
 export class SubscriptionsService {
   constructor(
@@ -54,7 +63,7 @@ export class SubscriptionsService {
         tenantId,
         businessId,
         packageName: dto.packageName,
-        pricing: packageConfig.pricing,
+        pricing: withTax(packageConfig.pricing).total,
         duration,
         featureFlags: packageConfig.featureFlags,
         postingLimits: packageConfig.postingLimits,
@@ -103,10 +112,12 @@ export class SubscriptionsService {
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
     businessId = business.id;
 
-    const base = HOTEL_STAR_PRICING[dto.starRating];
-    if (!base) throw new BadRequestException('Invalid star rating');
+    const starBase = HOTEL_STAR_PRICING[dto.starRating];
+    if (!starBase) throw new BadRequestException('Invalid star rating');
     const selectedCount = Object.values(dto.amenities || {}).filter((a) => a?.selected).length;
-    const pricing = base + selectedCount * HOTEL_ADDON_PRICE;
+    // GST applies to the combined star + amenities base, same as the plans.
+    const totals = withTax(starBase + selectedCount * HOTEL_ADDON_PRICE);
+    const pricing = totals.total;
 
     const duration = PLAN_DURATION_DAYS; // same quarterly cycle as the standard plans
     const startDate = new Date();
@@ -159,6 +170,12 @@ export class SubscriptionsService {
         businessId,
         status: 'ACTIVE',
         endDate: { gte: new Date() },
+        // Legacy auto-assigned packages don't count as a paid plan, so those
+        // businesses are treated as unpaid and prompted to choose one.
+        OR: [
+          { packageName: { in: ACTIVE_PACKAGES } },
+          { packageName: { startsWith: 'HOTEL_' } },
+        ],
       },
     });
     if (!active) {
@@ -181,7 +198,16 @@ export class SubscriptionsService {
    */
   async listAllForAdmin() {
     const subs = await this.db.subscription.findMany({
-      where: { deletedAt: null },
+      // Legacy rows (LISTING_BASIC etc.) were auto-assigned by the old
+      // registration flow without the business ever choosing or paying, so they
+      // are excluded — those businesses count as having no plan.
+      where: {
+        deletedAt: null,
+        OR: [
+          { packageName: { in: ACTIVE_PACKAGES } },
+          { packageName: { startsWith: 'HOTEL_' } },
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       include: {
         business: {

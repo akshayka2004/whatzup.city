@@ -48,6 +48,8 @@ export default function ApprovalsPage() {
   // Form states
   const [rejectReason, setRejectReason] = useState('');
   const [approveNotes, setApproveNotes] = useState('');
+  // null until the admin answers the payment question in the approve dialog
+  const [paymentApproved, setPaymentApproved] = useState<boolean | null>(null);
 
   // Per-document review
   const [docActionLoading, setDocActionLoading] = useState(false);
@@ -112,20 +114,49 @@ export default function ApprovalsPage() {
     fetchApprovals(activeTab);
   }, [activeTab]);
 
+  /**
+   * Approving a new business also settles its first payment, so the dialog asks
+   * whether the payment is approved. Verifying the payment activates the
+   * subscription, which is what makes the plan show up in Subscriptions.
+   */
   const handleApprove = async () => {
     if (!approvingItem) return;
+    if (paymentApproved === null) {
+      setError('Please confirm whether the payment is approved.');
+      return;
+    }
     setActionLoading(true);
     setError('');
+
+    const pendingPayment = approvingItem.entity?.business?.payments?.[0];
+
     try {
+      // Settle the payment first — if this fails we don't want an approved
+      // business carrying an unresolved payment.
+      if (pendingPayment && pendingPayment.status === 'PENDING') {
+        const payRes = paymentApproved
+          ? await apiService.post<any>(`/v1/payments/${pendingPayment.id}/verify`, {})
+          : await apiService.post<any>(`/v1/payments/${pendingPayment.id}/reject`, {
+              reason: approveNotes || 'Payment not approved during business review',
+            });
+        if (payRes.error) {
+          setError(payRes.error);
+          setActionLoading(false);
+          return;
+        }
+      }
+
       const response = await apiService.post<any>(
         `/v1/admin/businesses/${approvingItem.id}/approve`,
         { notes: approveNotes || 'Approved by dashboard administrator' },
       );
       if (response.error) setError(response.error);
     } catch (_) {}
+
     setApprovals((prev) => prev.filter((a) => a.id !== approvingItem.id));
     setApprovingItem(null);
     setApproveNotes('');
+    setPaymentApproved(null);
     setActionLoading(false);
   };
 
@@ -975,6 +1006,61 @@ export default function ApprovalsPage() {
                 <span className="font-semibold text-muted-foreground">"{approvingItem.entity?.name}"</span>.
                 The workspace will be fully unlocked immediately.
               </p>
+
+              {/* Payment decision — approving the business settles its first
+                  payment, which activates the subscription. */}
+              {(() => {
+                const pay = approvingItem.entity?.business?.payments?.[0];
+                const sub = approvingItem.entity?.business?.subscriptions?.[0];
+                return (
+                  <div className="space-y-3 mb-5 text-left rounded-xl border border-border bg-secondary/50 p-4">
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                      Payment
+                    </p>
+                    {pay ? (
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          {planLabel(sub?.packageName || pay.invoiceMetadata?.packageName)} ·{' '}
+                          <span className="font-semibold text-foreground">
+                            ₹{Number(pay.amount || 0).toLocaleString('en-IN')}
+                          </span>{' '}
+                          · {pay.method} · {pay.status}
+                        </p>
+                        <p className="text-xs font-medium text-foreground">Is the payment approved?</p>
+                        <div className="inline-flex rounded-xl border border-border p-0.5">
+                          {[{ l: 'Yes', v: true }, { l: 'No', v: false }].map((o) => (
+                            <button
+                              key={o.l}
+                              type="button"
+                              onClick={() => setPaymentApproved(o.v)}
+                              className={`rounded-lg px-5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                                paymentApproved === o.v
+                                  ? o.v
+                                    ? 'bg-success text-white'
+                                    : 'bg-destructive text-destructive-foreground'
+                                  : 'text-muted-foreground hover:text-foreground'
+                              }`}
+                            >
+                              {o.l}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          {paymentApproved === true
+                            ? 'Payment will be verified and the subscription activated.'
+                            : paymentApproved === false
+                              ? 'Payment will be rejected; the business stays unpaid.'
+                              : 'Choose one to continue.'}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-warning">
+                        No payment submitted by this business yet.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               <div className="space-y-3 mb-6 text-left">
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest block">

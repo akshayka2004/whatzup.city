@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Body, Param, Headers, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Headers, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
-import { CreatePaymentDto, RejectPaymentDto } from './dto/payment.dto';
+import { CreatePaymentDto, RejectPaymentDto, BillingProfileDto } from './dto/payment.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -43,9 +43,43 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List payments awaiting screenshot verification (Admin only)' })
-  async pending() {
-    return this.paymentsService.listPending();
+  @ApiOperation({ summary: 'List payments awaiting verification; ?cycle=RENEWAL for renewals only (Admin)' })
+  async pending(@Query('cycle') cycle?: 'NEW' | 'RENEWAL') {
+    return this.paymentsService.listPending(cycle);
+  }
+
+  @Get('admin/transactions')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Financial transaction log (Admin only)' })
+  async transactions(@Query('businessId') businessId?: string) {
+    return this.paymentsService.listTransactions(businessId);
+  }
+
+  @Post('businesses/:businessId/billing-profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Save invoice/billing details for a business' })
+  async saveBilling(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('businessId') businessId: string,
+    @Body() dto: BillingProfileDto,
+  ) {
+    return this.paymentsService.upsertBillingProfile(userId, tenantId, businessId, dto);
+  }
+
+  @Get('businesses/:businessId/billing-profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get invoice/billing details for a business' })
+  async getBilling(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('businessId') businessId: string,
+  ) {
+    return this.paymentsService.getBillingProfile(userId, tenantId, businessId);
   }
 
   @Post(':id/reject')

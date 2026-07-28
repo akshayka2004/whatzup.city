@@ -61,11 +61,17 @@ export default function AdminSubscriptionsPage() {
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [txns, setTxns] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const res = await apiService.get<any>('/v1/subscriptions/admin/all');
+      const [res, txRes] = await Promise.all([
+        apiService.get<any>('/v1/subscriptions/admin/all'),
+        apiService.get<any>('/v1/payments/admin/transactions'),
+      ]);
+      const txList = Array.isArray(txRes.data) ? txRes.data : txRes.data?.data ?? [];
+      setTxns(txList);
       if (res.error) setError(res.error);
       const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
       setRows(list);
@@ -188,6 +194,58 @@ export default function AdminSubscriptionsPage() {
             <option value="PENDING_PAYMENT">Pending payment</option>
             <option value="EXPIRED">Expired</option>
           </select>
+        </div>
+
+        {/* Transaction log — every financial event, straight from the DB */}
+        <div>
+          <h2 className="text-sm font-bold text-foreground mb-2">Transaction log</h2>
+          {txns.length === 0 ? (
+            <Card className="p-6 text-center">
+              <p className="text-xs text-muted-foreground">No transactions recorded yet.</p>
+            </Card>
+          ) : (
+            <Card className="overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 text-xs text-muted-foreground">
+                    <tr>
+                      <th className="text-left font-medium px-4 py-3">Date</th>
+                      <th className="text-left font-medium px-4 py-3">Business</th>
+                      <th className="text-left font-medium px-4 py-3">Event</th>
+                      <th className="text-left font-medium px-4 py-3">Plan</th>
+                      <th className="text-left font-medium px-4 py-3">Base</th>
+                      <th className="text-left font-medium px-4 py-3">GST</th>
+                      <th className="text-left font-medium px-4 py-3">Total</th>
+                      <th className="text-left font-medium px-4 py-3">Ref</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {txns.slice(0, 100).map((t) => (
+                      <tr key={t.id} className="border-t border-border">
+                        <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(t.createdAt).toLocaleString('en-IN', {
+                            day: 'numeric', month: 'short', year: 'numeric',
+                          })}
+                        </td>
+                        <td className="px-4 py-3 text-foreground">{t.business?.name || '—'}</td>
+                        <td className="px-4 py-3">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-muted text-muted-foreground">
+                            {t.type?.replace('PAYMENT_', '')}
+                          </span>
+                          <span className="ml-1.5 text-[10px] text-muted-foreground">{t.cycle}</span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">{planLabel(t.packageName)}</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">{formatINR(Number(t.amountBase || 0))}</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">{formatINR(Number(t.amountTax || 0))}</td>
+                        <td className="px-4 py-3 font-semibold text-foreground">{formatINR(Number(t.amountTotal || 0))}</td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">{t.reference || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
         </div>
 
         {/* Subscriber table */}

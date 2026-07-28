@@ -16,6 +16,7 @@ import {
   UserPlus,
   User,
   Receipt,
+  BadgeIndianRupee,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +35,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: 'Registrations', href: '/admin/registrations', icon: UserPlus },
       { label: 'Approvals', href: '/admin/approvals', icon: CheckCircle },
       { label: 'Payments', href: '/admin/payments', icon: Receipt },
+      { label: 'Payment Approvals', href: '/admin/payment-approvals', icon: BadgeIndianRupee },
       { label: 'Reports', href: '/admin/reports', icon: AlertTriangle },
       { label: 'Notices', href: '/admin/notices', icon: Bell },
     ],

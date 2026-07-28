@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsEnum, IsBoolean, IsEmail } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum PaymentMethodEnum {
@@ -41,6 +41,52 @@ export class CreatePaymentDto {
   @IsOptional()
   @IsString()
   packageName?: string;
+}
+
+/** Details our office needs to raise the invoice. */
+export class BillingProfileDto {
+  @ApiProperty({ example: 'Sunrise Hospitality Pvt Ltd' })
+  @IsString()
+  @IsNotEmpty()
+  billingName!: string;
+
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  hasGst!: boolean;
+
+  @ApiProperty({ example: '32ABCDE1234F1Z5', required: false })
+  @IsOptional()
+  @IsString()
+  gstin?: string;
+
+  @ApiProperty({ example: 'ABCDE1234F', required: false })
+  @IsOptional()
+  @IsString()
+  pan?: string;
+
+  @ApiProperty({ example: '45/998-A, MG Road, Ernakulam' })
+  @IsString()
+  @IsNotEmpty()
+  addressLine!: string;
+
+  @ApiProperty({ example: 'Thiruvananthapuram', required: false })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiProperty({ example: 'Kerala', required: false })
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @ApiProperty({ example: '695001' })
+  @IsString()
+  @IsNotEmpty()
+  pincode!: string;
+
+  @ApiProperty({ example: 'accounts@sunrise.com' })
+  @IsEmail()
+  invoiceEmail!: string;
 }
 
 export class RejectPaymentDto {

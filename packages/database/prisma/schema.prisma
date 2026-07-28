@@ -54,6 +54,8 @@ model Tenant {
   eventClicks             EventClick[]
   coupons                 Coupon[]
   vouchers                Voucher[]
+  transactions            Transaction[]
+  billingProfiles         BillingProfile[]
   voucherClaims           VoucherClaim[]
   reviews                 Review[]
   reviewMedia             ReviewMedia[]
@@ -564,6 +566,8 @@ model Business {
   products          Product[]
   offers            Offer[]
   vouchers          Voucher[]
+  transactions      Transaction[]
+  billingProfile    BillingProfile?
   voucherClaims     VoucherClaim[]
   events            Event[]
   coupons           Coupon[]
@@ -1827,6 +1831,7 @@ model Subscription {
   entity   Entity?   @relation(fields: [entityId], references: [id], onDelete: Cascade)
   plan     Plan?     @relation(fields: [planId], references: [id], onDelete: SetNull)
   payments Payment[]
+  transactions Transaction[]
 
   @@index([tenantId])
   @@index([businessId])
@@ -1863,6 +1868,7 @@ model Payment {
   tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  transactions Transaction[]
 
   @@index([tenantId])
   @@index([businessId])
@@ -1870,6 +1876,76 @@ model Payment {
   @@index([status])
   @@index([deletedAt])
   @@map("payments")
+}
+
+/// Immutable financial log. One row per money event (submission, verification,
+/// rejection) so finance can reconcile without reconstructing state from
+/// Payment/Subscription. Amounts are split so GST is auditable.
+model Transaction {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  businessId     String    @map("business_id") @db.Uuid
+  paymentId      String?   @map("payment_id") @db.Uuid
+  subscriptionId String?   @map("subscription_id") @db.Uuid
+
+  /// PAYMENT_SUBMITTED | PAYMENT_VERIFIED | PAYMENT_REJECTED
+  type           String    @db.VarChar(40)
+  /// NEW | RENEWAL — first verified payment is NEW, everything after is RENEWAL
+  cycle          String    @default("NEW") @db.VarChar(20)
+  packageName    String?   @map("package_name") @db.VarChar(100)
+
+  amountBase     Decimal   @map("amount_base") @db.Decimal(12, 2)
+  amountTax      Decimal   @map("amount_tax") @db.Decimal(12, 2)
+  amountTotal    Decimal   @map("amount_total") @db.Decimal(12, 2)
+  taxPercent     Decimal   @default(18) @map("tax_percent") @db.Decimal(5, 2)
+
+  method         String?   @db.VarChar(50)
+  reference      String?   @db.VarChar(255)
+  status         String    @default("PENDING") @db.VarChar(30)
+  note           String?   @db.Text
+  metadata       Json      @default("{}")
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+  createdBy      String?   @map("created_by") @db.Uuid
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  payment      Payment?      @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([businessId])
+  @@index([paymentId])
+  @@index([type])
+  @@index([cycle])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+/// Details needed to raise an invoice off-platform. One per business.
+model BillingProfile {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  businessId     String    @unique @map("business_id") @db.Uuid
+
+  billingName    String    @map("billing_name") @db.VarChar(255)
+  hasGst         Boolean   @default(false) @map("has_gst")
+  gstin          String?   @db.VarChar(20)
+  pan            String?   @db.VarChar(15)
+  addressLine    String    @map("address_line") @db.Text
+  city           String?   @db.VarChar(100)
+  state          String?   @db.VarChar(100)
+  pincode        String    @db.VarChar(10)
+  invoiceEmail   String    @map("invoice_email") @db.VarChar(255)
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("billing_profiles")
 }
 
 model OnboardingProgress {

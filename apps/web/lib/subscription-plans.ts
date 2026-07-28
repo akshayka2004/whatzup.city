@@ -100,6 +100,22 @@ export function formatINR(n: number) {
   return `₹${n.toLocaleString('en-IN')}`;
 }
 
+/** GST applied on top of every plan and hotel listing charge. */
+export const TAX_PERCENT = 18;
+
+export type Totals = { base: number; tax: number; total: number };
+
+/**
+ * Plan/hotel prices are exclusive of GST — tax is added on top, so Whtzup+ at
+ * ₹2,500 is payable as ₹2,950. Mirrored server-side; the server recomputes and
+ * never trusts a client-sent amount.
+ */
+export function withTax(base: number): Totals {
+  const b = Math.max(0, Math.round(base));
+  const tax = Math.round((b * TAX_PERCENT) / 100);
+  return { base: b, tax, total: b + tax };
+}
+
 /**
  * Human label for a stored `Subscription.packageName`. Handles the current
  * plans, hotel classifications (HOTEL_4STAR) and the retired package codes
