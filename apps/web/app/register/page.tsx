@@ -86,10 +86,23 @@ const CATEGORIES = [
     ],
   },
   {
+    slug: 'hotel',
+    label: 'Hotel',
+    subcategories: [
+      { slug: 'hotel_business', label: 'Business Hotel' },
+      { slug: 'hotel_boutique', label: 'Boutique Hotel' },
+      { slug: 'hotel_heritage', label: 'Heritage Hotel' },
+      { slug: 'hotel_resort', label: 'Resort Hotel' },
+      { slug: 'hotel_airport', label: 'Airport Hotel' },
+    ],
+  },
+  {
     slug: 'staycation',
     label: 'Staycation',
     subcategories: [
-      { slug: 'hotels', label: 'Hotels' },
+      // Renamed from "Hotels" — star-classified hotels now live under the
+      // top-level Hotel category. Slug kept so existing rows/businesses resolve.
+      { slug: 'hotels', label: 'Homestays' },
       { slug: 'resorts', label: 'Resorts' },
       { slug: 'villas', label: 'Villas' },
       { slug: 'serviced_apartments', label: 'Serviced Apartments' },

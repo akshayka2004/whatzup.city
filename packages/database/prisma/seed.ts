@@ -520,8 +520,10 @@ async function main() {
       sortOrder: 17,
     },
     {
+      // slug is 'hotel' (singular) — 'hotels' is already taken by the
+      // Staycation subcategory, and Category has @@unique([tenantId, slug]).
       name: 'Hotel',
-      slug: 'hotels',
+      slug: 'hotel',
       description: 'Star-classified hotels — listing charge set by classification',
       icon: 'Hotel',
       sortOrder: 18,

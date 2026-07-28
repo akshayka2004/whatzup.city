@@ -97,7 +97,7 @@ export default function BusinessSettingsPage() {
   const [savingReg, setSavingReg] = useState(false);
   const [regMsg, setRegMsg] = useState('');
   const isFood = categorySlug === 'food' || /food|restaurant|cafe|bakery/i.test(categorySlug);
-  const isHotel = categorySlug === 'hotels';
+  const isHotel = categorySlug === 'hotel';
 
   // Hotel classification + amenities
   const [hotelStarRating, setHotelStarRating] = useState<number | null>(null);

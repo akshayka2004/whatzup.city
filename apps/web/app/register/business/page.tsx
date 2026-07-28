@@ -53,7 +53,7 @@ function RegisterBusinessWizardContent() {
   // Registration / KYC details (collected in Step 3)
   const [regDetails, setRegDetails] = useState<RegistrationDetails>({});
   const [categorySlug, setCategorySlug] = useState<string | null>(null);
-  const isHotel = categorySlug === 'hotels';
+  const isHotel = categorySlug === 'hotel';
 
   // Step 4 Hotel classification + amenities (Hotel category only)
   const [hotelStarRating, setHotelStarRating] = useState<number | null>(null);
