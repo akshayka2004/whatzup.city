@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { HOTEL_AMENITIES } from '@/lib/hotel-pricing';
 import {
   Star,
   MapPin,
@@ -522,6 +523,40 @@ export default function BusinessDetailPage() {
                     <span key={tag} className="px-3 py-1 bg-white/5 border border-white/5 rounded-full text-sm text-slate-300">{tag}</span>
                   ))}
                 </div>
+              </Card>
+            )}
+
+            {/* ── Hotel classification & amenities (Hotel category only) */}
+            {(biz.hotelStarRating || Object.values(biz.hotelAmenities || {}).some((a: any) => a?.selected)) && (
+              <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                  <h2 className="text-2xl font-bold text-foreground">Hotel</h2>
+                  {biz.hotelStarRating && (
+                    <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-semibold">
+                      {biz.hotelStarRating}★ classification
+                    </span>
+                  )}
+                </div>
+                {(() => {
+                  const selected = HOTEL_AMENITIES.filter(
+                    (a) => (biz.hotelAmenities || {})[a.key]?.selected,
+                  );
+                  if (!selected.length) return null;
+                  return (
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {selected.map((a) => (
+                        <div key={a.key} className="p-3 rounded-xl bg-white/5 border border-white/5">
+                          <div className="text-sm font-semibold text-foreground">{a.label}</div>
+                          {a.subOptions && (
+                            <div className="text-[11px] text-muted-foreground mt-0.5">
+                              {a.subOptions.join(' · ')}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </Card>
             )}
 

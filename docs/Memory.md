@@ -111,6 +111,13 @@
 7. **Prisma migrate**, never `db push`.
 8. **Dev preview pane**: screenshots/`/login` render flakily in the in-app browser;
    verify via compiled CSS/build output + real Chrome.
+9. **`next build` DOES NOT typecheck** — `apps/web/next.config` sets
+   `typescript.ignoreBuildErrors: true` and the log prints `Skipping validation of
+   types`. A missing import compiles clean and then crashes at runtime as
+   `ReferenceError: x is not defined` → "This page couldn't load."
+   **Always run `cd apps/web && npx tsc --noEmit` and check for TS2304
+   ("Cannot find name") before claiming a build is clean.** This exact bug shipped
+   an unimported `cn` in `/dashboard/settings`, breaking the page for hotels.
 
 ## VPS deploy quick ref
 

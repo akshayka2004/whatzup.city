@@ -62,6 +62,19 @@ class OnboardingService {
       socialLinks?: Record<string, string>;
       tags?: string[];
       subcategorySlugs?: string[];
+      // Registration / KYC details
+      brandName?: string;
+      companyName?: string;
+      companyType?: string;
+      compliance?: any;
+      ownerContact?: any;
+      billingContact?: any;
+      supportContact?: any;
+      branchHead?: any;
+      categoryAttributes?: any;
+      // Hotel category pricing
+      hotelStarRating?: number;
+      hotelAmenities?: any;
     },
   ): Promise<ApiResponse<BusinessDraft>> {
     return apiService.put<BusinessDraft>(

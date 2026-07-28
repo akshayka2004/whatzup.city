@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
+import { cn } from '@/lib/utils';
 import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/business/registration-details';
 import {
   STAR_OPTIONS, STAR_PRICING, HOTEL_AMENITIES, ADDON_PRICE, computeHotelCharge, type HotelAmenities,
