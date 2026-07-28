@@ -23,21 +23,25 @@
 
 ## Recently done (newest first)
 
-- **Resume fix + live admin data + QR** (): resume check bailed unless
-  status was DRAFT, so registered businesses fell to step 1 -> step 2 and hit
-  "email already registered" on their own address; now resumes at any status,
-  landing registered businesses on **step 3** (only DRAFT+STEP_3 goes to step 4),
-  with a loader so step 1 never flashes.  was fully fake
-  (invented Free/Starter/Growth/Enterprise plans, subscriber "plans" derived from
-  business rows that carry no subscription data, upgrade requests in localStorage)
-  -> rebuilt on new **** (Subscription table
-  cross-tenant + latest payment). Approvals pending query now includes latest
-  subscription + payment; review panel shows plan opted, amount, duration,
-  payment status, UPI ref.  shared from lib/subscription-plans
-  (handles current plans, HOTEL_nSTAR, retired codes). QR extracted from the
-  Google Pay screenshot, thresholded + quiet zone rebuilt + upscaled to
-  **public/payment-qr.png** (1488px); shown up to 340px with UPI ID
-   for manual pay.
+- **Resume fix + live admin data + QR** (`0b65855`): the resume check bailed
+  unless status was `DRAFT`, so already-registered businesses fell through to
+  step 1 → step 2 and hit "email already registered" on their own address. Now
+  resumes at **any** status, landing registered businesses on **step 3**; only a
+  `DRAFT` that completed `STEP_3` goes to step 4. A loader holds the UI until the
+  check resolves so step 1 never flashes.
+  `/admin/subscriptions` was **entirely fake** — invented Free/Starter/Growth/
+  Enterprise plans (₹499/1299/3999), subscriber "plans" derived from business
+  rows that carry no subscription data, and upgrade requests in **localStorage**.
+  Rebuilt on new **`GET /v1/subscriptions/admin/all`** (Subscription table,
+  cross-tenant, + each business's latest payment). Approvals pending query now
+  includes the latest subscription + payment; the review panel shows plan opted,
+  amount, duration, payment status and UPI ref, or flags that neither exists.
+  `planLabel()` moved into `lib/subscription-plans` (handles current plans,
+  `HOTEL_nSTAR`, and retired codes). QR extracted from the Google Pay
+  screenshot, thresholded with a rebuilt quiet zone and upscaled to
+  **`public/payment-qr.png`** (1488px) — the original embedded the code at
+  ~520px inside chrome and scanned poorly; shown up to 340px alongside UPI ID
+  `8129255552@okbizaxis` for manual payment.
 
 - **Registration unified** (`4d957a4`): there were **two parallel registration
   paths** — `/register` (what users actually used; hardcoded
