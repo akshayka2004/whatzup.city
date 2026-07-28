@@ -14,7 +14,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex h-screen w-full bg-background">
+    <div className="flex h-dvh w-full bg-background">
       {/* Sidebar - Hidden on mobile */}
       {!isMobile && <PublicSidebar />}
 

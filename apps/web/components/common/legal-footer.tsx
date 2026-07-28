@@ -13,18 +13,31 @@ export function LegalFooter() {
             <span className="text-sm font-semibold text-foreground">whtzup.city</span>
           </div>
 
-          {/* Links */}
-          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-            <Link href="/terms-of-service" className="hover:text-foreground transition-colors">
+          {/* Links — min-h-11 keeps each tap target at the 44px minimum on
+              touch devices; the negative margin keeps the visual spacing tight. */}
+          <nav className="-my-2 flex flex-wrap items-center justify-center gap-x-5 text-xs text-muted-foreground">
+            <Link
+              href="/terms-of-service"
+              className="inline-flex min-h-11 items-center hover:text-foreground transition-colors"
+            >
               Terms of Service
             </Link>
-            <Link href="/privacy-policy" className="hover:text-foreground transition-colors">
+            <Link
+              href="/privacy-policy"
+              className="inline-flex min-h-11 items-center hover:text-foreground transition-colors"
+            >
               Privacy Policy
             </Link>
-            <Link href="/report" className="hover:text-foreground transition-colors">
+            <Link
+              href="/report"
+              className="inline-flex min-h-11 items-center hover:text-foreground transition-colors"
+            >
               Report Issue
             </Link>
-            <a href="mailto:support@lifeartgroup.in" className="hover:text-foreground transition-colors">
+            <a
+              href="mailto:support@lifeartgroup.in"
+              className="inline-flex min-h-11 max-w-full items-center truncate hover:text-foreground transition-colors"
+            >
               support@lifeartgroup.in
             </a>
           </nav>

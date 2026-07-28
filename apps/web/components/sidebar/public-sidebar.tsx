@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -16,6 +17,7 @@ import {
   Calendar,
   Store,
   ArrowRight,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -43,9 +45,28 @@ const GROUPS: { title: string; items: Item[] }[] = [
   },
 ];
 
+const PROMO_DISMISSED_KEY = 'sidebar_promo_dismissed';
+
 export function PublicSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+
+  // Dismissal persists so the card doesn't reappear on every navigation.
+  // Starts hidden-false and syncs after mount to avoid a hydration mismatch.
+  const [promoDismissed, setPromoDismissed] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (localStorage.getItem(PROMO_DISMISSED_KEY) === '1') setPromoDismissed(true);
+  }, []);
+
+  const dismissPromo = () => {
+    setPromoDismissed(true);
+    try {
+      localStorage.setItem(PROMO_DISMISSED_KEY, '1');
+    } catch {
+      /* storage unavailable — dismissal just won't persist */
+    }
+  };
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/');
@@ -108,24 +129,39 @@ export function PublicSidebar() {
         ))}
       </nav>
 
-      {/* Promo card */}
-      <div className="px-3 pb-3">
-        <Link
-          href="/register"
-          className="block overflow-hidden rounded-2xl bg-primary p-4 text-primary-foreground transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:hover:translate-y-0"
-        >
-          <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
-            <Store className="h-[18px] w-[18px]" />
+      {/* Promo card — dismissible. The close button is a sibling of the Link,
+          never nested inside it: nested interactive elements are invalid HTML
+          and confuse screen readers and keyboard traversal. */}
+      {!promoDismissed && (
+        <div className="px-3 pb-3">
+          <div className="relative">
+            <Link
+              href="/register"
+              className="block overflow-hidden rounded-2xl bg-primary p-4 pr-12 text-primary-foreground transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:hover:translate-y-0"
+            >
+              <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-white/15">
+                <Store className="h-[18px] w-[18px]" />
+              </div>
+              <p className="text-sm font-semibold leading-tight">List your business</p>
+              <p className="mt-1 text-xs leading-snug text-primary-foreground/80">
+                Reach citizens across your city.
+              </p>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold">
+                Get started <ArrowRight className="h-3.5 w-3.5" />
+              </span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={dismissPromo}
+              aria-label="Dismiss list your business"
+              className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-xl text-primary-foreground/70 transition-colors hover:bg-white/15 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <p className="text-sm font-semibold leading-tight">List your business</p>
-          <p className="mt-1 text-xs leading-snug text-primary-foreground/80">
-            Reach citizens across your city.
-          </p>
-          <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold">
-            Get started <ArrowRight className="h-3.5 w-3.5" />
-          </span>
-        </Link>
-      </div>
+        </div>
+      )}
 
       {/* Footer actions */}
       <div className="space-y-1 border-t border-sidebar-border px-3 py-3">

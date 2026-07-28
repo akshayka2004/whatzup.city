@@ -18,7 +18,7 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
 
   if (loading || !user) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
+      <div className="flex h-dvh w-full items-center justify-center bg-background text-foreground">
         <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
         <span className="text-sm text-muted-foreground">Authenticating…</span>
       </div>
@@ -26,7 +26,7 @@ export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen w-full bg-background">
+    <div className="flex h-dvh w-full bg-background">
       {!isMobile && <SuperAdminSidebar />}
 
       <div className="flex flex-1 flex-col overflow-hidden">

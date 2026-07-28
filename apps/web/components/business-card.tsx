@@ -72,14 +72,14 @@ export function BusinessCard({ business }: { business: any }) {
         <div className="mb-1 flex flex-wrap items-center gap-1.5">
           <Link
             href={`/business/${business.id}`}
-            className="truncate font-semibold text-foreground hover:text-primary transition-colors"
+            className="min-w-0 max-w-full truncate font-semibold text-foreground hover:text-primary transition-colors"
           >
             {business.name}
           </Link>
           {business.isVerified && <VerifiedBadge />}
           {isFood && business.halalStatus === 'HALAL' && (
-            <span className="inline-flex items-center gap-0.5 rounded-full border border-success/25 bg-success/12 px-1.5 py-0.5 text-[10px] font-semibold text-success">
-              <BadgeCheck className="h-3 w-3" />
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-success/25 bg-success/12 px-1.5 py-0.5 text-[10px] font-semibold text-success">
+              <BadgeCheck className="h-3 w-3 shrink-0" />
               Halal
             </span>
           )}
@@ -95,18 +95,21 @@ export function BusinessCard({ business }: { business: any }) {
           </p>
         )}
 
-        <div className="mb-2 flex items-center gap-3 text-sm">
-          <span className="inline-flex items-center gap-1">
-            <Star className="h-4 w-4 fill-warning text-warning" />
+        {/* Rating + city. Wraps on narrow screens, and the city truncates
+            instead of overflowing the card — flex children default to
+            min-width:auto, so min-w-0 is required for truncate to work. */}
+        <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          <span className="inline-flex shrink-0 items-center gap-1">
+            <Star className="h-4 w-4 shrink-0 fill-warning text-warning" />
             <span className="font-semibold text-foreground tabular-nums">
               {rating != null ? Number(rating).toFixed(1) : '—'}
             </span>
             <span className="text-xs text-muted-foreground">({reviews})</span>
           </span>
           {business.city && (
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5" />
-              {business.city}
+            <span className="inline-flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{business.city}</span>
             </span>
           )}
         </div>
@@ -116,10 +119,10 @@ export function BusinessCard({ business }: { business: any }) {
             {tags.slice(0, 4).map((t) => (
               <span
                 key={t}
-                className="inline-flex items-center gap-0.5 rounded-full border border-border bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                className="inline-flex max-w-full items-center gap-0.5 rounded-full border border-border bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"
               >
-                <Tag className="h-2.5 w-2.5" />
-                {t}
+                <Tag className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate">{t}</span>
               </span>
             ))}
           </div>

@@ -161,7 +161,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background text-foreground">
+      <div className="flex h-dvh w-full items-center justify-center bg-background text-foreground">
         <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
         <span className="text-sm text-muted-foreground">Authenticating workspace…</span>
       </div>
@@ -214,7 +214,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
       cyan: 'bg-cyan-600 hover:bg-cyan-500',
     };
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background p-4">
+      <div className="flex h-dvh w-full items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md p-8 rounded-3xl border border-white/10 bg-[#0d0d12]/90 shadow-2xl text-center space-y-6">
           <div className={`w-20 h-20 rounded-full border flex items-center justify-center mx-auto ${toneMap[gate.tone]}`}>
             <GateIcon className="h-8 w-8" />
@@ -257,7 +257,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   }
 
   return (
-    <div className="flex h-screen w-full bg-background relative overflow-hidden">
+    <div className="flex h-dvh w-full bg-background relative overflow-hidden">
       {/* Sidebar - Hidden on mobile */}
       {!isMobile && <BusinessSidebar />}
 
