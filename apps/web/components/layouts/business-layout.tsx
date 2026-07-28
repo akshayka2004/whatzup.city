@@ -136,7 +136,9 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   }, [user, authLoading]);
 
   const getOnboardingPath = (role: string, entityId: string, entityType?: string) => {
-    if (role === 'business') return `/register/business?id=${entityId}`;
+    // Business registration is one continuous flow at /register, which resumes
+    // an unfinished draft on its own — no id param, no standalone wizard.
+    if (role === 'business') return `/register`;
     const type = entityType || '';
     if (type === 'INFLUENCER') return `/register/influencer?id=${entityId}`;
     if (type === 'PROFESSIONAL') return `/register/professional?id=${entityId}`;

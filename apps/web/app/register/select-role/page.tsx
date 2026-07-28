@@ -92,7 +92,7 @@ export default function SelectRolePage() {
       if (res.ok) {
         const data = await res.json();
         if (option.entityType === 'BUSINESS' && data.businessId) {
-          router.push(`/register/business?id=${data.businessId}`);
+          router.push(`/register`);
           return;
         }
       }
@@ -116,7 +116,7 @@ export default function SelectRolePage() {
     if (option.entityType === 'CUSTOMER') {
       router.push('/');
     } else if (option.entityType === 'BUSINESS') {
-      router.push('/register/business?id=mock-biz-001');
+      router.push('/register');
     } else if (option.entityType === 'GOVERNMENT') {
       router.push('/government/dashboard');
     } else {
