@@ -5,7 +5,7 @@
 
 ## Current state
 
-- **Branch:** `main`. **HEAD:** `0b65855` (resume fix + live admin data + QR), pushed to
+- **Branch:** `main`. **HEAD:** `32fa8a7` (GST + transaction log + invoice details), pushed to
   `github.com/akshayka2004/whatzup.city`.
 - **VPS migration state:** `..._vouchers`, `..._business_registration_details`,
   `..._hotel_registration` all applied (confirmed 2026-07-28 deploy log).
@@ -22,6 +22,28 @@
   per-role page passes. See `docs/Phases.md`.
 
 ## Recently done (newest first)
+
+- **GST + transaction log + invoice details** (`32fa8a7`): the ₹999 in admin
+  subscriptions was **real data** — `LISTING_BASIC` is priced 999 and the old
+  registration flow auto-assigned it without the business choosing or paying.
+  Legacy packages are now excluded from `listAllForAdmin`, revenue **and**
+  `getActive`, so those businesses read as unpaid and hit the paywall (user
+  confirmed the hard block).
+  **GST 18% added on top** of every plan and hotel base (₹2,500 → ₹2,950);
+  `withTax()` in `lib/subscription-plans.ts`, mirrored in `subscriptions.service.ts`;
+  `splitTax()` in `payments.service.ts` re-splits a paid total for invoicing.
+  `Subscription.pricing` now stores the **tax-inclusive total**.
+  New **`Transaction`** model = append-only financial log (base/tax/total,
+  taxPercent, cycle, package, method, ref) written on submit/verify/reject,
+  shown on admin subscriptions via `GET /v1/payments/admin/transactions`.
+  New **`BillingProfile`** model (billing name, GST y/n + GSTIN, PAN, address,
+  pincode, invoice email) collected on a sub-step **after payment** in
+  registration, saved *before* the payment is recorded.
+  **Cycle**: first payment = `NEW`, after a verified one = `RENEWAL`.
+  `/admin/payment-approvals` (new page + sidebar) lists **RENEWAL only**;
+  new businesses stay in `/admin/approvals`, whose approve dialog now asks
+  "Is the payment approved?" and verifies/rejects the payment accordingly.
+  Migration `20260729090000_transactions_billing`.
 
 - **Resume fix + live admin data + QR** (`0b65855`): the resume check bailed
   unless status was `DRAFT`, so already-registered businesses fell through to
