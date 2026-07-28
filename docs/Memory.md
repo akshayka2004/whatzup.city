@@ -5,8 +5,10 @@
 
 ## Current state
 
-- **Branch:** `main`. **HEAD:** `7e5f587` (design tokens), pushed to
+- **Branch:** `main`. **HEAD:** `508081a` (hotel classification pricing), pushed to
   `github.com/akshayka2004/whatzup.city`.
+- **VPS is behind by 3 migrations** — not yet `migrate deploy`'d: `..._vouchers`,
+  `..._business_registration_details`, `..._hotel_registration`.
 - **Deploy:** VPS (Mumbai), PM2 — `saas-api` :4001, `saas-web` :3000,
   `saas-worker`, `saas-launch-page` :6001. Supabase Postgres (ap-south-1), local
   Redis + Typesense.
@@ -20,8 +22,7 @@
 
 ## Recently done (newest first)
 
-- **Hotel classification pricing** (uncommitted at write, DO NOT PUSH — user holding
-  approval): new `Hotel` category (slug `hotels`, separate from `Staycation`).
+- **Hotel classification pricing** (`508081a`, pushed): new `Hotel` category (slug `hotels`, separate from `Staycation`).
   `Business.hotelStarRating Int?` (1-5) + `hotelAmenities Json` (9 top-level
   amenities from client's `details.md`, per-item flat fee, sub-choices free/
   informational only). Migration `..._hotel_registration` (ALTER only).
@@ -112,9 +113,7 @@ cd packages/database && pnpm prisma migrate deploy && pnpm prisma generate && cd
 
 ## Open items
 
-- **Hotel pricing feature is UNCOMMITTED and NOT to be pushed** until the user
-  explicitly approves (they asked to hold push after brainstorming this one).
-- **Apply new migrations on VPS** (once pushed): `..._vouchers`,
+- **Apply 3 pending migrations on VPS**: `..._vouchers`,
   `..._business_registration_details`, `..._hotel_registration` via `prisma migrate deploy`.
 - Voucher customer wallet page (`/vouchers`) — API `GET /v1/vouchers/my` exists, no page yet.
 - `/reset-password` page (API exists).
