@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsEnum, IsInt, Min, Max, IsObject } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum PackageNameEnum {
@@ -20,4 +20,19 @@ export class AssignPackageDto {
   @ApiProperty({ example: 30, description: 'Duration in days' })
   @IsNumber()
   duration!: number;
+}
+
+export class AssignHotelPackageDto {
+  @ApiProperty({ example: 4, description: '1-5 star classification' })
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  starRating!: number;
+
+  @ApiProperty({
+    example: { spa: { selected: true }, cafe: { selected: true } },
+    description: 'Selected top-level amenities keyed by amenity key',
+  })
+  @IsObject()
+  amenities!: Record<string, { selected?: boolean; subChoices?: string[] }>;
 }

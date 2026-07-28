@@ -202,6 +202,8 @@ export class BusinessesService {
       'brandName', 'companyName', 'companyType', 'compliance', 'ownerContact',
       'billingContact', 'supportContact', 'branchHead', 'categoryAttributes',
       'subcategoryIds',
+      // Hotel category pricing
+      'hotelStarRating', 'hotelAmenities',
     ];
     const payload: any = {};
     for (const k of ALLOWED) if (data[k] !== undefined) payload[k] = data[k];

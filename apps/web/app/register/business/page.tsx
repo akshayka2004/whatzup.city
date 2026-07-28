@@ -6,6 +6,9 @@ import { onboardingService, BusinessDraft } from '@/lib/services/onboarding-serv
 import { KERALA_CITIES } from '@/lib/constants';
 import { optimizeImage } from '@/lib/utils/image-optimizer';
 import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/business/registration-details';
+import {
+  STAR_OPTIONS, STAR_PRICING, HOTEL_AMENITIES, ADDON_PRICE, computeHotelCharge, type HotelAmenities,
+} from '@/lib/hotel-pricing';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +52,12 @@ function RegisterBusinessWizardContent() {
 
   // Registration / KYC details (collected in Step 3)
   const [regDetails, setRegDetails] = useState<RegistrationDetails>({});
+  const [categorySlug, setCategorySlug] = useState<string | null>(null);
+  const isHotel = categorySlug === 'hotels';
+
+  // Step 4 Hotel classification + amenities (Hotel category only)
+  const [hotelStarRating, setHotelStarRating] = useState<number | null>(null);
+  const [hotelAmenities, setHotelAmenities] = useState<HotelAmenities>({});
 
   // Step 3 Contact & Location States
   // City/state locked to Thiruvananthapuram for Release 1
@@ -94,6 +103,7 @@ function RegisterBusinessWizardContent() {
         if (response.data && !response.error) {
           const draft = response.data.business;
           setBusinessDraft(draft);
+          setCategorySlug(draft.category?.slug || null);
           setDescription(draft.description || '');
           setOwnerName(draft.ownerName || '');
           setAddress(draft.address || '');
@@ -211,14 +221,16 @@ function RegisterBusinessWizardContent() {
     }
   };
 
-  // Submit Step 4 (Subscription Plan selection)
+  // Submit Step 4 (Subscription Plan selection, or Hotel star-classification pricing)
   const handleStep4Submit = async () => {
     if (!businessId) return;
     setError('');
     setSubmitting(true);
 
     try {
-      const response = await onboardingService.assignSubscription(businessId, selectedPlan, 30);
+      const response = isHotel
+        ? await onboardingService.assignHotelSubscription(businessId, hotelStarRating || 0, hotelAmenities)
+        : await onboardingService.assignSubscription(businessId, selectedPlan, 30);
       if (response.data && !response.error) {
         setCurrentStep(5);
       } else {
@@ -680,7 +692,7 @@ function RegisterBusinessWizardContent() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Company, PAN/GST, contacts, and category status. Billing contact is required.
                 </p>
-                <RegistrationDetailsForm value={regDetails} onChange={setRegDetails} categorySlug={null} />
+                <RegistrationDetailsForm value={regDetails} onChange={setRegDetails} categorySlug={categorySlug} />
               </div>
 
               <div className="flex justify-between pt-4">
@@ -713,8 +725,121 @@ function RegisterBusinessWizardContent() {
             </form>
           )}
 
-          {/* STEP 4: Choose Subscription Package */}
-          {currentStep === 4 && (
+          {/* STEP 4: Choose Subscription Package (or Hotel classification pricing) */}
+          {currentStep === 4 && isHotel && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-indigo-400" />
+                  Hotel Classification & Amenities
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Your listing charge is set by star classification. Each amenity you add is
+                  billed ₹{ADDON_PRICE.toLocaleString('en-IN')} recurring alongside it.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-bold text-foreground mb-2">Star classification</h4>
+                <div className="grid grid-cols-5 gap-2">
+                  {STAR_OPTIONS.map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setHotelStarRating(star)}
+                      className={`p-3 rounded-xl border text-center transition cursor-pointer ${
+                        hotelStarRating === star
+                          ? 'bg-white/[0.04] border-2 border-white scale-[1.02]'
+                          : 'border-border hover:border-slate-500'
+                      }`}
+                    >
+                      <div className="text-sm font-extrabold text-foreground">{star}★</div>
+                      <div className="text-[11px] text-muted-foreground mt-1">
+                        ₹{STAR_PRICING[star].toLocaleString('en-IN')}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-bold text-foreground mb-2">Amenities (₹{ADDON_PRICE.toLocaleString('en-IN')} each)</h4>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {HOTEL_AMENITIES.map((a) => {
+                    const on = !!hotelAmenities[a.key]?.selected;
+                    return (
+                      <button
+                        key={a.key}
+                        type="button"
+                        onClick={() =>
+                          setHotelAmenities((prev) => ({
+                            ...prev,
+                            [a.key]: { ...prev[a.key], selected: !on },
+                          }))
+                        }
+                        className={`p-3 rounded-xl border text-left transition cursor-pointer ${
+                          on ? 'border-primary bg-primary/10' : 'border-border hover:border-slate-500'
+                        }`}
+                      >
+                        <div className="text-sm font-semibold text-foreground">{a.label}</div>
+                        {a.subOptions && (
+                          <div className="text-[11px] text-muted-foreground mt-0.5">
+                            {a.subOptions.join(' · ')}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {(() => {
+                const charge = computeHotelCharge(hotelStarRating, hotelAmenities);
+                return (
+                  <div className="rounded-xl border border-border p-4 flex items-center justify-between">
+                    <div className="text-xs text-muted-foreground">
+                      Base ₹{charge.base.toLocaleString('en-IN')} + {charge.selectedCount} amenity
+                      {charge.selectedCount === 1 ? '' : 'ies'} × ₹{ADDON_PRICE.toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-lg font-extrabold text-foreground">
+                      ₹{charge.total.toLocaleString('en-IN')}<span className="text-xs font-normal text-muted-foreground">/yr</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div className="flex justify-between pt-4">
+                <Button
+                  type="button"
+                  onClick={handleBack}
+                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
+                  </span>
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={handleStep4Submit}
+                  disabled={submitting || !hotelStarRating}
+                  className="h-11 px-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold cursor-pointer"
+                >
+                  {submitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <span className="flex items-center gap-1.5">
+                      Save & Continue
+                      <ArrowRight className="h-4 w-4" />
+                    </span>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {currentStep === 4 && !isHotel && (
             <div className="space-y-6">
               <div>
                 <h3 className="text-xl font-bold text-foreground flex items-center gap-2">

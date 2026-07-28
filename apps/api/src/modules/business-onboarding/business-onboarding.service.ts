@@ -232,6 +232,9 @@ export class BusinessOnboardingService {
     if (dto.supportContact !== undefined) updateData.supportContact = dto.supportContact;
     if (dto.branchHead !== undefined) updateData.branchHead = dto.branchHead;
     if (dto.categoryAttributes !== undefined) updateData.categoryAttributes = dto.categoryAttributes;
+    // Hotel category pricing
+    if (dto.hotelStarRating !== undefined) updateData.hotelStarRating = dto.hotelStarRating;
+    if (dto.hotelAmenities !== undefined) updateData.hotelAmenities = dto.hotelAmenities;
 
     if (dto.businessEmail && dto.businessEmail !== business.email) {
       const duplicateEmail = await this.db.business.findFirst({
@@ -456,6 +459,7 @@ export class BusinessOnboardingService {
     // Accept either business.id or entity.id
     const business = await this.db.business.findFirst({
       where: { tenantId, OR: [{ id }, { entityId: id }] },
+      include: { category: { select: { slug: true } } },
     });
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');

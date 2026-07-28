@@ -28,6 +28,7 @@ export interface BusinessDraft {
   subcategoryIds: string[];
   tags: string[];
   socialLinks: Record<string, string>;
+  category?: { slug: string };
 }
 
 export interface OnboardingStatusResponse {
@@ -77,6 +78,17 @@ class OnboardingService {
     return apiService.post<any>(`/v1/subscriptions/businesses/${businessId}/assign`, {
       packageName,
       duration: durationDays,
+    });
+  }
+
+  async assignHotelSubscription(
+    businessId: string,
+    starRating: number,
+    amenities: Record<string, { selected?: boolean; subChoices?: string[] }>,
+  ): Promise<ApiResponse<any>> {
+    return apiService.post<any>(`/v1/subscriptions/businesses/${businessId}/assign-hotel`, {
+      starRating,
+      amenities,
     });
   }
 

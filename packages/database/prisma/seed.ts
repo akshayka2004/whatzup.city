@@ -416,7 +416,7 @@ async function main() {
     {
       name: 'Staycation',
       slug: 'staycation',
-      description: 'Hotels, Resorts, Villas & Holiday Stays',
+      description: 'Resorts, Villas & Holiday Stays',
       icon: 'BedDouble',
       sortOrder: 3,
     },
@@ -518,6 +518,13 @@ async function main() {
       description: 'Banking & Financial Services',
       icon: 'Landmark',
       sortOrder: 17,
+    },
+    {
+      name: 'Hotel',
+      slug: 'hotels',
+      description: 'Star-classified hotels — listing charge set by classification',
+      icon: 'Hotel',
+      sortOrder: 18,
     },
   ];
 

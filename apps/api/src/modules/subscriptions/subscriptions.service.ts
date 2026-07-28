@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { AuditService } from '../audit/audit.service';
-import { AssignPackageDto, PackageNameEnum } from './dto/subscription.dto';
+import { AssignPackageDto, AssignHotelPackageDto, PackageNameEnum } from './dto/subscription.dto';
+
+// Mirrors apps/web/lib/hotel-pricing.ts — keep both in sync.
+const HOTEL_STAR_PRICING: Record<number, number> = { 5: 15000, 4: 12500, 3: 10000, 2: 7500, 1: 5000 };
+const HOTEL_ADDON_PRICE = 2500;
 
 @Injectable()
 export class SubscriptionsService {
@@ -72,6 +76,69 @@ export class SubscriptionsService {
       resource: 'SUBSCRIPTION',
       resourceId: subscription.id,
       metadata: { packageName: dto.packageName, price: packageConfig.pricing },
+    });
+
+    return subscription;
+  }
+
+  /**
+   * Hotel category only. Star classification replaces normal package
+   * selection: computes base + recurring per-amenity charge server-side
+   * (never trusts client-sent price), persists the classification onto the
+   * business, and creates the Subscription directly (planId stays null).
+   */
+  async assignHotelPackage(userId: string, tenantId: string, businessId: string, dto: AssignHotelPackageDto) {
+    const business = await this.db.business.findFirst({
+      where: { tenantId, OR: [{ id: businessId }, { entityId: businessId }] },
+    });
+    if (!business) throw new NotFoundException('Business not found');
+    if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
+    businessId = business.id;
+
+    const base = HOTEL_STAR_PRICING[dto.starRating];
+    if (!base) throw new BadRequestException('Invalid star rating');
+    const selectedCount = Object.values(dto.amenities || {}).filter((a) => a?.selected).length;
+    const pricing = base + selectedCount * HOTEL_ADDON_PRICE;
+
+    const duration = 365; // yearly, recurring alongside the base classification charge
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + duration);
+
+    await this.db.business.update({
+      where: { id: businessId },
+      data: { hotelStarRating: dto.starRating, hotelAmenities: dto.amenities || {} },
+    });
+
+    await this.db.subscription.updateMany({
+      where: { tenantId, businessId, status: 'ACTIVE' },
+      data: { status: 'EXPIRED' },
+    });
+
+    const subscription = await this.db.subscription.create({
+      data: {
+        tenantId,
+        businessId,
+        planId: null,
+        packageName: `HOTEL_${dto.starRating}STAR`,
+        pricing,
+        duration,
+        featureFlags: { hotelListing: true, amenityCount: selectedCount },
+        postingLimits: 50,
+        categoryLimits: 1,
+        status: 'PENDING_PAYMENT',
+        startDate,
+        endDate,
+      },
+    });
+
+    await this.audit.log({
+      tenantId,
+      userId,
+      action: 'SUBSCRIPTION_SELECTED',
+      resource: 'SUBSCRIPTION',
+      resourceId: subscription.id,
+      metadata: { packageName: subscription.packageName, price: pricing, starRating: dto.starRating, selectedCount },
     });
 
     return subscription;

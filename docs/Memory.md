@@ -20,6 +20,29 @@
 
 ## Recently done (newest first)
 
+- **Hotel classification pricing** (uncommitted at write, DO NOT PUSH — user holding
+  approval): new `Hotel` category (slug `hotels`, separate from `Staycation`).
+  `Business.hotelStarRating Int?` (1-5) + `hotelAmenities Json` (9 top-level
+  amenities from client's `details.md`, per-item flat fee, sub-choices free/
+  informational only). Migration `..._hotel_registration` (ALTER only).
+  Pricing: `STAR_PRICING` ₹5000(1★)-₹15000(5★) + ₹2500/selected amenity,
+  **recurring yearly** (`apps/web/lib/hotel-pricing.ts`, mirrored server-side
+  in `subscriptions.service.ts` — never trust client-sent price). For Hotel-
+  category businesses, star classification **replaces** normal Plan/Subscription
+  selection: wizard Step 4 branches on `categorySlug === 'hotels'` (hydrated via
+  new `category: { slug }` include in `business-onboarding.service.getProgress`)
+  to a star-picker + amenity checklist instead of the Plan cards, posts to new
+  `POST /v1/subscriptions/businesses/:id/assign-hotel` (creates Subscription
+  directly, `planId: null`, `packageName: HOTEL_{n}STAR`, status
+  `PENDING_PAYMENT` — same manual/self-reported Payment flow as everything else,
+  no gateway). Settings page gets a matching edit block; editing there updates
+  the Business fields only, does NOT reprice the active Subscription (that only
+  happens at registration) — by design, not yet asked for a repricing/renewal flow.
+  Decisions locked via AskUserQuestion: separate category, replaces Plan pick,
+  addons recurring same cycle, priced per top-level item (not sub-choice),
+  manual payment kept, hotel-only (no generic category-pricing engine).
+
+
 - **Business registration / KYC details** (uncommitted at write): added `Business`
   fields `brandName, companyName, companyType` + JSON `compliance` (PAN/GST),
   `ownerContact`, `billingContact`, `supportContact`, `branchHead`,
@@ -89,7 +112,10 @@ cd packages/database && pnpm prisma migrate deploy && pnpm prisma generate && cd
 
 ## Open items
 
-- **Apply new migrations on VPS**: `..._vouchers` + `..._business_registration_details` via `prisma migrate deploy`.
+- **Hotel pricing feature is UNCOMMITTED and NOT to be pushed** until the user
+  explicitly approves (they asked to hold push after brainstorming this one).
+- **Apply new migrations on VPS** (once pushed): `..._vouchers`,
+  `..._business_registration_details`, `..._hotel_registration` via `prisma migrate deploy`.
 - Voucher customer wallet page (`/vouchers`) — API `GET /v1/vouchers/my` exists, no page yet.
 - `/reset-password` page (API exists).
 - DB perf indexes migration apply on VPS.

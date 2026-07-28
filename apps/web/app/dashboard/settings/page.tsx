@@ -8,6 +8,9 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
 import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/business/registration-details';
+import {
+  STAR_OPTIONS, STAR_PRICING, HOTEL_AMENITIES, ADDON_PRICE, computeHotelCharge, type HotelAmenities,
+} from '@/lib/hotel-pricing';
 import { useRouter } from 'next/navigation';
 import {
   Instagram, Facebook, Linkedin, Twitter, Youtube,
@@ -94,6 +97,13 @@ export default function BusinessSettingsPage() {
   const [savingReg, setSavingReg] = useState(false);
   const [regMsg, setRegMsg] = useState('');
   const isFood = categorySlug === 'food' || /food|restaurant|cafe|bakery/i.test(categorySlug);
+  const isHotel = categorySlug === 'hotels';
+
+  // Hotel classification + amenities
+  const [hotelStarRating, setHotelStarRating] = useState<number | null>(null);
+  const [hotelAmenities, setHotelAmenities] = useState<HotelAmenities>({});
+  const [savingHotel, setSavingHotel] = useState(false);
+  const [hotelMsg, setHotelMsg] = useState('');
 
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [addingLink, setAddingLink] = useState(false);
@@ -151,6 +161,8 @@ export default function BusinessSettingsPage() {
             branchHead: b.branchHead || {},
             categoryAttributes: b.categoryAttributes || {},
           });
+          setHotelStarRating(b.hotelStarRating ?? null);
+          setHotelAmenities(b.hotelAmenities || {});
 
           // Hydrate social links from business record if API has them, else localStorage
           const sl = biz.socialLinks;
@@ -208,6 +220,19 @@ export default function BusinessSettingsPage() {
     });
     setSavingReg(false);
     setRegMsg(res.error ? res.error : 'Registration details saved.');
+  };
+
+  /* ── Save hotel classification + amenities ───────────────────── */
+  const handleSaveHotel = async () => {
+    if (!business?.id) return;
+    setSavingHotel(true);
+    setHotelMsg('');
+    const res = await apiService.patch<any>(`/v1/businesses/${business.id}`, {
+      hotelStarRating: hotelStarRating ?? undefined,
+      hotelAmenities: hotelAmenities || {},
+    });
+    setSavingHotel(false);
+    setHotelMsg(res.error ? res.error : 'Hotel details saved. Changing star rating or amenities does not affect an already-active listing charge until renewal.');
   };
 
   /* ── Save business profile ───────────────────────────────────── */
@@ -685,6 +710,94 @@ export default function BusinessSettingsPage() {
             categorySlug={categorySlug}
           />
         </div>
+
+        {/* ── Hotel classification & amenities ─────────────────────── */}
+        {isHotel && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-foreground tracking-tight">Hotel classification & amenities</h2>
+                <p className="text-sm text-muted-foreground">
+                  Star classification sets your base listing charge; each amenity adds ₹{ADDON_PRICE.toLocaleString('en-IN')} recurring.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                {hotelMsg && (
+                  <span className={cn('text-xs font-medium max-w-xs text-right', /saved/i.test(hotelMsg) ? 'text-success' : 'text-destructive')}>
+                    {hotelMsg}
+                  </span>
+                )}
+                <Button onClick={handleSaveHotel} disabled={savingHotel || !business} className="gap-1.5">
+                  {savingHotel ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Save details
+                </Button>
+              </div>
+            </div>
+
+            <Card className="p-5 space-y-5">
+              <div>
+                <h3 className="text-sm font-bold text-foreground mb-2">Star classification</h3>
+                <div className="grid grid-cols-5 gap-2">
+                  {STAR_OPTIONS.map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setHotelStarRating(star)}
+                      className={cn(
+                        'p-3 rounded-xl border text-center transition cursor-pointer',
+                        hotelStarRating === star ? 'border-primary bg-primary/10' : 'border-border hover:border-slate-500',
+                      )}
+                    >
+                      <div className="text-sm font-extrabold text-foreground">{star}★</div>
+                      <div className="text-[11px] text-muted-foreground mt-1">₹{STAR_PRICING[star].toLocaleString('en-IN')}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-bold text-foreground mb-2">Amenities</h3>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {HOTEL_AMENITIES.map((a) => {
+                    const on = !!hotelAmenities[a.key]?.selected;
+                    return (
+                      <button
+                        key={a.key}
+                        type="button"
+                        onClick={() =>
+                          setHotelAmenities((prev) => ({ ...prev, [a.key]: { ...prev[a.key], selected: !on } }))
+                        }
+                        className={cn(
+                          'p-3 rounded-xl border text-left transition cursor-pointer',
+                          on ? 'border-primary bg-primary/10' : 'border-border hover:border-slate-500',
+                        )}
+                      >
+                        <div className="text-sm font-semibold text-foreground">{a.label}</div>
+                        {a.subOptions && (
+                          <div className="text-[11px] text-muted-foreground mt-0.5">{a.subOptions.join(' · ')}</div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {(() => {
+                const charge = computeHotelCharge(hotelStarRating, hotelAmenities);
+                return (
+                  <div className="rounded-xl border border-border p-4 flex items-center justify-between">
+                    <div className="text-xs text-muted-foreground">
+                      Base ₹{charge.base.toLocaleString('en-IN')} + {charge.selectedCount} amenit{charge.selectedCount === 1 ? 'y' : 'ies'} × ₹{ADDON_PRICE.toLocaleString('en-IN')}
+                    </div>
+                    <div className="text-lg font-extrabold text-foreground">
+                      ₹{charge.total.toLocaleString('en-IN')}<span className="text-xs font-normal text-muted-foreground">/yr</span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </Card>
+          </div>
+        )}
 
       </div>
     </BusinessLayout>

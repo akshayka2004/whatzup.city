@@ -131,4 +131,8 @@ export class UpdateBusinessDetailsDto {
   @IsOptional() @IsObject() supportContact?: any;
   @IsOptional() @IsObject() branchHead?: any;
   @IsOptional() @IsObject() categoryAttributes?: any;
+
+  // ── Hotel category pricing (star classification + priced amenities) ──
+  @IsOptional() @IsNumber() hotelStarRating?: number;
+  @IsOptional() @IsObject() hotelAmenities?: any;
 }

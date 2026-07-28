@@ -577,6 +577,8 @@ describe intent, data flow, and the non-obvious.
 
 ### Change log (notable behavioural changes)
 
+- hotel classification pricing (UNCOMMITTED, hold for push approval) — new `Hotel` category; star rating (1-5) sets base listing charge, priced amenity checklist adds recurring ₹2500/item; replaces normal Plan/Subscription pick for this category via `POST /v1/subscriptions/businesses/:id/assign-hotel`.
+
 - vouchers — spend-gated `Voucher` + `VoucherClaim`; customer unlocks a unique code once cumulative verified spend ≥ threshold, staff redeem in dashboard. Module `modules/vouchers`; UI `/dashboard/vouchers` + business-detail section.
 - business registration/KYC — `Business` gains `brandName/companyName/companyType` + JSON `compliance`(PAN/GST)/`ownerContact`/`billingContact`/`supportContact`/`branchHead`/`categoryAttributes`; collected in onboarding Step 3 + editable in settings via `components/business/registration-details.tsx`; per-category attributes in `lib/category-attributes.ts`.
 - City Experience Platform redesign (light warm-neutral + terracotta) — see `9414a32`.

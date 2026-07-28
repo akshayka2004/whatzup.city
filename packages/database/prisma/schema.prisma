@@ -520,6 +520,10 @@ model Business {
   branchHead         Json     @default("{}") @map("branch_head")
   // category-specific attributes, keyed by attribute key -> value(s)
   categoryAttributes Json     @default("{}") @map("category_attributes")
+  // Hotel category only: 1-5 star classification drives base listing charge
+  hotelStarRating    Int?     @map("hotel_star_rating")
+  // Hotel category only: { [amenityKey]: { selected: bool, ...subChoices } } — ₹2500/selected top-level item
+  hotelAmenities     Json     @default("{}") @map("hotel_amenities")
   profileType    BusinessProfileType @default(OWNER) @map("profile_type")
   logo           String?        @db.Text
   coverImage     String?        @map("cover_image") @db.Text
