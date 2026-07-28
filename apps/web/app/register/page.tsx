@@ -284,22 +284,32 @@ export default function UnifiedRegisterPage() {
     (async () => {
       try {
         if (typeof window === 'undefined') return;
-        const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
-        if (!stored) return;
-        const u = JSON.parse(stored);
-        const entityId = u?.entity?.id || u?.businessId;
-        const entityType = u?.entity?.type || (u?.businessId ? 'BUSINESS' : null);
-        if (!entityId || entityType !== 'BUSINESS') return;
-        // Resume regardless of status. An already-registered business must never
-        // be sent back through account creation — re-entering their email there
-        // fails with "email already registered".
 
-        const res = await onboardingService.getProgress(entityId);
-        if (cancelled || !res.data || res.error) return;
+        // Ask the API who this user is rather than trusting the localStorage
+        // session shape (it varies between owners and staff, and is written
+        // asynchronously at login). This is the authoritative source and works
+        // for any signed-in business owner.
+        let draft: any = null;
+        const mine = await apiService.get<any>('/v1/businesses/owner/mine');
+        const list = mine.data?.data || (Array.isArray(mine.data) ? mine.data : []);
+        if (Array.isArray(list) && list.length > 0) draft = list[0];
 
-        const draft: any = res.data.business;
+        // Fall back to the session's entity id (covers a freshly created draft
+        // that owner/mine hasn't picked up yet).
+        if (!draft) {
+          const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
+          if (!stored) return;
+          const u = JSON.parse(stored);
+          const entityId = u?.entity?.id || u?.businessId;
+          const entityType = u?.entity?.type || (u?.businessId ? 'BUSINESS' : null);
+          if (!entityId || entityType !== 'BUSINESS') return;
+          const res = await onboardingService.getProgress(entityId);
+          if (cancelled || !res.data || res.error) return;
+          draft = res.data.business;
+        }
+        if (cancelled || !draft) return;
         setRole('BUSINESS');
-        setBusinessId(draft.id || entityId);
+        setBusinessId(draft.id);
         setCompanyName(draft.name || '');
         setDescription(draft.description || '');
         if (draft.category?.slug) setCategorySlug(draft.category.slug);
@@ -321,11 +331,21 @@ export default function UnifiedRegisterPage() {
         if (draft.hotelAmenities) setHotelAmenities(draft.hotelAmenities);
 
         // Already-registered businesses land on the profile step so they can
-        // review/edit — never on payment, which they've already been through.
-        // Only an unfinished DRAFT that saved its details goes straight to pay.
-        const done: string[] = res.data.onboardingProgress?.stepsCompleted || [];
+        // review/edit — never back at account creation, and never on payment,
+        // which they've already been through. Only an unfinished DRAFT that
+        // already saved its details continues straight to payment.
         const isDraft = (draft.status || '').toUpperCase() === 'DRAFT';
-        setCurrentStep(isDraft && done.includes('STEP_3') ? 4 : 3);
+        let step = 3;
+        if (isDraft) {
+          try {
+            const prog = await onboardingService.getProgress(draft.id);
+            const done: string[] = prog.data?.onboardingProgress?.stepsCompleted || [];
+            if (done.includes('STEP_3')) step = 4;
+          } catch {
+            /* keep step 3 */
+          }
+        }
+        if (!cancelled) setCurrentStep(step);
       } catch {
         /* resume is best-effort — fall back to a fresh registration */
       } finally {

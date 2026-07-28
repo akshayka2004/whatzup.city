@@ -101,7 +101,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (type === 'PROFESSIONAL') return `/register/professional?id=${u.entity.id}`;
         if (type === 'EVENT_ORGANIZER') return `/register/event-organizer?id=${u.entity.id}`;
         if (type === 'ORGANIZATION') return `/register/ngo?id=${u.entity.id}`;
-        return `/register/business?id=${u.entity.id}`;
+        // Business registration is one flow at /register, which resumes the
+        // user's draft itself — no id param, no standalone wizard.
+        return `/register`;
       }
       return '/dashboard';
     }
