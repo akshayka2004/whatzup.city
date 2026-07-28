@@ -19,7 +19,8 @@ import {
   STAR_OPTIONS, HOTEL_AMENITIES, computeHotelCharge, type HotelAmenities,
 } from '@/lib/hotel-pricing';
 import {
-  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, getPlan, formatINR, PAYMENT_QR_SRC,
+  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, getPlan, formatINR,
+  PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
 } from '@/lib/subscription-plans';
 import {
   User as UserIcon,
@@ -289,8 +290,9 @@ export default function UnifiedRegisterPage() {
         const entityId = u?.entity?.id || u?.businessId;
         const entityType = u?.entity?.type || (u?.businessId ? 'BUSINESS' : null);
         if (!entityId || entityType !== 'BUSINESS') return;
-        // Already submitted or live — nothing to resume.
-        if (u?.entity?.status && u.entity.status !== 'DRAFT') return;
+        // Resume regardless of status. An already-registered business must never
+        // be sent back through account creation — re-entering their email there
+        // fails with "email already registered".
 
         const res = await onboardingService.getProgress(entityId);
         if (cancelled || !res.data || res.error) return;
@@ -318,9 +320,12 @@ export default function UnifiedRegisterPage() {
         if (draft.hotelStarRating) setHotelStarRating(draft.hotelStarRating);
         if (draft.hotelAmenities) setHotelAmenities(draft.hotelAmenities);
 
-        // Details already saved -> jump straight to plan & payment.
+        // Already-registered businesses land on the profile step so they can
+        // review/edit — never on payment, which they've already been through.
+        // Only an unfinished DRAFT that saved its details goes straight to pay.
         const done: string[] = res.data.onboardingProgress?.stepsCompleted || [];
-        setCurrentStep(done.includes('STEP_3') ? 4 : 3);
+        const isDraft = (draft.status || '').toUpperCase() === 'DRAFT';
+        setCurrentStep(isDraft && done.includes('STEP_3') ? 4 : 3);
       } catch {
         /* resume is best-effort — fall back to a fresh registration */
       } finally {
@@ -805,6 +810,17 @@ export default function UnifiedRegisterPage() {
       setUploadProgress(0);
     }
   };
+
+  // Hold the UI until the resume check finishes, otherwise an existing business
+  // flashes step 1 before being moved to their real step.
+  if (resuming) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center text-foreground">
+        <Loader2 className="h-6 w-6 animate-spin mr-2 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Loading your registration…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full font-sans flex flex-col"
@@ -1749,16 +1765,26 @@ export default function UnifiedRegisterPage() {
                     );
                   })()}
 
-                  <div className="rounded-2xl border border-border p-5 flex flex-col items-center gap-3">
+                  <div className="rounded-2xl border border-border p-6 flex flex-col items-center gap-3">
                     <h3 className="text-sm font-bold text-foreground">Scan to pay</h3>
                     <img
                       src={PAYMENT_QR_SRC}
-                      alt="Payment QR code"
-                      className="w-52 h-52 object-contain rounded-xl bg-white p-2"
+                      alt="UPI payment QR code"
+                      width={340}
+                      height={340}
+                      className="w-full max-w-[340px] aspect-square object-contain rounded-xl bg-white p-4"
                     />
-                    <p className="text-[11px] text-muted-foreground text-center">
-                      Pay the exact amount shown above using any UPI app.
-                    </p>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">
+                        Or pay to UPI ID
+                      </p>
+                      <p className="text-sm font-bold text-foreground tracking-wide select-all">
+                        {PAYMENT_UPI_ID}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {PAYMENT_PAYEE_NAME} · pay the exact amount shown above
+                      </p>
+                    </div>
                   </div>
 
                   <div className="space-y-3">

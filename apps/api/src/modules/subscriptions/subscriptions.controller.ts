@@ -4,6 +4,9 @@ import { SubscriptionsService } from './subscriptions.service';
 import { AssignPackageDto, AssignHotelPackageDto } from './dto/subscription.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { UserRole } from '@saas/types';
 
 @ApiTags('Subscriptions')
 @Controller('subscriptions')
@@ -27,6 +30,15 @@ export class SubscriptionsController {
     @Body() dto: AssignPackageDto,
   ) {
     return this.subscriptionsService.assignPackage(userId, tenantId, businessId, dto);
+  }
+
+  @Get('admin/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List all subscriptions with latest payment (Admin only)' })
+  async listAll() {
+    return this.subscriptionsService.listAllForAdmin();
   }
 
   @Post('businesses/:businessId/assign-hotel')

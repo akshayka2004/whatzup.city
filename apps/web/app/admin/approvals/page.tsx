@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { apiService } from '@/lib/services/api-service';
+import { planLabel } from '@/lib/subscription-plans';
 import {
   CheckCircle,
   XCircle,
@@ -392,6 +393,78 @@ export default function ApprovalsPage() {
                         <div className="pt-2 text-muted-foreground italic">
                           "{reviewingItem.entity.business.description}"
                         </div>
+
+                        {/* Plan opted + payment submitted — live from the DB so the
+                            approver can confirm both before approving. */}
+                        {(() => {
+                          const sub = reviewingItem.entity.business.subscriptions?.[0];
+                          const pay = reviewingItem.entity.business.payments?.[0];
+                          if (!sub && !pay) {
+                            return (
+                              <div className="mt-3 p-3 rounded-lg border border-warning/20 bg-warning/5 text-warning">
+                                No plan selected and no payment submitted yet.
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="mt-3 space-y-2 p-3 rounded-lg border border-border bg-muted/30">
+                              <div className="font-semibold text-foreground">Plan &amp; Payment</div>
+                              {sub && (
+                                <>
+                                  <div className="grid grid-cols-3 py-1 border-b border-border">
+                                    <span className="text-muted-foreground">Plan opted</span>
+                                    <span className="col-span-2 text-foreground font-semibold">
+                                      {planLabel(sub.packageName)}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-3 py-1 border-b border-border">
+                                    <span className="text-muted-foreground">Plan amount</span>
+                                    <span className="col-span-2 text-foreground font-semibold">
+                                      ₹{Number(sub.pricing || 0).toLocaleString('en-IN')}
+                                      <span className="text-muted-foreground font-normal">
+                                        {' '}· {sub.duration} days · {sub.status}
+                                      </span>
+                                    </span>
+                                  </div>
+                                </>
+                              )}
+                              {pay ? (
+                                <>
+                                  <div className="grid grid-cols-3 py-1 border-b border-border">
+                                    <span className="text-muted-foreground">Paid</span>
+                                    <span className="col-span-2 text-foreground font-semibold">
+                                      ₹{Number(pay.amount || 0).toLocaleString('en-IN')}
+                                      <span className="text-muted-foreground font-normal"> · {pay.method}</span>
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-3 py-1 border-b border-border">
+                                    <span className="text-muted-foreground">Payment status</span>
+                                    <span
+                                      className={`col-span-2 font-semibold ${
+                                        pay.status === 'SUCCESS'
+                                          ? 'text-success'
+                                          : pay.status === 'FAILED'
+                                            ? 'text-destructive'
+                                            : 'text-warning'
+                                      }`}
+                                    >
+                                      {pay.status}
+                                      {pay.status === 'PENDING' && ' — verify in Payments'}
+                                    </span>
+                                  </div>
+                                  {pay.transactionRef && (
+                                    <div className="grid grid-cols-3 py-1">
+                                      <span className="text-muted-foreground">UPI ref</span>
+                                      <span className="col-span-2 text-foreground">{pay.transactionRef}</span>
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="text-warning">No payment submitted yet.</div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 

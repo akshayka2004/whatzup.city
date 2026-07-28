@@ -174,6 +174,46 @@ export class SubscriptionsService {
     return active;
   }
 
+  /**
+   * Admin subscriber list, straight from the Subscription table across all
+   * tenants (subscriptions live in each business's own tenant). Includes the
+   * latest payment so the admin sees what was actually paid.
+   */
+  async listAllForAdmin() {
+    const subs = await this.db.subscription.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        business: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            city: true,
+            status: true,
+            createdAt: true,
+            category: { select: { name: true, slug: true } },
+            payments: {
+              where: { deletedAt: null },
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              select: {
+                id: true, amount: true, status: true, method: true,
+                transactionRef: true, createdAt: true, verifiedAt: true,
+              },
+            },
+          },
+        },
+      },
+      take: 500,
+    });
+
+    return subs.map((s) => ({
+      ...s,
+      latestPayment: s.business?.payments?.[0] ?? null,
+    }));
+  }
+
   async getPackages() {
     // Only the current plans — retired ones stay in the enum for existing rows.
     return ACTIVE_PACKAGES.map((name) => {

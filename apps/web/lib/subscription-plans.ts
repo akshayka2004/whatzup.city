@@ -86,9 +86,36 @@ export function getPlan(code?: string | null): SubscriptionPlan | undefined {
   return SUBSCRIPTION_PLANS.find((p) => p.code === code);
 }
 
-/** UPI/QR image served from apps/web/public. */
-export const PAYMENT_QR_SRC = '/QR.jpeg';
+/**
+ * UPI QR served from apps/web/public. `payment-qr.png` is the code extracted
+ * from the original Google Pay screenshot and upscaled with a clean quiet
+ * zone, so it scans reliably at large sizes. QR.jpeg is kept as the source.
+ */
+export const PAYMENT_QR_SRC = '/payment-qr.png';
+/** Shown alongside the QR so users can also pay by entering the ID manually. */
+export const PAYMENT_UPI_ID = '8129255552@okbizaxis';
+export const PAYMENT_PAYEE_NAME = 'Lifeart';
 
 export function formatINR(n: number) {
   return `₹${n.toLocaleString('en-IN')}`;
+}
+
+/**
+ * Human label for a stored `Subscription.packageName`. Handles the current
+ * plans, hotel classifications (HOTEL_4STAR) and the retired package codes
+ * that older rows still carry.
+ */
+export function planLabel(packageName?: string | null) {
+  if (!packageName) return '—';
+  const p = SUBSCRIPTION_PLANS.find((x) => x.code === packageName);
+  if (p) return p.name;
+  if (packageName.startsWith('HOTEL_')) {
+    return `Hotel ${packageName.replace('HOTEL_', '').replace('STAR', '')}★`;
+  }
+  // Retired codes (LISTING_BASIC, FEATURED, …) — show them readably.
+  return packageName
+    .toLowerCase()
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
 }

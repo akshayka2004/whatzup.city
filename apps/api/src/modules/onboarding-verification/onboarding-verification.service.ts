@@ -131,6 +131,18 @@ export class OnboardingVerificationService {
               business: {
                 include: {
                   category: { select: { id: true, name: true } },
+                  // Surface the plan opted for and the payment submitted, so the
+                  // approver can verify both without leaving the queue.
+                  subscriptions: {
+                    where: { deletedAt: null },
+                    orderBy: { createdAt: 'desc' },
+                    take: 1,
+                  },
+                  payments: {
+                    where: { deletedAt: null },
+                    orderBy: { createdAt: 'desc' },
+                    take: 1,
+                  },
                 },
               },
               influencerProfile: true,

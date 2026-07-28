@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import {
   SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, RENEWAL_REMINDER_DAYS,
-  getPlan, formatINR, PAYMENT_QR_SRC,
+  getPlan, formatINR, PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
 } from '@/lib/subscription-plans';
 import { computeHotelCharge, type HotelAmenities } from '@/lib/hotel-pricing';
 import { Loader2, UploadCloud, X, ShieldCheck } from 'lucide-react';
@@ -208,14 +208,24 @@ export function SubscriptionPaywall() {
               Valid for {PLAN_DURATION_DAYS} days from activation.
             </p>
 
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-border p-5">
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-border p-6">
               <h3 className="text-sm font-bold text-foreground">Scan to pay</h3>
               <img
                 src={PAYMENT_QR_SRC}
-                alt="Payment QR code"
-                className="w-48 h-48 object-contain rounded-xl bg-white p-2"
+                alt="UPI payment QR code"
+                width={320}
+                height={320}
+                className="w-full max-w-[320px] aspect-square object-contain rounded-xl bg-white p-4"
               />
-              <p className="text-[11px] text-muted-foreground">Pay the exact amount using any UPI app.</p>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">Or pay to UPI ID</p>
+                <p className="text-sm font-bold text-foreground tracking-wide select-all">
+                  {PAYMENT_UPI_ID}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {PAYMENT_PAYEE_NAME} · pay the exact amount shown above
+                </p>
+              </div>
             </div>
 
             <div className="space-y-3">
