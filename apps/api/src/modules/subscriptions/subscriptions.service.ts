@@ -6,11 +6,16 @@ import {
 } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { AuditService } from '../audit/audit.service';
-import { AssignPackageDto, AssignHotelPackageDto, PackageNameEnum } from './dto/subscription.dto';
+import {
+  AssignPackageDto, AssignHotelPackageDto, PackageNameEnum, ACTIVE_PACKAGES,
+} from './dto/subscription.dto';
 
 // Mirrors apps/web/lib/hotel-pricing.ts — keep both in sync.
 const HOTEL_STAR_PRICING: Record<number, number> = { 5: 15000, 4: 12500, 3: 10000, 2: 7500, 1: 5000 };
 const HOTEL_ADDON_PRICE = 2500;
+
+/** All plans (and hotel listings) run for one quarter. */
+export const PLAN_DURATION_DAYS = 90;
 
 @Injectable()
 export class SubscriptionsService {
@@ -30,10 +35,13 @@ export class SubscriptionsService {
     businessId = business.id;
 
     const packageConfig = this.getPackageConfig(dto.packageName);
+    if (!packageConfig) throw new BadRequestException('Unknown package');
 
+    // Duration is server-controlled — never taken from the client.
+    const duration = PLAN_DURATION_DAYS;
     const startDate = new Date();
     const endDate = new Date();
-    endDate.setDate(startDate.getDate() + dto.duration);
+    endDate.setDate(startDate.getDate() + duration);
 
     // Deactivate previous active subscriptions for this business
     await this.db.subscription.updateMany({
@@ -47,7 +55,7 @@ export class SubscriptionsService {
         businessId,
         packageName: dto.packageName,
         pricing: packageConfig.pricing,
-        duration: dto.duration,
+        duration,
         featureFlags: packageConfig.featureFlags,
         postingLimits: packageConfig.postingLimits,
         categoryLimits: packageConfig.categoryLimits,
@@ -100,7 +108,7 @@ export class SubscriptionsService {
     const selectedCount = Object.values(dto.amenities || {}).filter((a) => a?.selected).length;
     const pricing = base + selectedCount * HOTEL_ADDON_PRICE;
 
-    const duration = 365; // yearly, recurring alongside the base classification charge
+    const duration = PLAN_DURATION_DAYS; // same quarterly cycle as the standard plans
     const startDate = new Date();
     const endDate = new Date();
     endDate.setDate(startDate.getDate() + duration);
@@ -167,11 +175,14 @@ export class SubscriptionsService {
   }
 
   async getPackages() {
-    return Object.values(PackageNameEnum).map((name) => {
+    // Only the current plans — retired ones stay in the enum for existing rows.
+    return ACTIVE_PACKAGES.map((name) => {
       const config = this.getPackageConfig(name);
       return {
         name,
         price: config.pricing,
+        mrp: config.mrp,
+        durationDays: PLAN_DURATION_DAYS,
         postingLimits: config.postingLimits,
         categoryLimits: config.categoryLimits,
         featureFlags: config.featureFlags,
@@ -182,6 +193,59 @@ export class SubscriptionsService {
 
   private getPackageConfig(packageName: PackageNameEnum) {
     const packages: Record<PackageNameEnum, any> = {
+      // ── Current plans. `pricing` is the offer price (what we charge);
+      //    `mrp` is shown struck through in the UI. Mirrors
+      //    apps/web/lib/subscription-plans.ts — keep both in sync.
+      [PackageNameEnum.WHTZUP_PLUS]: {
+        pricing: 2500,
+        mrp: 5000,
+        postingLimits: 1,
+        categoryLimits: 1,
+        featureFlags: { listingPackage: true, offers: 1, vouchers: 1 },
+        features: ['Web App Listing', 'Website Listing (information only)', 'No backlinks'],
+      },
+      [PackageNameEnum.WHTZUP_X]: {
+        pricing: 5000,
+        mrp: 10000,
+        postingLimits: 5,
+        categoryLimits: 1,
+        featureFlags: { listingPackage: true, backlinks: true, offers: 5, vouchers: 5 },
+        features: ['Web App Listing', 'Website Listing with backlinks', 'Information only'],
+      },
+      [PackageNameEnum.WHTZUP_XL]: {
+        pricing: 7500,
+        mrp: 15000,
+        postingLimits: 10,
+        categoryLimits: 2,
+        featureFlags: {
+          listingPackage: true, backlinks: true, sponsoredPoster: true,
+          whatsappCampaign: true, offers: 10, vouchers: 10,
+        },
+        features: [
+          'Web App Listing',
+          'Website Listing with backlinks',
+          '1 Sponsored Category Landing Page poster image',
+          'WhatsApp Channel Campaign — 1 weekly poster/video',
+        ],
+      },
+      [PackageNameEnum.WHTZUP_LUXE]: {
+        pricing: 10000,
+        mrp: 20000,
+        postingLimits: 20,
+        categoryLimits: 3,
+        featureFlags: {
+          listingPackage: true, backlinks: true, sponsoredPoster: true,
+          sponsoredVideo: true, whatsappCampaign: true, offers: 20, vouchers: 20,
+        },
+        features: [
+          'Web App Listing',
+          'Website Listing with backlinks',
+          'Sponsored Category Landing Page video (up to 60s) + poster image',
+          'WhatsApp Channel Campaign — 1 weekly poster/video',
+        ],
+      },
+
+      // ── Retired plans (not offered to new signups) ──────────────
       [PackageNameEnum.FREE]: {
         pricing: 0,
         postingLimits: 5,

@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param, Headers, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
-import { CreatePaymentDto } from './dto/payment.dto';
+import { CreatePaymentDto, RejectPaymentDto } from './dto/payment.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -37,6 +37,29 @@ export class PaymentsController {
     @Param('businessId') businessId: string,
   ) {
     return this.paymentsService.getPayments(userId, tenantId, businessId);
+  }
+
+  @Get('admin/pending')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List payments awaiting screenshot verification (Admin only)' })
+  async pending() {
+    return this.paymentsService.listPending();
+  }
+
+  @Post(':id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reject a submitted payment (Admin only)' })
+  async reject(
+    @CurrentUser('id') adminId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('id') paymentId: string,
+    @Body() dto: RejectPaymentDto,
+  ) {
+    return this.paymentsService.rejectPayment(adminId, tenantId, paymentId, dto.reason);
   }
 
   @Post(':id/verify')

@@ -9,6 +9,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/use-auth';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
+import { SubscriptionPaywall } from '@/components/business/subscription-paywall';
 import { apiService } from '@/lib/services/api-service';
 import {
   AlertTriangle,
@@ -323,6 +324,11 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
               </div>
             </div>
           )}
+
+          {/* Payment is mandatory: approved workspaces without an active paid
+              plan get a blocking prompt; those nearing expiry get a reminder.
+              Skipped while the trial modal is up so overlays never stack. */}
+          {!showTrialModal && verificationStatus === 'APPROVED' && <SubscriptionPaywall />}
 
           <div
             className={`container mx-auto px-4 pt-6 ${isMobile ? 'pb-28' : 'pb-6'}`}

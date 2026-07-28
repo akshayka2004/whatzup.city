@@ -94,6 +94,28 @@ class OnboardingService {
     });
   }
 
+  /** Record a QR/UPI payment with its proof screenshot for admin verification. */
+  async submitPayment(
+    businessId: string,
+    payload: {
+      amount: number;
+      method?: string;
+      proofUrl?: string;
+      transactionRef?: string;
+      subscriptionId?: string;
+      packageName?: string;
+    },
+  ): Promise<ApiResponse<any>> {
+    return apiService.post<any>(`/v1/payments/businesses/${businessId}`, {
+      method: payload.method || 'UPI_QR',
+      amount: payload.amount,
+      proofUrl: payload.proofUrl,
+      transactionRef: payload.transactionRef,
+      subscriptionId: payload.subscriptionId,
+      packageName: payload.packageName,
+    });
+  }
+
   async assignHotelSubscription(
     businessId: string,
     starRating: number,

@@ -19,6 +19,7 @@ export enum UploadCategory {
   BILL = 'bill',
   DOCUMENT = 'document',
   NOTIFICATION = 'notification',
+  PAYMENT = 'payment',
 }
 
 export class GetUploadUrlDto {
@@ -69,6 +70,13 @@ const CATEGORY_CONFIG: Record<
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
   },
   [UploadCategory.DOCUMENT]: {
+    bucket: 'verification-documents',
+    maxSize: 10 * 1024 * 1024,
+    allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+  },
+  // Payment screenshots — private bucket; admins view them via a short-lived
+  // signed download URL from the payment verification queue.
+  [UploadCategory.PAYMENT]: {
     bucket: 'verification-documents',
     maxSize: 10 * 1024 * 1024,
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],

@@ -2,6 +2,7 @@ import { IsString, IsNotEmpty, IsNumber, IsOptional, IsEnum } from 'class-valida
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum PaymentMethodEnum {
+  UPI_QR = 'UPI_QR',
   GPAY = 'GPAY',
   BANK_TRANSFER = 'BANK_TRANSFER',
   RAZORPAY = 'RAZORPAY',
@@ -26,4 +27,25 @@ export class CreatePaymentDto {
   @IsOptional()
   @IsString()
   subscriptionId?: string;
+
+  @ApiProperty({
+    example: '{"bucket":"business-media","path":"payments/x.png"}',
+    required: false,
+    description: 'Uploaded payment screenshot (QR/UPI proof) for admin review',
+  })
+  @IsOptional()
+  @IsString()
+  proofUrl?: string;
+
+  @ApiProperty({ example: 'WHTZUP_XL', required: false })
+  @IsOptional()
+  @IsString()
+  packageName?: string;
+}
+
+export class RejectPaymentDto {
+  @ApiProperty({ example: 'Screenshot unreadable' })
+  @IsString()
+  @IsNotEmpty()
+  reason!: string;
 }

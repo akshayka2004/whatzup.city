@@ -2,6 +2,15 @@ import { IsString, IsNotEmpty, IsNumber, IsEnum, IsInt, Min, Max, IsObject } fro
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum PackageNameEnum {
+  // ── Current plans ────────────────────────────────────────────
+  WHTZUP_PLUS = 'WHTZUP_PLUS',
+  WHTZUP_X = 'WHTZUP_X',
+  WHTZUP_XL = 'WHTZUP_XL',
+  WHTZUP_LUXE = 'WHTZUP_LUXE',
+
+  // ── Retired ──────────────────────────────────────────────────
+  // Not offered to new signups. Kept so existing subscription rows
+  // still validate and render in dashboards//history.
   FREE = 'FREE',
   LISTING_BASIC = 'LISTING_BASIC',
   LISTING_PREMIUM = 'LISTING_PREMIUM',
@@ -11,6 +20,14 @@ export enum PackageNameEnum {
   ADVERTISEMENT = 'ADVERTISEMENT',
   ENTERPRISE = 'ENTERPRISE',
 }
+
+/** Plans offered to new signups (retired ones excluded). */
+export const ACTIVE_PACKAGES = [
+  PackageNameEnum.WHTZUP_PLUS,
+  PackageNameEnum.WHTZUP_X,
+  PackageNameEnum.WHTZUP_XL,
+  PackageNameEnum.WHTZUP_LUXE,
+];
 
 export class AssignPackageDto {
   @ApiProperty({ enum: PackageNameEnum, example: 'PREMIUM' })

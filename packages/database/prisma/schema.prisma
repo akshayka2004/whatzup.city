@@ -1846,6 +1846,11 @@ model Payment {
   status         String    @default("PENDING") @db.VarChar(50)
   transactionRef String?   @map("transaction_ref") @db.VarChar(255)
   invoiceMetadata Json?    @map("invoice_metadata")
+  // QR/UPI payment proof screenshot uploaded by the payer; admin reviews it.
+  proofUrl       String?   @map("proof_url") @db.Text
+  verifiedAt     DateTime? @map("verified_at")
+  verifiedBy     String?   @map("verified_by") @db.Uuid
+  rejectionReason String?  @map("rejection_reason") @db.Text
   
   // Core Audit Fields
   createdAt      DateTime  @default(now()) @map("created_at")

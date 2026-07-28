@@ -7,8 +7,11 @@ import { KERALA_CITIES } from '@/lib/constants';
 import { optimizeImage } from '@/lib/utils/image-optimizer';
 import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/business/registration-details';
 import {
-  STAR_OPTIONS, STAR_PRICING, HOTEL_AMENITIES, ADDON_PRICE, computeHotelCharge, type HotelAmenities,
+  STAR_OPTIONS, HOTEL_AMENITIES, computeHotelCharge, type HotelAmenities,
 } from '@/lib/hotel-pricing';
+import {
+  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, getPlan, formatINR, PAYMENT_QR_SRC,
+} from '@/lib/subscription-plans';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -73,9 +76,16 @@ function RegisterBusinessWizardContent() {
   const [twitter, setTwitter] = useState('');
 
   // Step 4 Subscription States
-  const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'LISTING_BASIC' | 'LISTING_PREMIUM'>(
-    'LISTING_BASIC',
-  );
+  const [selectedPlan, setSelectedPlan] = useState<string>('WHTZUP_X');
+
+  // Search tags (collected here so the profile only needs an edit provision)
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+
+  // Step 7 Payment States
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
+  const [paymentProofProgress, setPaymentProofProgress] = useState(0);
+  const [payerRef, setPayerRef] = useState('');
 
   // Step 5 Document & Image Files States
   const [verificationDoc, setVerificationDoc] = useState<File | null>(null);
@@ -105,6 +115,7 @@ function RegisterBusinessWizardContent() {
           setBusinessDraft(draft);
           setCategorySlug(draft.category?.slug || null);
           setDescription(draft.description || '');
+          if (Array.isArray(draft.tags)) setTags(draft.tags);
           setOwnerName(draft.ownerName || '');
           setAddress(draft.address || '');
           if (draft.city) setCity(draft.city);
@@ -158,6 +169,7 @@ function RegisterBusinessWizardContent() {
       const response = await onboardingService.updateStep(businessId, 2, {
         businessDescription: description,
         subcategorySlugs: subcategorySlugs.length ? subcategorySlugs : ['cafes'],
+        tags,
       });
 
       if (response.data && !response.error) {
@@ -366,9 +378,51 @@ function RegisterBusinessWizardContent() {
     setSubmitting(true);
 
     try {
+      // 1. Upload the payment screenshot so an admin can verify it.
+      if (!paymentProof) {
+        setError('Please upload your payment screenshot before submitting.');
+        setSubmitting(false);
+        return;
+      }
+
+      setPaymentProofProgress(10);
+      let proofUrl = '';
+      {
+        const signed = await onboardingService.getSignedUrl(
+          businessId,
+          paymentProof.name,
+          paymentProof.type,
+          'payment',
+        );
+        if (!signed.data || signed.error) {
+          throw new Error(signed.error || 'Failed to get upload URL for the payment screenshot.');
+        }
+        setPaymentProofProgress(40);
+        const ok = await onboardingService.uploadFile(signed.data.uploadUrl, paymentProof);
+        if (!ok) throw new Error('Failed to upload the payment screenshot.');
+        proofUrl = JSON.stringify({ bucket: 'verification-documents', path: signed.data.fileKey });
+        setPaymentProofProgress(70);
+      }
+
+      // 2. Record the payment against the subscription created in step 4.
+      const charge = computeHotelCharge(hotelStarRating, hotelAmenities);
+      const plan = getPlan(selectedPlan);
+      const amount = isHotel ? charge.total : plan?.offerPrice || 0;
+
+      const payRes = await onboardingService.submitPayment(businessId, {
+        amount,
+        method: 'UPI_QR',
+        proofUrl,
+        transactionRef: payerRef || undefined,
+        packageName: isHotel ? `HOTEL_${hotelStarRating}STAR` : selectedPlan,
+      });
+      if (payRes.error) throw new Error(payRes.error);
+      setPaymentProofProgress(100);
+
+      // 3. Submit the application for verification.
       const response = await onboardingService.submitForVerification(businessId);
       if (response.data && !response.error) {
-        setSuccess('Application successfully submitted! Redirecting to Restricted Dashboard...');
+        setSuccess('Payment submitted for verification! Redirecting to your dashboard...');
         
         // Update local session status
         if (typeof window !== 'undefined') {
@@ -412,10 +466,12 @@ function RegisterBusinessWizardContent() {
     'Create Account',
     'Description',
     'Location & Contacts',
-    'Pricing Package',
+    isHotel ? 'Classification' : 'Choose Plan',
     'Identity Uploads',
     'Review Submission',
+    'Payment',
   ];
+  const TOTAL_STEPS = 7;
 
   return (
     <div className="min-h-screen bg-background text-foreground py-10 px-4 relative overflow-hidden font-sans">
@@ -439,11 +495,11 @@ function RegisterBusinessWizardContent() {
           <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground mb-3 px-2">
             <span>Progress Status</span>
             <span className="text-cyan-400">
-              Step {currentStep} of 6: {stepTitles[currentStep - 1]}
+              Step {currentStep} of {TOTAL_STEPS}: {stepTitles[currentStep - 1]}
             </span>
           </div>
-          <Progress value={(currentStep / 6) * 100} className="h-2 bg-background" />
-          <div className="grid grid-cols-6 gap-2 mt-4 text-[10px] text-center font-mono">
+          <Progress value={(currentStep / TOTAL_STEPS) * 100} className="h-2 bg-background" />
+          <div className="grid grid-cols-7 gap-2 mt-4 text-[10px] text-center font-mono">
             {stepTitles.map((title, i) => (
               <span
                 key={i}
@@ -536,6 +592,54 @@ function RegisterBusinessWizardContent() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Search tags — editable later from dashboard settings */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Search tags <span className="text-xs">(help customers find you)</span>
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const t = tagInput.trim();
+                        if (t && !tags.includes(t)) setTags([...tags, t]);
+                        setTagInput('');
+                      }
+                    }}
+                    placeholder="e.g. biryani, rooftop, live music — press Enter"
+                    className="h-11 rounded-xl"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const t = tagInput.trim();
+                      if (t && !tags.includes(t)) setTags([...tags, t]);
+                      setTagInput('');
+                    }}
+                    className="h-11 px-4 rounded-xl bg-muted text-foreground cursor-pointer"
+                  >
+                    Add
+                  </Button>
+                </div>
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map((t) => (
+                      <button
+                        type="button"
+                        key={t}
+                        onClick={() => setTags(tags.filter((x) => x !== t))}
+                        className="px-3 py-1.5 rounded-full text-xs bg-primary/10 border border-primary/20 text-primary cursor-pointer"
+                      >
+                        {t} ✕
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end pt-4">
@@ -734,8 +838,8 @@ function RegisterBusinessWizardContent() {
                   Hotel Classification & Amenities
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Your listing charge is set by star classification. Each amenity you add is
-                  billed ₹{ADDON_PRICE.toLocaleString('en-IN')} recurring alongside it.
+                  Choose your star classification and the services you offer. Your total is
+                  calculated from these and shown at the final payment step.
                 </p>
               </div>
 
@@ -754,16 +858,13 @@ function RegisterBusinessWizardContent() {
                       }`}
                     >
                       <div className="text-sm font-extrabold text-foreground">{star}★</div>
-                      <div className="text-[11px] text-muted-foreground mt-1">
-                        ₹{STAR_PRICING[star].toLocaleString('en-IN')}
-                      </div>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <h4 className="text-sm font-bold text-foreground mb-2">Amenities (₹{ADDON_PRICE.toLocaleString('en-IN')} each)</h4>
+                <h4 className="text-sm font-bold text-foreground mb-2">Services & amenities you offer</h4>
                 <div className="grid sm:grid-cols-2 gap-2">
                   {HOTEL_AMENITIES.map((a) => {
                     const on = !!hotelAmenities[a.key]?.selected;
@@ -798,11 +899,12 @@ function RegisterBusinessWizardContent() {
                 return (
                   <div className="rounded-xl border border-border p-4 flex items-center justify-between">
                     <div className="text-xs text-muted-foreground">
-                      Base ₹{charge.base.toLocaleString('en-IN')} + {charge.selectedCount} amenity
-                      {charge.selectedCount === 1 ? '' : 'ies'} × ₹{ADDON_PRICE.toLocaleString('en-IN')}
+                      {hotelStarRating ? `${hotelStarRating}★ classification` : 'No classification selected'}
+                      {' · '}
+                      {charge.selectedCount} service{charge.selectedCount === 1 ? '' : 's'} selected
                     </div>
-                    <div className="text-lg font-extrabold text-foreground">
-                      ₹{charge.total.toLocaleString('en-IN')}<span className="text-xs font-normal text-muted-foreground">/yr</span>
+                    <div className="text-xs text-muted-foreground">
+                      Total shown at payment
                     </div>
                   </div>
                 );
@@ -844,84 +946,55 @@ function RegisterBusinessWizardContent() {
               <div>
                 <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <CreditCard className="h-5 w-5 text-indigo-400" />
-                  Select Catalog Package
+                  Select Your Plan
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Select a subscription package. You won't be charged during verification
-                  onboarding.
+                  Valid for {PLAN_DURATION_DAYS} days. You'll pay at the final step after reviewing your details.
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4">
-                {[
-                  {
-                    code: 'FREE',
-                    name: 'Free Basic',
-                    price: '$0',
-                    features: [
-                      'Single listing item',
-                      'Basic contact details',
-                      'Standard phone listing',
-                    ],
-                    border: 'border-border hover:border-slate-500',
-                    badge: 'bg-slate-500/10 text-muted-foreground',
-                  },
-                  {
-                    code: 'LISTING_BASIC',
-                    name: 'Enterprise Basic',
-                    price: '$29/mo',
-                    features: [
-                      'Priority search indexing',
-                      'R2 Gallery uploads',
-                      'Verified Business Badge',
-                      'Customer Reviews feed',
-                    ],
-                    border: 'border-cyan-500/30 shadow-cyan-500/5 hover:border-cyan-500',
-                    badge: 'bg-cyan-500/10 text-cyan-400',
-                  },
-                  {
-                    code: 'LISTING_PREMIUM',
-                    name: 'Premium Growth',
-                    price: '$99/mo',
-                    features: [
-                      'All Basic features',
-                      'Live promotions & deals',
-                      'Advanced visitor metrics',
-                      'Platform priority push',
-                    ],
-                    border: 'border-violet-500/30 shadow-violet-500/5 hover:border-violet-500',
-                    badge: 'bg-violet-500/10 text-violet-400',
-                  },
-                ].map((plan) => (
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {SUBSCRIPTION_PLANS.map((plan) => (
                   <button
                     key={plan.code}
-                    onClick={() => setSelectedPlan(plan.code as any)}
-                    className={`p-5 rounded-2xl border bg-white/[0.01] text-left transition duration-300 relative flex flex-col justify-between h-[340px] cursor-pointer ${
+                    type="button"
+                    onClick={() => setSelectedPlan(plan.code)}
+                    className={`p-5 rounded-2xl border bg-white/[0.01] text-left transition duration-300 relative flex flex-col justify-between min-h-[340px] cursor-pointer ${
                       selectedPlan === plan.code
-                        ? 'bg-white/[0.04] border-2 border-white shadow-xl scale-[1.02]'
-                        : plan.border
+                        ? 'bg-white/[0.04] border-2 border-primary shadow-xl scale-[1.02]'
+                        : 'border-border hover:border-slate-500'
                     }`}
                   >
                     <div>
-                      <div className="flex justify-between items-start mb-4">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${plan.badge}`}
-                        >
+                      <div className="flex justify-between items-start mb-3 gap-2">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-primary/10 text-primary">
                           {plan.name}
                         </span>
+                        {plan.highlight && (
+                          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/10 text-emerald-400">
+                            Popular
+                          </span>
+                        )}
                       </div>
-                      <h4 className="text-foregroundxl font-extrabold text-white mb-2">{plan.price}</h4>
-                      <ul className="space-y-2 mt-4 text-[11px] text-muted-foreground leading-relaxed">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <h4 className="text-2xl font-extrabold text-foreground">{formatINR(plan.offerPrice)}</h4>
+                        <span className="text-xs text-muted-foreground line-through">{formatINR(plan.mrp)}</span>
+                      </div>
+                      <p className="text-[11px] text-emerald-400 font-semibold mb-3">50% launch offer</p>
+                      <p className="text-[11px] text-muted-foreground mb-3">
+                        {plan.offers} Offer{plan.offers > 1 ? 's' : ''} · {plan.vouchers} Voucher{plan.vouchers > 1 ? 's' : ''}
+                      </p>
+                      <ul className="space-y-2 text-[11px] text-muted-foreground leading-relaxed">
                         {plan.features.map((f, idx) => (
-                          <li key={idx} className="flex items-center gap-1.5">
-                            <CheckCircle className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                          <li key={idx} className="flex items-start gap-1.5">
+                            <CheckCircle className="h-3.5 w-3.5 text-emerald-400 shrink-0 mt-0.5" />
                             {f}
                           </li>
                         ))}
                       </ul>
                     </div>
                     {selectedPlan === plan.code && (
-                      <span className="text-xs font-bold text-emerald-400 self-end">Selected</span>
+                      <span className="text-xs font-bold text-emerald-400 self-end mt-3">Selected</span>
                     )}
                   </button>
                 ))}
@@ -1174,8 +1247,136 @@ function RegisterBusinessWizardContent() {
 
                 <Button
                   type="button"
-                  onClick={handleFinalSubmit}
+                  onClick={() => setCurrentStep(7)}
                   disabled={submitting}
+                  className="h-11 px-8 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold cursor-pointer hover:opacity-90"
+                >
+                  <span className="flex items-center gap-1.5">
+                    Continue to Payment
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 7: Payment — final price revealed here, QR + proof upload */}
+          {currentStep === 7 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-emerald-400" />
+                  Payment
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Scan the QR to pay, then upload a screenshot of the payment. Our team verifies it
+                  and activates your listing.
+                </p>
+              </div>
+
+              {/* Price breakdown */}
+              {(() => {
+                const charge = computeHotelCharge(hotelStarRating, hotelAmenities);
+                const plan = getPlan(selectedPlan);
+                const amount = isHotel ? charge.total : plan?.offerPrice || 0;
+                return (
+                  <div className="rounded-2xl border border-border p-5 space-y-3">
+                    <h4 className="text-sm font-bold text-foreground">Your total</h4>
+                    {isHotel ? (
+                      <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>{hotelStarRating}★ classification</span>
+                          <span>{formatINR(charge.base)}</span>
+                        </div>
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>{charge.selectedCount} service{charge.selectedCount === 1 ? '' : 's'} × {formatINR(2500)}</span>
+                          <span>{formatINR(charge.addons)}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>{plan?.name}</span>
+                          <span className="line-through text-xs">{formatINR(plan?.mrp || 0)}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-400 text-xs font-semibold">
+                          <span>50% launch offer applied</span>
+                          <span>−{formatINR((plan?.mrp || 0) - (plan?.offerPrice || 0))}</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-baseline border-t border-border pt-3">
+                      <span className="text-sm font-bold text-foreground">Amount payable</span>
+                      <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Valid for {PLAN_DURATION_DAYS} days from activation.
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* QR */}
+              <div className="rounded-2xl border border-border p-5 flex flex-col items-center gap-3">
+                <h4 className="text-sm font-bold text-foreground">Scan to pay</h4>
+                <img
+                  src={PAYMENT_QR_SRC}
+                  alt="Payment QR code"
+                  className="w-56 h-56 object-contain rounded-xl bg-white p-2"
+                />
+                <p className="text-[11px] text-muted-foreground text-center">
+                  Pay the exact amount shown above using any UPI app.
+                </p>
+              </div>
+
+              {/* Proof upload */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Payment screenshot <span className="text-destructive">*</span>
+                </label>
+                <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border border-dashed border-input cursor-pointer hover:bg-muted/40 transition">
+                  <UploadCloud className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    {paymentProof ? paymentProof.name : 'Click to upload your payment screenshot'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => setPaymentProof(e.target.files?.[0] || null)}
+                  />
+                </label>
+                {paymentProofProgress > 0 && paymentProofProgress < 100 && (
+                  <Progress value={paymentProofProgress} className="h-1.5" />
+                )}
+
+                <label className="text-sm font-medium text-muted-foreground">
+                  UPI transaction reference <span className="text-xs">(optional)</span>
+                </label>
+                <Input
+                  value={payerRef}
+                  onChange={(e) => setPayerRef(e.target.value)}
+                  placeholder="e.g. 481234567890"
+                  className="h-11 rounded-xl"
+                />
+              </div>
+
+              <div className="flex justify-between pt-4">
+                <Button
+                  type="button"
+                  onClick={handleBack}
+                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <ArrowLeft className="h-4 w-4" />
+                    Back
+                  </span>
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={handleFinalSubmit}
+                  disabled={submitting || !paymentProof}
                   className="h-11 px-8 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold cursor-pointer hover:opacity-90"
                 >
                   {submitting ? (
@@ -1184,7 +1385,7 @@ function RegisterBusinessWizardContent() {
                       Submitting...
                     </span>
                   ) : (
-                    'Submit Verification Request'
+                    'Submit Payment & Application'
                   )}
                 </Button>
               </div>
