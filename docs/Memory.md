@@ -5,7 +5,7 @@
 
 ## Current state
 
-- **Branch:** `main`. **HEAD:** `5d8faee` (hotel category reachability fix), pushed to
+- **Branch:** `main`. **HEAD:** `6e8147f` (billing: plans + QR payment), pushed to
   `github.com/akshayka2004/whatzup.city`.
 - **VPS migration state:** `..._vouchers`, `..._business_registration_details`,
   `..._hotel_registration` all applied (confirmed 2026-07-28 deploy log).
@@ -22,6 +22,21 @@
   per-role page passes. See `docs/Phases.md`.
 
 ## Recently done (newest first)
+
+- **Billing: plan tiers + mandatory QR payment** (`6e8147f`): 4 plans in
+  `apps/web/lib/subscription-plans.ts` (Whtzup+ 2500/5000, X 5000/10000,
+  XL 7500/15000, LUXE 10000/20000 — offer price charged, MRP struck through),
+  **90-day** server-controlled term. Legacy 8 packages retained in the enum for
+  existing rows but excluded from `getPackages()`. Wizard is now **7 steps** —
+  payment is the final step after review: price breakdown + `public/QR.jpeg` +
+  mandatory screenshot upload; **hotels see no price until this step**. Tags now
+  collected at registration. `SubscriptionPaywall` (mounted in `business-layout`,
+  APPROVED only, hidden while trial modal shows) blocks owners without an active
+  paid plan and reminds 5 days pre-expiry. Admin queue `/admin/payments` +
+  `GET /v1/payments/admin/pending`, `POST /v1/payments/:id/verify|reject`;
+  proofs stored in the private `verification-documents` bucket and shown via
+  short-lived signed URLs. Needed a new `PAYMENT` UploadCategory — the storage
+  controller `@IsEnum`-validates category and would otherwise 400 every upload.
 
 - **Hotel reachability fix** (`5d8faee`): `508081a` shipped hotel pricing that could
   never trigger. (a) `apps/web/app/register/page.tsx` `CATEGORIES` is a **hardcoded**
@@ -136,8 +151,8 @@ cd packages/database && pnpm prisma migrate deploy && pnpm prisma generate && cd
 
 ## Open items
 
-- **Apply 3 pending migrations on VPS**: `..._vouchers`,
-  `..._business_registration_details`, `..._hotel_registration` via `prisma migrate deploy`.
+- **Pending VPS migrations**: `..._hotel_category_rows`, `..._payment_proof`
+  (the vouchers / registration-details / hotel-registration ones are applied).
 - Voucher customer wallet page (`/vouchers`) — API `GET /v1/vouchers/my` exists, no page yet.
 - `/reset-password` page (API exists).
 - DB perf indexes migration apply on VPS.
