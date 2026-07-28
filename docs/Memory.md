@@ -5,7 +5,7 @@
 
 ## Current state
 
-- **Branch:** `main`. **HEAD:** `6e8147f` (billing: plans + QR payment), pushed to
+- **Branch:** `main`. **HEAD:** `4d957a4` (unified registration flow), pushed to
   `github.com/akshayka2004/whatzup.city`.
 - **VPS migration state:** `..._vouchers`, `..._business_registration_details`,
   `..._hotel_registration` all applied (confirmed 2026-07-28 deploy log).
@@ -22,6 +22,23 @@
   per-role page passes. See `docs/Phases.md`.
 
 ## Recently done (newest first)
+
+- **Registration unified** (`4d957a4`): there were **two parallel registration
+  paths** — `/register` (what users actually used; hardcoded
+  `assignSubscription(LISTING_BASIC)`, a retired package, so no plan choice and
+  no payment) and `/register/business?id=` (the 7-step wizard where plan/KYC/
+  tags/hotel/payment all lived but which the main flow never visited). Merged
+  into **one flow at `/register`**, 4 steps for BUSINESS (Account Type →
+  Credentials → Business Profile → Plan & Payment); other roles keep 3.
+  Step 3 = description + tags + `RegistrationDetailsForm`, saves then continues.
+  Step 4 = plan cards or hotel star+services, with price revealed only after
+  "Proceed to Payment" (`showPayment` flag) → QR + mandatory screenshot.
+  `handleBusinessFinalSubmit` assigns plan/hotel → uploads proof → records
+  payment → submits for verification. **Draft resume**: `/register` loads the
+  user's DRAFT business on mount and jumps to step 3/4 via `stepsCompleted`.
+  `/register/business` is now a `redirect('/register')` (old `?id=` links 404'd
+  with "Business not found" via `getProgress`'s tenant-scoped lookup);
+  select-role + `business-layout` `getOnboardingPath` repointed to `/register`.
 
 - **Billing: plan tiers + mandatory QR payment** (`6e8147f`): 4 plans in
   `apps/web/lib/subscription-plans.ts` (Whtzup+ 2500/5000, X 5000/10000,
