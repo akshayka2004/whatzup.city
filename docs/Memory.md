@@ -5,10 +5,11 @@
 
 ## Current state
 
-- **Branch:** `main`. **HEAD:** `508081a` (hotel classification pricing), pushed to
+- **Branch:** `main`. **HEAD:** `5d8faee` (hotel category reachability fix), pushed to
   `github.com/akshayka2004/whatzup.city`.
-- **VPS is behind by 3 migrations** — not yet `migrate deploy`'d: `..._vouchers`,
-  `..._business_registration_details`, `..._hotel_registration`.
+- **VPS migration state:** `..._vouchers`, `..._business_registration_details`,
+  `..._hotel_registration` all applied (confirmed 2026-07-28 deploy log).
+  **`..._hotel_category_rows` still pending** — hotel pricing stays invisible until it runs.
 - **Deploy:** VPS (Mumbai), PM2 — `saas-api` :4001, `saas-web` :3000,
   `saas-worker`, `saas-launch-page` :6001. Supabase Postgres (ap-south-1), local
   Redis + Typesense.
@@ -21,6 +22,21 @@
   per-role page passes. See `docs/Phases.md`.
 
 ## Recently done (newest first)
+
+- **Hotel reachability fix** (`5d8faee`): `508081a` shipped hotel pricing that could
+  never trigger. (a) `apps/web/app/register/page.tsx` `CATEGORIES` is a **hardcoded**
+  array with no API fetch — no Hotel entry meant `categorySlug` never matched, so the
+  Step 4 hotel branch never rendered; (b) the Hotel category lived only in `seed.ts`,
+  and `migrate deploy` doesn't run seeds, so no row reached prod — and
+  `startOnboarding` **silently falls back to the first category** when a slug misses,
+  hiding the failure; (c) slug collision — `hotels` was already the Staycation
+  subcategory and `business_categories` has `UNIQUE (tenant_id, slug)`.
+  Fix: Hotel added to `CATEGORIES` with subcategories, slug **`hotel`** (singular),
+  `isHotel` updated in wizard + settings, Staycation's "Hotels" relabelled
+  **"Homestays"** (slug kept `hotels` so existing businesses resolve), and migration
+  `..._hotel_category_rows` inserts category+subcategory rows per tenant (idempotent).
+  **Lesson: category lists here are hardcoded in the frontend AND need DB rows —
+  changing one without the other silently does nothing.**
 
 - **Hotel classification pricing** (`508081a`, pushed): new `Hotel` category (slug `hotels`, separate from `Staycation`).
   `Business.hotelStarRating Int?` (1-5) + `hotelAmenities Json` (9 top-level
