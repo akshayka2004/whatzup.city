@@ -5,7 +5,7 @@
 
 ## Current state
 
-- **Branch:** `main`. **HEAD:** `4d957a4` (unified registration flow), pushed to
+- **Branch:** `main`. **HEAD:** `0b65855` (resume fix + live admin data + QR), pushed to
   `github.com/akshayka2004/whatzup.city`.
 - **VPS migration state:** `..._vouchers`, `..._business_registration_details`,
   `..._hotel_registration` all applied (confirmed 2026-07-28 deploy log).
@@ -22,6 +22,22 @@
   per-role page passes. See `docs/Phases.md`.
 
 ## Recently done (newest first)
+
+- **Resume fix + live admin data + QR** (): resume check bailed unless
+  status was DRAFT, so registered businesses fell to step 1 -> step 2 and hit
+  "email already registered" on their own address; now resumes at any status,
+  landing registered businesses on **step 3** (only DRAFT+STEP_3 goes to step 4),
+  with a loader so step 1 never flashes.  was fully fake
+  (invented Free/Starter/Growth/Enterprise plans, subscriber "plans" derived from
+  business rows that carry no subscription data, upgrade requests in localStorage)
+  -> rebuilt on new **** (Subscription table
+  cross-tenant + latest payment). Approvals pending query now includes latest
+  subscription + payment; review panel shows plan opted, amount, duration,
+  payment status, UPI ref.  shared from lib/subscription-plans
+  (handles current plans, HOTEL_nSTAR, retired codes). QR extracted from the
+  Google Pay screenshot, thresholded + quiet zone rebuilt + upscaled to
+  **public/payment-qr.png** (1488px); shown up to 340px with UPI ID
+   for manual pay.
 
 - **Registration unified** (`4d957a4`): there were **two parallel registration
   paths** — `/register` (what users actually used; hardcoded
