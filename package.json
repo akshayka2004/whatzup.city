@@ -14,7 +14,11 @@
     "db:seed": "dotenv -e .env -- turbo run db:seed",
     "db:reset": "dotenv -e .env -- turbo run db:reset",
     "db:push": "dotenv -e .env -- turbo run db:push",
-    "clean": "turbo run clean && rimraf node_modules"
+    "clean": "turbo run clean && rimraf node_modules",
+    "security:tenant-scope": "node scripts/check-tenant-scope.js",
+    "security:tenant-scope:strict": "node scripts/check-tenant-scope.js --strict",
+    "security:audit": "pnpm audit --audit-level=high",
+    "security:check": "pnpm run security:audit && pnpm run security:tenant-scope"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.59.4",

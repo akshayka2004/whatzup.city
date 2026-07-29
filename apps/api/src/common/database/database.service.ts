@@ -5,6 +5,23 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { PrismaClient, Prisma } from '@saas/database';
 
+/**
+ * Field names present anywhere in a `where` clause, including inside AND/OR/NOT.
+ * Used to decide whether a query is scoped to a tenant/owner.
+ */
+function collectKeys(where: unknown, depth = 0, acc = new Set<string>()): Set<string> {
+  if (depth > 5 || !where || typeof where !== 'object') return acc;
+  for (const [k, v] of Object.entries(where as Record<string, unknown>)) {
+    if (k === 'AND' || k === 'OR' || k === 'NOT') {
+      const list = Array.isArray(v) ? v : [v];
+      list.forEach((item) => collectKeys(item, depth + 1, acc));
+    } else {
+      acc.add(k);
+    }
+  }
+  return acc;
+}
+
 @Injectable()
 export class DatabaseService
   extends PrismaClient<Prisma.PrismaClientOptions, 'query' | 'info' | 'warn' | 'error'>
@@ -45,6 +62,7 @@ export class DatabaseService
 
     this.$on('warn' as never, (e: Prisma.LogEvent) => this.logger.warn(e.message));
     this.$on('error' as never, (e: Prisma.LogEvent) => this.logger.error(e.message));
+
   }
 
   async onModuleInit() {

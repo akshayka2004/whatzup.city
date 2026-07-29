@@ -8,6 +8,7 @@ import {
 import { DatabaseService } from '../../common/database/database.service';
 import { AuditService } from '../audit/audit.service';
 import { StorageService } from '../../common/storage/storage.service';
+import { CryptoService } from '../../common/crypto/crypto.service';
 import { CreatePaymentDto } from './dto/payment.dto';
 
 /** Mirrors the web pricing helper — plan prices are GST-exclusive. */
@@ -32,6 +33,7 @@ export class PaymentsService {
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
     private readonly storage: StorageService,
+    private readonly crypto: CryptoService,
   ) {}
 
   async createPayment(userId: string, tenantId: string, businessId: string, dto: CreatePaymentDto) {
@@ -40,6 +42,21 @@ export class PaymentsService {
     });
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
+
+    // The proof was uploaded straight to storage via a signed URL, so its real
+    // content is unverified until now. Check the bytes before an admin ever
+    // opens it; rejected files are removed from the bucket.
+    if (dto.proofUrl) {
+      try {
+        const parsed = JSON.parse(dto.proofUrl);
+        await this.storage.verifyStoredFile(parsed.bucket, parsed.path, [
+          'image/jpeg', 'image/png', 'image/webp', 'application/pdf',
+        ]);
+      } catch (err) {
+        if (err instanceof BadRequestException) throw err;
+        this.logger.warn(`Could not verify payment proof: ${(err as Error).message}`);
+      }
+    }
 
     // First payment rides along with registration approval; anything after a
     // verified one is a renewal and goes to the payment-approval queue.
@@ -292,8 +309,25 @@ export class PaymentsService {
         }
         const meta: any = p.invoiceMetadata || {};
         const split = splitTax(Number(p.amount));
+
+        // Identity documents are masked in the list view. Admins reveal them
+        // one at a time through the audited endpoint.
+        const bp: any = (p.business as any)?.billingProfile;
+        const business = bp
+          ? {
+              ...p.business,
+              billingProfile: {
+                ...bp,
+                pan: CryptoService.mask(this.crypto.decrypt(bp.pan)),
+                gstin: CryptoService.mask(this.crypto.decrypt(bp.gstin)),
+                masked: true,
+              },
+            }
+          : p.business;
+
         return {
           ...p,
+          business,
           proofSignedUrl,
           cycle: meta.cycle || 'NEW',
           amountBase: meta.amountBase ?? split.base,
@@ -325,11 +359,13 @@ export class PaymentsService {
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
 
+    // PAN/GSTIN are identity documents — encrypted at rest so a DB dump alone
+    // doesn't expose them.
     const data = {
       billingName: dto.billingName,
       hasGst: !!dto.hasGst,
-      gstin: dto.hasGst ? dto.gstin || null : null,
-      pan: dto.pan || null,
+      gstin: dto.hasGst ? this.crypto.encrypt(dto.gstin) : null,
+      pan: this.crypto.encrypt(dto.pan),
       addressLine: dto.addressLine,
       city: dto.city || null,
       state: dto.state || null,
@@ -350,7 +386,38 @@ export class PaymentsService {
     });
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
-    return this.db.billingProfile.findUnique({ where: { businessId: business.id } });
+    const bp = await this.db.billingProfile.findUnique({ where: { businessId: business.id } });
+    if (!bp) return null;
+    // The owner sees their own values in full.
+    return { ...bp, pan: this.crypto.decrypt(bp.pan), gstin: this.crypto.decrypt(bp.gstin) };
+  }
+
+  /**
+   * Billing details for an admin. PAN/GSTIN are masked unless `reveal` is set,
+   * and every reveal is written to the audit log — these are identity documents
+   * belonging to someone else.
+   */
+  async getBillingProfileForAdmin(adminId: string, businessId: string, reveal = false) {
+    const bp = await this.db.billingProfile.findUnique({ where: { businessId } });
+    if (!bp) return null;
+
+    const pan = this.crypto.decrypt(bp.pan);
+    const gstin = this.crypto.decrypt(bp.gstin);
+
+    if (!reveal) {
+      return { ...bp, pan: CryptoService.mask(pan), gstin: CryptoService.mask(gstin), masked: true };
+    }
+
+    await this.audit.log({
+      tenantId: bp.tenantId,
+      userId: adminId,
+      action: 'BILLING_PII_REVEALED',
+      resource: 'BILLING_PROFILE',
+      resourceId: bp.id,
+      metadata: { businessId, fields: ['pan', 'gstin'] },
+    });
+
+    return { ...bp, pan, gstin, masked: false };
   }
 
   async getPayments(userId: string, tenantId: string, businessId: string) {

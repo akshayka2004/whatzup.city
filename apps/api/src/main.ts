@@ -38,8 +38,26 @@ async function bootstrap() {
       },
       frameguard: { action: 'deny' },
       referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+      // Force HTTPS for a year once served over TLS. Only meaningful behind a
+      // TLS terminator — harmless over plain HTTP.
+      hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+      // Don't leak the framework in headers.
+      hidePoweredBy: true,
+      noSniff: true,
+      // Keep cross-origin isolation defaults; storage is a separate origin.
+      crossOriginResourcePolicy: { policy: 'same-site' },
     }),
   );
+
+  // Deny access to browser hardware/APIs the platform never uses, so an
+  // injected script can't reach them either.
+  app.use((_req: any, res: any, next: any) => {
+    res.setHeader(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=(self), payment=(), usb=(), magnetometer=(), gyroscope=()',
+    );
+    next();
+  });
   // Compress responses > 1 KB at level 6 (good balance of speed vs size)
   app.use(compression({ level: 6, threshold: 1024 }));
   app.use(cookieParser());

@@ -112,6 +112,11 @@ model User {
   isActive      Boolean      @default(true) @map("is_active")
   emailVerified Boolean      @default(false) @map("email_verified")
   lastLoginAt   DateTime?    @map("last_login_at")
+  // Brute-force defence: consecutive failures lock the account for an
+  // escalating window. Reset to 0 on a successful login.
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+  lastFailedLoginAt   DateTime? @map("last_failed_login_at")
   referralCode         String?      @unique @map("referral_code") @db.VarChar(20)
   referredBy           String?      @map("referred_by") @db.Uuid
   acceptedTermsAt      DateTime?    @map("accepted_terms_at")

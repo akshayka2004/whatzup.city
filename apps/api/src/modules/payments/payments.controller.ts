@@ -48,6 +48,19 @@ export class PaymentsController {
     return this.paymentsService.listPending(cycle);
   }
 
+  @Get('admin/businesses/:businessId/billing-profile')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Billing details for a business; ?reveal=true unmasks PAN/GSTIN and is audited (Admin)' })
+  async adminBilling(
+    @CurrentUser('id') adminId: string,
+    @Param('businessId') businessId: string,
+    @Query('reveal') reveal?: string,
+  ) {
+    return this.paymentsService.getBillingProfileForAdmin(adminId, businessId, reveal === 'true');
+  }
+
   @Get('admin/transactions')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)

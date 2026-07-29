@@ -40,6 +40,13 @@ export interface JwtPayload {
 
 @Injectable()
 export class AuthService {
+  /** Consecutive failures before the account is locked. */
+  private static readonly LOCK_THRESHOLD = 5;
+  /** First lock window; doubles for each subsequent block of failures. */
+  private static readonly LOCK_BASE_MINUTES = 15;
+  /** Ceiling so an attacker can't lock a user out permanently. */
+  private static readonly LOCK_MAX_MINUTES = 24 * 60;
+
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
@@ -326,9 +333,40 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // ── Durable account lockout (survives Redis restarts/flushes) ─────
+    // The Redis counters above are the fast path; this is the layer that
+    // still holds if Redis is unavailable.
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const mins = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
+      throw new HttpException(
+        `Account temporarily locked due to repeated failed logins. Try again in ${mins} minute(s).`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
     // ── Password verify (intentionally slow — argon2) ─────────────────
     const isPasswordValid = await this.passwordService.compare(dto.password, user.passwordHash);
     if (!isPasswordValid) {
+      // 5 consecutive failures -> 15 min, doubling each further block, capped
+      // at 24h so an attacker can't lock someone out indefinitely.
+      const attempts = (user.failedLoginAttempts || 0) + 1;
+      let lockedUntil: Date | null = null;
+      if (attempts >= AuthService.LOCK_THRESHOLD) {
+        const blocks = Math.floor(attempts / AuthService.LOCK_THRESHOLD);
+        const minutes = Math.min(
+          AuthService.LOCK_BASE_MINUTES * Math.pow(2, blocks - 1),
+          AuthService.LOCK_MAX_MINUTES,
+        );
+        lockedUntil = new Date(Date.now() + minutes * 60_000);
+      }
+
+      await this.db.user
+        .update({
+          where: { id: user.id },
+          data: { failedLoginAttempts: attempts, lastFailedLoginAt: new Date(), lockedUntil },
+        })
+        .catch(() => {});
+
       // Fire-and-forget audit log — don't add latency on the hot path
       this.db.auditLog.create({
         data: {
@@ -336,10 +374,23 @@ export class AuthService {
           userId: user.id,
           action: 'LOGIN_FAILED',
           resource: 'auth',
-          metadata: { ipAddress, userAgent },
+          metadata: { ipAddress, userAgent, attempts, locked: !!lockedUntil },
         },
       }).catch(() => {});
+
+      // Same message whether the account exists or the password is wrong, so
+      // login can't be used to enumerate registered emails.
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Successful password — clear the failure counters.
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      await this.db.user
+        .update({
+          where: { id: user.id },
+          data: { failedLoginAttempts: 0, lockedUntil: null },
+        })
+        .catch(() => {});
     }
 
     // Clear rate-limit counters on success

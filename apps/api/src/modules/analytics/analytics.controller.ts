@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsSummaryService } from './analytics-summary.service';
@@ -18,6 +19,9 @@ export class AnalyticsController {
     private readonly summaryService: AnalyticsSummaryService,
   ) {}
 
+  // Unauthenticated ingest — capped per IP so it can't be used to flood the
+  // analytics table.
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @Public()
   @Post('track')
   @ApiOperation({ summary: 'Ingest analytics event' })

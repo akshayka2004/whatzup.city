@@ -10,6 +10,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../supabase/supabase.client';
+import { sniffFileType, looksLikeSvgOrHtml } from './file-signature';
 import { RedisService } from '../redis/redis.service';
 
 // Buckets the platform relies on. Missing buckets are auto-created on boot so
@@ -306,6 +307,67 @@ export class StorageService implements OnApplicationBootstrap {
   validateMimeType(mimeType: string, allowedTypes: string[]): void {
     if (!allowedTypes.includes(mimeType.toLowerCase())) {
       throw new BadRequestException(`MIME type ${mimeType} is not permitted for this file category.`);
+    }
+  }
+
+  /**
+   * Verify an already-uploaded object by its real bytes.
+   *
+   * Uploads go straight from the browser to Supabase via a signed URL, so the
+   * API never sees the content at request time and the declared MIME type is
+   * unverified. This re-checks the stored object's magic bytes and deletes
+   * anything that isn't genuinely one of the allowed types — in particular
+   * SVG/HTML, which are images by MIME but can carry script.
+   *
+   * Returns true when the object is acceptable (or when storage is
+   * unavailable, so verification can't block a working upload path).
+   */
+  async verifyStoredFile(
+    bucket: string,
+    path: string,
+    allowedTypes: string[],
+  ): Promise<boolean> {
+    if (!this.supabaseClient) return true;
+
+    try {
+      const { data, error } = await this.supabaseClient.storage.from(bucket).download(path);
+      if (error || !data) {
+        this.logger.warn(`Could not download ${bucket}/${path} for verification: ${error?.message}`);
+        return true; // don't fail the flow on a transient storage error
+      }
+
+      const head = Buffer.from(await data.slice(0, 512).arrayBuffer());
+
+      if (looksLikeSvgOrHtml(head)) {
+        await this.deleteQuietly(bucket, path);
+        throw new BadRequestException(
+          'SVG/HTML uploads are not permitted. Please upload a JPG, PNG, WEBP or PDF.',
+        );
+      }
+
+      const sniffed = sniffFileType(head);
+      if (!sniffed.mime || !allowedTypes.includes(sniffed.mime)) {
+        await this.deleteQuietly(bucket, path);
+        throw new BadRequestException(
+          `File content is not a permitted type${sniffed.mime ? ` (detected ${sniffed.mime})` : ''}. ` +
+            'Please upload a JPG, PNG, WEBP or PDF.',
+        );
+      }
+
+      return true;
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      this.logger.warn(`File verification skipped for ${bucket}/${path}: ${(err as Error).message}`);
+      return true;
+    }
+  }
+
+  private async deleteQuietly(bucket: string, path: string) {
+    try {
+      await this.supabaseClient?.storage.from(bucket).remove([path]);
+      this.logger.warn(`Removed rejected upload ${bucket}/${path}`);
+    } catch {
+      /* best effort */
     }
   }
 }

@@ -15,6 +15,7 @@ import { StorageSerializerInterceptor } from './common/interceptors/storage-seri
 import { DatabaseModule } from './common/database/database.module';
 import { RedisModule } from './common/redis/redis.module';
 import { StorageModule } from './common/storage/storage.module';
+import { CryptoModule } from './common/crypto/crypto.module';
 
 // Domain modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -107,6 +108,7 @@ import { TrialsModule } from './modules/trials/trials.module';
     DatabaseModule,
     RedisModule,
     StorageModule,
+    CryptoModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({

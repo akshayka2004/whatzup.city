@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
+import { redact } from '../../common/utils/redact';
 
 @Injectable()
 export class AuditService {
@@ -26,8 +27,16 @@ export class AuditService {
     ipAddress?: string;
     userAgent?: string;
   }): void {
+    // Audit rows are long-lived and widely readable, so strip secrets and
+    // identity documents (PAN/GSTIN/tokens) before persisting.
+    const safe = {
+      ...data,
+      oldData: redact(data.oldData),
+      newData: redact(data.newData),
+      metadata: redact(data.metadata),
+    };
     void this.db.auditLog
-      .create({ data })
+      .create({ data: safe })
       .catch((e) => this.logger.warn(`audit log failed (${data.action}): ${e?.message ?? e}`));
   }
 

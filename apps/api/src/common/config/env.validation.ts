@@ -49,6 +49,11 @@ class EnvironmentVariables {
   @IsOptional()
   SUPABASE_SERVICE_ROLE_KEY?: string;
 
+  /** 32-byte key (hex or base64) for encrypting PAN/GSTIN at rest. */
+  @IsString()
+  @IsOptional()
+  ENCRYPTION_KEY?: string;
+
   @IsString()
   @IsOptional()
   SUPABASE_STORAGE_BUCKET?: string;
@@ -92,6 +97,26 @@ export function validateEnv(config: Record<string, any>) {
       throw new Error(
         'CRITICAL SECURITY ERROR: JWT_SECRET is too weak or uses default strings in production mode. ' +
           'Must be at least 32 characters long.',
+      );
+    }
+
+    // Identity documents (PAN/GSTIN) are encrypted at rest. Without this key
+    // they would be written in plaintext, so refuse to start rather than
+    // silently degrade.
+    const encKey = validatedConfig.ENCRYPTION_KEY;
+    if (!encKey) {
+      throw new Error(
+        'CRITICAL SECURITY ERROR: ENCRYPTION_KEY is required in production — PAN/GSTIN are encrypted at rest. ' +
+          'Generate one with: openssl rand -hex 32',
+      );
+    }
+    const keyBytes = /^[0-9a-f]{64}$/i.test(encKey)
+      ? Buffer.from(encKey, 'hex')
+      : Buffer.from(encKey, 'base64');
+    if (keyBytes.length !== 32) {
+      throw new Error(
+        'CRITICAL SECURITY ERROR: ENCRYPTION_KEY must decode to 32 bytes (64 hex chars). ' +
+          'Generate one with: openssl rand -hex 32',
       );
     }
     if (
