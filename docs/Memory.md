@@ -5,8 +5,10 @@
 
 ## Current state
 
-- **Branch:** `main`. **HEAD:** `32fa8a7` (GST + transaction log + invoice details), pushed to
+- **Branch:** `main`. **HEAD:** `11dbefb` (security hardening + tenant-scope triage), pushed to
   `github.com/akshayka2004/whatzup.city`.
+- **Before next deploy:** set `ENCRYPTION_KEY` in the root `.env` on the VPS or
+  the API will not start (`openssl rand -hex 32`).
 - **VPS migration state:** `..._vouchers`, `..._business_registration_details`,
   `..._hotel_registration` all applied (confirmed 2026-07-28 deploy log).
   **`..._hotel_category_rows` still pending** — hotel pricing stays invisible until it runs.
@@ -22,6 +24,27 @@
   per-role page passes. See `docs/Phases.md`.
 
 ## Recently done (newest first)
+
+- **Security hardening** (`ec47df0`, triage `11dbefb`): see `SECURITY.md` (new).
+  **`ENCRYPTION_KEY` is now REQUIRED in production — the API refuses to boot
+  without a valid 32-byte key** (`openssl rand -hex 32`, root `.env`).
+  `CryptoService` (AES-256-GCM, `v1:iv:tag:ct`) encrypts PAN/GSTIN; legacy
+  plaintext passes through so no backfill is needed. Admin views mask them;
+  unmasking goes via `?reveal=true` and writes a `BILLING_PII_REVEALED` audit
+  row. `redact()` strips secrets/PII from audit metadata.
+  Login had **Redis-only** brute-force counters → added durable DB lockout
+  (`users.failed_login_attempts`/`locked_until`, migration
+  `..._login_lockout`): 5 fails → 15 min, doubling, capped 24h. Strict
+  `@Throttle` on login/signup/forgot/reset/verify + analytics ingest.
+  Payment proofs re-verified **after** upload by magic bytes
+  (`file-signature.ts`); SVG/HTML rejected and deleted from the bucket.
+  helmet gains HSTS/noSniff/hidePoweredBy + Permissions-Policy.
+  **Prisma 6 removed `$use`**, so no runtime tenant middleware — instead
+  `scripts/check-tenant-scope.js` (`pnpm security:tenant-scope`). All 30 real
+  findings triaged + annotated `// tenant-scope-ok:`; scan is clean. (47→30:
+  17 were scanner false positives on ES6 shorthand `{ businessId, ... }`.)
+  No cross-tenant leak found. **Open gaps: no RLS, no admin 2FA, key sits on
+  the app server.**
 
 - **GST + transaction log + invoice details** (`32fa8a7`): the ₹999 in admin
   subscriptions was **real data** — `LISTING_BASIC` is priced 999 and the old
