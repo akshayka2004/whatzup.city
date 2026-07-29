@@ -931,6 +931,7 @@ export class AuthService {
     const phone = params.phone?.trim();
 
     if (name) {
+      // tenant-scope-ok: global uniqueness check across all tenants; selects id only
       const dupName = await this.db.business.findFirst({
         where: { name: { equals: name, mode: 'insensitive' }, deletedAt: null },
         select: { id: true },
@@ -943,6 +944,7 @@ export class AuthService {
     if (phone) {
       const [userPhone, bizPhone] = await Promise.all([
         this.db.user.findFirst({ where: { phone, deletedAt: null }, select: { id: true } }),
+        // tenant-scope-ok: global uniqueness check across all tenants; selects id only
         this.db.business.findFirst({ where: { phone, deletedAt: null }, select: { id: true } }),
       ]);
       if (userPhone || bizPhone) {

@@ -43,6 +43,7 @@ export class TrendingService {
 
     if (engagementData.length === 0) {
       // Fallback: use raw DB ordering
+      // tenant-scope-ok: public trending listings across all businesses
       const fallback = await this.db.business.findMany({
         where: { deletedAt: null },
         orderBy: [{ totalReviews: 'desc' }, { averageRating: 'desc' }],
@@ -99,6 +100,7 @@ export class TrendingService {
     if (cached) return cached;
 
     const now = new Date();
+    // tenant-scope-ok: public trending offers across all businesses
     const offers = await this.db.offer.findMany({
       where: {
         status: 'ACTIVE',

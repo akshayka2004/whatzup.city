@@ -169,7 +169,9 @@ export class TrialsService {
     const base = tenantId ? { tenantId } : {};
 
     const [onTrial, expiringIn7Days, expired, introClaimed, introRedeemed] = await Promise.all([
+      // tenant-scope-ok: platform-wide trial statistics (admin)
       db.business.count({ where: { ...base, trialStatus: 'ACTIVE' } }),
+      // tenant-scope-ok: platform-wide trial statistics (admin)
       db.business.count({
         where: {
           ...base,
@@ -180,8 +182,11 @@ export class TrialsService {
           },
         },
       }),
+      // tenant-scope-ok: platform-wide trial statistics (admin)
       db.business.count({ where: { ...base, trialStatus: 'EXPIRED' } }),
+      // tenant-scope-ok: platform-wide trial statistics (admin)
       db.business.count({ where: { ...base, hasIntroOffer: true } }),
+      // tenant-scope-ok: platform-wide trial statistics (admin)
       db.business.count({ where: { ...base, introOfferRedeemed: true } }),
     ]);
 

@@ -67,6 +67,7 @@ export class BusinessOnboardingService {
     }
 
     // Block duplicate company name across all owners (case-insensitive)
+    // tenant-scope-ok: company names must be unique platform-wide; selects id only
     const globalDuplicate = await this.db.business.findFirst({
       where: {
         name: { equals: dto.businessName.trim(), mode: 'insensitive' },

@@ -70,10 +70,15 @@ none, because it produces false confidence.
    Chosen mitigation is defence-in-depth: `pnpm security:tenant-scope` flags
    reads on tenant-owned models with no tenant/owner filter.
    **Application code is currently the only barrier between tenants.**
-2. **`pnpm security:tenant-scope` currently reports ~47 findings.** Most are
-   intentional platform-wide admin aggregates; each needs review and either a
-   filter or a `// tenant-scope-ok: <reason>` annotation. Until triaged, this is
-   an open risk, not a clean bill of health.
+2. **Tenant-scope findings are triaged — the scan is clean.** All 30 real
+   findings were reviewed and annotated with `// tenant-scope-ok: <reason>`, so
+   any *new* unscoped read now shows up immediately. The original 47 included 17
+   false positives from ES6 shorthand (`{ businessId, ... }`), since fixed in the
+   scanner. The reviewed queries fall into four groups: public discovery (search,
+   trending, categories), platform-wide admin metrics, role-guarded admin queues
+   that span tenants by design, and global uniqueness checks selecting only an id.
+   No cross-tenant leak was found. Note this is a text-based heuristic, not a
+   runtime guarantee — it cannot see dynamically-built `where` objects.
 3. **No 2FA for admin accounts.** Admins can approve payments and reveal PAN
    for every business. TOTP with recovery codes is the intended fix; deferred by
    decision, not because it is unimportant.

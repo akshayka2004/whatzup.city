@@ -75,6 +75,7 @@ export class SearchService implements OnApplicationBootstrap {
         const hasDocs = await this.typesenseService.hasDocuments('businesses');
         if (!hasDocs) {
           this.logger.log('Typesense businesses collection is empty. Syncing from database...');
+          // tenant-scope-ok: public business search across all listings
           const businesses = await this.db.business.findMany({
             where: { deletedAt: null },
             select: { id: true, tenantId: true },
@@ -196,12 +197,14 @@ export class SearchService implements OnApplicationBootstrap {
     if (filters?.minRating) where.averageRating = { gte: filters.minRating };
 
     const [data, total] = await Promise.all([
+      // tenant-scope-ok: public business search across all listings
       this.db.business.findMany({
         where,
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { averageRating: 'desc' },
       }),
+      // tenant-scope-ok: public business search across all listings
       this.db.business.count({ where }),
     ]);
 
@@ -259,6 +262,7 @@ export class SearchService implements OnApplicationBootstrap {
     const cached = await this.redis.get<any>(cacheKey);
     if (cached) return cached;
 
+    // tenant-scope-ok: public business search across all listings
     const data = await this.db.business.findMany({
       where: { deletedAt: null },
       orderBy: [{ averageRating: 'desc' }, { totalReviews: 'desc' }],
@@ -288,6 +292,7 @@ export class SearchService implements OnApplicationBootstrap {
     const cached = await this.redis.get<any>(cacheKey);
     if (cached) return cached;
 
+    // tenant-scope-ok: public business search across all listings
     const data = await this.db.business.findMany({
       where: { deletedAt: null },
       orderBy: [{ totalReviews: 'desc' }, { createdAt: 'desc' }],
@@ -381,6 +386,7 @@ export class SearchService implements OnApplicationBootstrap {
     // Postgres fallback for suggestions
     const terms = [query, ...synonymExtras];
     const [businesses, categories] = await Promise.all([
+      // tenant-scope-ok: public business search across all listings
       this.db.business.findMany({
         where: {
           deletedAt: null,

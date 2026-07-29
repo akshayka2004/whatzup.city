@@ -34,6 +34,7 @@ export class CategoriesService {
    */
   private async attachListingCounts(categories: any[]): Promise<any[]> {
     const [grouped, allCats] = await Promise.all([
+      // tenant-scope-ok: public category listing counts across all businesses
       this.db.business.groupBy({
         by: ['categoryId'],
         where: { deletedAt: null },

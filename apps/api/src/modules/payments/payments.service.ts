@@ -271,6 +271,7 @@ export class PaymentsService {
    * screen asks for RENEWAL only.
    */
   async listPending(cycle?: 'NEW' | 'RENEWAL') {
+    // tenant-scope-ok: admin approval queue spans tenants by design; role-guarded in controller
     const payments = await this.db.payment.findMany({
       where: { status: 'PENDING', deletedAt: null },
       orderBy: { createdAt: 'desc' },
@@ -341,6 +342,7 @@ export class PaymentsService {
 
   /** Full financial log for a business — admin/finance view. */
   async listTransactions(businessId?: string) {
+    // tenant-scope-ok: admin financial log spans tenants by design; role-guarded in controller
     return this.db.transaction.findMany({
       where: businessId ? { businessId } : {},
       orderBy: { createdAt: 'desc' },

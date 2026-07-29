@@ -197,6 +197,7 @@ export class SubscriptionsService {
    * latest payment so the admin sees what was actually paid.
    */
   async listAllForAdmin() {
+    // tenant-scope-ok: admin subscriber list spans tenants by design; role-guarded in controller
     const subs = await this.db.subscription.findMany({
       // Legacy rows (LISTING_BASIC etc.) were auto-assigned by the old
       // registration flow without the business ever choosing or paying, so they

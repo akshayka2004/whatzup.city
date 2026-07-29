@@ -39,6 +39,7 @@ export class MetricsProcessor extends WorkerHost {
 
     // Fetch all active businesses
     const tenantFilter = data.tenantId ? { tenantId: data.tenantId } : {};
+    // tenant-scope-ok: background job aggregating platform-wide metrics
     const businesses = await this.db.business.findMany({
       where: {
         ...tenantFilter,

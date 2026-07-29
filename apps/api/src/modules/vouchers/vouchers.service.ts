@@ -136,6 +136,7 @@ export class VouchersService {
 
   async listClaims(userId: string, voucherId: string) {
     await this.ownedVoucher(userId, voucherId);
+    // tenant-scope-ok: ownership asserted by ownedVoucher() immediately above
     return this.db.voucherClaim.findMany({
       where: { voucherId, deletedAt: null },
       orderBy: { unlockedAt: 'desc' },

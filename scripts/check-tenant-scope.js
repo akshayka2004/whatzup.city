@@ -55,6 +55,34 @@ function extractCall(src, startIdx) {
   return src.slice(startIdx, startIdx + 400);
 }
 
+/**
+ * Isolate the `where:` object so `select: { businessId: true }` can't be
+ * mistaken for a filter. Returns '' when the call has no where clause at all
+ * (which is itself unscoped).
+ */
+function extractWhere(call) {
+  const m = /\bwhere\s*:\s*\{/.exec(call);
+  if (!m) return '';
+  const start = m.index + m[0].length - 1;
+  let depth = 0;
+  for (let i = start; i < call.length; i++) {
+    if (call[i] === '{') depth++;
+    else if (call[i] === '}') {
+      depth--;
+      if (depth === 0) return call.slice(start, i + 1);
+    }
+  }
+  return call.slice(start);
+}
+
+/**
+ * True when the where clause constrains by an ownership key. Matches both
+ * `businessId: x` and the ES6 shorthand `{ businessId, ... }`.
+ */
+function isScoped(where, keys) {
+  return keys.some((k) => new RegExp(`\\b${k}\\b`).test(where));
+}
+
 const findings = [];
 
 for (const file of walk(ROOT)) {
@@ -71,7 +99,8 @@ for (const file of walk(ROOT)) {
         const lineNo = src.slice(0, idx).split('\n').length;
         const prevLine = lines[lineNo - 2] || '';
 
-        const scoped = SCOPE_KEYS.some((k) => call.includes(`${k}:`));
+        const where = extractWhere(call);
+        const scoped = where !== '' && isScoped(where, SCOPE_KEYS);
         const acknowledged = prevLine.includes('tenant-scope-ok');
 
         if (!scoped && !acknowledged) {

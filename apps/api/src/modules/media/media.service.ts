@@ -99,12 +99,14 @@ export class MediaService implements OnModuleInit {
     if (mediaCount > 0) return true;
 
     // Check BusinessDocument
+    // tenant-scope-ok: platform-wide storage statistics (admin)
     const docCount = await this.db.businessDocument.count({
       where: { fileUrl: { contains: fileKey } },
     });
     if (docCount > 0) return true;
 
     // Check Business Logo/Cover
+    // tenant-scope-ok: platform-wide storage statistics (admin)
     const bizCount = await this.db.business.count({
       where: {
         OR: [
@@ -122,6 +124,7 @@ export class MediaService implements OnModuleInit {
     if (userCount > 0) return true;
 
     // Check Bill Image
+    // tenant-scope-ok: platform-wide storage statistics (admin)
     const billCount = await this.db.bill.count({
       where: { billImage: { contains: fileKey } },
     });
