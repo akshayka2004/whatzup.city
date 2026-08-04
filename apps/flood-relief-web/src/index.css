@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Source Sans 3", system-ui, sans-serif;
+  --font-heading: "Lexend", system-ui, sans-serif;
+
+  --color-primary-50: #f0f5fa;
+  --color-primary-100: #dbe4ee;
+  --color-primary-200: #b3c5da;
+  --color-primary-300: #7f9dbf;
+  --color-primary-400: #4d6f96;
+  --color-primary-500: #2d4a6e;
+  --color-primary-600: #1b3252;
+  --color-primary-700: #142640;
+  --color-primary-800: #0f1c30;
+  --color-primary-900: #0f172a;
+  --color-primary-950: #060a15;
+
+  --color-accent-50: #f0f9ff;
+  --color-accent-100: #e0f2fe;
+  --color-accent-200: #b9e6fe;
+  --color-accent-300: #7cd4fd;
+  --color-accent-400: #36bdf9;
+  --color-accent-500: #0ca3e9;
+  --color-accent-600: #0369a1;
+  --color-accent-700: #045484;
+  --color-accent-800: #08476d;
+  --color-accent-900: #0c3c5c;
+
+  --color-success-50: #f0fdf4;
+  --color-success-500: #16a34a;
+  --color-success-600: #15803d;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-500: #d97706;
+  --color-warning-600: #b45309;
+
+  --color-danger-50: #fef2f2;
+  --color-danger-500: #dc2626;
+  --color-danger-600: #b91c1c;
+
+  --color-surface: #f8fafc;
+  --color-surface-muted: #e8ecf1;
+  --color-border-subtle: #e2e8f0;
+
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --animate-marquee: marquee 32s linear infinite;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background-color: var(--color-surface);
+    color: var(--color-primary-900);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-accent-500);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+@layer utilities {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

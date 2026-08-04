@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+  // Isolated output — pnpm dedupes identical @prisma/client versions across the
+  // workspace, so without a package-unique path this collides with packages/database's
+  // generated client (whichever `prisma generate` ran last wins, silently).
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+}
+
+enum District {
+  THIRUVANANTHAPURAM
+  KOLLAM
+  PATHANAMTHITTA
+  ALAPPUZHA
+  KOTTAYAM
+  IDUKKI
+  ERNAKULAM
+  THRISSUR
+  PALAKKAD
+  MALAPPURAM
+  KOZHIKODE
+  WAYANAD
+  KANNUR
+  KASARAGOD
+}
+
+enum AlertCategory {
+  WEATHER_WARNING
+  EVACUATION
+  ROAD_CLOSURE
+  RESCUE_OPERATION
+  RELIEF_CAMP_UPDATE
+  HEALTH_ADVISORY
+  GENERAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  RESOLVED
+  INACTIVE
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Notification {
+  id            String        @id @default(uuid())
+  title         String
+  description   String
+  category      AlertCategory
+  district      District
+  publishedDate DateTime
+  status        AlertStatus   @default(ACTIVE)
+  isPinned      Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([district])
+  @@index([status])
+  @@index([isPinned])
+  @@map("notifications")
+}
+
+model CollectionCentre {
+  id                  String                      @id @default(uuid())
+  name                String
+  district            District
+  region              String
+  address             String
+  mapLink             String?
+  contactName         String
+  contactDesignation  String
+  contactPhone        String
+  contactAltPhone     String?
+  workingHours        String?
+  remarks             String?
+  officials           CollectionCentreOfficial[]
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+
+  @@index([district])
+  @@map("collection_centres")
+}
+
+model CollectionCentreOfficial {
+  id             String           @id @default(uuid())
+  centreId       String
+  centre         CollectionCentre @relation(fields: [centreId], references: [id], onDelete: Cascade)
+  name           String
+  designation    String
+  contactNumber  String
+  createdAt      DateTime         @default(now())
+
+  @@index([centreId])
+  @@map("collection_centre_officials")
+}
+
+model ReliefCamp {
+  id                 String             @id @default(uuid())
+  name               String
+  district           District
+  region             String
+  address            String
+  mapLink            String?
+  contactName        String
+  contactDesignation String
+  contactPhone       String
+  remarks            String?
+  officials          CampOfficial[]
+  requirements       CampRequirement[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@index([district])
+  @@map("relief_camps")
+}
+
+model CampOfficial {
+  id            String     @id @default(uuid())
+  campId        String
+  camp          ReliefCamp @relation(fields: [campId], references: [id], onDelete: Cascade)
+  name          String
+  designation   String
+  department    String
+  contactNumber String
+  createdAt     DateTime   @default(now())
+
+  @@index([campId])
+  @@map("camp_officials")
+}
+
+model CampRequirement {
+  id        String     @id @default(uuid())
+  campId    String
+  camp      ReliefCamp @relation(fields: [campId], references: [id], onDelete: Cascade)
+  itemName  String
+  quantity  String
+  priority  Priority   @default(MEDIUM)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([campId])
+  @@index([priority])
+  @@map("camp_requirements")
+}
+
+model VolunteerGroup {
+  id              String                    @id @default(uuid())
+  name            String
+  district        District
+  region          String
+  coordinatorName  String
+  coordinatorPhone String
+  whatsappLink    String?
+  telegramLink    String?
+  website         String?
+  remarks         String?
+  officials       VolunteerGroupOfficial[]
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  @@index([district])
+  @@map("volunteer_groups")
+}
+
+model VolunteerGroupOfficial {
+  id            String         @id @default(uuid())
+  groupId       String
+  group         VolunteerGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  name          String
+  designation   String
+  department    String
+  contactNumber String
+  createdAt     DateTime       @default(now())
+
+  @@index([groupId])
+  @@map("volunteer_group_officials")
+}
+
+model EmergencyContact {
+  id            String   @id @default(uuid())
+  department    String
+  officialName  String
+  designation   String
+  district      District
+  phoneNumber   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([district])
+  @@map("emergency_contacts")
+}

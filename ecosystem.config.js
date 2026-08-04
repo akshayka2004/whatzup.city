@@ -54,8 +54,26 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 6001
+        PORT: 6001,
+        FLOOD_RELIEF_URL: 'https://floodrelief.whtzup.city',
+        MARKETPLACE_URL: 'https://app.whtzup.city',
+      }
+    },
+    {
+      name: 'saas-flood-relief-api',
+      cwd: './apps/flood-relief-api',
+      script: 'dist/server.js',
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 4002,
+        // Own dedicated Postgres + JWT secret — see apps/flood-relief-api/.env.example.
+        // Loaded from apps/flood-relief-api/.env by dotenv at startup (not from this file).
       }
     }
+    // flood-relief-web has no PM2 entry — its production build (apps/flood-relief-web/dist)
+    // is served directly by nginx as static files (see docker/nginx/default.conf).
   ]
 };

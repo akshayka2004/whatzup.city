@@ -1,0 +1,30 @@
+export const DISTRICTS = [
+  "THIRUVANANTHAPURAM",
+  "KOLLAM",
+  "PATHANAMTHITTA",
+  "ALAPPUZHA",
+  "KOTTAYAM",
+  "IDUKKI",
+  "ERNAKULAM",
+  "THRISSUR",
+  "PALAKKAD",
+  "MALAPPURAM",
+  "KOZHIKODE",
+  "WAYANAD",
+  "KANNUR",
+  "KASARAGOD",
+] as const;
+
+export const ALERT_CATEGORIES = [
+  "WEATHER_WARNING",
+  "EVACUATION",
+  "ROAD_CLOSURE",
+  "RESCUE_OPERATION",
+  "RELIEF_CAMP_UPDATE",
+  "HEALTH_ADVISORY",
+  "GENERAL",
+] as const;
+
+export const ALERT_STATUSES = ["ACTIVE", "RESOLVED", "INACTIVE"] as const;
+
+export const PRIORITIES = ["HIGH", "MEDIUM", "LOW"] as const;

@@ -40,6 +40,7 @@ Thumbs.db
 # Prisma
 # migrations/ tracked (adopted prisma migrate) — do NOT ignore
 packages/database/node_modules/
+apps/flood-relief-api/generated/
 
 # Docker
 docker/data/
