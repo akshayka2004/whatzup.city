@@ -2,7 +2,7 @@
 
 Covers first-time production setup for `apps/flood-relief-api` and `apps/flood-relief-web`,
 plus the changes to `apps/launch-page`. Local repo changes are already committed and pushed
-(`4c80cfa` on `main`). Everything below runs **on the VPS**, over SSH.
+to `main`. Everything below runs **on the VPS**, over SSH.
 
 ## Database decision: self-hosted on the same VPS
 
@@ -91,34 +91,46 @@ pnpm install
 cat > apps/flood-relief-api/.env <<'ENV'
 NODE_ENV=production
 PORT=4002
-DATABASE_URL="postgresql://kfr_user:REPLACE_WITH_THE_PASSWORD_FROM_STEP_2@localhost:5432/kerala_flood_relief?schema=public"
-JWT_SECRET=REPLACE_WITH_A_NEW_SECRET_NEVER_REUSE_THE_SAAS_PLATFORMS
+DATABASE_URL="postgresql://kfr_user:REPLACE_WITH_A_STRONG_GENERATED_PASSWORD@localhost:5432/kerala_flood_relief?schema=public"
+JWT_SECRET=gen_pass
 JWT_EXPIRES_IN=8h
 CORS_ORIGIN=https://floodrelief.whtzup.city
 SEED_ADMIN_NAME="Portal Administrator"
 SEED_ADMIN_EMAIL=admin@keralafloodrelief.gov.in
-SEED_ADMIN_PASSWORD=REPLACE_WITH_A_REAL_PASSWORD_BEFORE_SEEDING
+SEED_ADMIN_PASSWORD=gen_pass
 ENV
 ```
 
 Generate the JWT secret with `openssl rand -hex 48`. **Change `SEED_ADMIN_PASSWORD` before
 running the seed step** — don't ship the dev default to production.
 
-## 6. Build
+## 6. Generate the Prisma client
+
+`apps/flood-relief-api/generated/` is gitignored (it's generated code, not source) — it
+does not exist after a fresh `git pull`, and `tsc` will fail with `Cannot find module
+'../../generated/prisma'` if this step is skipped:
+
+```bash
+cd apps/flood-relief-api
+npx prisma generate
+cd ../..
+```
+
+## 7. Build
 
 ```bash
 pnpm --filter @saas/flood-relief-api run build
 pnpm --filter @saas/flood-relief-web run build
 ```
 
-## 7. Apply the database schema and seed the first admin
+## 8. Apply the database schema and seed the first admin
 
 ```bash
 pnpm --filter @saas/flood-relief-api run prisma:deploy   # applies migrations, non-interactive
 pnpm --filter @saas/flood-relief-api run prisma:seed     # creates the admin user + sample data
 ```
 
-## 8. Start/reload PM2
+## 9. Start/reload PM2
 
 `ecosystem.config.js` already has the new `saas-flood-relief-api` entry and the updated
 `saas-launch-page` entry (new `FLOOD_RELIEF_URL`/`MARKETPLACE_URL` env vars) from the
@@ -131,7 +143,7 @@ pm2 save
 
 (`saas-launch-page` needs a reload too — its `server.ts` and `package.json` changed.)
 
-## 9. nginx
+## 10. nginx
 
 **Verify first**: is `docker/nginx/default.conf` (in this repo) actually the file nginx
 reads on this VPS, or is the live config hand-written elsewhere? If it's this file:
@@ -147,12 +159,12 @@ If the live config is elsewhere, add the `floodrelief.${DOMAIN}` server block fr
 `apps/flood-relief-web/dist` as static files) into that file instead, adjusting the `root`
 path to match where this repo actually lives on the VPS.
 
-## 10. DNS
+## 11. DNS
 
 Add an A (or CNAME) record: `floodrelief.whtzup.city` → this VPS's IP, same as your
 existing `api.`/`app.` records.
 
-## 11. TLS
+## 12. TLS
 
 Once DNS has propagated:
 
@@ -160,7 +172,7 @@ Once DNS has propagated:
 sudo certbot --nginx -d floodrelief.whtzup.city
 ```
 
-## 12. Verify
+## 13. Verify
 
 ```bash
 curl https://floodrelief.whtzup.city/api/health
