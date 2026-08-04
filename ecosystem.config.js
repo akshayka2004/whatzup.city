@@ -56,7 +56,7 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 6001,
         FLOOD_RELIEF_URL: 'https://floodrelief.whtzup.city',
-        MARKETPLACE_URL: 'https://app.whtzup.city',
+        MARKETPLACE_URL: 'https://platform.whtzup.city',
       }
     },
     {
