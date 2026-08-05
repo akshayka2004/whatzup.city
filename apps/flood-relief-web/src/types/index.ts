@@ -110,6 +110,7 @@ export interface CollectionCentre {
   workingHours?: string | null;
   remarks?: string | null;
   officials: Official[];
+  requirements: CampRequirement[];
   createdAt: string;
   updatedAt: string;
 }
@@ -216,6 +217,7 @@ export interface CollectionCentreInput {
   workingHours: string;
   remarks: string;
   officials: OfficialInput[];
+  requirements: RequirementInput[];
 }
 
 export interface ReliefCampInput {

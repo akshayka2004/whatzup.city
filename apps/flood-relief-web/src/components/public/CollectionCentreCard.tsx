@@ -1,13 +1,20 @@
 import { MapPin, Phone, Clock, User } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { DistrictBadge } from "@/components/StatusBadges";
+import { DistrictBadge, PriorityBadge } from "@/components/StatusBadges";
 import type { CollectionCentre } from "@/types";
 
 export function CollectionCentreCard({ centre }: { centre: CollectionCentre }) {
+  const highPriorityCount = centre.requirements.filter((r) => r.priority === "HIGH").length;
+
   return (
     <Card className="flex flex-col gap-3 p-5">
       <div className="flex items-start justify-between gap-2">
         <DistrictBadge district={centre.district} />
+        {highPriorityCount > 0 && (
+          <span className="text-xs font-semibold text-danger-600">
+            {highPriorityCount} urgent requirement{highPriorityCount > 1 ? "s" : ""}
+          </span>
+        )}
       </div>
       <h3 className="font-heading text-base font-semibold text-primary-900">{centre.name}</h3>
       <p className="flex items-start gap-1.5 text-sm text-primary-600">
@@ -37,6 +44,19 @@ export function CollectionCentreCard({ centre }: { centre: CollectionCentre }) {
             {centre.officials.map((o) => (
               <li key={o.id}>
                 {o.name} — {o.designation} ({o.contactNumber})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {centre.requirements.length > 0 && (
+        <div className="border-t border-border-subtle pt-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary-400">Immediate requirements</p>
+          <ul className="mt-1.5 flex flex-col gap-1.5">
+            {centre.requirements.map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-2 text-sm text-primary-600">
+                <span>{r.itemName} <span className="text-primary-400">× {r.quantity}</span></span>
+                <PriorityBadge priority={r.priority} />
               </li>
             ))}
           </ul>

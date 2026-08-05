@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Input, Select, Textarea } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 import { OfficialsEditor } from "@/components/admin/OfficialsEditor";
+import { RequirementsEditor } from "@/components/admin/RequirementsEditor";
 import {
   DISTRICTS,
   DISTRICT_LABELS,
@@ -26,6 +27,7 @@ function toFormValues(centre: CollectionCentre | null): CollectionCentreFormValu
     workingHours: centre?.workingHours ?? "",
     remarks: centre?.remarks ?? "",
     officials: centre?.officials.map((o) => ({ name: o.name, designation: o.designation, contactNumber: o.contactNumber })) ?? [],
+    requirements: centre?.requirements.map((r) => ({ itemName: r.itemName, quantity: r.quantity, priority: r.priority })) ?? [],
   };
 }
 
@@ -85,6 +87,11 @@ export function CollectionCentreForm({
       <Textarea label="Remarks" value={values.remarks} onChange={(e) => setValues((v) => ({ ...v, remarks: e.target.value }))} />
 
       <OfficialsEditor value={values.officials} onChange={(officials) => setValues((v) => ({ ...v, officials }))} />
+      <RequirementsEditor
+        title="Immediate requirements"
+        value={values.requirements}
+        onChange={(requirements) => setValues((v) => ({ ...v, requirements }))}
+      />
 
       <div className="mt-2 flex justify-end gap-3 border-t border-border-subtle pt-4">
         <Button type="submit" isLoading={isSubmitting}>

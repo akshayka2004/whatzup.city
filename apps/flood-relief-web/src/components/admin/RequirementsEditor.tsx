@@ -5,9 +5,11 @@ import { PRIORITIES, type Priority, type RequirementInput } from "@/types";
 export function RequirementsEditor({
   value,
   onChange,
+  title = "Daily requirements",
 }: {
   value: RequirementInput[];
   onChange: (next: RequirementInput[]) => void;
+  title?: string;
 }) {
   function update(index: number, patch: Partial<RequirementInput>) {
     onChange(value.map((r, i) => (i === index ? { ...r, ...patch } : r)));
@@ -24,7 +26,7 @@ export function RequirementsEditor({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-primary-800">Daily requirements</p>
+        <p className="text-sm font-semibold text-primary-800">{title}</p>
         <Button type="button" variant="outline" size="sm" onClick={add}>
           <Plus className="size-4" aria-hidden="true" />
           Add requirement

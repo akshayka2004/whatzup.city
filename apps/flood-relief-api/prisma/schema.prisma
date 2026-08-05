@@ -98,6 +98,7 @@ model CollectionCentre {
   workingHours        String?
   remarks             String?
   officials           CollectionCentreOfficial[]
+  requirements        CollectionCentreRequirement[]
   createdAt           DateTime                    @default(now())
   updatedAt           DateTime                    @updatedAt
 
@@ -116,6 +117,21 @@ model CollectionCentreOfficial {
 
   @@index([centreId])
   @@map("collection_centre_officials")
+}
+
+model CollectionCentreRequirement {
+  id        String           @id @default(uuid())
+  centreId  String
+  centre    CollectionCentre @relation(fields: [centreId], references: [id], onDelete: Cascade)
+  itemName  String
+  quantity  String
+  priority  Priority         @default(MEDIUM)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([centreId])
+  @@index([priority])
+  @@map("collection_centre_requirements")
 }
 
 model ReliefCamp {

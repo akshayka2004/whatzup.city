@@ -17,7 +17,13 @@ const columns: Column<CollectionCentre>[] = [
   },
   { header: "District", render: (centre) => <DistrictBadge district={centre.district} /> },
   { header: "Contact", render: (centre) => `${centre.contactName} (${centre.contactPhone})` },
-  { header: "Officials", render: (centre) => centre.officials.length },
+  {
+    header: "Requirements",
+    render: (centre) => {
+      const high = centre.requirements.filter((r) => r.priority === "HIGH").length;
+      return `${centre.requirements.length} total${high ? ` · ${high} urgent` : ""}`;
+    },
+  },
 ];
 
 export function CollectionCentresAdminPage() {

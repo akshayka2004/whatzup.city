@@ -8,7 +8,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { getPagination, buildPaginatedResponse } from "../utils/pagination";
 import { idParamSchema, paginationQuerySchema, phoneSchema } from "../utils/zodHelpers";
-import { DISTRICTS } from "../constants";
+import { DISTRICTS, PRIORITIES } from "../constants";
 
 const router = Router();
 
@@ -16,6 +16,12 @@ const officialSchema = z.object({
   name: z.string().trim().min(2).max(150),
   designation: z.string().trim().min(2).max(150),
   contactNumber: phoneSchema,
+});
+
+const requirementSchema = z.object({
+  itemName: z.string().trim().min(2).max(150),
+  quantity: z.string().trim().min(1).max(100),
+  priority: z.enum(PRIORITIES).default("MEDIUM"),
 });
 
 const centreBodySchema = z.object({
@@ -31,9 +37,10 @@ const centreBodySchema = z.object({
   workingHours: z.string().trim().max(150).optional().or(z.literal("").transform(() => undefined)),
   remarks: z.string().trim().max(2000).optional().or(z.literal("").transform(() => undefined)),
   officials: z.array(officialSchema).default([]),
+  requirements: z.array(requirementSchema).default([]),
 });
 
-const include = { officials: true } satisfies Prisma.CollectionCentreInclude;
+const include = { officials: true, requirements: true } satisfies Prisma.CollectionCentreInclude;
 
 router.get(
   "/",
@@ -89,9 +96,9 @@ router.post(
   requireRole("ADMIN"),
   validate({ body: centreBodySchema }),
   asyncHandler(async (req, res) => {
-    const { officials, ...data } = req.body;
+    const { officials, requirements, ...data } = req.body;
     const centre = await prisma.collectionCentre.create({
-      data: { ...data, officials: { create: officials } },
+      data: { ...data, officials: { create: officials }, requirements: { create: requirements } },
       include,
     });
     res.status(201).json({ success: true, data: centre });
@@ -104,15 +111,16 @@ router.put(
   requireRole("ADMIN"),
   validate({ params: idParamSchema, body: centreBodySchema }),
   asyncHandler(async (req, res) => {
-    const { officials, ...data } = req.body;
+    const { officials, requirements, ...data } = req.body;
     const existing = await prisma.collectionCentre.findUnique({ where: { id: req.params.id } });
     if (!existing) throw ApiError.notFound("Collection centre not found");
 
     const centre = await prisma.$transaction(async (tx) => {
       await tx.collectionCentreOfficial.deleteMany({ where: { centreId: req.params.id } });
+      await tx.collectionCentreRequirement.deleteMany({ where: { centreId: req.params.id } });
       return tx.collectionCentre.update({
         where: { id: req.params.id },
-        data: { ...data, officials: { create: officials } },
+        data: { ...data, officials: { create: officials }, requirements: { create: requirements } },
         include,
       });
     });
