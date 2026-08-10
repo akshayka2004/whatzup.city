@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import {
-  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, RENEWAL_REMINDER_DAYS,
+  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, HOTEL_DURATION_DAYS, RENEWAL_REMINDER_DAYS,
   getPlan, formatINR, withTax, TAX_PERCENT,
   PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
 } from '@/lib/subscription-plans';
@@ -45,7 +45,7 @@ export function SubscriptionPaywall() {
   const [ready, setReady] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
-  const [selectedPlan, setSelectedPlan] = useState<string>('WHTZUP_X');
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [proof, setProof] = useState<File | null>(null);
   const [payerRef, setPayerRef] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -213,7 +213,7 @@ export function SubscriptionPaywall() {
               <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
             </div>
             <p className="text-[11px] text-muted-foreground -mt-4">
-              Valid for {PLAN_DURATION_DAYS} days from activation.
+              Valid for {isHotel ? HOTEL_DURATION_DAYS : PLAN_DURATION_DAYS} days from activation.
             </p>
 
             <div className="flex flex-col items-center gap-3 rounded-xl border border-border p-6">
@@ -265,7 +265,7 @@ export function SubscriptionPaywall() {
             <Button
               type="button"
               onClick={submit}
-              disabled={submitting || !proof}
+              disabled={submitting || !proof || (!isHotel && !selectedPlan)}
               className="w-full h-11 rounded-xl font-semibold cursor-pointer"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit payment for verification'}

@@ -8,7 +8,13 @@
  * Keep in sync with the mirror in apps/api/src/modules/subscriptions/subscriptions.service.ts.
  */
 
+/** Standard plans are billed per quarter. */
 export const PLAN_DURATION_DAYS = 90;
+/**
+ * Hotels are billed annually — star classification is a yearly slab charge and
+ * amenity/category listings are yearly, per the client pricing sheet.
+ */
+export const HOTEL_DURATION_DAYS = 365;
 /** Show the renewal prompt this many days before a subscription expires. */
 export const RENEWAL_REMINDER_DAYS = 5;
 
@@ -25,12 +31,25 @@ export type SubscriptionPlan = {
 
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
+    code: 'WHTZUP',
+    name: 'Whtzup',
+    mrp: 2500,
+    offerPrice: 1500,
+    offers: 1,
+    vouchers: 1,
+    features: [
+      'Web App Listing',
+      'Website Listing (information only)',
+      'No backlinks',
+    ],
+  },
+  {
     code: 'WHTZUP_PLUS',
     name: 'Whtzup+',
     mrp: 5000,
     offerPrice: 2500,
-    offers: 1,
-    vouchers: 1,
+    offers: 3,
+    vouchers: 3,
     features: [
       'Web App Listing',
       'Website Listing (information only)',
@@ -62,7 +81,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       'Web App Listing',
       'Website Listing with backlinks',
       '1 Sponsored Category Landing Page poster image',
-      'WhatsApp Channel Campaign — 1 weekly poster/video',
+      'WhatsApp Channel Campaign — 1 poster/video per month',
     ],
   },
   {
@@ -76,7 +95,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
       'Web App Listing',
       'Website Listing with backlinks',
       'Sponsored Category Landing Page video (up to 60s) + poster image',
-      'WhatsApp Channel Campaign — 1 weekly poster/video',
+      'WhatsApp Channel Campaign — 1 poster & 1 video per week',
     ],
   },
 ];

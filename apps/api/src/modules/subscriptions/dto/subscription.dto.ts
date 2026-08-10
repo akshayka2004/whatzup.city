@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export enum PackageNameEnum {
   // ── Current plans ────────────────────────────────────────────
+  WHTZUP = 'WHTZUP',
   WHTZUP_PLUS = 'WHTZUP_PLUS',
   WHTZUP_X = 'WHTZUP_X',
   WHTZUP_XL = 'WHTZUP_XL',
@@ -23,6 +24,7 @@ export enum PackageNameEnum {
 
 /** Plans offered to new signups (retired ones excluded). */
 export const ACTIVE_PACKAGES = [
+  PackageNameEnum.WHTZUP,
   PackageNameEnum.WHTZUP_PLUS,
   PackageNameEnum.WHTZUP_X,
   PackageNameEnum.WHTZUP_XL,

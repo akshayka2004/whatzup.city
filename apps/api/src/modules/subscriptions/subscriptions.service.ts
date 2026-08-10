@@ -14,8 +14,13 @@ import {
 const HOTEL_STAR_PRICING: Record<number, number> = { 5: 15000, 4: 12500, 3: 10000, 2: 7500, 1: 5000 };
 const HOTEL_ADDON_PRICE = 2500;
 
-/** All plans (and hotel listings) run for one quarter. */
+/** Standard packages are billed per quarter. */
 export const PLAN_DURATION_DAYS = 90;
+/**
+ * Hotels are billed annually: star classification is a yearly slab charge and
+ * amenity/category listings are yearly, per the client pricing sheet.
+ */
+export const HOTEL_DURATION_DAYS = 365;
 
 /** GST added on top of every plan/hotel base price. Mirrors apps/web/lib/subscription-plans.ts. */
 export const TAX_PERCENT = 18;
@@ -119,7 +124,8 @@ export class SubscriptionsService {
     const totals = withTax(starBase + selectedCount * HOTEL_ADDON_PRICE);
     const pricing = totals.total;
 
-    const duration = PLAN_DURATION_DAYS; // same quarterly cycle as the standard plans
+    // Hotels are billed annually, unlike the quarterly standard packages.
+    const duration = HOTEL_DURATION_DAYS;
     const startDate = new Date();
     const endDate = new Date();
     endDate.setDate(startDate.getDate() + duration);
@@ -263,12 +269,20 @@ export class SubscriptionsService {
       // ── Current plans. `pricing` is the offer price (what we charge);
       //    `mrp` is shown struck through in the UI. Mirrors
       //    apps/web/lib/subscription-plans.ts — keep both in sync.
-      [PackageNameEnum.WHTZUP_PLUS]: {
-        pricing: 2500,
-        mrp: 5000,
+      [PackageNameEnum.WHTZUP]: {
+        pricing: 1500,
+        mrp: 2500,
         postingLimits: 1,
         categoryLimits: 1,
         featureFlags: { listingPackage: true, offers: 1, vouchers: 1 },
+        features: ['Web App Listing', 'Website Listing (information only)', 'No backlinks'],
+      },
+      [PackageNameEnum.WHTZUP_PLUS]: {
+        pricing: 2500,
+        mrp: 5000,
+        postingLimits: 3,
+        categoryLimits: 1,
+        featureFlags: { listingPackage: true, offers: 3, vouchers: 3 },
         features: ['Web App Listing', 'Website Listing (information only)', 'No backlinks'],
       },
       [PackageNameEnum.WHTZUP_X]: {
@@ -292,7 +306,7 @@ export class SubscriptionsService {
           'Web App Listing',
           'Website Listing with backlinks',
           '1 Sponsored Category Landing Page poster image',
-          'WhatsApp Channel Campaign — 1 weekly poster/video',
+          'WhatsApp Channel Campaign — 1 poster/video per month',
         ],
       },
       [PackageNameEnum.WHTZUP_LUXE]: {
@@ -308,7 +322,7 @@ export class SubscriptionsService {
           'Web App Listing',
           'Website Listing with backlinks',
           'Sponsored Category Landing Page video (up to 60s) + poster image',
-          'WhatsApp Channel Campaign — 1 weekly poster/video',
+          'WhatsApp Channel Campaign — 1 poster & 1 video per week',
         ],
       },
 

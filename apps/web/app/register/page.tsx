@@ -19,7 +19,7 @@ import {
   STAR_OPTIONS, HOTEL_AMENITIES, computeHotelCharge, type HotelAmenities,
 } from '@/lib/hotel-pricing';
 import {
-  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, getPlan, formatINR, withTax, TAX_PERCENT,
+  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, HOTEL_DURATION_DAYS, getPlan, formatINR, withTax, TAX_PERCENT,
   PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
 } from '@/lib/subscription-plans';
 import {
@@ -265,7 +265,7 @@ export default function UnifiedRegisterPage() {
 
   // ── Step 4: plan / hotel classification, then payment ───────────
   const isHotel = categorySlug === 'hotel';
-  const [selectedPlan, setSelectedPlan] = useState<string>('WHTZUP_X');
+  const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [hotelStarRating, setHotelStarRating] = useState<number | null>(null);
   const [hotelAmenities, setHotelAmenities] = useState<HotelAmenities>({});
   /** Price stays hidden until the payer explicitly proceeds. */
@@ -1749,7 +1749,9 @@ export default function UnifiedRegisterPage() {
                     <Button
                       type="button"
                       onClick={() => setShowPayment(true)}
-                      disabled={isHotel && !hotelStarRating}
+                      // Nothing is pre-selected, so require an explicit choice:
+                      // a star rating for hotels, a plan for everyone else.
+                      disabled={isHotel ? !hotelStarRating : !selectedPlan}
                       className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer text-[#D3DAD9]"
                     >
                       Proceed to Payment <ArrowRight className="h-4 w-4" />
@@ -1817,7 +1819,7 @@ export default function UnifiedRegisterPage() {
                           <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
                         </div>
                         <p className="text-[11px] text-muted-foreground">
-                          Valid for {PLAN_DURATION_DAYS} days from activation. Inclusive of {TAX_PERCENT}% GST.
+                          Valid for {isHotel ? HOTEL_DURATION_DAYS : PLAN_DURATION_DAYS} days from activation. Inclusive of {TAX_PERCENT}% GST.
                         </p>
                       </div>
                     );
