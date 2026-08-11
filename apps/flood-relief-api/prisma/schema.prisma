@@ -54,6 +54,12 @@ enum Priority {
   LOW
 }
 
+enum CentreStatus {
+  OPEN
+  PAUSED
+  CLOSED
+}
+
 model User {
   id           String   @id @default(uuid())
   name         String
@@ -97,12 +103,14 @@ model CollectionCentre {
   contactAltPhone     String?
   workingHours        String?
   remarks             String?
+  status              CentreStatus                @default(OPEN)
   officials           CollectionCentreOfficial[]
   requirements        CollectionCentreRequirement[]
   createdAt           DateTime                    @default(now())
   updatedAt           DateTime                    @updatedAt
 
   @@index([district])
+  @@index([status])
   @@map("collection_centres")
 }
 

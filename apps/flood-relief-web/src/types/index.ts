@@ -60,6 +60,9 @@ export type AlertStatus = (typeof ALERT_STATUSES)[number];
 export const PRIORITIES = ["HIGH", "MEDIUM", "LOW"] as const;
 export type Priority = (typeof PRIORITIES)[number];
 
+export const CENTRE_STATUSES = ["OPEN", "PAUSED", "CLOSED"] as const;
+export type CentreStatus = (typeof CENTRE_STATUSES)[number];
+
 export interface PaginationInfo {
   page: number;
   pageSize: number;
@@ -109,6 +112,7 @@ export interface CollectionCentre {
   contactAltPhone?: string | null;
   workingHours?: string | null;
   remarks?: string | null;
+  status: CentreStatus;
   officials: Official[];
   requirements: CampRequirement[];
   createdAt: string;
@@ -216,6 +220,7 @@ export interface CollectionCentreInput {
   contactAltPhone: string;
   workingHours: string;
   remarks: string;
+  status: CentreStatus;
   officials: OfficialInput[];
   requirements: RequirementInput[];
 }

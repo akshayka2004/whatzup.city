@@ -1,6 +1,6 @@
 import { MapPin, Phone, Clock, User } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { DistrictBadge, PriorityBadge } from "@/components/StatusBadges";
+import { CentreStatusBadge, DistrictBadge, PriorityBadge } from "@/components/StatusBadges";
 import type { CollectionCentre } from "@/types";
 
 export function CollectionCentreCard({ centre }: { centre: CollectionCentre }) {
@@ -9,7 +9,10 @@ export function CollectionCentreCard({ centre }: { centre: CollectionCentre }) {
   return (
     <Card className="flex flex-col gap-3 p-5">
       <div className="flex items-start justify-between gap-2">
-        <DistrictBadge district={centre.district} />
+        <div className="flex flex-wrap gap-1.5">
+          <DistrictBadge district={centre.district} />
+          <CentreStatusBadge status={centre.status} />
+        </div>
         {highPriorityCount > 0 && (
           <span className="text-xs font-semibold text-danger-600">
             {highPriorityCount} urgent requirement{highPriorityCount > 1 ? "s" : ""}

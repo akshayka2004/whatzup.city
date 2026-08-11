@@ -8,7 +8,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { getPagination, buildPaginatedResponse } from "../utils/pagination";
 import { idParamSchema, paginationQuerySchema, phoneSchema } from "../utils/zodHelpers";
-import { DISTRICTS, PRIORITIES } from "../constants";
+import { DISTRICTS, PRIORITIES, CENTRE_STATUSES } from "../constants";
 
 const router = Router();
 
@@ -36,6 +36,7 @@ const centreBodySchema = z.object({
   contactAltPhone: phoneSchema.optional().or(z.literal("").transform(() => undefined)),
   workingHours: z.string().trim().max(150).optional().or(z.literal("").transform(() => undefined)),
   remarks: z.string().trim().max(2000).optional().or(z.literal("").transform(() => undefined)),
+  status: z.enum(CENTRE_STATUSES).default("OPEN"),
   officials: z.array(officialSchema).default([]),
   requirements: z.array(requirementSchema).default([]),
 });

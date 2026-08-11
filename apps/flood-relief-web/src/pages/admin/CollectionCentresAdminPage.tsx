@@ -1,6 +1,6 @@
 import { AdminListShell } from "@/components/admin/AdminListShell";
 import { CollectionCentreForm } from "@/components/admin/forms/CollectionCentreForm";
-import { DistrictBadge } from "@/components/StatusBadges";
+import { CentreStatusBadge, DistrictBadge } from "@/components/StatusBadges";
 import type { Column } from "@/components/admin/DataTable";
 import { collectionCentresApi } from "@/api/resources";
 import type { CollectionCentre } from "@/types";
@@ -16,6 +16,7 @@ const columns: Column<CollectionCentre>[] = [
     ),
   },
   { header: "District", render: (centre) => <DistrictBadge district={centre.district} /> },
+  { header: "Status", render: (centre) => <CentreStatusBadge status={centre.status} /> },
   { header: "Contact", render: (centre) => `${centre.contactName} (${centre.contactPhone})` },
   {
     header: "Requirements",

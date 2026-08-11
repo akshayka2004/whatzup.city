@@ -4,12 +4,20 @@ import { Button } from "@/components/ui/Button";
 import { OfficialsEditor } from "@/components/admin/OfficialsEditor";
 import { RequirementsEditor } from "@/components/admin/RequirementsEditor";
 import {
+  CENTRE_STATUSES,
   DISTRICTS,
   DISTRICT_LABELS,
+  type CentreStatus,
   type CollectionCentre,
   type CollectionCentreInput,
   type District,
 } from "@/types";
+
+const CENTRE_STATUS_LABELS: Record<CentreStatus, string> = {
+  OPEN: "Open",
+  PAUSED: "Paused",
+  CLOSED: "Closed",
+};
 
 export type CollectionCentreFormValues = CollectionCentreInput;
 
@@ -26,6 +34,7 @@ function toFormValues(centre: CollectionCentre | null): CollectionCentreFormValu
     contactAltPhone: centre?.contactAltPhone ?? "",
     workingHours: centre?.workingHours ?? "",
     remarks: centre?.remarks ?? "",
+    status: centre?.status ?? "OPEN",
     officials: centre?.officials.map((o) => ({ name: o.name, designation: o.designation, contactNumber: o.contactNumber })) ?? [],
     requirements: centre?.requirements.map((r) => ({ itemName: r.itemName, quantity: r.quantity, priority: r.priority })) ?? [],
   };
@@ -83,6 +92,18 @@ export function CollectionCentreForm({
           onChange={(e) => setValues((v) => ({ ...v, contactAltPhone: e.target.value }))}
         />
         <Input label="Working hours" value={values.workingHours} onChange={(e) => setValues((v) => ({ ...v, workingHours: e.target.value }))} />
+        <Select
+          label="Status"
+          required
+          value={values.status}
+          onChange={(e) => setValues((v) => ({ ...v, status: e.target.value as CentreStatus }))}
+        >
+          {CENTRE_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {CENTRE_STATUS_LABELS[s]}
+            </option>
+          ))}
+        </Select>
       </div>
       <Textarea label="Remarks" value={values.remarks} onChange={(e) => setValues((v) => ({ ...v, remarks: e.target.value }))} />
 

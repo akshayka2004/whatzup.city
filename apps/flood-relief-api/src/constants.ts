@@ -28,3 +28,5 @@ export const ALERT_CATEGORIES = [
 export const ALERT_STATUSES = ["ACTIVE", "RESOLVED", "INACTIVE"] as const;
 
 export const PRIORITIES = ["HIGH", "MEDIUM", "LOW"] as const;
+
+export const CENTRE_STATUSES = ["OPEN", "PAUSED", "CLOSED"] as const;
