@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Tag, Calendar, X, Eye, CheckCircle2, Sparkles, Loader2 } from 'lucide-react';
+import { Tag, Calendar, X, Eye, CheckCircle2, Sparkles, Loader2, Phone } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -17,6 +17,7 @@ import {
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES, getViewerCity, setViewerCity } from '@/lib/constants';
 import { ReportButton } from '@/components/report-button';
+import { categoryLabel, deliverySummary, type PlatformOfferDetails } from '@/lib/platform-offers';
 
 interface Offer {
   id: string;
@@ -30,6 +31,12 @@ interface Offer {
   expiresAt?: string;
   expiresIn?: number;
   terms?: string;
+  /** Platform-curated offers aren't tied to a business and can't be claimed. */
+  isPlatform?: boolean;
+  imageUrl?: string | null;
+  phone?: string | null;
+  details?: PlatformOfferDetails;
+  subType?: string | null;
 }
 
 const STORAGE_KEY = 'claimed_offers';
@@ -69,6 +76,30 @@ function mapApiOffer(o: any): Offer {
   };
 }
 
+/**
+ * Platform-curated offers into the same card shape. They have no discount and
+ * no expiry, so the badge carries the price instead and no countdown renders.
+ */
+function mapPlatformOffer(o: any): Offer {
+  return {
+    id: o.id,
+    title: o.title,
+    description: o.description || '',
+    business: o.location || '',
+    businessType: categoryLabel(o.category),
+    discount: 0,
+    discountAmount: 0,
+    discountLabel: o.price || 'View',
+    expiresIn: undefined,
+    terms: '',
+    isPlatform: true,
+    imageUrl: o.imageSignedUrl || null,
+    phone: o.phone || null,
+    details: o.details || {},
+    subType: o.subType || null,
+  };
+}
+
 export default function OffersPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -88,18 +119,32 @@ export default function OffersPage() {
   useEffect(() => {
     setClaimedIds(getClaimedOffers());
     setLoading(true);
-    apiService
-      .get<any>(`/v1/offers${city ? `?city=${encodeURIComponent(city)}` : ''}`)
-      .then((res) => {
-        if (res.data && !res.error) {
-          const list = Array.isArray(res.data)
-            ? res.data
-            : res.data?.data ?? res.data?.items ?? [];
-          const mapped = list.map(mapApiOffer);
-          setOffers(mapped);
-          const cats = [...new Set(mapped.map((o: Offer) => o.businessType).filter(Boolean))] as string[];
-          setCategories(cats);
+
+    // Business offers and platform-curated offers are shown together. Platform
+    // offers are fetched separately because they have no Business relation.
+    Promise.allSettled([
+      apiService.get<any>(`/v1/offers${city ? `?city=${encodeURIComponent(city)}` : ''}`),
+      apiService.get<any>('/v1/platform-offers/public'),
+    ])
+      .then(([offersRes, platformRes]) => {
+        let mapped: Offer[] = [];
+
+        if (offersRes.status === 'fulfilled' && offersRes.value.data && !offersRes.value.error) {
+          const raw = offersRes.value.data;
+          const list = Array.isArray(raw) ? raw : raw?.data ?? raw?.items ?? [];
+          mapped = list.map(mapApiOffer);
         }
+
+        if (platformRes.status === 'fulfilled' && platformRes.value.data && !platformRes.value.error) {
+          const raw = platformRes.value.data;
+          const list = Array.isArray(raw) ? raw : raw?.data ?? [];
+          // Platform offers lead the list — they're the featured, curated ones.
+          mapped = [...list.map(mapPlatformOffer), ...mapped];
+        }
+
+        setOffers(mapped);
+        const cats = [...new Set(mapped.map((o: Offer) => o.businessType).filter(Boolean))] as string[];
+        setCategories(cats);
       })
       .finally(() => setLoading(false));
   }, [city]);
@@ -218,17 +263,31 @@ export default function OffersPage() {
                     claimed && 'opacity-75',
                   )}
                 >
+                  {offer.imageUrl && (
+                    <img
+                      src={offer.imageUrl}
+                      alt=""
+                      className="mb-4 h-40 w-full rounded-xl object-cover border border-border"
+                    />
+                  )}
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="min-w-0">
                       <h3 className="font-semibold text-foreground truncate">{offer.title}</h3>
                       {offer.business && (
                         <p className="text-sm text-muted-foreground truncate">{offer.business}</p>
                       )}
-                      {offer.businessType && (
-                        <span className="mt-1 inline-block rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                          {offer.businessType}
-                        </span>
-                      )}
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        {offer.businessType && (
+                          <span className="inline-block rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                            {offer.businessType}
+                          </span>
+                        )}
+                        {offer.isPlatform && (
+                          <span className="inline-block rounded-full border border-warning/25 bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
+                            Platform exclusive
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div
                       className={cn(
@@ -263,7 +322,17 @@ export default function OffersPage() {
                       <Eye className="h-4 w-4" /> View details
                     </Button>
                     <ReportButton kind="offer" targetId={offer.id} targetName={offer.title} />
-                    {claimed ? (
+                    {/* Platform offers have nothing to redeem — the customer
+                        contacts the vendor directly, so no claim button. */}
+                    {offer.isPlatform ? (
+                      offer.phone ? (
+                        <a href={`tel:${offer.phone}`} className="flex-1">
+                          <Button className="w-full gap-1.5" size="sm">
+                            <Phone className="h-4 w-4" /> Call
+                          </Button>
+                        </a>
+                      ) : null
+                    ) : claimed ? (
                       <div className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-success/12 border border-success/25 text-success text-sm font-semibold px-3">
                         <CheckCircle2 className="h-4 w-4" /> Claimed
                       </div>
@@ -300,25 +369,87 @@ export default function OffersPage() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-secondary p-4 rounded-xl text-center border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Discount</p>
-                  <p className="text-3xl font-extrabold text-primary">{viewingOffer.discountLabel}</p>
+              {/* Platform offers have a price and no expiry; business offers
+                  have a discount and a countdown. */}
+              {viewingOffer.isPlatform ? (
+                <div className="mb-6 space-y-3">
+                  <div className="bg-secondary p-4 rounded-xl text-center border border-border">
+                    <p className="text-xs text-muted-foreground mb-1">Price</p>
+                    <p className="text-2xl font-extrabold text-primary">{viewingOffer.discountLabel}</p>
+                  </div>
+                  {(() => {
+                    const d = viewingOffer.details || {};
+                    const rows: { label: string; value: string }[] = [];
+                    if (d.providerType) rows.push({ label: 'Type', value: d.providerType });
+                    if (d.availableTiming) rows.push({ label: 'Available', value: d.availableTiming });
+                    if (d.hasPreBooking && d.preBookingPackage) {
+                      rows.push({ label: 'Package', value: d.preBookingPackage });
+                    }
+                    if (d.hasPreBooking && d.sadhyaTiming) {
+                      rows.push({ label: 'Sadhya timing', value: d.sadhyaTiming });
+                    }
+                    const delivery = deliverySummary(d);
+                    if (delivery.length) rows.push({ label: 'Options', value: delivery.join(' · ') });
+                    if (d.propertyTypes?.length) rows.push({ label: 'Property', value: d.propertyTypes.join(', ') });
+                    if (d.views?.length) rows.push({ label: 'View', value: d.views.join(', ') });
+                    if (d.venueTypes?.length) rows.push({ label: 'Venue', value: d.venueTypes.join(', ') });
+                    if (d.minTeamCount) rows.push({ label: 'Min team', value: d.minTeamCount });
+                    if (d.time) rows.push({ label: 'Time', value: d.time });
+                    if (d.minPax || d.maxPax) {
+                      rows.push({ label: 'Pax', value: [d.minPax, d.maxPax].filter(Boolean).join(' – ') });
+                    }
+                    if (d.acStatus) rows.push({ label: 'AC', value: d.acStatus });
+                    if (d.amenities) rows.push({ label: 'Amenities', value: d.amenities });
+                    if (d.brandOrCategory) rows.push({ label: 'Brand', value: d.brandOrCategory });
+                    if (viewingOffer.phone) rows.push({ label: 'Phone', value: viewingOffer.phone });
+                    if (!rows.length) return null;
+                    return (
+                      <div className="bg-secondary p-4 rounded-xl border border-border space-y-1.5">
+                        {rows.map((r) => (
+                          <div key={r.label} className="grid grid-cols-3 gap-2 text-sm">
+                            <span className="text-muted-foreground">{r.label}</span>
+                            <span className="col-span-2 text-foreground">{r.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
-                <div className="bg-secondary p-4 rounded-xl text-center border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Expires in</p>
-                  <p className="text-3xl font-extrabold text-foreground tabular-nums">
-                    {viewingOffer.expiresIn != null ? `${viewingOffer.expiresIn}d` : '—'}
-                  </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-secondary p-4 rounded-xl text-center border border-border">
+                    <p className="text-xs text-muted-foreground mb-1">Discount</p>
+                    <p className="text-3xl font-extrabold text-primary">{viewingOffer.discountLabel}</p>
+                  </div>
+                  <div className="bg-secondary p-4 rounded-xl text-center border border-border">
+                    <p className="text-xs text-muted-foreground mb-1">Expires in</p>
+                    <p className="text-3xl font-extrabold text-foreground tabular-nums">
+                      {viewingOffer.expiresIn != null ? `${viewingOffer.expiresIn}d` : '—'}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
               {viewingOffer.terms && (
                 <div className="bg-secondary p-4 rounded-xl border border-border mb-6">
                   <p className="text-xs text-muted-foreground font-semibold mb-1">Terms & conditions</p>
                   <p className="text-sm text-foreground">{viewingOffer.terms}</p>
                 </div>
               )}
-              {isClaimed(viewingOffer.id) ? (
+              {viewingOffer.isPlatform ? (
+                // Nothing to redeem — the customer deals with the vendor directly.
+                <div className="flex gap-3">
+                  <Button onClick={() => setViewingOffer(null)} variant="outline" className="flex-1">
+                    Close
+                  </Button>
+                  {viewingOffer.phone && (
+                    <a href={`tel:${viewingOffer.phone}`} className="flex-1">
+                      <Button className="w-full gap-1.5">
+                        <Phone className="h-4 w-4" /> Call vendor
+                      </Button>
+                    </a>
+                  )}
+                </div>
+              ) : isClaimed(viewingOffer.id) ? (
                 <div className="w-full flex items-center justify-center gap-2 rounded-xl bg-success/12 border border-success/25 text-success font-semibold py-3">
                   <CheckCircle2 className="h-5 w-5" /> Already claimed
                 </div>

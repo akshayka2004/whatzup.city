@@ -17,6 +17,7 @@ import {
   User,
   Receipt,
   BadgeIndianRupee,
+  Tag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -44,6 +45,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: 'Manage',
     items: [
       { label: 'Categories', href: '/admin/categories', icon: Building2 },
+      { label: 'Platform Offers', href: '/admin/platform-offers', icon: Tag },
       { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
       { label: 'Audit Logs', href: '/admin/audit', icon: FileText },
       { label: 'My Profile', href: '/admin/profile', icon: User },

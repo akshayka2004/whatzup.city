@@ -55,6 +55,7 @@ model Tenant {
   coupons                 Coupon[]
   vouchers                Voucher[]
   transactions            Transaction[]
+  platformOffers          PlatformOffer[]
   billingProfiles         BillingProfile[]
   voucherClaims           VoucherClaim[]
   reviews                 Review[]
@@ -915,6 +916,61 @@ model Offer {
   @@index([deletedAt])
   @@index([status, endDate])
   @@map("offers")
+}
+
+/// Platform-curated offers (Onam specials etc.), created by admins.
+///
+/// Deliberately NOT linked to a Business: these are freeform vendor entries and
+/// the vendor need not have a platform account, so the name/location/phone are
+/// typed rather than resolved from a Business row. Published/unpublished by
+/// hand — no start/end dates and no redemption tracking.
+model PlatformOffer {
+  id          String              @id @default(uuid()) @db.Uuid
+  tenantId    String              @map("tenant_id") @db.Uuid
+
+  category    PlatformOfferCategory
+  /// Only Staycation branches: PROPERTY | DAYOUT. Null for other categories.
+  subType     String?             @map("sub_type") @db.VarChar(30)
+
+  /// Vendor / property / business name — always collected.
+  title       String              @db.VarChar(255)
+  location    String              @db.VarChar(255)
+  /// Free text, not numeric: "Pricing / Package" is often a range or per-head.
+  price       String?             @db.VarChar(120)
+  phone       String?             @db.VarChar(30)
+  imageUrl    String?             @map("image_url") @db.Text
+  description String?             @db.Text
+
+  /// Category-specific fields. Shape documented in apps/web/lib/platform-offers.ts.
+  details     Json                @default("{}")
+
+  status      PlatformOfferStatus @default(UNPUBLISHED)
+
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  deletedAt   DateTime?           @map("deleted_at")
+  createdBy   String?             @map("created_by") @db.Uuid
+  updatedBy   String?             @map("updated_by") @db.Uuid
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([category])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("platform_offers")
+}
+
+enum PlatformOfferCategory {
+  SADYA
+  CLOTHING
+  ELECTRONICS
+  STAYCATION
+}
+
+enum PlatformOfferStatus {
+  UNPUBLISHED
+  PUBLISHED
 }
 
 enum OfferStatus {
