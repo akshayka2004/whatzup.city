@@ -38,6 +38,36 @@ export class SubscriptionsService {
     private readonly audit: AuditService,
   ) {}
 
+  /**
+   * Supersede every non-final subscription a business has (ACTIVE and
+   * PENDING_PAYMENT) before creating a new one, and auto-fail any PENDING
+   * payment still pointing at the rows just superseded.
+   *
+   * Without the payment cleanup, a business that retries (rejected, or just
+   * resubmits) leaves an old payment sitting in the admin queue next to the
+   * new one. If an admin verifies the wrong one, verifyPayment's
+   * `if (payment.subscriptionId) subscription.update(...ACTIVE)` would
+   * resurrect the subscription this method just expired.
+   */
+  private async supersedeSubscriptions(tenantId: string, businessId: string) {
+    const stale = await this.db.subscription.findMany({
+      where: { tenantId, businessId, status: { in: ['ACTIVE', 'PENDING_PAYMENT'] } },
+      select: { id: true },
+    });
+    if (stale.length === 0) return;
+    const staleIds = stale.map((s) => s.id);
+
+    await this.db.subscription.updateMany({
+      where: { id: { in: staleIds } },
+      data: { status: 'EXPIRED' },
+    });
+
+    await this.db.payment.updateMany({
+      where: { subscriptionId: { in: staleIds }, status: 'PENDING' },
+      data: { status: 'FAILED', rejectionReason: 'Superseded by a newer payment attempt' },
+    });
+  }
+
   async assignPackage(userId: string, tenantId: string, businessId: string, dto: AssignPackageDto) {
     // Accept either business.id or entity.id — the onboarding resubmit flow
     // passes entityId, matching the other onboarding endpoints.
@@ -57,11 +87,7 @@ export class SubscriptionsService {
     const endDate = new Date();
     endDate.setDate(startDate.getDate() + duration);
 
-    // Deactivate previous active subscriptions for this business
-    await this.db.subscription.updateMany({
-      where: { tenantId, businessId, status: 'ACTIVE' },
-      data: { status: 'EXPIRED' },
-    });
+    await this.supersedeSubscriptions(tenantId, businessId);
 
     const subscription = await this.db.subscription.create({
       data: {
@@ -135,10 +161,8 @@ export class SubscriptionsService {
       data: { hotelStarRating: dto.starRating, hotelAmenities: dto.amenities || {} },
     });
 
-    await this.db.subscription.updateMany({
-      where: { tenantId, businessId, status: 'ACTIVE' },
-      data: { status: 'EXPIRED' },
-    });
+    // Same supersession as assignPackage — see supersedeSubscriptions().
+    await this.supersedeSubscriptions(tenantId, businessId);
 
     const subscription = await this.db.subscription.create({
       data: {
