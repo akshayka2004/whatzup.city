@@ -10,6 +10,7 @@ import { AuditService } from '../audit/audit.service';
 import { StorageService } from '../../common/storage/storage.service';
 import { CryptoService } from '../../common/crypto/crypto.service';
 import { CreatePaymentDto } from './dto/payment.dto';
+import { mapWithConcurrency } from '../../common/utils/concurrency';
 
 /** Mirrors the web pricing helper — plan prices are GST-exclusive. */
 export const TAX_PERCENT = 18;
@@ -293,8 +294,7 @@ export class PaymentsService {
 
     // proofUrl is stored as {"bucket","path"} against a private bucket — hand
     // the admin a short-lived signed URL so the screenshot actually renders.
-    return Promise.all(
-      filtered.map(async (p) => {
+    return mapWithConcurrency(filtered, 10, async (p) => {
         let proofSignedUrl: string | null = null;
         if (p.proofUrl) {
           try {
@@ -336,8 +336,7 @@ export class PaymentsService {
           amountTotal: split.total,
           taxPercent: TAX_PERCENT,
         };
-      }),
-    );
+    });
   }
 
   /** Full financial log for a business — admin/finance view. */

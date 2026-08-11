@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,12 +11,15 @@ import {
   ArrowLeft, Users, Receipt, Tag, Star, TrendingUp,
   Building2, BarChart3, Loader2,
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip,
-} from 'recharts';
 import { apiService } from '@/lib/services/api-service';
+
+const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
+const BarChart = dynamic(() => import('recharts').then(m => m.BarChart), { ssr: false });
+const Bar = dynamic(() => import('recharts').then(m => m.Bar), { ssr: false });
+const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false });
+const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false });
+const CartesianGrid = dynamic(() => import('recharts').then(m => m.CartesianGrid), { ssr: false });
+const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false });
 
 const RANGES = [
   { label: '7D', days: 7 },

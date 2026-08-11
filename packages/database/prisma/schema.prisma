@@ -958,6 +958,7 @@ model PlatformOffer {
   @@index([category])
   @@index([status])
   @@index([deletedAt])
+  @@index([tenantId, deletedAt, status, category])
   @@map("platform_offers")
 }
 
@@ -1936,6 +1937,7 @@ model Payment {
   @@index([method])
   @@index([status])
   @@index([deletedAt])
+  @@index([status, deletedAt])
   @@map("payments")
 }
 

@@ -3,6 +3,7 @@ import { DatabaseService } from '../../common/database/database.service';
 import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 import { StorageService } from '../../common/storage/storage.service';
 import { AuditService } from '../audit/audit.service';
+import { mapWithConcurrency } from '../../common/utils/concurrency';
 import {
   CreatePlatformOfferDto, UpdatePlatformOfferDto, PlatformOfferStatusEnum,
 } from './dto/platform-offer.dto';
@@ -61,7 +62,10 @@ export class PlatformOffersService {
   }
 
   async update(tenantId: string, userId: string, id: string, dto: UpdatePlatformOfferDto) {
-    const existing = await this.db.platformOffer.findFirst({ where: { id, deletedAt: null } });
+    const resolvedTenant = await this.tenantResolver.resolveTenantId(tenantId);
+    const existing = await this.db.platformOffer.findFirst({
+      where: { id, tenantId: resolvedTenant, deletedAt: null },
+    });
     if (!existing) throw new NotFoundException('Platform offer not found');
 
     if (dto.imageUrl && dto.imageUrl !== existing.imageUrl) await this.verifyPoster(dto.imageUrl);
@@ -99,7 +103,10 @@ export class PlatformOffersService {
   }
 
   async setStatus(tenantId: string, userId: string, id: string, status: PlatformOfferStatusEnum) {
-    const existing = await this.db.platformOffer.findFirst({ where: { id, deletedAt: null } });
+    const resolvedTenant = await this.tenantResolver.resolveTenantId(tenantId);
+    const existing = await this.db.platformOffer.findFirst({
+      where: { id, tenantId: resolvedTenant, deletedAt: null },
+    });
     if (!existing) throw new NotFoundException('Platform offer not found');
 
     const updated = await this.db.platformOffer.update({
@@ -122,7 +129,10 @@ export class PlatformOffersService {
   }
 
   async remove(tenantId: string, userId: string, id: string) {
-    const existing = await this.db.platformOffer.findFirst({ where: { id, deletedAt: null } });
+    const resolvedTenant = await this.tenantResolver.resolveTenantId(tenantId);
+    const existing = await this.db.platformOffer.findFirst({
+      where: { id, tenantId: resolvedTenant, deletedAt: null },
+    });
     if (!existing) throw new NotFoundException('Platform offer not found');
 
     // Soft delete — keeps the audit trail intact.
@@ -155,7 +165,7 @@ export class PlatformOffersService {
       orderBy: { createdAt: 'desc' },
       take: 500,
     });
-    return Promise.all(rows.map((r) => this.withSignedImage(r)));
+    return mapWithConcurrency(rows, 10, (r) => this.withSignedImage(r));
   }
 
   /** Public list — published only. */
@@ -171,7 +181,7 @@ export class PlatformOffersService {
       orderBy: { createdAt: 'desc' },
       take: 200,
     });
-    return Promise.all(rows.map((r) => this.withSignedImage(r)));
+    return mapWithConcurrency(rows, 10, (r) => this.withSignedImage(r));
   }
 
   async findOne(id: string) {

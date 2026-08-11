@@ -107,10 +107,13 @@ export class ReportsService {
       },
     });
 
-    // Fetch business names
+    // Fetch business names. Hard ceiling to protect against a pathologically
+    // large tenant — this is a full export, not paginated, so we cap rather
+    // than page it.
     const businesses = await this.db.business.findMany({
       where: { tenantId, deletedAt: null },
       select: { id: true, name: true },
+      take: 10000,
     });
 
     const bizNameMap = new Map(businesses.map((b) => [b.id, b.name]));
@@ -150,6 +153,8 @@ export class ReportsService {
         createdAt: true,
       },
       orderBy: { createdAt: 'desc' },
+      // Hard ceiling — see exportBusinessReport above.
+      take: 10000,
     });
 
     const csvRows = ['Flag ID,Target Type,Target ID,Severity,Status,Reason,Created At'];
