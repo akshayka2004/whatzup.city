@@ -22,6 +22,8 @@ import {
   UserCog,
   Building2,
   CalendarDays,
+  Receipt,
+  BadgeIndianRupee,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -49,7 +51,13 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: 'Business',
     items: [
       { label: 'Businesses', href: '/super-admin/businesses', icon: Building2 },
-      { label: 'Approvals', href: '/super-admin/approvals', icon: CheckCircle },
+      // Points at /admin/approvals (not /super-admin/approvals) — that page has
+      // the payment-approval popup for a business's first payment; the old
+      // super-admin-only approvals page never got it. AdminLayout already
+      // permits super-admin.
+      { label: 'Approvals', href: '/admin/approvals', icon: CheckCircle },
+      { label: 'Payments', href: '/admin/payments', icon: Receipt },
+      { label: 'Payment Approvals', href: '/admin/payment-approvals', icon: BadgeIndianRupee },
       { label: 'Categories', href: '/super-admin/categories', icon: Folder },
       { label: 'Platform Offers', href: '/super-admin/offers', icon: Tag },
       { label: 'Events', href: '/super-admin/events', icon: CalendarDays },
