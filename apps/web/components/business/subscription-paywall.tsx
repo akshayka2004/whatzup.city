@@ -103,6 +103,19 @@ export function SubscriptionPaywall() {
     setSubmitting(true);
     setError('');
     try {
+      // Create (or renew) the Subscription row first — the payment must carry
+      // its id, or verifyPayment has nothing to activate and the paid amount
+      // never reflects on the business account. Matches the registration flow.
+      const assignRes = isHotel
+        ? await onboardingService.assignHotelSubscription(
+            biz.id,
+            biz.hotelStarRating || 0,
+            biz.hotelAmenities || {},
+          )
+        : await onboardingService.assignSubscription(biz.id, selectedPlan);
+      if (assignRes.error) throw new Error(assignRes.error);
+      const subscriptionId = (assignRes.data as any)?.id;
+
       const signed = await onboardingService.getSignedUrl(biz.id, proof.name, proof.type, 'payment');
       if (!signed.data || signed.error) throw new Error(signed.error || 'Failed to get upload URL.');
       const ok = await onboardingService.uploadFile(signed.data.uploadUrl, proof);
@@ -113,6 +126,7 @@ export function SubscriptionPaywall() {
         method: 'UPI_QR',
         proofUrl: JSON.stringify({ bucket: 'verification-documents', path: signed.data.fileKey }),
         transactionRef: payerRef || undefined,
+        subscriptionId,
         packageName: isHotel ? `HOTEL_${biz.hotelStarRating}STAR` : selectedPlan,
       });
       if (res.error) throw new Error(res.error);
