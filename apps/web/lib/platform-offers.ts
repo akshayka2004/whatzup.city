@@ -15,6 +15,7 @@
 
 export const PLATFORM_OFFER_CATEGORIES = [
   { value: 'SADYA', label: 'Sadya', blurb: 'Onam sadya from hotels, home chefs and caterers' },
+  { value: 'PAYASAM', label: 'Payasam', blurb: 'Payasam varieties from hotels, home chefs and caterers' },
   { value: 'CLOTHING', label: 'Clothing', blurb: 'Apparel and fashion deals' },
   { value: 'ELECTRONICS', label: 'Electronics', blurb: 'Electronics and appliance deals' },
   { value: 'STAYCATION', label: 'Staycation', blurb: 'Stays and team day-out packages' },
@@ -50,8 +51,10 @@ export const SADYA_DELIVERY_OPTIONS: DeliveryOption[] = [
   { key: 'ownDelivery', label: 'Own delivery' },
   { key: 'aggregators', label: 'Zomato / Swiggy' },
   { key: 'takeaway', label: 'Takeaway' },
-  { key: 'dining', label: 'Dining' },
 ];
+
+/** A single named rate line, e.g. {label:'Resort', rate:'₹2500/night'}. */
+export type RateLine = { label: string; rate: string };
 
 // ── Staycation: property stay ──────────────────────────────────────
 export const STAYCATION_PROPERTY_TYPES = [
@@ -91,26 +94,42 @@ export const DAYOUT_VENUE_TYPES = [
 
 /** Shape of `PlatformOffer.details`, discriminated by category + subType. */
 export type PlatformOfferDetails = {
-  // Sadya
+  // Sadya / Payasam — provider + timing
   providerType?: string;
   availableTiming?: string;
+
+  // Sadya / Payasam — pre-booking, delivery and dine-in each carry their own rate
   hasPreBooking?: boolean;
   preBookingPackage?: string;
   sadhyaTiming?: string;
+  preBookingRate?: string;
+
   hasDelivery?: boolean;
   /** Keys from SADYA_DELIVERY_OPTIONS. */
   deliveryOptions?: string[];
   freeDeliveryKm?: string;
+  deliveryRate?: string;
+
+  hasDineIn?: boolean;
+  dineInRate?: string;
+
+  // Payasam only
+  payasamTypes?: RateLine[];
 
   // Staycation — property
   propertyTypes?: string[];
+  propertyTypeRates?: RateLine[];
   views?: string[];
   minPax?: string;
   maxPax?: string;
+  paxSlabRates?: { minPax: string; maxPax: string; rate: string }[];
   acStatus?: string;
+  acRate?: string;
+  nonAcRate?: string;
 
   // Staycation — day-out
   venueTypes?: string[];
+  venueTypeRates?: RateLine[];
   minTeamCount?: string;
   time?: string;
 
@@ -156,4 +175,55 @@ export function deliverySummary(details?: PlatformOfferDetails): string[] {
     }
     return opt.label;
   });
+}
+
+/**
+ * Itemized rate lines for public display. Sadya/Payasam and Staycation carry
+ * per-option rates instead of one flat price, so the card/modal renders this
+ * list wherever it's non-empty.
+ */
+export function rateLines(category: string, subType: string | null | undefined, details?: PlatformOfferDetails): RateLine[] {
+  if (!details) return [];
+  const lines: RateLine[] = [];
+
+  if (category === 'SADYA' || category === 'PAYASAM') {
+    if (details.hasPreBooking && details.preBookingRate) {
+      lines.push({ label: 'Pre-booking', rate: details.preBookingRate });
+    }
+    if (details.hasDelivery && details.deliveryRate) {
+      lines.push({ label: 'Delivery', rate: details.deliveryRate });
+    }
+    if (details.hasDineIn && details.dineInRate) {
+      lines.push({ label: 'Dine-in', rate: details.dineInRate });
+    }
+    if (category === 'PAYASAM' && details.payasamTypes?.length) {
+      lines.push(...details.payasamTypes.filter((p) => p.label && p.rate));
+    }
+    return lines;
+  }
+
+  if (category === 'STAYCATION' && subType === 'PROPERTY') {
+    if (details.propertyTypeRates?.length) {
+      lines.push(...details.propertyTypeRates.filter((p) => p.label && p.rate));
+    }
+    if (details.acRate) lines.push({ label: 'AC', rate: details.acRate });
+    if (details.nonAcRate) lines.push({ label: 'Non-AC', rate: details.nonAcRate });
+    if (details.paxSlabRates?.length) {
+      lines.push(
+        ...details.paxSlabRates
+          .filter((p) => p.rate)
+          .map((p) => ({ label: `${p.minPax || '?'}–${p.maxPax || '?'} pax`, rate: p.rate })),
+      );
+    }
+    return lines;
+  }
+
+  if (category === 'STAYCATION' && subType === 'DAYOUT') {
+    if (details.venueTypeRates?.length) {
+      lines.push(...details.venueTypeRates.filter((p) => p.label && p.rate));
+    }
+    return lines;
+  }
+
+  return lines;
 }

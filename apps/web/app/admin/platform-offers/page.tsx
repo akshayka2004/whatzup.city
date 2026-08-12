@@ -20,13 +20,84 @@ import {
   PLATFORM_OFFER_CATEGORIES, STAYCATION_SUBTYPES,
   SADYA_PROVIDER_TYPES, SADYA_DELIVERY_OPTIONS,
   STAYCATION_PROPERTY_TYPES, STAYCATION_VIEWS, AC_OPTIONS,
-  DAYOUT_VENUE_TYPES, categoryLabel, subTypeLabel,
-  type PlatformOfferCategory, type PlatformOfferDetails,
+  DAYOUT_VENUE_TYPES, categoryLabel, subTypeLabel, rateLines,
+  type PlatformOfferCategory, type PlatformOfferDetails, type RateLine,
 } from '@/lib/platform-offers';
 import { cn } from '@/lib/utils';
 import {
   Tag, Plus, Loader2, UploadCloud, Eye, EyeOff, Trash2, X, ImageIcon,
 } from 'lucide-react';
+
+/** Freeform repeatable {label, rate} rows — used for Payasam types. */
+function RateLineEditor({
+  lines, onChange, labelPlaceholder,
+}: { lines: RateLine[]; onChange: (lines: RateLine[]) => void; labelPlaceholder: string }) {
+  const update = (i: number, patch: Partial<RateLine>) =>
+    onChange(lines.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+  const remove = (i: number) => onChange(lines.filter((_, idx) => idx !== i));
+  return (
+    <div className="space-y-2">
+      {lines.map((l, i) => (
+        <div key={i} className="flex gap-2">
+          <Input
+            value={l.label}
+            onChange={(e) => update(i, { label: e.target.value })}
+            placeholder={labelPlaceholder}
+            className="h-10 rounded-lg flex-1"
+          />
+          <Input
+            value={l.rate}
+            onChange={(e) => update(i, { rate: e.target.value })}
+            placeholder="Rate"
+            className="h-10 rounded-lg w-32"
+          />
+          <button
+            type="button"
+            onClick={() => remove(i)}
+            className="p-2 text-muted-foreground hover:text-destructive cursor-pointer"
+            aria-label="Remove"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange([...lines, { label: '', rate: '' }])}
+        className="text-xs font-medium text-primary hover:underline cursor-pointer"
+      >
+        + Add rate
+      </button>
+    </div>
+  );
+}
+
+/** Rate input per currently-selected chip — keeps rows in sync with the selection. */
+function PerSelectionRates({
+  selected, lines, onChange,
+}: { selected: string[]; lines: RateLine[]; onChange: (lines: RateLine[]) => void }) {
+  if (!selected.length) return null;
+  const rateFor = (label: string) => lines.find((l) => l.label === label)?.rate || '';
+  const setRate = (label: string, rate: string) => {
+    const rest = lines.filter((l) => l.label !== label);
+    onChange(rate ? [...rest, { label, rate }] : rest);
+  };
+  return (
+    <div className="space-y-2">
+      {selected.map((label) => (
+        <div key={label} className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground w-36 shrink-0 truncate">{label}</span>
+          <Input
+            value={rateFor(label)}
+            onChange={(e) => setRate(label, e.target.value)}
+            placeholder="Rate"
+            className="h-9 rounded-lg"
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 type Row = {
   id: string;
@@ -149,6 +220,7 @@ export default function AdminPlatformOffersPage() {
   };
 
   const isStaycation = category === 'STAYCATION';
+  const isSadyaLike = category === 'SADYA' || category === 'PAYASAM';
   const canSave =
     !!category && !!title.trim() && !!location.trim() &&
     (!isStaycation || !!subType);
@@ -296,6 +368,11 @@ export default function AdminPlatformOffersPage() {
                         </span>
                       )}
                       {r.price && <span className="text-foreground font-semibold">{r.price}</span>}
+                      {rateLines(r.category, r.subType, r.details).map((rl, i) => (
+                        <span key={i} className="rounded-full bg-muted px-2 py-0.5 text-foreground">
+                          {rl.label}: <span className="font-semibold">{rl.rate}</span>
+                        </span>
+                      ))}
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button
@@ -419,17 +496,28 @@ export default function AdminPlatformOffersPage() {
                     <Field label="Location *">
                       <Input value={location} onChange={(e) => setLocation(e.target.value)} className="h-11 rounded-xl" />
                     </Field>
-                    <Field label="Price" hint="Free text — e.g. ₹850 per head, or ₹5,000 onwards">
-                      <Input value={price} onChange={(e) => setPrice(e.target.value)} className="h-11 rounded-xl" />
-                    </Field>
+                    {!isSadyaLike && !isStaycation && (
+                      <Field label="Price" hint="Free text — e.g. ₹850 per head, or ₹5,000 onwards">
+                        <Input value={price} onChange={(e) => setPrice(e.target.value)} className="h-11 rounded-xl" />
+                      </Field>
+                    )}
                     <Field label="Phone">
                       <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="h-11 rounded-xl" />
                     </Field>
                   </div>
 
-                  {/* ── Sadya ─────────────────────────────────────── */}
-                  {category === 'SADYA' && (
+                  {/* ── Sadya / Payasam ───────────────────────────── */}
+                  {isSadyaLike && (
                     <div className="space-y-4 rounded-xl border border-border p-4">
+                      {category === 'PAYASAM' && (
+                        <Field label="Payasam types and rates" hint="e.g. Palada Payasam — ₹80/head">
+                          <RateLineEditor
+                            lines={details.payasamTypes || []}
+                            onChange={(lines) => setD({ payasamTypes: lines })}
+                            labelPlaceholder="Payasam type"
+                          />
+                        </Field>
+                      )}
                       <Field label="Provider type">
                         <div className="flex flex-wrap gap-2">
                           {SADYA_PROVIDER_TYPES.map((t) => (
@@ -471,7 +559,7 @@ export default function AdminPlatformOffersPage() {
                           <span className="text-sm font-medium text-foreground">Pre-booking available</span>
                         </label>
                         {details.hasPreBooking && (
-                          <div className="grid sm:grid-cols-2 gap-3 pl-6">
+                          <div className="grid sm:grid-cols-3 gap-3 pl-6">
                             <Field label="Pricing / package">
                               <Input
                                 value={details.preBookingPackage || ''}
@@ -483,6 +571,13 @@ export default function AdminPlatformOffersPage() {
                               <Input
                                 value={details.sadhyaTiming || ''}
                                 onChange={(e) => setD({ sadhyaTiming: e.target.value })}
+                                className="h-11 rounded-xl"
+                              />
+                            </Field>
+                            <Field label="Pre-booking rate">
+                              <Input
+                                value={details.preBookingRate || ''}
+                                onChange={(e) => setD({ preBookingRate: e.target.value })}
                                 className="h-11 rounded-xl"
                               />
                             </Field>
@@ -533,6 +628,34 @@ export default function AdminPlatformOffersPage() {
                                 />
                               </Field>
                             )}
+                            <Field label="Delivery rate">
+                              <Input
+                                value={details.deliveryRate || ''}
+                                onChange={(e) => setD({ deliveryRate: e.target.value })}
+                                className="h-11 rounded-xl max-w-[200px]"
+                              />
+                            </Field>
+                          </div>
+                        )}
+
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!details.hasDineIn}
+                            onChange={(e) => setD({ hasDineIn: e.target.checked })}
+                            className="h-4 w-4 cursor-pointer"
+                          />
+                          <span className="text-sm font-medium text-foreground">Dine-in available</span>
+                        </label>
+                        {details.hasDineIn && (
+                          <div className="pl-6">
+                            <Field label="Dine-in rate">
+                              <Input
+                                value={details.dineInRate || ''}
+                                onChange={(e) => setD({ dineInRate: e.target.value })}
+                                className="h-11 rounded-xl max-w-[200px]"
+                              />
+                            </Field>
                           </div>
                         )}
                       </div>
@@ -549,6 +672,15 @@ export default function AdminPlatformOffersPage() {
                           onToggle={(v) => toggleIn('propertyTypes', v)}
                         />
                       </Field>
+                      {!!(details.propertyTypes || []).length && (
+                        <Field label="Rate per property type">
+                          <PerSelectionRates
+                            selected={details.propertyTypes || []}
+                            lines={details.propertyTypeRates || []}
+                            onChange={(lines) => setD({ propertyTypeRates: lines })}
+                          />
+                        </Field>
+                      )}
                       <Field label="View / frontage">
                         <ChipGroup
                           options={STAYCATION_VIEWS}
@@ -602,6 +734,85 @@ export default function AdminPlatformOffersPage() {
                           </div>
                         </Field>
                       </div>
+
+                      {(details.acStatus === 'AC' || details.acStatus === 'Both') && (
+                        <Field label="AC rate">
+                          <Input
+                            value={details.acRate || ''}
+                            onChange={(e) => setD({ acRate: e.target.value })}
+                            className="h-11 rounded-xl max-w-[200px]"
+                          />
+                        </Field>
+                      )}
+                      {(details.acStatus === 'Non-AC' || details.acStatus === 'Both') && (
+                        <Field label="Non-AC rate">
+                          <Input
+                            value={details.nonAcRate || ''}
+                            onChange={(e) => setD({ nonAcRate: e.target.value })}
+                            className="h-11 rounded-xl max-w-[200px]"
+                          />
+                        </Field>
+                      )}
+
+                      <Field label="Rate by group size" hint="Optional — add a rate per pax slab, e.g. 2-4 pax">
+                        <div className="space-y-2">
+                          {(details.paxSlabRates || []).map((slab, i) => (
+                            <div key={i} className="flex gap-2">
+                              <Input
+                                value={slab.minPax}
+                                onChange={(e) => {
+                                  const rows = [...(details.paxSlabRates || [])];
+                                  rows[i] = { ...rows[i], minPax: e.target.value.replace(/\D/g, '') };
+                                  setD({ paxSlabRates: rows });
+                                }}
+                                placeholder="Min pax"
+                                inputMode="numeric"
+                                className="h-10 rounded-lg w-24"
+                              />
+                              <Input
+                                value={slab.maxPax}
+                                onChange={(e) => {
+                                  const rows = [...(details.paxSlabRates || [])];
+                                  rows[i] = { ...rows[i], maxPax: e.target.value.replace(/\D/g, '') };
+                                  setD({ paxSlabRates: rows });
+                                }}
+                                placeholder="Max pax"
+                                inputMode="numeric"
+                                className="h-10 rounded-lg w-24"
+                              />
+                              <Input
+                                value={slab.rate}
+                                onChange={(e) => {
+                                  const rows = [...(details.paxSlabRates || [])];
+                                  rows[i] = { ...rows[i], rate: e.target.value };
+                                  setD({ paxSlabRates: rows });
+                                }}
+                                placeholder="Rate"
+                                className="h-10 rounded-lg flex-1"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setD({
+                                  paxSlabRates: (details.paxSlabRates || []).filter((_, idx) => idx !== i),
+                                })}
+                                className="p-2 text-muted-foreground hover:text-destructive cursor-pointer"
+                                aria-label="Remove"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => setD({
+                              paxSlabRates: [...(details.paxSlabRates || []), { minPax: '', maxPax: '', rate: '' }],
+                            })}
+                            className="text-xs font-medium text-primary hover:underline cursor-pointer"
+                          >
+                            + Add slab
+                          </button>
+                        </div>
+                      </Field>
                     </div>
                   )}
 
@@ -615,6 +826,15 @@ export default function AdminPlatformOffersPage() {
                           onToggle={(v) => toggleIn('venueTypes', v)}
                         />
                       </Field>
+                      {!!(details.venueTypes || []).length && (
+                        <Field label="Rate per venue type">
+                          <PerSelectionRates
+                            selected={details.venueTypes || []}
+                            lines={details.venueTypeRates || []}
+                            onChange={(lines) => setD({ venueTypeRates: lines })}
+                          />
+                        </Field>
+                      )}
                       <div className="grid sm:grid-cols-2 gap-3">
                         <Field label="Minimum team count">
                           <Input

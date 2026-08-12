@@ -967,6 +967,7 @@ enum PlatformOfferCategory {
   CLOTHING
   ELECTRONICS
   STAYCATION
+  PAYASAM
 }
 
 enum PlatformOfferStatus {

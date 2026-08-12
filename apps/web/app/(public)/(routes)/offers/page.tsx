@@ -17,7 +17,7 @@ import {
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES, getViewerCity, setViewerCity } from '@/lib/constants';
 import { ReportButton } from '@/components/report-button';
-import { categoryLabel, deliverySummary, type PlatformOfferDetails } from '@/lib/platform-offers';
+import { categoryLabel, deliverySummary, rateLines, type PlatformOfferDetails } from '@/lib/platform-offers';
 
 interface Offer {
   id: string;
@@ -37,6 +37,8 @@ interface Offer {
   phone?: string | null;
   details?: PlatformOfferDetails;
   subType?: string | null;
+  /** Raw category enum value, used to pick the right rate-line rules. */
+  category?: string;
 }
 
 const STORAGE_KEY = 'claimed_offers';
@@ -81,6 +83,7 @@ function mapApiOffer(o: any): Offer {
  * no expiry, so the badge carries the price instead and no countdown renders.
  */
 function mapPlatformOffer(o: any): Offer {
+  const rates = rateLines(o.category, o.subType, o.details);
   return {
     id: o.id,
     title: o.title,
@@ -89,7 +92,7 @@ function mapPlatformOffer(o: any): Offer {
     businessType: categoryLabel(o.category),
     discount: 0,
     discountAmount: 0,
-    discountLabel: o.price || 'View',
+    discountLabel: o.price || (rates[0] ? rates[0].rate : 'View'),
     expiresIn: undefined,
     terms: '',
     isPlatform: true,
@@ -97,6 +100,7 @@ function mapPlatformOffer(o: any): Offer {
     phone: o.phone || null,
     details: o.details || {},
     subType: o.subType || null,
+    category: o.category,
   };
 }
 
@@ -373,10 +377,28 @@ export default function OffersPage() {
                   have a discount and a countdown. */}
               {viewingOffer.isPlatform ? (
                 <div className="mb-6 space-y-3">
-                  <div className="bg-secondary p-4 rounded-xl text-center border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Price</p>
-                    <p className="text-2xl font-extrabold text-primary">{viewingOffer.discountLabel}</p>
-                  </div>
+                  {(() => {
+                    const rates = rateLines(viewingOffer.category || '', viewingOffer.subType, viewingOffer.details);
+                    if (rates.length) {
+                      return (
+                        <div className="bg-secondary p-4 rounded-xl border border-border space-y-1.5">
+                          <p className="text-xs text-muted-foreground mb-1">Rates</p>
+                          {rates.map((r, i) => (
+                            <div key={i} className="grid grid-cols-3 gap-2 text-sm">
+                              <span className="text-muted-foreground">{r.label}</span>
+                              <span className="col-span-2 text-foreground font-semibold">{r.rate}</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="bg-secondary p-4 rounded-xl text-center border border-border">
+                        <p className="text-xs text-muted-foreground mb-1">Price</p>
+                        <p className="text-2xl font-extrabold text-primary">{viewingOffer.discountLabel}</p>
+                      </div>
+                    );
+                  })()}
                   {(() => {
                     const d = viewingOffer.details || {};
                     const rows: { label: string; value: string }[] = [];
