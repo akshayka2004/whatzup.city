@@ -5,6 +5,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export enum PlatformOfferCategoryEnum {
   SADYA = 'SADYA',
+  PAYASAM = 'PAYASAM',
   CLOTHING = 'CLOTHING',
   ELECTRONICS = 'ELECTRONICS',
   STAYCATION = 'STAYCATION',
