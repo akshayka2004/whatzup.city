@@ -32,6 +32,20 @@ export class PlatformOffersController {
     return this.service.listPublic(tenantId, category);
   }
 
+  @Public()
+  @Post(':id/click')
+  @ApiOperation({ summary: 'Track a deduped detail-view click on a platform offer' })
+  async trackClick(
+    @Query('tenantId') tenantId: string = 'default',
+    @Param('id') id: string,
+    @Body() body: { actorKey?: string },
+  ) {
+    const actorKey = (body?.actorKey || '').trim().slice(0, 120);
+    if (!actorKey) return { ok: false };
+    await this.service.trackClick(tenantId, id, actorKey);
+    return { ok: true };
+  }
+
   // ── Admin ────────────────────────────────────────────────────────
 
   @Get('admin')

@@ -4,6 +4,7 @@ import { TenantResolverService } from '../../common/database/tenant-resolver.ser
 import { StorageService } from '../../common/storage/storage.service';
 import { AuditService } from '../audit/audit.service';
 import { mapWithConcurrency } from '../../common/utils/concurrency';
+import { recordOfferClick } from '../../common/utils/offer-click.util';
 import {
   CreatePlatformOfferDto, UpdatePlatformOfferDto, PlatformOfferStatusEnum,
 } from './dto/platform-offer.dto';
@@ -182,6 +183,12 @@ export class PlatformOffersService {
       take: 200,
     });
     return mapWithConcurrency(rows, 10, (r) => this.withSignedImage(r));
+  }
+
+  /** Records a deduped detail-view click for the super-admin click count. */
+  async trackClick(tenantId: string, id: string, actorKey: string) {
+    const resolvedTenant = await this.tenantResolver.resolveTenantId(tenantId);
+    await recordOfferClick(this.db, { tenantId: resolvedTenant, offerKind: 'PLATFORM', offerId: id, actorKey });
   }
 
   async findOne(id: string) {

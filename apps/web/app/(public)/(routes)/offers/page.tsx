@@ -18,6 +18,7 @@ import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES, getViewerCity, setViewerCity } from '@/lib/constants';
 import { ReportButton } from '@/components/report-button';
 import { categoryLabel, deliverySummary, rateLines, type PlatformOfferDetails } from '@/lib/platform-offers';
+import { getVisitorId } from '@/lib/visitor-id';
 
 interface Offer {
   id: string;
@@ -163,6 +164,14 @@ export default function OffersPage() {
     if (typeFilter === 'all') return offers;
     return offers.filter((o) => o.businessType === typeFilter);
   }, [typeFilter, offers]);
+
+  const openOffer = (offer: Offer) => {
+    setViewingOffer(offer);
+    // Fire-and-forget click tracking — deduped server-side per visitor/day.
+    const actorKey = user?.id || getVisitorId();
+    const endpoint = offer.isPlatform ? `/v1/platform-offers/${offer.id}/click` : `/v1/offers/${offer.id}/click`;
+    apiService.post<any>(endpoint, { actorKey }).catch(() => {});
+  };
 
   const handleClaim = async (offer: Offer) => {
     // Only logged-in users may claim — guests go to registration.
@@ -318,7 +327,7 @@ export default function OffersPage() {
                   )}
                   <div className="mt-auto flex gap-2">
                     <Button
-                      onClick={() => setViewingOffer(offer)}
+                      onClick={() => openOffer(offer)}
                       variant="outline"
                       className="flex-1 gap-1.5"
                       size="sm"

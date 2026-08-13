@@ -909,6 +909,8 @@ model Offer {
   business Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
   redemptions OfferRedemption[]
 
+  clickCount         Int         @default(0) @map("click_count")
+
   @@index([tenantId])
   @@index([businessId])
   @@index([status])
@@ -954,12 +956,32 @@ model PlatformOffer {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  clickCount  Int                 @default(0) @map("click_count")
+
   @@index([tenantId])
   @@index([category])
   @@index([status])
   @@index([deletedAt])
   @@index([tenantId, deletedAt, status, category])
   @@map("platform_offers")
+}
+
+/// Dedupe log for offer detail-view clicks — one row per (offer, visitor, day)
+/// so refresh-spam from the same visitor doesn't inflate the count. offerId is
+/// deliberately unconstrained (no FK): it points at either Offer.id or
+/// PlatformOffer.id depending on offerKind.
+model OfferClick {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  offerKind String   @map("offer_kind") @db.VarChar(20)
+  offerId   String   @map("offer_id") @db.Uuid
+  actorKey  String   @map("actor_key") @db.VarChar(120)
+  clickDate DateTime @map("click_date") @db.Date
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([offerKind, offerId, actorKey, clickDate])
+  @@index([offerKind, offerId])
+  @@map("offer_clicks")
 }
 
 enum PlatformOfferCategory {

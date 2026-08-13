@@ -8,6 +8,7 @@ import { PaginationParamsDto, SortOrder } from '../../common/database/pagination
 import { PaginatedResult } from '../../common/database/pagination';
 import { BusinessCustomerService } from '../customers/business-customer.service';
 import { AnalyticsSummaryService } from '../analytics/analytics-summary.service';
+import { recordOfferClick } from '../../common/utils/offer-click.util';
 
 @Injectable()
 export class OffersService {
@@ -165,6 +166,12 @@ export class OffersService {
         });
     if (!offer) throw new NotFoundException('Offer not found');
     return offer;
+  }
+
+  /** Records a deduped detail-view click for the business dashboard/super-admin click count. */
+  async trackClick(tenantId: string, id: string, actorKey: string) {
+    const resolvedTenant = await this.tenantResolver.resolveTenantId(tenantId);
+    await recordOfferClick(this.db, { tenantId: resolvedTenant, offerKind: 'BUSINESS', offerId: id, actorKey });
   }
 
   async update(tenantId: string, id: string, userId: string, data: any) {

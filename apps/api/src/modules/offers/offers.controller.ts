@@ -57,6 +57,19 @@ export class OffersController {
   }
 
   @Public()
+  @Post(':id/click')
+  async trackClick(
+    @Query('tenantId') tenantId: string = 'default',
+    @Param('id') id: string,
+    @Body() body: { actorKey?: string },
+  ) {
+    const actorKey = (body?.actorKey || '').trim().slice(0, 120);
+    if (!actorKey) return { ok: false };
+    await this.offersService.trackClick(tenantId, id, actorKey);
+    return { ok: true };
+  }
+
+  @Public()
   @Get('business/:businessId')
   async findByBusiness(
     @Query('tenantId') tenantId: string = 'default',

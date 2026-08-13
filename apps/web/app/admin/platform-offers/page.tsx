@@ -110,6 +110,7 @@ type Row = {
   description?: string | null;
   details: PlatformOfferDetails;
   status: 'PUBLISHED' | 'UNPUBLISHED';
+  clickCount?: number;
   imageSignedUrl?: string | null;
   createdAt: string;
 };
@@ -373,6 +374,9 @@ export default function AdminPlatformOffersPage() {
                           {rl.label}: <span className="font-semibold">{rl.rate}</span>
                         </span>
                       ))}
+                      <span className="ml-auto rounded-full bg-secondary px-2 py-0.5 text-muted-foreground">
+                        {r.clickCount ?? 0} clicks
+                      </span>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button

@@ -125,7 +125,7 @@ export default function OffersPage() {
           discountAmount: o.discountAmount != null ? Number(o.discountAmount) : 0,
           active: o.status === 'ACTIVE',
           views: o.views ?? 0,
-          clicks: o.clicks ?? 0,
+          clicks: o.clickCount ?? o.clicks ?? 0,
           tags: Array.isArray(o.tags) ? o.tags : [],
           targetCities: Array.isArray(o.targetCities) ? o.targetCities : [],
           startsAt: o.startDate || o.startsAt || undefined,

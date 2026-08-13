@@ -20,6 +20,7 @@ interface OfferRow {
   startDate?: string;
   endDate?: string;
   maxRedemptions?: number | null;
+  clickCount?: number;
   business?: { id: string; name?: string; city?: string; tenant?: { name?: string } } | null;
 }
 
@@ -127,6 +128,7 @@ export default function SuperAdminOffersPage() {
                     <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Business</th>
                     <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Discount</th>
                     <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Valid Till</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Clicks</th>
                     <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">Action</th>
                   </tr>
                 </thead>
@@ -157,6 +159,9 @@ export default function SuperAdminOffersPage() {
                         <span className="inline-flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" /> {fmtDate(o.endDate)}
                         </span>
+                      </td>
+                      <td className="px-5 py-3 text-foreground font-semibold tabular-nums">
+                        {o.clickCount ?? 0}
                       </td>
                       <td className="px-5 py-3 text-right">
                         <Button
