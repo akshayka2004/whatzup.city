@@ -86,7 +86,7 @@ export default function SuperAdminDashboardPage() {
     <SuperAdminLayout>
       <div className="space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground tracking-tight">
               Super Admin Portal
@@ -95,7 +95,7 @@ export default function SuperAdminDashboardPage() {
               Tenant billing oversight, infrastructure analytics, and cluster monitoring.
             </p>
           </div>
-          <Button className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground">
+          <Button className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground shrink-0">
             <Database className="h-4 w-4" />
             Infrastructure Logs
           </Button>

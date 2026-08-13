@@ -191,7 +191,7 @@ export default function AdminCategoriesPage() {
                     onClick={() => handleOpenEdit(cat)}
                     size="icon"
                     variant="outline"
-                    className="h-9 w-9 rounded-xl border-border text-foreground hover:bg-muted"
+                    className="h-10 w-10 rounded-xl border-border text-foreground hover:bg-muted"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -199,7 +199,7 @@ export default function AdminCategoriesPage() {
                     onClick={() => setDeletingCategory(cat)}
                     size="icon"
                     variant="outline"
-                    className="h-9 w-9 rounded-xl border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="h-10 w-10 rounded-xl border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

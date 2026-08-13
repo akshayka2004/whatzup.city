@@ -9,20 +9,20 @@ export default function SuperAdminSettingsPage() {
   return (
     <SuperAdminLayout>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Global System Parameters</h1>
             <p className="text-muted-foreground">
               Adjust system-wide settings, multi-tenant limits, and automatic backup cron rules
             </p>
           </div>
-          <Button className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground">
+          <Button className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground shrink-0">
             <Save className="h-4 w-4" />
             Save Configuration
           </Button>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl space-y-6">
             <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />

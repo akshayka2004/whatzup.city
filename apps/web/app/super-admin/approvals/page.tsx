@@ -513,7 +513,7 @@ export default function SuperAdminApprovalsPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-border">
+              <div className="flex flex-wrap justify-end gap-3 pt-4 mt-2 border-t border-border">
                 <Button
                   onClick={() => { setRejectingItem(reviewingItem); setReviewingItem(null); }}
                   variant="outline"

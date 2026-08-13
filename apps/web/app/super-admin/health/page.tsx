@@ -15,7 +15,7 @@ export default function SuperAdminHealthPage() {
   return (
     <SuperAdminLayout>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Platform Health & Status</h1>
             <p className="text-muted-foreground">
@@ -24,7 +24,7 @@ export default function SuperAdminHealthPage() {
           </div>
           <Button
             variant="outline"
-            className="rounded-xl border-border text-foreground hover:bg-secondary gap-2"
+            className="rounded-xl border-border text-foreground hover:bg-secondary gap-2 shrink-0"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh Status

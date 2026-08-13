@@ -81,7 +81,7 @@ export default function AdminFraudPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 text-sm border-t md:border-t-0 pt-4 md:pt-0 border-border">
+                <div className="flex items-center gap-6 text-sm border-t md:border-t-0 pt-4 md:pt-0 border-border flex-wrap">
                   <div>
                     <p className="text-xs text-muted-foreground">Confidence Score</p>
                     <p className="font-bold text-foreground text-base mt-0.5">{item.score}</p>

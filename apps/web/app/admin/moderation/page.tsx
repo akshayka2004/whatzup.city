@@ -82,7 +82,7 @@ export default function ModerationPage() {
                       onClick={() => setPardoningUser(violator)}
                       size="icon"
                       variant="outline"
-                      className="rounded-xl border-success/20 text-success hover:bg-success/10 hover:text-success h-9 w-9"
+                      className="rounded-xl border-success/20 text-success hover:bg-success/10 hover:text-success h-10 w-10"
                     >
                       <CheckCircle className="h-4 w-4" />
                     </Button>
@@ -90,7 +90,7 @@ export default function ModerationPage() {
                       onClick={() => setBanningUser(violator)}
                       size="icon"
                       variant="outline"
-                      className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9"
+                      className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive h-10 w-10"
                     >
                       <XCircle className="h-4 w-4" />
                     </Button>

@@ -130,8 +130,10 @@ export default function SuperAdminEventsPage() {
                           <td className="px-5 py-3 text-right"><span className="inline-flex items-center gap-1 text-foreground font-semibold"><ExternalLink className="h-3 w-3 text-primary" /> {e.registrationClicks ?? 0}</span></td>
                           <td className="px-5 py-3 text-right"><span className="inline-flex items-center gap-1 text-foreground font-semibold"><Ticket className="h-3 w-3 text-success" /> {e.ticketClicks ?? 0}</span></td>
                           <td className="px-5 py-3 text-right whitespace-nowrap">
-                            <Button onClick={() => openEdit(e)} variant="outline" size="icon" className="h-8 w-8 rounded-lg border-border mr-1 cursor-pointer"><Pencil className="h-3.5 w-3.5" /></Button>
-                            <Button onClick={() => remove(e)} variant="outline" size="icon" className="h-8 w-8 rounded-lg border-destructive/30 text-destructive cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></Button>
+                            <div className="inline-flex items-center gap-2">
+                              <Button onClick={() => openEdit(e)} variant="outline" size="icon" className="h-9 w-9 rounded-lg border-border cursor-pointer"><Pencil className="h-3.5 w-3.5" /></Button>
+                              <Button onClick={() => remove(e)} variant="outline" size="icon" className="h-9 w-9 rounded-lg border-destructive/30 text-destructive cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></Button>
+                            </div>
                           </td>
                         </tr>
                       ))}

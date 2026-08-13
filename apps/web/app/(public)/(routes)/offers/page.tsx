@@ -325,7 +325,7 @@ export default function OffersPage() {
                       {offer.expiresIn === 0 ? 'Expires today' : `Expires in ${offer.expiresIn} days`}
                     </div>
                   )}
-                  <div className="mt-auto flex gap-2">
+                  <div className="mt-auto flex flex-wrap gap-2">
                     <Button
                       onClick={() => openOffer(offer)}
                       variant="outline"
@@ -367,7 +367,7 @@ export default function OffersPage() {
               <button
                 onClick={() => setViewingOffer(null)}
                 aria-label="Close"
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="absolute top-3 right-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>

@@ -252,7 +252,7 @@ export default function TenantsPage() {
                       Adjust maximum user limits and premium features
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {['Trial', 'Standard', 'Premium'].map((plan) => (
                       <Button
                         key={plan}
@@ -266,7 +266,7 @@ export default function TenantsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-secondary/40 rounded-xl border border-border">
+                <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-secondary/40 rounded-xl border border-border">
                   <div>
                     <p className="text-sm font-semibold text-foreground">Tenant Access State</p>
                     <p className="text-xs text-muted-foreground">

@@ -187,7 +187,7 @@ export default function ReportsPage() {
                       onClick={() => setViewingReport(report)}
                       size="icon"
                       variant="outline"
-                      className="rounded-xl border-border text-foreground hover:bg-secondary h-9 w-9"
+                      className="rounded-xl border-border text-foreground hover:bg-secondary h-10 w-10"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -195,7 +195,7 @@ export default function ReportsPage() {
                       onClick={() => setDeletingReport(report)}
                       size="icon"
                       variant="outline"
-                      className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive h-9 w-9"
+                      className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive h-10 w-10"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

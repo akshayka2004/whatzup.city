@@ -558,7 +558,7 @@ export default function RoleOnboardingWizard() {
                         required
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-muted-foreground">Instagram Handle</label>
                         <Input
@@ -578,7 +578,7 @@ export default function RoleOnboardingWizard() {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-muted-foreground">Facebook Page link</label>
                         <Input
@@ -603,7 +603,7 @@ export default function RoleOnboardingWizard() {
 
                 {role === 'influencer' && currentStep === 2 && (
                   <>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-muted-foreground">Total Followers Count</label>
                         <Input
@@ -723,7 +723,7 @@ export default function RoleOnboardingWizard() {
 
                 {role === 'professional' && currentStep === 2 && (
                   <>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-muted-foreground">Min Pricing Hour / Rate ($)</label>
                         <Input
@@ -833,7 +833,7 @@ export default function RoleOnboardingWizard() {
                         className="bg-background border-input text-sm rounded-xl"
                       />
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <Input
                         placeholder="Facebook URL"
                         value={facebookLink}
@@ -959,7 +959,7 @@ export default function RoleOnboardingWizard() {
                   <>
                     <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-4">
                       <label className="text-xs font-bold text-muted-foreground">Add a Past Event Showcase</label>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Input
                           placeholder="Event Title"
                           value={newEvName}
@@ -1014,7 +1014,7 @@ export default function RoleOnboardingWizard() {
                             <Button
                               type="button"
                               onClick={() => setPreviousEvents(previousEvents.filter((_, i) => i !== idx))}
-                              className="h-7 w-7 p-0 bg-transparent text-rose-400 hover:bg-rose-500/10"
+                              className="h-10 w-10 p-0 bg-transparent text-rose-400 hover:bg-rose-500/10"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -1215,7 +1215,7 @@ export default function RoleOnboardingWizard() {
 
               {/* Upload form container */}
               <form onSubmit={handleUploadDoc} className="p-5 rounded-2xl bg-muted/30 border border-border space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-muted-foreground">Document Type Label</label>
                     <Input
@@ -1323,7 +1323,7 @@ export default function RoleOnboardingWizard() {
                         <Button
                           type="button"
                           onClick={() => handleDeleteDoc(doc.id)}
-                          className="h-7 w-7 p-0 bg-transparent text-rose-400 hover:bg-rose-500/10 rounded-lg cursor-pointer"
+                          className="h-10 w-10 p-0 bg-transparent text-rose-400 hover:bg-rose-500/10 rounded-lg cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>

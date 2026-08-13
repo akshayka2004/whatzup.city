@@ -151,7 +151,8 @@ export default function FavoritesPage() {
             <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
               <button
                 onClick={() => setRemovingFav(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+                aria-label="Close"
+                className="absolute top-3 right-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>

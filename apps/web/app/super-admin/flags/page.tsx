@@ -85,14 +85,14 @@ export default function SuperAdminFlagsPage() {
   return (
     <SuperAdminLayout>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Feature Flags</h1>
             <p className="text-muted-foreground">
               Control feature rollout, billing activation, and experimental capabilities
             </p>
           </div>
-          <Button className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground">
+          <Button className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground shrink-0">
             <Plus className="h-4 w-4" />
             Add Feature Flag
           </Button>

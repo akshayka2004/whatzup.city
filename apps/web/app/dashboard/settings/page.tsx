@@ -552,7 +552,7 @@ export default function BusinessSettingsPage() {
               <div className="sm:col-span-2">
                 <label className="text-xs font-medium text-muted-foreground block mb-1.5">Halal Status</label>
                 {editing ? (
-                  <div className="grid grid-cols-3 gap-2 max-w-md">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-w-md">
                     {[{ v: '', l: 'Not specified' }, { v: 'HALAL', l: 'Halal' }, { v: 'NON_HALAL', l: 'Non-Halal' }].map((o) => (
                       <button
                         type="button"
@@ -738,7 +738,7 @@ export default function BusinessSettingsPage() {
             <Card className="p-5 space-y-5">
               <div>
                 <h3 className="text-sm font-bold text-foreground mb-2">Star classification</h3>
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {STAR_OPTIONS.map((star) => (
                     <button
                       key={star}

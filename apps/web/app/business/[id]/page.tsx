@@ -772,7 +772,8 @@ export default function BusinessDetailPage() {
           <Card className="w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setBillModalOpen(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+              aria-label="Close"
+              className="absolute top-3 right-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
@@ -881,7 +882,7 @@ export default function BusinessDetailPage() {
                       onClick={() => setBillRating(star)}
                       onMouseEnter={() => setBillRatingHover(star)}
                       onMouseLeave={() => setBillRatingHover(0)}
-                      className="cursor-pointer p-0.5 transition-transform hover:scale-110"
+                      className="cursor-pointer p-1.5 transition-transform hover:scale-110"
                     >
                       <Star
                         className={cn(
@@ -943,7 +944,8 @@ export default function BusinessDetailPage() {
           <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
             <button
               onClick={() => setClaimingOffer(null)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+              aria-label="Close"
+              className="absolute top-3 right-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
@@ -984,7 +986,8 @@ export default function BusinessDetailPage() {
           <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
             <button
               onClick={() => setClaimedCode(null)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+              aria-label="Close"
+              className="absolute top-3 right-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>

@@ -136,7 +136,7 @@ export default function FraudEscalationsPage() {
         </Card>
 
         {/* ── STATS ──────────────────────────────────────────── */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: 'Total Escalated', value: bills.length, icon: ShieldAlert, color: 'text-destructive', bg: 'bg-destructive/10' },
             { label: 'High Risk (>80%)', value: bills.filter((b) => b.fraudScore >= 0.8).length, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10' },
@@ -227,7 +227,7 @@ export default function FraudEscalationsPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex flex-row lg:flex-col items-center justify-end gap-2 shrink-0">
+                    <div className="flex flex-row lg:flex-col items-center justify-end gap-2 shrink-0 flex-wrap">
                       <Button
                         onClick={() => setReviewingItem(item)}
                         size="sm"

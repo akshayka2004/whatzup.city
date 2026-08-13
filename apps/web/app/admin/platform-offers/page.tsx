@@ -922,14 +922,14 @@ export default function AdminPlatformOffersPage() {
               )}
             </div>
 
-            <div className="flex justify-between gap-3 p-5 border-t border-border">
+            <div className="flex flex-wrap justify-between gap-3 p-5 border-t border-border">
               <Button
                 onClick={() => { setOpen(false); resetForm(); }}
                 className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
               >
                 Cancel
               </Button>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   onClick={() => save(false)}
                   disabled={!canSave || saving}

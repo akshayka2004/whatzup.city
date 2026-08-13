@@ -259,7 +259,7 @@ export default function BillModerationPage() {
 
         {/* ── TABS + SEARCH ──────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="flex gap-1 bg-card/40 p-1 rounded-xl border border-border">
+          <div className="flex flex-wrap gap-1 bg-card/40 p-1 rounded-xl border border-border">
             {TABS.map((tab) => {
               const count = tab.key === 'PENDING' ? pendingCount : tab.key === 'FLAGGED' ? flaggedCount : undefined;
               return (

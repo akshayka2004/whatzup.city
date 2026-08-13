@@ -150,23 +150,23 @@ export default function GovDashboardPage() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
       <header className="border-b border-white/5 bg-card/40 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
               <Building2 className="h-5 w-5 text-amber-400" />
             </div>
-            <div>
-              <p className="text-sm font-bold text-foreground">Government Portal</p>
-              <p className="text-[10px] text-muted-foreground">Official Civic Communications</p>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-foreground truncate">Government Portal</p>
+              <p className="text-[10px] text-muted-foreground truncate">Official Civic Communications</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Button
               onClick={() => setShowForm(true)}
-              className="rounded-xl gap-2 bg-gradient-to-r from-primary to-accent text-primary-foreground text-xs font-semibold cursor-pointer"
+              className="rounded-xl gap-2 bg-gradient-to-r from-primary to-accent text-primary-foreground text-xs font-semibold cursor-pointer h-9 px-3"
             >
               <Plus className="h-3.5 w-3.5" />
-              New Notice
+              <span className="hidden sm:inline">New Notice</span>
             </Button>
             <Button
               onClick={handleSignOut}
@@ -175,13 +175,13 @@ export default function GovDashboardPage() {
               className="rounded-xl border-white/10 text-rose-400 hover:bg-rose-500/10 cursor-pointer gap-1.5"
             >
               <LogOut className="h-3.5 w-3.5" />
-              Sign Out
+              <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-8">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {/* Welcome */}
         <div>
           <h1 className="text-2xl font-extrabold text-foreground">Civic Dashboard</h1>
@@ -306,7 +306,7 @@ export default function GovDashboardPage() {
               {/* Type selector */}
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-2">Notice Type</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {(Object.keys(TYPE_CONFIG) as NoticeType[]).map((t) => {
                     const cfg = TYPE_CONFIG[t];
                     const Icon = cfg.icon;

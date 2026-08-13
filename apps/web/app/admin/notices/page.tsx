@@ -184,7 +184,7 @@ export default function AdminNoticesPage() {
   return (
     <AdminLayout>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">
               Civic Notices & Announcements
@@ -266,7 +266,7 @@ export default function AdminNoticesPage() {
                       onClick={() => setViewingNotice(note)}
                       size="icon"
                       variant="outline"
-                      className="h-8 w-8 rounded-lg border-border text-foreground hover:bg-secondary cursor-pointer"
+                      className="h-10 w-10 rounded-lg border-border text-foreground hover:bg-secondary cursor-pointer"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -274,7 +274,7 @@ export default function AdminNoticesPage() {
                       onClick={() => setDeletingNotice(note)}
                       size="icon"
                       variant="outline"
-                      className="h-8 w-8 rounded-lg border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                      className="h-10 w-10 rounded-lg border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
