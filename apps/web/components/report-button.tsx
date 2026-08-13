@@ -37,7 +37,7 @@ export function ReportButton({
       aria-label="Report this listing"
       className={
         className ??
-        'inline-flex items-center justify-center h-8 w-8 rounded-lg border border-border text-muted-foreground hover:text-rose-400 hover:border-rose-500/30 transition-colors cursor-pointer shrink-0'
+        'inline-flex items-center justify-center h-10 w-10 rounded-lg border border-border text-muted-foreground hover:text-rose-400 hover:border-rose-500/30 transition-colors cursor-pointer shrink-0'
       }
     >
       <Flag className="h-3.5 w-3.5" />
