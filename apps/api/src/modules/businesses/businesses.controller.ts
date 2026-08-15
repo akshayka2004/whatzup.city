@@ -141,6 +141,16 @@ export class BusinessesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  @Delete('admin/:id')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Soft-delete a business — removes it from search/discovery (super-admin)' })
+  async adminDelete(@Param('id') id: string, @CurrentUser('id') adminId: string) {
+    await this.businessesService.adminSoftDelete(id, adminId);
+    return { message: 'Business deleted' };
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @Patch(':id/status')
   @ApiBearerAuth()

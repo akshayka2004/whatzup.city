@@ -5,7 +5,7 @@ import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Building2, Search, RefreshCw, Pencil, X, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Tag, CalendarDays, ArrowUpDown, Wallet, Star } from 'lucide-react';
+import { Building2, Search, RefreshCw, Pencil, X, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Tag, CalendarDays, ArrowUpDown, Wallet, Star, Trash2, AlertTriangle } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES } from '@/lib/constants';
 
@@ -62,6 +62,9 @@ export default function SuperAdminBusinessesPage() {
   const [form, setForm] = useState<Biz | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState<Biz | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteErr, setDeleteErr] = useState('');
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 350);
@@ -131,6 +134,17 @@ export default function SuperAdminBusinessesPage() {
   };
 
   const set = (k: keyof Biz, v: any) => setForm((f) => (f ? { ...f, [k]: v } : f));
+
+  const handleDelete = async () => {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    setDeleteErr('');
+    const res = await apiService.delete<any>(`/v1/businesses/admin/${confirmDelete.id}`);
+    setDeleting(false);
+    if (res.error) { setDeleteErr(res.error); return; }
+    setRows((prev) => prev.filter((b) => b.id !== confirmDelete.id));
+    setConfirmDelete(null);
+  };
 
   const SortTh = ({ label, col }: { label: string; col: string }) => (
     <th className="px-5 py-3 text-left">
@@ -227,9 +241,19 @@ export default function SuperAdminBusinessesPage() {
                       </td>
                       <td className="px-5 py-3"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-foreground">{b.status}</span></td>
                       <td className="px-5 py-3 text-right">
-                        <Button onClick={() => openEdit(b)} variant="outline" size="sm" className="rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer">
-                          <Pencil className="h-3.5 w-3.5" /> Edit
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button onClick={() => openEdit(b)} variant="outline" size="sm" className="rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer">
+                            <Pencil className="h-3.5 w-3.5" /> Edit
+                          </Button>
+                          <Button
+                            onClick={() => { setDeleteErr(''); setConfirmDelete(b); }}
+                            variant="outline"
+                            size="sm"
+                            className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 gap-1.5 cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Delete
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -307,6 +331,36 @@ export default function SuperAdminBusinessesPage() {
               <Button onClick={() => setEditing(null)} variant="outline" className="rounded-xl border-border text-muted-foreground hover:bg-secondary">Cancel</Button>
               <Button onClick={save} disabled={saving} className="rounded-xl bg-primary text-primary-foreground font-semibold gap-1.5">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Save
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Delete confirm modal */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
+            <button onClick={() => setConfirmDelete(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"><X className="h-5 w-5" /></button>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground">Delete business</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              This removes <strong className="text-foreground">{confirmDelete.name}</strong> from public search and discovery.
+              It's a soft delete (recoverable from the database if needed), not a permanent erase.
+            </p>
+            {deleteErr && <p className="text-xs text-destructive mt-3">{deleteErr}</p>}
+            <div className="flex justify-end gap-2 mt-5">
+              <Button onClick={() => setConfirmDelete(null)} variant="outline" className="rounded-xl border-border text-muted-foreground hover:bg-secondary cursor-pointer">Cancel</Button>
+              <Button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="rounded-xl bg-destructive text-white font-semibold gap-1.5 hover:bg-destructive/90 cursor-pointer"
+              >
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Delete
               </Button>
             </div>
           </Card>

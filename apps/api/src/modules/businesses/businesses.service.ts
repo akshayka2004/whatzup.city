@@ -369,6 +369,32 @@ export class BusinessesService {
     return updated;
   }
 
+  async adminSoftDelete(id: string, adminId: string) {
+    const business = await this.businessRepo.model.findFirst({ where: { id, deletedAt: null } });
+    if (!business) throw new NotFoundException('Business not found');
+
+    const removed = await this.businessRepo.model.update({
+      where: { id },
+      data: { deletedAt: new Date(), updatedBy: adminId },
+    });
+    await this.redis.del(`business:${id}`);
+
+    await this.auditService.log({
+      tenantId: business.tenantId,
+      userId: adminId,
+      action: 'ADMIN_DELETE_BUSINESS',
+      resource: 'BUSINESS',
+      resourceId: id,
+      oldData: business,
+    });
+
+    try {
+      await this.searchService.removeFromIndex(id, business.tenantId);
+    } catch { /* non-fatal */ }
+
+    return removed;
+  }
+
   async getOwnerBusinesses(tenantId: string, ownerId: string) {
     return this.businessRepo.findMany(
       tenantId,
