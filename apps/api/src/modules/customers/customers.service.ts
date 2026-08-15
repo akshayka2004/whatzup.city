@@ -23,6 +23,7 @@ export class CustomersService {
         isActive: true,
         emailVerified: true,
         referralCode: true,
+        profession: true,
         createdAt: true,
         customerProfile: true,
       },

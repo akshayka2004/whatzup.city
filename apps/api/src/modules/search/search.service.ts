@@ -38,6 +38,9 @@ const SEARCH_SYNONYM_GROUPS: string[][] = [
   ['resort', 'resorts'],
   ['hotel', 'hotels'],
   ['venue', 'venues', 'venue spots', 'auditorium', 'mandapam', 'mandapams'],
+  ['sadya', 'sadhya', 'sadhya feast', 'onam sadya', 'onam sadhya'],
+  ['payasam', 'payasam sweet', 'payasam dessert'],
+  ['staycation', 'stay cation', 'day-out', 'day out', 'dayout'],
 ];
 
 @Injectable()

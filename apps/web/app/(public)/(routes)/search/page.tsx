@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Search, Star, MapPin, Globe, Instagram, Heart, Loader2, CheckCircle2, Tag, Building2 } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { apiService } from '@/lib/services/api-service';
+import { categoryLabel } from '@/lib/platform-offers';
 import {
   Select,
   SelectContent,
@@ -62,6 +63,35 @@ interface SearchResult {
   isVerified?: boolean;
 }
 
+interface PlatformOfferResult {
+  id: string;
+  title: string;
+  location: string;
+  category: string;
+  price?: string | null;
+}
+
+// Same spelling-variant groups as apps/api/src/modules/search/search.service.ts,
+// scoped to platform-offer categories only — keeps this client-side filter in
+// sync with the API's synonym expansion without pulling in the full list.
+const PLATFORM_OFFER_SYNONYMS: Record<string, string[]> = {
+  SADYA: ['sadya', 'sadhya', 'sadhya feast', 'onam sadya', 'onam sadhya'],
+  PAYASAM: ['payasam', 'payasam sweet', 'payasam dessert'],
+  STAYCATION: ['staycation', 'stay cation', 'day-out', 'day out', 'dayout'],
+  CLOTHING: ['clothing', 'clothes', 'apparel', 'fashion'],
+  ELECTRONICS: ['electronics', 'electronic', 'gadgets', 'appliances'],
+};
+
+function matchesPlatformOffer(o: any, term: string): boolean {
+  const q = term.trim().toLowerCase();
+  if (!q) return true;
+  if ((o.title || '').toLowerCase().includes(q)) return true;
+  if ((o.location || '').toLowerCase().includes(q)) return true;
+  if ((o.description || '').toLowerCase().includes(q)) return true;
+  const synonyms = PLATFORM_OFFER_SYNONYMS[o.category] || [];
+  return synonyms.some((s) => s.includes(q) || q.includes(s));
+}
+
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -70,6 +100,7 @@ function SearchContent() {
   const [searchTerm, setSearchTerm] = useState(initialQuery);
   const [sortBy, setSortBy] = useState('relevant');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [rawPlatformOffers, setRawPlatformOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [favIds, setFavIds] = useState<string[]>([]);
 
@@ -124,6 +155,30 @@ function SearchContent() {
       setShowSuggestions(true);
     }
   };
+
+  // Curated platform offers (Sadya/Payasam/Staycation/…) aren't tied to a
+  // business and never reach the /v1/search index, so they're fetched once
+  // here and filtered client-side alongside the business results.
+  useEffect(() => {
+    apiService.get<any>('/v1/platform-offers/public').then((res) => {
+      if (res.data && !res.error) {
+        const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+        setRawPlatformOffers(list);
+      }
+    });
+  }, []);
+
+  const platformResults: PlatformOfferResult[] = searchTerm.trim()
+    ? rawPlatformOffers
+        .filter((o) => matchesPlatformOffer(o, searchTerm))
+        .map((o) => ({
+          id: o.id,
+          title: o.title,
+          location: o.location,
+          category: categoryLabel(o.category),
+          price: o.price,
+        }))
+    : [];
 
   useEffect(() => { setSearchTerm(initialQuery); }, [initialQuery]);
 
@@ -255,16 +310,41 @@ function SearchContent() {
         </div>
       </div>
 
+      {platformResults.length > 0 && (
+        <div className="mb-6 space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+            Platform Offers
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {platformResults.map((o) => (
+              <Link
+                key={o.id}
+                href="/offers"
+                className="flex items-center justify-between gap-3 rounded-xl border border-warning/20 bg-warning/5 px-4 py-3 hover:border-warning/40 transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{o.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{o.category} · {o.location}</p>
+                </div>
+                {o.price && <span className="shrink-0 text-sm font-bold text-primary">{o.price}</span>}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
         </div>
       ) : sorted.length === 0 ? (
-        <div className="p-12 rounded-2xl text-center border border-dashed border-border bg-secondary">
-          <Search className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-50" />
-          <h3 className="text-base font-semibold text-foreground mb-1">No businesses found</h3>
-          <p className="text-sm text-muted-foreground">Try a different search term or city.</p>
-        </div>
+        platformResults.length === 0 ? (
+          <div className="p-12 rounded-2xl text-center border border-dashed border-border bg-secondary">
+            <Search className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-50" />
+            <h3 className="text-base font-semibold text-foreground mb-1">No results found</h3>
+            <p className="text-sm text-muted-foreground">Try a different search term or city.</p>
+          </div>
+        ) : null
       ) : (
         <div className="space-y-4">
           {sorted.map((result) => (

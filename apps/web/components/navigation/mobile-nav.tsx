@@ -38,6 +38,8 @@ import {
   Building2,
   Megaphone,
   Grid,
+  Receipt,
+  BadgeIndianRupee,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -138,9 +140,12 @@ export function MobileNav() {
     ];
 
     drawerItems = [
+      { label: 'Payments', href: '/admin/payments', icon: Receipt },
+      { label: 'Payment Approvals', href: '/admin/payment-approvals', icon: BadgeIndianRupee },
       { label: 'Notices', href: '/admin/notices', icon: Bell },
       { label: 'Audit Logs', href: '/admin/audit', icon: FileText },
       { label: 'Categories', href: '/admin/categories', icon: Building2 },
+      { label: 'Platform Offers', href: '/admin/platform-offers', icon: Tag },
       { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
       { label: 'My Profile', href: '/admin/profile', icon: UserCog },
       { label: 'Settings', href: '/admin/settings', icon: Settings },
@@ -158,6 +163,9 @@ export function MobileNav() {
       { label: 'Manage Users', href: '/super-admin/users', icon: UserCog },
       { label: 'Businesses', href: '/super-admin/businesses', icon: Building2 },
       { label: 'Approvals', href: '/super-admin/approvals', icon: CheckCircle },
+      { label: 'Payments', href: '/admin/payments', icon: Receipt },
+      { label: 'Payment Approvals', href: '/admin/payment-approvals', icon: BadgeIndianRupee },
+      { label: 'Platform Offers', href: '/admin/platform-offers', icon: Tag },
       { label: 'Reports', href: '/super-admin/reports', icon: AlertTriangle },
       { label: 'Notices', href: '/super-admin/notices', icon: Bell },
       { label: 'Audit Logs', href: '/super-admin/audit', icon: FileText },

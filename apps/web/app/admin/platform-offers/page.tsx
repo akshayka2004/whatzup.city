@@ -54,7 +54,7 @@ function RateLineEditor({
           <button
             type="button"
             onClick={() => remove(i)}
-            className="p-2 text-muted-foreground hover:text-destructive cursor-pointer"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive active:scale-95 cursor-pointer"
             aria-label="Remove"
           >
             <X className="h-4 w-4" />
@@ -91,7 +91,7 @@ function PerSelectionRates({
             value={rateFor(label)}
             onChange={(e) => setRate(label, e.target.value)}
             placeholder="Rate"
-            className="h-9 rounded-lg"
+            className="h-10 rounded-lg"
           />
         </div>
       ))}
@@ -799,7 +799,7 @@ export default function AdminPlatformOffersPage() {
                                 onClick={() => setD({
                                   paxSlabRates: (details.paxSlabRates || []).filter((_, idx) => idx !== i),
                                 })}
-                                className="p-2 text-muted-foreground hover:text-destructive cursor-pointer"
+                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive active:scale-95 cursor-pointer"
                                 aria-label="Remove"
                               >
                                 <X className="h-4 w-4" />

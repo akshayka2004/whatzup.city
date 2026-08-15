@@ -93,7 +93,9 @@ function mapPlatformOffer(o: any): Offer {
     businessType: categoryLabel(o.category),
     discount: 0,
     discountAmount: 0,
-    discountLabel: o.price || (rates[0] ? rates[0].rate : 'View'),
+    // Empty (not "View") when the admin hasn't entered a price or any rate —
+    // the rate badge/box is hidden entirely rather than showing a placeholder.
+    discountLabel: o.price || rates[0]?.rate || '',
     expiresIn: undefined,
     terms: '',
     isPlatform: true,
@@ -302,14 +304,16 @@ export default function OffersPage() {
                         )}
                       </div>
                     </div>
-                    <div
-                      className={cn(
-                        'shrink-0 rounded-xl px-3 py-1 text-lg font-bold',
-                        claimed ? 'bg-success/12 text-success' : 'bg-primary/10 text-primary',
-                      )}
-                    >
-                      {claimed ? <CheckCircle2 className="h-5 w-5" /> : offer.discountLabel}
-                    </div>
+                    {(claimed || offer.discountLabel) && (
+                      <div
+                        className={cn(
+                          'shrink-0 rounded-xl px-3 py-1 text-lg font-bold',
+                          claimed ? 'bg-success/12 text-success' : 'bg-primary/10 text-primary',
+                        )}
+                      >
+                        {claimed ? <CheckCircle2 className="h-5 w-5" /> : offer.discountLabel}
+                      </div>
+                    )}
                   </div>
                   {offer.description && (
                     <p className="mb-4 text-sm text-muted-foreground line-clamp-2">{offer.description}</p>
@@ -401,6 +405,7 @@ export default function OffersPage() {
                         </div>
                       );
                     }
+                    if (!viewingOffer.discountLabel) return null;
                     return (
                       <div className="bg-secondary p-4 rounded-xl text-center border border-border">
                         <p className="text-xs text-muted-foreground mb-1">Price</p>
