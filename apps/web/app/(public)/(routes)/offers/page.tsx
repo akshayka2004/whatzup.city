@@ -163,9 +163,18 @@ export default function OffersPage() {
   };
 
   const filtered = useMemo(() => {
-    if (typeFilter === 'all') return offers;
-    return offers.filter((o) => o.businessType === typeFilter);
-  }, [typeFilter, offers]);
+    let list = offers;
+    // Business offers are already server-scoped by city. Platform offers have
+    // no structured city field (`location` is freeform text), so the city
+    // filter is applied client-side by substring match against it.
+    if (city) {
+      list = list.filter((o) => !o.isPlatform || o.business.toLowerCase().includes(city.toLowerCase()));
+    }
+    if (typeFilter !== 'all') {
+      list = list.filter((o) => o.businessType === typeFilter);
+    }
+    return list;
+  }, [typeFilter, city, offers]);
 
   const openOffer = (offer: Offer) => {
     setViewingOffer(offer);
