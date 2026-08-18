@@ -54,6 +54,7 @@ export const KERALA_CITIES = [
   'Kollam',
   'Thrissur',
   'Kannur',
+  'Kasaragod',
   'Palakkad',
   'Alappuzha',
   'Kottayam',
