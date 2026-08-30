@@ -13,6 +13,7 @@ export type RegistrationDetails = {
   brandName?: string;
   companyName?: string;
   companyType?: string;
+  billSeriesPrefix?: string;
   compliance?: {
     pan?: { has?: boolean; number?: string; nameAsPerPan?: string };
     gst?: { has?: boolean; gstin?: string; legalName?: string; tradeName?: string; regType?: string };
@@ -143,7 +144,21 @@ export function RegistrationDetailsForm({
               </SelectContent>
             </Select>
           </Field>
+          <Field
+            label="Bill series prefix"
+          >
+            <Input
+              value={v.billSeriesPrefix || ''}
+              onChange={(e) => merge({ billSeriesPrefix: e.target.value })}
+              placeholder="e.g. INV- or SC/2026/"
+            />
+          </Field>
         </div>
+        <p className="text-[11px] text-muted-foreground">
+          Optional. If your own bills always start with a fixed prefix, entering it here lets us
+          auto-flag matching customer-submitted bills during review — you can also set this later
+          from Settings.
+        </p>
       </Section>
 
       {/* PAN */}

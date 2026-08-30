@@ -233,6 +233,7 @@ export class BusinessOnboardingService {
     if (dto.supportContact !== undefined) updateData.supportContact = dto.supportContact;
     if (dto.branchHead !== undefined) updateData.branchHead = dto.branchHead;
     if (dto.categoryAttributes !== undefined) updateData.categoryAttributes = dto.categoryAttributes;
+    if (dto.billSeriesPrefix !== undefined) updateData.billSeriesPrefix = dto.billSeriesPrefix.trim() || null;
     // Hotel category pricing
     if (dto.hotelStarRating !== undefined) updateData.hotelStarRating = dto.hotelStarRating;
     if (dto.hotelAmenities !== undefined) updateData.hotelAmenities = dto.hotelAmenities;

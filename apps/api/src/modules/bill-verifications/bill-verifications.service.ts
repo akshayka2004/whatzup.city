@@ -12,6 +12,7 @@ import { VerifiedPurchasesService } from '../verified-purchases/verified-purchas
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 import { AnalyticsSummaryService } from '../analytics/analytics-summary.service';
+import { DatabaseService } from '../../common/database/database.service';
 
 // Business-level owner roles (string-literal comparison for forward compat)
 const OWNER_ROLES = ['BUSINESS_OWNER', 'BUSINESS_ADMIN', 'SUPER_ADMIN'] as const;
@@ -34,7 +35,21 @@ export class BillVerificationsService {
     private readonly verifiedPurchasesService: VerifiedPurchasesService,
     private readonly notificationsService: NotificationsService,
     private readonly analyticsSummary: AnalyticsSummaryService,
+    private readonly db: DatabaseService,
   ) {}
+
+  /**
+   * True if the bill's OCR-extracted invoice number starts with the
+   * business's registered bill series prefix (case-insensitive). Informational
+   * only — never auto-approves; moderators still review every bill, this just
+   * lets them see which ones already line up with the business's own series.
+   */
+  private seriesMatched(billSeriesPrefix: string | null | undefined, ocrMetadata: any): boolean {
+    if (!billSeriesPrefix) return false;
+    const invoiceNumber: string | undefined = ocrMetadata?.parsed?.invoiceNumber;
+    if (!invoiceNumber) return false;
+    return invoiceNumber.trim().toLowerCase().startsWith(billSeriesPrefix.trim().toLowerCase());
+  }
 
   // ── BUSINESS-SCOPED QUEUE ─────────────────────────────────────────
 
@@ -98,6 +113,17 @@ export class BillVerificationsService {
         }
         return v;
       });
+    }
+
+    if (result?.data?.length) {
+      const business = await this.db.business.findUnique({
+        where: { id: businessId },
+        select: { billSeriesPrefix: true },
+      });
+      result.data = result.data.map((v: any) => ({
+        ...v,
+        seriesMatched: this.seriesMatched(business?.billSeriesPrefix, v.ocrMetadata),
+      }));
     }
 
     return result;

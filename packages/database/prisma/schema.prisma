@@ -528,6 +528,10 @@ model Business {
   branchHead         Json     @default("{}") @map("branch_head")
   // category-specific attributes, keyed by attribute key -> value(s)
   categoryAttributes Json     @default("{}") @map("category_attributes")
+  // Optional invoice-number prefix the business uses on its own bills (e.g.
+  // "INV-", "SC/2026/") — lets moderation auto-flag a customer-submitted
+  // bill as series-matched when its OCR-extracted number starts with this.
+  billSeriesPrefix   String?  @map("bill_series_prefix") @db.VarChar(30)
   // Hotel category only: 1-5 star classification drives base listing charge
   hotelStarRating    Int?     @map("hotel_star_rating")
   // Hotel category only: { [amenityKey]: { selected: bool, ...subChoices } } — ₹2500/selected top-level item

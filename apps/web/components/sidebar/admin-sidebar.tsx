@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   CheckCircle,
   FileText,
-  Shield,
   AlertTriangle,
   BarChart3,
   Bell,
@@ -105,14 +104,6 @@ export function AdminSidebar() {
             <span className="text-[11px] text-muted-foreground">Master Admin</span>
           </span>
         </Link>
-      </div>
-
-      {/* Info banner */}
-      <div className="mx-3 mb-2 rounded-xl border border-info/20 bg-info/10 px-3 py-2">
-        <p className="flex items-center gap-1 text-[10px] font-medium text-info">
-          <Shield className="h-3 w-3 shrink-0" />
-          Bill verification is managed by businesses
-        </p>
       </div>
 
       {/* Grouped nav */}

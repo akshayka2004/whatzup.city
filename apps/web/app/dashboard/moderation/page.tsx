@@ -61,7 +61,8 @@ function mapApiBill(b: any) {
     business: businessName,
     amount,
     billDate,
-    billNumber: b.billNumber || bill.billNumber || b.id.substring(0, 8).toUpperCase(),
+    billNumber: b.ocrMetadata?.parsed?.invoiceNumber || b.billNumber || bill.billNumber || b.id.substring(0, 8).toUpperCase(),
+    seriesMatched: !!b.seriesMatched,
     status: (b.status || 'PENDING') as BillStatus,
     ocrConfidence: b.ocrConfidence ?? (b.ocrMetadata?.confidence ?? 75),
     fraudScore: isNaN(fraudScore) ? 0.1 : fraudScore,
@@ -345,6 +346,11 @@ export default function BillModerationPage() {
                           <span className="font-mono">{bill.billNumber}</span>
                           <span className="mx-1.5">·</span>
                           {bill.billDate}
+                          {bill.seriesMatched && (
+                            <span className="ml-1.5 inline-flex items-center rounded-full bg-success/10 px-1.5 py-0.5 text-[10px] font-semibold text-success">
+                              Series matched
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>

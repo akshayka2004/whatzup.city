@@ -742,6 +742,7 @@ export default function UnifiedRegisterPage() {
             supportContact: regDetails.supportContact,
             branchHead: regDetails.branchHead,
             categoryAttributes: regDetails.categoryAttributes,
+            billSeriesPrefix: regDetails.billSeriesPrefix,
           });
         } catch (e) { console.warn('Step 3 update failed:', e); }
 
