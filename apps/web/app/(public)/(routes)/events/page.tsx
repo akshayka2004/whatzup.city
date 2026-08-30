@@ -102,7 +102,7 @@ export default function EventsPage() {
             {events.map((ev) => (
               <div
                 key={ev.id}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl motion-reduce:hover:translate-y-0"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100"
               >
                 <div className="relative h-40 overflow-hidden bg-secondary">
                   {ev.posterImage ? (

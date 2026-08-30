@@ -171,6 +171,13 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Mobile touch feel: kill the default gray tap-flash (we use active:
+     states for feedback instead) and skip the ~300ms tap delay browsers
+     otherwise reserve for double-tap-to-zoom detection. */
+  a, button, [role='button'], input, select, textarea {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
 }
 
 /*

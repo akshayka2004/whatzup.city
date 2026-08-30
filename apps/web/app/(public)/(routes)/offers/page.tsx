@@ -283,7 +283,7 @@ export default function OffersPage() {
                 <div
                   key={offer.id}
                   className={cn(
-                    'flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl motion-reduce:hover:translate-y-0',
+                    'flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100',
                     claimed && 'opacity-75',
                   )}
                 >

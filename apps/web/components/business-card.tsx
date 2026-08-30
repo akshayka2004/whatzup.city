@@ -38,7 +38,7 @@ export function BusinessCard({ business }: { business: any }) {
   };
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl motion-reduce:hover:translate-y-0">
+    <div className="group flex flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl active:scale-[0.98] active:shadow-md motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100">
       {/* Cover */}
       <Link href={`/business/${business.id}`} className="relative block h-40 overflow-hidden">
         {cover ? (

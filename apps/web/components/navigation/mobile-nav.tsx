@@ -230,8 +230,8 @@ export function MobileNav() {
         return (
           <Link key={item.label} href={item.href} className="flex-1">
             <button
-              className={`w-full flex flex-col items-center justify-center gap-1 rounded-xl py-1 text-[10px] font-medium transition-colors ${
-                active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+              className={`w-full flex flex-col items-center justify-center gap-1 rounded-xl py-1 text-[10px] font-medium transition-all duration-150 active:scale-90 motion-reduce:active:scale-100 ${
+                active ? 'text-primary' : 'text-muted-foreground hover:text-foreground active:text-primary'
               }`}
             >
               <Icon className="h-5 w-5 shrink-0" />
@@ -245,7 +245,7 @@ export function MobileNav() {
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <button
-            className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+            className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl py-1 text-[10px] font-medium text-muted-foreground transition-all duration-150 hover:text-foreground active:scale-90 active:text-primary motion-reduce:active:scale-100"
             onClick={() => setIsOpen(true)}
           >
             <Menu className="h-5 w-5 shrink-0" />
@@ -279,7 +279,7 @@ export function MobileNav() {
                 <button
                   key={item.label}
                   onClick={() => handleDrawerItemClick(item.href, item.action)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/40 border border-border hover:bg-secondary/80 text-foreground transition-all text-left text-xs font-semibold cursor-pointer h-12"
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/40 border border-border hover:bg-secondary/80 active:scale-[0.96] active:bg-secondary text-foreground transition-all duration-150 text-left text-xs font-semibold cursor-pointer h-12 motion-reduce:active:scale-100"
                 >
                   <ItemIcon className="h-4 w-4 text-primary shrink-0" />
                   <span className="truncate">{item.label}</span>
@@ -291,7 +291,7 @@ export function MobileNav() {
             {user && (
               <button
                 onClick={handleSignOutClick}
-                className="col-span-2 flex items-center gap-3 px-4 py-3 rounded-2xl bg-destructive/10 border border-destructive/20 hover:bg-destructive/20 transition-all text-left text-xs font-semibold text-destructive cursor-pointer h-12 mt-2"
+                className="col-span-2 flex items-center gap-3 px-4 py-3 rounded-2xl bg-destructive/10 border border-destructive/20 hover:bg-destructive/20 active:scale-[0.96] transition-all duration-150 text-left text-xs font-semibold text-destructive cursor-pointer h-12 mt-2 motion-reduce:active:scale-100"
               >
                 <LogOut className="h-4 w-4 shrink-0 text-destructive" />
                 <span>Sign Out</span>
