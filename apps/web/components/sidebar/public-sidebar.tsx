@@ -21,24 +21,24 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type Item = { label: string; href: string; icon: React.ComponentType<{ className?: string }> };
+type Item = { label: string; href: string; icon: React.ComponentType<{ className?: string }>; tour?: string };
 
 const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: 'Discover',
     items: [
-      { label: 'Browse', href: '/category', icon: Grid },
+      { label: 'Browse', href: '/category', icon: Grid, tour: 'nav-browse' },
       { label: 'Nearby', href: '/nearby', icon: MapPin },
-      { label: 'Search', href: '/search', icon: Search },
-      { label: 'Offers', href: '/offers', icon: Ticket },
-      { label: 'Events', href: '/events', icon: Calendar },
+      { label: 'Search', href: '/search', icon: Search, tour: 'nav-search' },
+      { label: 'Offers', href: '/offers', icon: Ticket, tour: 'nav-offers' },
+      { label: 'Events', href: '/events', icon: Calendar, tour: 'nav-events' },
       { label: 'Announcements', href: '/government', icon: FileText },
     ],
   },
   {
     title: 'Personal',
     items: [
-      { label: 'Favorites', href: '/favorites', icon: Heart },
+      { label: 'Favorites', href: '/favorites', icon: Heart, tour: 'nav-favorites' },
       { label: 'Notifications', href: '/notifications', icon: Bell },
       { label: 'Report Issue', href: '/report', icon: Flag },
     ],
@@ -87,6 +87,7 @@ export function PublicSidebar() {
       <Link
         href={item.href}
         aria-current={active ? 'page' : undefined}
+        data-tour={item.tour}
         className={cn(
           'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150',
           active
@@ -165,7 +166,7 @@ export function PublicSidebar() {
 
       {/* Footer actions */}
       <div className="space-y-1 border-t border-sidebar-border px-3 py-3">
-        <NavLink item={{ label: 'Settings', href: '/profile', icon: Settings }} />
+        <NavLink item={{ label: 'Settings', href: '/profile', icon: Settings, tour: 'nav-settings' }} />
         <button
           onClick={handleSignOut}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive"

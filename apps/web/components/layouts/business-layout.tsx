@@ -10,6 +10,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
 import { SubscriptionPaywall } from '@/components/business/subscription-paywall';
+import { OnboardingTour } from '@/components/onboarding/platform-tour';
+import { BUSINESS_TOUR_STEPS } from '@/lib/tour-steps';
 import { apiService } from '@/lib/services/api-service';
 import {
   AlertTriangle,
@@ -256,8 +258,14 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
     );
   }
 
+  const isAdminViewer =
+    ['admin', 'super-admin'].includes(user?.role || '') ||
+    ['MASTER_ADMIN', 'SUPER_ADMIN'].includes((user as any)?.rbacRole || '');
+  const showTour = !isMobile && !isAdminViewer && !showTrialModal;
+
   return (
     <div className="flex h-dvh w-full bg-background relative overflow-hidden">
+      {showTour && <OnboardingTour steps={BUSINESS_TOUR_STEPS} storageKey="onboarding_tour_business_v1" />}
       {/* Sidebar - Hidden on mobile */}
       {!isMobile && <BusinessSidebar />}
 

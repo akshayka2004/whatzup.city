@@ -34,13 +34,13 @@ import { getRoleLabel } from '@/lib/rbac';
 // ── MENU DEFINITIONS PER ROLE TIER ───────────────────────────────────
 
 const OWNER_MENU = [
-  { label: 'Overview', href: '/dashboard', icon: BarChart3, exact: true },
+  { label: 'Overview', href: '/dashboard', icon: BarChart3, exact: true, tour: 'nav-overview' },
   { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-  { label: 'Bill Moderation', href: '/dashboard/moderation', icon: ShieldCheck, badge: 'pending' },
-  { label: 'Customers', href: '/dashboard/customers', icon: Users },
+  { label: 'Bill Moderation', href: '/dashboard/moderation', icon: ShieldCheck, badge: 'pending', tour: 'nav-moderation' },
+  { label: 'Customers', href: '/dashboard/customers', icon: Users, tour: 'nav-customers' },
   { label: 'Campaigns', href: '/dashboard/campaigns', icon: Megaphone },
-  { label: 'Offers', href: '/dashboard/offers', icon: Tag },
-  { label: 'Vouchers', href: '/dashboard/vouchers', icon: Ticket },
+  { label: 'Offers', href: '/dashboard/offers', icon: Tag, tour: 'nav-offers' },
+  { label: 'Vouchers', href: '/dashboard/vouchers', icon: Ticket, tour: 'nav-vouchers' },
   { label: 'Events', href: '/dashboard/events', icon: CalendarDays },
   { label: 'Products', href: '/dashboard/products', icon: Package },
   { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
@@ -54,12 +54,12 @@ const OWNER_MENU = [
 ];
 
 const MODERATOR_MENU = [
-  { label: 'Overview', href: '/dashboard', icon: ClipboardList, exact: true },
-  { label: 'Bill Queue', href: '/dashboard/moderation', icon: ShieldCheck, badge: 'pending', highlight: true },
+  { label: 'Overview', href: '/dashboard', icon: ClipboardList, exact: true, tour: 'nav-overview' },
+  { label: 'Bill Queue', href: '/dashboard/moderation', icon: ShieldCheck, badge: 'pending', highlight: true, tour: 'nav-moderation' },
   { label: 'Review Moderation', href: '/dashboard/reviews', icon: Star },
-  { label: 'Customer Reports', href: '/dashboard/customers', icon: MessageSquare },
+  { label: 'Customer Reports', href: '/dashboard/customers', icon: MessageSquare, tour: 'nav-customers' },
   // Fraud Alerts hidden — dormant module
-  { label: 'Offers', href: '/dashboard/offers', icon: Tag },
+  { label: 'Offers', href: '/dashboard/offers', icon: Tag, tour: 'nav-offers' },
   { label: 'Media', href: '/dashboard/media', icon: Image },
 ];
 
@@ -129,6 +129,7 @@ export function BusinessSidebar() {
     active,
     highlight,
     badge,
+    tour,
   }: {
     href: string;
     label: string;
@@ -136,10 +137,12 @@ export function BusinessSidebar() {
     active: boolean;
     highlight?: boolean;
     badge?: boolean;
+    tour?: string;
   }) => (
     <Link
       href={href}
       aria-current={active ? 'page' : undefined}
+      data-tour={tour}
       className={cn(
         'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-150',
         active
@@ -215,6 +218,7 @@ export function BusinessSidebar() {
             active={isItemActive(item.href, item.exact)}
             highlight={(item as any).highlight}
             badge={(item as any).badge === 'pending'}
+            tour={(item as any).tour}
           />
         ))}
       </nav>
@@ -226,6 +230,7 @@ export function BusinessSidebar() {
           label="Settings"
           icon={Settings}
           active={pathname === '/profile'}
+          tour="nav-settings"
         />
         <button
           onClick={handleSignOut}

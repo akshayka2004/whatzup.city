@@ -46,15 +46,22 @@ const nextConfig = {
     ],
   },
 
-  // Long-lived caching for built static assets
+  // Long-lived caching for built static assets — production only. In dev,
+  // Turbopack doesn't always change chunk filenames per edit, so a year-long
+  // immutable cache here makes browsers keep serving stale JS/CSS across
+  // restarts no matter how many times the source changes.
   async headers() {
     return [
-      {
-        source: '/_next/static/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-        ],
-      },
+      ...(process.env.NODE_ENV === 'production'
+        ? [
+            {
+              source: '/_next/static/:path*',
+              headers: [
+                { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+              ],
+            },
+          ]
+        : []),
       {
         source: '/:all*(svg|jpg|jpeg|png|webp|avif|ico|woff|woff2|ttf)',
         headers: [
