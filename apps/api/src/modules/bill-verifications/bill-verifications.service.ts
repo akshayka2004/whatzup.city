@@ -39,6 +39,21 @@ export class BillVerificationsService {
   ) {}
 
   /**
+   * Global loyalty points — 1 point per ₹1 of verified spend, platform-wide.
+   * Idempotent on billId (unique constraint), so a bill can never award twice
+   * even if approval logic is ever re-run.
+   */
+  private async awardPoints(tenantId: string, userId: string, billId: string, amount: number) {
+    try {
+      await this.db.pointsEntry.create({
+        data: { tenantId, userId, billId, points: amount },
+      });
+    } catch (err: any) {
+      if (err?.code !== 'P2002') throw err;
+    }
+  }
+
+  /**
    * True if the bill's OCR-extracted invoice number starts with the
    * business's registered bill series prefix (case-insensitive). Informational
    * only — never auto-approves; moderators still review every bill, this just
@@ -227,6 +242,7 @@ export class BillVerificationsService {
       Number(verification.bill.amount),
       verification.bill.billDate,
     );
+    await this.awardPoints(tid, verification.bill.userId, verification.billId, Number(verification.bill.amount));
 
     // Notify customer
     await this.notificationsService.send({
@@ -437,6 +453,7 @@ export class BillVerificationsService {
         Number(verification.bill.amount),
         verification.bill.billDate,
       ).catch(() => {/* Already exists — no-op */});
+      await this.awardPoints(tid, verification.bill.userId, verification.billId, Number(verification.bill.amount));
     }
 
     await this.auditService.log({

@@ -13,7 +13,24 @@ import {
   Edit2, Mail, Phone, MapPin, LogOut, Check, X,
   Sparkles, Receipt, Heart, Tag, Building2, CalendarDays,
   Camera, Loader2, Trash2, AlertTriangle, HeadphonesIcon, Shield, FileText, Copy, Users,
+  Gift, Lock, CheckCircle2,
 } from 'lucide-react';
+
+interface PlatformVoucherTier {
+  id: string;
+  title: string;
+  description?: string | null;
+  thresholdPoints: number;
+  rewardType: string;
+  rewardValue: number | null;
+  rewardLabel: string | null;
+  progress: number;
+  remainingToUnlock: number;
+  qualified: boolean;
+  unlocked: boolean;
+  code: string | null;
+  status: string | null;
+}
 
 /* ── Types matching API responses ─────────────────────────────── */
 interface CustomerProfile {
@@ -79,6 +96,10 @@ export default function ProfilePage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState('');
 
+  const [points, setPoints] = useState(0);
+  const [voucherTiers, setVoucherTiers] = useState<PlatformVoucherTier[]>([]);
+  const [unlockingTierId, setUnlockingTierId] = useState<string | null>(null);
+
   /* ── Redirect if logged out ──────────────────────────────────── */
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -99,6 +120,13 @@ export default function ProfilePage() {
         if (refRes.data.referralCode) setReferralCode(refRes.data.referralCode);
         if (typeof refRes.data.count === 'number') setReferralCount(refRes.data.count);
         if (Array.isArray(refRes.data.referrals)) setReferralList(refRes.data.referrals);
+      }
+
+      // Global loyalty points + reward tier progress
+      const ptsRes = await apiService.get<any>('/v1/platform-vouchers/available');
+      if (!cancelled && ptsRes.data && !ptsRes.error) {
+        setPoints(ptsRes.data.points ?? 0);
+        setVoucherTiers(ptsRes.data.tiers ?? []);
       }
 
       // Fetch customer profile (phone, city, etc.)
@@ -202,6 +230,21 @@ export default function ProfilePage() {
   };
 
   /* ── Save handler ────────────────────────────────────────────── */
+  const unlockTier = async (tierId: string) => {
+    setUnlockingTierId(tierId);
+    const res = await apiService.post<any>(`/v1/platform-vouchers/${tierId}/unlock`, {});
+    setUnlockingTierId(null);
+    if (res.error) return;
+    setVoucherTiers((tiers) =>
+      tiers.map((t) => (t.id === tierId ? { ...t, unlocked: true, code: res.data.code, status: res.data.status } : t)),
+    );
+  };
+
+  const tierRewardText = (t: PlatformVoucherTier) =>
+    t.rewardType === 'PERCENT' ? `${t.rewardValue}% off`
+      : t.rewardType === 'AMOUNT' ? `₹${Number(t.rewardValue || 0).toLocaleString('en-IN')} off`
+        : t.rewardLabel || 'Reward';
+
   const handleSave = async () => {
     setSaving(true);
     setSaveMsg('');
@@ -435,6 +478,71 @@ export default function ProfilePage() {
                 ))}
               </div>
             )}
+          </Card>
+        )}
+
+        {/* Rewards — global loyalty points + platform voucher tiers */}
+        {voucherTiers.length > 0 && (
+          <Card className="p-6 rounded-2xl border-border bg-card">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Gift className="h-4 w-4 text-primary" /> Rewards
+              </h3>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span className="text-sm font-bold text-primary">{points.toLocaleString('en-IN')} pts</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Earned from verified bills across every business on the platform.
+            </p>
+            <div className="space-y-3">
+              {voucherTiers.map((t) => (
+                <div key={t.id} className="rounded-xl border border-border p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground truncate">{t.title}</p>
+                      {t.description && <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>}
+                    </div>
+                    <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                      {tierRewardText(t)}
+                    </span>
+                  </div>
+                  <div className="mt-3 h-2 rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${Math.round(t.progress * 100)}%` }}
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      {t.unlocked
+                        ? 'Unlocked'
+                        : `${t.remainingToUnlock.toLocaleString('en-IN')} pts to go`}
+                    </span>
+                    {t.unlocked ? (
+                      <span className="inline-flex items-center gap-1 font-mono font-bold text-success">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> {t.code}
+                      </span>
+                    ) : t.qualified ? (
+                      <Button
+                        size="sm"
+                        onClick={() => unlockTier(t.id)}
+                        disabled={unlockingTierId === t.id}
+                        className="h-7 px-3 text-xs gap-1 cursor-pointer"
+                      >
+                        {unlockingTierId === t.id ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                        Unlock
+                      </Button>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-muted-foreground">
+                        <Lock className="h-3 w-3" /> Locked
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </Card>
         )}
 

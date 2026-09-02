@@ -40,6 +40,7 @@ import {
   Grid,
   Receipt,
   BadgeIndianRupee,
+  Gift,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -166,6 +167,7 @@ export function MobileNav() {
       { label: 'Payments', href: '/admin/payments', icon: Receipt },
       { label: 'Payment Approvals', href: '/admin/payment-approvals', icon: BadgeIndianRupee },
       { label: 'Platform Offers', href: '/admin/platform-offers', icon: Tag },
+      { label: 'Platform Vouchers', href: '/super-admin/platform-vouchers', icon: Gift },
       { label: 'Reports', href: '/super-admin/reports', icon: AlertTriangle },
       { label: 'Notices', href: '/super-admin/notices', icon: Bell },
       { label: 'Audit Logs', href: '/super-admin/audit', icon: FileText },

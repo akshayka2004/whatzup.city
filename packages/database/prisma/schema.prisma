@@ -58,6 +58,9 @@ model Tenant {
   platformOffers          PlatformOffer[]
   billingProfiles         BillingProfile[]
   voucherClaims           VoucherClaim[]
+  pointsEntries           PointsEntry[]
+  platformVouchers        PlatformVoucher[]
+  platformVoucherClaims   PlatformVoucherClaim[]
   reviews                 Review[]
   reviewMedia             ReviewMedia[]
   reviewVotes             ReviewVote[]
@@ -142,6 +145,8 @@ model User {
   businessStaff          BusinessStaff[]
   offerRedemptions       OfferRedemption[]
   voucherClaims          VoucherClaim[]
+  pointsEntries          PointsEntry[]
+  platformVoucherClaims  PlatformVoucherClaim[]
   reviews                Review[]
   reviewVotes            ReviewVote[]
   bookmarks              Bookmark[]
@@ -579,6 +584,7 @@ model Business {
   transactions      Transaction[]
   billingProfile    BillingProfile?
   voucherClaims     VoucherClaim[]
+  platformVoucherRedemptions PlatformVoucherClaim[]
   events            Event[]
   coupons           Coupon[]
   reviews           Review[]
@@ -1145,6 +1151,98 @@ model VoucherClaim {
   @@map("voucher_claims")
 }
 
+/// Global (cross-business) loyalty points. One row per verified bill — 1 point
+/// per rupee of verified spend, platform-wide. Unique on billId so a bill can
+/// never award points twice; sum is computed on read, same pattern as
+/// VerifiedPurchase, rather than a denormalized running counter.
+model PointsEntry {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  billId    String    @unique @map("bill_id") @db.Uuid
+  points    Decimal   @db.Decimal(12, 2)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bill   Bill   @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([deletedAt])
+  @@map("points_entries")
+}
+
+/// Platform-wide reward tier, defined by super-admin — same shape as Voucher
+/// but not tied to a single business. Unlocked by cumulative global points
+/// instead of per-business spend.
+model PlatformVoucher {
+  id              String      @id @default(uuid()) @db.Uuid
+  tenantId        String      @map("tenant_id") @db.Uuid
+  title           String      @db.VarChar(255)
+  description     String?     @db.Text
+  thresholdPoints Decimal     @map("threshold_points") @db.Decimal(12, 2)
+  rewardType      String      @default("AMOUNT") @map("reward_type") @db.VarChar(20)
+  rewardValue     Decimal?    @map("reward_value") @db.Decimal(12, 2)
+  rewardLabel     String?     @map("reward_label") @db.VarChar(255)
+  status          OfferStatus @default(ACTIVE)
+  startDate       DateTime    @default(now()) @map("start_date")
+  endDate         DateTime    @map("end_date")
+  maxRedemptions     Int?     @map("max_redemptions")
+  currentRedemptions Int      @default(0) @map("current_redemptions")
+  terms           String?     @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  tenant Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  claims PlatformVoucherClaim[]
+
+  @@index([tenantId])
+  @@index([status, endDate])
+  @@index([deletedAt])
+  @@map("platform_vouchers")
+}
+
+model PlatformVoucherClaim {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  platformVoucherId  String    @map("platform_voucher_id") @db.Uuid
+  userId             String    @map("user_id") @db.Uuid
+  code               String    @db.VarChar(30)
+  // UNLOCKED (visible, not yet used) | REDEEMED (any business's staff marked used)
+  status             String    @default("UNLOCKED") @db.VarChar(20)
+  pointsAtUnlock     Decimal   @map("points_at_unlock") @db.Decimal(12, 2)
+  unlockedAt         DateTime  @default(now()) @map("unlocked_at")
+  redeemedAt         DateTime? @map("redeemed_at")
+  redeemedBy         String?   @map("redeemed_by") @db.Uuid
+  // Which business's staff redeemed it — informational only, redemption isn't
+  // scoped to a single business (that's the whole point of "platform-wide").
+  redeemedByBusinessId String? @map("redeemed_by_business_id") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant             Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  platformVoucher    PlatformVoucher @relation(fields: [platformVoucherId], references: [id], onDelete: Cascade)
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  redeemedByBusiness Business?       @relation(fields: [redeemedByBusinessId], references: [id], onDelete: SetNull)
+
+  // One claim per customer per tier.
+  @@unique([platformVoucherId, userId])
+  @@unique([tenantId, code])
+  @@index([userId])
+  @@index([status])
+  @@index([redeemedByBusinessId])
+  @@map("platform_voucher_claims")
+}
+
 // ── REVIEWS & ENGAGEMENT ────────────────────────────────────
 
 model Review {
@@ -1349,6 +1447,7 @@ model Bill {
   items            BillItem[]
   verifications    BillVerification[]
   verifiedPurchase VerifiedPurchase?
+  pointsEntry      PointsEntry?
 
   @@index([tenantId])
   @@index([userId])

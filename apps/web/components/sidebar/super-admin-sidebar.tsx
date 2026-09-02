@@ -24,6 +24,7 @@ import {
   CalendarDays,
   Receipt,
   BadgeIndianRupee,
+  Gift,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -61,6 +62,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: 'Categories', href: '/super-admin/categories', icon: Folder },
       { label: 'Platform Offers', href: '/admin/platform-offers', icon: Tag },
       { label: 'Business Offers', href: '/super-admin/offers', icon: Tag },
+      { label: 'Platform Vouchers', href: '/super-admin/platform-vouchers', icon: Gift },
       { label: 'Events', href: '/super-admin/events', icon: CalendarDays },
       { label: 'Subscriptions', href: '/super-admin/subscriptions', icon: CreditCard },
     ],

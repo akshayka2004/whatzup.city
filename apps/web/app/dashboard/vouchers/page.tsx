@@ -52,6 +52,11 @@ export default function VouchersPage() {
   const [redeemBusy, setRedeemBusy] = useState(false);
   const [redeemMsg, setRedeemMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
+  // redeem — platform-wide (points) vouchers, not scoped to this business
+  const [platformRedeemCode, setPlatformRedeemCode] = useState('');
+  const [platformRedeemBusy, setPlatformRedeemBusy] = useState(false);
+  const [platformRedeemMsg, setPlatformRedeemMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
   const load = useCallback(async () => {
     if (!businessId) return;
     setLoading(true);
@@ -119,6 +124,18 @@ export default function VouchersPage() {
     load();
   };
 
+  const doPlatformRedeem = async () => {
+    if (!platformRedeemCode.trim()) return;
+    setPlatformRedeemBusy(true); setPlatformRedeemMsg(null);
+    const res = await apiService.post<any>('/v1/platform-vouchers/redeem', {
+      code: platformRedeemCode.trim(),
+    });
+    setPlatformRedeemBusy(false);
+    if (res.error) { setPlatformRedeemMsg({ ok: false, text: res.error }); return; }
+    setPlatformRedeemMsg({ ok: true, text: `Redeemed: ${res.data?.voucherTitle} — ${res.data?.customer}` });
+    setPlatformRedeemCode('');
+  };
+
   const rewardText = (v: Voucher) =>
     v.rewardType === 'PERCENT' ? `${v.rewardValue}% off`
       : v.rewardType === 'AMOUNT' ? `₹${Number(v.rewardValue || 0).toLocaleString('en-IN')} off`
@@ -162,6 +179,35 @@ export default function VouchersPage() {
           {redeemMsg && (
             <p className={cn('mt-2 text-xs font-medium', redeemMsg.ok ? 'text-success' : 'text-destructive')}>
               {redeemMsg.text}
+            </p>
+          )}
+        </div>
+
+        {/* Redeem panel — platform-wide points vouchers, redeemable by any business */}
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <ScanLine className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-bold">Redeem a platform voucher</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Earned from a customer's platform-wide loyalty points, not tied to your business specifically.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              value={platformRedeemCode}
+              onChange={(e) => setPlatformRedeemCode(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && doPlatformRedeem()}
+              placeholder="Enter voucher code (e.g. PTS-A1B2C3)"
+              className="flex-1 font-mono uppercase"
+            />
+            <Button onClick={doPlatformRedeem} disabled={platformRedeemBusy || !platformRedeemCode.trim()} className="gap-1.5">
+              {platformRedeemBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              Mark redeemed
+            </Button>
+          </div>
+          {platformRedeemMsg && (
+            <p className={cn('mt-2 text-xs font-medium', platformRedeemMsg.ok ? 'text-success' : 'text-destructive')}>
+              {platformRedeemMsg.text}
             </p>
           )}
         </div>
