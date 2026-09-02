@@ -1,13 +1,13 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { PublicSidebar } from '../sidebar/public-sidebar';
 import { Header } from '../common/header';
 import { MobileNav } from '../navigation/mobile-nav';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/use-auth';
 import { OnboardingTour } from '../onboarding/platform-tour';
-import { CUSTOMER_TOUR_STEPS } from '@/lib/tour-steps';
+import { CUSTOMER_TOUR_STEPS, CUSTOMER_MOBILE_TOUR_STEPS } from '@/lib/tour-steps';
 
 const ADMIN_ROLES = ['admin', 'super-admin', 'MASTER_ADMIN', 'SUPER_ADMIN'];
 
@@ -18,11 +18,21 @@ interface PublicLayoutProps {
 export function PublicLayout({ children }: PublicLayoutProps) {
   const isMobile = useIsMobile();
   const { user } = useAuth();
-  const showTour = !isMobile && !!user && !ADMIN_ROLES.includes(user.role) && !ADMIN_ROLES.includes(user.rbacRole || '');
+  // useIsMobile() reports false for one tick before its own effect settles —
+  // without this guard the tour can mount/unmount before it ever paints.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const isAllowedRole = !!user && !ADMIN_ROLES.includes(user.role) && !ADMIN_ROLES.includes(user.rbacRole || '');
+  const showTour = mounted && isAllowedRole;
 
   return (
     <div className="flex h-dvh w-full bg-background">
-      {showTour && <OnboardingTour steps={CUSTOMER_TOUR_STEPS} storageKey="onboarding_tour_customer_v1" />}
+      {showTour && (
+        isMobile
+          ? <OnboardingTour steps={CUSTOMER_MOBILE_TOUR_STEPS} storageKey="onboarding_tour_customer_mobile_v1" />
+          : <OnboardingTour steps={CUSTOMER_TOUR_STEPS} storageKey="onboarding_tour_customer_v1" />
+      )}
       {/* Sidebar - Hidden on mobile */}
       {!isMobile && <PublicSidebar />}
 

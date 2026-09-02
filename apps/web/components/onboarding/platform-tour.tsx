@@ -116,7 +116,7 @@ export function OnboardingTour({ steps, storageKey, startDelayMs = 600 }: Onboar
   // back to viewport-centered when there's no target (welcome/closing slide).
   const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-  const cardWidth = 340;
+  const cardWidth = Math.min(340, vw - 32);
   let cardStyle: React.CSSProperties;
   if (rect) {
     const spaceBelow = vh - (rect.top + rect.height);

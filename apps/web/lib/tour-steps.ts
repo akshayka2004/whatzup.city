@@ -73,3 +73,52 @@ export const BUSINESS_TOUR_STEPS: TourStep[] = [
     description: 'Update your business details, team, and account settings.',
   },
 ];
+
+export const CUSTOMER_MOBILE_TOUR_STEPS: TourStep[] = [
+  {
+    title: 'Welcome to whtzup.city 👋',
+    description: "Quick tour of the app. Skip anytime.",
+  },
+  {
+    selector: '[data-tour="mnav-home"]',
+    title: 'Home',
+    description: 'Trending businesses, offers, and city announcements.',
+  },
+  {
+    selector: '[data-tour="mnav-search"]',
+    title: 'Search',
+    description: 'Look up a specific business, offer, or event by name.',
+  },
+  {
+    selector: '[data-tour="mnav-saved"]',
+    title: 'Saved',
+    description: 'Businesses you favorite show up here for quick access.',
+  },
+  {
+    selector: '[data-tour="mnav-menu"]',
+    title: 'Menu',
+    description: 'Browse, Offers, Events, Announcements, and your Profile — all here.',
+  },
+];
+
+export const BUSINESS_MOBILE_TOUR_STEPS: TourStep[] = [
+  {
+    title: 'Welcome to your dashboard 👋',
+    description: "Here's a quick tour. Skip anytime.",
+  },
+  {
+    selector: '[data-tour="mnav-overview"]',
+    title: 'Overview',
+    description: 'Your business at a glance — key stats and recent activity.',
+  },
+  {
+    selector: '[data-tour="mnav-offers"]',
+    title: 'Offers',
+    description: 'Publish deals that show up in the public Offers page.',
+  },
+  {
+    selector: '[data-tour="mnav-menu"]',
+    title: 'Menu',
+    description: 'Bill Moderation, Customers, Vouchers, Settings, and more — all here.',
+  },
+];

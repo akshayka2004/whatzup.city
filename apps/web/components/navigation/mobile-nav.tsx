@@ -58,6 +58,7 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   href: string;
+  tour?: string;
 }
 
 export function MobileNav() {
@@ -110,9 +111,9 @@ export function MobileNav() {
     } else {
       // BUSINESS_OWNER / other business roles (mirrors OWNER_MENU)
       primaryTabs = [
-        { label: 'Overview', href: '/dashboard', icon: Home },
+        { label: 'Overview', href: '/dashboard', icon: Home, tour: 'mnav-overview' },
         { label: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp },
-        { label: 'Offers', href: '/dashboard/offers', icon: Tag },
+        { label: 'Offers', href: '/dashboard/offers', icon: Tag, tour: 'mnav-offers' },
         { label: 'Products', href: '/dashboard/products', icon: Package },
       ];
       drawerItems = [
@@ -185,10 +186,10 @@ export function MobileNav() {
   } else {
     // Public User context (mirrors public-sidebar menuItems)
     primaryTabs = [
-      { label: 'Home', href: '/', icon: Home },
-      { label: 'Search', href: '/search', icon: Search },
+      { label: 'Home', href: '/', icon: Home, tour: 'mnav-home' },
+      { label: 'Search', href: '/search', icon: Search, tour: 'mnav-search' },
       { label: 'Map', href: '/nearby', icon: MapPin },
-      { label: 'Saved', href: '/favorites', icon: Heart },
+      { label: 'Saved', href: '/favorites', icon: Heart, tour: 'mnav-saved' },
     ];
 
     drawerItems = [
@@ -230,7 +231,7 @@ export function MobileNav() {
         const Icon = item.icon;
         const active = isActive(item.href);
         return (
-          <Link key={item.label} href={item.href} className="flex-1">
+          <Link key={item.label} href={item.href} className="flex-1" data-tour={item.tour}>
             <button
               className={`w-full flex flex-col items-center justify-center gap-1 rounded-xl py-1 text-[10px] font-medium transition-all duration-150 active:scale-90 motion-reduce:active:scale-100 ${
                 active ? 'text-primary' : 'text-muted-foreground hover:text-foreground active:text-primary'
@@ -247,6 +248,7 @@ export function MobileNav() {
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <button
+            data-tour="mnav-menu"
             className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl py-1 text-[10px] font-medium text-muted-foreground transition-all duration-150 hover:text-foreground active:scale-90 active:text-primary motion-reduce:active:scale-100"
             onClick={() => setIsOpen(true)}
           >
