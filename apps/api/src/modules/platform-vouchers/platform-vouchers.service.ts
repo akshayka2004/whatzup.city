@@ -228,6 +228,36 @@ export class PlatformVouchersService {
     }
   }
 
+  async businessRedemptions(businessId?: string) {
+    if (!businessId) return { count: 0, totalRewardValue: 0, redemptions: [] };
+    const claims = await this.db.platformVoucherClaim.findMany({
+      where: { redeemedByBusinessId: businessId, status: 'REDEEMED', deletedAt: null },
+      orderBy: { redeemedAt: 'desc' },
+      include: {
+        platformVoucher: { select: { title: true, rewardType: true, rewardValue: true, rewardLabel: true } },
+        user: { select: { name: true } },
+      },
+    });
+    const totalRewardValue = claims.reduce(
+      (sum, c) => sum + (c.platformVoucher.rewardType === 'AMOUNT' ? Number(c.platformVoucher.rewardValue ?? 0) : 0),
+      0,
+    );
+    return {
+      count: claims.length,
+      totalRewardValue,
+      redemptions: claims.map((c) => ({
+        id: c.id,
+        code: c.code,
+        customerName: c.user?.name ?? 'Customer',
+        tierTitle: c.platformVoucher.title,
+        rewardType: c.platformVoucher.rewardType,
+        rewardValue: c.platformVoucher.rewardValue != null ? Number(c.platformVoucher.rewardValue) : null,
+        rewardLabel: c.platformVoucher.rewardLabel,
+        redeemedAt: c.redeemedAt,
+      })),
+    };
+  }
+
   async myVouchers(userId: string) {
     return this.db.platformVoucherClaim.findMany({
       where: { userId, deletedAt: null },

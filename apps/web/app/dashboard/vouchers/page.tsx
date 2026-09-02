@@ -10,7 +10,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  Ticket, Plus, Loader2, Trash2, CheckCircle2, Lock, X, ScanLine,
+  Ticket, Plus, Loader2, Trash2, CheckCircle2, Lock, X, ScanLine, Gift, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,6 +19,12 @@ type Voucher = {
   rewardType: string; rewardValue?: number | null; rewardLabel?: string | null;
   status: string; endDate: string; maxRedemptions?: number | null;
   currentRedemptions: number; unlockedCount?: number; redeemedCount?: number;
+};
+
+type PlatformRedemption = {
+  id: string; code: string; customerName: string; tierTitle: string;
+  rewardType: string; rewardValue: number | null; rewardLabel: string | null;
+  redeemedAt: string;
 };
 
 const REWARD_TYPES = [
@@ -57,6 +63,11 @@ export default function VouchersPage() {
   const [platformRedeemBusy, setPlatformRedeemBusy] = useState(false);
   const [platformRedeemMsg, setPlatformRedeemMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
+  // platform-voucher redemptions at this business
+  const [platformRedemptions, setPlatformRedemptions] = useState<PlatformRedemption[]>([]);
+  const [platformTotalReward, setPlatformTotalReward] = useState(0);
+  const [redemptionsLoading, setRedemptionsLoading] = useState(true);
+
   const load = useCallback(async () => {
     if (!businessId) return;
     setLoading(true);
@@ -65,7 +76,18 @@ export default function VouchersPage() {
     setLoading(false);
   }, [businessId]);
 
+  const loadPlatformRedemptions = useCallback(async () => {
+    setRedemptionsLoading(true);
+    const res = await apiService.get<any>('/v1/platform-vouchers/business/redemptions');
+    if (res.data && !res.error) {
+      setPlatformRedemptions(res.data.redemptions ?? []);
+      setPlatformTotalReward(res.data.totalRewardValue ?? 0);
+    }
+    setRedemptionsLoading(false);
+  }, []);
+
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadPlatformRedemptions(); }, [loadPlatformRedemptions]);
 
   const resetForm = () => {
     setTitle(''); setThreshold(''); setRewardType('AMOUNT'); setRewardValue('');
@@ -134,6 +156,7 @@ export default function VouchersPage() {
     if (res.error) { setPlatformRedeemMsg({ ok: false, text: res.error }); return; }
     setPlatformRedeemMsg({ ok: true, text: `Redeemed: ${res.data?.voucherTitle} — ${res.data?.customer}` });
     setPlatformRedeemCode('');
+    loadPlatformRedemptions();
   };
 
   const rewardText = (v: Voucher) =>
@@ -209,6 +232,55 @@ export default function VouchersPage() {
             <p className={cn('mt-2 text-xs font-medium', platformRedeemMsg.ok ? 'text-success' : 'text-destructive')}>
               {platformRedeemMsg.text}
             </p>
+          )}
+        </div>
+
+        {/* Platform-voucher redemptions at this business */}
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <div className="flex items-center gap-2">
+              <Gift className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-bold">Platform voucher redemptions at your business</h2>
+            </div>
+            <div className="flex items-center gap-3 text-xs shrink-0">
+              <span className="inline-flex items-center gap-1 font-semibold text-foreground">
+                <Users className="h-3.5 w-3.5 text-primary" /> {platformRedemptions.length}
+              </span>
+              {platformTotalReward > 0 && (
+                <span className="font-semibold text-foreground">
+                  ₹{platformTotalReward.toLocaleString('en-IN')} given out
+                </span>
+              )}
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Customers who redeemed a platform-wide loyalty reward in-store at your business.
+          </p>
+          {redemptionsLoading ? (
+            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : platformRedemptions.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">No platform vouchers redeemed here yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {platformRedemptions.map((r) => (
+                <div key={r.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-secondary/60 border border-border">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{r.customerName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{r.tierTitle}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold text-primary">
+                      {r.rewardType === 'PERCENT' ? `${r.rewardValue}% off`
+                        : r.rewardType === 'AMOUNT' ? `₹${Number(r.rewardValue || 0).toLocaleString('en-IN')} off`
+                          : r.rewardLabel || 'Reward'}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {new Date(r.redeemedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 

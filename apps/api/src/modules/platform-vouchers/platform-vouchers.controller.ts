@@ -57,6 +57,12 @@ export class PlatformVouchersController {
     return this.platformVouchers.redeem(userId, businessId, dto.code);
   }
 
+  @Get('business/redemptions')
+  @ApiOperation({ summary: 'Platform vouchers redeemed at my business' })
+  businessRedemptions(@CurrentUser('businessId') businessId: string) {
+    return this.platformVouchers.businessRedemptions(businessId);
+  }
+
   // ── SUPER-ADMIN: CRUD ──────────────────────────────────────────────────
   @Get('admin')
   @UseGuards(RolesGuard)

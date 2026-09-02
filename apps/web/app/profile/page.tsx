@@ -482,8 +482,7 @@ export default function ProfilePage() {
         )}
 
         {/* Rewards — global loyalty points + platform voucher tiers */}
-        {voucherTiers.length > 0 && (
-          <Card className="p-6 rounded-2xl border-border bg-card">
+        <Card className="p-6 rounded-2xl border-border bg-card">
             <div className="flex items-center justify-between mb-1">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                 <Gift className="h-4 w-4 text-primary" /> Rewards
@@ -496,6 +495,11 @@ export default function ProfilePage() {
             <p className="text-xs text-muted-foreground mb-4">
               Earned from verified bills across every business on the platform.
             </p>
+            {voucherTiers.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No reward tiers available right now. Check back soon.
+              </p>
+            ) : (
             <div className="space-y-3">
               {voucherTiers.map((t) => (
                 <div key={t.id} className="rounded-xl border border-border p-4">
@@ -543,8 +547,8 @@ export default function ProfilePage() {
                 </div>
               ))}
             </div>
-          </Card>
-        )}
+            )}
+        </Card>
 
         {/* Personal Information */}
         <Card className="p-6 rounded-2xl border-border bg-card">
