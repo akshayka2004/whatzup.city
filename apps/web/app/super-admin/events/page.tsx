@@ -5,12 +5,15 @@ import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { CalendarDays, ExternalLink, Ticket, Loader2, Users, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { CalendarDays, ExternalLink, Ticket, Loader2, Users, Plus, Pencil, Trash2, X, ImagePlus, Megaphone } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
-import { KERALA_CITIES } from '@/lib/constants';
+import { KERALA_CITIES, EVENT_CATEGORIES } from '@/lib/constants';
+
+const PLATFORM_HOST = '__PLATFORM__';
 
 const empty = {
-  businessId: '', title: '', description: '', posterImage: '', venue: '', city: '',
+  businessId: '', hostLabel: 'Special Correspondent', title: '', description: '', posterImage: '', venue: '', city: '',
+  category: '', ticketType: 'FREE', ticketPrice: '',
   startDate: '', endDate: '', registrationUrl: '', ticketUrl: '',
 };
 
@@ -25,6 +28,7 @@ export default function SuperAdminEventsPage() {
   const [form, setForm] = useState<any>(empty);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
+  const [posterUploading, setPosterUploading] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -51,21 +55,53 @@ export default function SuperAdminEventsPage() {
   const openEdit = (e: any) => {
     setEditing(e);
     setForm({
-      businessId: e.business?.id || e.businessId || '',
+      businessId: e.business?.id || e.businessId || (e.hostLabel ? PLATFORM_HOST : ''),
+      hostLabel: e.hostLabel || 'Special Correspondent',
       title: e.title || '', description: e.description || '', posterImage: e.posterImage || '',
       venue: e.venue || '', city: e.city || '',
+      category: e.category || '', ticketType: e.ticketType || 'FREE',
+      ticketPrice: e.ticketPrice != null ? String(e.ticketPrice) : '',
       startDate: e.startDate?.slice(0, 16) || '', endDate: e.endDate?.slice(0, 16) || '',
       registrationUrl: e.registrationUrl || '', ticketUrl: e.ticketUrl || '',
     });
     setErr(''); setOpen(true);
   };
 
+  const handlePosterUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) { setErr('Poster must be an image.'); return; }
+    setPosterUploading(true); setErr('');
+    try {
+      const signed = await apiService.post<{ uploadUrl: string; fileKey: string; bucket: string }>(
+        '/v1/storage/upload-url',
+        { category: 'event', filename: file.name, mimeType: file.type, entityId: editing?.id || 'new' },
+      );
+      if (signed.error || !signed.data?.uploadUrl) throw new Error(signed.error || 'Upload URL failed');
+      const { uploadUrl, fileKey, bucket } = signed.data;
+      const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
+      const publicUrl = `${new URL(uploadUrl).origin}/storage/v1/object/public/${bucket}/${fileKey}`;
+      set('posterImage', publicUrl);
+    } catch (e: any) {
+      setErr(e?.message || 'Poster upload failed');
+    } finally {
+      setPosterUploading(false);
+    }
+  };
+
   const save = async () => {
     if (!form.title || !form.startDate || !form.endDate) { setErr('Title, start and end date/time are required.'); return; }
-    if (!editing && !form.businessId) { setErr('Pick a business to host the event.'); return; }
+    if (!editing) {
+      if (!form.businessId) { setErr('Pick a business to host the event.'); return; }
+      if (form.businessId === PLATFORM_HOST && !form.hostLabel.trim()) { setErr('Enter a host label for the platform event.'); return; }
+    }
+    if (form.ticketType === 'PAID' && !form.ticketPrice) { setErr('Enter a ticket price, or switch to Free.'); return; }
     setSaving(true); setErr('');
+    const isPlatform = form.businessId === PLATFORM_HOST;
     const payload = {
       ...form,
+      businessId: isPlatform ? undefined : form.businessId,
+      hostLabel: isPlatform ? (form.hostLabel.trim() || 'Special Correspondent') : undefined,
+      ticketPrice: form.ticketType === 'PAID' ? Number(form.ticketPrice) : undefined,
       startDate: new Date(form.startDate).toISOString(),
       endDate: new Date(form.endDate).toISOString(),
     };
@@ -124,8 +160,24 @@ export default function SuperAdminEventsPage() {
                     <tbody>
                       {events.map((e) => (
                         <tr key={e.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
-                          <td className="px-5 py-3 font-semibold text-foreground">{e.title}</td>
-                          <td className="px-5 py-3 text-muted-foreground text-xs">{e.business?.name || '—'}</td>
+                          <td className="px-5 py-3 font-semibold text-foreground">
+                            {e.title}
+                            <div className="flex items-center gap-1.5 mt-1">
+                              {e.category && (
+                                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-secondary text-muted-foreground">
+                                  {EVENT_CATEGORIES.find((c) => c.value === e.category)?.label || e.category}
+                                </span>
+                              )}
+                              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${e.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
+                                {e.ticketType === 'PAID' ? `₹${Number(e.ticketPrice || 0).toLocaleString('en-IN')}` : 'Free'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3 text-muted-foreground text-xs">
+                            {e.business?.name || (e.hostLabel && (
+                              <span className="inline-flex items-center gap-1"><Megaphone className="h-3 w-3 text-primary" /> {e.hostLabel}</span>
+                            )) || '—'}
+                          </td>
                           <td className="px-5 py-3 text-muted-foreground text-xs whitespace-nowrap">{fmt(e.startDate)} → {fmt(e.endDate)}</td>
                           <td className="px-5 py-3 text-right"><span className="inline-flex items-center gap-1 text-foreground font-semibold"><ExternalLink className="h-3 w-3 text-primary" /> {e.registrationClicks ?? 0}</span></td>
                           <td className="px-5 py-3 text-right"><span className="inline-flex items-center gap-1 text-foreground font-semibold"><Ticket className="h-3 w-3 text-success" /> {e.ticketClicks ?? 0}</span></td>
@@ -182,18 +234,53 @@ export default function SuperAdminEventsPage() {
                 <select value={form.businessId} onChange={(e) => set('businessId', e.target.value)} disabled={!!editing}
                   className="w-full h-10 px-3 bg-background border border-input rounded-xl text-sm text-foreground disabled:opacity-60">
                   <option value="">Select business…</option>
+                  <option value={PLATFORM_HOST}>✦ Special Correspondent (Platform)</option>
                   {businesses.map((b) => <option key={b.id} value={b.id}>{b.name}{b.city ? ` — ${b.city}` : ''}</option>)}
                 </select>
               </div>
+              {form.businessId === PLATFORM_HOST && (
+                <Input placeholder="Host label (shown to visitors)" value={form.hostLabel} onChange={(e) => set('hostLabel', e.target.value)}
+                  disabled={!!editing} className="h-10 bg-background border-input rounded-xl text-foreground disabled:opacity-60" />
+              )}
               <Input placeholder="Event title" value={form.title} onChange={(e) => set('title', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
               <textarea placeholder="Description" value={form.description} onChange={(e) => set('description', e.target.value)} className="w-full min-h-20 p-3 bg-background border border-input rounded-xl text-sm text-foreground" />
-              <Input placeholder="Poster image URL (optional)" value={form.posterImage} onChange={(e) => set('posterImage', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
+
+              <div>
+                <label className="text-[11px] text-muted-foreground">Poster image</label>
+                <div className="flex items-center gap-3 mt-1">
+                  {form.posterImage && (
+                    <img src={form.posterImage} alt="Poster" className="h-14 w-14 rounded-lg object-cover border border-border shrink-0" />
+                  )}
+                  <label className="flex-1 h-10 px-3 flex items-center gap-2 bg-background border border-dashed border-input rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary/50">
+                    {posterUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                    {posterUploading ? 'Uploading…' : form.posterImage ? 'Replace poster' : 'Upload poster'}
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePosterUpload(f); }} />
+                  </label>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <Input placeholder="Venue / location" value={form.venue} onChange={(e) => set('venue', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
                 <select value={form.city} onChange={(e) => set('city', e.target.value)} className="h-10 px-3 bg-background border border-input rounded-xl text-sm text-foreground">
                   <option value="">City</option>
                   {KERALA_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <select value={form.category} onChange={(e) => set('category', e.target.value)} className="h-10 px-3 bg-background border border-input rounded-xl text-sm text-foreground">
+                  <option value="">Category</option>
+                  {EVENT_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <select value={form.ticketType} onChange={(e) => set('ticketType', e.target.value)} className="h-10 px-3 bg-background border border-input rounded-xl text-sm text-foreground">
+                    <option value="FREE">Free</option>
+                    <option value="PAID">Paid</option>
+                  </select>
+                  {form.ticketType === 'PAID' && (
+                    <Input type="number" placeholder="Price ₹" value={form.ticketPrice} onChange={(e) => set('ticketPrice', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-[11px] text-muted-foreground">Start date &amp; time</label><Input type="datetime-local" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>

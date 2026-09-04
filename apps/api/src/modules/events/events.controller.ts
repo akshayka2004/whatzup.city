@@ -45,7 +45,7 @@ export class EventsController {
   @Post('admin')
   @ApiBearerAuth()
   async adminCreate(@CurrentUser('id') userId: string, @Body() dto: any) {
-    return this.eventsService.adminCreate(userId, dto.businessId, dto);
+    return this.eventsService.adminCreate(userId, dto.businessId || undefined, dto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

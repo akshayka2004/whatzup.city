@@ -5,10 +5,10 @@ import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, CalendarDays, Trash2, Edit, X, Loader2, ExternalLink, Ticket, Users, MapPin } from 'lucide-react';
+import { Plus, CalendarDays, Trash2, Edit, X, Loader2, ExternalLink, Ticket, Users, MapPin, ImagePlus } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
-import { KERALA_CITIES } from '@/lib/constants';
+import { KERALA_CITIES, EVENT_CATEGORIES } from '@/lib/constants';
 
 interface Ev {
   id: string;
@@ -18,6 +18,9 @@ interface Ev {
   venue?: string | null;
   city?: string | null;
   targetCities?: string[];
+  category?: string | null;
+  ticketType?: string;
+  ticketPrice?: number | string | null;
   startDate: string;
   endDate: string;
   registrationUrl?: string | null;
@@ -29,6 +32,7 @@ interface Ev {
 
 const empty = {
   title: '', description: '', posterImage: '', venue: '', city: '',
+  category: '', ticketType: 'FREE', ticketPrice: '',
   startDate: '', endDate: '', registrationUrl: '', ticketUrl: '',
 };
 
@@ -44,6 +48,7 @@ export default function DashboardEventsPage() {
   const [err, setErr] = useState('');
   const [form, setForm] = useState<any>(empty);
   const [targetCities, setTargetCities] = useState<string[]>([]);
+  const [posterUploading, setPosterUploading] = useState(false);
 
   const fetchEvents = useCallback(async () => {
     if (!businessId) { setLoading(false); return; }
@@ -61,6 +66,8 @@ export default function DashboardEventsPage() {
     setForm({
       title: ev.title, description: ev.description || '', posterImage: ev.posterImage || '',
       venue: ev.venue || '', city: ev.city || '',
+      category: ev.category || '', ticketType: ev.ticketType || 'FREE',
+      ticketPrice: ev.ticketPrice != null ? String(ev.ticketPrice) : '',
       startDate: ev.startDate?.slice(0, 16) || '', endDate: ev.endDate?.slice(0, 16) || '',
       registrationUrl: ev.registrationUrl || '', ticketUrl: ev.ticketUrl || '',
     });
@@ -73,13 +80,36 @@ export default function DashboardEventsPage() {
   const toggleCity = (c: string) =>
     setTargetCities((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
 
+  const handlePosterUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) { setErr('Poster must be an image.'); return; }
+    setPosterUploading(true); setErr('');
+    try {
+      const signed = await apiService.post<{ uploadUrl: string; fileKey: string; bucket: string }>(
+        '/v1/storage/upload-url',
+        { category: 'event', filename: file.name, mimeType: file.type, entityId: editing?.id || businessId },
+      );
+      if (signed.error || !signed.data?.uploadUrl) throw new Error(signed.error || 'Upload URL failed');
+      const { uploadUrl, fileKey, bucket } = signed.data;
+      const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
+      const publicUrl = `${new URL(uploadUrl).origin}/storage/v1/object/public/${bucket}/${fileKey}`;
+      set('posterImage', publicUrl);
+    } catch (e: any) {
+      setErr(e?.message || 'Poster upload failed');
+    } finally {
+      setPosterUploading(false);
+    }
+  };
+
   const save = async () => {
     if (!businessId) return;
     if (!form.title || !form.startDate || !form.endDate) { setErr('Title, start and end dates are required.'); return; }
+    if (form.ticketType === 'PAID' && !form.ticketPrice) { setErr('Enter a ticket price, or switch to Free.'); return; }
     setSaving(true); setErr('');
     const payload = {
       businessId,
       ...form,
+      ticketPrice: form.ticketType === 'PAID' ? Number(form.ticketPrice) : undefined,
       targetCities,
       startDate: new Date(form.startDate).toISOString(),
       endDate: new Date(form.endDate).toISOString(),
@@ -127,7 +157,17 @@ export default function DashboardEventsPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-foreground">{ev.title}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                    <div className="flex items-center gap-1.5 mt-1">
+                      {ev.category && (
+                        <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-secondary text-muted-foreground">
+                          {EVENT_CATEGORIES.find((c) => c.value === ev.category)?.label || ev.category}
+                        </span>
+                      )}
+                      <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${ev.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
+                        {ev.ticketType === 'PAID' ? `₹${Number(ev.ticketPrice || 0).toLocaleString('en-IN')}` : 'Free'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
                       <MapPin className="h-3 w-3" /> {[ev.venue, ev.city].filter(Boolean).join(', ') || '—'}
                     </p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -158,13 +198,43 @@ export default function DashboardEventsPage() {
             <div className="space-y-3">
               <Input placeholder="Event title" value={form.title} onChange={(e) => set('title', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
               <textarea placeholder="Description" value={form.description} onChange={(e) => set('description', e.target.value)} className="w-full min-h-20 p-3 bg-background border border-input rounded-xl text-sm text-foreground" />
-              <Input placeholder="Poster image URL (optional)" value={form.posterImage} onChange={(e) => set('posterImage', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
+
+              <div>
+                <label className="text-[11px] text-muted-foreground">Poster image</label>
+                <div className="flex items-center gap-3 mt-1">
+                  {form.posterImage && (
+                    <img src={form.posterImage} alt="Poster" className="h-14 w-14 rounded-lg object-cover border border-border shrink-0" />
+                  )}
+                  <label className="flex-1 h-10 px-3 flex items-center gap-2 bg-background border border-dashed border-input rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary/50">
+                    {posterUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                    {posterUploading ? 'Uploading…' : form.posterImage ? 'Replace poster' : 'Upload poster'}
+                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePosterUpload(f); }} />
+                  </label>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <Input placeholder="Venue" value={form.venue} onChange={(e) => set('venue', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
                 <select value={form.city} onChange={(e) => set('city', e.target.value)} className="h-10 px-3 bg-background border border-input rounded-xl text-sm text-foreground">
                   <option value="">City (location)</option>
                   {KERALA_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <select value={form.category} onChange={(e) => set('category', e.target.value)} className="h-10 px-3 bg-background border border-input rounded-xl text-sm text-foreground">
+                  <option value="">Category</option>
+                  {EVENT_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <select value={form.ticketType} onChange={(e) => set('ticketType', e.target.value)} className="h-10 px-3 bg-background border border-input rounded-xl text-sm text-foreground">
+                    <option value="FREE">Free</option>
+                    <option value="PAID">Paid</option>
+                  </select>
+                  {form.ticketType === 'PAID' && (
+                    <Input type="number" placeholder="Price ₹" value={form.ticketPrice} onChange={(e) => set('ticketPrice', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-[11px] text-muted-foreground">Start date &amp; time</label><Input type="datetime-local" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>

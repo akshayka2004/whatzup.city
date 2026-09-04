@@ -2517,13 +2517,19 @@ model BranchAnalyticsSummary {
 model Event {
   id                 String    @id @default(uuid()) @db.Uuid
   tenantId           String    @map("tenant_id") @db.Uuid
-  businessId         String    @map("business_id") @db.Uuid
+  // Nullable — a platform-published event (host = "Special Correspondent")
+  // has no business, and carries hostLabel instead.
+  businessId         String?   @map("business_id") @db.Uuid
+  hostLabel          String?   @map("host_label") @db.VarChar(255)
   title              String    @db.VarChar(255)
   description        String    @db.Text
   posterImage        String?   @map("poster_image") @db.Text
   venue              String?   @db.VarChar(255)
   city               String?   @db.VarChar(100)
   targetCities       Json      @default("[]") @map("target_cities")
+  category           String?   @db.VarChar(30)
+  ticketType         String    @default("FREE") @map("ticket_type") @db.VarChar(10)
+  ticketPrice        Decimal?  @map("ticket_price") @db.Decimal(10, 2)
   startDate          DateTime  @map("start_date")
   endDate            DateTime  @map("end_date")
   registrationUrl    String?   @map("registration_url") @db.Text
@@ -2537,7 +2543,7 @@ model Event {
   deletedAt          DateTime? @map("deleted_at")
 
   tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  business Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business Business?    @relation(fields: [businessId], references: [id], onDelete: SetNull)
   clicks   EventClick[]
 
   @@index([tenantId])
@@ -2545,6 +2551,7 @@ model Event {
   @@index([status, endDate])
   @@index([deletedAt])
   @@index([status, startDate])
+  @@index([category])
   @@map("events")
 }
 

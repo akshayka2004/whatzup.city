@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { apiService } from '@/lib/services/api-service';
-import { KERALA_CITIES, getViewerCity, setViewerCity } from '@/lib/constants';
+import { KERALA_CITIES, EVENT_CATEGORIES, getViewerCity, setViewerCity } from '@/lib/constants';
 
 interface Ev {
   id: string;
@@ -21,6 +21,10 @@ interface Ev {
   posterImage?: string | null;
   venue?: string | null;
   city?: string | null;
+  category?: string | null;
+  ticketType?: string;
+  ticketPrice?: number | string | null;
+  hostLabel?: string | null;
   startDate: string;
   endDate: string;
   registrationUrl?: string | null;
@@ -36,6 +40,7 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Ev[]>([]);
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState('');
+  const [category, setCategory] = useState('');
 
   useEffect(() => {
     setCity(getViewerCity());
@@ -58,6 +63,8 @@ export default function EventsPage() {
     setViewerCity(next);
   };
 
+  const visibleEvents = category ? events.filter((ev) => ev.category === category) : events;
+
   // Record the outbound click, then open the publisher's page in a new tab.
   const go = async (ev: Ev, type: 'REGISTER' | 'TICKET') => {
     const res = await apiService.post<any>(`/v1/events/${ev.id}/click`, { type });
@@ -73,7 +80,7 @@ export default function EventsPage() {
         <h1 className="text-3xl font-bold tracking-tight mb-1">Events</h1>
         <p className="text-muted-foreground mb-6">Discover events near you — register or grab tickets.</p>
 
-        <div className="mb-8">
+        <div className="mb-8 flex flex-wrap gap-3">
           <Select value={city || 'all'} onValueChange={handleCityChange}>
             <SelectTrigger className="w-52 rounded-xl">
               <SelectValue placeholder="Filter by city" />
@@ -85,13 +92,24 @@ export default function EventsPage() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={category || 'all'} onValueChange={(v) => setCategory(v === 'all' ? '' : v)}>
+            <SelectTrigger className="w-52 rounded-xl">
+              <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {EVENT_CATEGORIES.map((c) => (
+                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
           </div>
-        ) : events.length === 0 ? (
+        ) : visibleEvents.length === 0 ? (
           <div className="p-12 rounded-2xl text-center border border-dashed border-border bg-secondary">
             <CalendarDays className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-50" />
             <h3 className="text-base font-semibold text-foreground mb-1">No upcoming events</h3>
@@ -99,7 +117,7 @@ export default function EventsPage() {
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {events.map((ev) => (
+            {visibleEvents.map((ev) => (
               <div
                 key={ev.id}
                 className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100"
@@ -119,7 +137,19 @@ export default function EventsPage() {
                 </div>
                 <div className="p-5 flex-1 flex flex-col">
                   <h3 className="font-semibold text-foreground text-lg leading-tight">{ev.title}</h3>
-                  {ev.business?.name && <p className="text-xs text-muted-foreground mt-0.5">by {ev.business.name}</p>}
+                  {(ev.business?.name || ev.hostLabel) && (
+                    <p className="text-xs text-muted-foreground mt-0.5">by {ev.business?.name || ev.hostLabel}</p>
+                  )}
+                  <div className="flex items-center gap-1.5 mt-2">
+                    {ev.category && (
+                      <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-secondary text-muted-foreground">
+                        {EVENT_CATEGORIES.find((c) => c.value === ev.category)?.label || ev.category}
+                      </span>
+                    )}
+                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${ev.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
+                      {ev.ticketType === 'PAID' ? `₹${Number(ev.ticketPrice || 0).toLocaleString('en-IN')}` : 'Free'}
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground mt-2 line-clamp-2 flex-1">{ev.description}</p>
 
                   <div className="flex flex-col gap-1.5 mt-3 text-xs text-muted-foreground">

@@ -45,6 +45,29 @@ export const BUSINESS_CATEGORIES = [
   'Real Estate',
 ] as const;
 
+// Event categories — value is stored on Event.category; label is shown in UI.
+export const EVENT_CATEGORIES = [
+  { value: 'ENTERTAINMENT', label: 'Entertainment' },
+  { value: 'MEETUP', label: 'Meetup' },
+  { value: 'WORKSHOP', label: 'Workshop' },
+  { value: 'CONCERT', label: 'Concert / Music' },
+  { value: 'SPORTS', label: 'Sports' },
+  { value: 'FESTIVAL', label: 'Festival' },
+  { value: 'EXHIBITION', label: 'Exhibition' },
+  { value: 'CONFERENCE', label: 'Conference' },
+  { value: 'NETWORKING', label: 'Networking' },
+  { value: 'FOOD_AND_DRINK', label: 'Food & Drink' },
+  { value: 'ARTS_AND_CULTURE', label: 'Arts & Culture' },
+  { value: 'COMMUNITY', label: 'Community' },
+  { value: 'CHARITY', label: 'Charity' },
+  { value: 'RELIGIOUS', label: 'Religious' },
+  { value: 'EDUCATION', label: 'Education' },
+  { value: 'KIDS_AND_FAMILY', label: 'Kids & Family' },
+  { value: 'HEALTH_AND_WELLNESS', label: 'Health & Wellness' },
+  { value: 'TECH', label: 'Tech' },
+  { value: 'OTHER', label: 'Other' },
+] as const;
+
 // Serviceable cities (Kerala). Single source used by registration, filters,
 // and city-targeting for offers/announcements/events.
 export const KERALA_CITIES = [

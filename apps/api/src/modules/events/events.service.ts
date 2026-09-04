@@ -1,12 +1,22 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
+import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 import { AuditService } from '../audit/audit.service';
+
+const TICKET_TYPES = ['FREE', 'PAID'];
+const EVENT_CATEGORIES = [
+  'ENTERTAINMENT', 'MEETUP', 'WORKSHOP', 'CONCERT', 'SPORTS', 'FESTIVAL',
+  'EXHIBITION', 'CONFERENCE', 'NETWORKING', 'FOOD_AND_DRINK', 'ARTS_AND_CULTURE',
+  'COMMUNITY', 'CHARITY', 'RELIGIOUS', 'EDUCATION', 'KIDS_AND_FAMILY',
+  'HEALTH_AND_WELLNESS', 'TECH', 'OTHER',
+];
 
 @Injectable()
 export class EventsService {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly tenantResolver: TenantResolverService,
   ) {}
 
   private async resolveBusinessId(tenantId: string, businessOrEntityId: string): Promise<string> {
@@ -18,28 +28,47 @@ export class EventsService {
     return biz.id;
   }
 
+  // Shared validation + field extraction for ticket/category on create+update.
+  private extraFields(dto: any, payload: any) {
+    if (dto.category !== undefined) {
+      if (dto.category && !EVENT_CATEGORIES.includes(dto.category)) {
+        throw new BadRequestException(`Invalid category: ${dto.category}`);
+      }
+      payload.category = dto.category || null;
+    }
+    if (dto.ticketType !== undefined) {
+      if (!TICKET_TYPES.includes(dto.ticketType)) {
+        throw new BadRequestException(`ticketType must be one of ${TICKET_TYPES.join(', ')}`);
+      }
+      payload.ticketType = dto.ticketType;
+      payload.ticketPrice = dto.ticketType === 'PAID' ? (dto.ticketPrice ?? payload.ticketPrice) : null;
+    } else if (dto.ticketPrice !== undefined) {
+      payload.ticketPrice = dto.ticketPrice;
+    }
+  }
+
   async create(tenantId: string, userId: string, businessId: string, dto: any) {
     const bizId = await this.resolveBusinessId(tenantId, businessId);
     if (!dto.title || !dto.startDate || !dto.endDate) {
       throw new BadRequestException('title, startDate and endDate are required');
     }
-    const event = await this.db.event.create({
-      data: {
-        tenantId,
-        businessId: bizId,
-        title: dto.title,
-        description: dto.description || '',
-        posterImage: dto.posterImage || null,
-        venue: dto.venue || null,
-        city: dto.city || null,
-        targetCities: Array.isArray(dto.targetCities) ? dto.targetCities : [],
-        startDate: new Date(dto.startDate),
-        endDate: new Date(dto.endDate),
-        registrationUrl: dto.registrationUrl || null,
-        ticketUrl: dto.ticketUrl || null,
-        status: 'ACTIVE',
-      },
-    });
+    const data: any = {
+      tenantId,
+      businessId: bizId,
+      title: dto.title,
+      description: dto.description || '',
+      posterImage: dto.posterImage || null,
+      venue: dto.venue || null,
+      city: dto.city || null,
+      targetCities: Array.isArray(dto.targetCities) ? dto.targetCities : [],
+      startDate: new Date(dto.startDate),
+      endDate: new Date(dto.endDate),
+      registrationUrl: dto.registrationUrl || null,
+      ticketUrl: dto.ticketUrl || null,
+      status: 'ACTIVE',
+    };
+    this.extraFields(dto, data);
+    const event = await this.db.event.create({ data });
     await this.audit.log({ tenantId, userId, action: 'CREATE_EVENT', resource: 'EVENT', resourceId: event.id });
     return event;
   }
@@ -111,6 +140,7 @@ export class EventsService {
     for (const k of ['title', 'description', 'posterImage', 'venue', 'city', 'targetCities', 'registrationUrl', 'ticketUrl', 'status']) {
       if (dto[k] !== undefined) payload[k] = dto[k];
     }
+    this.extraFields(dto, payload);
     if (dto.startDate) payload.startDate = new Date(dto.startDate);
     if (dto.endDate) payload.endDate = new Date(dto.endDate);
     const updated = await this.db.event.update({ where: { id }, data: payload });
@@ -128,34 +158,45 @@ export class EventsService {
   }
 
   // ── Super-admin CRUD (cross-tenant; resolves the business/event globally) ──
-  async adminCreate(userId: string, businessId: string, dto: any) {
-    if (!businessId) throw new BadRequestException('businessId is required');
+  // businessId is optional: omitting it (with hostLabel set) publishes a
+  // platform-hosted "Special Correspondent" event with no business owner.
+  async adminCreate(userId: string, businessId: string | undefined, dto: any) {
     if (!dto.title || !dto.startDate || !dto.endDate) {
       throw new BadRequestException('title, startDate and endDate are required');
     }
-    const biz = await this.db.business.findFirst({
-      where: { OR: [{ id: businessId }, { entityId: businessId }], deletedAt: null },
-      select: { id: true, tenantId: true },
-    });
-    if (!biz) throw new BadRequestException('Business not found');
-    const event = await this.db.event.create({
-      data: {
-        tenantId: biz.tenantId,
-        businessId: biz.id,
-        title: dto.title,
-        description: dto.description || '',
-        posterImage: dto.posterImage || null,
-        venue: dto.venue || null,
-        city: dto.city || null,
-        targetCities: Array.isArray(dto.targetCities) ? dto.targetCities : [],
-        startDate: new Date(dto.startDate),
-        endDate: new Date(dto.endDate),
-        registrationUrl: dto.registrationUrl || null,
-        ticketUrl: dto.ticketUrl || null,
-        status: 'ACTIVE',
-      },
-    });
-    await this.audit.log({ tenantId: biz.tenantId, userId, action: 'ADMIN_CREATE_EVENT', resource: 'EVENT', resourceId: event.id });
+    let bizId: string | null = null;
+    let tenantId: string;
+    if (businessId) {
+      const biz = await this.db.business.findFirst({
+        where: { OR: [{ id: businessId }, { entityId: businessId }], deletedAt: null },
+        select: { id: true, tenantId: true },
+      });
+      if (!biz) throw new BadRequestException('Business not found');
+      bizId = biz.id;
+      tenantId = biz.tenantId;
+    } else {
+      if (!dto.hostLabel) throw new BadRequestException('hostLabel is required when no business is set');
+      tenantId = await this.tenantResolver.resolveTenantId(dto.tenantId);
+    }
+    const data: any = {
+      tenantId,
+      businessId: bizId,
+      hostLabel: bizId ? null : dto.hostLabel,
+      title: dto.title,
+      description: dto.description || '',
+      posterImage: dto.posterImage || null,
+      venue: dto.venue || null,
+      city: dto.city || null,
+      targetCities: Array.isArray(dto.targetCities) ? dto.targetCities : [],
+      startDate: new Date(dto.startDate),
+      endDate: new Date(dto.endDate),
+      registrationUrl: dto.registrationUrl || null,
+      ticketUrl: dto.ticketUrl || null,
+      status: 'ACTIVE',
+    };
+    this.extraFields(dto, data);
+    const event = await this.db.event.create({ data });
+    await this.audit.log({ tenantId, userId, action: 'ADMIN_CREATE_EVENT', resource: 'EVENT', resourceId: event.id });
     return event;
   }
 
@@ -166,6 +207,8 @@ export class EventsService {
     for (const k of ['title', 'description', 'posterImage', 'venue', 'city', 'targetCities', 'registrationUrl', 'ticketUrl', 'status']) {
       if (dto[k] !== undefined) payload[k] = dto[k];
     }
+    if (dto.hostLabel !== undefined) payload.hostLabel = dto.hostLabel || null;
+    this.extraFields(dto, payload);
     if (dto.startDate) payload.startDate = new Date(dto.startDate);
     if (dto.endDate) payload.endDate = new Date(dto.endDate);
     const updated = await this.db.event.update({ where: { id }, data: payload });
