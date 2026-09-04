@@ -22,6 +22,7 @@ export class GovernmentAlertsController {
     UserRole.NGO_ADMIN,
     UserRole.COMMUNITY_ADMIN,
     UserRole.NEWS_FORUM_ADMIN,
+    UserRole.PLATFORM_STAFF,
   )
   @UseGuards(RolesGuard)
   @Post()
@@ -56,6 +57,7 @@ export class GovernmentAlertsController {
     UserRole.NGO_ADMIN,
     UserRole.COMMUNITY_ADMIN,
     UserRole.NEWS_FORUM_ADMIN,
+    UserRole.PLATFORM_STAFF,
   )
   @UseGuards(RolesGuard)
   @Delete(':id')

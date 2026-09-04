@@ -24,7 +24,7 @@ export class EventsController {
 
   // ── Super-admin analytics (declared before :id to avoid capture) ──
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Get('admin/all')
   @ApiBearerAuth()
   async adminAll(@Query('page') page?: number) {
@@ -32,7 +32,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Get('admin/registrations')
   @ApiBearerAuth()
   async adminRegistrations(@Query('eventId') eventId?: string, @Query('page') page?: number) {
@@ -41,7 +41,7 @@ export class EventsController {
 
   // ── Super-admin CRUD (declared before :id routes) ──
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Post('admin')
   @ApiBearerAuth()
   async adminCreate(@CurrentUser('id') userId: string, @Body() dto: any) {
@@ -49,7 +49,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Patch('admin/:id')
   @ApiBearerAuth()
   async adminUpdate(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: any) {
@@ -57,7 +57,7 @@ export class EventsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Delete('admin/:id')
   @ApiBearerAuth()
   async adminRemove(@CurrentUser('id') userId: string, @Param('id') id: string) {

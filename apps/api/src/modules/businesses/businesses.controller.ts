@@ -99,10 +99,10 @@ export class BusinessesController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Get('admin/all')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List all businesses across tenants (super-admin)' })
+  @ApiOperation({ summary: 'List all businesses across tenants (super-admin; read-only for platform staff)' })
   async adminAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,

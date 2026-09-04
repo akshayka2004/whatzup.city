@@ -241,6 +241,7 @@ enum UserRoleEnum {
   NEWS_FORUM_ADMIN
   // Legacy value kept for migration compatibility
   BUSINESS_ADMIN
+  PLATFORM_STAFF
 }
 
 enum BusinessMemberRole {

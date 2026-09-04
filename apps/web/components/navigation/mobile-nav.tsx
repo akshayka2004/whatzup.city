@@ -82,6 +82,7 @@ export function MobileNav() {
   // pages render AdminLayout, but the viewer's own role decides their nav,
   // not the URL prefix (otherwise their menu options appear to vanish).
   const isDashboard = pathname.startsWith('/dashboard');
+  const isStaff = pathname.startsWith('/staff');
   const isSuperAdminRole = activeRole === 'SUPER_ADMIN';
   const isSuperAdmin = pathname.startsWith('/super-admin') || (pathname.startsWith('/admin') && isSuperAdminRole);
   const isAdmin = pathname.startsWith('/admin') && !isSuperAdminRole;
@@ -189,6 +190,18 @@ export function MobileNav() {
       { label: 'My Profile', href: '/super-admin/profile', icon: UserCog },
       { label: 'Settings', href: '/super-admin/settings', icon: Settings },
     ];
+  } else if (isStaff) {
+    // Platform staff (mirrors staff-sidebar.tsx)
+    primaryTabs = [
+      { label: 'Overview', href: '/staff', icon: Home },
+      { label: 'Events', href: '/staff/events', icon: CalendarDays },
+      { label: 'Movies', href: '/staff/movies', icon: Clapperboard },
+      { label: 'Offers', href: '/staff/platform-offers', icon: Tag },
+    ];
+    drawerItems = [
+      { label: 'Announcements', href: '/staff/announcements', icon: Bell },
+      { label: 'Businesses', href: '/staff/businesses', icon: Building2 },
+    ];
   } else {
     // Public User context (mirrors public-sidebar menuItems)
     primaryTabs = [
@@ -279,6 +292,8 @@ export function MobileNav() {
                 ? 'System approvals and platform moderation'
                 : isSuperAdmin
                 ? 'Tenants & multi-tenant cluster management'
+                : isStaff
+                ? 'Platform data-entry workspace'
                 : 'Browse city offers and manage your profile'}
             </SheetDescription>
           </SheetHeader>

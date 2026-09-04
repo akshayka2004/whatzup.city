@@ -20,6 +20,9 @@ export enum UserRole {
   NEWS_FORUM_ADMIN = 'NEWS_FORUM_ADMIN',
   // Legacy alias — kept for DB migration compatibility
   BUSINESS_ADMIN = 'BUSINESS_ADMIN',
+  // Platform-side data-entry account: events, movies, platform offers,
+  // announcements — created only by SUPER_ADMIN.
+  PLATFORM_STAFF = 'PLATFORM_STAFF',
 }
 
 export enum EntityType {

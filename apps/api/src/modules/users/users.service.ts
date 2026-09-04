@@ -378,7 +378,7 @@ export class UsersService {
    */
   async createAdminUser(
     tenantId: string,
-    data: { name: string; email: string; password: string; role: 'MASTER_ADMIN' | 'PORTAL_ADMIN' },
+    data: { name: string; email: string; password: string; role: 'MASTER_ADMIN' | 'PORTAL_ADMIN' | 'PLATFORM_STAFF' },
   ) {
     if (!data.name || !data.email || !data.password) {
       throw new BadRequestException('Name, email and password are required');
@@ -387,9 +387,9 @@ export class UsersService {
       throw new BadRequestException('Password must be at least 8 characters');
     }
 
-    const validRoles = ['MASTER_ADMIN', 'PORTAL_ADMIN'];
+    const validRoles = ['MASTER_ADMIN', 'PORTAL_ADMIN', 'PLATFORM_STAFF'];
     if (!validRoles.includes(data.role)) {
-      throw new BadRequestException('Invalid role — must be MASTER_ADMIN or PORTAL_ADMIN');
+      throw new BadRequestException('Invalid role — must be MASTER_ADMIN, PORTAL_ADMIN, or PLATFORM_STAFF');
     }
 
     const emailNormalized = data.email.trim().toLowerCase();
@@ -425,12 +425,13 @@ export class UsersService {
   }
 
   /**
-   * List admin users (MASTER_ADMIN / SUPER_ADMIN) for the Super Admin panel.
+   * List admin users (MASTER_ADMIN / SUPER_ADMIN / PLATFORM_STAFF) for the
+   * Super Admin panel.
    */
   async listAdminUsers(tenantId?: string) {
     const where: any = {
       deletedAt: null,
-      role: { in: ['MASTER_ADMIN', 'SUPER_ADMIN'] },
+      role: { in: ['MASTER_ADMIN', 'SUPER_ADMIN', 'PLATFORM_STAFF'] },
     };
     if (tenantId) where.tenantId = tenantId;
 

@@ -140,10 +140,10 @@ export class UsersController {
 
   @Post('admin/create')
   @Roles(UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Super Admin creates a Portal Admin or Master Admin account' })
+  @ApiOperation({ summary: 'Super Admin creates a Portal Admin, Master Admin, or Platform Staff account' })
   async createAdmin(
     @CurrentUser('tenantId') tenantId: string,
-    @Body() body: { name: string; email: string; password: string; role: 'MASTER_ADMIN' | 'PORTAL_ADMIN' },
+    @Body() body: { name: string; email: string; password: string; role: 'MASTER_ADMIN' | 'PORTAL_ADMIN' | 'PLATFORM_STAFF' },
   ) {
     return this.usersService.createAdminUser(tenantId, body);
   }

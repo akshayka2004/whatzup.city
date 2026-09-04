@@ -62,6 +62,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (u.role === 'government' || u.rbacRole === 'GOVERNMENT_ADMIN') {
       return '/government/dashboard';
     }
+    if (u.role === 'platform_staff' || u.rbacRole === 'PLATFORM_STAFF') {
+      return '/staff';
+    }
     if (
       u.role === 'civic' ||
       ['NGO_ADMIN', 'COMMUNITY_ADMIN', 'NEWS_FORUM_ADMIN'].includes(u.rbacRole || '')

@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 const ROLE_OPTIONS = [
   { value: 'MASTER_ADMIN', label: 'Portal Admin', description: 'Can manage registrations, approvals, reports, and categories' },
   { value: 'PORTAL_ADMIN', label: 'Portal Admin (Alt)', description: 'Same as Portal Admin — alternate label' },
+  { value: 'PLATFORM_STAFF', label: 'Platform Staff', description: 'Data entry only — events, movies, platform offers, announcements, and read-only businesses' },
 ];
 
 interface AdminUser {
@@ -46,6 +47,7 @@ function formatDate(d?: string) {
 function roleLabel(role: string) {
   if (role === 'SUPER_ADMIN') return { label: 'Super Admin', color: 'text-primary bg-primary/10 border-primary/20' };
   if (role === 'MASTER_ADMIN') return { label: 'Portal Admin', color: 'text-info bg-info/10 border-info/20' };
+  if (role === 'PLATFORM_STAFF') return { label: 'Platform Staff', color: 'text-warning bg-warning/10 border-warning/20' };
   return { label: role, color: 'text-muted-foreground bg-muted border-border' };
 }
 
@@ -60,7 +62,7 @@ export default function AdminManagementPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'MASTER_ADMIN' | 'PORTAL_ADMIN'>('MASTER_ADMIN');
+  const [role, setRole] = useState<'MASTER_ADMIN' | 'PORTAL_ADMIN' | 'PLATFORM_STAFF'>('MASTER_ADMIN');
 
   const fetchAdmins = async () => {
     setLoading(true);

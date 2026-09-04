@@ -50,7 +50,7 @@ export class PlatformOffersController {
 
   @Get('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List all platform offers (Admin only)' })
   async listForAdmin(
@@ -62,7 +62,7 @@ export class PlatformOffersController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a platform offer (Admin only)' })
   async create(
@@ -75,7 +75,7 @@ export class PlatformOffersController {
 
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Publish or unpublish a platform offer (Admin only)' })
   async setStatus(
@@ -89,7 +89,7 @@ export class PlatformOffersController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a platform offer (Admin only)' })
   async update(
@@ -103,7 +103,7 @@ export class PlatformOffersController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a platform offer (Admin only)' })
   async remove(
