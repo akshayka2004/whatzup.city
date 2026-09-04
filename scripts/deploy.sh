@@ -19,11 +19,16 @@ echo "==> prisma generate"
 pnpm --filter @saas/database db:generate
 
 echo "==> build api"
-pnpm --filter @saas/api build
+# Plain `pnpm --filter X build` runs only X's own build script — it ignores
+# turbo.json's dependsOn: ["^build"], so workspace deps like @saas/types
+# never rebuild first and apps/api compiles against a stale dist/ (root
+# cause of the 2026-09-04 PLATFORM_STAFF enum-not-found deploy failure).
+# `turbo run build --filter` resolves that dependency graph before building.
+pnpm exec turbo run build --filter=@saas/api
 
 echo "==> build web"
 rm -rf apps/web/.next
-pnpm --filter @saas/web build
+pnpm exec turbo run build --filter=@saas/web
 
 echo "==> copy standalone static/public"
 cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
