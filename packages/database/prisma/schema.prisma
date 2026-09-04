@@ -52,6 +52,7 @@ model Tenant {
   offerRedemptions        OfferRedemption[]
   events                  Event[]
   eventClicks             EventClick[]
+  movies                  Movie[]
   coupons                 Coupon[]
   vouchers                Voucher[]
   transactions            Transaction[]
@@ -2569,5 +2570,38 @@ model EventClick {
   @@index([eventId])
   @@index([tenantId])
   @@map("event_clicks")
+}
+
+// Platform-managed movie listings — no business ownership; published by
+// super-admin (and, once granted, platform staff) via a standalone CRUD.
+model Movie {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  name            String    @db.VarChar(255)
+  posterImage     String?   @map("poster_image") @db.Text
+  language        String?   @db.VarChar(50)
+  genres          Json      @default("[]")
+  durationMinutes Int?      @map("duration_minutes")
+  certification   String?   @db.VarChar(10)
+  releaseDate     DateTime? @map("release_date")
+  synopsis        String?   @db.Text
+  cast            Json      @default("[]")
+  trailerUrl      String?   @map("trailer_url") @db.Text
+  bookingUrl      String?   @map("booking_url") @db.Text
+  // NOW_SHOWING | UPCOMING | ENDED
+  status          String    @default("UPCOMING") @db.VarChar(20)
+  targetCities    Json      @default("[]") @map("target_cities")
+  createdBy       String?   @map("created_by") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("movies")
 }
 

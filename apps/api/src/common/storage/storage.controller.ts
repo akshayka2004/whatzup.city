@@ -21,6 +21,7 @@ export enum UploadCategory {
   NOTIFICATION = 'notification',
   PAYMENT = 'payment',
   EVENT = 'event',
+  MOVIE = 'movie',
 }
 
 export class GetUploadUrlDto {
@@ -88,6 +89,11 @@ const CATEGORY_CONFIG: Record<
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
   },
   [UploadCategory.EVENT]: {
+    bucket: 'business-media',
+    maxSize: 5 * 1024 * 1024,
+    allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+  },
+  [UploadCategory.MOVIE]: {
     bucket: 'business-media',
     maxSize: 5 * 1024 * 1024,
     allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
