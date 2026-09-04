@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react';
 import { AdminSidebar } from '../sidebar/admin-sidebar';
+import { SuperAdminSidebar } from '../sidebar/super-admin-sidebar';
 import { Header } from '../common/header';
 import { MobileNav } from '../navigation/mobile-nav';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -26,9 +27,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
+  // A super-admin who follows an /admin/* link (Payments, Approvals, etc.)
+  // must keep seeing their own sidebar — the admin one is a strict subset
+  // and made those links look like nav items had vanished.
+  const isSuperAdmin = user.role === 'super-admin' || user.rbacRole === 'SUPER_ADMIN';
+
   return (
     <div className="flex h-dvh w-full bg-background">
-      {!isMobile && <AdminSidebar />}
+      {!isMobile && (isSuperAdmin ? <SuperAdminSidebar /> : <AdminSidebar />)}
 
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />

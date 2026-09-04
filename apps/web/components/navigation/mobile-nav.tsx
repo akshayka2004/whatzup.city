@@ -76,10 +76,14 @@ export function MobileNav() {
     }
   }, [user]);
 
-  // Determine Routing Context
+  // Determine Routing Context. A super-admin following an /admin/* link
+  // (Payments, Approvals, etc.) still gets the super-admin menu — those
+  // pages render AdminLayout, but the viewer's own role decides their nav,
+  // not the URL prefix (otherwise their menu options appear to vanish).
   const isDashboard = pathname.startsWith('/dashboard');
-  const isAdmin = pathname.startsWith('/admin');
-  const isSuperAdmin = pathname.startsWith('/super-admin');
+  const isSuperAdminRole = activeRole === 'SUPER_ADMIN';
+  const isSuperAdmin = pathname.startsWith('/super-admin') || (pathname.startsWith('/admin') && isSuperAdminRole);
+  const isAdmin = pathname.startsWith('/admin') && !isSuperAdminRole;
 
   // Helper to check if a tab is active
   const isActive = (href: string) => {
