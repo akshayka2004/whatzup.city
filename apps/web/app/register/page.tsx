@@ -925,6 +925,32 @@ export default function UnifiedRegisterPage() {
               </span>
             ))}
           </div>
+
+          {/* Persistent cost context — visible from step 1, not just the payment step */}
+          {role === 'BUSINESS' && (
+            <div className="mt-4 pt-3 border-t border-border flex items-center justify-between gap-2 text-xs">
+              <span className="text-muted-foreground">
+                {isHotel ? 'Hotel listing' : 'Business listing'}
+              </span>
+              {isHotel ? (
+                hotelStarRating ? (
+                  <span className="font-semibold text-foreground">
+                    {formatINR(withTax(computeHotelCharge(hotelStarRating, hotelAmenities).total).total)} · {HOTEL_DURATION_DAYS} days
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">Price depends on star rating &amp; amenities — set in the final step</span>
+                )
+              ) : selectedPlan ? (
+                <span className="font-semibold text-foreground">
+                  {getPlan(selectedPlan)?.name} · {formatINR(getPlan(selectedPlan)?.offerPrice || 0)} · {PLAN_DURATION_DAYS} days
+                </span>
+              ) : (
+                <span className="text-muted-foreground">
+                  Plans from {formatINR(Math.min(...SUBSCRIPTION_PLANS.map((p) => p.offerPrice)))} · {PLAN_DURATION_DAYS} days — pick one in the final step
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Main Alert Banners */}
@@ -1603,7 +1629,15 @@ export default function UnifiedRegisterPage() {
                 </div>
               )}
 
-              <div className="flex justify-end pt-6 border-t border-border">
+              <div className="flex justify-between pt-6 border-t border-border">
+                <Button
+                  type="button"
+                  onClick={() => setCurrentStep(2)}
+                  disabled={loading}
+                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
+                </Button>
                 <Button
                   type="submit"
                   disabled={loading}

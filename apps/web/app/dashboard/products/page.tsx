@@ -254,7 +254,7 @@ export default function ProductsPage() {
                       </div>
                     </div>
                     {product.description && (
-                      <p className="text-xs text-muted-foreground mt-2 line-clamp-1">{product.description}</p>
+                      <p className="text-xs text-muted-foreground mt-2 line-clamp-1 break-words">{product.description}</p>
                     )}
                   </div>
                   <div className="flex gap-2 shrink-0 ml-4">

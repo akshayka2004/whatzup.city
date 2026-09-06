@@ -721,17 +721,17 @@ export function PlatformOffersManager() {
                           />
                         </Field>
                         <Field label="AC / Non-AC">
-                          <div className="flex flex-wrap gap-2">
+                          <div className="inline-flex rounded-xl border border-border bg-secondary/40 p-1">
                             {AC_OPTIONS.map((a) => (
                               <button
                                 key={a}
                                 type="button"
                                 onClick={() => setD({ acStatus: a })}
                                 className={cn(
-                                  'rounded-full border px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors',
+                                  'rounded-lg px-3 py-1.5 text-xs font-medium cursor-pointer transition-all',
                                   details.acStatus === a
-                                    ? 'border-primary bg-primary/10 text-primary'
-                                    : 'border-border text-muted-foreground hover:text-foreground',
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground',
                                 )}
                               >
                                 {a}

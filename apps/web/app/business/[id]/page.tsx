@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { HOTEL_AMENITIES } from '@/lib/hotel-pricing';
 import {
+  ArrowLeft,
   Star,
   MapPin,
   Clock,
@@ -342,6 +343,13 @@ export default function BusinessDetailPage() {
   return (
     <PublicLayout>
       <div>
+        <button
+          onClick={() => router.back()}
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground cursor-pointer"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back
+        </button>
+
         {/* Hero Image */}
         <div className="w-full h-96 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 border border-white/5 mb-8 flex items-center justify-center overflow-hidden">
           {biz.coverImage ? (

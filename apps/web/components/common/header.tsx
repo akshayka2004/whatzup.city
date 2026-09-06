@@ -212,7 +212,7 @@ export function Header() {
                         <div className={`flex-1 ${n.isRead ? 'ml-3.5' : ''}`}>
                           <p className="text-xs font-semibold text-foreground leading-snug">{n.title || n.type || 'Notification'}</p>
                           {(n.body || n.message) && (
-                            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{n.body || n.message}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2 break-words">{n.body || n.message}</p>
                           )}
                           {n.createdAt && (
                             <p className="text-[10px] text-muted-foreground/50 mt-1">

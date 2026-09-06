@@ -171,7 +171,7 @@ export default function NotificationsPage() {
                           {notification.timestamp}
                         </span>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
+                      <p className="text-sm text-muted-foreground line-clamp-2 break-words">
                         {notification.description}
                       </p>
                     </div>

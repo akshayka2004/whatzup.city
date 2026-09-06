@@ -41,10 +41,28 @@ export class EventsService {
         throw new BadRequestException(`ticketType must be one of ${TICKET_TYPES.join(', ')}`);
       }
       payload.ticketType = dto.ticketType;
-      payload.ticketPrice = dto.ticketType === 'PAID' ? (dto.ticketPrice ?? payload.ticketPrice) : null;
-    } else if (dto.ticketPrice !== undefined) {
-      payload.ticketPrice = dto.ticketPrice;
+      if (dto.ticketType === 'PAID') {
+        payload.ticketPrice = dto.ticketPrice ?? payload.ticketPrice;
+        payload.ticketTiers = this.validateTiers(dto.ticketTiers);
+      } else {
+        payload.ticketPrice = null;
+        payload.ticketTiers = null;
+      }
+    } else {
+      if (dto.ticketPrice !== undefined) payload.ticketPrice = dto.ticketPrice;
+      if (dto.ticketTiers !== undefined) payload.ticketTiers = this.validateTiers(dto.ticketTiers);
     }
+  }
+
+  // Named tiers (e.g. Gold/Platinum) are optional even for a PAID event —
+  // when present they take precedence over the flat ticketPrice for display.
+  private validateTiers(tiers: any): { name: string; price: number }[] | null {
+    if (tiers === undefined || tiers === null) return null;
+    if (!Array.isArray(tiers)) throw new BadRequestException('ticketTiers must be an array');
+    const clean = tiers
+      .map((t) => ({ name: String(t?.name ?? '').trim(), price: Number(t?.price) }))
+      .filter((t) => t.name && Number.isFinite(t.price) && t.price >= 0);
+    return clean.length ? clean : null;
   }
 
   async create(tenantId: string, userId: string, businessId: string, dto: any) {

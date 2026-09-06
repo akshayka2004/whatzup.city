@@ -90,7 +90,7 @@ export function BusinessCard({ business }: { business: any }) {
         )}
 
         {business.description && (
-          <p className="mb-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+          <p className="mb-2 line-clamp-2 break-words text-xs leading-relaxed text-muted-foreground">
             {business.description}
           </p>
         )}

@@ -325,7 +325,7 @@ export default function OffersPage() {
                     )}
                   </div>
                   {offer.description && (
-                    <p className="mb-4 text-sm text-muted-foreground line-clamp-2">{offer.description}</p>
+                    <p className="mb-4 text-sm text-muted-foreground line-clamp-2 break-words">{offer.description}</p>
                   )}
                   {offer.expiresIn != null && (
                     <div

@@ -419,7 +419,7 @@ export default function AnalyticsPage() {
                         {rev.title && (
                           <p className="text-xs font-medium text-foreground mb-0.5">{rev.title}</p>
                         )}
-                        <p className="text-sm text-muted-foreground line-clamp-2">{rev.comment}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2 break-words">{rev.comment}</p>
                       </div>
                     </div>
                   ))}

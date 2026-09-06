@@ -21,6 +21,7 @@ interface Ev {
   category?: string | null;
   ticketType?: string;
   ticketPrice?: number | string | null;
+  ticketTiers?: { name: string; price: number }[] | null;
   startDate: string;
   endDate: string;
   registrationUrl?: string | null;
@@ -49,6 +50,7 @@ export default function DashboardEventsPage() {
   const [form, setForm] = useState<any>(empty);
   const [targetCities, setTargetCities] = useState<string[]>([]);
   const [posterUploading, setPosterUploading] = useState(false);
+  const [tiers, setTiers] = useState<{ name: string; price: string }[]>([]);
 
   const fetchEvents = useCallback(async () => {
     if (!businessId) { setLoading(false); return; }
@@ -60,7 +62,7 @@ export default function DashboardEventsPage() {
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
-  const openCreate = () => { setEditing(null); setForm(empty); setTargetCities([]); setErr(''); setOpen(true); };
+  const openCreate = () => { setEditing(null); setForm(empty); setTargetCities([]); setTiers([]); setErr(''); setOpen(true); };
   const openEdit = (ev: Ev) => {
     setEditing(ev);
     setForm({
@@ -72,6 +74,11 @@ export default function DashboardEventsPage() {
       registrationUrl: ev.registrationUrl || '', ticketUrl: ev.ticketUrl || '',
     });
     setTargetCities(ev.targetCities || []);
+    setTiers(
+      Array.isArray(ev.ticketTiers)
+        ? ev.ticketTiers.map((t) => ({ name: t.name || '', price: String(t.price ?? '') }))
+        : [],
+    );
     setErr('');
     setOpen(true);
   };
@@ -79,6 +86,10 @@ export default function DashboardEventsPage() {
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
   const toggleCity = (c: string) =>
     setTargetCities((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
+  const addTier = () => setTiers((t) => [...t, { name: '', price: '' }]);
+  const updateTier = (i: number, patch: Partial<{ name: string; price: string }>) =>
+    setTiers((t) => t.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
+  const removeTier = (i: number) => setTiers((t) => t.filter((_, idx) => idx !== i));
 
   const handlePosterUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) { setErr('Poster must be an image.'); return; }
@@ -104,12 +115,19 @@ export default function DashboardEventsPage() {
   const save = async () => {
     if (!businessId) return;
     if (!form.title || !form.startDate || !form.endDate) { setErr('Title, start and end dates are required.'); return; }
-    if (form.ticketType === 'PAID' && !form.ticketPrice) { setErr('Enter a ticket price, or switch to Free.'); return; }
+    const cleanTiers = tiers
+      .map((t) => ({ name: t.name.trim(), price: Number(t.price) }))
+      .filter((t) => t.name && Number.isFinite(t.price) && t.price >= 0);
+    if (form.ticketType === 'PAID' && !form.ticketPrice && cleanTiers.length === 0) {
+      setErr('Enter a ticket price, add ticket tiers, or switch to Free.');
+      return;
+    }
     setSaving(true); setErr('');
     const payload = {
       businessId,
       ...form,
-      ticketPrice: form.ticketType === 'PAID' ? Number(form.ticketPrice) : undefined,
+      ticketPrice: form.ticketType === 'PAID' ? (form.ticketPrice ? Number(form.ticketPrice) : undefined) : undefined,
+      ticketTiers: form.ticketType === 'PAID' && cleanTiers.length ? cleanTiers : null,
       targetCities,
       startDate: new Date(form.startDate).toISOString(),
       endDate: new Date(form.endDate).toISOString(),
@@ -164,7 +182,11 @@ export default function DashboardEventsPage() {
                         </span>
                       )}
                       <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${ev.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
-                        {ev.ticketType === 'PAID' ? `₹${Number(ev.ticketPrice || 0).toLocaleString('en-IN')}` : 'Free'}
+                        {ev.ticketType !== 'PAID'
+                          ? 'Free'
+                          : Array.isArray(ev.ticketTiers) && ev.ticketTiers.length
+                            ? `${ev.ticketTiers.length} tiers from ₹${Math.min(...ev.ticketTiers.map((t) => Number(t.price) || 0)).toLocaleString('en-IN')}`
+                            : `₹${Number(ev.ticketPrice || 0).toLocaleString('en-IN')}`}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
@@ -236,6 +258,27 @@ export default function DashboardEventsPage() {
                   )}
                 </div>
               </div>
+
+              {form.ticketType === 'PAID' && (
+                <div>
+                  <label className="text-[11px] text-muted-foreground">Ticket tiers (optional — e.g. Gold, Platinum). Leave empty to use the flat price above.</label>
+                  <div className="space-y-2 mt-1">
+                    {tiers.map((t, i) => (
+                      <div key={i} className="flex gap-2">
+                        <Input placeholder="Tier name (e.g. Gold)" value={t.name} onChange={(e) => updateTier(i, { name: e.target.value })} className="h-9 bg-background border-input rounded-lg text-foreground flex-1" />
+                        <Input type="number" placeholder="Price ₹" value={t.price} onChange={(e) => updateTier(i, { price: e.target.value })} className="h-9 bg-background border-input rounded-lg text-foreground w-28" />
+                        <button type="button" onClick={() => removeTier(i)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={addTier} className="text-xs font-medium text-primary hover:underline cursor-pointer">
+                      + Add tier
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-[11px] text-muted-foreground">Start date &amp; time</label><Input type="datetime-local" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
                 <div><label className="text-[11px] text-muted-foreground">End date &amp; time</label><Input type="datetime-local" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>

@@ -232,7 +232,7 @@ export default function SupportPage() {
                   )}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{ticket.title}</p>
+                    <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2 break-words">{ticket.title}</p>
                     <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0', cfg.color)}>
                       {cfg.label}
                     </span>

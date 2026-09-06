@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Button } from '@/components/ui/button';
-import { Clapperboard, Clock, PlayCircle, Ticket, Loader2 } from 'lucide-react';
+import { Clapperboard, Clock, PlayCircle, Ticket, Loader2, Info, X, Calendar } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -23,6 +23,8 @@ interface Movie {
   durationMinutes?: number | null;
   certification?: string | null;
   releaseDate?: string | null;
+  synopsis?: string | null;
+  cast?: string[];
   status: string;
   trailerUrl?: string | null;
   bookingUrl?: string | null;
@@ -39,6 +41,7 @@ export default function MoviesPage() {
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState('');
   const [status, setStatus] = useState('');
+  const [viewing, setViewing] = useState<Movie | null>(null);
 
   useEffect(() => {
     setCity(getViewerCity());
@@ -133,7 +136,7 @@ export default function MoviesPage() {
                   )}
                 </div>
                 <div className="p-4 flex-1 flex flex-col">
-                  <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">{m.name}</h3>
+                  <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 break-words">{m.name}</h3>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-[11px] text-muted-foreground">
                     {m.language && <span>{m.language}</span>}
                     {Array.isArray(m.genres) && m.genres.length > 0 && <span>• {m.genres.slice(0, 2).join(', ')}</span>}
@@ -141,7 +144,15 @@ export default function MoviesPage() {
                       <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {m.durationMinutes}m</span>
                     )}
                   </div>
-                  <div className="flex gap-2 mt-3">
+                  <Button
+                    onClick={() => setViewing(m)}
+                    size="sm"
+                    variant="outline"
+                    className="mt-3 w-full rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer"
+                  >
+                    <Info className="h-3.5 w-3.5" /> View Details
+                  </Button>
+                  <div className="flex gap-2 mt-2">
                     {m.trailerUrl && (
                       <Button asChild size="sm" variant="outline" className="flex-1 rounded-xl border-primary/30 text-primary hover:bg-primary/10 gap-1.5 cursor-pointer">
                         <a href={m.trailerUrl.startsWith('http') ? m.trailerUrl : `https://${m.trailerUrl}`} target="_blank" rel="noopener noreferrer">
@@ -163,6 +174,88 @@ export default function MoviesPage() {
           </div>
         )}
       </div>
+
+      {viewing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setViewing(null)}>
+          <div
+            className="w-full max-w-lg max-h-[88vh] overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setViewing(null)}
+              aria-label="Close"
+              className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="relative aspect-[16/9] bg-secondary overflow-hidden rounded-t-2xl">
+              {viewing.posterImage ? (
+                <img src={viewing.posterImage} alt={viewing.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <Clapperboard className="h-12 w-12 text-muted-foreground opacity-40" />
+                </div>
+              )}
+            </div>
+
+            <div className="p-5">
+              <h2 className="text-xl font-bold text-foreground break-words">{viewing.name}</h2>
+              <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-muted-foreground">
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${viewing.status === 'NOW_SHOWING' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary'}`}>
+                  {STATUS_LABEL[viewing.status] || viewing.status}
+                </span>
+                {viewing.certification && (
+                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-secondary">{viewing.certification}</span>
+                )}
+                {viewing.language && <span>{viewing.language}</span>}
+                {viewing.durationMinutes && (
+                  <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {viewing.durationMinutes}m</span>
+                )}
+                {viewing.releaseDate && (
+                  <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(viewing.releaseDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                )}
+              </div>
+
+              {Array.isArray(viewing.genres) && viewing.genres.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {viewing.genres.map((g, i) => (
+                    <span key={i} className="px-2 py-0.5 rounded-full text-[11px] bg-secondary text-muted-foreground break-words">{g}</span>
+                  ))}
+                </div>
+              )}
+
+              {viewing.synopsis && (
+                <p className="text-sm text-muted-foreground mt-3 leading-relaxed break-words">{viewing.synopsis}</p>
+              )}
+
+              {Array.isArray(viewing.cast) && viewing.cast.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs font-semibold text-foreground mb-1">Cast</p>
+                  <p className="text-xs text-muted-foreground break-words">{viewing.cast.join(', ')}</p>
+                </div>
+              )}
+
+              <div className="flex gap-2 mt-5">
+                {viewing.trailerUrl && (
+                  <Button asChild size="sm" variant="outline" className="flex-1 rounded-xl border-primary/30 text-primary hover:bg-primary/10 gap-1.5 cursor-pointer">
+                    <a href={viewing.trailerUrl.startsWith('http') ? viewing.trailerUrl : `https://${viewing.trailerUrl}`} target="_blank" rel="noopener noreferrer">
+                      <PlayCircle className="h-3.5 w-3.5" /> Trailer
+                    </a>
+                  </Button>
+                )}
+                {viewing.bookingUrl && (
+                  <Button asChild size="sm" className="flex-1 rounded-xl bg-primary text-primary-foreground font-semibold gap-1.5 cursor-pointer">
+                    <a href={viewing.bookingUrl.startsWith('http') ? viewing.bookingUrl : `https://${viewing.bookingUrl}`} target="_blank" rel="noopener noreferrer">
+                      <Ticket className="h-3.5 w-3.5" /> Book
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </PublicLayout>
   );
 }

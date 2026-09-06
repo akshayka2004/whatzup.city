@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Ticket, ExternalLink, Loader2, CalendarDays } from 'lucide-react';
+import { Calendar, MapPin, Ticket, ExternalLink, Loader2, CalendarDays, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -24,6 +24,7 @@ interface Ev {
   category?: string | null;
   ticketType?: string;
   ticketPrice?: number | string | null;
+  ticketTiers?: { name: string; price: number }[] | null;
   hostLabel?: string | null;
   startDate: string;
   endDate: string;
@@ -41,6 +42,7 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('');
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setCity(getViewerCity());
@@ -64,6 +66,13 @@ export default function EventsPage() {
   };
 
   const visibleEvents = category ? events.filter((ev) => ev.category === category) : events;
+
+  const toggleExpanded = (id: string) =>
+    setExpanded((cur) => {
+      const next = new Set(cur);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   // Record the outbound click, then open the publisher's page in a new tab.
   const go = async (ev: Ev, type: 'REGISTER' | 'TICKET') => {
@@ -147,10 +156,36 @@ export default function EventsPage() {
                       </span>
                     )}
                     <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${ev.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
-                      {ev.ticketType === 'PAID' ? `₹${Number(ev.ticketPrice || 0).toLocaleString('en-IN')}` : 'Free'}
+                      {ev.ticketType !== 'PAID'
+                        ? 'Free'
+                        : Array.isArray(ev.ticketTiers) && ev.ticketTiers.length
+                          ? `From ₹${Math.min(...ev.ticketTiers.map((t) => Number(t.price) || 0)).toLocaleString('en-IN')}`
+                          : `₹${Number(ev.ticketPrice || 0).toLocaleString('en-IN')}`}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2 flex-1">{ev.description}</p>
+
+                  {Array.isArray(ev.ticketTiers) && ev.ticketTiers.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {ev.ticketTiers.map((t, i) => (
+                        <span key={i} className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-secondary text-foreground break-words">
+                          {t.name}: ₹{Number(t.price).toLocaleString('en-IN')}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-2 flex-1">
+                    <p className={`text-sm text-muted-foreground break-words ${expanded.has(ev.id) ? '' : 'line-clamp-2'}`}>{ev.description}</p>
+                    {ev.description && ev.description.length > 90 && (
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(ev.id)}
+                        className="mt-1 inline-flex items-center gap-0.5 text-xs font-medium text-primary hover:underline cursor-pointer"
+                      >
+                        {expanded.has(ev.id) ? <>View less <ChevronUp className="h-3 w-3" /></> : <>View more <ChevronDown className="h-3 w-3" /></>}
+                      </button>
+                    )}
+                  </div>
 
                   <div className="flex flex-col gap-1.5 mt-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {fmt(ev.startDate)}{ev.endDate && ev.endDate !== ev.startDate ? ` – ${fmt(ev.endDate)}` : ''}</span>

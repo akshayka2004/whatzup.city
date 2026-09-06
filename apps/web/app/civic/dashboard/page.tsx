@@ -425,7 +425,7 @@ export default function CivicDashboardPage() {
                             <span className="text-[10px] text-muted-foreground">{n.publishedAt}</span>
                           </div>
                           <h4 className="text-sm font-semibold text-foreground mt-0.5 truncate">{n.title}</h4>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{n.body}</p>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">{n.body}</p>
                         </div>
                       </div>
                       <button

@@ -45,9 +45,24 @@ export class SecurityExceptionFilter implements ExceptionFilter {
           status = HttpStatus.BAD_REQUEST;
           message = 'Invalid relation reference';
           break;
+        // Schema drift — the running process's Prisma Client (or the DB
+        // itself) doesn't have a table/column the code just tried to use.
+        // Near-certain cause: a deploy applied new code without running
+        // `prisma migrate deploy` + `prisma generate` first, or PM2 never
+        // restarted onto the new build. Same fix either way: redeploy.
+        case 'P2021':
+        case 'P2022':
+          status = HttpStatus.INTERNAL_SERVER_ERROR;
+          message = 'Database schema is out of date for this build — re-run the deploy (migrate + generate + restart).';
+          break;
         default:
           status = HttpStatus.BAD_REQUEST;
-          message = 'Database operation failed';
+          // This filter is a global APP_FILTER — it also wraps public,
+          // unauthenticated routes, so the raw Prisma message (which often
+          // names tables/columns/constraints) must never go in the response.
+          // The opaque code is enough to grep PM2 logs for the real detail,
+          // which is already logged above in full.
+          message = `Database operation failed (${exception.code})`;
           break;
       }
     }

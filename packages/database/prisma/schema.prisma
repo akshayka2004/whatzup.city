@@ -2532,6 +2532,9 @@ model Event {
   category           String?   @db.VarChar(30)
   ticketType         String    @default("FREE") @map("ticket_type") @db.VarChar(10)
   ticketPrice        Decimal?  @map("ticket_price") @db.Decimal(10, 2)
+  // Optional named tiers (e.g. Gold/Platinum), each its own price — takes
+  // precedence over ticketPrice for display when present. [{name, price}]
+  ticketTiers        Json?     @map("ticket_tiers")
   startDate          DateTime  @map("start_date")
   endDate            DateTime  @map("end_date")
   registrationUrl    String?   @map("registration_url") @db.Text

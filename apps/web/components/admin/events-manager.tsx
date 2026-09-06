@@ -26,6 +26,7 @@ export function EventsManager() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<any>(empty);
+  const [tiers, setTiers] = useState<{ name: string; price: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
   const [posterUploading, setPosterUploading] = useState(false);
@@ -51,7 +52,7 @@ export function EventsManager() {
   const fmt = (d?: string) => (d ? new Date(d).toLocaleString('en-IN') : '');
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
-  const openCreate = () => { setEditing(null); setForm(empty); setErr(''); setOpen(true); };
+  const openCreate = () => { setEditing(null); setForm(empty); setTiers([]); setErr(''); setOpen(true); };
   const openEdit = (e: any) => {
     setEditing(e);
     setForm({
@@ -64,8 +65,18 @@ export function EventsManager() {
       startDate: e.startDate?.slice(0, 16) || '', endDate: e.endDate?.slice(0, 16) || '',
       registrationUrl: e.registrationUrl || '', ticketUrl: e.ticketUrl || '',
     });
+    setTiers(
+      Array.isArray(e.ticketTiers)
+        ? e.ticketTiers.map((t: any) => ({ name: t.name || '', price: String(t.price ?? '') }))
+        : [],
+    );
     setErr(''); setOpen(true);
   };
+
+  const addTier = () => setTiers((t) => [...t, { name: '', price: '' }]);
+  const updateTier = (i: number, patch: Partial<{ name: string; price: string }>) =>
+    setTiers((t) => t.map((x, idx) => (idx === i ? { ...x, ...patch } : x)));
+  const removeTier = (i: number) => setTiers((t) => t.filter((_, idx) => idx !== i));
 
   const handlePosterUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) { setErr('Poster must be an image.'); return; }
@@ -94,14 +105,21 @@ export function EventsManager() {
       if (!form.businessId) { setErr('Pick a business to host the event.'); return; }
       if (form.businessId === PLATFORM_HOST && !form.hostLabel.trim()) { setErr('Enter a host label for the platform event.'); return; }
     }
-    if (form.ticketType === 'PAID' && !form.ticketPrice) { setErr('Enter a ticket price, or switch to Free.'); return; }
+    const cleanTiers = tiers
+      .map((t) => ({ name: t.name.trim(), price: Number(t.price) }))
+      .filter((t) => t.name && Number.isFinite(t.price) && t.price >= 0);
+    if (form.ticketType === 'PAID' && !form.ticketPrice && cleanTiers.length === 0) {
+      setErr('Enter a ticket price, add ticket tiers, or switch to Free.');
+      return;
+    }
     setSaving(true); setErr('');
     const isPlatform = form.businessId === PLATFORM_HOST;
     const payload = {
       ...form,
       businessId: isPlatform ? undefined : form.businessId,
       hostLabel: isPlatform ? (form.hostLabel.trim() || 'Special Correspondent') : undefined,
-      ticketPrice: form.ticketType === 'PAID' ? Number(form.ticketPrice) : undefined,
+      ticketPrice: form.ticketType === 'PAID' ? (form.ticketPrice ? Number(form.ticketPrice) : undefined) : undefined,
+      ticketTiers: form.ticketType === 'PAID' && cleanTiers.length ? cleanTiers : null,
       startDate: new Date(form.startDate).toISOString(),
       endDate: new Date(form.endDate).toISOString(),
     };
@@ -169,7 +187,11 @@ export function EventsManager() {
                                 </span>
                               )}
                               <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${e.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
-                                {e.ticketType === 'PAID' ? `₹${Number(e.ticketPrice || 0).toLocaleString('en-IN')}` : 'Free'}
+                                {e.ticketType !== 'PAID'
+                                  ? 'Free'
+                                  : Array.isArray(e.ticketTiers) && e.ticketTiers.length
+                                    ? `${e.ticketTiers.length} tiers from ₹${Math.min(...e.ticketTiers.map((t: any) => Number(t.price) || 0)).toLocaleString('en-IN')}`
+                                    : `₹${Number(e.ticketPrice || 0).toLocaleString('en-IN')}`}
                               </span>
                             </div>
                           </td>
@@ -282,6 +304,27 @@ export function EventsManager() {
                   )}
                 </div>
               </div>
+
+              {form.ticketType === 'PAID' && (
+                <div>
+                  <label className="text-[11px] text-muted-foreground">Ticket tiers (optional — e.g. Gold, Platinum). Leave empty to use the flat price above.</label>
+                  <div className="space-y-2 mt-1">
+                    {tiers.map((t, i) => (
+                      <div key={i} className="flex gap-2">
+                        <Input placeholder="Tier name (e.g. Gold)" value={t.name} onChange={(e) => updateTier(i, { name: e.target.value })} className="h-9 bg-background border-input rounded-lg text-foreground flex-1" />
+                        <Input type="number" placeholder="Price ₹" value={t.price} onChange={(e) => updateTier(i, { price: e.target.value })} className="h-9 bg-background border-input rounded-lg text-foreground w-28" />
+                        <button type="button" onClick={() => removeTier(i)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={addTier} className="text-xs font-medium text-primary hover:underline cursor-pointer">
+                      + Add tier
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="text-[11px] text-muted-foreground">Start date &amp; time</label><Input type="datetime-local" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
                 <div><label className="text-[11px] text-muted-foreground">End date &amp; time</label><Input type="datetime-local" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
