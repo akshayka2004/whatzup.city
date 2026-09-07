@@ -434,6 +434,53 @@ export class PaymentsService {
     });
   }
 
+  /** Invoice view for the paying business owner — includes billing profile, decrypted for its own owner. */
+  async getPaymentInvoice(userId: string, tenantId: string, paymentId: string) {
+    const payment = await this.db.payment.findFirst({
+      where: { id: paymentId, tenantId, deletedAt: null },
+      include: {
+        business: { include: { billingProfile: true } },
+        subscription: { select: { packageName: true, pricing: true, duration: true } },
+      },
+    });
+    if (!payment) throw new NotFoundException('Payment not found');
+    if (payment.business.ownerId !== userId) throw new ForbiddenException('Not authorized');
+
+    const meta: any = payment.invoiceMetadata || {};
+    const split = splitTax(Number(payment.amount));
+    const bp = payment.business.billingProfile;
+
+    return {
+      id: payment.id,
+      amount: payment.amount,
+      amountBase: meta.amountBase ?? split.base,
+      amountTax: meta.amountTax ?? split.tax,
+      taxPercent: meta.taxPercent ?? TAX_PERCENT,
+      method: payment.method,
+      status: payment.status,
+      transactionRef: payment.transactionRef,
+      rejectionReason: payment.rejectionReason,
+      packageName: meta.packageName || payment.subscription?.packageName || null,
+      cycle: meta.cycle || 'NEW',
+      createdAt: payment.createdAt,
+      verifiedAt: payment.verifiedAt,
+      business: { name: payment.business.name, city: payment.business.city },
+      billingProfile: bp
+        ? {
+            billingName: bp.billingName,
+            hasGst: bp.hasGst,
+            gstin: bp.hasGst ? this.crypto.decrypt(bp.gstin) : null,
+            pan: this.crypto.decrypt(bp.pan),
+            addressLine: bp.addressLine,
+            city: bp.city,
+            state: bp.state,
+            pincode: bp.pincode,
+            invoiceEmail: bp.invoiceEmail,
+          }
+        : null,
+    };
+  }
+
   async handleWebhookPlaceholder(body: any, signature: string) {
     // This serves as the Razorpay webhook verification placeholder
     // Real implementation would verify crypto signature

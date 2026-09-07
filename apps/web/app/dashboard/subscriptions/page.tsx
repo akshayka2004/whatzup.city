@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { apiService } from '@/lib/services/api-service';
@@ -265,6 +266,7 @@ export default function BusinessSubscriptionsPage() {
                           <th className="text-left font-medium px-4 py-3">Method</th>
                           <th className="text-left font-medium px-4 py-3">Reference</th>
                           <th className="text-left font-medium px-4 py-3">Status</th>
+                          <th className="text-left font-medium px-4 py-3">Invoice</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -295,6 +297,14 @@ export default function BusinessSubscriptionsPage() {
                                   </>
                                 )}
                               </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <Link
+                                href={`/dashboard/invoice/${p.id}`}
+                                className="text-primary hover:underline font-medium"
+                              >
+                                View
+                              </Link>
                             </td>
                           </tr>
                         ))}

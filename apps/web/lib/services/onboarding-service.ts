@@ -116,6 +116,11 @@ class OnboardingService {
     });
   }
 
+  /** Full invoice view (payment + billing profile) for the paying business owner. */
+  async getPaymentInvoice(paymentId: string): Promise<ApiResponse<any>> {
+    return apiService.get<any>(`/v1/payments/${paymentId}/invoice`);
+  }
+
   /** Invoice/billing details our office needs to raise the invoice. */
   async saveBillingProfile(
     businessId: string,

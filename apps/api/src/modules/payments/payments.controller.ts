@@ -95,6 +95,18 @@ export class PaymentsController {
     return this.paymentsService.getBillingProfile(userId, tenantId, businessId);
   }
 
+  @Get(':id/invoice')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Invoice details for a payment (owner only)' })
+  async invoice(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('id') paymentId: string,
+  ) {
+    return this.paymentsService.getPaymentInvoice(userId, tenantId, paymentId);
+  }
+
   @Post(':id/reject')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)

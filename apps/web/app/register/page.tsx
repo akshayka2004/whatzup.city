@@ -687,8 +687,9 @@ export default function UnifiedRegisterPage() {
         }
       }
 
-      setSuccess('Payment submitted for verification! Redirecting to your dashboard...');
-      setTimeout(() => router.push('/dashboard'), 2000);
+      const submittedPaymentId = (payRes.data as any)?.id;
+      setSuccess('Payment submitted for verification! Redirecting to your invoice...');
+      setTimeout(() => router.push(submittedPaymentId ? `/dashboard/invoice/${submittedPaymentId}` : '/dashboard'), 2000);
     } catch (err: any) {
       setError(err.message || 'Could not complete registration.');
     } finally {

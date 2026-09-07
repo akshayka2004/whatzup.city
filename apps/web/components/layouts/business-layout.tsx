@@ -28,6 +28,9 @@ import { Card } from '@/components/ui/card';
 
 // Paths allowed even when trial has expired
 const TRIAL_ALLOWED_PATHS = ['/dashboard/profile', '/dashboard/support', '/dashboard/subscriptions'];
+// The invoice for a just-submitted payment must stay reachable even though the
+// business itself is still PENDING_VERIFICATION at that point.
+const VERIFICATION_ALLOWED_PATHS = ['/dashboard/invoice'];
 
 type TrialStatus = 'NOT_STARTED' | 'ACTIVE' | 'EXPIRED' | 'CONVERTED';
 
@@ -158,7 +161,8 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   // until an admin approves. The gate shows current status + (if rejected)
   // the admin's remark and a resubmit action.
   const GATE_STATUSES = ['DRAFT', 'PENDING_VERIFICATION', 'UNDER_REVIEW', 'REJECTED'];
-  const isGated = GATE_STATUSES.includes(verificationStatus);
+  const isVerificationAllowedPath = VERIFICATION_ALLOWED_PATHS.some((p) => pathname.startsWith(p));
+  const isGated = GATE_STATUSES.includes(verificationStatus) && !isVerificationAllowedPath;
 
   // Trial expiry: block all paths except the allowed list when trial is EXPIRED
   const trialExpired = trialStatus === 'EXPIRED';
@@ -274,16 +278,16 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
           ? <OnboardingTour steps={BUSINESS_MOBILE_TOUR_STEPS} storageKey="onboarding_tour_business_mobile_v1" />
           : <OnboardingTour steps={BUSINESS_TOUR_STEPS} storageKey="onboarding_tour_business_v1" />
       )}
-      {/* Sidebar - Hidden on mobile */}
-      {!isMobile && <BusinessSidebar />}
+      {/* Sidebar - Hidden on mobile, and on print (invoice download) */}
+      {!isMobile && <div className="print:hidden"><BusinessSidebar /></div>}
 
       {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
+        <div className="print:hidden"><Header /></div>
 
         {/* ── Trial expiry banner (ACTIVE trial, days remaining) ── */}
         {trialStatus === 'ACTIVE' && trialDaysRemaining <= 5 && (
-          <div className="w-full bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex items-center justify-between text-xs text-amber-300 z-40 relative">
+          <div className="print:hidden w-full bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex items-center justify-between text-xs text-amber-300 z-40 relative">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 shrink-0 text-amber-400 animate-pulse" />
               <span>
@@ -356,8 +360,8 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
         </main>
       </div>
 
-      {/* Mobile navigation - Visible only on mobile */}
-      {isMobile && <MobileNav />}
+      {/* Mobile navigation - Visible only on mobile, hidden on print */}
+      {isMobile && <div className="print:hidden"><MobileNav /></div>}
     </div>
   );
 }
