@@ -2583,7 +2583,9 @@ model Movie {
   tenantId        String    @map("tenant_id") @db.Uuid
   name            String    @db.VarChar(255)
   posterImage     String?   @map("poster_image") @db.Text
-  language        String?   @db.VarChar(50)
+  // JSONB array of language names — a single VarChar(50) column overflowed
+  // once more than one language was entered, so this has no per-value limit.
+  languages       Json      @default("[]")
   genres          Json      @default("[]")
   durationMinutes Int?      @map("duration_minutes")
   certification   String?   @db.VarChar(10)

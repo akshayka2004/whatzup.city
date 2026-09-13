@@ -9,6 +9,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@saas/types';
+import { MovieDto } from './dto/movie.dto';
 
 @ApiTags('Movies')
 @Controller('movies')
@@ -42,7 +43,7 @@ export class MoviesController {
   async adminCreate(
     @CurrentUser('id') userId: string,
     @CurrentUser('tenantId') tenantId: string,
-    @Body() dto: any,
+    @Body() dto: MovieDto,
   ) {
     return this.moviesService.adminCreate(userId, tenantId, dto);
   }
@@ -51,7 +52,7 @@ export class MoviesController {
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Patch('admin/:id')
   @ApiBearerAuth()
-  async adminUpdate(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: any) {
+  async adminUpdate(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: MovieDto) {
     return this.moviesService.adminUpdate(id, userId, dto);
   }
 

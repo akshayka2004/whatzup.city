@@ -18,7 +18,7 @@ interface Movie {
   id: string;
   name: string;
   posterImage?: string | null;
-  language?: string | null;
+  languages?: string[];
   genres?: string[];
   durationMinutes?: number | null;
   certification?: string | null;
@@ -138,7 +138,7 @@ export default function MoviesPage() {
                 <div className="p-4 flex-1 flex flex-col">
                   <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 break-words">{m.name}</h3>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-[11px] text-muted-foreground">
-                    {m.language && <span>{m.language}</span>}
+                    {Array.isArray(m.languages) && m.languages.length > 0 && <span className="break-words">{m.languages.join(', ')}</span>}
                     {Array.isArray(m.genres) && m.genres.length > 0 && <span>• {m.genres.slice(0, 2).join(', ')}</span>}
                     {m.durationMinutes && (
                       <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {m.durationMinutes}m</span>
@@ -208,7 +208,9 @@ export default function MoviesPage() {
                 {viewing.certification && (
                   <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-secondary">{viewing.certification}</span>
                 )}
-                {viewing.language && <span>{viewing.language}</span>}
+                {Array.isArray(viewing.languages) && viewing.languages.length > 0 && (
+                  <span className="break-words">{viewing.languages.join(', ')}</span>
+                )}
                 {viewing.durationMinutes && (
                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {viewing.durationMinutes}m</span>
                 )}

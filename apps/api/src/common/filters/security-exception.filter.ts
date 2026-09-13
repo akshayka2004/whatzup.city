@@ -45,6 +45,13 @@ export class SecurityExceptionFilter implements ExceptionFilter {
           status = HttpStatus.BAD_REQUEST;
           message = 'Invalid relation reference';
           break;
+        // A string value didn't fit its column (e.g. a VarChar length cap).
+        // DTOs should catch this before it reaches Postgres, but this is the
+        // net for any field that doesn't have one yet.
+        case 'P2000':
+          status = HttpStatus.BAD_REQUEST;
+          message = 'One of the fields you entered is too long. Please shorten it and try again.';
+          break;
         // Schema drift — the running process's Prisma Client (or the DB
         // itself) doesn't have a table/column the code just tried to use.
         // Near-certain cause: a deploy applied new code without running

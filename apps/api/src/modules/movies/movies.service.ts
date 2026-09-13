@@ -3,11 +3,11 @@ import { DatabaseService } from '../../common/database/database.service';
 import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 import { AuditService } from '../audit/audit.service';
 
-const STATUSES = ['UPCOMING', 'NOW_SHOWING', 'ENDED'];
-const CERTIFICATIONS = ['U', 'U/A', 'A', 'S'];
+export const STATUSES = ['UPCOMING', 'NOW_SHOWING', 'ENDED'];
+export const CERTIFICATIONS = ['U', 'U/A', 'A', 'S'];
 
 const FIELDS = [
-  'name', 'posterImage', 'language', 'durationMinutes', 'certification',
+  'name', 'posterImage', 'languages', 'durationMinutes', 'certification',
   'synopsis', 'trailerUrl', 'bookingUrl', 'status', 'targetCities', 'genres', 'cast',
 ] as const;
 
@@ -33,6 +33,7 @@ export class MoviesService {
     for (const k of FIELDS) {
       if (dto[k] !== undefined) data[k] = dto[k];
     }
+    if (Array.isArray(dto.languages) === false && dto.languages !== undefined) data.languages = [];
     if (Array.isArray(dto.genres) === false && dto.genres !== undefined) data.genres = [];
     if (Array.isArray(dto.cast) === false && dto.cast !== undefined) data.cast = [];
     if (Array.isArray(dto.targetCities) === false && dto.targetCities !== undefined) data.targetCities = [];

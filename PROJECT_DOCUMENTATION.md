@@ -4,7 +4,9 @@
 > engineer understand, run, scale, rebuild, or rework any part of this platform
 > without prior context. Keep it current — see [Maintaining this document](#18-maintaining-this-document).
 >
-> **Last updated:** 2026-07-19 (login/forgot-password redesign)
+> **Last updated:** 2026-09-13 (movie language DB-overflow fix + DTO hardening).
+> See [§19 Feature history](#19-feature-history--time-taken) for everything
+> shipped since the previous update, with per-feature time spans.
 
 ---
 
@@ -145,11 +147,17 @@ Run a command in one package: `pnpm --filter @saas/api <script>`.
 `business-onboarding`, `businesses`, `campaigns`, `categories`, `civic`,
 `customer-onboarding`, `customers`, `dashboard`, `discovery`, `entity-onboarding`,
 `events`, `fraud`, `government-alerts`, `health`, `launch-interests`, `media`,
-`metrics`, `notifications`, `ocr`, `offers`, `onboarding-analytics`,
-`onboarding-verification`, `payments`, `preferences`, `products`, `realtime`,
+`metrics`, `movies`, `notifications`, `ocr`, `offers`, `onboarding-analytics`,
+`onboarding-verification`, `payments`, `platform-offers`, `platform-vouchers`,
+`preferences`, `products`, `realtime`,
 `reports`, `reviews`, `search`, `search-analytics`, `segmentation`,
 `subscriptions`, `team`, `trending`, `trials`, `typesense`, `users`,
-`verification`, `verified-purchases`.
+`verification`, `verified-purchases`, `vouchers`.
+
+> `movies` and `events` (admin routes) historically took `@Body() dto: any`
+> with manual field-whitelisting instead of a class-validator DTO — see the
+> [untyped-DTO gotcha in §10.5](#105-untyped-body-dto-any-skips-validationpipe-entirely)
+> for why that's dangerous and how it was fixed.
 
 Each module is the standard NestJS trio (controller + service + module), often
 with a DTO folder. Controllers define routes; services hold business logic;
@@ -212,14 +220,30 @@ launch page and launch-interest capture.
 - **Media / analytics / audit:** `Media`, `AnalyticsEvent`, `BusinessMetric`,
   `UserActivity`, `SearchHistory`, `AuditLog`, `AdminAction`, `ModerationReport`,
   `FeatureFlag`.
-- **Billing:** `Subscription`, `Payment`.
+- **Billing:** `Subscription`, `Payment`, `Transaction` (append-only financial
+  log — one row per submit/verify/reject), `BillingProfile` (GST/PAN + invoice
+  address, collected at registration Step 4, decrypted only for its own owner
+  or a revealing admin — see [§12.11](#1211-invoicing)).
+- **Vouchers & loyalty:** `Voucher`/`VoucherClaim` (per-business, spend-gated —
+  code hidden until cumulative verified spend crosses a threshold);
+  `PlatformVoucher`/`PlatformVoucherClaim` (platform-wide "Global Points" —
+  same idea but the threshold is on points earned across *any* business, and
+  redemption isn't scoped to one business); `PlatformOffer` (admin-curated
+  Sadya/Clothing/Electronics/Staycation offers, city-targeted).
+- **Events & movies (platform-published content):** `Event` (business-owned
+  or platform-hosted via nullable `businessId` + `hostLabel`; JSON
+  `ticketTiers` for named price tiers like Gold/Platinum), `EventClick`,
+  `Movie` (admin/staff-managed listings; `languages`/`genres`/`cast` are all
+  JSONB arrays — see the [movie-language gotcha](#105-untyped-body-dto-any-skips-validationpipe-entirely)
+  for why none of these are VarChar).
 - **Pre-aggregated summaries (perf):** `UserSpendingSummary`,
   `ReferralAnalyticsSummary`, `BusinessAnalyticsSummary`, `BranchAnalyticsSummary`.
 - **Launch capture:** `LaunchIndividualInterest`, `LaunchBusinessInterest`.
 
 ### Key enums
 
-`UserRoleEnum`, `EntityType`, `EntityStatus`, `BusinessStatus`
+`UserRoleEnum` (now includes `PLATFORM_STAFF` — see
+[§14 Auth](#14-auth--authorization)), `EntityType`, `EntityStatus`, `BusinessStatus`
 (`DRAFT`, `PENDING_VERIFICATION`, `UNDER_REVIEW`, `APPROVED`, `REJECTED`),
 `BusinessProfileType`, `TrialStatus`, `OfferStatus`, `ReviewStatus`
 (`PENDING`, `APPROVED`, `FLAGGED`, `REMOVED`), `BillStatus`,
@@ -389,6 +413,87 @@ swallowed by `:id`, sending `"referral-leaderboard"` as an id →
 
 See the secret-hygiene note in [§7](#7-environment-variables).
 
+### 10.5 Untyped `Body() dto: any` skips ValidationPipe entirely
+
+The global `ValidationPipe` (`main.ts`, `whitelist: true, forbidNonWhitelisted: true`)
+only validates when the controller parameter has a real class-validator DTO
+type. A handler typed `@Body() dto: any` gets **zero validation** — every
+field, including its length, goes straight through to Prisma/Postgres.
+
+This bit us for real: `movies.language` was a `VarChar(50)` column with no
+DTO, so an admin listing multiple languages in that one field
+(`"Malayalam, Hindi, Tamil, Telugu, Kannada"`) overflowed the column and
+Postgres rejected the write with a raw `PrismaClientKnownRequestError P2000`,
+surfaced to the admin as an opaque "Database operation failed" 500-shaped
+error. Fixed two ways (2026-09-13):
+
+1. **Root cause:** `movies.language` (`VarChar(50)`, one value) became
+   `movies.languages` (`JSONB`, array — no per-value length limit), matching
+   the existing `genres`/`cast` pattern. Migration
+   `20260913000000_movie_languages` backfills existing comma-crammed values
+   by splitting on `,`.
+2. **Structural fix:** `movies` and `events` (the two modules still using
+   `dto: any`) got real DTOs (`modules/movies/dto/movie.dto.ts`,
+   `modules/events/dto/event.dto.ts`) with `@MaxLength` matching every
+   remaining `VarChar` column (`title`, `venue`, `city`, `hostLabel`,
+   `certification`, etc.), so an oversized value is now rejected with a clear
+   400 instead of ever reaching Postgres. `payments`' `BillingProfileDto`/
+   `CreatePaymentDto` (already typed, but missing `@MaxLength`) got the same
+   treatment.
+3. **Safety net for anything still missed:** `SecurityExceptionFilter` now
+   special-cases Prisma `P2000` ("value too long for column") as a clean 400
+   ("One of the fields you entered is too long...") instead of falling into
+   the generic `Database operation failed (Pxxxx)` branch — so even a future
+   unvalidated field fails soft, not as a raw DB crash.
+
+**Takeaway:** any new admin/data-entry endpoint must use a real DTO class, not
+`any`. If a field maps to a `VarChar(n)` column, give it `@MaxLength(n)`.
+
+### 10.6 Turborepo: `pnpm --filter` skips the workspace build graph
+
+`turbo.json`'s `build` task declares `dependsOn: ["^build"]` — that's what
+makes a change to `@saas/types` or `@saas/database` trigger a rebuild of
+whatever depends on them. Running `pnpm --filter @saas/api build` directly
+**bypasses Turborepo entirely** and does not rebuild those dependencies'
+`dist/` first.
+
+This caused a real deploy failure: adding `PLATFORM_STAFF` to `UserRoleEnum`
+in `@saas/database` compiled fine locally (fresh `dist/`), but the VPS's
+`deploy.sh` ran the plain `pnpm --filter` command, so `@saas/api` built
+against a **stale** `@saas/types`/`@saas/database` `dist/` still missing the
+new enum value → 17 `TS2339` errors, deploy failed. Fixed (`da46f60`) by
+changing `scripts/deploy.sh` to `pnpm exec turbo run build --filter=@saas/api`
+/ `--filter=@saas/web`, which resolves the dependency graph correctly.
+
+**Takeaway:** never call `pnpm --filter <pkg> build` directly for a workspace
+package that depends on another workspace package — always go through
+`pnpm exec turbo run build --filter=<pkg>`.
+
+### 10.7 Next.js dev server: immutable Cache-Control poisons the browser
+
+`next.config.mjs`'s `headers()` applied
+`Cache-Control: public, max-age=31536000, immutable` on `/_next/static/*` in
+**every** environment, including dev. Browsers treat `immutable` as "never
+revalidate, ever" — so once a dev chunk URL was fetched under that header, no
+amount of restarting the dev server fixes it for that browser; even a hard
+reload keeps serving the stale cached chunk. Fixed by scoping the header to
+`process.env.NODE_ENV === 'production'` only.
+
+If a browser is already poisoned from before the fix, restarting the server
+doesn't help — Turbopack's dev chunk hashes are derived from the **file path**,
+not its content, so renaming the file is the reliable way to force a genuinely
+new, never-cached URL.
+
+### 10.8 Tailwind `line-clamp-N` doesn't stop horizontal overflow
+
+`line-clamp-N` only sets `-webkit-line-clamp` + `overflow: hidden` +
+`display: -webkit-box`. It does **not** set `overflow-wrap`/`word-break`, so a
+single long unbroken token (a pasted URL, a run-on word) inside clamped
+user-generated text can still overflow the card horizontally even though
+vertical clamping "worked". Always pair `line-clamp-N` with `break-words` on
+any field showing free-text/user-generated content (descriptions, review
+comments, notification bodies, etc.).
+
 ---
 
 ## 11. Region / infrastructure migration runbook
@@ -496,6 +601,79 @@ tenant.
 `totalTenants` + `activeOffers`; for a tenant admin it stays tenant-scoped.
 Cached in Redis under `analytics:overview:{platform|tenantId}` for 5 min.
 
+### 12.7 First-time onboarding tour
+
+A closable/skippable spotlight tour (`components/onboarding/platform-tour.tsx`,
+originally `onboarding-tour.tsx` — renamed to dodge a poisoned dev cache, see
+[§10.7](#107-nextjs-dev-server-immutable-cache-control-poisons-the-browser))
+auto-shows once per role on first login, highlighting each nav section on the
+real UI. Steps are defined per audience in `lib/tour-steps.ts`
+(`BUSINESS_TOUR_STEPS`/`BUSINESS_MOBILE_TOUR_STEPS`, and a public/customer
+set), rendered from `PublicLayout`/`BusinessLayout`. Shown to all roles
+**except** super-admin/admin. Persisted per `storageKey` in `localStorage` so
+it never re-shows once dismissed. `useIsMobile()` reports `false` for one
+render before its effect resolves the real value — the layouts guard the
+tour's mount with an extra `mounted` state so it doesn't mount-then-unmount
+before its own reveal timer fires on mobile.
+
+### 12.8 Events, movies & platform-hosted content
+
+- **Events** (`Event`) can be business-owned (normal flow) or platform-hosted
+  — omit `businessId` and set `hostLabel` (e.g. "Special Correspondent") to
+  publish from the platform's own side. `ticketType` is `FREE`/`PAID`;
+  `category` is an allow-listed enum (`EVENT_CATEGORIES` in
+  `events.service.ts`). Paid events support either a flat `ticketPrice` or
+  named `ticketTiers` (`[{ name: "Gold", price }, ...]`) — tiers take
+  precedence for display when present.
+- **Movies** (`Movie`) is a standalone admin/staff-managed section (not tied
+  to a business) — name, poster, `languages`/`genres`/`cast` (all JSONB
+  arrays), certification, status (`UPCOMING`/`NOW_SHOWING`/`ENDED`), optional
+  city targeting. Public page: `/movies`.
+- **Action logs:** every section (events/movies/platform-offers/announcements)
+  has a collapsed-by-default `ActionLog` component
+  (`components/admin/action-log.tsx`) reading `GET /v1/audit-logs?resource=X`
+  (server-side filtering already existed in `AuditService.findAll`), with a
+  client-side CSV export (build a comma-joined string → `Blob` → object URL →
+  trigger `<a download>`).
+- **Platform Staff** — see [§14](#14-auth--authorization) — is the
+  data-entry-only role that publishes into all of the above without full
+  admin access.
+
+### 12.9 Global points & platform-wide vouchers ("loyalty")
+
+Two parallel spend-gated reward systems, both hide the redemption code until
+a threshold is crossed:
+
+- **Per-business vouchers** (`Voucher`/`VoucherClaim`) — threshold is
+  cumulative *verified spend at one business*; staff redeem in that
+  business's dashboard.
+- **Platform-wide ("Global Points")** (`PlatformVoucher`/`PlatformVoucherClaim`)
+  — threshold is *points earned across any business on the platform*, and
+  redemption isn't scoped to one business (any business's staff can mark a
+  claim `REDEEMED`). Surfaced to the customer as a Rewards card on
+  `/profile` (must render even with zero tiers — it used to be hidden
+  entirely when `voucherTiers.length === 0`), and to businesses as a
+  redemption-stats card scoped to redemptions *at their own business*.
+
+### 12.10 Invoicing
+
+Registration Step 4 (business plan/hotel pick → QR/UPI payment + proof
+upload) ends by redirecting to `/dashboard/invoice/{paymentId}` instead of
+straight to `/dashboard`. That page (`GET /v1/payments/:id/invoice`,
+owner-only) renders a proper invoice — issuer (Lifeart Business Services Pvt.
+Ltd.), Bill To (decrypted `BillingProfile`), GST-split line items, payment
+method/ref — with a status badge that's honest about payment state:
+**Pending Verification** (amber, the common case right after submit — the
+office hasn't verified the QR payment yet), **Paid & Verified** (green), or
+**Rejected** (red, shows the admin's reason). "Download" is `window.print()`
+with `print:hidden` on all surrounding chrome (sidebar/header/mobile-nav) —
+no PDF library dependency. Because the business is still
+`PENDING_VERIFICATION` at the moment it lands here, `BusinessLayout`'s
+onboarding gate (§12.1) explicitly exempts `/dashboard/invoice/*` so the page
+doesn't get swallowed by the full-screen "Verification Pending" block. Also
+linked from the payment-history table on `/dashboard/subscriptions` so it
+stays reachable later.
+
 ---
 
 ## 13. Search, storage, realtime
@@ -519,6 +697,20 @@ Cached in Redis under `analytics:overview:{platform|tenantId}` for 5 min.
   `entity`) from the token.
 - Write endpoints whitelist mutable fields (e.g. users/businesses `PATCH`) to
   prevent role/tenant injection.
+- **`PLATFORM_STAFF`** (added 2026-09-04) is a narrow, data-entry-only role
+  (publish events/movies/platform-offers, manage announcements, read-only
+  businesses). Pattern used: **default-deny**, not widening an existing
+  broad layout's allow-list. It has its own layout/guard
+  (`components/layouts/staff-layout.tsx`, `useRequireAuth(['PLATFORM_STAFF', ...])`)
+  and sidebar (`staff-sidebar.tsx`) under `/staff/*`, entirely separate from
+  `AdminLayout`/`SuperAdminLayout` — so it's denied everywhere except its own
+  explicit allow-list, rather than risking over-broadening an existing admin
+  surface. The admin CRUD UIs it shares with super-admin (`events-manager.tsx`,
+  `movies-manager.tsx`, `platform-offers-manager.tsx`, `notices-manager.tsx`
+  under `components/admin/`) are exported as layout-less named components so
+  `/staff/*` and `/super-admin/*` pages each supply their own layout/guard
+  around the same CRUD body — role-gating stays strictly at the page/layout
+  level, not duplicated in the CRUD component.
 
 ---
 
@@ -574,6 +766,49 @@ document relevant, durable changes — not every line edit. Update when you:
 When you update: bump the **Last updated** line at the top (date + latest commit),
 and keep entries concise and accurate. Do not restate code line-by-line —
 describe intent, data flow, and the non-obvious.
+
+## 19. Feature history & time taken
+
+Everything shipped between the previous update (2026-07-19) and this one
+(2026-09-13), grouped by feature. **"Span" is the wall-clock time between a
+feature's first and last commit** — it is *not* an engineering-hours
+estimate; nothing in this repo tracks actual time-on-task. Read it with that
+caveat: a short span often just means the feature was built and pushed in one
+continuous sitting (fast iteration, not necessarily low effort — e.g. the
+mobile responsive audit across four layout tiers landed in 3 minutes of
+commit time), while a long span usually means work was picked back up after a
+gap (e.g. the security hardening pass, or the flood-relief portal spanning
+overnight).
+
+| Feature | Date | Commit(s) | Span |
+|---|---|---|---|
+| Whtzup plan tiers + mandatory QR payment w/ proof | 2026-07-28 | `6e8147f` | — |
+| Unified registration flow (retired standalone wizard) | 2026-07-28 | `4d957a4` | — |
+| Registration resume fix + live admin data + upscaled QR | 2026-07-28 | `0b65855`→`28b001f` | 14 min |
+| Mobile UI fixes (sidebar promo, viewport, overflow) | 2026-07-28 | `97f2231` | — |
+| 18% GST, transaction log, invoice details, renewal approvals | 2026-07-29 | `32fa8a7` | — |
+| Security hardening (PII encryption, lockout, upload verification) + tenant-scope triage | 2026-07-29 | `ec47df0`→`11dbefb` | 12 h 33 min |
+| Kerala Flood Relief Portal (independent workspace app) | 2026-08-04–05 | `4c80cfa`→`d994c9c` | 20 h 51 min |
+| Pricing: Whtzup entry tier, annual hotel billing | 2026-08-11 | `67e959a` | — |
+| Subscription/paywall/sidebar fixes | 2026-08-11 | `dd995ce`→`7aaa403` | 11 min |
+| Platform offers (Sadya/Clothing/Electronics/Staycation) + perf/security fixes | 2026-08-12 | `8cf5a71`→`a244b49` | 47 min |
+| Platform offers: Payasam category, itemized rates | 2026-08-12 | `fd35666` | — |
+| Live per-offer click tracking | 2026-08-13 | `b36e5a2` | — |
+| Mobile responsive audit (public/business/admin/super-admin) | 2026-08-13 | `90d3e6b`→`56ce5bb` | 3 min |
+| Misc fixes + business soft-delete | 2026-08-15 | `96b363a`→`198e976` | 12 min |
+| Bill series prefix (auto-flag matching bills) | 2026-08-30 | `c0d67e9` | — |
+| Mobile touch feedback (kill tap lag) | 2026-08-30 | `8558180` | — |
+| **Global Points & platform-wide vouchers** ([§12.9](#129-global-points--platform-wide-vouchers-loyalty)) | 2026-09-02 | `457f226` | — |
+| Rewards card fix + business redemption stats | 2026-09-03 | `60c2bad` | — |
+| **First-time onboarding tour**, desktop + mobile ([§12.7](#127-first-time-onboarding-tour)) | 2026-09-03 | `6b66ee8`→`e3eeb32` | 14 min |
+| Super-admin sidebar fix (Phase 1) | 2026-09-04 | `f7e95a8` | — |
+| **Events/Movies/Platform-Staff/Audit-log 5-phase build** — Special Correspondent host + ticket types/categories (Phase 2), Movies section (Phase 3), Platform Staff role (Phase 4), per-section action logs + CSV export (Phase 5) ([§12.8](#128-events-movies--platform-hosted-content), [§14](#14-auth--authorization)) | 2026-09-04 | `d716f48`→`b1d695c` | 3 h 15 min (incl. Phase 1 above) |
+| Deploy pipeline fix — build through Turborepo ([§10.6](#106-turborepo-pnpm---filter-skips-the-workspace-build-graph)) | 2026-09-04 | `da46f60` | — |
+| UX batch — movie/event detail views, ticket tiers, registration Back button + cost summary, AC/Non-AC toggle, card text-overflow fix ([§10.8](#108-tailwind-line-clamp-n-doesnt-stop-horizontal-overflow)) | 2026-09-06 | `33661a5` | — |
+| **Invoice page** at end of registration ([§12.10](#1210-invoicing)) | 2026-09-08 | `a0be7af` | — |
+| Movie multi-language support + DB-overflow fix + DTO hardening ([§10.5](#105-untyped-body-dto-any-skips-validationpipe-entirely)) | 2026-09-13 | *pending push* | — |
+
+---
 
 ### Change log (notable behavioural changes)
 

@@ -16,7 +16,7 @@ const STATUSES = [
 const CERTIFICATIONS = ['U', 'U/A', 'A', 'S'];
 
 const empty = {
-  name: '', posterImage: '', language: '', genres: '', durationMinutes: '',
+  name: '', posterImage: '', languages: '', genres: '', durationMinutes: '',
   certification: '', releaseDate: '', synopsis: '', cast: '',
   trailerUrl: '', bookingUrl: '', status: 'UPCOMING',
 };
@@ -51,7 +51,8 @@ export function MoviesManager() {
   const openEdit = (m: any) => {
     setEditing(m);
     setForm({
-      name: m.name || '', posterImage: m.posterImage || '', language: m.language || '',
+      name: m.name || '', posterImage: m.posterImage || '',
+      languages: Array.isArray(m.languages) ? m.languages.join(', ') : '',
       genres: Array.isArray(m.genres) ? m.genres.join(', ') : '',
       durationMinutes: m.durationMinutes ? String(m.durationMinutes) : '',
       certification: m.certification || '', releaseDate: m.releaseDate?.slice(0, 10) || '',
@@ -88,6 +89,7 @@ export function MoviesManager() {
     setSaving(true); setErr('');
     const payload = {
       ...form,
+      languages: form.languages.split(',').map((s: string) => s.trim()).filter(Boolean),
       genres: form.genres.split(',').map((s: string) => s.trim()).filter(Boolean),
       cast: form.cast.split(',').map((s: string) => s.trim()).filter(Boolean),
       durationMinutes: form.durationMinutes ? Number(form.durationMinutes) : undefined,
@@ -138,7 +140,7 @@ export function MoviesManager() {
                   <thead>
                     <tr className="border-b border-border bg-secondary/40">
                       <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Movie</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Language</th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Languages</th>
                       <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
                       <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Release</th>
                       <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">Actions</th>
@@ -157,7 +159,9 @@ export function MoviesManager() {
                             <span className="font-semibold text-foreground">{m.name}</span>
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-muted-foreground text-xs">{m.language || '—'}</td>
+                        <td className="px-5 py-3 text-muted-foreground text-xs">
+                          {Array.isArray(m.languages) && m.languages.length ? m.languages.join(', ') : '—'}
+                        </td>
                         <td className="px-5 py-3">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${m.status === 'NOW_SHOWING' ? 'bg-success/10 text-success' : m.status === 'ENDED' ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
                             {STATUSES.find((s) => s.value === m.status)?.label || m.status}
@@ -204,7 +208,7 @@ export function MoviesManager() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <Input placeholder="Language" value={form.language} onChange={(e) => set('language', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
+                <Input placeholder="Languages (comma separated, e.g. Malayalam, English)" value={form.languages} onChange={(e) => set('languages', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
                 <select value={form.certification} onChange={(e) => set('certification', e.target.value)} className="h-10 px-3 bg-background border border-input rounded-xl text-sm text-foreground">
                   <option value="">Certification</option>
                   {CERTIFICATIONS.map((c) => <option key={c} value={c}>{c}</option>)}

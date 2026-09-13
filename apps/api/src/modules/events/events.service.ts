@@ -3,8 +3,8 @@ import { DatabaseService } from '../../common/database/database.service';
 import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 import { AuditService } from '../audit/audit.service';
 
-const TICKET_TYPES = ['FREE', 'PAID'];
-const EVENT_CATEGORIES = [
+export const TICKET_TYPES = ['FREE', 'PAID'];
+export const EVENT_CATEGORIES = [
   'ENTERTAINMENT', 'MEETUP', 'WORKSHOP', 'CONCERT', 'SPORTS', 'FESTIVAL',
   'EXHIBITION', 'CONFERENCE', 'NETWORKING', 'FOOD_AND_DRINK', 'ARTS_AND_CULTURE',
   'COMMUNITY', 'CHARITY', 'RELIGIOUS', 'EDUCATION', 'KIDS_AND_FAMILY',

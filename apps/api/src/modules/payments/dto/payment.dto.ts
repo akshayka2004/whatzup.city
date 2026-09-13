@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsEnum, IsBoolean, IsEmail } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsEnum, IsBoolean, IsEmail, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum PaymentMethodEnum {
@@ -21,6 +21,7 @@ export class CreatePaymentDto {
   @ApiProperty({ example: 'pay_ABC123xyz', required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   transactionRef?: string;
 
   @ApiProperty({ example: 'sub-uuid-here', required: false })
@@ -40,6 +41,7 @@ export class CreatePaymentDto {
   @ApiProperty({ example: 'WHTZUP_XL', required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   packageName?: string;
 }
 
@@ -48,6 +50,7 @@ export class BillingProfileDto {
   @ApiProperty({ example: 'Sunrise Hospitality Pvt Ltd' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255)
   billingName!: string;
 
   @ApiProperty({ example: true })
@@ -57,35 +60,42 @@ export class BillingProfileDto {
   @ApiProperty({ example: '32ABCDE1234F1Z5', required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(20)
   gstin?: string;
 
   @ApiProperty({ example: 'ABCDE1234F', required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(15)
   pan?: string;
 
   @ApiProperty({ example: '45/998-A, MG Road, Ernakulam' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(1000)
   addressLine!: string;
 
   @ApiProperty({ example: 'Thiruvananthapuram', required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   city?: string;
 
   @ApiProperty({ example: 'Kerala', required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   state?: string;
 
   @ApiProperty({ example: '695001' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(10)
   pincode!: string;
 
   @ApiProperty({ example: 'accounts@sunrise.com' })
   @IsEmail()
+  @MaxLength(255)
   invoiceEmail!: string;
 }
 

@@ -9,6 +9,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@saas/types';
+import { EventDto } from './dto/event.dto';
 
 @ApiTags('Events')
 @Controller('events')
@@ -44,7 +45,7 @@ export class EventsController {
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Post('admin')
   @ApiBearerAuth()
-  async adminCreate(@CurrentUser('id') userId: string, @Body() dto: any) {
+  async adminCreate(@CurrentUser('id') userId: string, @Body() dto: EventDto) {
     return this.eventsService.adminCreate(userId, dto.businessId || undefined, dto);
   }
 
@@ -52,7 +53,7 @@ export class EventsController {
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Patch('admin/:id')
   @ApiBearerAuth()
-  async adminUpdate(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: any) {
+  async adminUpdate(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: EventDto) {
     return this.eventsService.adminUpdate(id, userId, dto);
   }
 
@@ -95,9 +96,9 @@ export class EventsController {
   async create(
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
-    @Body() dto: any,
+    @Body() dto: EventDto,
   ) {
-    return this.eventsService.create(tenantId, userId, dto.businessId, dto);
+    return this.eventsService.create(tenantId, userId, dto.businessId || '', dto);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -107,9 +108,9 @@ export class EventsController {
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
-    @Body() dto: any,
+    @Body() dto: EventDto,
   ) {
-    return this.eventsService.update(tenantId, dto.businessId, id, userId, dto);
+    return this.eventsService.update(tenantId, dto.businessId || '', id, userId, dto);
   }
 
   @UseGuards(JwtAuthGuard)
