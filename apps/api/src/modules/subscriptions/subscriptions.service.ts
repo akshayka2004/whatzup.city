@@ -7,12 +7,21 @@ import {
 import { DatabaseService } from '../../common/database/database.service';
 import { AuditService } from '../audit/audit.service';
 import {
-  AssignPackageDto, AssignHotelPackageDto, PackageNameEnum, ACTIVE_PACKAGES,
+  AssignPackageDto, AssignHotelPackageDto, AssignHomeChefPackageDto, HomeChefTierEnum,
+  PackageNameEnum, ACTIVE_PACKAGES,
 } from './dto/subscription.dto';
 
 // Mirrors apps/web/lib/hotel-pricing.ts — keep both in sync.
 const HOTEL_STAR_PRICING: Record<number, number> = { 5: 15000, 4: 12500, 3: 10000, 2: 7500, 1: 5000 };
 const HOTEL_ADDON_PRICE = 2500;
+
+// Home Chef category only — fixed annual tiers, exclusive to that subcategory.
+// Mirrors apps/web/lib/home-chef-pricing.ts — keep both in sync.
+const HOME_CHEF_PRICING: Record<HomeChefTierEnum, { pricing: number; offers: number; vouchers: number; backlinks: boolean; whatsappCampaign: boolean }> = {
+  [HomeChefTierEnum.STARTER]: { pricing: 2500, offers: 1, vouchers: 1, backlinks: false, whatsappCampaign: false },
+  [HomeChefTierEnum.GROWTH]: { pricing: 5000, offers: 5, vouchers: 5, backlinks: true, whatsappCampaign: false },
+  [HomeChefTierEnum.PREMIUM]: { pricing: 7500, offers: 7, vouchers: 7, backlinks: true, whatsappCampaign: true },
+};
 
 /** Standard packages are billed per quarter. */
 export const PLAN_DURATION_DAYS = 90;
@@ -158,7 +167,14 @@ export class SubscriptionsService {
 
     await this.db.business.update({
       where: { id: businessId },
-      data: { hotelStarRating: dto.starRating, hotelAmenities: dto.amenities || {} },
+      data: {
+        hotelStarRating: dto.starRating,
+        hotelAmenities: dto.amenities || {},
+        // Renewal calls resend `amenities` but not `amenityDetails` — leave
+        // the business's existing detail entries untouched in that case
+        // rather than silently wiping them.
+        ...(dto.amenityDetails !== undefined ? { amenityDetails: dto.amenityDetails } : {}),
+      },
     });
 
     // Same supersession as assignPackage — see supersedeSubscriptions().
@@ -193,6 +209,67 @@ export class SubscriptionsService {
     return subscription;
   }
 
+  /**
+   * Home Chef category only. Three fixed annual tiers, exclusive to that
+   * subcategory — replaces the standard package picker the same way hotel
+   * classification does, but with no star/amenity math, just a flat tier price.
+   */
+  async assignHomeChefPackage(userId: string, tenantId: string, businessId: string, dto: AssignHomeChefPackageDto) {
+    const business = await this.db.business.findFirst({
+      where: { tenantId, OR: [{ id: businessId }, { entityId: businessId }] },
+    });
+    if (!business) throw new NotFoundException('Business not found');
+    if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
+    businessId = business.id;
+
+    const tierConfig = HOME_CHEF_PRICING[dto.tier];
+    if (!tierConfig) throw new BadRequestException('Unknown Home Chef tier');
+
+    // Home Chef, like Hotel, is billed annually rather than quarterly.
+    const duration = HOTEL_DURATION_DAYS;
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + duration);
+
+    const totals = withTax(tierConfig.pricing);
+
+    await this.supersedeSubscriptions(tenantId, businessId);
+
+    const subscription = await this.db.subscription.create({
+      data: {
+        tenantId,
+        businessId,
+        planId: null,
+        packageName: `HOMECHEF_${dto.tier}`,
+        pricing: totals.total,
+        duration,
+        featureFlags: {
+          homeChef: true,
+          offers: tierConfig.offers,
+          vouchers: tierConfig.vouchers,
+          backlinks: tierConfig.backlinks,
+          whatsappCampaign: tierConfig.whatsappCampaign,
+        },
+        postingLimits: tierConfig.offers,
+        categoryLimits: 1,
+        status: 'PENDING_PAYMENT',
+        startDate,
+        endDate,
+      },
+    });
+
+    await this.audit.log({
+      tenantId,
+      userId,
+      action: 'SUBSCRIPTION_SELECTED',
+      resource: 'SUBSCRIPTION',
+      resourceId: subscription.id,
+      metadata: { packageName: subscription.packageName, price: totals.total, tier: dto.tier },
+    });
+
+    return subscription;
+  }
+
   async getActive(tenantId: string, businessId: string) {
     const active = await this.db.subscription.findFirst({
       where: {
@@ -205,6 +282,7 @@ export class SubscriptionsService {
         OR: [
           { packageName: { in: ACTIVE_PACKAGES } },
           { packageName: { startsWith: 'HOTEL_' } },
+          { packageName: { startsWith: 'HOMECHEF_' } },
         ],
       },
     });
@@ -237,6 +315,7 @@ export class SubscriptionsService {
         OR: [
           { packageName: { in: ACTIVE_PACKAGES } },
           { packageName: { startsWith: 'HOTEL_' } },
+          { packageName: { startsWith: 'HOMECHEF_' } },
         ],
       },
       orderBy: { createdAt: 'desc' },

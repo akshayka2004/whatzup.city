@@ -18,6 +18,8 @@ import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/
 import {
   STAR_OPTIONS, HOTEL_AMENITIES, computeHotelCharge, type HotelAmenities,
 } from '@/lib/hotel-pricing';
+import { AmenityDetailsEditor, type AmenityItem } from '@/components/business/amenity-details-editor';
+import { HOME_CHEF_PLANS, HOME_CHEF_DURATION_DAYS, getHomeChefPlan } from '@/lib/home-chef-pricing';
 import {
   SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, HOTEL_DURATION_DAYS, getPlan, formatINR, withTax, TAX_PERCENT,
   PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
@@ -263,11 +265,14 @@ export default function UnifiedRegisterPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
 
-  // ── Step 4: plan / hotel classification, then payment ───────────
+  // ── Step 4: plan / hotel classification / Home Chef tier, then payment ──
   const isHotel = categorySlug === 'hotel';
+  const isHomeChef = subcategorySlug === 'home_chefs';
   const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [homeChefTier, setHomeChefTier] = useState<string>('');
   const [hotelStarRating, setHotelStarRating] = useState<number | null>(null);
   const [hotelAmenities, setHotelAmenities] = useState<HotelAmenities>({});
+  const [amenityDetails, setAmenityDetails] = useState<Record<string, AmenityItem[]>>({});
   /** Price stays hidden until the payer explicitly proceeds. */
   const [showPayment, setShowPayment] = useState(false);
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
@@ -339,6 +344,7 @@ export default function UnifiedRegisterPage() {
         });
         if (draft.hotelStarRating) setHotelStarRating(draft.hotelStarRating);
         if (draft.hotelAmenities) setHotelAmenities(draft.hotelAmenities);
+        if (draft.amenityDetails) setAmenityDetails(draft.amenityDetails);
 
         // Already-registered businesses land on the profile step so they can
         // review/edit — never back at account creation, and never on payment,
@@ -611,14 +617,17 @@ export default function UnifiedRegisterPage() {
     setLoading(true);
 
     try {
-      // 1. Create the subscription for the chosen plan / classification.
+      // 1. Create the subscription for the chosen plan / classification / tier.
       const assignRes = isHotel
         ? await onboardingService.assignHotelSubscription(
             businessId,
             hotelStarRating || 0,
             hotelAmenities,
+            amenityDetails,
           )
-        : await onboardingService.assignSubscription(businessId, selectedPlan, PLAN_DURATION_DAYS);
+        : isHomeChef
+          ? await onboardingService.assignHomeChefSubscription(businessId, homeChefTier)
+          : await onboardingService.assignSubscription(businessId, selectedPlan, PLAN_DURATION_DAYS);
       if (assignRes.error) throw new Error(assignRes.error);
       const subscriptionId = (assignRes.data as any)?.id;
 
@@ -640,8 +649,11 @@ export default function UnifiedRegisterPage() {
       // 3. Record the payment.
       const charge = computeHotelCharge(hotelStarRating, hotelAmenities);
       const plan = getPlan(selectedPlan);
+      const homeChefPlan = getHomeChefPlan(homeChefTier);
       // Amount charged is GST-inclusive; the server recomputes and splits it.
-      const amount = withTax(isHotel ? charge.total : plan?.offerPrice || 0).total;
+      const amount = withTax(
+        isHotel ? charge.total : isHomeChef ? homeChefPlan?.price || 0 : plan?.offerPrice || 0,
+      ).total;
 
       // Invoice details first — if this fails the payment isn't recorded, so the
       // office never ends up with a payment it can't raise an invoice for.
@@ -664,7 +676,7 @@ export default function UnifiedRegisterPage() {
         proofUrl: JSON.stringify({ bucket: 'verification-documents', path: signed.data.fileKey }),
         transactionRef: payerRef || undefined,
         subscriptionId,
-        packageName: isHotel ? `HOTEL_${hotelStarRating}STAR` : selectedPlan,
+        packageName: isHotel ? `HOTEL_${hotelStarRating}STAR` : isHomeChef ? `HOMECHEF_${homeChefTier}` : selectedPlan,
       });
       if (payRes.error) throw new Error(payRes.error);
       setUploadProgress(100);
@@ -1668,12 +1680,14 @@ export default function UnifiedRegisterPage() {
                   <div>
                     <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                       <Layers className="h-5 w-5 text-zinc-400" />
-                      {isHotel ? 'Hotel Classification & Services' : 'Choose Your Plan'}
+                      {isHotel ? 'Hotel Classification & Services' : isHomeChef ? 'Choose Your Home Chef Plan' : 'Choose Your Plan'}
                     </h2>
                     <p className="text-xs text-muted-foreground mt-1">
                       {isHotel
                         ? 'Select your star classification and the services you offer. Your total is shown on the next screen.'
-                        : `Valid for ${PLAN_DURATION_DAYS} days.`}
+                        : isHomeChef
+                          ? `Exclusive Home Chef pricing. Valid for ${HOME_CHEF_DURATION_DAYS} days (annual).`
+                          : `Valid for ${PLAN_DURATION_DAYS} days.`}
                     </p>
                   </div>
 
@@ -1703,35 +1717,47 @@ export default function UnifiedRegisterPage() {
                         <h3 className="text-sm font-bold text-foreground mb-2">
                           Services &amp; amenities you offer
                         </h3>
-                        <div className="grid sm:grid-cols-2 gap-2">
-                          {HOTEL_AMENITIES.map((a) => {
-                            const on = !!hotelAmenities[a.key]?.selected;
-                            return (
-                              <button
-                                key={a.key}
-                                type="button"
-                                onClick={() =>
-                                  setHotelAmenities((prev) => ({
-                                    ...prev,
-                                    [a.key]: { ...prev[a.key], selected: !on },
-                                  }))
-                                }
-                                className={`p-3 rounded-xl border text-left transition cursor-pointer ${
-                                  on ? 'border-primary bg-primary/10' : 'border-border hover:border-slate-500'
-                                }`}
-                              >
-                                <div className="text-sm font-semibold text-foreground">{a.label}</div>
-                                {a.subOptions && (
-                                  <div className="text-[11px] text-muted-foreground mt-0.5">
-                                    {a.subOptions.join(' · ')}
-                                  </div>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        <p className="text-[11px] text-muted-foreground mb-2">
+                          Select each service you offer, then add the specific rooms, halls, menus, etc. so guests know what to expect.
+                        </p>
+                        <AmenityDetailsEditor
+                          amenities={hotelAmenities}
+                          onAmenitiesChange={setHotelAmenities}
+                          details={amenityDetails}
+                          onDetailsChange={setAmenityDetails}
+                        />
                       </div>
                     </>
+                  ) : isHomeChef ? (
+                    <div className="grid sm:grid-cols-3 gap-3">
+                      {HOME_CHEF_PLANS.map((p) => (
+                        <button
+                          key={p.code}
+                          type="button"
+                          onClick={() => setHomeChefTier(p.code)}
+                          className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col ${
+                            homeChefTier === p.code
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border hover:border-slate-500'
+                          }`}
+                        >
+                          <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
+                          <div className="text-lg font-extrabold text-foreground">{formatINR(p.price)}</div>
+                          <div className="text-[11px] text-muted-foreground mt-0.5">per year</div>
+                          <div className="text-[11px] text-muted-foreground mt-1">
+                            {p.offers} offers · {p.vouchers} vouchers
+                          </div>
+                          <ul className="mt-2 space-y-1">
+                            {p.features.map((f, i) => (
+                              <li key={i} className="flex items-start gap-1 text-[11px] text-muted-foreground">
+                                <CheckCircle className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
+                                {f}
+                              </li>
+                            ))}
+                          </ul>
+                        </button>
+                      ))}
+                    </div>
                   ) : (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       {SUBSCRIPTION_PLANS.map((p) => (
@@ -1787,8 +1813,8 @@ export default function UnifiedRegisterPage() {
                       type="button"
                       onClick={() => setShowPayment(true)}
                       // Nothing is pre-selected, so require an explicit choice:
-                      // a star rating for hotels, a plan for everyone else.
-                      disabled={isHotel ? !hotelStarRating : !selectedPlan}
+                      // a star rating for hotels, a tier for Home Chefs, a plan for everyone else.
+                      disabled={isHotel ? !hotelStarRating : isHomeChef ? !homeChefTier : !selectedPlan}
                       className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer text-[#D3DAD9]"
                     >
                       Proceed to Payment <ArrowRight className="h-4 w-4" />
@@ -1810,9 +1836,13 @@ export default function UnifiedRegisterPage() {
                   {(() => {
                     const charge = computeHotelCharge(hotelStarRating, hotelAmenities);
                     const plan = getPlan(selectedPlan);
-                    // Plan/hotel prices are GST-exclusive; tax is added on top.
-                    const totals = withTax(isHotel ? charge.total : plan?.offerPrice || 0);
+                    const homeChefPlan = getHomeChefPlan(homeChefTier);
+                    // Plan/hotel/Home Chef prices are GST-exclusive; tax is added on top.
+                    const totals = withTax(
+                      isHotel ? charge.total : isHomeChef ? homeChefPlan?.price || 0 : plan?.offerPrice || 0,
+                    );
                     const amount = totals.total;
+                    const durationDays = isHotel ? HOTEL_DURATION_DAYS : isHomeChef ? HOME_CHEF_DURATION_DAYS : PLAN_DURATION_DAYS;
                     return (
                       <div className="rounded-2xl border border-border p-5 space-y-3">
                         <h3 className="text-sm font-bold text-foreground">Your total</h3>
@@ -1827,6 +1857,13 @@ export default function UnifiedRegisterPage() {
                                 {charge.selectedCount} service{charge.selectedCount === 1 ? '' : 's'} × {formatINR(2500)}
                               </span>
                               <span>{formatINR(charge.addons)}</span>
+                            </div>
+                          </div>
+                        ) : isHomeChef ? (
+                          <div className="space-y-1.5 text-sm">
+                            <div className="flex justify-between text-muted-foreground">
+                              <span>{homeChefPlan?.name}</span>
+                              <span>{formatINR(homeChefPlan?.price || 0)}</span>
                             </div>
                           </div>
                         ) : (
@@ -1856,7 +1893,7 @@ export default function UnifiedRegisterPage() {
                           <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
                         </div>
                         <p className="text-[11px] text-muted-foreground">
-                          Valid for {isHotel ? HOTEL_DURATION_DAYS : PLAN_DURATION_DAYS} days from activation. Inclusive of {TAX_PERCENT}% GST.
+                          Valid for {durationDays} days from activation. Inclusive of {TAX_PERCENT}% GST.
                         </p>
                       </div>
                     );

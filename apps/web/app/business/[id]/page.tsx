@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { HOTEL_AMENITIES } from '@/lib/hotel-pricing';
+import { labelsFor } from '@/components/business/amenity-details-editor';
 import {
   ArrowLeft,
   Star,
@@ -550,18 +551,43 @@ export default function BusinessDetailPage() {
                     (a) => (biz.hotelAmenities || {})[a.key]?.selected,
                   );
                   if (!selected.length) return null;
+                  const details = biz.amenityDetails || {};
                   return (
                     <div className="grid sm:grid-cols-2 gap-3">
-                      {selected.map((a) => (
-                        <div key={a.key} className="p-3 rounded-xl bg-white/5 border border-white/5">
-                          <div className="text-sm font-semibold text-foreground">{a.label}</div>
-                          {a.subOptions && (
-                            <div className="text-[11px] text-muted-foreground mt-0.5">
-                              {a.subOptions.join(' · ')}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                      {selected.map((a) => {
+                        const items = Array.isArray(details[a.key]) ? details[a.key] : [];
+                        const labels = labelsFor(a.key);
+                        return (
+                          <div key={a.key} className="p-3 rounded-xl bg-white/5 border border-white/5">
+                            <div className="text-sm font-semibold text-foreground">{a.label}</div>
+                            {a.subOptions && (
+                              <div className="text-[11px] text-muted-foreground mt-0.5">
+                                {a.subOptions.join(' · ')}
+                              </div>
+                            )}
+                            {items.length > 0 && (
+                              <div className="mt-2.5 space-y-2 border-t border-white/5 pt-2.5">
+                                {items.map((item: any) => (
+                                  <div key={item.id}>
+                                    <div className="text-xs font-semibold text-foreground break-words">{item.title}</div>
+                                    <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mt-0.5 text-[11px] text-muted-foreground">
+                                      {item.capacity && <span>{labels.capacity}: {item.capacity}</span>}
+                                      {item.price && <span>{labels.price}: {item.price}</span>}
+                                    </div>
+                                    {Array.isArray(item.features) && item.features.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {item.features.map((f: string, i: number) => (
+                                          <span key={i} className="px-1.5 py-0.5 rounded-full text-[10px] bg-white/5 text-slate-300 break-words">{f}</span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })()}

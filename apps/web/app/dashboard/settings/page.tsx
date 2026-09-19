@@ -10,8 +10,9 @@ import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
 import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/business/registration-details';
 import {
-  STAR_OPTIONS, STAR_PRICING, HOTEL_AMENITIES, ADDON_PRICE, computeHotelCharge, type HotelAmenities,
+  STAR_OPTIONS, STAR_PRICING, ADDON_PRICE, computeHotelCharge, type HotelAmenities,
 } from '@/lib/hotel-pricing';
+import { AmenityDetailsEditor, type AmenityItem } from '@/components/business/amenity-details-editor';
 import { useRouter } from 'next/navigation';
 import {
   Instagram, Facebook, Linkedin, Twitter, Youtube,
@@ -103,6 +104,7 @@ export default function BusinessSettingsPage() {
   // Hotel classification + amenities
   const [hotelStarRating, setHotelStarRating] = useState<number | null>(null);
   const [hotelAmenities, setHotelAmenities] = useState<HotelAmenities>({});
+  const [amenityDetails, setAmenityDetails] = useState<Record<string, AmenityItem[]>>({});
   const [savingHotel, setSavingHotel] = useState(false);
   const [hotelMsg, setHotelMsg] = useState('');
 
@@ -164,6 +166,7 @@ export default function BusinessSettingsPage() {
           });
           setHotelStarRating(b.hotelStarRating ?? null);
           setHotelAmenities(b.hotelAmenities || {});
+          setAmenityDetails(b.amenityDetails || {});
 
           // Hydrate social links from business record if API has them, else localStorage
           const sl = biz.socialLinks;
@@ -231,6 +234,7 @@ export default function BusinessSettingsPage() {
     const res = await apiService.patch<any>(`/v1/businesses/${business.id}`, {
       hotelStarRating: hotelStarRating ?? undefined,
       hotelAmenities: hotelAmenities || {},
+      amenityDetails: amenityDetails || {},
     });
     setSavingHotel(false);
     setHotelMsg(res.error ? res.error : 'Hotel details saved. Changing star rating or amenities does not affect an already-active listing charge until renewal.');
@@ -758,29 +762,15 @@ export default function BusinessSettingsPage() {
 
               <div>
                 <h3 className="text-sm font-bold text-foreground mb-2">Amenities</h3>
-                <div className="grid sm:grid-cols-2 gap-2">
-                  {HOTEL_AMENITIES.map((a) => {
-                    const on = !!hotelAmenities[a.key]?.selected;
-                    return (
-                      <button
-                        key={a.key}
-                        type="button"
-                        onClick={() =>
-                          setHotelAmenities((prev) => ({ ...prev, [a.key]: { ...prev[a.key], selected: !on } }))
-                        }
-                        className={cn(
-                          'p-3 rounded-xl border text-left transition cursor-pointer',
-                          on ? 'border-primary bg-primary/10' : 'border-border hover:border-slate-500',
-                        )}
-                      >
-                        <div className="text-sm font-semibold text-foreground">{a.label}</div>
-                        {a.subOptions && (
-                          <div className="text-[11px] text-muted-foreground mt-0.5">{a.subOptions.join(' · ')}</div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Select each service you offer, then add the specific rooms, halls, menus, etc. Guests see these details on your public page.
+                </p>
+                <AmenityDetailsEditor
+                  amenities={hotelAmenities}
+                  onAmenitiesChange={setHotelAmenities}
+                  details={amenityDetails}
+                  onDetailsChange={setAmenityDetails}
+                />
               </div>
 
               {(() => {

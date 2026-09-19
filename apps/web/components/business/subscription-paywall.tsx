@@ -23,11 +23,13 @@ import {
   PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
 } from '@/lib/subscription-plans';
 import { computeHotelCharge, type HotelAmenities } from '@/lib/hotel-pricing';
+import { HOME_CHEF_PLANS, HOME_CHEF_DURATION_DAYS, getHomeChefPlan } from '@/lib/home-chef-pricing';
 import { Loader2, UploadCloud, X, ShieldCheck } from 'lucide-react';
 
 type Biz = {
   id: string;
   category?: { slug?: string } | null;
+  subcategoryIds?: string[] | null;
   hotelStarRating?: number | null;
   hotelAmenities?: HotelAmenities | null;
 };
@@ -46,6 +48,7 @@ export function SubscriptionPaywall() {
   const [dismissed, setDismissed] = useState(false);
 
   const [selectedPlan, setSelectedPlan] = useState<string>('');
+  const [homeChefTier, setHomeChefTier] = useState<string>('');
   const [proof, setProof] = useState<File | null>(null);
   const [payerRef, setPayerRef] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -79,10 +82,12 @@ export function SubscriptionPaywall() {
   }, []);
 
   const isHotel = biz?.category?.slug === 'hotel';
+  const isHomeChef = Array.isArray(biz?.subcategoryIds) && biz.subcategoryIds.includes('home_chefs');
   const hotelCharge = computeHotelCharge(biz?.hotelStarRating, biz?.hotelAmenities);
   const plan = getPlan(selectedPlan);
+  const homeChefPlan = getHomeChefPlan(homeChefTier);
   // Prices are GST-exclusive; tax is added on top, same as registration.
-  const totals = withTax(isHotel ? hotelCharge.total : plan?.offerPrice || 0);
+  const totals = withTax(isHotel ? hotelCharge.total : isHomeChef ? homeChefPlan?.price || 0 : plan?.offerPrice || 0);
   const amount = totals.total;
 
   // `getActive` returns a synthetic FREE tier when nothing is active.
@@ -112,7 +117,9 @@ export function SubscriptionPaywall() {
             biz.hotelStarRating || 0,
             biz.hotelAmenities || {},
           )
-        : await onboardingService.assignSubscription(biz.id, selectedPlan);
+        : isHomeChef
+          ? await onboardingService.assignHomeChefSubscription(biz.id, homeChefTier)
+          : await onboardingService.assignSubscription(biz.id, selectedPlan);
       if (assignRes.error) throw new Error(assignRes.error);
       const subscriptionId = (assignRes.data as any)?.id;
 
@@ -127,7 +134,7 @@ export function SubscriptionPaywall() {
         proofUrl: JSON.stringify({ bucket: 'verification-documents', path: signed.data.fileKey }),
         transactionRef: payerRef || undefined,
         subscriptionId,
-        packageName: isHotel ? `HOTEL_${biz.hotelStarRating}STAR` : selectedPlan,
+        packageName: isHotel ? `HOTEL_${biz.hotelStarRating}STAR` : isHomeChef ? `HOMECHEF_${homeChefTier}` : selectedPlan,
       });
       if (res.error) throw new Error(res.error);
       setDone(true);
@@ -177,7 +184,7 @@ export function SubscriptionPaywall() {
           </div>
         ) : (
           <div className="p-6 space-y-6">
-            {/* Plan choice — hotels are priced by classification instead */}
+            {/* Plan choice — hotels are priced by classification, Home Chefs by tier */}
             {isHotel ? (
               <div className="rounded-xl border border-border p-4 space-y-1.5 text-sm">
                 <h3 className="text-sm font-bold text-foreground mb-2">Your hotel listing</h3>
@@ -189,6 +196,28 @@ export function SubscriptionPaywall() {
                   <span>{hotelCharge.selectedCount} service{hotelCharge.selectedCount === 1 ? '' : 's'}</span>
                   <span>{formatINR(hotelCharge.addons)}</span>
                 </div>
+              </div>
+            ) : isHomeChef ? (
+              <div className="grid sm:grid-cols-3 gap-3">
+                {HOME_CHEF_PLANS.map((p) => (
+                  <button
+                    key={p.code}
+                    type="button"
+                    onClick={() => setHomeChefTier(p.code)}
+                    className={cn(
+                      'p-4 rounded-xl border text-left transition cursor-pointer',
+                      homeChefTier === p.code
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-slate-500',
+                    )}
+                  >
+                    <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
+                    <div className="text-lg font-extrabold text-foreground">{formatINR(p.price)}</div>
+                    <div className="text-[11px] text-muted-foreground mt-1">
+                      {p.offers} offers · {p.vouchers} vouchers
+                    </div>
+                  </button>
+                ))}
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -227,7 +256,7 @@ export function SubscriptionPaywall() {
               <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
             </div>
             <p className="text-[11px] text-muted-foreground -mt-4">
-              Valid for {isHotel ? HOTEL_DURATION_DAYS : PLAN_DURATION_DAYS} days from activation.
+              Valid for {isHotel ? HOTEL_DURATION_DAYS : isHomeChef ? HOME_CHEF_DURATION_DAYS : PLAN_DURATION_DAYS} days from activation.
             </p>
 
             <div className="flex flex-col items-center gap-3 rounded-xl border border-border p-6">
@@ -279,7 +308,7 @@ export function SubscriptionPaywall() {
             <Button
               type="button"
               onClick={submit}
-              disabled={submitting || !proof || (!isHotel && !selectedPlan)}
+              disabled={submitting || !proof || (!isHotel && !isHomeChef && !selectedPlan) || (isHomeChef && !homeChefTier)}
               className="w-full h-11 rounded-xl font-semibold cursor-pointer"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit payment for verification'}

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsEnum, IsInt, Min, Max, IsObject } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsEnum, IsInt, Min, Max, IsObject, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum PackageNameEnum {
@@ -54,4 +54,25 @@ export class AssignHotelPackageDto {
   })
   @IsObject()
   amenities!: Record<string, { selected?: boolean; subChoices?: string[] }>;
+
+  @ApiProperty({
+    required: false,
+    description: 'Structured detail entries (halls, rooms, menu sections, etc.) keyed by amenity key. Omit to leave the business\'s existing details untouched — e.g. on a renewal call that only resends amenities.',
+  })
+  @IsOptional()
+  @IsObject()
+  amenityDetails?: Record<string, any[]>;
+}
+
+/** Home Chef category only — three fixed annual tiers, not the standard packages. */
+export enum HomeChefTierEnum {
+  STARTER = 'STARTER',
+  GROWTH = 'GROWTH',
+  PREMIUM = 'PREMIUM',
+}
+
+export class AssignHomeChefPackageDto {
+  @ApiProperty({ enum: HomeChefTierEnum, example: 'GROWTH' })
+  @IsEnum(HomeChefTierEnum)
+  tier!: HomeChefTierEnum;
 }

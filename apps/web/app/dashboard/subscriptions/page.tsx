@@ -19,6 +19,7 @@ import {
   SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, RENEWAL_REMINDER_DAYS,
   formatINR, planLabel,
 } from '@/lib/subscription-plans';
+import { HOME_CHEF_PLANS } from '@/lib/home-chef-pricing';
 import { cn } from '@/lib/utils';
 import {
   CreditCard, Check, Loader2, Clock, CheckCircle2, XCircle, AlertCircle,
@@ -56,6 +57,7 @@ function daysUntil(iso?: string | null) {
 
 export default function BusinessSubscriptionsPage() {
   const [businessId, setBusinessId] = useState<string>('');
+  const [isHomeChef, setIsHomeChef] = useState(false);
   const [sub, setSub] = useState<Sub | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [billing, setBilling] = useState<any>(null);
@@ -69,6 +71,7 @@ export default function BusinessSubscriptionsPage() {
       const biz = list?.[0];
       if (cancelled || !biz?.id) { setLoading(false); return; }
       setBusinessId(biz.id);
+      setIsHomeChef(Array.isArray(biz.subcategoryIds) && biz.subcategoryIds.includes('home_chefs'));
 
       const [subRes, payRes, billRes] = await Promise.allSettled([
         apiService.get<any>(`/v1/subscriptions/businesses/${biz.id}/active`),
@@ -156,51 +159,89 @@ export default function BusinessSubscriptionsPage() {
 
             {/* Plan catalogue */}
             <div>
-              <h2 className="text-sm font-bold text-foreground mb-2">Available plans</h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {SUBSCRIPTION_PLANS.map((p) => {
-                  const current = p.code === currentCode;
-                  return (
-                    <Card
-                      key={p.code}
-                      className={cn('p-4 flex flex-col', current && 'border-primary bg-primary/5')}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-primary">{p.name}</span>
-                        {current && (
-                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                            Current
+              <h2 className="text-sm font-bold text-foreground mb-2">
+                {isHomeChef ? 'Available Home Chef plans' : 'Available plans'}
+              </h2>
+              {isHomeChef ? (
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {HOME_CHEF_PLANS.map((p) => {
+                    const current = `HOMECHEF_${p.code}` === currentCode;
+                    return (
+                      <Card
+                        key={p.code}
+                        className={cn('p-4 flex flex-col', current && 'border-primary bg-primary/5')}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold text-primary">{p.name}</span>
+                          {current && (
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                              Current
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xl font-extrabold text-foreground">{formatINR(p.price)}</div>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">per year</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          {p.offers} offers · {p.vouchers} vouchers
+                        </p>
+                        <ul className="mt-2 space-y-1">
+                          {p.features.map((f, i) => (
+                            <li key={i} className="flex items-start gap-1 text-[11px] text-muted-foreground">
+                              <Check className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {SUBSCRIPTION_PLANS.map((p) => {
+                    const current = p.code === currentCode;
+                    return (
+                      <Card
+                        key={p.code}
+                        className={cn('p-4 flex flex-col', current && 'border-primary bg-primary/5')}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold text-primary">{p.name}</span>
+                          {current && (
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                              Current
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-xl font-extrabold text-foreground">
+                            {formatINR(p.offerPrice)}
                           </span>
-                        )}
-                      </div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-xl font-extrabold text-foreground">
-                          {formatINR(p.offerPrice)}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground line-through">
-                          {formatINR(p.mrp)}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-emerald-400 font-semibold mt-0.5">
-                        50% launch offer
-                      </p>
-                      <p className="text-[11px] text-muted-foreground mt-1">
-                        {p.offers} offers · {p.vouchers} vouchers
-                      </p>
-                      <ul className="mt-2 space-y-1">
-                        {p.features.map((f, i) => (
-                          <li key={i} className="flex items-start gap-1 text-[11px] text-muted-foreground">
-                            <Check className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
-                            {f}
-                          </li>
-                        ))}
-                      </ul>
-                    </Card>
-                  );
-                })}
-              </div>
+                          <span className="text-[11px] text-muted-foreground line-through">
+                            {formatINR(p.mrp)}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-emerald-400 font-semibold mt-0.5">
+                          50% launch offer
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          {p.offers} offers · {p.vouchers} vouchers
+                        </p>
+                        <ul className="mt-2 space-y-1">
+                          {p.features.map((f, i) => (
+                            <li key={i} className="flex items-start gap-1 text-[11px] text-muted-foreground">
+                              <Check className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
               <p className="text-[11px] text-muted-foreground mt-2">
-                Hotels are billed by star classification and selected services instead of these plans.
+                Hotels are billed by star classification and selected services; Home Chefs are billed annually on exclusive tiers, instead of these plans.
               </p>
             </div>
 

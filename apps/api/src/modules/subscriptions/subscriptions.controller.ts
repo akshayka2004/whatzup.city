@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
-import { AssignPackageDto, AssignHotelPackageDto } from './dto/subscription.dto';
+import { AssignPackageDto, AssignHotelPackageDto, AssignHomeChefPackageDto } from './dto/subscription.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -52,6 +52,19 @@ export class SubscriptionsController {
     @Body() dto: AssignHotelPackageDto,
   ) {
     return this.subscriptionsService.assignHotelPackage(userId, tenantId, businessId, dto);
+  }
+
+  @Post('businesses/:businessId/assign-homechef')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Assign a Home Chef annual tier to a business (Home Chef subcategory only)' })
+  async assignHomeChef(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('businessId') businessId: string,
+    @Body() dto: AssignHomeChefPackageDto,
+  ) {
+    return this.subscriptionsService.assignHomeChefPackage(userId, tenantId, businessId, dto);
   }
 
   @Get('businesses/:businessId/active')

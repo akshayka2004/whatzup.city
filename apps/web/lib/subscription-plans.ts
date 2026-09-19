@@ -147,6 +147,10 @@ export function planLabel(packageName?: string | null) {
   if (packageName.startsWith('HOTEL_')) {
     return `Hotel ${packageName.replace('HOTEL_', '').replace('STAR', '')}★`;
   }
+  if (packageName.startsWith('HOMECHEF_')) {
+    const tier = packageName.replace('HOMECHEF_', '');
+    return `HomeChef ${tier.charAt(0) + tier.slice(1).toLowerCase()}`;
+  }
   // Retired codes (LISTING_BASIC, FEATURED, …) — show them readably.
   return packageName
     .toLowerCase()

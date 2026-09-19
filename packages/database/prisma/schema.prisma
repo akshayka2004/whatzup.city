@@ -543,6 +543,10 @@ model Business {
   hotelStarRating    Int?     @map("hotel_star_rating")
   // Hotel category only: { [amenityKey]: { selected: bool, ...subChoices } } — ₹2500/selected top-level item
   hotelAmenities     Json     @default("{}") @map("hotel_amenities")
+  // Hotel category only: { [amenityKey]: AmenityItem[] } — the hall/room/menu-style
+  // detail entries a hotel enters for each amenity it has selected. Purely
+  // informational (shown on the public page); does not affect billing.
+  amenityDetails     Json     @default("{}") @map("amenity_details")
   profileType    BusinessProfileType @default(OWNER) @map("profile_type")
   logo           String?        @db.Text
   coverImage     String?        @map("cover_image") @db.Text

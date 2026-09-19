@@ -203,7 +203,7 @@ export class BusinessesService {
       'billingContact', 'supportContact', 'branchHead', 'categoryAttributes',
       'subcategoryIds',
       // Hotel category pricing
-      'hotelStarRating', 'hotelAmenities',
+      'hotelStarRating', 'hotelAmenities', 'amenityDetails',
     ];
     const payload: any = {};
     for (const k of ALLOWED) if (data[k] !== undefined) payload[k] = data[k];

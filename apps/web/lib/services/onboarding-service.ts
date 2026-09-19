@@ -137,11 +137,18 @@ class OnboardingService {
     businessId: string,
     starRating: number,
     amenities: Record<string, { selected?: boolean; subChoices?: string[] }>,
+    amenityDetails?: Record<string, any[]>,
   ): Promise<ApiResponse<any>> {
     return apiService.post<any>(`/v1/subscriptions/businesses/${businessId}/assign-hotel`, {
       starRating,
       amenities,
+      ...(amenityDetails !== undefined ? { amenityDetails } : {}),
     });
+  }
+
+  /** Home Chef subcategory only — one of the three fixed annual tiers. */
+  async assignHomeChefSubscription(businessId: string, tier: string): Promise<ApiResponse<any>> {
+    return apiService.post<any>(`/v1/subscriptions/businesses/${businessId}/assign-homechef`, { tier });
   }
 
   async getSignedUrl(
