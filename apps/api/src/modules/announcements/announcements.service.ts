@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { TenantResolverService } from '../../common/database/tenant-resolver.service';
+import { AnnouncementDto } from './dto/announcement.dto';
 
 @Injectable()
 export class AnnouncementsService {
@@ -9,9 +10,47 @@ export class AnnouncementsService {
     private readonly tenantResolver: TenantResolverService,
   ) {}
 
-  async create(tenantId: string, agencyId: string, data: any) {
+  // Turns a validated AnnouncementDto into a Prisma payload. Previously
+  // `create`/`update` spread the raw request body straight into Prisma —
+  // a body carrying its own `tenantId` would override the real one, since
+  // object-literal keys are last-write-wins. This is now the only path
+  // fields reach the database through.
+  private toPayload(data: AnnouncementDto) {
+    const payload: any = {};
+    if (data.title !== undefined) payload.title = data.title;
+    if (data.body !== undefined) payload.body = data.body;
+    if (data.category !== undefined) payload.category = data.category;
+    if (data.priority !== undefined) payload.priority = data.priority;
+    if (data.targetAudience !== undefined) payload.targetAudience = data.targetAudience;
+    if (data.targetCities !== undefined) payload.targetCities = data.targetCities;
+    if (data.linkUrl !== undefined) payload.linkUrl = data.linkUrl || null;
+    if (data.publishAt !== undefined) payload.publishAt = data.publishAt ? new Date(data.publishAt) : null;
+    if (data.expiresAt !== undefined) payload.expiresAt = data.expiresAt ? new Date(data.expiresAt) : null;
+    if (data.startAt !== undefined) payload.startAt = data.startAt ? new Date(data.startAt) : null;
+    return payload;
+  }
+
+  async create(tenantId: string, agencyId: string, data: AnnouncementDto) {
+    if (!data.title || !data.category) {
+      throw new BadRequestException('title and category are required');
+    }
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
-    return this.db.governmentAnnouncement.create({ data: { tenantId, agencyId, ...data } });
+    return this.db.governmentAnnouncement.create({
+      data: {
+        tenantId,
+        agencyId,
+        title: data.title,
+        body: data.body || '',
+        category: data.category,
+        priority: data.priority,
+        targetAudience: data.targetAudience,
+        targetCities: data.targetCities ?? [],
+        linkUrl: data.linkUrl || null,
+        publishAt: data.publishAt ? new Date(data.publishAt) : null,
+        expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+        startAt: data.startAt ? new Date(data.startAt) : null,
+      },
+    });
   }
 
   /**
@@ -113,8 +152,8 @@ export class AnnouncementsService {
     });
   }
 
-  async update(id: string, data: any) {
-    return this.db.governmentAnnouncement.update({ where: { id }, data });
+  async update(id: string, data: AnnouncementDto) {
+    return this.db.governmentAnnouncement.update({ where: { id }, data: this.toPayload(data) });
   }
   async publish(id: string) {
     return this.db.governmentAnnouncement.update({

@@ -17,6 +17,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@saas/types';
+import { OfferDto } from './dto/offer.dto';
 
 @ApiTags('Offers')
 @Controller('offers')
@@ -95,9 +96,9 @@ export class OffersController {
   async create(
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
-    @Body() data: any,
+    @Body() data: OfferDto,
   ) {
-    return this.offersService.create(tenantId, userId, data.businessId, data);
+    return this.offersService.create(tenantId, userId, data.businessId || '', data);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -107,7 +108,7 @@ export class OffersController {
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
-    @Body() data: any,
+    @Body() data: OfferDto,
   ) {
     return this.offersService.update(tenantId, id, userId, data);
   }

@@ -13,6 +13,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { BranchesService } from './branches.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { BranchDto } from './dto/branch.dto';
 
 @ApiTags('Business Branches')
 @ApiBearerAuth()
@@ -37,7 +38,7 @@ export class BranchesController {
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
     @Param('businessId') businessId: string,
-    @Body() data: any,
+    @Body() data: BranchDto,
   ) {
     return this.branchesService.create(tenantId, businessId, userId, data);
   }
@@ -48,7 +49,7 @@ export class BranchesController {
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
-    @Body() data: any,
+    @Body() data: BranchDto,
   ) {
     return this.branchesService.update(tenantId, id, userId, data);
   }

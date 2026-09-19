@@ -17,6 +17,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { UserRole, BusinessStatus } from '@saas/types';
+import { BusinessDto } from './dto/business.dto';
 
 @ApiTags('Businesses')
 @Controller('businesses')
@@ -81,7 +82,7 @@ export class BusinessesController {
   @Post()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Register a new business' })
-  async create(@CurrentUser() user: any, @Body() data: any) {
+  async create(@CurrentUser() user: any, @Body() data: BusinessDto) {
     return this.businessesService.create(user.tenantId, user.id, data);
   }
 
@@ -93,7 +94,7 @@ export class BusinessesController {
     @Param('id') id: string,
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
-    @Body() data: any,
+    @Body() data: BusinessDto,
   ) {
     return this.businessesService.update(tenantId, id, userId, data);
   }
@@ -135,7 +136,7 @@ export class BusinessesController {
   async adminUpdate(
     @Param('id') id: string,
     @CurrentUser('id') adminId: string,
-    @Body() data: any,
+    @Body() data: BusinessDto,
   ) {
     return this.businessesService.adminUpdate(id, adminId, data);
   }

@@ -14,6 +14,7 @@ import { ProductsService } from './products.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { ProductDto } from './dto/product.dto';
 
 @ApiTags('Products')
 @Controller('products')
@@ -42,9 +43,9 @@ export class ProductsController {
   async create(
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
-    @Body() data: any,
+    @Body() data: ProductDto,
   ) {
-    return this.productsService.create(tenantId, userId, data.businessId, data);
+    return this.productsService.create(tenantId, userId, data.businessId || '', data);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -54,7 +55,7 @@ export class ProductsController {
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
-    @Body() data: any,
+    @Body() data: ProductDto,
   ) {
     return this.productsService.update(tenantId, id, userId, data);
   }

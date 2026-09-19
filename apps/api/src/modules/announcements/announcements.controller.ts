@@ -7,6 +7,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { UserRole } from '@saas/types';
+import { AnnouncementDto } from './dto/announcement.dto';
 
 @ApiTags('Announcements')
 @Controller('announcements')
@@ -33,7 +34,7 @@ export class AnnouncementsController {
   @Roles(UserRole.GOVERNMENT_ADMIN, UserRole.MASTER_ADMIN)
   @Post()
   @ApiBearerAuth()
-  async create(@CurrentUser() user: any, @Body() data: any): Promise<any> {
+  async create(@CurrentUser() user: any, @Body() data: AnnouncementDto): Promise<any> {
     return this.announcementsService.create(user.tenantId, user.id, data);
   }
 
@@ -41,7 +42,7 @@ export class AnnouncementsController {
   @Roles(UserRole.GOVERNMENT_ADMIN, UserRole.MASTER_ADMIN)
   @Patch(':id')
   @ApiBearerAuth()
-  async update(@Param('id') id: string, @Body() data: any): Promise<any> {
+  async update(@Param('id') id: string, @Body() data: AnnouncementDto): Promise<any> {
     return this.announcementsService.update(id, data);
   }
 

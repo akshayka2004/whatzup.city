@@ -7,6 +7,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { UserRole } from '@saas/types';
+import { CategoryDto } from './dto/category.dto';
 
 @ApiTags('Categories')
 @Controller('categories')
@@ -23,7 +24,7 @@ export class CategoriesController {
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @Post()
   @ApiBearerAuth()
-  async create(@CurrentUser('tenantId') tenantId: string, @Body() data: any) {
+  async create(@CurrentUser('tenantId') tenantId: string, @Body() data: CategoryDto) {
     return this.categoriesService.create(tenantId, data);
   }
 
@@ -34,7 +35,7 @@ export class CategoriesController {
   async update(
     @Param('id') id: string,
     @CurrentUser('tenantId') tenantId: string,
-    @Body() data: any,
+    @Body() data: CategoryDto,
   ) {
     return this.categoriesService.update(id, tenantId, data);
   }

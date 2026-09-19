@@ -6,6 +6,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@saas/types';
+import { AdminUpdateUserDto } from './dto/admin-update-user.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -115,7 +116,7 @@ export class UsersController {
   async adminUpdate(
     @Param('id') id: string,
     @CurrentUser('id') adminId: string,
-    @Body() data: any,
+    @Body() data: AdminUpdateUserDto,
   ) {
     return this.usersService.adminUpdate(id, adminId, data);
   }

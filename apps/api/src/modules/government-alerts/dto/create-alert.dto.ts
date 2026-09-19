@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsDateString, IsObject, IsEnum, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsDateString, IsObject, IsEnum, IsArray, MaxLength, ArrayMaxSize } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum AlertPriority {
@@ -11,6 +11,7 @@ export enum AlertPriority {
 export class CreateAlertDto {
   @ApiProperty({ description: 'Alert headline / title' })
   @IsString()
+  @MaxLength(500)
   title!: string;
 
   @ApiProperty({ description: 'Full body text of the alert' })
@@ -19,6 +20,7 @@ export class CreateAlertDto {
 
   @ApiProperty({ description: 'Category of the alert (e.g., EMERGENCY, ROAD_BLOCK, WEATHER)' })
   @IsString()
+  @MaxLength(100)
   category!: string;
 
   @ApiProperty({
@@ -53,11 +55,15 @@ export class CreateAlertDto {
     type: [String],
   })
   @IsArray()
+  @ArrayMaxSize(50)
+  @IsString({ each: true })
+  @MaxLength(100, { each: true })
   @IsOptional()
   targetCities?: string[];
 
   @ApiProperty({ description: 'Optional external link / URL', required: false })
   @IsString()
+  @MaxLength(2048)
   @IsOptional()
   linkUrl?: string;
 
