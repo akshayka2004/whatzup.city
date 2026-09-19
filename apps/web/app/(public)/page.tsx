@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import {
   Search, MapPin, Star, Megaphone, Shield,
   ArrowRight, CheckCircle2,
-  Receipt, Tag, ChevronRight, Sparkles, Globe,
+  Tag, ChevronRight, Sparkles, Globe,
   ShoppingBag, Stethoscope, Laptop, GraduationCap,
-  Utensils, Plane, Dumbbell, Building2, Loader2,
+  Utensils, Dumbbell, Building2, Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -81,15 +81,18 @@ const FEATURES = [
   },
 ];
 
+// Slugs must match real rows in the `business_categories` table
+// (packages/database/prisma/seed.ts) — a slug that doesn't exist falls back
+// to a free-text search on the category page and mostly returns nothing.
 const CATEGORIES = [
   { label: 'Restaurants',          icon: Utensils,       slug: 'restaurants' },
-  { label: 'Shopping & Retail',    icon: ShoppingBag,    slug: 'shopping' },
+  { label: 'Shopping & Retail',    icon: ShoppingBag,    slug: 'retail' },
   { label: 'Professional Services',icon: Sparkles,       slug: 'services' },
   { label: 'Medical & Health',     icon: Stethoscope,    slug: 'healthcare' },
   { label: 'Education Hubs',       icon: GraduationCap,  slug: 'education' },
   { label: 'Tech & Agency',        icon: Laptop,         slug: 'technology' },
-  { label: 'Logistics & Travel',   icon: Plane,          slug: 'travel' },
-  { label: 'Health & Fitness',     icon: Dumbbell,       slug: 'fitness' },
+  { label: 'Real Estate',          icon: Building2,      slug: 'real_estate' },
+  { label: 'Health & Fitness',     icon: Dumbbell,       slug: 'fitness_wellness' },
 ];
 
 /* ────────────── COMPONENT ────────────── */
@@ -162,11 +165,13 @@ export default function HomePage() {
 
   const identity = getCityIdentity(city);
 
+  // Deliberately 3 tiles, not 4 — a 4th "Verified Listings" tile used to
+  // read off the same `stats.businesses` number as "Registered Businesses",
+  // presenting one figure twice as if it were a distinct metric.
   const statsCards = [
     { label: 'Registered Businesses', value: stats.businesses, icon: Building2 },
     { label: 'Active Promotions',     value: stats.offers,     icon: Tag },
     { label: 'Active Categories',     value: stats.categories, icon: Globe },
-    { label: 'Verified Listings',     value: stats.businesses, icon: Receipt },
   ];
 
   return (
@@ -240,7 +245,7 @@ export default function HomePage() {
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                 Trending:
               </span>
-              {['Restaurants', 'Healthcare', 'Shopping', 'Services'].map((cat) => (
+              {['Restaurants', 'Healthcare', 'Retail', 'Services'].map((cat) => (
                 <Link
                   key={cat}
                   href={`/category?type=${cat.toLowerCase()}`}
@@ -335,7 +340,7 @@ export default function HomePage() {
       </section>
 
       {/* ── STATS ────────────────────────────────────────────────────── */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10 md:mb-14">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10 md:mb-14">
         {statsCards.map((stat) => {
           const Icon = stat.icon;
           return (

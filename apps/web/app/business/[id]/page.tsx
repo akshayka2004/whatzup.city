@@ -718,9 +718,16 @@ export default function BusinessDetailPage() {
                     <div key={review.id || i} className="pb-4 border-b border-white/5 last:border-0">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <p className="font-semibold text-foreground">
-                            {review.user?.name || review.customerName || 'Anonymous'}
-                          </p>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-semibold text-foreground">
+                              {review.user?.name || review.customerName || 'Anonymous'}
+                            </p>
+                            {review.isVerifiedPurchase && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-success/15 text-success">
+                                <CheckCircle2 className="h-3 w-3" /> Verified Purchase
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-2">
                             <div className="flex gap-0.5">
                               {[...Array(5)].map((_, j) => (
