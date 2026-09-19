@@ -4,7 +4,7 @@
 > engineer understand, run, scale, rebuild, or rework any part of this platform
 > without prior context. Keep it current — see [Maintaining this document](#18-maintaining-this-document).
 >
-> **Last updated:** 2026-09-13 (movie language DB-overflow fix + DTO hardening).
+> **Last updated:** 2026-09-14 (PM2/env-drift outage — see [§10.9](#109-pm2-caches-env-vars-per-process----update-env-only-merges-never-clears)).
 > See [§19 Feature history](#19-feature-history--time-taken) for everything
 > shipped since the previous update, with per-feature time spans.
 
@@ -493,6 +493,43 @@ user-generated text can still overflow the card horizontally even though
 vertical clamping "worked". Always pair `line-clamp-N` with `break-words` on
 any field showing free-text/user-generated content (descriptions, review
 comments, notification bodies, etc.).
+
+### 10.9 PM2 caches env vars per-process — `--update-env` only merges, never clears
+
+**2026-09-13/14 outage.** After the movie-language migration (§10.5) shipped,
+`saas-api` started throwing "Database schema is out of date" on *every* route
+(login included) — not just movies. Root cause turned out to be a full day of
+env drift, not the migration itself:
+
+- Root `.env` and `packages/database/prisma/.env` each held a **different**
+  Supabase project (`DATABASE_URL`'s `postgres.<ref>` differed between them —
+  a leftover from the Tokyo → Mumbai migration in [§11](#11-region--infrastructure-migration-runbook)
+  never being fully reconciled across every file that reads it).
+- Neither matched what `saas-api` was **actually** running with. `pm2 env <id>`
+  showed a *third*, different project again. PM2's daemon caches whatever env
+  a process last started with; `pm2 restart --update-env` merges the calling
+  shell's current env into that cache, but it does **not** clear a variable
+  the daemon already has cached — so editing `.env` files and restarting
+  looked like it should work and silently didn't, run after run.
+- **Supabase pooler hostnames are shared per-region across many projects** —
+  the actual project is selected by the connection *username*
+  (`postgres.<project-ref>`), not the hostname. Don't trust "same region" as
+  "same project"; always diff the `postgres.<ref>` segment specifically.
+- The only fully reliable way to identify the real database, once local/VPS
+  connection strings disagree, was the Supabase dashboard's own **SQL
+  Editor** run directly by a human (`select tablename from pg_tables where
+  schemaname='public'`) — not another constructed connection string, which
+  just risked repeating the same mistake with a different wrong string.
+
+**Fix:** aligned `DATABASE_URL`/`DIRECT_URL` in both `.env` files to the
+confirmed-correct project, then `pm2 delete saas-api && pm2 start
+ecosystem.config.js --only saas-api && pm2 save` — a full delete/recreate,
+not a restart, so PM2 drops its stale cached env instead of re-merging it.
+
+**Takeaway:** if `pm2 env <id>` doesn't match `.env` after a restart, don't
+keep restarting — delete and recreate the process. And when in doubt about
+which Supabase project is live, check row counts in that project's own SQL
+Editor before writing any connection string into a file.
 
 ---
 
