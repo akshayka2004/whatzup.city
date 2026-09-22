@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Mail,
@@ -47,9 +47,11 @@ const FEATURES = [
   },
 ];
 
-export default function LoginPage() {
+function LoginForm() {
   const { signIn } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || undefined;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -69,7 +71,7 @@ export default function LoginPage() {
     }
     setIsSubmitting(true);
     try {
-      const success = await signIn(email, password);
+      const success = await signIn(email, password, redirectTo);
       if (!success) {
         setError('Invalid email or password.');
       } else {
@@ -314,5 +316,19 @@ export default function LoginPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen w-full flex items-center justify-center" style={{ background: C.bg }}>
+          <Loader2 className="h-7 w-7 animate-spin" style={{ color: C.para }} />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

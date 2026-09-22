@@ -4,10 +4,17 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService, User, UserRole } from '@/lib/services/auth-service';
 import { useRouter } from 'next/navigation';
 
+// Only a same-origin /business/:id path (with an optional query/hash) is honored —
+// anything else is treated as untrusted and falls back to resolveRedirect().
+// Guards against an open redirect via a crafted ?redirect= query param.
+function isSafeBusinessRedirect(path: string): boolean {
+  return /^\/business\/[^/?#\s]+([?#].*)?$/.test(path);
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<boolean>;
+  signIn: (email: string, password: string, redirectTo?: string) => Promise<boolean>;
   signUp: (email: string, password: string, name: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   switchRole: (role: string) => void;
@@ -113,14 +120,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return '/';
   };
 
-  const signIn = async (email: string, password: string): Promise<boolean> => {
+  const signIn = async (email: string, password: string, redirectTo?: string): Promise<boolean> => {
     setLoading(true);
     try {
       // Login response now includes entity — no second roundtrip needed for redirect
       const loggedInUser = await authService.signIn(email, password);
       if (loggedInUser) {
         setUser(loggedInUser);
-        router.push(resolveRedirect(loggedInUser));
+        // A QR-scan deep link (?redirect=/business/:id) wins over the usual
+        // role-based landing page — but only once validated as same-origin.
+        const target =
+          redirectTo && isSafeBusinessRedirect(redirectTo) ? redirectTo : resolveRedirect(loggedInUser);
+        router.push(target);
         // Background refresh: loads full permissions without blocking redirect
         authService.fetchCurrentUser()
           .then((fresh) => { if (fresh) setUser(fresh); })

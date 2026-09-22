@@ -27,6 +27,7 @@ import {
   Flag,
   CalendarDays,
   Ticket,
+  QrCode,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRoleLabel } from '@/lib/rbac';
@@ -46,6 +47,7 @@ const OWNER_MENU = [
   { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
   { label: 'Branches', href: '/dashboard/branches', icon: GitBranch },
   { label: 'Media', href: '/dashboard/media', icon: Image },
+  { label: 'QR Code', href: '/dashboard/qr-code', icon: QrCode },
   { label: 'Team', href: '/dashboard/team', icon: UserCog },
   { label: 'Subscriptions', href: '/dashboard/subscriptions', icon: CreditCard },
   { label: 'Support', href: '/dashboard/support', icon: LifeBuoy },

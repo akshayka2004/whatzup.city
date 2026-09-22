@@ -5,9 +5,10 @@ import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Building2, Search, RefreshCw, Pencil, X, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Tag, CalendarDays, ArrowUpDown, Wallet, Star, Trash2, AlertTriangle } from 'lucide-react';
+import { Building2, Search, RefreshCw, Pencil, X, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Tag, CalendarDays, ArrowUpDown, Wallet, Star, Trash2, AlertTriangle, QrCode } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES } from '@/lib/constants';
+import { BusinessQrCard } from '@/components/business/qr-card';
 
 const STATUS_OPTIONS = ['DRAFT', 'PENDING_VERIFICATION', 'APPROVED', 'REJECTED', 'SUSPENDED'];
 
@@ -65,6 +66,7 @@ export default function SuperAdminBusinessesPage() {
   const [confirmDelete, setConfirmDelete] = useState<Biz | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteErr, setDeleteErr] = useState('');
+  const [qrBiz, setQrBiz] = useState<Biz | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 350);
@@ -245,6 +247,9 @@ export default function SuperAdminBusinessesPage() {
                           <Button onClick={() => openEdit(b)} variant="outline" size="sm" className="rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer">
                             <Pencil className="h-3.5 w-3.5" /> Edit
                           </Button>
+                          <Button onClick={() => setQrBiz(b)} variant="outline" size="sm" className="rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer">
+                            <QrCode className="h-3.5 w-3.5" /> QR
+                          </Button>
                           <Button
                             onClick={() => { setDeleteErr(''); setConfirmDelete(b); }}
                             variant="outline"
@@ -363,6 +368,22 @@ export default function SuperAdminBusinessesPage() {
                 {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Delete
               </Button>
             </div>
+          </Card>
+        </div>
+      )}
+      {/* QR preview / download modal */}
+      {qrBiz && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setQrBiz(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"><X className="h-5 w-5" /></button>
+            <h3 className="text-lg font-bold text-foreground mb-1">{qrBiz.name}&apos;s QR code</h3>
+            <p className="text-xs text-muted-foreground mb-4">Preview, print or download it for the business if they need a replacement.</p>
+            <BusinessQrCard
+              businessId={qrBiz.id}
+              businessName={qrBiz.name}
+              category={qrBiz.category?.name}
+              city={qrBiz.city}
+            />
           </Card>
         </div>
       )}

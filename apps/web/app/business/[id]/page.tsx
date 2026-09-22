@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
@@ -60,11 +60,14 @@ function timeAgo(dateStr: string): string {
   } catch { return ''; }
 }
 
-export default function BusinessDetailPage() {
+function BusinessDetailPageContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const businessId = (params?.id as string) || '';
+  // QR-scan deep link: gates the offers section behind sign-in, then scrolls to it.
+  const fromQr = searchParams.get('src') === 'qr';
 
   const [biz, setBiz] = useState<any>(null);
   const [offers, setOffers] = useState<any[]>([]);
@@ -98,6 +101,13 @@ export default function BusinessDetailPage() {
             businessId: bizData.id,
             tenantId: bizData.tenantId,
           }).catch(() => {});
+          if (fromQr) {
+            apiService.post('/v1/analytics/track', {
+              event: 'QR_SCAN',
+              businessId: bizData.id,
+              tenantId: bizData.tenantId,
+            }).catch(() => {});
+          }
         }
       }
       if (offersRes.status === 'fulfilled' && offersRes.value.data && !offersRes.value.error) {
@@ -110,6 +120,13 @@ export default function BusinessDetailPage() {
       }
     }).finally(() => setLoading(false));
   }, [businessId]);
+
+  // QR scans land signed-in users straight on the offers section.
+  useEffect(() => {
+    if (fromQr && user && !loading) {
+      document.getElementById('offers-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [fromQr, user, loading]);
 
   // ── Vouchers (spend-gated) — needs a logged-in user for spend + unlock state
   const [vouchers, setVouchers] = useState<any[]>([]);
@@ -755,9 +772,22 @@ export default function BusinessDetailPage() {
 
           {/* ── Sidebar */}
           <div>
-            <Card className="p-6 rounded-2xl mb-6 sticky top-8 border-white/5 bg-card/40 backdrop-blur-xl">
+            <Card id="offers-section" className="p-6 rounded-2xl mb-6 sticky top-8 border-white/5 bg-card/40 backdrop-blur-xl">
               <h3 className="font-bold text-foreground mb-4">Active Offers</h3>
-              {offers.length === 0 ? (
+              {fromQr && !user ? (
+                <div className="text-center py-6">
+                  <Lock className="h-8 w-8 mx-auto text-muted-foreground mb-3 opacity-60" />
+                  <p className="text-sm text-muted-foreground mb-4">Sign in to view {biz.name}&apos;s current offers.</p>
+                  <Button
+                    onClick={() =>
+                      router.push(`/login?redirect=${encodeURIComponent(`/business/${businessId}?src=qr#offers-section`)}`)
+                    }
+                    className="w-full rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
+                  >
+                    Sign in
+                  </Button>
+                </div>
+              ) : offers.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-4">No active offers right now.</p>
               ) : (
                 <div className="space-y-3">
@@ -1057,5 +1087,21 @@ export default function BusinessDetailPage() {
         </div>
       )}
     </PublicLayout>
+  );
+}
+
+export default function BusinessDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <PublicLayout>
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        </PublicLayout>
+      }
+    >
+      <BusinessDetailPageContent />
+    </Suspense>
   );
 }

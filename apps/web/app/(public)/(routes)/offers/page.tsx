@@ -6,7 +6,9 @@ import { useAuth } from '@/hooks/use-auth';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Tag, Calendar, X, Eye, CheckCircle2, Sparkles, Loader2, Phone } from 'lucide-react';
+import { Tag, Calendar, X, Eye, CheckCircle2, Sparkles, Loader2, Phone, QrCode } from 'lucide-react';
+import { QrScanModal } from '@/components/business/qr-scan-modal';
+import { extractBusinessIdFromScan } from '@/lib/qr';
 import {
   Select,
   SelectContent,
@@ -118,6 +120,8 @@ export default function OffersPage() {
   const [city, setCity] = useState('');
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [justClaimed, setJustClaimed] = useState<string | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
+  const [scanError, setScanError] = useState('');
 
   useEffect(() => {
     setCity(getViewerCity());
@@ -211,6 +215,16 @@ export default function OffersPage() {
 
   const isClaimed = (id: string) => claimedIds.includes(id);
 
+  const handleQrScan = (decodedText: string) => {
+    const businessId = extractBusinessIdFromScan(decodedText);
+    if (!businessId) {
+      setScanError("That code isn't a whtzup.city business QR.");
+      return;
+    }
+    setScanOpen(false);
+    router.push(`/business/${businessId}?src=qr#offers-section`);
+  };
+
   return (
     <PublicLayout>
       <div>
@@ -219,13 +233,26 @@ export default function OffersPage() {
             <h1 className="text-3xl font-bold tracking-tight mb-1">Exclusive Offers</h1>
             <p className="text-muted-foreground">Find the best deals from businesses near you</p>
           </div>
-          {claimedIds.length > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/12 border border-success/25 text-success text-xs font-semibold">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              {claimedIds.length} claimed
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {claimedIds.length > 0 && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/12 border border-success/25 text-success text-xs font-semibold">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {claimedIds.length} claimed
+              </div>
+            )}
+            <Button
+              onClick={() => { setScanError(''); setScanOpen(true); }}
+              variant="outline"
+              size="sm"
+              className="rounded-xl gap-1.5 cursor-pointer"
+            >
+              <QrCode className="h-4 w-4" /> Scan QR
+            </Button>
+          </div>
         </div>
+        {scanError && (
+          <p className="text-xs text-destructive mb-4 -mt-2">{scanError}</p>
+        )}
 
         {justClaimed && (
           <div
@@ -511,6 +538,8 @@ export default function OffersPage() {
             </div>
           </div>
         )}
+
+        <QrScanModal open={scanOpen} onClose={() => setScanOpen(false)} onScan={handleQrScan} />
       </div>
     </PublicLayout>
   );
