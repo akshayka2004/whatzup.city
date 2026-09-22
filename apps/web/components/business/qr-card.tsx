@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
+import { toPng } from 'html-to-image';
 import { Button } from '@/components/ui/button';
-import { Download, Printer } from 'lucide-react';
+import { Download, Printer, Loader2 } from 'lucide-react';
 import { businessQrTarget } from '@/lib/qr';
 
 interface BusinessQrCardProps {
@@ -15,7 +16,9 @@ interface BusinessQrCardProps {
 
 export function BusinessQrCard({ businessId, businessName, category, city }: BusinessQrCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [qrReady, setQrReady] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const targetUrl = businessQrTarget(businessId);
 
   useEffect(() => {
@@ -30,14 +33,22 @@ export function BusinessQrCard({ businessId, businessName, category, city }: Bus
       .catch(() => setQrReady(false));
   }, [targetUrl]);
 
-  const handleDownload = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const link = document.createElement('a');
-    const safeName = businessName.replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'business';
-    link.download = `${safeName}-qr.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+  const handleDownload = async () => {
+    if (!cardRef.current || downloading) return;
+    setDownloading(true);
+    try {
+      // Snapshots the whole styled card (branding, name, QR, footer) — not just the raw QR pattern.
+      const dataUrl = await toPng(cardRef.current, { pixelRatio: 3, backgroundColor: '#FBF8F2' });
+      const link = document.createElement('a');
+      const safeName = businessName.replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'business';
+      link.download = `${safeName}-qr.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('QR card export failed:', err);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -46,12 +57,13 @@ export function BusinessQrCard({ businessId, businessName, category, city }: Bus
         <Button onClick={() => window.print()} size="sm" variant="outline" className="rounded-xl gap-1.5 cursor-pointer">
           <Printer className="h-4 w-4" /> Print
         </Button>
-        <Button onClick={handleDownload} disabled={!qrReady} size="sm" className="rounded-xl gap-1.5 cursor-pointer">
-          <Download className="h-4 w-4" /> Download PNG
+        <Button onClick={handleDownload} disabled={!qrReady || downloading} size="sm" className="rounded-xl gap-1.5 cursor-pointer">
+          {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download PNG
         </Button>
       </div>
 
       <div
+        ref={cardRef}
         className="mx-auto"
         style={{
           width: 380,
