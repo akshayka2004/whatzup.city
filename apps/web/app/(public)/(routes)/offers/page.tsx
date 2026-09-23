@@ -302,7 +302,7 @@ export default function OffersPage() {
             <p className="text-sm text-muted-foreground">Check back later for exclusive deals.</p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {filtered.map((offer) => {
               const claimed = isClaimed(offer.id);
               const urgent = offer.expiresIn != null && offer.expiresIn <= 3;
@@ -343,7 +343,7 @@ export default function OffersPage() {
                     {(claimed || offer.discountLabel) && (
                       <div
                         className={cn(
-                          'shrink-0 rounded-xl px-3 py-1 text-lg font-bold',
+                          'shrink-0 max-w-[45%] break-words text-right rounded-xl px-3 py-1 text-lg font-bold',
                           claimed ? 'bg-success/12 text-success' : 'bg-primary/10 text-primary',
                         )}
                       >
