@@ -1,4 +1,5 @@
 import { apiService, ApiResponse } from './api-service';
+import { storageUploadError } from '../upload-error';
 
 export interface BusinessOnboardingProgress {
   id: string;
@@ -236,17 +237,15 @@ class OnboardingService {
         body: file,
       });
       if (!res.ok) {
-        let msg = `Upload failed (HTTP ${res.status})`;
-        try {
-          const b = await res.json();
-          msg = b.message || b.error || msg;
-        } catch {}
-        return { data: null as any, error: msg, status: res.status };
+        return { data: null as any, error: await storageUploadError(res), status: res.status };
       }
     } catch (e) {
       return {
         data: null as any,
-        error: e instanceof Error ? e.message : 'Upload failed',
+        error:
+          e instanceof Error && !/failed to fetch|load failed|networkerror/i.test(e.message)
+            ? e.message
+            : "Can't reach the upload service. Check your internet connection and try again.",
         status: 0,
       };
     }

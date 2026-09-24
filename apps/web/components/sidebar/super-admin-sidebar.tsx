@@ -28,6 +28,7 @@ import {
   Clapperboard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MOVIES_ENABLED } from '@/lib/feature-flags';
 
 type Item = {
   label: string;
@@ -65,7 +66,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: 'Business Offers', href: '/super-admin/offers', icon: Tag },
       { label: 'Platform Vouchers', href: '/super-admin/platform-vouchers', icon: Gift },
       { label: 'Events', href: '/super-admin/events', icon: CalendarDays },
-      { label: 'Movies', href: '/super-admin/movies', icon: Clapperboard },
+      ...(MOVIES_ENABLED ? [{ label: 'Movies', href: '/super-admin/movies', icon: Clapperboard }] : []),
       { label: 'Subscriptions', href: '/super-admin/subscriptions', icon: CreditCard },
     ],
   },

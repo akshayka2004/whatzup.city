@@ -12,6 +12,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MOVIES_ENABLED } from '@/lib/feature-flags';
 
 type Item = {
   label: string;
@@ -23,7 +24,7 @@ type Item = {
 const ITEMS: Item[] = [
   { label: 'Overview', href: '/staff', icon: LayoutDashboard, exact: true },
   { label: 'Events', href: '/staff/events', icon: CalendarDays },
-  { label: 'Movies', href: '/staff/movies', icon: Clapperboard },
+  ...(MOVIES_ENABLED ? [{ label: 'Movies', href: '/staff/movies', icon: Clapperboard }] : []),
   { label: 'Platform Offers', href: '/staff/platform-offers', icon: Tag },
   { label: 'Announcements', href: '/staff/announcements', icon: Megaphone },
   { label: 'Businesses', href: '/staff/businesses', icon: Building2 },

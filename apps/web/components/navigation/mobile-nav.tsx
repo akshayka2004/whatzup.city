@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
+import { useOwnerBusiness } from '@/hooks/use-owner-business';
+import { MOVIES_ENABLED } from '@/lib/feature-flags';
 import {
   Home,
   Search,
@@ -86,6 +88,8 @@ export function MobileNav() {
   const isSuperAdminRole = activeRole === 'SUPER_ADMIN';
   const isSuperAdmin = pathname.startsWith('/super-admin') || (pathname.startsWith('/admin') && isSuperAdminRole);
   const isAdmin = pathname.startsWith('/admin') && !isSuperAdminRole;
+  // Menu Photos exist for food businesses only, so the drawer needs the category.
+  const { isFood } = useOwnerBusiness(isDashboard && activeRole !== 'BUSINESS_MODERATOR');
 
   // Helper to check if a tab is active
   const isActive = (href: string) => {
@@ -107,10 +111,9 @@ export function MobileNav() {
         { label: 'Overview', href: '/dashboard', icon: Home },
         { label: 'Bill Queue', href: '/dashboard/moderation', icon: CheckCircle },
         { label: 'Offers', href: '/dashboard/offers', icon: Tag },
-        { label: 'Media', href: '/dashboard/media', icon: ImageIcon },
+        { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
       ];
       drawerItems = [
-        { label: 'Review Moderation', href: '/dashboard/reviews', icon: Star },
         { label: 'Customer Reports', href: '/dashboard/customers', icon: Users },
         { label: 'Profile', href: '/profile', icon: UserCog },
       ];
@@ -129,7 +132,7 @@ export function MobileNav() {
         { label: 'Events', href: '/dashboard/events', icon: CalendarDays },
         { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
         { label: 'Branches', href: '/dashboard/branches', icon: GitBranch },
-        { label: 'Media', href: '/dashboard/media', icon: ImageIcon },
+        ...(isFood ? [{ label: 'Menu Photos', href: '/dashboard/menu', icon: ImageIcon }] : []),
         { label: 'Team', href: '/dashboard/team', icon: UserCog },
         { label: 'Subscriptions', href: '/dashboard/subscriptions', icon: CreditCard },
         { label: 'Support', href: '/dashboard/support', icon: LifeBuoy },
@@ -182,7 +185,7 @@ export function MobileNav() {
       { label: 'Subscriptions', href: '/super-admin/subscriptions', icon: CreditCard },
       { label: 'Referrals', href: '/super-admin/referrals', icon: Share2 },
       { label: 'Events', href: '/super-admin/events', icon: CalendarDays },
-      { label: 'Movies', href: '/super-admin/movies', icon: Clapperboard },
+      ...(MOVIES_ENABLED ? [{ label: 'Movies', href: '/super-admin/movies', icon: Clapperboard }] : []),
       { label: 'Security', href: '/super-admin/security', icon: Lock },
       { label: 'Admins', href: '/super-admin/roles', icon: UserCog },
       { label: 'Feature Flags', href: '/super-admin/flags', icon: Flag },
@@ -195,7 +198,7 @@ export function MobileNav() {
     primaryTabs = [
       { label: 'Overview', href: '/staff', icon: Home },
       { label: 'Events', href: '/staff/events', icon: CalendarDays },
-      { label: 'Movies', href: '/staff/movies', icon: Clapperboard },
+      ...(MOVIES_ENABLED ? [{ label: 'Movies', href: '/staff/movies', icon: Clapperboard }] : []),
       { label: 'Offers', href: '/staff/platform-offers', icon: Tag },
     ];
     drawerItems = [
@@ -215,7 +218,7 @@ export function MobileNav() {
       { label: 'Browse', href: '/category', icon: Grid },
       { label: 'Offers', href: '/offers', icon: Tag },
       { label: 'Events', href: '/events', icon: CalendarDays },
-      { label: 'Movies', href: '/movies', icon: Clapperboard },
+      ...(MOVIES_ENABLED ? [{ label: 'Movies', href: '/movies', icon: Clapperboard }] : []),
       { label: 'Announcements', href: '/government', icon: FileText },
       { label: 'Notifications', href: '/notifications', icon: Bell },
       { label: 'Report Issue', href: '/report', icon: Flag },

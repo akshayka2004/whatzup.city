@@ -97,7 +97,7 @@ class AuthService {
   }): Promise<any> {
     const response = await apiService.post<any>('/v1/auth/select-role', data);
     if (response.error || !response.data) {
-      throw new Error(response.error || 'Failed to select role');
+      throw new Error(response.error || "Couldn't save your role selection. Please try again.");
     }
     await this.fetchCurrentUser();
     return response.data;
@@ -109,7 +109,10 @@ class AuthService {
   async signIn(email: string, password: string): Promise<User | null> {
     const response = await apiService.post<any>('/v1/auth/login', { email, password });
     if (response.error || !response.data) {
-      throw new Error(response.error || 'Login failed');
+      if (response.status === 401 && /^invalid credentials$/i.test((response.error || '').trim())) {
+        throw new Error('The email or password is incorrect. Check them and try again, or use "Forgot password".');
+      }
+      throw new Error(response.error || "We couldn't sign you in. Please try again.");
     }
     const u = response.data.user;
     const apiUser: User = {
@@ -132,7 +135,7 @@ class AuthService {
   async signUp(email: string, password: string, name: string): Promise<User | null> {
     const response = await apiService.post<any>('/v1/auth/signup', { email, password, name });
     if (response.error || !response.data) {
-      throw new Error(response.error || 'Registration failed');
+      throw new Error(response.error || "We couldn't create your account. Please try again.");
     }
     const u = response.data.user;
     const apiUser: User = {
@@ -150,7 +153,7 @@ class AuthService {
   async businessSignup(data: any): Promise<{ user: User; businessId: string } | null> {
     const response = await apiService.post<any>('/v1/auth/business/signup', data);
     if (response.error || !response.data) {
-      throw new Error(response.error || 'Registration failed');
+      throw new Error(response.error || "We couldn't register your business account. Please try again.");
     }
     const u = response.data.user;
     const apiUser: User = {

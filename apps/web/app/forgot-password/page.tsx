@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
         setSent(true);
       }
     } catch (err: any) {
-      setError(err?.message || 'Something went wrong. Please try again.');
+      setError(err?.message || "We couldn't send the reset email. Check the address you entered and try again.");
     } finally {
       setIsSubmitting(false);
     }

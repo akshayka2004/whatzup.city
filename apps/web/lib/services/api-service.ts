@@ -18,6 +18,78 @@ export interface PaginatedResponse<T> {
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
+/** Plain-language fallback for when the server gave no usable message. */
+function statusMessage(status: number): string {
+  switch (status) {
+    case 0:
+      return "Can't reach the server. Check your internet connection and try again.";
+    case 400:
+      return 'The request was not accepted. Check the details you entered and try again.';
+    case 401:
+      return 'Your session has expired. Please sign in again.';
+    case 403:
+      return "You don't have permission to do that.";
+    case 404:
+      return "We couldn't find what you asked for. It may have been moved or removed.";
+    case 408:
+    case 504:
+      return 'The server took too long to respond. Please try again.';
+    case 409:
+      return 'That conflicts with something that already exists.';
+    case 413:
+      return 'The file or data you sent is too large.';
+    case 415:
+      return 'That file type is not supported.';
+    case 422:
+      return 'Some of the details you entered are not valid. Check the form and try again.';
+    case 429:
+      return 'Too many attempts in a short time. Wait a minute and try again.';
+    case 502:
+    case 503:
+      return 'The service is temporarily unavailable. Please try again in a moment.';
+    default:
+      return status >= 500
+        ? 'The server ran into a problem. Please try again, and contact support if it continues.'
+        : `The request failed (error ${status}). Please try again.`;
+  }
+}
+
+// Bare framework defaults ("Forbidden resource") say nothing useful — replace them.
+const GENERIC_MESSAGE =
+  /^(unauthorized|forbidden( resource)?|not found|bad request|internal server error|too many requests|conflict|service unavailable|bad gateway|gateway timeout|throttlerexception.*|http \d+)$/i;
+
+/** Turns an error response body into one readable sentence. */
+async function readError(response: Response): Promise<string> {
+  let raw: unknown;
+  try {
+    const body = await response.json();
+    raw = body?.message ?? body?.error;
+  } catch {
+    // Non-JSON body (e.g. a proxy's HTML error page) — fall through to the status text.
+  }
+  if (Array.isArray(raw)) {
+    // class-validator returns one entry per failed field.
+    raw = raw
+      .map((m) => String(m).trim())
+      .filter(Boolean)
+      .map((m) => m.charAt(0).toUpperCase() + m.slice(1))
+      .join('. ');
+  }
+  if (typeof raw !== 'string' || !raw.trim() || GENERIC_MESSAGE.test(raw.trim())) {
+    return statusMessage(response.status);
+  }
+  return raw;
+}
+
+function networkError(error: unknown): string {
+  const msg = error instanceof Error ? error.message : '';
+  // Browsers report a dead connection as a bare TypeError ("Failed to fetch" / "Load failed").
+  if (!msg || /failed to fetch|load failed|networkerror|network request failed/i.test(msg)) {
+    return statusMessage(0);
+  }
+  return msg;
+}
+
 class ApiService {
   // IMPORTANT: Always route through Next.js proxy (/api → server-side rewrite).
   // Bare-metal HTTP deployment requires same-origin requests for cookies + CORS.
@@ -92,14 +164,9 @@ class ApiService {
       }
 
       if (!response.ok) {
-        let errorMsg = `HTTP ${response.status}`;
-        try {
-          const errBody = await response.json();
-          errorMsg = errBody.message || errBody.error || errorMsg;
-        } catch {}
         return {
           data: null as unknown as T,
-          error: errorMsg,
+          error: await readError(response),
           status: response.status,
         };
       }
@@ -114,7 +181,7 @@ class ApiService {
     } catch (error) {
       return {
         data: null as unknown as T,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: networkError(error),
         status: 0,
       };
     }
@@ -164,12 +231,7 @@ class ApiService {
       }
 
       if (!response.ok) {
-        let errorMsg = `HTTP ${response.status}`;
-        try {
-          const errBody = await response.json();
-          errorMsg = errBody.message || errBody.error || errorMsg;
-        } catch {}
-        return { data: null as unknown as T, error: errorMsg, status: response.status };
+        return { data: null as unknown as T, error: await readError(response), status: response.status };
       }
 
       if (response.status === 204) {
@@ -181,7 +243,7 @@ class ApiService {
     } catch (error) {
       return {
         data: null as unknown as T,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: networkError(error),
         status: 0,
       };
     }

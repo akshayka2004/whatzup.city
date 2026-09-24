@@ -10,8 +10,10 @@ import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@saas/types';
 import { MovieDto } from './dto/movie.dto';
+import { MoviesEnabledGuard } from '../../common/guards/movies-enabled.guard';
 
 @ApiTags('Movies')
+@UseGuards(MoviesEnabledGuard)
 @Controller('movies')
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}

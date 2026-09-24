@@ -21,7 +21,8 @@ export function BusinessCard({ business }: { business: any }) {
   );
   const rating = business.avgRating ?? business.averageRating;
   const reviews = business.reviewCount ?? business.totalReviews ?? 0;
-  const cover = business.coverImage || business.logo;
+  // Cover banners are retired; the card shows the logo (or an initial) instead.
+  const cover = business.logo;
 
   const [saved, setSaved] = useState(false);
   useEffect(() => {

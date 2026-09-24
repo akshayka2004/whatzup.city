@@ -24,6 +24,11 @@ export class BusinessMediaService {
     if (!business) throw new NotFoundException('Business not found');
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
 
+    // Cover banners are retired. Existing ones are left untouched; new ones are refused.
+    if (dto.mediaType === 'COVER_BANNER') {
+      throw new BadRequestException('Cover banners are no longer supported, so a new one cannot be added.');
+    }
+
     const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];
     const videoTypes = ['video/mp4', 'video/webm'];
     if (dto.mediaType === 'PROMO_VIDEO') {
@@ -44,13 +49,6 @@ export class BusinessMediaService {
       if (logos.length >= 1) {
         throw new BadRequestException(
           'A business can only have one active logo. Delete the existing one first.',
-        );
-      }
-    } else if (dto.mediaType === 'COVER_BANNER') {
-      const banners = existingMedia.filter((m) => m.type === 'COVER_BANNER');
-      if (banners.length >= 1) {
-        throw new BadRequestException(
-          'A business can only have one active cover banner. Delete the existing one first.',
         );
       }
     } else if (dto.mediaType === 'GALLERY') {
@@ -91,16 +89,11 @@ export class BusinessMediaService {
       },
     });
 
-    // If logo or cover banner, update direct Business fields as well
+    // A logo also updates the direct Business field
     if (dto.mediaType === 'LOGO') {
       await this.db.business.update({
         where: { id: businessId },
         data: { logo: dbUrl },
-      });
-    } else if (dto.mediaType === 'COVER_BANNER') {
-      await this.db.business.update({
-        where: { id: businessId },
-        data: { coverImage: dbUrl },
       });
     }
 

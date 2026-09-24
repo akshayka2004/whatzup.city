@@ -112,7 +112,7 @@ export default function BillsPage() {
       });
 
       if (createRes.error) {
-        throw new Error(createRes.error || 'Failed to record bill');
+        throw new Error(createRes.error || "Couldn't record this bill. Check the details and try again.");
       }
 
       setIsUploadOpen(false);

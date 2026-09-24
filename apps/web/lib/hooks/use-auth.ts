@@ -18,7 +18,7 @@ export function useAuth() {
         setUser(currentUser);
         setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch user');
+        setError(err instanceof Error ? err.message : "Couldn't load your account details. Refresh the page and try again.");
         setUser(null);
       } finally {
         setIsLoading(false);

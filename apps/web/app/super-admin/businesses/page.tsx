@@ -125,7 +125,7 @@ export default function SuperAdminBusinessesPage() {
       categoryId: form.categoryId, phone: form.phone, email: form.email, website: form.website,
       address: form.address, city: form.city, zipCode: form.zipCode,
       status: form.status, isVerified: form.isVerified, halalStatus: form.halalStatus || null,
-      logo: form.logo || null, coverImage: form.coverImage || null,
+      logo: form.logo || null,
     };
     const res = await apiService.patch<any>(`/v1/businesses/admin/${editing.id}`, payload);
     setSaving(false);
@@ -318,7 +318,6 @@ export default function SuperAdminBusinessesPage() {
                 </select>
               </Field>
               <Field label="Logo URL"><input className={inp} value={form.logo || ''} onChange={(e) => set('logo', e.target.value)} /></Field>
-              <Field label="Cover Image URL"><input className={inp} value={form.coverImage || ''} onChange={(e) => set('coverImage', e.target.value)} /></Field>
             </div>
             <Field label="Address"><input className={inp} value={form.address || ''} onChange={(e) => set('address', e.target.value)} /></Field>
             <Field label="Description">

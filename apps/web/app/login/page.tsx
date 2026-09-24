@@ -78,7 +78,7 @@ function LoginForm() {
         setSuccessMsg('Logged in successfully!');
       }
     } catch (err: any) {
-      setError(err?.message || 'An error occurred during authentication.');
+      setError(err?.message || "We couldn't sign you in. Check your email and password, then try again.");
     } finally {
       setIsSubmitting(false);
     }

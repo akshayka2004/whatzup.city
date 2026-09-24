@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { notFound } from 'next/navigation';
+import { MOVIES_ENABLED } from '@/lib/feature-flags';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Button } from '@/components/ui/button';
 import { Clapperboard, Clock, PlayCircle, Ticket, Loader2, Info, X, Calendar } from 'lucide-react';
@@ -37,6 +39,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 export default function MoviesPage() {
+  if (!MOVIES_ENABLED) notFound();
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [city, setCity] = useState('');

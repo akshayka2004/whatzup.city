@@ -197,7 +197,7 @@ export class BusinessesService {
     const ALLOWED = [
       'name', 'description', 'categoryId', 'ownerName', 'phone', 'email', 'website',
       'address', 'city', 'state', 'zipCode', 'district', 'googleMapsUrl', 'socialLinks',
-      'tags', 'logo', 'coverImage', 'halalStatus', 'operatingHours',
+      'tags', 'logo', 'halalStatus', 'operatingHours',
       // Registration / KYC details
       'brandName', 'companyName', 'companyType', 'compliance', 'ownerContact',
       'billingContact', 'supportContact', 'branchHead', 'categoryAttributes',

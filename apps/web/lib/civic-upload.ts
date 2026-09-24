@@ -6,6 +6,8 @@
 // manual URL entry.
 // ============================================================
 
+import { storageUploadError } from './upload-error';
+
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const BUCKET = process.env.NEXT_PUBLIC_SUPABASE_BUCKET || 'civic';
@@ -50,12 +52,7 @@ export async function uploadCivicImage(file: File, folder: string): Promise<stri
   );
 
   if (!res.ok) {
-    let msg = `Upload failed (HTTP ${res.status})`;
-    try {
-      const body = await res.json();
-      msg = body.message || body.error || msg;
-    } catch {}
-    throw new Error(msg);
+    throw new Error(await storageUploadError(res));
   }
 
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;

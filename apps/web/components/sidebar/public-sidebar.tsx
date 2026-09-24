@@ -21,6 +21,7 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MOVIES_ENABLED } from '@/lib/feature-flags';
 
 type Item = { label: string; href: string; icon: React.ComponentType<{ className?: string }>; tour?: string };
 
@@ -33,7 +34,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
       { label: 'Search', href: '/search', icon: Search, tour: 'nav-search' },
       { label: 'Offers', href: '/offers', icon: Ticket, tour: 'nav-offers' },
       { label: 'Events', href: '/events', icon: Calendar, tour: 'nav-events' },
-      { label: 'Movies', href: '/movies', icon: Clapperboard },
+      ...(MOVIES_ENABLED ? [{ label: 'Movies', href: '/movies', icon: Clapperboard }] : []),
       { label: 'Announcements', href: '/government', icon: FileText },
     ],
   },

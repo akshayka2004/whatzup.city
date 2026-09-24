@@ -5,10 +5,13 @@ import { StaffLayout } from '@/components/layouts/staff-layout';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import { CalendarDays, Clapperboard, Tag, Megaphone, Building2 } from 'lucide-react';
+import { MOVIES_ENABLED } from '@/lib/feature-flags';
 
 const LINKS = [
   { label: 'Events', href: '/staff/events', icon: CalendarDays, desc: 'Publish and manage platform events.' },
-  { label: 'Movies', href: '/staff/movies', icon: Clapperboard, desc: 'Publish movie listings.' },
+  ...(MOVIES_ENABLED
+    ? [{ label: 'Movies', href: '/staff/movies', icon: Clapperboard, desc: 'Publish movie listings.' }]
+    : []),
   { label: 'Platform Offers', href: '/staff/platform-offers', icon: Tag, desc: 'Publish curated platform deals.' },
   { label: 'Announcements', href: '/staff/announcements', icon: Megaphone, desc: 'Broadcast civic notices and alerts.' },
   { label: 'Businesses', href: '/staff/businesses', icon: Building2, desc: 'Look up registered businesses (read-only).' },

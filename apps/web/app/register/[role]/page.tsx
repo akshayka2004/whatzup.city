@@ -203,7 +203,7 @@ export default function RoleOnboardingWizard() {
           setError(res.error || 'Failed to retrieve onboarding details.');
         }
       } catch (err: any) {
-        setError(err.message || 'Error occurred while loading onboarding details.');
+        setError(err.message || "We couldn't load your onboarding details. Refresh the page and try again.");
       } finally {
         setLoading(false);
       }
@@ -331,7 +331,7 @@ export default function RoleOnboardingWizard() {
         setError(response.error || `Failed to save step ${currentStep} progress.`);
       }
     } catch (err: any) {
-      setError(err.message || 'Error occurred while saving profile details.');
+      setError(err.message || "We couldn't save your profile details. Check the form and try again.");
     } finally {
       setSubmitting(false);
     }
@@ -462,7 +462,7 @@ export default function RoleOnboardingWizard() {
         setError(response.error || 'Failed to submit onboarding application.');
       }
     } catch (err: any) {
-      setError(err.message || 'Error occurred during final verification submission.');
+      setError(err.message || "We couldn't submit your application for verification. Please try again.");
     } finally {
       setSubmitting(false);
     }

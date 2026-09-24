@@ -18,7 +18,7 @@ export class SecurityExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message: any = 'Internal server error';
+    let message: any = 'The server could not complete this request.';
 
     // 1. Handle HTTP Exceptions (NestJS standard exceptions)
     if (exception instanceof HttpException) {
@@ -33,17 +33,25 @@ export class SecurityExceptionFilter implements ExceptionFilter {
       this.logger.error(`[Prisma Client Error Code ${exception.code}]: ${exception.message}`, exception.stack, 'Database');
       
       switch (exception.code) {
-        case 'P2002':
+        case 'P2002': {
           status = HttpStatus.CONFLICT;
-          message = 'Resource already exists';
+          // meta.target lists the violated column(s) — names only, never values.
+          const target = (exception.meta as any)?.target;
+          const fields = (Array.isArray(target) ? target : typeof target === 'string' ? [target] : [])
+            .filter((t: unknown) => typeof t === 'string' && /^[A-Za-z0-9_]+$/.test(t as string))
+            .map((t: string) => t.replace(/_/g, ' '));
+          message = fields.length
+            ? `That ${fields.join(' / ')} is already in use. Enter a different value.`
+            : 'A record with these details already exists.';
           break;
+        }
         case 'P2025':
           status = HttpStatus.NOT_FOUND;
-          message = 'Resource not found';
+          message = 'That record no longer exists. It may have been deleted. Refresh and try again.';
           break;
         case 'P2003':
           status = HttpStatus.BAD_REQUEST;
-          message = 'Invalid relation reference';
+          message = 'This action refers to a record that does not exist, or is still in use by something else.';
           break;
         // A string value didn't fit its column (e.g. a VarChar length cap).
         // DTOs should catch this before it reaches Postgres, but this is the
@@ -73,16 +81,40 @@ export class SecurityExceptionFilter implements ExceptionFilter {
           break;
       }
     }
-    // 3. Fallback for other standard JavaScript errors
+    // 3. Prisma: the query itself was malformed / missing required data. The raw
+    //    message embeds the query and model names, so never send it to the client.
+    else if (exception instanceof Prisma.PrismaClientValidationError) {
+      this.logger.error(`[Prisma Validation Error]: ${exception.message}`, exception.stack, 'Database');
+      status = HttpStatus.BAD_REQUEST;
+      message = 'Some required information is missing or in the wrong format. Check the form and try again.';
+    }
+    // 4. Prisma: the database could not be reached (pooler cold start, restart, outage).
+    else if (
+      exception instanceof Prisma.PrismaClientInitializationError ||
+      exception instanceof Prisma.PrismaClientRustPanicError
+    ) {
+      this.logger.error(`[Prisma Connection Error]: ${exception.message}`, exception.stack, 'Database');
+      status = HttpStatus.SERVICE_UNAVAILABLE;
+      message = 'The database is temporarily unreachable. Wait a few seconds and try again.';
+    }
+    // 5. Fallback for other standard JavaScript errors
     else {
       const errorMessage = exception instanceof Error ? exception.message : String(exception);
       const errorStack = exception instanceof Error ? exception.stack : undefined;
 
       this.logger.error(`[Unhandled Exception]: ${errorMessage}`, errorStack, 'System');
 
-      // Always surface the message — generic "Internal server error" makes debugging impossible
-      // for end users on bare-metal deployments. The filter still hides the stack trace.
-      message = errorMessage || message;
+      // Errors thrown on purpose (e.g. "Storage service error: ...") keep their text so
+      // the cause is visible. Engine-level bugs (TypeError etc.) read as gibberish to a
+      // user, so those get a plain-language message; the full detail is in the logs.
+      const isEngineBug =
+        exception instanceof TypeError ||
+        exception instanceof ReferenceError ||
+        exception instanceof RangeError ||
+        exception instanceof SyntaxError;
+      message = isEngineBug
+        ? 'The server hit an unexpected problem while handling this request. Please try again, and contact support if it keeps happening.'
+        : errorMessage || 'The server could not complete this request.';
     }
 
     // Always log the details internally for developers

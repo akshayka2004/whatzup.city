@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
 import { SubscriptionPaywall } from '@/components/business/subscription-paywall';
+import { MenuPhotoPrompt } from '@/components/business/menu-photo-prompt';
 import { OnboardingTour } from '@/components/onboarding/platform-tour';
 import { BUSINESS_TOUR_STEPS, BUSINESS_MOBILE_TOUR_STEPS } from '@/lib/tour-steps';
 import { apiService } from '@/lib/services/api-service';
@@ -351,6 +352,18 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
               plan get a blocking prompt; those nearing expiry get a reminder.
               Skipped while the trial modal is up so overlays never stack. */}
           {!showTrialModal && verificationStatus === 'APPROVED' && <SubscriptionPaywall />}
+
+          {/* Food businesses with no menu photos get a one-per-session nudge. Owners only —
+              moderators and staff can't manage the menu. */}
+          <MenuPhotoPrompt
+            enabled={
+              !showTrialModal &&
+              verificationStatus === 'APPROVED' &&
+              !isAdminViewer &&
+              !['business_moderator', 'business_staff'].includes(user?.role || '') &&
+              (user?.rbacRole || '') !== 'BUSINESS_MODERATOR'
+            }
+          />
 
           <div
             className={`container mx-auto px-4 pt-6 ${isMobile ? 'pb-28' : 'pb-6'}`}

@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 const ROLE_OPTIONS = [
   { value: 'MASTER_ADMIN', label: 'Portal Admin', description: 'Can manage registrations, approvals, reports, and categories' },
   { value: 'PORTAL_ADMIN', label: 'Portal Admin (Alt)', description: 'Same as Portal Admin — alternate label' },
-  { value: 'PLATFORM_STAFF', label: 'Platform Staff', description: 'Data entry only — events, movies, platform offers, announcements, and read-only businesses' },
+  { value: 'PLATFORM_STAFF', label: 'Platform Staff', description: 'Data entry only — events, platform offers, announcements, and read-only businesses' },
 ];
 
 interface AdminUser {

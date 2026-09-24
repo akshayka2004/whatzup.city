@@ -41,7 +41,7 @@ export default function SuperAdminOffersPage() {
       setOffers(list);
       setMeta(res.data.meta ?? { total: list.length });
     } else {
-      setError(res.error || 'Failed to load offers');
+      setError(res.error || "Couldn't load offers. Refresh the page to try again.");
       setOffers([]);
     }
     setLoading(false);

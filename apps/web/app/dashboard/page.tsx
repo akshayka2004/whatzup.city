@@ -406,11 +406,10 @@ export default function BusinessDashboardPage() {
 
         {/* ── Staff quick-access ── */}
         {isStaff && (
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             {[
               { label: 'Active Offers', value: activeOffers.toString(), icon: Tag, href: '/dashboard/offers', color: 'text-success', bg: 'bg-success/10' },
               { label: 'Listed Products', value: '—', icon: FileText, href: '/dashboard/products', color: 'text-primary', bg: 'bg-primary/10' },
-              { label: 'Pending Media', value: '—', icon: Clock, href: '/dashboard/media', color: 'text-warning', bg: 'bg-warning/10' },
             ].map((s) => (
               <Link key={s.label} href={s.href}>
                 <Card className="p-4 rounded-2xl border-border bg-card/40 hover:bg-card/60 transition-all cursor-pointer">

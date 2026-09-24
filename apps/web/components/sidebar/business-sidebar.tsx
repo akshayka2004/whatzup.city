@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRoleLabel } from '@/lib/rbac';
+import { useOwnerBusiness } from '@/hooks/use-owner-business';
 
 // ── MENU DEFINITIONS PER ROLE TIER ───────────────────────────────────
 
@@ -46,7 +47,6 @@ const OWNER_MENU = [
   { label: 'Products', href: '/dashboard/products', icon: Package },
   { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
   { label: 'Branches', href: '/dashboard/branches', icon: GitBranch },
-  { label: 'Media', href: '/dashboard/media', icon: Image },
   { label: 'QR Code', href: '/dashboard/qr-code', icon: QrCode },
   { label: 'Team', href: '/dashboard/team', icon: UserCog },
   { label: 'Subscriptions', href: '/dashboard/subscriptions', icon: CreditCard },
@@ -62,7 +62,6 @@ const MODERATOR_MENU = [
   { label: 'Customer Reports', href: '/dashboard/customers', icon: MessageSquare, tour: 'nav-customers' },
   // Fraud Alerts hidden — dormant module
   { label: 'Offers', href: '/dashboard/offers', icon: Tag, tour: 'nav-offers' },
-  { label: 'Media', href: '/dashboard/media', icon: Image },
 ];
 
 function getMenuForRole(role: string) {
@@ -104,7 +103,17 @@ export function BusinessSidebar() {
     }
   }, []);
 
-  const menuItems = getMenuForRole(userRole);
+  // Menu Photos are for food businesses only (owners/admins, not moderators).
+  const { isFood } = useOwnerBusiness(userRole !== 'BUSINESS_MODERATOR');
+  const baseMenu = getMenuForRole(userRole);
+  const menuItems =
+    isFood && userRole !== 'BUSINESS_MODERATOR'
+      ? baseMenu.flatMap((item) =>
+          item.href === '/dashboard/team'
+            ? [{ label: 'Menu Photos', href: '/dashboard/menu', icon: Image, tour: 'nav-menu' }, item]
+            : [item],
+        )
+      : baseMenu;
 
   const isItemActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href;

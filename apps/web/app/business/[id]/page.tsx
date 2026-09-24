@@ -72,6 +72,8 @@ function BusinessDetailPageContent() {
   const [biz, setBiz] = useState<any>(null);
   const [offers, setOffers] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [menuPhotos, setMenuPhotos] = useState<any[]>([]);
+  const [menuViewing, setMenuViewing] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -90,7 +92,11 @@ function BusinessDetailPageContent() {
       apiService.get<any>(`/v1/businesses/${businessId}`),
       apiService.get<any>(`/v1/offers/business/${businessId}`),
       apiService.get<any>(`/v1/reviews/business/${businessId}`),
-    ]).then(([bizRes, offersRes, reviewsRes]) => {
+      apiService.get<any>(`/v1/media/menu/business/${businessId}`),
+    ]).then(([bizRes, offersRes, reviewsRes, menuRes]) => {
+      if (menuRes.status === 'fulfilled' && menuRes.value.data && !menuRes.value.error) {
+        setMenuPhotos(Array.isArray(menuRes.value.data) ? menuRes.value.data : []);
+      }
       if (bizRes.status === 'fulfilled' && bizRes.value.data && !bizRes.value.error) {
         const bizData = bizRes.value.data;
         setBiz(bizData);
@@ -368,15 +374,6 @@ function BusinessDetailPageContent() {
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
 
-        {/* Hero Image */}
-        <div className="w-full h-96 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 border border-white/5 mb-8 flex items-center justify-center overflow-hidden">
-          {biz.coverImage ? (
-            <img src={biz.coverImage} alt={biz.name} className="w-full h-full object-cover" />
-          ) : (
-            <p className="text-muted-foreground">Business Cover Image</p>
-          )}
-        </div>
-
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2">
             {/* ── Business Info Card */}
@@ -547,6 +544,36 @@ function BusinessDetailPageContent() {
                 <div className="flex gap-3 flex-wrap">
                   {[biz.category?.name, biz.subcategory].filter(Boolean).map((tag) => (
                     <span key={tag} className="px-3 py-1 bg-white/5 border border-white/5 rounded-full text-sm text-slate-300">{tag}</span>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* ── Food menu photos (food businesses that have uploaded any) */}
+            {menuPhotos.length > 0 && (
+              <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
+                <h2 className="text-2xl font-bold text-foreground mb-4">Menu</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {menuPhotos.map((p: any) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setMenuViewing(p)}
+                      className="group relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-white/5 cursor-pointer"
+                      aria-label={p.title ? `View menu photo: ${p.title}` : 'View menu photo'}
+                    >
+                      <img
+                        src={p.publicUrl}
+                        alt={p.title || `${biz.name} menu`}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
+                      />
+                      {p.title && (
+                        <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-2 py-1 text-[11px] font-medium text-white">
+                          {p.title}
+                        </span>
+                      )}
+                    </button>
                   ))}
                 </div>
               </Card>
@@ -836,6 +863,28 @@ function BusinessDetailPageContent() {
           </div>
         </div>
       </div>
+
+      {/* ── MENU PHOTO LIGHTBOX */}
+      {menuViewing && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setMenuViewing(null)}
+        >
+          <button
+            onClick={() => setMenuViewing(null)}
+            aria-label="Close"
+            className="absolute top-4 right-4 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 cursor-pointer"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={menuViewing.publicUrl}
+            alt={menuViewing.title || `${biz.name} menu`}
+            className="max-h-[85vh] max-w-full rounded-xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
 
       {/* ── BILL SUBMISSION MODAL */}
       {billModalOpen && (
