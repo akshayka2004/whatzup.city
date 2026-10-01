@@ -3,7 +3,7 @@
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Flag, Plus } from 'lucide-react';
+import { Flag, Plus, ToggleLeft } from 'lucide-react';
 
 const flags = [
   // ── Release 1 — Billing & Trial Flags ────────────────────────────
@@ -86,11 +86,16 @@ export default function SuperAdminFlagsPage() {
     <SuperAdminLayout>
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Feature Flags</h1>
-            <p className="text-muted-foreground">
-              Control feature rollout, billing activation, and experimental capabilities
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <ToggleLeft className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Feature Flags</h1>
+              <p className="text-muted-foreground">
+                Control feature rollout, billing activation, and experimental capabilities
+              </p>
+            </div>
           </div>
           <Button className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground shrink-0">
             <Plus className="h-4 w-4" />
@@ -104,10 +109,11 @@ export default function SuperAdminFlagsPage() {
               {category}
             </h2>
             <div className="space-y-3">
-              {items.map((flag) => (
+              {items.map((flag, i) => (
                 <Card
                   key={flag.key}
-                  className="p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+                  className="ui-fade-up p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-4">

@@ -316,11 +316,12 @@ function SearchContent() {
             Platform Offers
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
-            {platformResults.map((o) => (
+            {platformResults.map((o, i) => (
               <Link
                 key={o.id}
                 href="/offers"
-                className="flex items-center justify-between gap-3 rounded-xl border border-warning/20 bg-warning/5 px-4 py-3 hover:border-warning/40 transition-colors"
+                className="ui-fade-up flex items-center justify-between gap-3 rounded-xl border border-warning/20 bg-warning/5 px-4 py-3 hover:border-warning/40 transition-colors"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
               >
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">{o.title}</p>
@@ -347,13 +348,14 @@ function SearchContent() {
         ) : null
       ) : (
         <div className="space-y-4">
-          {sorted.map((result) => (
+          {sorted.map((result, i) => (
             <div
               key={result.id}
-              className="rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:border-primary/25 hover:shadow-lg"
+              className="ui-fade-up rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:border-primary/25 hover:shadow-lg"
+              style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
             >
-              <div className="flex gap-6">
-                <div className="w-32 h-32 rounded-xl bg-secondary flex-shrink-0 border border-border"></div>
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                <div className="w-full h-36 sm:w-32 sm:h-32 rounded-xl bg-secondary shrink-0 border border-border"></div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between mb-2">
                     <div>

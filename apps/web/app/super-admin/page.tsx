@@ -87,13 +87,18 @@ export default function SuperAdminDashboardPage() {
       <div className="space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">
-              Super Admin Portal
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              Tenant billing oversight, infrastructure analytics, and cluster monitoring.
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <Activity className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">
+                Super Admin Portal
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                Tenant billing oversight, infrastructure analytics, and cluster monitoring.
+              </p>
+            </div>
           </div>
           <Button className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground shrink-0">
             <Database className="h-4 w-4" />
@@ -109,12 +114,13 @@ export default function SuperAdminDashboardPage() {
           <>
         {/* Stats Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat) => {
+          {stats.map((stat, i) => {
             const Icon = stat.icon;
             return (
               <Card
                 key={stat.label}
-                className="p-6 rounded-2xl hover:shadow-lg transition-all duration-300 border-border bg-card/60 backdrop-blur-xl relative overflow-hidden group"
+                className="ui-fade-up p-6 rounded-2xl hover:shadow-lg transition-all duration-300 border-border bg-card/60 backdrop-blur-xl relative overflow-hidden group"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors pointer-events-none"></div>
                 <div className="flex items-center justify-between mb-4">
@@ -170,12 +176,13 @@ export default function SuperAdminDashboardPage() {
                 icon: BadgeCheck,
                 color: 'text-success bg-success/10',
               },
-            ].map((stat) => {
+            ].map((stat, i) => {
               const Icon = stat.icon;
               return (
                 <Card
                   key={stat.label}
-                  className="p-5 rounded-2xl border-border bg-card/60 backdrop-blur-xl"
+                  className="ui-fade-up p-5 rounded-2xl border-border bg-card/60 backdrop-blur-xl"
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                 >
                   <div className={`p-2.5 rounded-xl ${stat.color} inline-flex mb-3`}>
                     <Icon className="h-4 w-4" />

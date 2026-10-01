@@ -89,23 +89,25 @@ export default function SuperAdminSubscriptionsPage() {
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-            <CreditCard className="h-6 w-6 text-primary" />
-            Subscriptions
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Live across all tenants. Plans run for {PLAN_DURATION_DAYS} days.
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+            <CreditCard className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Subscriptions</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Live across all tenants. Plans run for {PLAN_DURATION_DAYS} days.
+            </p>
+          </div>
         </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {SUBSCRIPTION_PLANS.map((p) => {
+          {SUBSCRIPTION_PLANS.map((p, i) => {
             const count = rows.filter((r) => r.packageName === p.code && r.status === 'ACTIVE').length;
             return (
-              <Card key={p.code} className="p-4">
+              <Card key={p.code} className="ui-fade-up p-4" style={{ animationDelay: `${Math.min(i, 10) * 0.05}s` }}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-bold text-primary">{p.name}</span>
                   {p.highlight && (
@@ -199,8 +201,12 @@ export default function SuperAdminSubscriptionsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((r) => (
-                    <tr key={r.id} className="border-t border-border">
+                  {filtered.map((r, i) => (
+                    <tr
+                      key={r.id}
+                      className="ui-fade-up border-t border-border"
+                      style={{ animationDelay: `${Math.min(i, 10) * 0.03}s` }}
+                    >
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">{r.business?.name || '—'}</div>
                         <div className="text-[11px] text-muted-foreground">

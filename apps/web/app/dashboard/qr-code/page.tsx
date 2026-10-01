@@ -36,16 +36,18 @@ export default function QrCodePage() {
             <Loader2 className="h-7 w-7 animate-spin text-muted-foreground" />
           </div>
         ) : !biz ? (
-          <Card className="p-10 text-center">
+          <Card className="p-10 text-center rounded-2xl ui-fade-up">
             <p className="text-sm text-muted-foreground">No business profile found yet.</p>
           </Card>
         ) : (
-          <BusinessQrCard
-            businessId={biz.id}
-            businessName={biz.name}
-            category={biz.category?.name}
-            city={biz.city}
-          />
+          <div className="ui-pop">
+            <BusinessQrCard
+              businessId={biz.id}
+              businessName={biz.name}
+              category={biz.category?.name}
+              city={biz.city}
+            />
+          </div>
         )}
       </div>
     </BusinessLayout>

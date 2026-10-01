@@ -100,24 +100,26 @@ export default function AdminSubscriptionsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-            <CreditCard className="h-6 w-6 text-primary" />
-            Subscriptions
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Live from the database. Plans run for {PLAN_DURATION_DAYS} days.
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0 ui-glow">
+            <CreditCard className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Subscriptions</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Live from the database. Plans run for {PLAN_DURATION_DAYS} days.
+            </p>
+          </div>
         </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         {/* Plan catalogue — single source of truth */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {SUBSCRIPTION_PLANS.map((p) => {
+          {SUBSCRIPTION_PLANS.map((p, i) => {
             const count = rows.filter((r) => r.packageName === p.code && r.status === 'ACTIVE').length;
             return (
-              <Card key={p.code} className="p-4">
+              <Card key={p.code} className="p-4 ui-fade-up" style={{ animationDelay: `${i * 0.05}s` }}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-bold text-primary">{p.name}</span>
                   {p.highlight && (
@@ -143,19 +145,19 @@ export default function AdminSubscriptionsPage() {
 
         {/* Totals */}
         <div className="grid sm:grid-cols-3 gap-3">
-          <Card className="p-4">
+          <Card className="p-4 ui-fade-up">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <IndianRupee className="h-3.5 w-3.5" /> Active revenue
             </div>
             <div className="text-2xl font-extrabold text-foreground mt-1">{formatINR(revenue)}</div>
           </Card>
-          <Card className="p-4">
+          <Card className="p-4 ui-fade-up" style={{ animationDelay: '0.05s' }}>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <CheckCircle2 className="h-3.5 w-3.5" /> Active
             </div>
             <div className="text-2xl font-extrabold text-foreground mt-1">{activeCount}</div>
           </Card>
-          <Card className="p-4">
+          <Card className="p-4 ui-fade-up" style={{ animationDelay: '0.1s' }}>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-3.5 w-3.5" /> Awaiting payment
             </div>

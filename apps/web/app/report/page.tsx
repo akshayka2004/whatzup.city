@@ -133,7 +133,7 @@ export default function ReportPage() {
               <h1 className="text-2xl font-extrabold text-foreground tracking-tight mb-1">What are you reporting?</h1>
               <p className="text-muted-foreground text-sm">Select the issue category to continue.</p>
             </div>
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid sm:grid-cols-2 gap-3 ui-fade-up">
               {ISSUE_TYPES.map((type) => {
                 const Icon = type.icon;
                 const selected = selectedType === type.id;
@@ -142,7 +142,7 @@ export default function ReportPage() {
                     key={type.id}
                     onClick={() => setSelectedType(type.id)}
                     className={cn(
-                      'text-left p-4 rounded-2xl border transition-all cursor-pointer',
+                      'text-left p-4 rounded-2xl border transition-all duration-200 ease-out cursor-pointer hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100',
                       selected
                         ? 'border-primary/40 bg-primary/5'
                         : 'border-border bg-card/60 hover:border-border hover:bg-muted/40',
@@ -183,7 +183,7 @@ export default function ReportPage() {
               </div>
             </div>
 
-            <Card className="p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl">
+            <Card className="p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl ui-pop">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground block mb-1.5">
@@ -252,8 +252,8 @@ export default function ReportPage() {
 
         {/* Step: Success */}
         {step === 'success' && (
-          <Card className="p-10 rounded-2xl border-border bg-card/60 text-center space-y-4">
-            <div className="mx-auto w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
+          <Card className="p-10 rounded-2xl border-border bg-card/60 text-center space-y-4 ui-pop">
+            <div className="mx-auto w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center ui-glow">
               <Check className="h-8 w-8 text-emerald-400" />
             </div>
             <h2 className="text-xl font-extrabold text-foreground">Report Submitted</h2>

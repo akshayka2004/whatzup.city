@@ -256,11 +256,15 @@ export default function TeamManagementPage() {
               <p className="text-xs text-muted-foreground">Create an account using the button above.</p>
             </Card>
           ) : null}
-          {team.map((member) => {
+          {team.map((member, i) => {
             const cfg = ROLE_CONFIG[member.role] || ROLE_CONFIG.STAFF;
             const isOwner = ['OWNER', 'BUSINESS_OWNER', 'BUSINESS_ADMIN'].includes(member.role);
             return (
-              <Card key={member.id} className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all">
+              <Card
+                key={member.id}
+                className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all ui-fade-up"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={cn('h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0', cfg.bg, cfg.color)}>
@@ -268,13 +272,13 @@ export default function TeamManagementPage() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-foreground">{member.name}</p>
-                        <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5', cfg.bg, cfg.color)}>
+                        <p className="text-sm font-semibold text-foreground truncate">{member.name}</p>
+                        <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shrink-0', cfg.bg, cfg.color)}>
                           <cfg.icon className="h-2.5 w-2.5" />
                           {cfg.label}
                         </span>
                         <span className={cn(
-                          'text-[10px] px-1.5 py-0.5 rounded-full font-medium',
+                          'text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0',
                           member.isActive
                             ? 'bg-success/10 text-success'
                             : 'bg-destructive/10 text-destructive',
@@ -282,8 +286,8 @@ export default function TeamManagementPage() {
                           {member.isActive ? 'Active' : 'Disabled'}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                        <Mail className="h-3 w-3" /> {member.email}
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 min-w-0">
+                        <Mail className="h-3 w-3 shrink-0" /> <span className="truncate">{member.email}</span>
                       </p>
                     </div>
                   </div>
@@ -300,7 +304,7 @@ export default function TeamManagementPage() {
                           size="sm"
                           title="Edit member"
                           onClick={() => openEdit(member)}
-                          className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 cursor-pointer"
+                          className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 cursor-pointer"
                         >
                           <Edit2 className="h-3.5 w-3.5" />
                         </Button>
@@ -309,7 +313,7 @@ export default function TeamManagementPage() {
                           size="sm"
                           title="Reset password"
                           onClick={() => openReset(member)}
-                          className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-info hover:bg-info/10 cursor-pointer"
+                          className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:text-info hover:bg-info/10 cursor-pointer"
                         >
                           <Lock className="h-3.5 w-3.5" />
                         </Button>
@@ -319,7 +323,7 @@ export default function TeamManagementPage() {
                           title={member.isActive ? 'Disable account' : 'Enable account'}
                           onClick={() => handleToggle(member)}
                           className={cn(
-                            'h-8 w-8 p-0 rounded-xl cursor-pointer',
+                            'h-10 w-10 p-0 rounded-xl cursor-pointer',
                             member.isActive
                               ? 'text-muted-foreground hover:text-warning hover:bg-warning/10'
                               : 'text-muted-foreground hover:text-success hover:bg-success/10',
@@ -336,7 +340,7 @@ export default function TeamManagementPage() {
                           size="sm"
                           title="Remove member"
                           onClick={() => setConfirmRemove(member)}
-                          className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                          className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -355,7 +359,7 @@ export default function TeamManagementPage() {
         {/* ── CREATE MODAL ────────────────────────────────────── */}
         {showCreateModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl overflow-y-auto max-h-[90vh]">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl overflow-y-auto max-h-[90vh] ui-pop">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <UserPlus className="h-4 w-4 text-primary" />
@@ -384,7 +388,7 @@ export default function TeamManagementPage() {
                   <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Password</label>
                   <div className="flex gap-2">
                     <Input value={formPassword} onChange={(e) => setFormPassword(e.target.value)} className="rounded-xl border-border bg-secondary text-sm font-mono" />
-                    <Button type="button" onClick={() => setFormPassword(generatePassword())} variant="outline" size="sm" className="rounded-xl border-border cursor-pointer" title="Regenerate">
+                    <Button type="button" onClick={() => setFormPassword(generatePassword())} variant="outline" size="sm" className="h-11 w-11 p-0 shrink-0 rounded-xl border-border cursor-pointer" title="Regenerate">
                       <Key className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -426,7 +430,7 @@ export default function TeamManagementPage() {
         {/* ── EDIT MODAL ──────────────────────────────────────── */}
         {editingMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl overflow-y-auto max-h-[90vh]">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl overflow-y-auto max-h-[90vh] ui-pop">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <Edit2 className="h-4 w-4 text-primary" />
@@ -487,7 +491,7 @@ export default function TeamManagementPage() {
         {/* ── RESET PASSWORD MODAL ─────────────────────────────── */}
         {resetMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl ui-pop">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <Lock className="h-4 w-4 text-info" />
@@ -509,7 +513,7 @@ export default function TeamManagementPage() {
                   <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">New Password</label>
                   <div className="flex gap-2">
                     <Input value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} className="rounded-xl border-border bg-secondary text-sm font-mono" />
-                    <Button type="button" onClick={() => setResetPassword(generatePassword())} variant="outline" size="sm" className="rounded-xl border-border cursor-pointer">
+                    <Button type="button" onClick={() => setResetPassword(generatePassword())} variant="outline" size="sm" className="h-11 w-11 p-0 shrink-0 rounded-xl border-border cursor-pointer">
                       <Key className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -528,7 +532,7 @@ export default function TeamManagementPage() {
         {/* ── CREATED CREDENTIALS DISPLAY ─────────────────────── */}
         {createdCredentials && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-success/20 bg-card shadow-2xl">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-success/20 bg-card shadow-2xl ui-pop">
               <div className="flex items-center gap-2 mb-4">
                 <CheckCircle2 className="h-5 w-5 text-success" />
                 <h3 className="text-base font-bold text-foreground">Credentials Ready</h3>
@@ -564,7 +568,7 @@ export default function TeamManagementPage() {
         {/* ── REMOVE CONFIRM ──────────────────────────────────── */}
         {confirmRemove && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-xs p-6 rounded-2xl border-border bg-card shadow-2xl text-center">
+            <Card className="w-full max-w-xs p-6 rounded-2xl border-border bg-card shadow-2xl text-center ui-pop">
               <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
                 <Trash2 className="h-6 w-6 text-destructive" />
               </div>

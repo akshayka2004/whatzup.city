@@ -82,7 +82,7 @@ export default function PrivacyPolicyPage() {
         {/* Main content */}
         <article className="flex-1 min-w-0 space-y-10 text-[15px] leading-relaxed text-muted-foreground">
           {/* Title block */}
-          <div className="pb-6 border-b border-border">
+          <div className="pb-6 border-b border-border ui-fade-up">
             <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight mb-3">
               Privacy Policy
             </h1>
@@ -235,7 +235,7 @@ export default function PrivacyPolicyPage() {
                 { name: 'Razorpay', desc: 'Payment processing for subscription plans' },
                 { name: 'Redis / BullMQ', desc: 'Session caching and background job queuing' },
               ].map((item) => (
-                <div key={item.name} className="flex gap-3 px-3 py-2.5 rounded-xl bg-muted/40 border border-border">
+                <div key={item.name} className="flex flex-col sm:flex-row gap-1 sm:gap-3 px-3 py-2.5 rounded-xl bg-muted/40 border border-border">
                   <span className="font-semibold text-foreground text-sm shrink-0">{item.name}</span>
                   <span className="text-sm">{item.desc}</span>
                 </div>

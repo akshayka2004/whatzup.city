@@ -116,7 +116,7 @@ export default function BusinessSubscriptionsPage() {
         ) : (
           <>
             {/* Current plan */}
-            <Card className="p-5">
+            <Card className="p-5 ui-fade-up">
               {isPaid ? (
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
@@ -164,12 +164,13 @@ export default function BusinessSubscriptionsPage() {
               </h2>
               {isHomeChef ? (
                 <div className="grid sm:grid-cols-3 gap-3">
-                  {HOME_CHEF_PLANS.map((p) => {
+                  {HOME_CHEF_PLANS.map((p, i) => {
                     const current = `HOMECHEF_${p.code}` === currentCode;
                     return (
                       <Card
                         key={p.code}
-                        className={cn('p-4 flex flex-col', current && 'border-primary bg-primary/5')}
+                        className={cn('p-4 flex flex-col transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg motion-reduce:hover:translate-y-0 ui-fade-up', current && 'border-primary bg-primary/5')}
+                        style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-bold text-primary">{p.name}</span>
@@ -198,12 +199,13 @@ export default function BusinessSubscriptionsPage() {
                 </div>
               ) : (
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {SUBSCRIPTION_PLANS.map((p) => {
+                  {SUBSCRIPTION_PLANS.map((p, i) => {
                     const current = p.code === currentCode;
                     return (
                       <Card
                         key={p.code}
-                        className={cn('p-4 flex flex-col', current && 'border-primary bg-primary/5')}
+                        className={cn('p-4 flex flex-col transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-lg motion-reduce:hover:translate-y-0 ui-fade-up', current && 'border-primary bg-primary/5')}
+                        style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-bold text-primary">{p.name}</span>
@@ -249,7 +251,7 @@ export default function BusinessSubscriptionsPage() {
             <div>
               <h2 className="text-sm font-bold text-foreground mb-2">Invoice details</h2>
               {billing ? (
-                <Card className="p-5">
+                <Card className="p-5 ui-fade-up">
                   <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-xs">
                     <div className="text-muted-foreground">
                       Billing name: <span className="text-foreground font-medium">{billing.billingName}</span>
@@ -297,7 +299,7 @@ export default function BusinessSubscriptionsPage() {
                   <p className="text-sm text-muted-foreground">No payments recorded yet.</p>
                 </Card>
               ) : (
-                <Card className="overflow-hidden">
+                <Card className="overflow-hidden ui-fade-up">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-muted/40 text-xs text-muted-foreground">

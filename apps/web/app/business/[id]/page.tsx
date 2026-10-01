@@ -379,17 +379,17 @@ function BusinessDetailPageContent() {
           <div className="md:col-span-2">
             {/* ── Business Info Card */}
             <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+                <div className="flex items-start gap-4 min-w-0">
                   {/* Business Logo */}
                   {biz.logo && (
                     <div className="h-16 w-16 rounded-xl overflow-hidden border border-white/10 bg-white/5 shrink-0">
                       <img src={biz.logo} alt={`${biz.name} logo`} className="h-full w-full object-contain" />
                     </div>
                   )}
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h1 className="text-3xl font-bold text-foreground">{biz.name}</h1>
+                      <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">{biz.name}</h1>
                       {biz.isVerified && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
                           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -415,7 +415,7 @@ function BusinessDetailPageContent() {
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 shrink-0">
                   <Button
                     variant="outline"
                     size="icon"
@@ -452,7 +452,7 @@ function BusinessDetailPageContent() {
                       href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-violet-400 hover:underline"
+                      className="text-violet-400 hover:underline break-words min-w-0"
                     >
                       {address}
                     </a>
@@ -461,19 +461,19 @@ function BusinessDetailPageContent() {
                 {(biz.phone || branch?.phone) && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <Phone className="h-5 w-5 text-cyan-400 flex-shrink-0" />
-                    <span>{biz.phone || branch?.phone}</span>
+                    <span className="break-words min-w-0">{biz.phone || branch?.phone}</span>
                   </div>
                 )}
                 {branch?.operatingHours && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <Clock className="h-5 w-5 text-amber-400 flex-shrink-0" />
-                    <span>{typeof branch.operatingHours === 'string' ? branch.operatingHours : JSON.stringify(branch.operatingHours)}</span>
+                    <span className="break-all min-w-0">{typeof branch.operatingHours === 'string' ? branch.operatingHours : JSON.stringify(branch.operatingHours)}</span>
                   </div>
                 )}
                 {biz.instagram && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <Instagram className="h-5 w-5 text-pink-400 flex-shrink-0" />
-                    <a href={`https://instagram.com/${biz.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="text-pink-400 hover:underline">
+                    <a href={`https://instagram.com/${biz.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="text-pink-400 hover:underline break-all min-w-0">
                       {biz.instagram.startsWith('@') ? biz.instagram : `@${biz.instagram}`}
                     </a>
                   </div>
@@ -481,7 +481,7 @@ function BusinessDetailPageContent() {
                 {biz.socialLinks?.instagram && !biz.instagram && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <Instagram className="h-5 w-5 text-pink-400 flex-shrink-0" />
-                    <a href={`https://instagram.com/${biz.socialLinks.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="text-pink-400 hover:underline">
+                    <a href={`https://instagram.com/${biz.socialLinks.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="text-pink-400 hover:underline break-all min-w-0">
                       {biz.socialLinks.instagram}
                     </a>
                   </div>
@@ -489,7 +489,7 @@ function BusinessDetailPageContent() {
                 {biz.socialLinks?.facebook && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <Facebook className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                    <a href={biz.socialLinks.facebook.startsWith('http') ? biz.socialLinks.facebook : `https://facebook.com/${biz.socialLinks.facebook}`} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">
+                    <a href={biz.socialLinks.facebook.startsWith('http') ? biz.socialLinks.facebook : `https://facebook.com/${biz.socialLinks.facebook}`} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline break-all min-w-0">
                       {biz.socialLinks.facebook}
                     </a>
                   </div>
@@ -497,7 +497,7 @@ function BusinessDetailPageContent() {
                 {(biz.socialLinks?.twitter || biz.socialLinks?.x) && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <Twitter className="h-5 w-5 text-sky-400 flex-shrink-0" />
-                    <a href={(biz.socialLinks.twitter || biz.socialLinks.x)!.startsWith('http') ? (biz.socialLinks.twitter || biz.socialLinks.x)! : `https://x.com/${(biz.socialLinks.twitter || biz.socialLinks.x)!.replace('@','')}`} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline">
+                    <a href={(biz.socialLinks.twitter || biz.socialLinks.x)!.startsWith('http') ? (biz.socialLinks.twitter || biz.socialLinks.x)! : `https://x.com/${(biz.socialLinks.twitter || biz.socialLinks.x)!.replace('@','')}`} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline break-all min-w-0">
                       {biz.socialLinks.twitter || biz.socialLinks.x}
                     </a>
                   </div>
@@ -505,7 +505,7 @@ function BusinessDetailPageContent() {
                 {biz.socialLinks?.linkedin && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <Linkedin className="h-5 w-5 text-sky-500 flex-shrink-0" />
-                    <a href={biz.socialLinks.linkedin.startsWith('http') ? biz.socialLinks.linkedin : `https://linkedin.com/company/${biz.socialLinks.linkedin}`} target="_blank" rel="noreferrer" className="text-sky-500 hover:underline">
+                    <a href={biz.socialLinks.linkedin.startsWith('http') ? biz.socialLinks.linkedin : `https://linkedin.com/company/${biz.socialLinks.linkedin}`} target="_blank" rel="noreferrer" className="text-sky-500 hover:underline break-all min-w-0">
                       {biz.socialLinks.linkedin}
                     </a>
                   </div>
@@ -513,7 +513,7 @@ function BusinessDetailPageContent() {
                 {biz.socialLinks?.youtube && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <Youtube className="h-5 w-5 text-red-400 flex-shrink-0" />
-                    <a href={biz.socialLinks.youtube.startsWith('http') ? biz.socialLinks.youtube : `https://${biz.socialLinks.youtube}`} target="_blank" rel="noreferrer" className="text-red-400 hover:underline">
+                    <a href={biz.socialLinks.youtube.startsWith('http') ? biz.socialLinks.youtube : `https://${biz.socialLinks.youtube}`} target="_blank" rel="noreferrer" className="text-red-400 hover:underline break-all min-w-0">
                       {biz.socialLinks.youtube}
                     </a>
                   </div>
@@ -521,7 +521,7 @@ function BusinessDetailPageContent() {
                 {biz.website && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <Globe className="h-5 w-5 text-emerald-400 flex-shrink-0" />
-                    <a href={biz.website.startsWith('http') ? biz.website : `https://${biz.website}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">
+                    <a href={biz.website.startsWith('http') ? biz.website : `https://${biz.website}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline break-all min-w-0">
                       {biz.website}
                     </a>
                   </div>
@@ -529,7 +529,7 @@ function BusinessDetailPageContent() {
                 {!biz.website && biz.socialLinks?.website && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <Globe className="h-5 w-5 text-emerald-400 flex-shrink-0" />
-                    <a href={biz.socialLinks.website.startsWith('http') ? biz.socialLinks.website : `https://${biz.socialLinks.website}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">
+                    <a href={biz.socialLinks.website.startsWith('http') ? biz.socialLinks.website : `https://${biz.socialLinks.website}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline break-all min-w-0">
                       {biz.socialLinks.website}
                     </a>
                   </div>
@@ -555,12 +555,13 @@ function BusinessDetailPageContent() {
               <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
                 <h2 className="text-2xl font-bold text-foreground mb-4">Menu</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {menuPhotos.map((p: any) => (
+                  {menuPhotos.map((p: any, i: number) => (
                     <button
                       key={p.id}
                       type="button"
                       onClick={() => setMenuViewing(p)}
-                      className="group relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-white/5 cursor-pointer"
+                      className="ui-fade-up group relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-white/5 cursor-pointer"
+                      style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                       aria-label={p.title ? `View menu photo: ${p.title}` : 'View menu photo'}
                     >
                       <img
@@ -654,7 +655,7 @@ function BusinessDetailPageContent() {
               </div>
 
               {billSubmitted ? (
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 mt-3">
+                <div className="ui-pop flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 mt-3 flex-wrap">
                   <div className="h-9 w-9 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
                     <Check className="h-5 w-5" />
                   </div>
@@ -700,8 +701,8 @@ function BusinessDetailPageContent() {
                   Cross a threshold to unlock the code, then show it in-store.
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {vouchers.map((v: any) => (
-                    <div key={v.id} className="rounded-xl border border-border bg-secondary/50 p-4">
+                  {vouchers.map((v: any, i: number) => (
+                    <div key={v.id} className="ui-fade-up rounded-xl border border-border bg-secondary/50 p-4" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <h3 className="font-semibold text-foreground truncate">{v.title}</h3>
@@ -763,7 +764,7 @@ function BusinessDetailPageContent() {
               ) : (
                 <div className="space-y-4">
                   {reviews.map((review: any, i: number) => (
-                    <div key={review.id || i} className="pb-4 border-b border-white/5 last:border-0">
+                    <div key={review.id || i} className="ui-fade-up pb-4 border-b border-white/5 last:border-0" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
@@ -803,7 +804,7 @@ function BusinessDetailPageContent() {
 
           {/* ── Sidebar */}
           <div>
-            <Card id="offers-section" className="p-6 rounded-2xl mb-6 sticky top-8 border-white/5 bg-card/40 backdrop-blur-xl">
+            <Card id="offers-section" className="p-6 rounded-2xl mb-6 md:sticky md:top-8 border-white/5 bg-card/40 backdrop-blur-xl">
               <h3 className="font-bold text-foreground mb-4">Active Offers</h3>
               {fromQr && !user ? (
                 <div className="text-center py-6">
@@ -834,7 +835,7 @@ function BusinessDetailPageContent() {
                       ? `Valid until ${new Date(o.validUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
                       : '';
                     return (
-                      <div key={o.id || i} className="p-3 bg-white/5 rounded-xl border border-white/5">
+                      <div key={o.id || i} className="ui-fade-up p-3 bg-white/5 rounded-xl border border-white/5" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
                         <p className="font-semibold text-foreground mb-1">{discount}</p>
                         {o.description && <p className="text-xs text-muted-foreground mb-1">{o.description}</p>}
                         {expiry && <p className="text-xs text-muted-foreground mb-2">{expiry}</p>}
@@ -884,7 +885,7 @@ function BusinessDetailPageContent() {
           <img
             src={menuViewing.publicUrl}
             alt={menuViewing.title || `${biz.name} menu`}
-            className="max-h-[85vh] max-w-full rounded-xl object-contain"
+            className="ui-pop max-h-[85vh] max-w-full rounded-xl object-contain"
             onClick={(e) => e.stopPropagation()}
           />
         </div>
@@ -893,7 +894,7 @@ function BusinessDetailPageContent() {
       {/* ── BILL SUBMISSION MODAL */}
       {billModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
+          <Card className="ui-pop w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setBillModalOpen(false)}
               aria-label="Close"
@@ -1065,7 +1066,7 @@ function BusinessDetailPageContent() {
       {/* ── CLAIM CONFIRMATION MODAL */}
       {claimingOffer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
+          <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setClaimingOffer(null)}
               aria-label="Close"
@@ -1107,7 +1108,7 @@ function BusinessDetailPageContent() {
       {/* ── CLAIM SUCCESS MODAL */}
       {claimedCode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
+          <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setClaimedCode(null)}
               aria-label="Close"

@@ -120,16 +120,21 @@ export default function AdminCategoriesPage() {
   return (
     <AdminLayout>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Category Taxonomy</h1>
-            <p className="text-muted-foreground">
-              Manage directory category branches, metadata, and listing mappings
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <Folder className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Category Taxonomy</h1>
+              <p className="text-muted-foreground">
+                Manage directory category branches, metadata, and listing mappings
+              </p>
+            </div>
           </div>
           <Button
             onClick={handleOpenAdd}
-            className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground"
+            className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground shrink-0"
           >
             <Plus className="h-4 w-4" />
             Add Category
@@ -149,10 +154,11 @@ export default function AdminCategoriesPage() {
         ) : null}
 
         <div className="grid md:grid-cols-2 gap-6">
-          {categories.map((cat) => (
+          {categories.map((cat, i) => (
             <Card
               key={cat.id}
-              className="p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden group"
+              className="ui-fade-up p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden group"
+              style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
               <div className="flex items-center justify-between">
@@ -212,7 +218,7 @@ export default function AdminCategoriesPage() {
         {/* ── ADD MODAL ────────────────────────────────────────────── */}
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
+            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setIsAddOpen(false)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -290,7 +296,7 @@ export default function AdminCategoriesPage() {
         {/* ── EDIT MODAL ───────────────────────────────────────────── */}
         {editingCategory && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
+            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setEditingCategory(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -357,7 +363,7 @@ export default function AdminCategoriesPage() {
         {/* ── DELETE MODAL ─────────────────────────────────────────── */}
         {deletingCategory && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
+            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setDeletingCategory(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"

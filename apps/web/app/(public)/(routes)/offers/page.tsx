@@ -228,12 +228,12 @@ export default function OffersPage() {
   return (
     <PublicLayout>
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight mb-1">Exclusive Offers</h1>
             <p className="text-muted-foreground">Find the best deals from businesses near you</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {claimedIds.length > 0 && (
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-success/12 border border-success/25 text-success text-xs font-semibold">
                 <CheckCircle2 className="h-3.5 w-3.5" />
@@ -303,16 +303,17 @@ export default function OffersPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {filtered.map((offer) => {
+            {filtered.map((offer, i) => {
               const claimed = isClaimed(offer.id);
               const urgent = offer.expiresIn != null && offer.expiresIn <= 3;
               return (
                 <div
                   key={offer.id}
                   className={cn(
-                    'flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100',
+                    'ui-fade-up flex flex-col rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:-translate-y-1 hover:border-primary/25 hover:shadow-xl active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100',
                     claimed && 'opacity-75',
                   )}
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                 >
                   {offer.imageUrl && (
                     <img
@@ -403,7 +404,7 @@ export default function OffersPage() {
 
         {viewingOffer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
-            <div className="relative w-full max-w-md p-6 rounded-2xl border border-border bg-card shadow-2xl">
+            <div className="ui-pop relative w-full max-w-md p-6 rounded-2xl border border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setViewingOffer(null)}
                 aria-label="Close"

@@ -138,10 +138,14 @@ export default function DashboardRegistrationsPage() {
             { label: 'Total Submissions', value: stats.total, icon: Users, color: 'text-primary' },
             { label: 'Business Interests', value: stats.businesses, icon: Building2, color: 'text-info' },
             { label: 'Individual Interests', value: stats.individuals, icon: UserCheck, color: 'text-primary' },
-          ].map((stat) => {
+          ].map((stat, i) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/60">
+              <Card
+                key={stat.label}
+                className="p-4 rounded-2xl border-border bg-card/60 ui-fade-up"
+                style={{ animationDelay: `${i * 0.05}s` }}
+              >
                 <div className="flex items-center gap-3">
                   <Icon className={`h-5 w-5 ${stat.color}`} />
                   <div>
@@ -205,18 +209,20 @@ export default function DashboardRegistrationsPage() {
           ) : (
             <div className="divide-y divide-border">
               {tab === 'businesses'
-                ? data.map((item) => (
+                ? data.map((item, i) => (
                     <BusinessRow
                       key={item.id}
                       item={item}
+                      index={i}
                       expanded={expanded}
                       setExpanded={setExpanded}
                     />
                   ))
-                : data.map((item) => (
+                : data.map((item, i) => (
                     <IndividualRow
                       key={item.id}
                       item={item}
+                      index={i}
                       expanded={expanded}
                       setExpanded={setExpanded}
                     />
@@ -237,7 +243,7 @@ export default function DashboardRegistrationsPage() {
                 disabled={!meta.hasPrev}
                 variant="outline"
                 size="sm"
-                className="rounded-xl border-border text-muted-foreground"
+                className="rounded-xl border-border text-muted-foreground h-10 w-10 p-0"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -246,7 +252,7 @@ export default function DashboardRegistrationsPage() {
                 disabled={!meta.hasNext}
                 variant="outline"
                 size="sm"
-                className="rounded-xl border-border text-muted-foreground"
+                className="rounded-xl border-border text-muted-foreground h-10 w-10 p-0"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -260,16 +266,18 @@ export default function DashboardRegistrationsPage() {
 
 function BusinessRow({
   item,
+  index,
   expanded,
   setExpanded,
 }: {
   item: any;
+  index?: number;
   expanded: string | null;
   setExpanded: (id: string | null) => void;
 }) {
   const isOpen = expanded === item.id;
   return (
-    <div>
+    <div className="ui-fade-up" style={{ animationDelay: `${Math.min(index ?? 0, 8) * 0.04}s` }}>
       <button
         onClick={() => setExpanded(isOpen ? null : item.id)}
         className="w-full text-left px-5 py-4 hover:bg-foreground/[0.04] transition-colors"
@@ -355,16 +363,18 @@ function BusinessRow({
 
 function IndividualRow({
   item,
+  index,
   expanded,
   setExpanded,
 }: {
   item: any;
+  index?: number;
   expanded: string | null;
   setExpanded: (id: string | null) => void;
 }) {
   const isOpen = expanded === item.id;
   return (
-    <div>
+    <div className="ui-fade-up" style={{ animationDelay: `${Math.min(index ?? 0, 8) * 0.04}s` }}>
       <button
         onClick={() => setExpanded(isOpen ? null : item.id)}
         className="w-full text-left px-5 py-4 hover:bg-foreground/[0.04] transition-colors"

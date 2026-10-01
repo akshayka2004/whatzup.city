@@ -106,18 +106,20 @@ export default function AdminManagementPage() {
       <div className="space-y-6 max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              Admin Management
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Create and manage Portal Admin accounts for platform operations.
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Admin Management</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Create and manage Portal Admin accounts for platform operations.
+              </p>
+            </div>
           </div>
           <Button
             onClick={() => { setIsOpen(true); setError(''); setSuccess(''); }}
-            className="rounded-xl bg-primary hover:bg-primary text-white gap-2 font-semibold cursor-pointer"
+            className="ui-press rounded-xl bg-primary hover:bg-primary text-white gap-2 font-semibold cursor-pointer shrink-0"
           >
             <Plus className="h-4 w-4" />
             Add Admin
@@ -144,14 +146,15 @@ export default function AdminManagementPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {admins.map((admin) => {
+            {admins.map((admin, i) => {
               const { label, color } = roleLabel(admin.role);
               return (
                 <Card
                   key={admin.id}
-                  className="p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl"
+                  className="ui-fade-up p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl"
+                  style={{ animationDelay: `${Math.min(i, 10) * 0.05}s` }}
                 >
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-primary/20 to-info/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
                         {admin.name.charAt(0).toUpperCase()}
@@ -171,14 +174,14 @@ export default function AdminManagementPage() {
                         <p className="text-xs text-muted-foreground truncate">{admin.email}</p>
                       </div>
                     </div>
-                    <div className="hidden sm:flex items-center gap-5 text-xs text-muted-foreground shrink-0">
-                      <div className="text-right">
+                    <div className="flex items-center gap-4 sm:gap-5 text-xs text-muted-foreground shrink-0 w-full sm:w-auto justify-between sm:justify-start border-t border-border/60 sm:border-t-0 pt-3 sm:pt-0 mt-1 sm:mt-0">
+                      <div className="sm:text-right">
                         <p className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" /> Created
                         </p>
                         <p className="text-foreground font-medium">{formatDate(admin.createdAt)}</p>
                       </div>
-                      <div className="text-right">
+                      <div className="sm:text-right">
                         <p className="flex items-center gap-1">
                           <Clock className="h-3 w-3" /> Last Login
                         </p>
@@ -195,7 +198,7 @@ export default function AdminManagementPage() {
         {/* Create Admin Modal */}
         {isOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl">
+            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                   <Shield className="h-5 w-5 text-primary" />
@@ -300,7 +303,7 @@ export default function AdminManagementPage() {
                   <Button
                     type="submit"
                     disabled={saving}
-                    className="flex-1 rounded-xl bg-primary hover:bg-primary text-white font-semibold cursor-pointer"
+                    className="ui-press flex-1 rounded-xl bg-primary hover:bg-primary text-white font-semibold cursor-pointer"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Admin'}
                   </Button>

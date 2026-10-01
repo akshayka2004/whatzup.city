@@ -94,7 +94,7 @@ export default function SuperAdminOffersPage() {
 
         {/* KPI */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card className="p-5 rounded-2xl border-border bg-card flex items-center gap-4">
+          <Card className="ui-fade-up p-5 rounded-2xl border-border bg-card flex items-center gap-4">
             <div className="p-3 rounded-xl bg-primary/10 text-primary"><Tag className="h-5 w-5" /></div>
             <div>
               <p className="text-xs text-muted-foreground">Active Offers</p>
@@ -133,8 +133,12 @@ export default function SuperAdminOffersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {offers.map((o) => (
-                    <tr key={o.id} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                  {offers.map((o, i) => (
+                    <tr
+                      key={o.id}
+                      className="ui-fade-up border-b border-border last:border-0 hover:bg-secondary/20 transition-colors"
+                      style={{ animationDelay: `${Math.min(i, 10) * 0.04}s` }}
+                    >
                       <td className="px-5 py-3">
                         <p className="font-semibold text-foreground">{o.title}</p>
                         {o.code && <p className="text-[11px] font-mono text-primary">{o.code}</p>}
@@ -168,7 +172,7 @@ export default function SuperAdminOffersPage() {
                           onClick={() => setConfirm(o)}
                           variant="outline"
                           size="sm"
-                          className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 gap-1.5 cursor-pointer"
+                          className="ui-press rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 gap-1.5 cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" /> Delete
                         </Button>
@@ -185,7 +189,7 @@ export default function SuperAdminOffersPage() {
       {/* Delete confirm modal */}
       {confirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
+          <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setConfirm(null)}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"

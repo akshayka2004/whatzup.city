@@ -263,8 +263,12 @@ export default function MenuPhotosPage() {
                   {photos.length} of {MAX_PHOTOS} photos
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {photos.map((p) => (
-                    <Card key={p.id} className="rounded-2xl overflow-hidden border-border bg-card/40 group">
+                  {photos.map((p, i) => (
+                    <Card
+                      key={p.id}
+                      className="ui-fade-up rounded-2xl overflow-hidden border-border bg-card/40 group"
+                      style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+                    >
                       <div className="h-48 w-full overflow-hidden bg-secondary">
                         <img
                           src={p.publicUrl}
@@ -286,7 +290,7 @@ export default function MenuPhotosPage() {
                             size="icon"
                             variant="outline"
                             aria-label="View photo"
-                            className="h-8 w-8 rounded-lg border-border text-foreground hover:bg-secondary cursor-pointer"
+                            className="h-10 w-10 rounded-lg border-border text-foreground hover:bg-secondary cursor-pointer"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -298,7 +302,7 @@ export default function MenuPhotosPage() {
                             size="icon"
                             variant="outline"
                             aria-label="Delete photo"
-                            className="h-8 w-8 rounded-lg border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                            className="h-10 w-10 rounded-lg border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -315,12 +319,12 @@ export default function MenuPhotosPage() {
         {/* Upload modal */}
         {uploadOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={closeUpload}
                 aria-label="Close"
                 disabled={uploading}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer disabled:opacity-40"
+                className="absolute top-4 right-4 p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer disabled:opacity-40"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -420,7 +424,7 @@ export default function MenuPhotosPage() {
             onClick={() => setViewing(null)}
           >
             <Card
-              className="w-full max-w-2xl p-2 rounded-2xl border-border bg-card shadow-2xl relative"
+              className="ui-pop w-full max-w-2xl p-2 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -439,7 +443,7 @@ export default function MenuPhotosPage() {
         {/* Delete modal */}
         {deleting && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
+            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
               <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>

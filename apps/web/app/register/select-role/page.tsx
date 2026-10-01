@@ -136,7 +136,7 @@ export default function SelectRolePage() {
             <Sparkles className="h-3.5 w-3.5" />
             Welcome — Choose Your Path
           </div>
-          <h1 className="text-foregroundxl md:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-foreground text-3xl md:text-4xl font-extrabold tracking-tight">
             How will you use{' '}
             <span className="bg-gradient-to-r from-violet-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
               the platform?
@@ -155,7 +155,7 @@ export default function SelectRolePage() {
 
         <form onSubmit={handleContinue} className="space-y-6">
           {/* Role cards */}
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-3 gap-4 ui-fade-up">
             {ROLES.map((option) => {
               const Icon = option.icon;
               const selected = selectedType === option.entityType;
@@ -164,7 +164,7 @@ export default function SelectRolePage() {
                   key={option.entityType}
                   type="button"
                   onClick={() => { setSelectedType(option.entityType); setError(''); }}
-                  className={`p-6 rounded-2xl border bg-gradient-to-b ${option.color} text-left transition-all duration-200 cursor-pointer flex flex-col gap-4 relative ${
+                  className={`p-6 rounded-2xl border bg-gradient-to-b ${option.color} text-left transition-all duration-200 cursor-pointer flex flex-col gap-4 relative ui-press ${
                     selected ? 'border-white scale-[1.02] shadow-xl' : option.borderColor
                   }`}
                 >
@@ -193,7 +193,7 @@ export default function SelectRolePage() {
 
           {/* Extra fields once role selected */}
           {selectedType && (
-            <Card className="bg-card/80 backdrop-blur-xl border border-border p-6 rounded-2xl space-y-4">
+            <Card className="bg-card/80 backdrop-blur-xl border border-border p-6 rounded-2xl space-y-4 ui-pop">
               <h3 className="text-sm font-bold text-foreground">Additional Details (optional)</h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>

@@ -262,8 +262,12 @@ export default function CivicDashboardPage() {
             { label: 'Active Now',      value: visible.length, icon: Globe, accent: 'text-muted-foreground' },
             { label: 'Alerts',          value: visible.filter((n) => n.type === 'ALERT').length, icon: AlertTriangle, accent: 'text-muted-foreground' },
             { label: 'Referrals',       value: referralCount, icon: Gift, accent: 'text-emerald-400' },
-          ].map(({ label, value, icon: Icon, accent }) => (
-            <Card key={label} className="p-4 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl">
+          ].map(({ label, value, icon: Icon, accent }, i) => (
+            <Card
+              key={label}
+              className="p-4 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl ui-fade-up"
+              style={{ animationDelay: `${i * 0.05}s` }}
+            >
               <div className="flex items-center gap-2 mb-2">
                 <Icon className={`h-4 w-4 ${accent}`} />
               </div>
@@ -275,7 +279,7 @@ export default function CivicDashboardPage() {
 
         {/* Publish form (inline panel) */}
         {showForm && (
-          <Card className="p-5 sm:p-6 rounded-2xl border-white/5 bg-card/80 backdrop-blur-xl">
+          <Card className="p-5 sm:p-6 rounded-2xl border-white/5 bg-card/80 backdrop-blur-xl ui-pop">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-foreground">New Publication</h3>
               <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground">
@@ -404,13 +408,14 @@ export default function CivicDashboardPage() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {visible.map((n) => {
+              {visible.map((n, i) => {
                 const cfg = TYPE_CONFIG[n.type];
                 const Icon = cfg.icon;
                 return (
                   <Card
                     key={n.id}
-                    className={`p-4 sm:p-5 rounded-2xl border ${cfg.border} ${cfg.bg} backdrop-blur-xl`}
+                    className={`p-4 sm:p-5 rounded-2xl border ${cfg.border} ${cfg.bg} backdrop-blur-xl ui-fade-up`}
+                    style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3 min-w-0">

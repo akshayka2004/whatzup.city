@@ -147,9 +147,14 @@ export default function SuperAdminNoticesPage() {
     <SuperAdminLayout>
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Civic Notices & Announcements</h1>
-            <p className="text-muted-foreground">Broadcast official notices, government safety alerts, and system bulletin news</p>
+          <div className="flex items-center gap-3">
+            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <Bell className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Civic Notices & Announcements</h1>
+              <p className="text-muted-foreground">Broadcast official notices, government safety alerts, and system bulletin news</p>
+            </div>
           </div>
           <Button
             onClick={() => { setTitle(''); setSender(''); setBody(''); setCategory('ANNOUNCEMENT'); setFormTags([]); setFormStartAt(''); setFormExpiresAt(''); setFormLink(''); setIsCreateOpen(true); }}
@@ -172,8 +177,8 @@ export default function SuperAdminNoticesPage() {
         ) : null}
 
         <div className="space-y-4">
-          {notices.map((note) => (
-            <Card key={note.id} className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors">
+          {notices.map((note, i) => (
+            <Card key={note.id} className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex items-start gap-4 flex-1 min-w-0">
                   <div className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center shrink-0 ${note.status === 'BROADCASTING' ? 'bg-warning/10 text-warning' : 'bg-secondary text-muted-foreground'}`}>
@@ -214,8 +219,8 @@ export default function SuperAdminNoticesPage() {
         {/* VIEW MODAL */}
         {viewingNotice && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
-              <button onClick={() => setViewingNotice(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
+            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setViewingNotice(null)} className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
               <div className="flex items-center gap-3 mb-4">
@@ -252,8 +257,8 @@ export default function SuperAdminNoticesPage() {
         {/* CREATE MODAL */}
         {isCreateOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
-              <button onClick={() => setIsCreateOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
+            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setIsCreateOpen(false)} className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
               <h3 className="text-xl font-bold text-foreground mb-4">Create New Alert</h3>
@@ -325,8 +330,8 @@ export default function SuperAdminNoticesPage() {
         {/* DELETE MODAL */}
         {deletingNotice && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
-              <button onClick={() => setDeletingNotice(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
+            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setDeletingNotice(null)} className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
               <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">

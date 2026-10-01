@@ -109,13 +109,13 @@ export default function SuperAdminPlatformVouchersPage() {
               business (1 point per ₹1 of verified bill spend). Redeemable by any business's staff.
             </p>
           </div>
-          <Button onClick={() => { resetForm(); setShowForm((s) => !s); }} className="gap-1.5 shrink-0 cursor-pointer">
+          <Button onClick={() => { resetForm(); setShowForm((s) => !s); }} className="ui-press gap-1.5 shrink-0 cursor-pointer">
             <Plus className="h-4 w-4" /> New tier
           </Button>
         </div>
 
         {showForm && (
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+          <div className="ui-pop rounded-2xl border border-border bg-card p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold">New reward tier</h2>
               <button onClick={() => setShowForm(false)} aria-label="Close" className="text-muted-foreground hover:text-foreground cursor-pointer">
@@ -168,7 +168,7 @@ export default function SuperAdminPlatformVouchersPage() {
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowForm(false)} className="cursor-pointer">Cancel</Button>
-              <Button onClick={submit} disabled={saving} className="gap-1.5 cursor-pointer">
+              <Button onClick={submit} disabled={saving} className="ui-press gap-1.5 cursor-pointer">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                 Publish tier
               </Button>
@@ -186,8 +186,12 @@ export default function SuperAdminPlatformVouchersPage() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {tiers.map((t) => (
-              <div key={t.id} className="rounded-2xl border border-border bg-card p-5">
+            {tiers.map((t, i) => (
+              <div
+                key={t.id}
+                className="ui-fade-up rounded-2xl border border-border bg-card p-5"
+                style={{ animationDelay: `${Math.min(i, 10) * 0.05}s` }}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-foreground truncate">{t.title}</h3>
@@ -211,10 +215,10 @@ export default function SuperAdminPlatformVouchersPage() {
                   <span>ends {new Date(t.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
                 </div>
                 <div className="mt-4 flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => toggleStatus(t)} className="flex-1 cursor-pointer">
+                  <Button variant="outline" size="sm" onClick={() => toggleStatus(t)} className="ui-press flex-1 cursor-pointer">
                     {t.status === 'ACTIVE' ? 'Pause' : 'Activate'}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => remove(t.id)} className="text-destructive hover:bg-destructive/10 cursor-pointer">
+                  <Button variant="outline" size="sm" onClick={() => remove(t.id)} className="ui-press text-destructive hover:bg-destructive/10 cursor-pointer">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

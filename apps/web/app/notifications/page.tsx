@@ -116,9 +116,9 @@ export default function NotificationsPage() {
   return (
     <PublicLayout>
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-foreground">Notifications</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Notifications</h1>
             {unreadCount > 0 && (
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary text-primary-foreground">
                 {unreadCount} new
@@ -148,15 +148,16 @@ export default function NotificationsPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {notifications.map((notification) => {
+            {notifications.map((notification, i) => {
               const Icon = getIcon(notification.type.toUpperCase());
               return (
                 <Card
                   key={notification.id}
                   onClick={() => handleToggleRead(notification.id)}
-                  className={`p-4 rounded-2xl hover:shadow-md transition-all cursor-pointer border border-border ${
+                  className={`p-4 rounded-2xl hover:shadow-md transition-all cursor-pointer border border-border ui-fade-up ${
                     notification.read ? 'bg-card/20 opacity-70' : 'bg-card/60 font-semibold'
                   }`}
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                 >
                   <div className="flex items-start gap-4">
                     <div className="rounded-xl bg-muted/40 p-3 flex-shrink-0 border border-border">

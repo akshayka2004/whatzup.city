@@ -16,11 +16,16 @@ export default function SuperAdminHealthPage() {
     <SuperAdminLayout>
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Platform Health & Status</h1>
-            <p className="text-muted-foreground">
-              Monitor real-time network latency, database status, and search cluster nodes
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <Activity className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Platform Health & Status</h1>
+              <p className="text-muted-foreground">
+                Monitor real-time network latency, database status, and search cluster nodes
+              </p>
+            </div>
           </div>
           <Button
             variant="outline"
@@ -31,11 +36,12 @@ export default function SuperAdminHealthPage() {
           </Button>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {healthIndicators.map((srv) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {healthIndicators.map((srv, i) => (
             <Card
               key={srv.name}
-              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
+              className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
+              style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="p-3 bg-primary/10 text-primary rounded-xl">

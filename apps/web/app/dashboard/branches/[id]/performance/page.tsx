@@ -94,24 +94,24 @@ export default function BranchPerformancePage() {
   return (
     <BusinessLayout>
       <div className="space-y-8">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex items-start gap-3 min-w-0">
             <Link href="/dashboard/branches">
               <Button variant="outline" size="sm" className="rounded-xl border-border text-foreground hover:bg-secondary mt-1 cursor-pointer">
                 <ArrowLeft className="h-3.5 w-3.5" />
               </Button>
             </Link>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <Building2 className="h-4 w-4 text-primary" />
                 <span className="text-xs text-muted-foreground font-medium uppercase tracking-widest">Branch Performance</span>
               </div>
-              <h1 className="text-3xl font-extrabold text-foreground tracking-tight">{branchName}</h1>
+              <h1 className="text-3xl font-extrabold text-foreground tracking-tight truncate">{branchName}</h1>
               <p className="text-muted-foreground text-sm mt-0.5">Live analytics for this location.</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary border border-border mt-1">
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary border border-border mt-1 shrink-0">
             {RANGES.map((r) => (
               <button
                 key={r.label}
@@ -135,10 +135,14 @@ export default function BranchPerformancePage() {
         ) : (
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {kpis.map((kpi) => {
+              {kpis.map((kpi, i) => {
                 const Icon = kpi.icon;
                 return (
-                  <Card key={kpi.label} className="p-5 rounded-2xl border-border bg-card/60 backdrop-blur-xl">
+                  <Card
+                    key={kpi.label}
+                    className="ui-fade-up p-5 rounded-2xl border-border bg-card/60 backdrop-blur-xl"
+                    style={{ animationDelay: `${i * 0.05}s` }}
+                  >
                     <div className="flex items-start justify-between mb-3">
                       <div className={`p-2.5 rounded-xl ${kpi.bg}`}>
                         <Icon className={`h-4 w-4 ${kpi.color}`} />

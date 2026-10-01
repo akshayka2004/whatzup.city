@@ -164,9 +164,14 @@ export default function SuperAdminBusinessesPage() {
     <SuperAdminLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Businesses</h1>
-            <p className="text-muted-foreground text-sm mt-1">Edit any business profile across the platform.</p>
+          <div className="flex items-center gap-3">
+            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <Building2 className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Businesses</h1>
+              <p className="text-muted-foreground text-sm mt-1">Edit any business profile across the platform.</p>
+            </div>
           </div>
           <Button onClick={fetchRows} variant="outline" size="sm" className="rounded-xl border-border text-muted-foreground hover:text-foreground gap-2">
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
@@ -208,7 +213,7 @@ export default function SuperAdminBusinessesPage() {
           ) : rows.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground"><Building2 className="h-8 w-8 opacity-30" /><p className="text-sm">No businesses found</p></div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="ui-scroll-x">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-secondary/40">
@@ -223,8 +228,8 @@ export default function SuperAdminBusinessesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((b) => (
-                    <tr key={b.id} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                  {rows.map((b, i) => (
+                    <tr key={b.id} className="ui-fade-up border-b border-border last:border-0 hover:bg-secondary/20 transition-colors" style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}>
                       <td className="px-5 py-3">
                         <p className="font-semibold text-foreground flex items-center gap-1.5">{b.name}{b.isVerified && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}</p>
                         {b.email && <p className="text-xs text-muted-foreground">{b.email}</p>}
@@ -282,8 +287,8 @@ export default function SuperAdminBusinessesPage() {
       {/* Edit modal */}
       {editing && form && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-2xl p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[88vh] overflow-y-auto">
-            <button onClick={() => setEditing(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"><X className="h-5 w-5" /></button>
+          <Card className="ui-pop w-full max-w-2xl p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[88vh] overflow-y-auto">
+            <button onClick={() => setEditing(null)} className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer"><X className="h-5 w-5" /></button>
             <h3 className="text-lg font-bold text-foreground mb-4">Edit Business</h3>
 
             <div className="grid md:grid-cols-2 gap-4">
@@ -344,8 +349,8 @@ export default function SuperAdminBusinessesPage() {
       {/* Delete confirm modal */}
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
-            <button onClick={() => setConfirmDelete(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"><X className="h-5 w-5" /></button>
+          <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setConfirmDelete(null)} className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer"><X className="h-5 w-5" /></button>
             <div className="flex items-center gap-3 mb-3">
               <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
                 <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -373,8 +378,8 @@ export default function SuperAdminBusinessesPage() {
       {/* QR preview / download modal */}
       {qrBiz && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setQrBiz(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"><X className="h-5 w-5" /></button>
+          <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setQrBiz(null)} className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer"><X className="h-5 w-5" /></button>
             <h3 className="text-lg font-bold text-foreground mb-1">{qrBiz.name}&apos;s QR code</h3>
             <p className="text-xs text-muted-foreground mb-4">Preview, print or download it for the business if they need a replacement.</p>
             <BusinessQrCard

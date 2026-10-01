@@ -157,10 +157,11 @@ export default function ReportsPage() {
               <p className="text-sm text-muted-foreground">All content reports resolved.</p>
             </Card>
           ) : (
-            filtered.map((report) => (
+            filtered.map((report, i) => (
               <Card
                 key={report.id}
-                className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all duration-300 relative overflow-hidden group"
+                className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all duration-300 relative overflow-hidden group ui-fade-up"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -209,7 +210,7 @@ export default function ReportsPage() {
         {/* ── INVESTIGATE/VIEW REPORT MODAL ────────────────────────── */}
         {viewingReport && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto ui-pop">
               <button
                 onClick={() => setViewingReport(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -240,7 +241,7 @@ export default function ReportsPage() {
                 </div>
                 <div className="bg-secondary p-4 rounded-xl border border-border">
                   <p className="text-xs text-muted-foreground font-semibold mb-2">Resolution Status</p>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <button
                       onClick={() => handleUpdateStatus(viewingReport.id, 'Pending')}
                       className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
@@ -299,7 +300,7 @@ export default function ReportsPage() {
         {/* ── DISMISS REPORT MODAL ─────────────────────────────────── */}
         {deletingReport && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto ui-pop">
               <button
                 onClick={() => setDeletingReport(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"

@@ -192,12 +192,13 @@ export default function AdminDashboardPage() {
 
         {/* Stats Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stats.map((stat) => {
+          {stats.map((stat, i) => {
             const Icon = stat.icon;
             const card = (
               <Card
                 key={stat.label}
-                className="p-6 rounded-2xl hover:shadow-lg transition-all duration-300 border-border bg-card/60 backdrop-blur-xl relative overflow-hidden group cursor-pointer"
+                className="ui-fade-up ui-press p-6 rounded-2xl hover:shadow-lg transition-all duration-300 border-border bg-card/60 backdrop-blur-xl relative overflow-hidden group cursor-pointer"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors pointer-events-none" />
                 <div className="flex items-center justify-between mb-4">
@@ -287,10 +288,11 @@ export default function AdminDashboardPage() {
                 <p className="text-xs text-muted-foreground py-6 text-center">No audit events yet.</p>
               ) : (
                 <div className="space-y-3">
-                  {auditLogs.map((log: any) => (
+                  {auditLogs.map((log: any, i: number) => (
                     <div
                       key={log.id}
-                      className="flex gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors border border-transparent hover:border-border"
+                      className="ui-fade-up flex gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors border border-transparent hover:border-border"
+                      style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                     >
                       <div className="w-1.5 h-10 rounded-full bg-primary flex-shrink-0" />
                       <div className="flex-1 min-w-0">

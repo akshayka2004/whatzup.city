@@ -245,8 +245,12 @@ export default function BillModerationPage() {
             { label: 'Approved', value: loading ? '…' : approvedCount, icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10' },
             { label: 'Rejected', value: loading ? '…' : rejectedCount, icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10' },
             { label: 'Fraud Flagged', value: loading ? '…' : flaggedCount, icon: ShieldAlert, color: 'text-warning', bg: 'bg-warning/10' },
-          ].map((stat) => (
-            <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
+          ].map((stat, i) => (
+            <Card
+              key={stat.label}
+              className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl ui-fade-up"
+              style={{ animationDelay: `${i * 0.05}s` }}
+            >
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs text-muted-foreground">{stat.label}</span>
                 <div className={cn('h-7 w-7 rounded-lg flex items-center justify-center', stat.bg)}>
@@ -309,16 +313,17 @@ export default function BillModerationPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {filteredBills.map((bill) => {
+            {filteredBills.map((bill, i) => {
               const statusCfg = STATUS_CONFIG[bill.status as BillStatus];
               return (
                 <Card
                   key={bill.id}
                   className={cn(
-                    'p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all cursor-pointer',
+                    'p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all duration-200 ease-out cursor-pointer ui-fade-up hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100',
                     selectedBill?.id === bill.id && 'ring-1 ring-primary/50 bg-primary/5',
                     bill.fraudScore >= 0.6 && 'border-l-2 border-l-destructive/50',
                   )}
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                   onClick={() => setSelectedBill(selectedBill?.id === bill.id ? null : bill)}
                 >
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
@@ -382,7 +387,7 @@ export default function BillModerationPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => { setSelectedBill(bill); setActionModal('reupload'); }}
-                            className="h-9 rounded-xl border-info/20 text-info hover:bg-info/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
+                            className="h-10 rounded-xl border-info/20 text-info hover:bg-info/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                           >
                             <RefreshCw className="h-3.5 w-3.5 mr-1" /> Re-upload
                           </Button>
@@ -390,14 +395,14 @@ export default function BillModerationPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => { setSelectedBill(bill); setActionModal('reject'); }}
-                            className="h-9 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
+                            className="h-10 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                           >
                             <X className="h-3.5 w-3.5 mr-1" /> Reject
                           </Button>
                           <Button
                             size="sm"
                             onClick={() => { setSelectedBill(bill); setActionModal('approve'); }}
-                            className="h-9 rounded-xl bg-success hover:bg-success text-white text-xs px-3 cursor-pointer flex-1 lg:flex-none"
+                            className="h-10 rounded-xl bg-success hover:bg-success text-white text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                           >
                             <Check className="h-3.5 w-3.5 mr-1" /> Approve
                           </Button>
@@ -410,7 +415,7 @@ export default function BillModerationPage() {
                             <Button
                               size="sm"
                               onClick={() => { setSelectedBill(bill); setActionModal('override'); }}
-                              className="h-9 rounded-xl bg-primary hover:bg-primary text-white text-xs px-3 cursor-pointer flex-1 lg:flex-none"
+                              className="h-10 rounded-xl bg-primary hover:bg-primary text-white text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                             >
                               <Shield className="h-3.5 w-3.5 mr-1" /> Override
                             </Button>
@@ -419,7 +424,7 @@ export default function BillModerationPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => { setSelectedBill(bill); setActionModal('reject'); }}
-                            className="h-9 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
+                            className="h-10 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
                           >
                             <X className="h-3.5 w-3.5 mr-1" /> Reject
                           </Button>
@@ -513,7 +518,7 @@ export default function BillModerationPage() {
         {/* ── ACTION MODAL ──────────────────────────────────── */}
         {actionModal && selectedBill && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto ui-pop">
               <div className={cn(
                 'mx-auto h-12 w-12 rounded-full flex items-center justify-center mb-4',
                 actionModal === 'approve' || actionModal === 'override' ? 'bg-success/10 text-success'

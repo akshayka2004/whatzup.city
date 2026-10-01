@@ -8,7 +8,7 @@ export default function CampaignsPage() {
   return (
     <BusinessLayout>
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Card className="w-full max-w-md p-10 rounded-2xl border-border bg-card/40 backdrop-blur-xl text-center">
+        <Card className="ui-pop w-full max-w-md p-10 rounded-2xl border-border bg-card/40 backdrop-blur-xl text-center">
           <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
             <Megaphone className="h-8 w-8 text-primary" />
           </div>

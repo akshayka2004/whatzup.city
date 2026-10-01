@@ -218,7 +218,7 @@ export default function SupportPage() {
               </Card>
             )}
 
-            {filtered.map((ticket) => {
+            {filtered.map((ticket, i) => {
               const cfg = STATUS_CONFIG[ticket.status];
               const StatusIcon = cfg.icon;
               const active = selected?.id === ticket.id;
@@ -227,9 +227,10 @@ export default function SupportPage() {
                   key={ticket.id}
                   onClick={() => { setSelected(ticket); setShowNew(false); }}
                   className={cn(
-                    'p-4 rounded-2xl border cursor-pointer transition-all hover:shadow-md',
+                    'p-4 rounded-2xl border cursor-pointer transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ui-fade-up',
                     active ? 'border-primary/40 bg-primary/5' : 'border-border bg-card/60',
                   )}
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2 break-words">{ticket.title}</p>
@@ -254,7 +255,7 @@ export default function SupportPage() {
           <div className="lg:col-span-2">
             {/* New Ticket Form */}
             {showNew && (
-              <Card className="p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl">
+              <Card className="p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl ui-pop">
                 <h2 className="text-base font-bold text-foreground mb-5 flex items-center gap-2">
                   <Plus className="h-4 w-4 text-primary" />
                   New Support Ticket
@@ -315,7 +316,7 @@ export default function SupportPage() {
 
             {/* Ticket Thread */}
             {selected && !showNew && (
-              <Card className="rounded-2xl border-border bg-card/60 backdrop-blur-xl flex flex-col" style={{ minHeight: '520px' }}>
+              <Card className="rounded-2xl border-border bg-card/60 backdrop-blur-xl flex flex-col min-h-[420px] sm:min-h-[520px] ui-pop">
                 {/* Header */}
                 <div className="p-5 border-b border-border">
                   <div className="flex items-start justify-between gap-3">

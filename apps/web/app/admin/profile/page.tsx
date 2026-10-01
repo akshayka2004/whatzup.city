@@ -126,7 +126,7 @@ export default function AdminProfilePage() {
       <div className="max-w-3xl mx-auto space-y-6">
 
         {/* Hero Profile Card */}
-        <Card className="rounded-2xl border-border bg-card/40 backdrop-blur-xl relative overflow-hidden">
+        <Card className="rounded-2xl border-border bg-card/40 backdrop-blur-xl relative overflow-hidden ui-fade-up">
           <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-primary/10 via-transparent to-transparent pointer-events-none" />
           <div className="p-7 pt-9">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -135,7 +135,7 @@ export default function AdminProfilePage() {
                 <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-accent text-primary-foreground flex items-center justify-center text-3xl font-extrabold shadow-lg ring-4 ring-primary/15">
                   {initials}
                 </div>
-                <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-warning flex items-center justify-center shadow-md">
+                <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-warning flex items-center justify-center shadow-md ui-glow">
                   <ShieldAlert className="h-3.5 w-3.5 text-black" />
                 </div>
               </div>
@@ -162,7 +162,7 @@ export default function AdminProfilePage() {
                       <span className="font-mono text-sm font-bold text-primary tracking-widest">{referralCode}</span>
                       <button
                         onClick={() => { navigator.clipboard.writeText(referralCode); setReferralCopied(true); setTimeout(() => setReferralCopied(false), 2000); }}
-                        className="text-primary hover:text-primary/70 cursor-pointer transition-colors"
+                        className="text-primary hover:text-primary/70 cursor-pointer transition-colors p-1.5 -m-1.5 rounded-lg hover:bg-primary/10 ui-press"
                         title="Copy referral code"
                       >
                         {referralCopied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
@@ -212,18 +212,18 @@ export default function AdminProfilePage() {
 
         {/* Save banners */}
         {saveMsg && (
-          <div className="p-3 rounded-xl bg-success/10 border border-success/20 text-success text-sm font-medium flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-success/10 border border-success/20 text-success text-sm font-medium flex items-center gap-2 ui-pop">
             <Check className="h-4 w-4" /> {saveMsg}
           </div>
         )}
         {saveErr && (
-          <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium flex items-center gap-2 ui-pop">
             <X className="h-4 w-4" /> {saveErr}
           </div>
         )}
 
         {/* Personal Information */}
-        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
+        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl ui-fade-up" style={{ animationDelay: '0.05s' }}>
           <h3 className="text-base font-bold text-foreground mb-5">Personal Information</h3>
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -259,7 +259,7 @@ export default function AdminProfilePage() {
         </Card>
 
         {/* Account Settings */}
-        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
+        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl ui-fade-up" style={{ animationDelay: '0.1s' }}>
           <h3 className="text-base font-bold text-foreground mb-4">Account Settings</h3>
           <div className="space-y-2">
             <Button
@@ -281,7 +281,7 @@ export default function AdminProfilePage() {
         </Card>
 
         {/* Support & Legal */}
-        <Card className="p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
+        <Card className="p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl ui-fade-up" style={{ animationDelay: '0.15s' }}>
           <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <HeadphonesIcon className="h-4 w-4 text-primary" />
             Help & Support

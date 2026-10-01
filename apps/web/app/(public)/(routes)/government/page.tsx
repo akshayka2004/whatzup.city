@@ -176,20 +176,21 @@ export default function GovernmentPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {notices.map((notice) => (
+            {notices.map((notice, i) => (
               <div
                 key={notice.id}
-                className="rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:border-primary/25 hover:shadow-lg"
+                className="ui-fade-up rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:border-primary/25 hover:shadow-lg"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
               >
                 <div className="flex items-start gap-4">
-                  <div className="rounded-xl bg-primary/10 p-3 border border-primary/20">
+                  <div className="rounded-xl bg-primary/10 p-3 border border-primary/20 shrink-0">
                     <AlertCircle className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-foreground text-lg">{notice.title}</h3>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-2 flex-wrap">
+                      <h3 className="font-semibold text-foreground text-lg break-words">{notice.title}</h3>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${
+                        className={`px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 ${
                           typeColors[notice.type] || typeColors.Announcement
                         }`}
                       >

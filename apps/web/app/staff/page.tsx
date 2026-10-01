@@ -29,11 +29,18 @@ export default function StaffOverviewPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {LINKS.map((l) => {
+          {LINKS.map((l, i) => {
             const Icon = l.icon;
             return (
-              <Link key={l.href} href={l.href}>
-                <Card className="p-5 rounded-2xl border-border bg-card hover:border-primary/30 hover:bg-secondary/40 transition-colors cursor-pointer h-full">
+              <Link
+                key={l.href}
+                href={l.href}
+                className="block ui-fade-up"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+              >
+                <Card
+                  className="p-5 rounded-2xl border-border bg-card hover:border-primary/30 hover:bg-secondary/40 transition-all duration-200 ease-out cursor-pointer h-full hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100"
+                >
                   <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-3">
                     <Icon className="h-5 w-5" />
                   </div>

@@ -354,12 +354,13 @@ export default function BusinessDashboardPage() {
 
         {/* ── Stats Grid — real DB data ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {stats.map((stat) => {
+          {stats.map((stat, i) => {
             const Icon = stat.icon;
             return (
               <Card
                 key={stat.label}
-                className="p-4 md:p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
+                className="ui-fade-up p-4 md:p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all duration-300 relative overflow-hidden group"
+                style={{ animationDelay: `${i * 0.05}s` }}
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors pointer-events-none" />
                 <div className="flex items-center justify-between mb-3 md:mb-4">
@@ -483,10 +484,11 @@ export default function BusinessDashboardPage() {
             </Card>
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
-              {offers.map((offer) => (
+              {offers.map((offer, i) => (
                 <Card
                   key={offer.id}
-                  className="p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden group"
+                  className="ui-fade-up p-6 rounded-2xl transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden group"
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
                   <div className="flex items-center justify-between">
@@ -504,7 +506,7 @@ export default function BusinessDashboardPage() {
                           {offer.status === 'ACTIVE' ? 'Active' : offer.status === 'PAUSED' ? 'Paused' : offer.status}
                         </button>
                       </div>
-                      <div className="flex items-center gap-6 text-sm mt-3">
+                      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm mt-3">
                         <div>
                           <p className="text-xs text-muted-foreground">Discount</p>
                           <p className="font-bold text-foreground text-base">
@@ -569,10 +571,10 @@ export default function BusinessDashboardPage() {
         {/* ── CREATE MODAL ── */}
         {isCreateOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
+            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setIsCreateOpen(false)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="absolute top-4 right-4 p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -631,10 +633,10 @@ export default function BusinessDashboardPage() {
         {/* ── EDIT MODAL ── */}
         {editingOffer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
+            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setEditingOffer(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="absolute top-4 right-4 p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -692,10 +694,10 @@ export default function BusinessDashboardPage() {
         {/* ── DELETE MODAL ── */}
         {deletingOffer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
+            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setDeletingOffer(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="absolute top-4 right-4 p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -725,10 +727,10 @@ export default function BusinessDashboardPage() {
         {/* ── VIEW MODAL ── */}
         {viewingOffer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
+            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setViewingOffer(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="absolute top-4 right-4 p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -784,10 +786,10 @@ export default function BusinessDashboardPage() {
         {/* ── SHARE MODAL ── */}
         {isShareOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
+            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setIsShareOpen(false)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="absolute top-4 right-4 p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>

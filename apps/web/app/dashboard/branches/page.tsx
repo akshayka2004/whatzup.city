@@ -332,7 +332,7 @@ export default function BranchesPage() {
   return (
     <BusinessLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Branches</h1>
             <p className="text-muted-foreground text-sm mt-0.5">Manage all your business locations.</p>
@@ -359,10 +359,11 @@ export default function BranchesPage() {
         ) : null}
 
         <div className="grid gap-4">
-          {branches.map((branch) => (
+          {branches.map((branch, i) => (
             <Card
               key={branch.id}
-              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all group relative overflow-hidden"
+              className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all group relative overflow-hidden"
+              style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
 
@@ -456,10 +457,10 @@ export default function BranchesPage() {
         {/* Add modal */}
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-xl p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
+            <Card className="ui-pop w-full max-w-xl p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-lg font-bold text-foreground">Add Branch Location</h3>
-                <button onClick={() => setIsAddOpen(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
+                <button onClick={() => setIsAddOpen(false)} className="p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -482,10 +483,10 @@ export default function BranchesPage() {
         {/* Edit modal */}
         {editingBranch && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-xl p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
+            <Card className="ui-pop w-full max-w-xl p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-lg font-bold text-foreground">Edit Branch</h3>
-                <button onClick={() => setEditingBranch(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
+                <button onClick={() => setEditingBranch(null)} className="p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -508,7 +509,7 @@ export default function BranchesPage() {
         {/* Delete confirm */}
         {deletingBranch && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl text-center">
+            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl text-center max-h-[90vh] overflow-y-auto">
               <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>

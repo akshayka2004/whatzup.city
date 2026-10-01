@@ -41,6 +41,7 @@ function StatCard({
   color,
   bg,
   loading,
+  delay,
 }: {
   label: string;
   value: string | number;
@@ -49,9 +50,13 @@ function StatCard({
   color: string;
   bg: string;
   loading: boolean;
+  delay?: number;
 }) {
   return (
-    <Card className="p-4 md:p-5 rounded-2xl border-border bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all group relative overflow-hidden">
+    <Card
+      className="ui-fade-up p-4 md:p-5 rounded-2xl border-border bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all group relative overflow-hidden"
+      style={{ animationDelay: `${delay ?? 0}s` }}
+    >
       <div className="absolute top-0 right-0 w-28 h-28 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
       <div className={`inline-flex p-2 md:p-2.5 rounded-xl mb-2 md:mb-3 ${bg}`}>
         <Icon className={`h-4 w-4 ${color}`} />
@@ -260,7 +265,7 @@ export default function AnalyticsPage() {
             {/* ── KPI Cards ── */}
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
               {statCards.map((card, i) => (
-                <StatCard key={i} {...card} loading={loading} />
+                <StatCard key={i} {...card} loading={loading} delay={Math.min(i, 9) * 0.05} />
               ))}
             </div>
 
@@ -403,7 +408,8 @@ export default function AnalyticsPage() {
                   {recentRevs.map((rev: any, i: number) => (
                     <div
                       key={i}
-                      className="flex gap-4 p-4 rounded-xl bg-secondary border border-border"
+                      className="ui-fade-up flex gap-4 p-4 rounded-xl bg-secondary border border-border"
+                      style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                     >
                       <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold text-sm">
                         {rev.author?.charAt(0)?.toUpperCase() ?? 'C'}

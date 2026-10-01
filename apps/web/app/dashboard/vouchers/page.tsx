@@ -181,7 +181,7 @@ export default function VouchersPage() {
         </div>
 
         {/* Redeem panel */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-5 ui-fade-up">
           <div className="flex items-center gap-2 mb-3">
             <ScanLine className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-bold">Redeem a customer voucher</h2>
@@ -207,7 +207,7 @@ export default function VouchersPage() {
         </div>
 
         {/* Redeem panel — platform-wide points vouchers, redeemable by any business */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-5 ui-fade-up" style={{ animationDelay: '0.05s' }}>
           <div className="flex items-center gap-2 mb-3">
             <ScanLine className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-bold">Redeem a platform voucher</h2>
@@ -236,7 +236,7 @@ export default function VouchersPage() {
         </div>
 
         {/* Platform-voucher redemptions at this business */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-border bg-card p-5 ui-fade-up" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-center justify-between gap-3 mb-1">
             <div className="flex items-center gap-2">
               <Gift className="h-4 w-4 text-primary" />
@@ -262,8 +262,12 @@ export default function VouchersPage() {
             <p className="text-sm text-muted-foreground text-center py-4">No platform vouchers redeemed here yet.</p>
           ) : (
             <div className="space-y-2">
-              {platformRedemptions.map((r) => (
-                <div key={r.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-secondary/60 border border-border">
+              {platformRedemptions.map((r, i) => (
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between gap-3 p-3 rounded-xl bg-secondary/60 border border-border ui-fade-up"
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}
+                >
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{r.customerName}</p>
                     <p className="text-xs text-muted-foreground truncate">{r.tierTitle}</p>
@@ -286,10 +290,10 @@ export default function VouchersPage() {
 
         {/* Create form */}
         {showForm && (
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+          <div className="rounded-2xl border border-border bg-card p-5 space-y-4 ui-pop">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold">New voucher</h2>
-              <button onClick={() => setShowForm(false)} aria-label="Close" className="text-muted-foreground hover:text-foreground">
+              <button onClick={() => setShowForm(false)} aria-label="Close" className="text-muted-foreground hover:text-foreground p-2 -m-2 rounded-lg hover:bg-secondary transition-colors">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -358,8 +362,12 @@ export default function VouchersPage() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {vouchers.map((v) => (
-              <div key={v.id} className="rounded-2xl border border-border bg-card p-5">
+            {vouchers.map((v, i) => (
+              <div
+                key={v.id}
+                className="rounded-2xl border border-border bg-card p-5 transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-xl motion-reduce:hover:translate-y-0 ui-fade-up"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-foreground truncate">{v.title}</h3>
@@ -383,10 +391,10 @@ export default function VouchersPage() {
                   <span>ends {new Date(v.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
                 </div>
                 <div className="mt-4 flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => toggleStatus(v)} className="flex-1">
+                  <Button variant="outline" size="sm" onClick={() => toggleStatus(v)} className="h-10 flex-1">
                     {v.status === 'ACTIVE' ? 'Pause' : 'Activate'}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => remove(v.id)} className="text-destructive hover:bg-destructive/10">
+                  <Button variant="outline" size="sm" onClick={() => remove(v.id)} className="h-10 w-10 p-0 shrink-0 text-destructive hover:bg-destructive/10">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>

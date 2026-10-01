@@ -50,7 +50,7 @@ export default function StaffBusinessesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, city, phone…"
-            className="pl-9 h-10 bg-background border-input rounded-xl text-foreground"
+            className="pl-9 h-11 bg-background border-input rounded-xl text-foreground"
           />
         </div>
 
@@ -62,9 +62,9 @@ export default function StaffBusinessesPage() {
             <p className="text-sm text-muted-foreground">No businesses found.</p>
           </Card>
         ) : (
-          <Card className="rounded-2xl border-border bg-card overflow-hidden">
+          <Card className="rounded-2xl border-border bg-card overflow-hidden ui-fade-up">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[560px]">
                 <thead>
                   <tr className="border-b border-border bg-secondary/40">
                     <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Business</th>

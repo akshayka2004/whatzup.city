@@ -204,14 +204,14 @@ export default function ProductsPage() {
     <BusinessLayout>
       <div>
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Products</h1>
             <p className="text-muted-foreground">Manage your product catalog</p>
           </div>
           <Button
             onClick={handleOpenAdd}
-            className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground cursor-pointer"
+            className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground cursor-pointer shrink-0"
           >
             <Plus className="h-4 w-4" /> Add Product
           </Button>
@@ -230,8 +230,12 @@ export default function ProductsPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {products.map((product) => (
-              <Card key={product.id} className="p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden">
+            {products.map((product, i) => (
+              <Card
+                key={product.id}
+                className="p-6 rounded-2xl transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden ui-fade-up"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+              >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
@@ -258,13 +262,13 @@ export default function ProductsPage() {
                     )}
                   </div>
                   <div className="flex gap-2 shrink-0 ml-4">
-                    <Button onClick={() => setViewingProduct(product)} size="icon" variant="outline" className="rounded-xl border-border hover:bg-muted text-foreground h-9 w-9 cursor-pointer">
+                    <Button onClick={() => setViewingProduct(product)} size="icon" variant="outline" className="rounded-xl border-border hover:bg-muted text-foreground h-10 w-10 cursor-pointer">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button onClick={() => handleOpenEdit(product)} size="icon" variant="outline" className="rounded-xl border-border hover:bg-muted text-foreground h-9 w-9 cursor-pointer">
+                    <Button onClick={() => handleOpenEdit(product)} size="icon" variant="outline" className="rounded-xl border-border hover:bg-muted text-foreground h-10 w-10 cursor-pointer">
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button onClick={() => setDeletingProduct(product)} size="icon" variant="outline" className="rounded-xl border-destructive/20 hover:bg-destructive/10 text-destructive hover:text-destructive h-9 w-9 cursor-pointer">
+                    <Button onClick={() => setDeletingProduct(product)} size="icon" variant="outline" className="rounded-xl border-destructive/20 hover:bg-destructive/10 text-destructive hover:text-destructive h-10 w-10 cursor-pointer">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -277,7 +281,7 @@ export default function ProductsPage() {
         {/* ── ADD MODAL ── */}
         {isAddOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto ui-pop">
               <button onClick={() => setIsAddOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
@@ -337,7 +341,7 @@ export default function ProductsPage() {
         {/* ── EDIT MODAL ── */}
         {editingProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto ui-pop">
               <button onClick={() => setEditingProduct(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
@@ -394,7 +398,7 @@ export default function ProductsPage() {
         {/* ── DELETE MODAL ── */}
         {deletingProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center ui-pop">
               <button onClick={() => setDeletingProduct(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
@@ -419,7 +423,7 @@ export default function ProductsPage() {
         {/* ── VIEW MODAL ── */}
         {viewingProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
+            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative ui-pop">
               <button onClick={() => setViewingProduct(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="h-5 w-5" />
               </button>

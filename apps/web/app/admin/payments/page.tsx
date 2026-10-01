@@ -72,14 +72,16 @@ export default function AdminPaymentsPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-            <Receipt className="h-6 w-6 text-primary" />
-            Payment Verification
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Review uploaded payment screenshots. Verifying activates the business's subscription.
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0 ui-glow">
+            <Receipt className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Payment Verification</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Review uploaded payment screenshots. Verifying activates the business's subscription.
+            </p>
+          </div>
         </div>
 
         {msg && <p className="text-sm font-medium text-primary">{msg}</p>}
@@ -96,8 +98,8 @@ export default function AdminPaymentsPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {rows.map((p) => (
-              <Card key={p.id} className="p-5">
+            {rows.map((p, i) => (
+              <Card key={p.id} className="p-5 ui-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
                 <div className="grid md:grid-cols-[220px_1fr] gap-5">
                   {/* Proof */}
                   <div>
@@ -153,7 +155,7 @@ export default function AdminPaymentsPage() {
                     </div>
 
                     {rejectingId === p.id ? (
-                      <div className="space-y-2">
+                      <div className="space-y-2 ui-pop">
                         <Input
                           value={reason}
                           onChange={(e) => setReason(e.target.value)}

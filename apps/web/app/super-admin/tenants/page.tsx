@@ -106,10 +106,11 @@ export default function TenantsPage() {
         )}
 
         <div className="space-y-4">
-          {tenants.map((tenant) => (
+          {tenants.map((tenant, i) => (
             <Card
               key={tenant.id}
-              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+              className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+              style={{ animationDelay: `${Math.min(i, 10) * 0.05}s` }}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1">
@@ -146,7 +147,7 @@ export default function TenantsPage() {
                   <Button
                     onClick={() => setManagingTenant(tenant)}
                     variant="outline"
-                    className="rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer"
+                    className="ui-press rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer"
                     size="sm"
                   >
                     Manage
@@ -160,7 +161,7 @@ export default function TenantsPage() {
         {/* ── TENANT DEEP DIVE MODAL ───────────────────────── */}
         {managingTenant && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-2xl p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <Card className="ui-pop w-full max-w-2xl p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setManagingTenant(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -181,7 +182,7 @@ export default function TenantsPage() {
               </div>
 
               {/* Stats Deep Dive */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                 <div className="bg-secondary/50 p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
                     <span className="text-[10px] uppercase font-bold tracking-wider">
@@ -214,7 +215,7 @@ export default function TenantsPage() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 <div className="bg-secondary/50 p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
                     <span className="text-[10px] uppercase font-bold tracking-wider">

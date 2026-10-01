@@ -106,8 +106,10 @@ export default function FraudEscalationsPage() {
 
         {/* ── HEADER ─────────────────────────────────────────── */}
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <ShieldAlert className="h-6 w-6 text-destructive" />
+          <div className="flex items-center gap-3 flex-wrap mb-1">
+            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-destructive/10 text-destructive shrink-0">
+              <ShieldAlert className="h-5 w-5" />
+            </div>
             <h1 className="text-2xl font-bold text-foreground">Fraud Escalation Queue</h1>
             <span className="px-2 py-0.5 rounded-full bg-destructive/15 text-destructive text-xs font-semibold">
               {bills.length} Escalated
@@ -174,16 +176,17 @@ export default function FraudEscalationsPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {filtered.map((item) => {
+            {filtered.map((item, i) => {
               const fraudPct = Math.round(item.fraudScore * 100);
               return (
                 <Card
                   key={item.id}
                   className={cn(
-                    'p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all',
+                    'ui-fade-up p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all',
                     fraudPct >= 80 && 'border-l-2 border-l-destructive/60',
                     fraudPct >= 60 && fraudPct < 80 && 'border-l-2 border-l-warning/50',
                   )}
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                 >
                   <div className="flex flex-col lg:flex-row gap-5">
                     <div className="flex-1 space-y-3">
@@ -232,14 +235,14 @@ export default function FraudEscalationsPage() {
                         onClick={() => setReviewingItem(item)}
                         size="sm"
                         variant="outline"
-                        className="rounded-xl border-border text-foreground hover:bg-muted gap-1.5 text-xs h-8 cursor-pointer"
+                        className="rounded-xl border-border text-foreground hover:bg-muted gap-1.5 text-xs h-10 cursor-pointer"
                       >
                         <Eye className="h-3.5 w-3.5" /> View Details
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 gap-1.5 text-xs h-8"
+                        className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 gap-1.5 text-xs h-10"
                         disabled
                         title="Super Admin action only"
                       >
@@ -256,7 +259,7 @@ export default function FraudEscalationsPage() {
         {/* ── DETAIL MODAL ─────────────────────────────────────── */}
         {reviewingItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl">
+            <Card className="ui-pop w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <ShieldAlert className="h-4 w-4 text-destructive" />

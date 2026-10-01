@@ -385,24 +385,24 @@ export default function BusinessSettingsPage() {
         </div>
 
         {savedMsg && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-success/10 border border-success/20 text-success text-sm font-semibold">
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-success/10 border border-success/20 text-success text-sm font-semibold ui-pop">
             <Check className="h-4 w-4" />
             {savedMsg}
           </div>
         )}
         {errMsg && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-semibold">
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-semibold ui-pop">
             <X className="h-4 w-4" />
             {errMsg}
           </div>
         )}
 
         {/* Business Logo */}
-        <Card className="p-6 rounded-2xl border-border bg-card">
+        <Card className="p-6 rounded-2xl border-border bg-card ui-fade-up">
           <h2 className="text-base font-bold text-foreground flex items-center gap-2 mb-5">
             <ImageIcon className="h-4 w-4 text-primary" /> Business Logo
           </h2>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-5 flex-wrap">
             <div className="h-20 w-20 rounded-2xl border border-border bg-secondary/60 overflow-hidden flex items-center justify-center shrink-0">
               {logoUrl ? (
                 <img src={logoUrl} alt="Business logo" className="h-full w-full object-contain" />
@@ -411,7 +411,7 @@ export default function BusinessSettingsPage() {
               )}
             </div>
             <div className="space-y-2">
-              <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold ${logoUploading ? 'opacity-60 pointer-events-none' : 'cursor-pointer'}`}>
+              <label className={`inline-flex h-11 items-center gap-2 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors ${logoUploading ? 'opacity-60 pointer-events-none' : 'cursor-pointer'}`}>
                 {logoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                 {logoUrl ? 'Replace Logo' : 'Upload Logo'}
                 <input
@@ -428,8 +428,8 @@ export default function BusinessSettingsPage() {
         </Card>
 
         {/* Business Profile */}
-        <Card className="p-6 rounded-2xl border-border bg-card">
-          <div className="flex items-center justify-between mb-5">
+        <Card className="p-6 rounded-2xl border-border bg-card ui-fade-up" style={{ animationDelay: '0.05s' }}>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Building2 className="h-4 w-4 text-primary" />
               Business Profile
@@ -439,7 +439,7 @@ export default function BusinessSettingsPage() {
                 onClick={() => { setTempProfile(profile); setEditing(true); setErrMsg(''); }}
                 variant="outline"
                 size="sm"
-                className="rounded-xl border-border text-foreground gap-1.5 cursor-pointer hover:bg-secondary"
+                className="h-10 rounded-xl border-border text-foreground gap-1.5 cursor-pointer hover:bg-secondary"
               >
                 <Edit2 className="h-3.5 w-3.5" /> Edit
               </Button>
@@ -449,7 +449,7 @@ export default function BusinessSettingsPage() {
                   onClick={handleSaveProfile}
                   disabled={saving}
                   size="sm"
-                  className="rounded-xl bg-success hover:bg-success text-white gap-1.5 cursor-pointer disabled:opacity-60"
+                  className="h-10 rounded-xl bg-success hover:bg-success text-white gap-1.5 cursor-pointer disabled:opacity-60"
                 >
                   {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                   Save
@@ -458,7 +458,7 @@ export default function BusinessSettingsPage() {
                   onClick={() => { setTempProfile(profile); setEditing(false); setErrMsg(''); }}
                   variant="outline"
                   size="sm"
-                  className="rounded-xl border-border text-foreground cursor-pointer hover:bg-secondary"
+                  className="h-10 w-10 rounded-xl border-border text-foreground cursor-pointer hover:bg-secondary"
                 >
                   <X className="h-3.5 w-3.5" />
                 </Button>
@@ -579,8 +579,8 @@ export default function BusinessSettingsPage() {
         </Card>
 
         {/* Social Media Links */}
-        <Card className="p-6 rounded-2xl border-border bg-card">
-          <div className="flex items-center justify-between mb-5">
+        <Card className="p-6 rounded-2xl border-border bg-card ui-fade-up" style={{ animationDelay: '0.1s' }}>
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Globe className="h-4 w-4 text-primary" />
               Social Media Links
@@ -588,7 +588,7 @@ export default function BusinessSettingsPage() {
             <Button
               onClick={() => setAddingLink(true)}
               size="sm"
-              className="rounded-xl gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold cursor-pointer"
+              className="h-10 rounded-xl gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
               Add Link
@@ -602,11 +602,15 @@ export default function BusinessSettingsPage() {
           )}
 
           <div className="space-y-2">
-            {socialLinks.map((link) => {
+            {socialLinks.map((link, i) => {
               const cfg = getPlatformConfig(link.platform);
               const Icon = cfg.icon;
               return (
-                <div key={link.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/60 border border-border">
+                <div
+                  key={link.id}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-secondary/60 border border-border ui-fade-up"
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}
+                >
                   <Icon className={`h-4 w-4 ${cfg.color} shrink-0`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-muted-foreground">
@@ -623,7 +627,7 @@ export default function BusinessSettingsPage() {
                   </div>
                   <button
                     onClick={() => handleRemoveLink(link.id)}
-                    className="text-destructive hover:text-destructive cursor-pointer shrink-0"
+                    className="text-destructive hover:text-destructive cursor-pointer shrink-0 p-2 -m-2 rounded-lg hover:bg-destructive/10 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -633,7 +637,7 @@ export default function BusinessSettingsPage() {
           </div>
 
           {addingLink && (
-            <form onSubmit={handleAddLink} className="mt-4 p-4 rounded-xl border border-border bg-secondary/60 space-y-3">
+            <form onSubmit={handleAddLink} className="mt-4 p-4 rounded-xl border border-border bg-secondary/60 space-y-3 ui-pop">
               <div>
                 <label className="text-xs font-medium text-muted-foreground block mb-1.5">Platform</label>
                 <select
@@ -691,8 +695,8 @@ export default function BusinessSettingsPage() {
         </Card>
 
         {/* ── Registration / KYC details ───────────────────────────── */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="space-y-4 ui-fade-up" style={{ animationDelay: '0.15s' }}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-foreground tracking-tight">Registration details</h2>
               <p className="text-sm text-muted-foreground">Company, PAN/GST, contacts, and category status.</p>
@@ -703,7 +707,7 @@ export default function BusinessSettingsPage() {
                   {regMsg}
                 </span>
               )}
-              <Button onClick={handleSaveReg} disabled={savingReg || !business} className="gap-1.5">
+              <Button onClick={handleSaveReg} disabled={savingReg || !business} className="gap-1.5 shrink-0">
                 {savingReg ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Save details
               </Button>
@@ -718,8 +722,8 @@ export default function BusinessSettingsPage() {
 
         {/* ── Hotel classification & amenities ─────────────────────── */}
         {isHotel && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="space-y-4 ui-fade-up" style={{ animationDelay: '0.2s' }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold text-foreground tracking-tight">Hotel classification & amenities</h2>
                 <p className="text-sm text-muted-foreground">
@@ -732,7 +736,7 @@ export default function BusinessSettingsPage() {
                     {hotelMsg}
                   </span>
                 )}
-                <Button onClick={handleSaveHotel} disabled={savingHotel || !business} className="gap-1.5">
+                <Button onClick={handleSaveHotel} disabled={savingHotel || !business} className="gap-1.5 shrink-0">
                   {savingHotel ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   Save details
                 </Button>

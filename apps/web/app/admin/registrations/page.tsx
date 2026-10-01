@@ -141,10 +141,10 @@ export default function AdminRegistrationsPage() {
             { label: 'Total Submissions', value: stats.total, icon: Users, color: 'text-primary' },
             { label: 'Business Interests', value: stats.businesses, icon: Building2, color: 'text-info' },
             { label: 'Individual Interests', value: stats.individuals, icon: UserCheck, color: 'text-primary' },
-          ].map((stat) => {
+          ].map((stat, i) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/60">
+              <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/60 ui-fade-up" style={{ animationDelay: `${i * 0.05}s` }}>
                 <div className="flex items-center gap-3">
                   <Icon className={`h-5 w-5 ${stat.color}`} />
                   <div>
@@ -159,7 +159,7 @@ export default function AdminRegistrationsPage() {
 
         {/* Filter bar */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex gap-1 p-1 rounded-xl bg-secondary border border-border">
+          <div className="flex flex-wrap gap-1 p-1 rounded-xl bg-secondary border border-border">
             {TABS.map((t) => {
               const Icon = t.icon;
               return (
@@ -208,11 +208,11 @@ export default function AdminRegistrationsPage() {
           ) : (
             <div className="divide-y divide-border">
               {tab === 'businesses'
-                ? data.map((item) => (
-                    <BusinessRow key={item.id} item={item} expanded={expanded} setExpanded={setExpanded} />
+                ? data.map((item, i) => (
+                    <BusinessRow key={item.id} item={item} index={i} expanded={expanded} setExpanded={setExpanded} />
                   ))
-                : data.map((item) => (
-                    <IndividualRow key={item.id} item={item} expanded={expanded} setExpanded={setExpanded} />
+                : data.map((item, i) => (
+                    <IndividualRow key={item.id} item={item} index={i} expanded={expanded} setExpanded={setExpanded} />
                   ))}
             </div>
           )}
@@ -253,19 +253,21 @@ export default function AdminRegistrationsPage() {
 
 function BusinessRow({
   item,
+  index,
   expanded,
   setExpanded,
 }: {
   item: any;
+  index?: number;
   expanded: string | null;
   setExpanded: (id: string | null) => void;
 }) {
   const isOpen = expanded === item.id;
   return (
-    <div>
+    <div className="ui-fade-up" style={{ animationDelay: `${Math.min(index ?? 0, 8) * 0.04}s` }}>
       <button
         onClick={() => setExpanded(isOpen ? null : item.id)}
-        className="w-full text-left px-5 py-4 hover:bg-foreground/[0.04] transition-colors"
+        className="w-full text-left px-5 py-4 hover:bg-foreground/[0.04] transition-colors ui-press"
       >
         <div className="flex items-center gap-4 min-w-0">
           <InitialsAvatar name={item.businessName || '?'} type="business" />
@@ -297,7 +299,7 @@ function BusinessRow({
         </div>
       </button>
       {isOpen && (
-        <div className="bg-secondary border-t border-border px-5 py-5">
+        <div className="bg-secondary border-t border-border px-5 py-5 ui-pop">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
             <div className="space-y-3">
               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Business Info</p>
@@ -334,19 +336,21 @@ function BusinessRow({
 
 function IndividualRow({
   item,
+  index,
   expanded,
   setExpanded,
 }: {
   item: any;
+  index?: number;
   expanded: string | null;
   setExpanded: (id: string | null) => void;
 }) {
   const isOpen = expanded === item.id;
   return (
-    <div>
+    <div className="ui-fade-up" style={{ animationDelay: `${Math.min(index ?? 0, 8) * 0.04}s` }}>
       <button
         onClick={() => setExpanded(isOpen ? null : item.id)}
-        className="w-full text-left px-5 py-4 hover:bg-foreground/[0.04] transition-colors"
+        className="w-full text-left px-5 py-4 hover:bg-foreground/[0.04] transition-colors ui-press"
       >
         <div className="flex items-center gap-4 min-w-0">
           <InitialsAvatar name={item.name || '?'} type="individual" />
@@ -373,7 +377,7 @@ function IndividualRow({
         </div>
       </button>
       {isOpen && (
-        <div className="bg-secondary border-t border-border px-5 py-5">
+        <div className="bg-secondary border-t border-border px-5 py-5 ui-pop">
           <div className="grid sm:grid-cols-2 gap-6 text-sm">
             <div className="space-y-3">
               <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Personal Details</p>

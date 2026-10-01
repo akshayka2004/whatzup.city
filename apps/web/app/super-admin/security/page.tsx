@@ -36,10 +36,11 @@ export default function SuperAdminSecurityPage() {
         </div>
 
         <div className="space-y-4">
-          {tenantThreats.map((item) => (
+          {tenantThreats.map((item, i) => (
             <Card
               key={item.id}
-              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+              className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+              style={{ animationDelay: `${Math.min(i, 10) * 0.05}s` }}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -58,7 +59,7 @@ export default function SuperAdminSecurityPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 text-sm border-t sm:border-t-0 pt-4 sm:pt-0 border-border">
+                <div className="flex items-center gap-3 sm:gap-6 flex-wrap text-sm border-t sm:border-t-0 pt-4 sm:pt-0 border-border">
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                       item.severity === 'HIGH'
@@ -72,13 +73,13 @@ export default function SuperAdminSecurityPage() {
                     <Button
                       size="icon"
                       variant="outline"
-                      className="h-8 w-8 rounded-lg border-border text-foreground"
+                      className="ui-press h-10 w-10 rounded-lg border-border text-foreground"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
                     <Button
                       size="sm"
-                      className="rounded-lg h-8 px-3 py-1 bg-primary hover:bg-primary text-white font-medium text-xs"
+                      className="ui-press rounded-lg h-10 px-3 py-1 bg-primary hover:bg-primary text-white font-medium text-xs"
                     >
                       Block Tenant
                     </Button>

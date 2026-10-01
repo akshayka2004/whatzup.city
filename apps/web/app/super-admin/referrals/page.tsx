@@ -34,10 +34,14 @@ export default function SuperAdminReferralsPage() {
           { label: 'Total Referred Users', value: loading ? '…' : totalReferred.toLocaleString(), icon: Users, color: 'text-primary bg-primary/10' },
           { label: 'Active Referrers', value: loading ? '…' : leaderboard.length.toLocaleString(), icon: Share2, color: 'text-info bg-info/10' },
           { label: 'Top Referral Count', value: loading ? '…' : (leaderboard[0]?.referralCount ?? 0).toLocaleString(), icon: TrendingUp, color: 'text-success bg-success/10' },
-        ].map((stat) => {
+        ].map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.label} className="p-5 rounded-2xl border-border bg-card flex items-center gap-4">
+            <Card
+              key={stat.label}
+              className="ui-fade-up p-5 rounded-2xl border-border bg-card flex items-center gap-4"
+              style={{ animationDelay: `${i * 0.05}s` }}
+            >
               <div className={`p-3 rounded-xl ${stat.color}`}>
                 <Icon className="h-5 w-5" />
               </div>
@@ -80,7 +84,11 @@ export default function SuperAdminReferralsPage() {
               </thead>
               <tbody>
                 {leaderboard.map((row: any, i: number) => (
-                  <tr key={row.id} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                  <tr
+                    key={row.id}
+                    className="ui-fade-up border-b border-border last:border-0 hover:bg-secondary/20 transition-colors"
+                    style={{ animationDelay: `${Math.min(i, 10) * 0.04}s` }}
+                  >
                     <td className="px-6 py-3 text-muted-foreground font-mono text-xs">
                       {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
                     </td>

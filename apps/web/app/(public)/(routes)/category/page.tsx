@@ -102,8 +102,10 @@ function CategoryContent() {
         </Card>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {businesses.map((business: any) => (
-            <BusinessCard key={business.id} business={business} />
+          {businesses.map((business: any, i: number) => (
+            <div key={business.id} className="ui-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
+              <BusinessCard business={business} />
+            </div>
           ))}
         </div>
       )}

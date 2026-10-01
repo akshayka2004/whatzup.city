@@ -133,15 +133,20 @@ export default function SuperAdminApprovalsPage() {
     <SuperAdminLayout>
       <div className="space-y-8 font-sans pb-12">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold text-foreground mb-2 tracking-tight">
-              Universal Moderation Queue
-            </h1>
-            <p className="text-muted-foreground text-sm">
-              Review, verify, and approve onboarding credentials for multi-entity profiles.
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <ShieldAlert className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-extrabold text-foreground mb-2 tracking-tight">
+                Universal Moderation Queue
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                Review, verify, and approve onboarding credentials for multi-entity profiles.
+              </p>
+            </div>
           </div>
-          <div className="h-1 py-1 px-4 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary text-center">
+          <div className="py-1.5 px-4 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary text-center self-start md:self-auto">
             {displayApprovals.length} pending verification
           </div>
         </div>
@@ -189,13 +194,14 @@ export default function SuperAdminApprovalsPage() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 gap-4">
-              {displayApprovals.map((req) => {
+              {displayApprovals.map((req, i) => {
                 const entity = req.entity || {};
                 const docCount = (entity.documents || []).length;
                 return (
                   <Card
                     key={req.id}
-                    className="p-5 rounded-2xl border border-border bg-card/45 backdrop-blur-xl hover:shadow-xl hover:border-border transition-all duration-300 relative overflow-hidden group"
+                    className="ui-fade-up p-5 rounded-2xl border border-border bg-card/45 backdrop-blur-xl hover:shadow-xl hover:border-border transition-all duration-300 relative overflow-hidden group"
+                    style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                   >
                     <div className="absolute top-0 right-0 w-48 h-48 bg-primary/[0.02] rounded-full blur-3xl pointer-events-none"></div>
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
@@ -263,10 +269,10 @@ export default function SuperAdminApprovalsPage() {
         {/* REVIEW MODAL */}
         {reviewingItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
-            <Card className="w-full max-w-6xl p-6 rounded-3xl border border-border bg-[#0c0c10] shadow-2xl relative max-h-[90vh] flex flex-col">
+            <Card className="ui-pop w-full max-w-6xl p-6 rounded-3xl border border-border bg-[#0c0c10] shadow-2xl relative max-h-[90vh] flex flex-col">
               <button
                 onClick={() => { setReviewingItem(null); setSelectedDoc(null); }}
-                className="absolute top-5 right-5 text-muted-foreground hover:text-foreground cursor-pointer p-1 bg-secondary rounded-full"
+                className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer bg-secondary rounded-full transition-colors"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -535,8 +541,8 @@ export default function SuperAdminApprovalsPage() {
         {/* APPROVE MODAL */}
         {approvingItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border border-border bg-[#0c0c10] shadow-2xl relative text-center">
-              <button onClick={() => setApprovingItem(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-slate-350 cursor-pointer">
+            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border border-border bg-[#0c0c10] shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setApprovingItem(null)} className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
               <div className="mx-auto w-12 h-12 rounded-full bg-success/10 flex items-center justify-center text-success mb-4">
@@ -571,8 +577,8 @@ export default function SuperAdminApprovalsPage() {
         {/* REJECT MODAL */}
         {rejectingItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border border-border bg-[#0c0c10] shadow-2xl relative">
-              <button onClick={() => setRejectingItem(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-slate-350 cursor-pointer">
+            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border border-border bg-[#0c0c10] shadow-2xl relative max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setRejectingItem(null)} className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer">
                 <X className="h-5 w-5" />
               </button>
               <h3 className="text-xl font-bold text-muted-foreground mb-2">Reject Submission</h3>

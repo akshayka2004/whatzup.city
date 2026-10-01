@@ -7,7 +7,7 @@ import { ActionLog } from '@/components/admin/action-log';
 export default function SuperAdminEventsPage() {
   return (
     <SuperAdminLayout>
-      <div className="space-y-6">
+      <div className="ui-fade-up space-y-6">
         <EventsManager />
         <ActionLog resource="EVENT" title="Events Action Log" />
       </div>

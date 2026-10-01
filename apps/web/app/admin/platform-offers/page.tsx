@@ -7,7 +7,7 @@ import { ActionLog } from '@/components/admin/action-log';
 export default function AdminPlatformOffersPage() {
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 ui-fade-up">
         <PlatformOffersManager />
         <ActionLog resource="PLATFORM_OFFER" title="Platform Offers Action Log" />
       </div>

@@ -157,7 +157,7 @@ export default function SuperAdminUsersPage() {
             onClick={fetchData}
             variant="outline"
             size="sm"
-            className="rounded-xl border-border text-muted-foreground hover:text-foreground gap-2"
+            className="ui-press rounded-xl border-border text-muted-foreground hover:text-foreground gap-2"
           >
             <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
             Refresh
@@ -230,8 +230,12 @@ export default function SuperAdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {displayRows.map((u) => (
-                    <tr key={u.id} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                  {displayRows.map((u, i) => (
+                    <tr
+                      key={u.id}
+                      className="ui-fade-up border-b border-border last:border-0 hover:bg-secondary/20 transition-colors"
+                      style={{ animationDelay: `${Math.min(i, 10) * 0.03}s` }}
+                    >
                       <td className="px-5 py-3">
                         <p className="font-semibold text-foreground">{u.name || '—'}</p>
                         {u.phone && <p className="text-xs text-muted-foreground">{u.phone}</p>}

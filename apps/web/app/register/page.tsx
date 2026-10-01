@@ -941,7 +941,7 @@ export default function UnifiedRegisterPage() {
             <img src="/logo.png" alt="Whtzup.city Logo" className="h-5 w-auto object-contain" />
             <span className="font-semibold tracking-tight">whtzup.city</span>
           </div>
-          <h1 className="text-foregroundxl md:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-foreground text-3xl md:text-4xl font-extrabold tracking-tight">
             Create Your Account
           </h1>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
@@ -1043,7 +1043,7 @@ export default function UnifiedRegisterPage() {
 
           {/* STEP 1: Account Type Selection */}
           {currentStep === 1 && (
-            <div className="space-y-6">
+            <div className="space-y-6 ui-pop">
               <div className="text-center md:text-left">
                 <h2 className="text-xl font-bold text-foreground">Select Account Class</h2>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -1051,7 +1051,7 @@ export default function UnifiedRegisterPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ui-fade-up">
                 {[
                   {
                     type: 'CUSTOMER',
@@ -1145,14 +1145,14 @@ export default function UnifiedRegisterPage() {
                 </div>
               )}
 
-              <div className="flex justify-between pt-4 border-t border-border">
-                <Link href="/login" className="text-muted-foreground hover:text-foreground text-sm font-semibold flex items-center gap-1.5">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-4 border-t border-border">
+                <Link href="/login" className="text-muted-foreground hover:text-foreground text-sm font-semibold flex items-center justify-center sm:justify-start gap-1.5">
                   <ArrowLeft className="h-4 w-4" /> Back to Login
                 </Link>
 
                 <Button
                   onClick={() => setCurrentStep(2)}
-                  className="rounded-xl h-11 px-6 font-semibold text-[#D3DAD9] hover:opacity-90 transition-opacity"
+                  className="rounded-xl h-11 px-6 font-semibold text-[#D3DAD9] hover:opacity-90 transition-opacity w-full sm:w-auto"
                 >
                   Continue <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Button>
@@ -1162,7 +1162,7 @@ export default function UnifiedRegisterPage() {
 
           {/* STEP 2: Account Details & Validation */}
           {currentStep === 2 && (
-            <form onSubmit={handleStep2Submit} className="space-y-6">
+            <form onSubmit={handleStep2Submit} className="space-y-6 ui-pop">
               <div>
                 <h2 className="text-xl font-bold text-foreground">Setup Credentials</h2>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -1262,7 +1262,7 @@ export default function UnifiedRegisterPage() {
                 {password && (
                   <div className="p-3 bg-muted/40 border border-border rounded-xl text-xs space-y-1">
                     <p className="font-semibold text-muted-foreground">Password strength checklist:</p>
-                    <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
                       <p className={hasMinLength ? 'text-emerald-400' : 'text-muted-foreground'}>✔ Minimum 8 characters</p>
                       <p className={hasUppercase ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one uppercase letter</p>
                       <p className={hasLowercase ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one lowercase letter</p>
@@ -1452,12 +1452,12 @@ export default function UnifiedRegisterPage() {
                 </label>
               </div>
 
-              <div className="flex justify-between pt-4 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-4 border-t border-border">
                 <Button
                   type="button"
                   onClick={() => setCurrentStep(1)}
                   disabled={loading}
-                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
+                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer w-full sm:w-auto"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
                 </Button>
@@ -1465,7 +1465,7 @@ export default function UnifiedRegisterPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 text-[#D3DAD9] hover:opacity-90 transition-opacity"
+                  className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 text-[#D3DAD9] hover:opacity-90 transition-opacity w-full sm:w-auto"
                 >
                   {loading ? (
                     <>
@@ -1483,7 +1483,7 @@ export default function UnifiedRegisterPage() {
 
           {/* STEP 3: Kerala Entity Profile Setup & Document Upload */}
           {currentStep === 3 && (
-            <form onSubmit={handleStep4Submit} className="space-y-6">
+            <form onSubmit={handleStep4Submit} className="space-y-6 ui-pop">
               <div>
                 <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <Building2 className="h-5 w-5 text-zinc-400" />
@@ -1698,19 +1698,19 @@ export default function UnifiedRegisterPage() {
                 </div>
               )}
 
-              <div className="flex justify-between pt-6 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-6 border-t border-border">
                 <Button
                   type="button"
                   onClick={() => setCurrentStep(2)}
                   disabled={loading}
-                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
+                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer w-full sm:w-auto"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1.5" /> Back
                 </Button>
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer hover:opacity-90 transition text-[#D3DAD9]"
+                  className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:opacity-90 transition text-[#D3DAD9] w-full sm:w-auto"
                 >
                   {loading ? (
                     <>
@@ -1730,7 +1730,7 @@ export default function UnifiedRegisterPage() {
 
           {/* ── STEP 4 (business only): plan / classification, then payment ── */}
           {currentStep === 4 && role === 'BUSINESS' && (
-            <div className="space-y-6">
+            <div className="space-y-6 ui-pop">
               {!showPayment ? (
                 <>
                   <div>
@@ -1802,7 +1802,7 @@ export default function UnifiedRegisterPage() {
                               key={star}
                               type="button"
                               onClick={() => setHotelStarRating(star)}
-                              className={`p-3 rounded-xl border text-center transition cursor-pointer ${
+                              className={`p-3 rounded-xl border text-center transition-all duration-200 ease-out cursor-pointer hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${
                                 hotelStarRating === star
                                   ? 'border-primary bg-primary/10'
                                   : 'border-border hover:border-slate-500'
@@ -1836,7 +1836,7 @@ export default function UnifiedRegisterPage() {
                           key={p.code}
                           type="button"
                           onClick={() => setHomeChefTier(p.code)}
-                          className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col ${
+                          className={`p-4 rounded-xl border text-left transition-all duration-200 ease-out cursor-pointer flex flex-col hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${
                             homeChefTier === p.code
                               ? 'border-primary bg-primary/10'
                               : 'border-border hover:border-slate-500'
@@ -1866,7 +1866,7 @@ export default function UnifiedRegisterPage() {
                           key={p.code}
                           type="button"
                           onClick={() => setSelectedPlan(p.code)}
-                          className={`p-4 rounded-xl border text-left transition cursor-pointer flex flex-col ${
+                          className={`p-4 rounded-xl border text-left transition-all duration-200 ease-out cursor-pointer flex flex-col hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${
                             selectedPlan === p.code
                               ? 'border-primary bg-primary/10'
                               : 'border-border hover:border-slate-500'
@@ -1900,13 +1900,13 @@ export default function UnifiedRegisterPage() {
                     </div>
                   )}
 
-                  <div className="flex justify-between pt-6 border-t border-border">
+                  <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-6 border-t border-border">
                     <Button
                       type="button"
                       onClick={() => setCurrentStep(3)}
-                      className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
+                      className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer w-full sm:w-auto"
                     >
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center justify-center gap-1.5">
                         <ArrowLeft className="h-4 w-4" /> Back
                       </span>
                     </Button>
@@ -1917,7 +1917,7 @@ export default function UnifiedRegisterPage() {
                       // a star rating for hotels, a tier for Home Chefs, a plan for everyone else
                       // (the launch offer stands in for that last choice).
                       disabled={isHotel ? !hotelStarRating : claimLaunch ? false : isHomeChef ? !homeChefTier : !selectedPlan}
-                      className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer text-[#D3DAD9]"
+                      className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 cursor-pointer text-[#D3DAD9] w-full sm:w-auto"
                     >
                       Proceed to Payment <ArrowRight className="h-4 w-4" />
                     </Button>
@@ -2062,13 +2062,13 @@ export default function UnifiedRegisterPage() {
                     />
                   </div>
 
-                  <div className="flex justify-between pt-6 border-t border-border">
+                  <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-6 border-t border-border">
                     <Button
                       type="button"
                       onClick={() => setShowPayment(false)}
-                      className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
+                      className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer w-full sm:w-auto"
                     >
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center justify-center gap-1.5">
                         <ArrowLeft className="h-4 w-4" /> Back
                       </span>
                     </Button>
@@ -2076,7 +2076,7 @@ export default function UnifiedRegisterPage() {
                       type="button"
                       onClick={() => setShowInvoice(true)}
                       disabled={loading || !paymentProof}
-                      className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer text-[#D3DAD9]"
+                      className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 cursor-pointer text-[#D3DAD9] w-full sm:w-auto"
                     >
                       Continue to Invoice Details <ArrowRight className="h-4 w-4" />
                     </Button>
@@ -2200,13 +2200,13 @@ export default function UnifiedRegisterPage() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-6 border-t border-border">
+                  <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-6 border-t border-border">
                     <Button
                       type="button"
                       onClick={() => setShowInvoice(false)}
-                      className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
+                      className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer w-full sm:w-auto"
                     >
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center justify-center gap-1.5">
                         <ArrowLeft className="h-4 w-4" /> Back
                       </span>
                     </Button>
@@ -2222,7 +2222,7 @@ export default function UnifiedRegisterPage() {
                         billingPincode.trim().length !== 6 ||
                         !invoiceEmail.trim()
                       }
-                      className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer text-[#D3DAD9]"
+                      className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 cursor-pointer text-[#D3DAD9] w-full sm:w-auto"
                     >
                       {loading ? (
                         <>

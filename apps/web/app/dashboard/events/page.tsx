@@ -170,8 +170,12 @@ export default function DashboardEventsPage() {
           </Card>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {events.map((ev) => (
-              <Card key={ev.id} className="p-5 rounded-2xl border-border bg-card">
+            {events.map((ev, i) => (
+              <Card
+                key={ev.id}
+                className="ui-fade-up p-5 rounded-2xl border-border bg-card"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h3 className="font-semibold text-foreground">{ev.title}</h3>
@@ -196,9 +200,9 @@ export default function DashboardEventsPage() {
                       {ev.startDate?.slice(0, 10)} → {ev.endDate?.slice(0, 10)}
                     </p>
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button onClick={() => openEdit(ev)} variant="outline" size="icon" className="h-8 w-8 rounded-lg border-border cursor-pointer"><Edit className="h-3.5 w-3.5" /></Button>
-                    <Button onClick={() => remove(ev)} variant="outline" size="icon" className="h-8 w-8 rounded-lg border-destructive/30 text-destructive cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></Button>
+                  <div className="flex gap-1.5 shrink-0">
+                    <Button onClick={() => openEdit(ev)} variant="outline" size="icon" className="h-10 w-10 rounded-lg border-border cursor-pointer"><Edit className="h-3.5 w-3.5" /></Button>
+                    <Button onClick={() => remove(ev)} variant="outline" size="icon" className="h-10 w-10 rounded-lg border-destructive/30 text-destructive cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
                 </div>
                 <div className="flex gap-3 mt-3">
@@ -213,8 +217,8 @@ export default function DashboardEventsPage() {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[88vh] overflow-y-auto">
-            <button onClick={() => setOpen(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"><X className="h-5 w-5" /></button>
+          <Card className="ui-pop w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[88vh] overflow-y-auto">
+            <button onClick={() => setOpen(false)} className="absolute top-4 right-4 p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"><X className="h-5 w-5" /></button>
             <h3 className="text-lg font-bold text-foreground mb-4">{editing ? 'Edit Event' : 'New Event'}</h3>
 
             <div className="space-y-3">
@@ -236,14 +240,14 @@ export default function DashboardEventsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input placeholder="Venue" value={form.venue} onChange={(e) => set('venue', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
                 <select value={form.city} onChange={(e) => set('city', e.target.value)} className="h-10 px-3 bg-background border border-input rounded-xl text-sm text-foreground">
                   <option value="">City (location)</option>
                   {KERALA_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select value={form.category} onChange={(e) => set('category', e.target.value)} className="h-10 px-3 bg-background border border-input rounded-xl text-sm text-foreground">
                   <option value="">Category</option>
                   {EVENT_CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -279,7 +283,7 @@ export default function DashboardEventsPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><label className="text-[11px] text-muted-foreground">Start date &amp; time</label><Input type="datetime-local" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
                 <div><label className="text-[11px] text-muted-foreground">End date &amp; time</label><Input type="datetime-local" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
               </div>

@@ -230,10 +230,14 @@ export default function CustomersPage() {
           </div>
         ) : stats ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {STAT_CARDS.map((s) => {
+            {STAT_CARDS.map((s, i) => {
               const Icon = s.icon;
               return (
-                <Card key={s.label} className="p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
+                <Card
+                  key={s.label}
+                  className="ui-fade-up p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl"
+                  style={{ animationDelay: `${i * 0.05}s` }}
+                >
                   <div className={cn('p-2 rounded-xl inline-flex mb-3', s.color)}>
                     <Icon className="h-4 w-4" />
                   </div>
@@ -314,10 +318,11 @@ export default function CustomersPage() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {customers.map((c) => (
+            {customers.map((c, i) => (
               <Card
                 key={c.id}
-                className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all cursor-pointer"
+                className="ui-fade-up ui-press p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all cursor-pointer"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}
                 onClick={() => setViewing(c)}
               >
                 <div className="flex items-center justify-between gap-4">
@@ -400,10 +405,10 @@ export default function CustomersPage() {
         {/* Customer detail modal */}
         {viewing && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative overflow-y-auto max-h-[90vh]">
+            <Card className="ui-pop w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative overflow-y-auto max-h-[90vh]">
               <button
                 onClick={() => setViewing(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="absolute top-4 right-4 p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>

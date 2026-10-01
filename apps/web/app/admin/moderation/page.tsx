@@ -36,11 +36,16 @@ export default function ModerationPage() {
   return (
     <AdminLayout>
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">User Moderation</h1>
-          <p className="text-muted-foreground">
-            Manage user conduct, view flag counts, and restrict access for violations.
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+            <Shield className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">User Moderation</h1>
+            <p className="text-muted-foreground">
+              Manage user conduct, view flag counts, and restrict access for violations.
+            </p>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -51,10 +56,11 @@ export default function ModerationPage() {
               <p className="text-sm text-muted-foreground">All flagged user accounts moderated.</p>
             </Card>
           ) : (
-            violators.map((violator) => (
+            violators.map((violator, i) => (
               <Card
                 key={violator.id}
-                className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all duration-300 relative overflow-hidden group"
+                className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all duration-300 relative overflow-hidden group"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -104,7 +110,7 @@ export default function ModerationPage() {
         {/* ── PARDON USER MODAL ────────────────────────────────────── */}
         {pardoningUser && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
+            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setPardoningUser(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -142,7 +148,7 @@ export default function ModerationPage() {
         {/* ── BAN USER MODAL ───────────────────────────────────────── */}
         {banningUser && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
+            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setBanningUser(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"

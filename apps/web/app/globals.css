@@ -255,3 +255,36 @@
     animation: none !important;
   }
 }
+
+/* ── Site-wide motion toolkit ─────────────────────────────────────────
+   Shared primitives for the mobile-first/dynamic-elements pass. Every
+   page should reuse these instead of inventing new keyframes — keeps
+   motion consistent and this file as the single place to tune it.
+   - ui-fade-up: entrance for cards/list items (stagger via inline
+     animationDelay, e.g. style={{ animationDelay: `${i * 0.05}s` }})
+   - ui-pop: entrance for modals/success states/newly-revealed content
+   - ui-glow: pulsing glow ring, use sparingly (one hero icon/badge per view)
+   - ui-shimmer: shimmer sweep overlay (absolute inset-0 child, parent
+     needs position:relative + overflow-hidden)
+   - ui-press: press-down feedback for tappable cards/buttons on mobile
+   - ui-scroll-x: horizontal-scroll wrapper for a table/row that doesn't
+     fit a mobile viewport — negative-margin bleed + scroll-snap
+----------------------------------------------------------------------- */
+@keyframes uiFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes uiPop { from { opacity: 0; transform: scale(.92) translateY(6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes uiGlow { 0%,100% { opacity: .3; transform: scale(1); } 50% { opacity: .65; transform: scale(1.06); } }
+@keyframes uiShimmer { 0% { background-position: -150% 0; } 100% { background-position: 250% 0; } }
+
+.ui-fade-up { animation: uiFadeUp .4s ease-out both; }
+.ui-pop { animation: uiPop .35s cubic-bezier(0.34,1.56,0.64,1) both; }
+.ui-glow { animation: uiGlow 2.8s ease-in-out infinite; }
+.ui-shimmer { background-image: linear-gradient(100deg, transparent 35%, rgba(255,255,255,0.4) 50%, transparent 65%); background-size: 250% 100%; animation: uiShimmer 2.4s linear infinite; }
+.ui-press { transition: transform .15s ease, box-shadow .15s ease; }
+.ui-press:active { transform: scale(0.97); }
+.ui-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; margin-inline: -1rem; padding-inline: 1rem; }
+.ui-scroll-x > * { scroll-snap-align: start; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-fade-up, .ui-pop, .ui-glow, .ui-shimmer { animation: none !important; }
+  .ui-press:active { transform: none !important; }
+}

@@ -271,13 +271,14 @@ export default function ApprovalsPage() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 gap-4">
-              {displayApprovals.map((req) => {
+              {displayApprovals.map((req, i) => {
                 const entity = req.entity || {};
                 const docCount = (entity.documents || []).length;
                 return (
                   <Card
                     key={req.id}
-                    className="p-5 rounded-2xl border border-border bg-card/45 backdrop-blur-xl hover:shadow-xl hover:border-border transition-all duration-300 relative overflow-hidden group"
+                    className="ui-fade-up p-5 rounded-2xl border border-border bg-card/45 backdrop-blur-xl hover:shadow-xl hover:border-border transition-all duration-300 relative overflow-hidden group"
+                    style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                   >
                     <div className="absolute top-0 right-0 w-48 h-48 bg-primary/[0.02] rounded-full blur-3xl pointer-events-none"></div>
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
@@ -360,7 +361,7 @@ export default function ApprovalsPage() {
            ============================================================ */}
         {reviewingItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
-            <Card className="w-full max-w-6xl p-6 rounded-3xl border border-border bg-[#0c0c10] shadow-2xl relative max-h-[90vh] flex flex-col">
+            <Card className="ui-pop w-full max-w-6xl p-6 rounded-3xl border border-border bg-[#0c0c10] shadow-2xl relative max-h-[90vh] flex flex-col">
               <button
                 onClick={() => {
                   setReviewingItem(null);
@@ -990,7 +991,7 @@ export default function ApprovalsPage() {
         {/* ── APPROVAL CONFIRMATION MODAL ──────────────────────────── */}
         {approvingItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border border-border bg-[#0c0c10] shadow-2xl relative text-center">
+            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border border-border bg-[#0c0c10] shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setApprovingItem(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
@@ -1098,7 +1099,7 @@ export default function ApprovalsPage() {
         {/* ── REJECTION REASON MODAL ────────────────────────────────── */}
         {rejectingItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border border-border bg-[#0c0c10] shadow-2xl relative">
+            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border border-border bg-[#0c0c10] shadow-2xl relative max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setRejectingItem(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"

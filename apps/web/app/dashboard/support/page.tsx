@@ -124,8 +124,12 @@ export default function BusinessSupportPage() {
             { label: 'Open', value: open, color: 'text-warning bg-warning/10' },
             { label: 'In Progress', value: inProgress, color: 'text-info bg-info/10' },
             { label: 'Resolved', value: resolved, color: 'text-success bg-success/10' },
-          ].map((s) => (
-            <Card key={s.label} className="p-4 rounded-2xl border-border bg-card/60 backdrop-blur-xl flex items-center gap-3">
+          ].map((s, i) => (
+            <Card
+              key={s.label}
+              className="p-4 rounded-2xl border-border bg-card/60 backdrop-blur-xl flex items-center gap-3 ui-fade-up"
+              style={{ animationDelay: `${i * 0.05}s` }}
+            >
               <div className={`p-2 rounded-xl ${s.color}`}>
                 <MessageSquare className="h-4 w-4" />
               </div>
@@ -137,7 +141,7 @@ export default function BusinessSupportPage() {
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6" style={{ minHeight: '540px' }}>
+        <div className="grid lg:grid-cols-3 gap-6 lg:min-h-[540px]">
           {/* Ticket list */}
           <div className="space-y-3">
             <div className="flex gap-2">
@@ -166,7 +170,7 @@ export default function BusinessSupportPage() {
               <p className="text-center text-sm text-muted-foreground py-6">No tickets found.</p>
             )}
 
-            {filtered.map((ticket) => {
+            {filtered.map((ticket, i) => {
               const cfg = STATUS_CONFIG[ticket.status];
               const active = selected?.id === ticket.id;
               return (
@@ -174,9 +178,10 @@ export default function BusinessSupportPage() {
                   key={ticket.id}
                   onClick={() => setSelected(ticket)}
                   className={cn(
-                    'p-4 rounded-2xl border cursor-pointer transition-all',
+                    'p-4 rounded-2xl border cursor-pointer transition-all ui-fade-up ui-press',
                     active ? 'border-primary/40 bg-primary/5' : 'border-border bg-card/60 hover:bg-secondary',
                   )}
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}
                 >
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <p className="text-sm font-semibold text-foreground line-clamp-1 break-words">{ticket.title}</p>
@@ -211,7 +216,7 @@ export default function BusinessSupportPage() {
                         <Button
                           size="sm"
                           onClick={() => handleStatusChange('resolved')}
-                          className="h-7 rounded-lg bg-success hover:bg-success text-white cursor-pointer text-xs px-3 gap-1"
+                          className="h-10 rounded-lg bg-success hover:bg-success text-white cursor-pointer text-xs px-3 gap-1"
                         >
                           <CheckCircle2 className="h-3 w-3" />
                           Resolve
@@ -222,7 +227,7 @@ export default function BusinessSupportPage() {
                           size="sm"
                           variant="outline"
                           onClick={() => handleStatusChange('closed')}
-                          className="h-7 rounded-lg border-border text-muted-foreground hover:bg-secondary cursor-pointer text-xs px-2"
+                          className="h-10 w-10 rounded-lg border-border text-muted-foreground hover:bg-secondary cursor-pointer text-xs px-2"
                         >
                           <X className="h-3.5 w-3.5" />
                         </Button>
@@ -264,7 +269,7 @@ export default function BusinessSupportPage() {
                       type="submit"
                       size="sm"
                       disabled={!replyText.trim()}
-                      className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground cursor-pointer px-4 disabled:opacity-40"
+                      className="h-11 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground cursor-pointer px-4 disabled:opacity-40"
                     >
                       <Send className="h-3.5 w-3.5" />
                     </Button>

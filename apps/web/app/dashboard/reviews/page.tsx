@@ -53,12 +53,12 @@ export default function ReviewsPage() {
   return (
     <BusinessLayout>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Customer Reviews</h1>
             <p className="text-muted-foreground">Monitor customer feedback and ratings</p>
           </div>
-          <div className="flex items-center gap-2 bg-secondary border border-border rounded-xl px-4 py-2">
+          <div className="flex items-center gap-2 bg-secondary border border-border rounded-xl px-4 py-2 self-start sm:self-auto">
             <Star className="h-5 w-5 fill-warning text-warning" />
             <span className="font-bold text-foreground text-lg">{avgRating}</span>
             <span className="text-xs text-muted-foreground">avg ({reviews.length} reviews)</span>
@@ -78,10 +78,11 @@ export default function ReviewsPage() {
         ) : null}
 
         <div className="space-y-4">
-          {reviews.map((review) => (
+          {reviews.map((review, i) => (
             <Card
               key={review.id}
-              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all duration-300 relative overflow-hidden group"
+              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 relative overflow-hidden group ui-fade-up"
+              style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
               <div className="flex items-start justify-between">
@@ -104,7 +105,7 @@ export default function ReviewsPage() {
                   onClick={() => setDeletingReview(review)}
                   size="icon"
                   variant="outline"
-                  className="rounded-xl border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10 h-9 w-9 flex-shrink-0"
+                  className="rounded-xl border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10 h-10 w-10 flex-shrink-0"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -115,7 +116,7 @@ export default function ReviewsPage() {
 
         {deletingReview && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center ui-pop">
               <button
                 onClick={() => setDeletingReview(null)}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"

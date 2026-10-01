@@ -309,7 +309,7 @@ export default function ProfilePage() {
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
 
         {/* Hero Profile Card */}
-        <Card className="rounded-2xl border-border bg-card relative overflow-hidden">
+        <Card className="rounded-2xl border-border bg-card relative overflow-hidden ui-fade-up">
           <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-primary/15 via-transparent to-transparent pointer-events-none" />
           <div className="p-7 pt-9">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -501,8 +501,12 @@ export default function ProfilePage() {
               </p>
             ) : (
             <div className="space-y-3">
-              {voucherTiers.map((t) => (
-                <div key={t.id} className="rounded-xl border border-border p-4">
+              {voucherTiers.map((t, i) => (
+                <div
+                  key={t.id}
+                  className="rounded-xl border border-border p-4 ui-fade-up"
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-semibold text-foreground truncate">{t.title}</p>
@@ -745,7 +749,7 @@ export default function ProfilePage() {
                 Delete Account
               </Button>
             ) : (
-              <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/5 space-y-3">
+              <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/5 space-y-3 ui-pop">
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
                   <p className="text-sm text-rose-300 font-medium">

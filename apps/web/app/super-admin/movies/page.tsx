@@ -10,7 +10,7 @@ export default function SuperAdminMoviesPage() {
   if (!MOVIES_ENABLED) notFound();
   return (
     <SuperAdminLayout>
-      <div className="space-y-6">
+      <div className="ui-fade-up space-y-6">
         <MoviesManager />
         <ActionLog resource="MOVIE" title="Movies Action Log" />
       </div>

@@ -79,10 +79,11 @@ export default function FavoritesPage() {
 
         {favorites.length > 0 ? (
           <div className="grid md:grid-cols-2 gap-6">
-            {favorites.map((fav) => (
+            {favorites.map((fav, i) => (
               <Card
                 key={fav.id}
-                className="p-6 rounded-2xl hover:shadow-md transition-all border-white/5 bg-card/40 backdrop-blur-xl"
+                className="ui-fade-up p-6 rounded-2xl transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 border-white/5 bg-card/40 backdrop-blur-xl"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -148,7 +149,7 @@ export default function FavoritesPage() {
 
         {removingFav && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
+            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl relative text-center">
               <button
                 onClick={() => setRemovingFav(null)}
                 aria-label="Close"

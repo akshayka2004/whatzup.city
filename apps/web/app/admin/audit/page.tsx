@@ -185,8 +185,12 @@ export default function AdminAuditPage() {
             { label: 'Bill Events', value: allLogs.filter((l) => l.category === 'BILL').length, color: 'text-info' },
             { label: 'Moderation', value: allLogs.filter((l) => l.category === 'MODERATION').length, color: 'text-destructive' },
             { label: 'Business Events', value: allLogs.filter((l) => l.category === 'BUSINESS').length, color: 'text-success' },
-          ].map((stat) => (
-            <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
+          ].map((stat, i) => (
+            <Card
+              key={stat.label}
+              className="ui-fade-up p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl"
+              style={{ animationDelay: `${i * 0.05}s` }}
+            >
               <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
               <p className={cn('text-2xl font-bold', stat.color)}>{stat.value}</p>
             </Card>
@@ -259,13 +263,14 @@ export default function AdminAuditPage() {
                     </td>
                   </tr>
                 ) : (
-                  paginated.map((log) => {
+                  paginated.map((log, i) => {
                     const cfg = CATEGORY_CONFIG[log.category];
                     const IconComp = cfg.icon;
                     return (
                       <tr
                         key={log.id}
-                        className="border-b border-border last:border-0 hover:bg-foreground/[0.04] transition-colors"
+                        className="ui-fade-up border-b border-border last:border-0 hover:bg-foreground/[0.04] transition-colors"
+                        style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}
                       >
                         <td className="px-5 py-3.5 text-muted-foreground font-mono text-xs whitespace-nowrap">
                           {log.date}

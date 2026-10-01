@@ -36,18 +36,24 @@ export default function AdminFraudPage() {
   return (
     <AdminLayout>
       <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Fraud & Abuse Prevention</h1>
-          <p className="text-muted-foreground">
-            Monitor platform abuse warning logs and auto-triggered system flags
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-destructive/10 text-destructive shrink-0">
+            <ShieldAlert className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Fraud & Abuse Prevention</h1>
+            <p className="text-muted-foreground">
+              Monitor platform abuse warning logs and auto-triggered system flags
+            </p>
+          </div>
         </div>
 
         <div className="space-y-4">
-          {flaggedAccounts.map((item) => (
+          {flaggedAccounts.map((item, i) => (
             <Card
               key={item.id}
-              className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+              className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+              style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-start gap-4">
@@ -89,7 +95,7 @@ export default function AdminFraudPage() {
                   <div className="flex gap-2">
                     <Button
                       size="sm"
-                      className="rounded-lg bg-destructive hover:bg-destructive text-white gap-1 px-3 py-1.5 h-8"
+                      className="rounded-lg bg-destructive hover:bg-destructive text-white gap-1 px-3 py-1.5 h-10"
                     >
                       <AlertTriangle className="h-4 w-4" />
                       Ban Resource
@@ -97,7 +103,7 @@ export default function AdminFraudPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="rounded-lg border-border text-foreground hover:bg-secondary gap-1 px-3 py-1.5 h-8"
+                      className="rounded-lg border-border text-foreground hover:bg-secondary gap-1 px-3 py-1.5 h-10"
                     >
                       <Check className="h-4 w-4" />
                       Dismiss

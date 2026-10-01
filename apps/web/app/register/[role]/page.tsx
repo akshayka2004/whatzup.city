@@ -481,7 +481,7 @@ export default function RoleOnboardingWizard() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase tracking-wider">
             {role.replace('-', ' ')} Onboarding
           </div>
-          <h1 className="text-foregroundxl md:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-foreground text-3xl md:text-4xl font-extrabold tracking-tight">
             Verification & Setup Wizard
           </h1>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
@@ -533,7 +533,7 @@ export default function RoleOnboardingWizard() {
         <Card className="bg-card/80 backdrop-blur-xl border border-border p-6 md:p-8 rounded-3xl shadow-xl">
           {/* Dynamically render step form */}
           {currentStep < totalSteps ? (
-            <form onSubmit={handleStepSubmit} className="space-y-6">
+            <form onSubmit={handleStepSubmit} className="space-y-6 ui-pop">
               <div>
                 <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <ActiveStepIcon className="h-5 w-5 text-violet-400 animate-pulse" />
@@ -1171,14 +1171,14 @@ export default function RoleOnboardingWizard() {
                 )}
               </div>
 
-              <div className="flex justify-between pt-6 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-6 border-t border-border">
                 <Button
                   type="button"
                   onClick={handleBack}
                   disabled={currentStep === 1 || submitting}
-                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer disabled:opacity-30"
+                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer disabled:opacity-30 w-full sm:w-auto"
                 >
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center justify-center gap-1.5">
                     <ArrowLeft className="h-4 w-4" />
                     Back
                   </span>
@@ -1187,7 +1187,7 @@ export default function RoleOnboardingWizard() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="h-11 px-6 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-semibold cursor-pointer"
+                  className="h-11 px-6 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-semibold cursor-pointer w-full sm:w-auto"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1334,14 +1334,14 @@ export default function RoleOnboardingWizard() {
               </div>
 
               {/* Navigation buttons */}
-              <div className="flex justify-between pt-6 border-t border-border">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-6 border-t border-border">
                 <Button
                   type="button"
                   onClick={handleBack}
                   disabled={submitting}
-                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
+                  className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer w-full sm:w-auto"
                 >
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center justify-center gap-1.5">
                     <ArrowLeft className="h-4 w-4" />
                     Back
                   </span>
@@ -1351,7 +1351,7 @@ export default function RoleOnboardingWizard() {
                   type="button"
                   onClick={handleFinalSubmit}
                   disabled={uploadedDocs.length === 0 || submitting}
-                  className="h-11 px-6 bg-gradient-to-r from-emerald-600 to-cyan-500 text-white rounded-xl font-semibold cursor-pointer shadow-lg shadow-emerald-500/10 hover:opacity-90 transition disabled:opacity-40"
+                  className="h-11 px-6 bg-gradient-to-r from-emerald-600 to-cyan-500 text-white rounded-xl font-semibold cursor-pointer shadow-lg shadow-emerald-500/10 hover:opacity-90 transition disabled:opacity-40 w-full sm:w-auto"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

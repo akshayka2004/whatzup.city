@@ -10,11 +10,16 @@ export default function AdminSettingsPage() {
     <AdminLayout>
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">System Configurations</h1>
-            <p className="text-muted-foreground">
-              Adjust security rules, OCR verification limits, and platform thresholds
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0 ui-glow">
+              <Settings className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">System Configurations</h1>
+              <p className="text-muted-foreground">
+                Adjust security rules, OCR verification limits, and platform thresholds
+              </p>
+            </div>
           </div>
           <Button className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground">
             <Save className="h-4 w-4" />
@@ -23,7 +28,7 @@ export default function AdminSettingsPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl space-y-6">
+          <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl space-y-6 ui-fade-up">
             <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               Verification Rules
@@ -52,7 +57,7 @@ export default function AdminSettingsPage() {
             </div>
           </Card>
 
-          <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl space-y-6">
+          <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl space-y-6 ui-fade-up" style={{ animationDelay: '0.05s' }}>
             <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
               <Hammer className="h-5 w-5 text-success" />
               Rate Limiting Parameters

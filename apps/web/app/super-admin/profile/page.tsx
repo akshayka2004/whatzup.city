@@ -133,16 +133,18 @@ export default function AdminProfilePage() {
   return (
     <SuperAdminLayout>
       <div className="space-y-6 max-w-2xl mx-auto">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
-            My Profile
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage your admin account details</p>
+        <div className="flex items-center gap-3">
+          <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+            <Shield className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
+            <p className="text-sm text-muted-foreground mt-1">Manage your admin account details</p>
+          </div>
         </div>
 
         {/* Avatar + basic info */}
-        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
+        <Card className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
           <div className="flex items-center gap-5 mb-6">
             <div className="relative">
               <div className="h-16 w-16 rounded-2xl overflow-hidden bg-gradient-to-tr from-primary to-info flex items-center justify-center text-2xl font-extrabold text-white">
@@ -155,7 +157,7 @@ export default function AdminProfilePage() {
               <button
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={avatarUploading}
-                className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-primary hover:bg-primary flex items-center justify-center cursor-pointer border-2 border-background"
+                className="ui-press absolute -bottom-1.5 -right-1.5 h-7 w-7 rounded-full bg-primary hover:bg-primary flex items-center justify-center cursor-pointer border-2 border-background"
               >
                 {avatarUploading ? (
                   <Loader2 className="h-3 w-3 text-white animate-spin" />
@@ -227,7 +229,7 @@ export default function AdminProfilePage() {
             <Button
               type="submit"
               disabled={saving}
-              className="w-full rounded-xl bg-primary hover:bg-primary text-white font-semibold cursor-pointer"
+              className="ui-press w-full rounded-xl bg-primary hover:bg-primary text-white font-semibold cursor-pointer"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Profile'}
             </Button>
@@ -235,7 +237,7 @@ export default function AdminProfilePage() {
         </Card>
 
         {/* Password change */}
-        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
+        <Card className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl" style={{ animationDelay: '0.05s' }}>
           <h3 className="text-base font-bold text-foreground flex items-center gap-2 mb-5">
             <KeyRound className="h-4 w-4 text-warning" />
             Change Password
@@ -307,7 +309,7 @@ export default function AdminProfilePage() {
             <Button
               type="submit"
               disabled={pwSaving}
-              className="w-full rounded-xl bg-warning hover:bg-warning text-white font-semibold cursor-pointer"
+              className="ui-press w-full rounded-xl bg-warning hover:bg-warning text-white font-semibold cursor-pointer"
             >
               {pwSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update Password'}
             </Button>

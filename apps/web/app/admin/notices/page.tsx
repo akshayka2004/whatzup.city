@@ -7,7 +7,7 @@ import { ActionLog } from '@/components/admin/action-log';
 export default function AdminNoticesPage() {
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 ui-fade-up">
         <NoticesManager />
         <ActionLog resource="GOVERNMENT_ANNOUNCEMENT" title="Announcements Action Log" />
       </div>

@@ -223,7 +223,7 @@ export default function HomePage() {
               </Button>
             </div>
 
-            <div className="flex items-center gap-2 max-w-lg">
+            <div className="flex items-center gap-2 max-w-lg flex-wrap">
               <MapPin className="h-4 w-4 text-primary shrink-0" />
               <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 shrink-0">
                 Your city:
@@ -267,7 +267,7 @@ export default function HomePage() {
             ) : (
               <div className="relative space-y-4 w-full max-w-xs">
                 {featuredBusiness && (
-                  <Link href={`/business/${featuredBusiness.id}`}>
+                  <Link href={`/business/${featuredBusiness.id}`} className="ui-fade-up block">
                     <Card className="p-4 rounded-xl border-border bg-card shadow-md cursor-pointer hover:border-primary/40 transition-colors">
                       <div className="flex items-start gap-3">
                         <div className="w-12 h-12 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
@@ -295,7 +295,7 @@ export default function HomePage() {
                 )}
 
                 {featuredOffer && (
-                  <Card className="p-4 rounded-xl border-border bg-card shadow-md">
+                  <Card className="ui-fade-up p-4 rounded-xl border-border bg-card shadow-md" style={{ animationDelay: '0.05s' }}>
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded-lg bg-primary/15 border border-primary/20">
                         <Tag className="h-4 w-4 text-primary" />
@@ -314,7 +314,7 @@ export default function HomePage() {
                 )}
 
                 {latestAnnouncement && (
-                  <Card className="p-3 rounded-xl border-border bg-card shadow-md">
+                  <Card className="ui-fade-up p-3 rounded-xl border-border bg-card shadow-md" style={{ animationDelay: '0.1s' }}>
                     <div className="flex items-center gap-3">
                       <div className="relative flex h-2.5 w-2.5 shrink-0">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
@@ -341,10 +341,14 @@ export default function HomePage() {
 
       {/* ── STATS ────────────────────────────────────────────────────── */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10 md:mb-14">
-        {statsCards.map((stat) => {
+        {statsCards.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.label} className="p-5 rounded-xl border-border bg-card text-center hover:border-primary/30 transition-colors">
+            <Card
+              key={stat.label}
+              className="ui-fade-up p-5 rounded-xl border-border bg-card text-center hover:border-primary/30 transition-colors"
+              style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+            >
               <div className="flex justify-center mb-2">
                 <div className="p-2 rounded-lg bg-primary/12 border border-primary/20">
                   <Icon className="h-4 w-4 text-primary" />
@@ -372,9 +376,9 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {CATEGORIES.map(({ label, icon: Icon, slug }) => (
-            <Link key={label} href={`/category?type=${slug}`}>
-              <Card className="p-4 rounded-xl border-border bg-card hover:border-primary/30 hover:bg-secondary/50 transition-all cursor-pointer group h-[120px] flex flex-col justify-between">
+          {CATEGORIES.map(({ label, icon: Icon, slug }, i) => (
+            <Link key={label} href={`/category?type=${slug}`} className="ui-fade-up block" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
+              <Card className="p-4 rounded-xl border-border bg-card hover:border-primary/30 hover:bg-secondary/50 transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 cursor-pointer group h-[120px] flex flex-col justify-between">
                 <div className="w-10 h-10 rounded-lg bg-primary/12 border border-primary/20 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                   <Icon className="h-5 w-5 text-primary" />
                 </div>
@@ -400,10 +404,14 @@ export default function HomePage() {
         </div>
 
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {FEATURES.map((feature) => {
+          {FEATURES.map((feature, i) => {
             const Icon = feature.icon;
             return (
-              <Card key={feature.title} className="p-6 rounded-xl border-border bg-card hover:border-primary/30 transition-all group">
+              <Card
+                key={feature.title}
+                className="ui-fade-up p-6 rounded-xl border-border bg-card hover:border-primary/30 transition-all group"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+              >
                 <div className="w-11 h-11 rounded-xl bg-primary/12 border border-primary/20 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                   <Icon className="h-5 w-5 text-primary" />
                 </div>

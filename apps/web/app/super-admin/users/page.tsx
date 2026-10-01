@@ -110,7 +110,7 @@ export default function SuperAdminUsersPage() {
             <h1 className="text-2xl font-bold text-foreground">Manage Users</h1>
             <p className="text-muted-foreground text-sm mt-1">Edit any user account across the platform.</p>
           </div>
-          <Button onClick={fetchRows} variant="outline" size="sm" className="rounded-xl border-border text-muted-foreground hover:text-foreground gap-2">
+          <Button onClick={fetchRows} variant="outline" size="sm" className="ui-press rounded-xl border-border text-muted-foreground hover:text-foreground gap-2">
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </Button>
         </div>
@@ -144,8 +144,12 @@ export default function SuperAdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((u) => (
-                    <tr key={u.id} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                  {rows.map((u, i) => (
+                    <tr
+                      key={u.id}
+                      className="ui-fade-up border-b border-border last:border-0 hover:bg-secondary/20 transition-colors"
+                      style={{ animationDelay: `${Math.min(i, 10) * 0.04}s` }}
+                    >
                       <td className="px-5 py-3">
                         <p className="font-semibold text-foreground">{u.name || '—'}</p>
                         {u.email && <p className="text-xs text-muted-foreground">{u.email}</p>}
@@ -158,7 +162,7 @@ export default function SuperAdminUsersPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3 text-right">
-                        <Button onClick={() => openEdit(u)} variant="outline" size="sm" className="rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer">
+                        <Button onClick={() => openEdit(u)} variant="outline" size="sm" className="ui-press rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer">
                           <Pencil className="h-3.5 w-3.5" /> Edit
                         </Button>
                       </td>
@@ -183,7 +187,7 @@ export default function SuperAdminUsersPage() {
 
       {editing && form && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[88vh] overflow-y-auto">
+          <Card className="ui-pop w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[88vh] overflow-y-auto">
             <button onClick={() => setEditing(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"><X className="h-5 w-5" /></button>
             <h3 className="text-lg font-bold text-foreground mb-4">Edit User</h3>
 
@@ -219,7 +223,7 @@ export default function SuperAdminUsersPage() {
 
             <div className="flex justify-end gap-2 mt-5">
               <Button onClick={() => setEditing(null)} variant="outline" className="rounded-xl border-border text-muted-foreground hover:bg-secondary">Cancel</Button>
-              <Button onClick={save} disabled={saving} className="rounded-xl bg-primary text-primary-foreground font-semibold gap-1.5">
+              <Button onClick={save} disabled={saving} className="ui-press rounded-xl bg-primary text-primary-foreground font-semibold gap-1.5">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Save
               </Button>
             </div>

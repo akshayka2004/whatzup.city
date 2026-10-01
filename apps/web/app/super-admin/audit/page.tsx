@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Search, Download, Receipt, Tag, Building2, ShieldAlert,
-  UserCheck, Settings, Bell, RefreshCw, Loader2,
+  UserCheck, Settings, Bell, RefreshCw, Loader2, History,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
@@ -118,11 +118,16 @@ export default function SuperAdminAuditPage() {
     <SuperAdminLayout>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Platform Audit Trail</h1>
-            <p className="text-muted-foreground">
-              Chronological log of all platform events — bills, offers, businesses, users, and system actions
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+              <History className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Platform Audit Trail</h1>
+              <p className="text-muted-foreground">
+                Chronological log of all platform events — bills, offers, businesses, users, and system actions
+              </p>
+            </div>
           </div>
           <Button onClick={handleExport} variant="outline" className="rounded-xl border-border text-foreground hover:bg-secondary gap-2 cursor-pointer shrink-0">
             <Download className="h-4 w-4" /> Export CSV
@@ -142,8 +147,8 @@ export default function SuperAdminAuditPage() {
             { label: 'Bill Events', value: allLogs.filter((l) => l.category === 'BILL').length, color: 'text-info' },
             { label: 'Moderation', value: allLogs.filter((l) => l.category === 'MODERATION').length, color: 'text-destructive' },
             { label: 'Business Events', value: allLogs.filter((l) => l.category === 'BUSINESS').length, color: 'text-success' },
-          ].map((stat) => (
-            <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
+          ].map((stat, i) => (
+            <Card key={stat.label} className="ui-fade-up p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl" style={{ animationDelay: `${i * 0.05}s` }}>
               <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
               <p className={cn('text-2xl font-bold', stat.color)}>{stat.value}</p>
             </Card>
@@ -191,7 +196,7 @@ export default function SuperAdminAuditPage() {
 
         {/* Table */}
         <Card className="p-0 rounded-2xl border-border bg-card/40 backdrop-blur-xl overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="ui-scroll-x">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-muted-foreground bg-secondary">
@@ -210,11 +215,11 @@ export default function SuperAdminAuditPage() {
                     </td>
                   </tr>
                 ) : (
-                  paginated.map((log) => {
+                  paginated.map((log, i) => {
                     const cfg = CATEGORY_CONFIG[log.category];
                     const IconComp = cfg.icon;
                     return (
-                      <tr key={log.id} className="border-b border-border last:border-0 hover:bg-foreground/[0.04] transition-colors">
+                      <tr key={log.id} className="ui-fade-up border-b border-border last:border-0 hover:bg-foreground/[0.04] transition-colors" style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}>
                         <td className="px-5 py-3.5 text-muted-foreground font-mono text-xs whitespace-nowrap">{log.date}</td>
                         <td className="px-5 py-3.5 font-medium text-foreground text-xs max-w-[160px]">
                           <span className="truncate block">{log.user}</span>

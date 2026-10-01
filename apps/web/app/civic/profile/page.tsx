@@ -206,7 +206,7 @@ export default function CivicProfilePage() {
         )}
 
         {/* Banner + Logo */}
-        <Card className="rounded-2xl border-white/5 bg-card/60 overflow-hidden">
+        <Card className="rounded-2xl border-white/5 bg-card/60 overflow-hidden ui-fade-up">
           <div className="relative h-32 sm:h-40 bg-gradient-to-r from-primary/20 to-accent/20">
             {profile.bannerUrl && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -320,25 +320,27 @@ export default function CivicProfilePage() {
           ) : (
             <div className="space-y-2">
               {profile.socialLinks.map((link, i) => (
-                <div key={i} className="flex gap-2 items-center">
+                <div key={i} className="flex flex-col sm:flex-row gap-2 sm:items-center">
                   <Input
                     value={link.label}
                     onChange={(e) => setLink(i, 'label', e.target.value)}
                     placeholder="Heading (e.g. Facebook)"
-                    className="h-10 bg-background border-input text-sm text-foreground rounded-xl w-1/3"
+                    className="h-10 bg-background border-input text-sm text-foreground rounded-xl w-full sm:w-1/3"
                   />
-                  <Input
-                    value={link.url}
-                    onChange={(e) => setLink(i, 'url', e.target.value)}
-                    placeholder="https://…"
-                    className="h-10 bg-background border-input text-sm text-foreground rounded-xl flex-1"
-                  />
-                  <button
-                    onClick={() => removeLink(i)}
-                    className="shrink-0 text-muted-foreground hover:text-rose-400 p-2 cursor-pointer"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      value={link.url}
+                      onChange={(e) => setLink(i, 'url', e.target.value)}
+                      placeholder="https://…"
+                      className="h-10 bg-background border-input text-sm text-foreground rounded-xl flex-1"
+                    />
+                    <button
+                      onClick={() => removeLink(i)}
+                      className="shrink-0 text-muted-foreground hover:text-rose-400 p-2 cursor-pointer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

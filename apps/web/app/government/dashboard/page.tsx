@@ -204,10 +204,14 @@ export default function GovDashboardPage() {
             { label: 'Active Notices', value: activeCount, icon: Bell, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
             { label: 'Active Alerts', value: alertCount, icon: ShieldAlert, color: 'text-rose-400', bg: 'bg-rose-500/10' },
             { label: 'Total Published', value: notices.length, icon: Megaphone, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-          ].map((s) => {
+          ].map((s, i) => {
             const Icon = s.icon;
             return (
-              <Card key={s.label} className="p-5 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl">
+              <Card
+                key={s.label}
+                className="p-5 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl ui-fade-up"
+                style={{ animationDelay: `${i * 0.05}s` }}
+              >
                 <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
                   <Icon className={`h-4 w-4 ${s.color}`} />
                 </div>
@@ -239,12 +243,16 @@ export default function GovDashboardPage() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {visibleNotices.map((notice) => {
+              {visibleNotices.map((notice, i) => {
                 const t = notice.type as NoticeType;
                 const cfg = TYPE_CONFIG[t];
                 const Icon = cfg.icon;
                 return (
-                  <Card key={notice.id} className="p-5 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all">
+                  <Card
+                    key={notice.id}
+                    className="p-5 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all ui-fade-up"
+                    style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+                  >
                     <div className="flex items-start gap-4">
                       <div className={`h-9 w-9 rounded-xl ${cfg.bg} flex items-center justify-center shrink-0`}>
                         <Icon className={`h-4 w-4 ${cfg.color}`} />
@@ -291,7 +299,7 @@ export default function GovDashboardPage() {
       {/* ── New Notice Modal ─────────────────────────────────────── */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-lg p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl">
+          <Card className="w-full max-w-lg p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl max-h-[90vh] overflow-y-auto ui-pop">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                 <Plus className="h-4 w-4 text-primary" />
@@ -364,7 +372,7 @@ export default function GovDashboardPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground block mb-1.5">Start / Issue date</label>
                   <Input type="date" value={formStartAt} onChange={(e) => setFormStartAt(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
