@@ -20,6 +20,8 @@ import {
 } from '@/lib/hotel-pricing';
 import { AmenityDetailsEditor, type AmenityItem } from '@/components/business/amenity-details-editor';
 import { HOME_CHEF_PLANS, HOME_CHEF_DURATION_DAYS, getHomeChefPlan } from '@/lib/home-chef-pricing';
+import { useLaunchOffer } from '@/hooks/use-launch-offer';
+import { LaunchOfferBanner } from '@/components/business/launch-offer-banner';
 import {
   SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, HOTEL_DURATION_DAYS, getPlan, formatINR, withTax, TAX_PERCENT,
   PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
@@ -273,6 +275,16 @@ export default function UnifiedRegisterPage() {
   const [hotelStarRating, setHotelStarRating] = useState<number | null>(null);
   const [hotelAmenities, setHotelAmenities] = useState<HotelAmenities>({});
   const [amenityDetails, setAmenityDetails] = useState<Record<string, AmenityItem[]>>({});
+  // ── Launch offer: first N registrations per category get one special-priced plan ──
+  const launchOffer = useLaunchOffer();
+  const launchSlotsLeft = launchOffer.slotsLeft(categorySlug);
+  const canClaimLaunch = launchOffer.enabled && launchSlotsLeft > 0;
+  const categoryLabel = CATEGORIES.find((c) => c.slug === categorySlug)?.label || categorySlug;
+  const [claimLaunch, setClaimLaunch] = useState(false);
+  // The last slot can go while someone is deciding — fall back to the regular plans.
+  useEffect(() => {
+    if (claimLaunch && !launchOffer.loading && !canClaimLaunch) setClaimLaunch(false);
+  }, [claimLaunch, canClaimLaunch, launchOffer.loading]);
   /** Price stays hidden until the payer explicitly proceeds. */
   const [showPayment, setShowPayment] = useState(false);
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
@@ -617,19 +629,41 @@ export default function UnifiedRegisterPage() {
     setLoading(true);
 
     try {
-      // 1. Create the subscription for the chosen plan / classification / tier.
-      const assignRes = isHotel
-        ? await onboardingService.assignHotelSubscription(
+      // 1. Create the subscription for the chosen plan / classification / tier
+      //    — or, for a launch-offer claim, reserve the slot (still needs payment below).
+      let subscriptionId: string | undefined;
+      if (claimLaunch) {
+        if (isHotel) {
+          // Saves the star rating and amenities onto the listing; pricing comes
+          // from the launch-offer claim, not from the hotel charge below.
+          const hotelRes = await onboardingService.assignHotelSubscription(
             businessId,
             hotelStarRating || 0,
             hotelAmenities,
             amenityDetails,
-          )
-        : isHomeChef
-          ? await onboardingService.assignHomeChefSubscription(businessId, homeChefTier)
-          : await onboardingService.assignSubscription(businessId, selectedPlan, PLAN_DURATION_DAYS);
-      if (assignRes.error) throw new Error(assignRes.error);
-      const subscriptionId = (assignRes.data as any)?.id;
+          );
+          if (hotelRes.error) throw new Error(hotelRes.error);
+        }
+        const claimRes = await onboardingService.claimLaunchOffer(businessId);
+        if (claimRes.error) {
+          await launchOffer.refresh(); // slots may have just run out
+          throw new Error(claimRes.error);
+        }
+        subscriptionId = (claimRes.data as any)?.id;
+      } else {
+        const assignRes = isHotel
+          ? await onboardingService.assignHotelSubscription(
+              businessId,
+              hotelStarRating || 0,
+              hotelAmenities,
+              amenityDetails,
+            )
+          : isHomeChef
+            ? await onboardingService.assignHomeChefSubscription(businessId, homeChefTier)
+            : await onboardingService.assignSubscription(businessId, selectedPlan, PLAN_DURATION_DAYS);
+        if (assignRes.error) throw new Error(assignRes.error);
+        subscriptionId = (assignRes.data as any)?.id;
+      }
 
       // 2. Upload the payment screenshot for admin verification.
       setUploadProgress(20);
@@ -650,9 +684,10 @@ export default function UnifiedRegisterPage() {
       const charge = computeHotelCharge(hotelStarRating, hotelAmenities);
       const plan = getPlan(selectedPlan);
       const homeChefPlan = getHomeChefPlan(homeChefTier);
+      const launchPrice = launchOffer.status?.price ?? 2500;
       // Amount charged is GST-inclusive; the server recomputes and splits it.
       const amount = withTax(
-        isHotel ? charge.total : isHomeChef ? homeChefPlan?.price || 0 : plan?.offerPrice || 0,
+        claimLaunch ? launchPrice : isHotel ? charge.total : isHomeChef ? homeChefPlan?.price || 0 : plan?.offerPrice || 0,
       ).total;
 
       // Invoice details first — if this fails the payment isn't recorded, so the
@@ -676,7 +711,13 @@ export default function UnifiedRegisterPage() {
         proofUrl: JSON.stringify({ bucket: 'verification-documents', path: signed.data.fileKey }),
         transactionRef: payerRef || undefined,
         subscriptionId,
-        packageName: isHotel ? `HOTEL_${hotelStarRating}STAR` : isHomeChef ? `HOMECHEF_${homeChefTier}` : selectedPlan,
+        packageName: claimLaunch
+          ? 'LAUNCH_SPECIAL'
+          : isHotel
+            ? `HOTEL_${hotelStarRating}STAR`
+            : isHomeChef
+              ? `HOMECHEF_${homeChefTier}`
+              : selectedPlan,
       });
       if (payRes.error) throw new Error(payRes.error);
       setUploadProgress(100);
@@ -945,7 +986,11 @@ export default function UnifiedRegisterPage() {
               <span className="text-muted-foreground">
                 {isHotel ? 'Hotel listing' : 'Business listing'}
               </span>
-              {isHotel ? (
+              {claimLaunch ? (
+                <span className="font-semibold text-emerald-400">
+                  Launch Offer · {formatINR(launchOffer.status?.price ?? 2500)} · {launchOffer.status?.durationDays ?? 90} days
+                </span>
+              ) : isHotel ? (
                 hotelStarRating ? (
                   <span className="font-semibold text-foreground">
                     {formatINR(withTax(computeHotelCharge(hotelStarRating, hotelAmenities).total).total)} · {HOTEL_DURATION_DAYS} days
@@ -965,6 +1010,17 @@ export default function UnifiedRegisterPage() {
             </div>
           )}
         </div>
+
+        {/* Launch offer — live slot count. Generic on step 1, per-category once a business account is being created. */}
+        {launchOffer.enabled && launchOffer.status && (currentStep === 1 || role === 'BUSINESS') && (
+          <LaunchOfferBanner
+            slotsPerCategory={launchOffer.status.slotsPerCategory}
+            price={launchOffer.status.price}
+            durationDays={launchOffer.status.durationDays}
+            categoryName={role === 'BUSINESS' && currentStep >= 2 ? categoryLabel : null}
+            slotsLeft={launchSlotsLeft}
+          />
+        )}
 
         {/* Main Alert Banners */}
         {error && (
@@ -1691,7 +1747,52 @@ export default function UnifiedRegisterPage() {
                     </p>
                   </div>
 
-                  {isHotel ? (
+                  {canClaimLaunch && (
+                    <div
+                      className={`rounded-xl border p-4 ${
+                        claimLaunch ? 'border-emerald-500 bg-emerald-500/10' : 'border-emerald-500/30 bg-emerald-500/5'
+                      }`}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-foreground">Claim launch offer</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            ₹{(launchOffer.status?.price ?? 2500).toLocaleString('en-IN')} for {launchOffer.status?.durationDays} days.{' '}
+                            <span className="font-semibold text-emerald-400">
+                              {launchSlotsLeft} of {launchOffer.status?.slotsPerCategory} slots left in {categoryLabel}
+                            </span>
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={() => setClaimLaunch((v) => !v)}
+                          variant={claimLaunch ? 'default' : 'outline'}
+                          className="rounded-xl h-10 px-5 font-semibold cursor-pointer shrink-0"
+                        >
+                          {claimLaunch ? 'Launch offer selected' : 'Claim launch offer'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {claimLaunch && !isHotel ? (
+                    <div className="rounded-xl border border-border p-4 space-y-2">
+                      <p className="text-sm font-bold text-foreground">
+                        Launch Offer · {launchOffer.status?.durationDays} days · ₹{(launchOffer.status?.price ?? 2500).toLocaleString('en-IN')}
+                      </p>
+                      <ul className="space-y-1">
+                        {['Web App Listing', 'Website Listing with backlinks', '5 offers · 5 vouchers'].map((f, i) => (
+                          <li key={i} className="flex items-start gap-1 text-[11px] text-muted-foreground">
+                            <CheckCircle className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-[11px] text-muted-foreground">
+                        Pay via the QR code on the next screen, same as any other plan.
+                      </p>
+                    </div>
+                  ) : isHotel ? (
                     <>
                       <div>
                         <h3 className="text-sm font-bold text-foreground mb-2">Star classification</h3>
@@ -1813,8 +1914,9 @@ export default function UnifiedRegisterPage() {
                       type="button"
                       onClick={() => setShowPayment(true)}
                       // Nothing is pre-selected, so require an explicit choice:
-                      // a star rating for hotels, a tier for Home Chefs, a plan for everyone else.
-                      disabled={isHotel ? !hotelStarRating : isHomeChef ? !homeChefTier : !selectedPlan}
+                      // a star rating for hotels, a tier for Home Chefs, a plan for everyone else
+                      // (the launch offer stands in for that last choice).
+                      disabled={isHotel ? !hotelStarRating : claimLaunch ? false : isHomeChef ? !homeChefTier : !selectedPlan}
                       className="rounded-xl h-11 px-6 font-semibold flex items-center gap-1.5 cursor-pointer text-[#D3DAD9]"
                     >
                       Proceed to Payment <ArrowRight className="h-4 w-4" />
@@ -1837,16 +1939,31 @@ export default function UnifiedRegisterPage() {
                     const charge = computeHotelCharge(hotelStarRating, hotelAmenities);
                     const plan = getPlan(selectedPlan);
                     const homeChefPlan = getHomeChefPlan(homeChefTier);
+                    const launchPrice = launchOffer.status?.price ?? 2500;
                     // Plan/hotel/Home Chef prices are GST-exclusive; tax is added on top.
+                    // A launch-offer hotel still pays the flat launch price, not the star/amenity charge.
                     const totals = withTax(
-                      isHotel ? charge.total : isHomeChef ? homeChefPlan?.price || 0 : plan?.offerPrice || 0,
+                      claimLaunch ? launchPrice : isHotel ? charge.total : isHomeChef ? homeChefPlan?.price || 0 : plan?.offerPrice || 0,
                     );
                     const amount = totals.total;
-                    const durationDays = isHotel ? HOTEL_DURATION_DAYS : isHomeChef ? HOME_CHEF_DURATION_DAYS : PLAN_DURATION_DAYS;
+                    const durationDays = claimLaunch
+                      ? launchOffer.status?.durationDays ?? 90
+                      : isHotel
+                        ? HOTEL_DURATION_DAYS
+                        : isHomeChef
+                          ? HOME_CHEF_DURATION_DAYS
+                          : PLAN_DURATION_DAYS;
                     return (
                       <div className="rounded-2xl border border-border p-5 space-y-3">
                         <h3 className="text-sm font-bold text-foreground">Your total</h3>
-                        {isHotel ? (
+                        {claimLaunch ? (
+                          <div className="space-y-1.5 text-sm">
+                            <div className="flex justify-between text-muted-foreground">
+                              <span>Launch Offer{isHotel ? ` · ${hotelStarRating}★ listing` : ''}</span>
+                              <span>{formatINR(launchPrice)}</span>
+                            </div>
+                          </div>
+                        ) : isHotel ? (
                           <div className="space-y-1.5 text-sm">
                             <div className="flex justify-between text-muted-foreground">
                               <span>{hotelStarRating}★ classification</span>

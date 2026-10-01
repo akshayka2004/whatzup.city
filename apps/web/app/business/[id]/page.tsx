@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { HOTEL_AMENITIES } from '@/lib/hotel-pricing';
 import { labelsFor } from '@/components/business/amenity-details-editor';
+import { LuckyWheel } from '@/components/business/lucky-wheel';
 import {
   ArrowLeft,
   Star,
@@ -682,6 +683,9 @@ function BusinessDetailPageContent() {
                 </Button>
               )}
             </Card>
+
+            {/* ── Lucky wheel discount */}
+            <LuckyWheel businessId={businessId} enabled={!!user} />
 
             {/* ── Vouchers (spend-gated) */}
             {user && vouchers.length > 0 && (

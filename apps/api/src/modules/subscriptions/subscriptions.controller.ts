@@ -5,6 +5,7 @@ import { AssignPackageDto, AssignHotelPackageDto, AssignHomeChefPackageDto } fro
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '@saas/types';
 
@@ -30,6 +31,25 @@ export class SubscriptionsController {
     @Body() dto: AssignPackageDto,
   ) {
     return this.subscriptionsService.assignPackage(userId, tenantId, businessId, dto);
+  }
+
+  @Public()
+  @Get('launch-offer')
+  @ApiOperation({ summary: 'Launch offer: slots used per category (public)' })
+  async launchOfferStatus() {
+    return this.subscriptionsService.getLaunchOfferStatus();
+  }
+
+  @Post('businesses/:businessId/claim-launch-offer')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reserve a launch-offer slot and queue its special-priced plan for payment' })
+  async claimLaunchOffer(
+    @CurrentUser('id') userId: string,
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('businessId') businessId: string,
+  ) {
+    return this.subscriptionsService.claimLaunchOffer(userId, tenantId, businessId);
   }
 
   @Get('admin/all')

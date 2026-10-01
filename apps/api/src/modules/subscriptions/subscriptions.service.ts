@@ -3,7 +3,9 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
+import { Prisma } from '@saas/database';
 import { DatabaseService } from '../../common/database/database.service';
 import { AuditService } from '../audit/audit.service';
 import {
@@ -33,6 +35,30 @@ export const HOTEL_DURATION_DAYS = 365;
 
 /** GST added on top of every plan/hotel base price. Mirrors apps/web/lib/subscription-plans.ts. */
 export const TAX_PERCENT = 18;
+
+/**
+ * Launch offer: the first LAUNCH_OFFER_SLOTS_PER_CATEGORY registrations in every
+ * category get one special-priced plan (paid, like any other — proof + admin
+ * verification). Set LAUNCH_OFFER_ENABLED=false to close the offer without a deploy.
+ */
+export const LAUNCH_OFFER_SLOTS_PER_CATEGORY = 15;
+export const LAUNCH_OFFER_DAYS = 90;
+export const LAUNCH_OFFER_PRICE = 2500;
+/** Not a PackageNameEnum member — same convention as the HOTEL_/HOMECHEF_ packageName prefixes. */
+export const LAUNCH_OFFER_PACKAGE_NAME = 'LAUNCH_SPECIAL';
+const LAUNCH_OFFER_PLAN = {
+  postingLimits: 5,
+  categoryLimits: 1,
+  featureFlags: { listingPackage: true, backlinks: true, offers: 5, vouchers: 5, launchOffer: true },
+  features: [
+    'Web App Listing',
+    'Website Listing with backlinks',
+    '5 offers · 5 vouchers',
+    'Launch Offer price — limited to the first 15 businesses per category',
+  ],
+};
+/** A slot claimed by a still-unsubmitted draft is held this long, then released. */
+const LAUNCH_OFFER_DRAFT_HOLD_MINUTES = 30;
 
 export function withTax(base: number) {
   const b = Math.max(0, Math.round(base));
@@ -270,6 +296,157 @@ export class SubscriptionsService {
     return subscription;
   }
 
+  // ── Launch offer: special-priced plan, limited slots ──────────────────────
+
+  private launchOfferEnabled(): boolean {
+    return process.env.LAUNCH_OFFER_ENABLED !== 'false';
+  }
+
+  /**
+   * Businesses currently holding a slot: submitted or approved ones, plus drafts
+   * that claimed within the hold window. Rejected and deleted ones free their slot.
+   */
+  private slotHolderWhere(): Prisma.BusinessWhereInput {
+    const holdCutoff = new Date(Date.now() - LAUNCH_OFFER_DRAFT_HOLD_MINUTES * 60 * 1000);
+    return {
+      launchOfferClaimedAt: { not: null },
+      deletedAt: null,
+      OR: [
+        { status: { in: ['PENDING_VERIFICATION', 'UNDER_REVIEW', 'APPROVED', 'SUSPENDED', 'ARCHIVED'] } },
+        { status: 'DRAFT', launchOfferClaimedAt: { gte: holdCutoff } },
+      ],
+    };
+  }
+
+  /** Public: how many launch-offer slots each category has used, for the registration banner. */
+  async getLaunchOfferStatus() {
+    const base = {
+      enabled: this.launchOfferEnabled(),
+      slotsPerCategory: LAUNCH_OFFER_SLOTS_PER_CATEGORY,
+      packageName: LAUNCH_OFFER_PACKAGE_NAME,
+      price: LAUNCH_OFFER_PRICE,
+      durationDays: LAUNCH_OFFER_DAYS,
+    };
+    if (!base.enabled) return { ...base, claimed: {} as Record<string, number> };
+
+    // tenant-scope-ok: public platform-wide counter — exposes only per-category totals
+    const rows = await this.db.business.groupBy({
+      by: ['categoryId'],
+      where: this.slotHolderWhere(),
+      _count: { _all: true },
+    });
+    // The registration form only knows a category by its slug, so report by slug.
+    const cats = rows.length
+      ? // tenant-scope-ok: category lookup for the public counter
+        await this.db.category.findMany({
+          where: { id: { in: rows.map((r) => r.categoryId) } },
+          select: { id: true, slug: true },
+        })
+      : [];
+    const slugById = new Map(cats.map((c) => [c.id, c.slug]));
+    const claimed: Record<string, number> = {};
+    for (const r of rows) {
+      const slug = slugById.get(r.categoryId);
+      if (slug) claimed[slug] = (claimed[slug] || 0) + r._count._all;
+    }
+    return { ...base, claimed };
+  }
+
+  /**
+   * Reserve a launch-offer slot for this business and queue its special-priced
+   * plan (pending payment, same proof + admin-verification flow as any other
+   * plan). The check and the reservation run under a per-category advisory
+   * lock, so two people submitting at once can never take the same last slot.
+   */
+  async claimLaunchOffer(userId: string, tenantId: string, businessId: string) {
+    if (!this.launchOfferEnabled()) {
+      throw new BadRequestException('The launch offer is not running right now.');
+    }
+
+    const business = await this.db.business.findFirst({
+      where: { tenantId, OR: [{ id: businessId }, { entityId: businessId }] },
+      include: { category: { select: { name: true } } },
+    });
+    if (!business) throw new NotFoundException('Business not found');
+    if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
+    if (!['DRAFT', 'REJECTED', 'PENDING_VERIFICATION', 'UNDER_REVIEW'].includes(business.status)) {
+      throw new BadRequestException('The launch offer is only available to new registrations.');
+    }
+
+    const holdCutoff = new Date(Date.now() - LAUNCH_OFFER_DRAFT_HOLD_MINUTES * 60 * 1000);
+
+    await this.db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT 1 AS ok FROM (SELECT pg_advisory_xact_lock(hashtext(${'launch-offer:' + business.categoryId}))) AS l`;
+
+      const fresh = await tx.business.findUnique({
+        where: { id: business.id },
+        select: { status: true, launchOfferClaimedAt: true },
+      });
+      const alreadyHolds =
+        !!fresh?.launchOfferClaimedAt &&
+        fresh.status !== 'REJECTED' &&
+        (fresh.status !== 'DRAFT' || fresh.launchOfferClaimedAt >= holdCutoff);
+      if (alreadyHolds) return;
+
+      // tenant-scope-ok: slots are counted platform-wide per category by design
+      const taken = await tx.business.count({
+        where: { ...this.slotHolderWhere(), categoryId: business.categoryId, id: { not: business.id } },
+      });
+      if (taken >= LAUNCH_OFFER_SLOTS_PER_CATEGORY) {
+        throw new ConflictException(
+          `All ${LAUNCH_OFFER_SLOTS_PER_CATEGORY} launch-offer slots for ${business.category?.name || 'this category'} have been taken. Continue with a regular plan.`,
+        );
+      }
+      await tx.business.update({
+        where: { id: business.id },
+        data: { launchOfferClaimedAt: new Date() },
+      });
+    });
+
+    // Slot secured. Reuse the queued subscription if a retry lands here again.
+    let subscription = await this.db.subscription.findFirst({
+      where: {
+        tenantId,
+        businessId: business.id,
+        status: { in: ['PENDING_PAYMENT', 'ACTIVE'] },
+        packageName: LAUNCH_OFFER_PACKAGE_NAME,
+      },
+    });
+
+    if (!subscription) {
+      await this.supersedeSubscriptions(tenantId, business.id);
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(startDate.getDate() + LAUNCH_OFFER_DAYS);
+      subscription = await this.db.subscription.create({
+        data: {
+          tenantId,
+          businessId: business.id,
+          packageName: LAUNCH_OFFER_PACKAGE_NAME,
+          pricing: LAUNCH_OFFER_PRICE,
+          duration: LAUNCH_OFFER_DAYS,
+          featureFlags: LAUNCH_OFFER_PLAN.featureFlags,
+          postingLimits: LAUNCH_OFFER_PLAN.postingLimits,
+          categoryLimits: LAUNCH_OFFER_PLAN.categoryLimits,
+          status: 'PENDING_PAYMENT',
+          startDate,
+          endDate,
+        },
+      });
+    }
+
+    await this.audit.log({
+      tenantId,
+      userId,
+      action: 'LAUNCH_OFFER_CLAIMED',
+      resource: 'SUBSCRIPTION',
+      resourceId: subscription.id,
+      metadata: { categoryId: business.categoryId, packageName: LAUNCH_OFFER_PACKAGE_NAME, price: LAUNCH_OFFER_PRICE },
+    });
+
+    return subscription;
+  }
+
   async getActive(tenantId: string, businessId: string) {
     const active = await this.db.subscription.findFirst({
       where: {
@@ -283,6 +460,7 @@ export class SubscriptionsService {
           { packageName: { in: ACTIVE_PACKAGES } },
           { packageName: { startsWith: 'HOTEL_' } },
           { packageName: { startsWith: 'HOMECHEF_' } },
+          { packageName: LAUNCH_OFFER_PACKAGE_NAME },
         ],
       },
     });
@@ -316,6 +494,7 @@ export class SubscriptionsService {
           { packageName: { in: ACTIVE_PACKAGES } },
           { packageName: { startsWith: 'HOTEL_' } },
           { packageName: { startsWith: 'HOMECHEF_' } },
+          { packageName: LAUNCH_OFFER_PACKAGE_NAME },
         ],
       },
       orderBy: { createdAt: 'desc' },

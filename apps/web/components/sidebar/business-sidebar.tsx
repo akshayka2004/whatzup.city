@@ -28,6 +28,7 @@ import {
   CalendarDays,
   Ticket,
   QrCode,
+  Disc3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getRoleLabel } from '@/lib/rbac';
@@ -43,6 +44,7 @@ const OWNER_MENU = [
   { label: 'Campaigns', href: '/dashboard/campaigns', icon: Megaphone },
   { label: 'Offers', href: '/dashboard/offers', icon: Tag, tour: 'nav-offers' },
   { label: 'Vouchers', href: '/dashboard/vouchers', icon: Ticket, tour: 'nav-vouchers' },
+  { label: 'Discounts', href: '/dashboard/discounts', icon: Disc3, tour: 'nav-discounts' },
   { label: 'Events', href: '/dashboard/events', icon: CalendarDays },
   { label: 'Products', href: '/dashboard/products', icon: Package },
   { label: 'Reviews', href: '/dashboard/reviews', icon: Star },

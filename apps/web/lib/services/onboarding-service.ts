@@ -95,6 +95,11 @@ class OnboardingService {
     });
   }
 
+  /** Launch offer: reserve a slot and queue the special-priced plan (still needs payment). */
+  async claimLaunchOffer(businessId: string): Promise<ApiResponse<any>> {
+    return apiService.post<any>(`/v1/subscriptions/businesses/${businessId}/claim-launch-offer`, {});
+  }
+
   /** Record a QR/UPI payment with its proof screenshot for admin verification. */
   async submitPayment(
     businessId: string,

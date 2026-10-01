@@ -59,6 +59,8 @@ model Tenant {
   platformOffers          PlatformOffer[]
   billingProfiles         BillingProfile[]
   voucherClaims           VoucherClaim[]
+  discounts               BusinessDiscount[]
+  discountSpins           DiscountSpin[]
   pointsEntries           PointsEntry[]
   platformVouchers        PlatformVoucher[]
   platformVoucherClaims   PlatformVoucherClaim[]
@@ -146,6 +148,7 @@ model User {
   businessStaff          BusinessStaff[]
   offerRedemptions       OfferRedemption[]
   voucherClaims          VoucherClaim[]
+  discountSpins          DiscountSpin[]
   pointsEntries          PointsEntry[]
   platformVoucherClaims  PlatformVoucherClaim[]
   reviews                Review[]
@@ -567,6 +570,10 @@ model Business {
   introOfferRedeemed      Boolean     @default(false) @map("intro_offer_redeemed")
   introOfferDiscountPct   Int         @default(20) @map("intro_offer_discount_pct")
 
+  // Launch offer: first N registrations per category get a special-priced plan. Set when
+  // the business claims a slot; the slot is released again if the application is rejected.
+  launchOfferClaimedAt    DateTime?   @map("launch_offer_claimed_at")
+
   // Core Audit Fields
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
@@ -604,6 +611,8 @@ model Business {
   subscriptions     Subscription[]
   payments          Payment[]
   businessTags      BusinessTag[]
+  discounts         BusinessDiscount[]
+  discountSpins     DiscountSpin[]
   customerRelationships BusinessCustomer[] @relation("BusinessCustomers")
   parentBusiness    Business?  @relation("BranchParent", fields: [parentBusinessId], references: [id])
   childBusinesses   Business[] @relation("BranchParent")
@@ -621,6 +630,7 @@ model Business {
   @@index([deletedAt])
   @@index([categoryId, city])
   @@index([status, averageRating])
+  @@index([categoryId, launchOfferClaimedAt])
   @@map("businesses")
 }
 
@@ -888,6 +898,7 @@ model Product {
   tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   business Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   category ProductCategory? @relation(fields: [categoryId], references: [id])
+  discounts BusinessDiscount[]
 
   @@index([tenantId])
   @@index([businessId])
@@ -1085,6 +1096,84 @@ model Coupon {
 // a customer whose cumulative VERIFIED spend at that business reaches the
 // threshold can unlock a unique code (VoucherClaim), then show it in-store where
 // staff mark it redeemed. The code is never returned until the customer qualifies.
+
+/// A business's lucky-wheel discount campaign. One active campaign per business
+/// at a time — creating a new one deactivates the previous. The 7 wheel
+/// percentages are generated server-side when the campaign is created, topping
+/// out at maxDiscountPercent, and are the same for every visitor; only which
+/// segment a given spin lands on is random.
+model BusinessDiscount {
+  id                 String    @id @default(uuid()) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  businessId         String    @map("business_id") @db.Uuid
+  // Item/product the discount applies to — free text so a business can name a
+  // menu item that has no catalog entry; productId links it when one exists.
+  itemName           String    @map("item_name") @db.VarChar(255)
+  productId          String?   @map("product_id") @db.Uuid
+  // Terms/context shown to the customer before they spin (e.g. "Dine-in only,
+  // not valid with other offers").
+  description        String?   @db.Text
+  maxDiscountPercent Int       @map("max_discount_percent")
+  // The 7 generated segment values, e.g. [2,3,5,6,7,8,10]. Max of this array
+  // always equals maxDiscountPercent.
+  wheelPercentages   Json      @map("wheel_percentages")
+  isActive           Boolean   @default(true) @map("is_active")
+  startDate          DateTime? @map("start_date")
+  endDate            DateTime? @map("end_date")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  business Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  product  Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
+  spins    DiscountSpin[]
+
+  @@index([tenantId])
+  @@index([businessId, isActive])
+  @@index([deletedAt])
+  @@map("business_discounts")
+}
+
+/// One customer's lucky-wheel result — the redeemable "ticket". One spin per
+/// customer per discount campaign (campaign changes → they can spin again).
+model DiscountSpin {
+  id               String    @id @default(uuid()) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  discountId       String    @map("discount_id") @db.Uuid
+  businessId       String    @map("business_id") @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  discountPercent  Int       @map("discount_percent")
+  // Snapshot of the item name at spin time, so the ticket still reads right
+  // even if the business later edits or retires the campaign.
+  itemName         String    @map("item_name") @db.VarChar(255)
+  code             String    @db.VarChar(30)
+  // UNLOCKED (visible, not yet used) | REDEEMED (staff marked used)
+  status           String    @default("UNLOCKED") @db.VarChar(20)
+  spunAt           DateTime  @default(now()) @map("spun_at")
+  expiresAt        DateTime? @map("expires_at")
+  redeemedAt       DateTime? @map("redeemed_at")
+  redeemedBy       String?   @map("redeemed_by") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  discount BusinessDiscount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  business Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // One spin per customer per campaign.
+  @@unique([discountId, userId])
+  @@unique([tenantId, code])
+  @@index([businessId, status])
+  @@index([userId])
+  @@map("discount_spins")
+}
 
 model Voucher {
   id              String      @id @default(uuid()) @db.Uuid

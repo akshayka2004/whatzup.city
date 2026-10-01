@@ -44,6 +44,8 @@ import {
   Receipt,
   BadgeIndianRupee,
   Gift,
+  Percent,
+  Disc3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -129,6 +131,7 @@ export function MobileNav() {
         { label: 'Bill Moderation', href: '/dashboard/moderation', icon: CheckCircle },
         { label: 'Customers', href: '/dashboard/customers', icon: Users },
         { label: 'Campaigns', href: '/dashboard/campaigns', icon: Megaphone },
+        { label: 'Discounts', href: '/dashboard/discounts', icon: Percent },
         { label: 'Events', href: '/dashboard/events', icon: CalendarDays },
         { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
         { label: 'Branches', href: '/dashboard/branches', icon: GitBranch },
@@ -157,6 +160,7 @@ export function MobileNav() {
       { label: 'Audit Logs', href: '/admin/audit', icon: FileText },
       { label: 'Categories', href: '/admin/categories', icon: Building2 },
       { label: 'Platform Offers', href: '/admin/platform-offers', icon: Tag },
+      { label: 'Discounts', href: '/admin/discounts', icon: Percent },
       { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
       { label: 'My Profile', href: '/admin/profile', icon: UserCog },
       { label: 'Settings', href: '/admin/settings', icon: Settings },
@@ -217,6 +221,7 @@ export function MobileNav() {
     drawerItems = [
       { label: 'Browse', href: '/category', icon: Grid },
       { label: 'Offers', href: '/offers', icon: Tag },
+      { label: 'Spin it', href: '/spin-it', icon: Disc3 },
       { label: 'Events', href: '/events', icon: CalendarDays },
       ...(MOVIES_ENABLED ? [{ label: 'Movies', href: '/movies', icon: Clapperboard }] : []),
       { label: 'Announcements', href: '/government', icon: FileText },

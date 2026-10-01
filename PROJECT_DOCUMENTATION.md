@@ -844,6 +844,35 @@ overnight).
 | UX batch — movie/event detail views, ticket tiers, registration Back button + cost summary, AC/Non-AC toggle, card text-overflow fix ([§10.8](#108-tailwind-line-clamp-n-doesnt-stop-horizontal-overflow)) | 2026-09-06 | `33661a5` | — |
 | **Invoice page** at end of registration ([§12.10](#1210-invoicing)) | 2026-09-08 | `a0be7af` | — |
 | Movie multi-language support + DB-overflow fix + DTO hardening ([§10.5](#105-untyped-body-dto-any-skips-validationpipe-entirely)) | 2026-09-13 | *pending push* | — |
+| Movies made dormant; banners retired; food Menu Photos; friendlier error messages | 2026-09-24 | `d0a198b` | — |
+| **Launch offer: paid plan** — ₹2500/90-day plan, 15 slots/category, same payment+approval flow as any other plan (see below) | 2026-10-01 | *pending push* | — |
+| **Lucky wheel discounts** — per-business spin-to-win campaigns, redeemable vouchers, "Spin it" discovery page (see below) | 2026-10-01 | *pending push* | — |
+
+**Launch offer (paid) — how it works.** `businesses.launch_offer_claimed_at` marks a
+claim. Slots are per top-level category (`LAUNCH_OFFER_SLOTS_PER_CATEGORY` = 15,
+`subscriptions.service.ts`). A business holds a slot while it is PENDING/UNDER_REVIEW/
+APPROVED/SUSPENDED/ARCHIVED, or DRAFT with a claim under 30 minutes old; REJECTED or
+soft-deleted businesses free theirs. `POST /subscriptions/businesses/:id/claim-launch-offer`
+takes a per-category Postgres advisory lock, re-counts, and reserves atomically, then
+queues a `LAUNCH_SPECIAL` subscription (`pricing 2500`, status `PENDING_PAYMENT`) —
+same payment-proof + admin-verification flow as every other plan, no auto-activation.
+Approval (`onboarding-verification.service.ts`) activates it with a 90-day window from
+the approval date. `GET /subscriptions/launch-offer` (public) feeds the registration
+banner. Kill switch: `LAUNCH_OFFER_ENABLED=false` on the API. Requires migration
+`20260928000000_launch_offer`.
+
+**Lucky wheel discounts — how it works.** A business publishes one active campaign
+(`BusinessDiscount`: an item/product + a max discount %, `discounts.service.ts`). The
+server generates 7 wheel segments, ascending, topping out at the max (duplicates
+allowed below 7 distinct values). A signed-in customer spins once per campaign on the
+business's public profile (`LuckyWheel`, login-gated like Vouchers); the server picks
+the winning segment server-side (`randomBytes`) and issues a `DiscountSpin` ticket —
+a unique `SPIN-XXXXXX` code, 30-day expiry, shown in a ticket UI (`DiscountTicket`).
+The business redeems it in-store by code at `/dashboard/discounts` (mirrors the
+Vouchers redeem box). Platform oversight at `/admin/discounts`. Customers browse every
+live wheel and their own won tickets at the public `/spin-it` page (`GET
+/discounts/active/all`, `GET /discounts/my`). Requires migration
+`20261001000000_discount_wheel`.
 
 ---
 

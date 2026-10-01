@@ -232,3 +232,26 @@
   .lp-root, .lp-hero-img, .lp-float, .lp-node, .lp-card { animation: none !important; }
   .lp-feature:hover, .lp-cta:hover:not(:disabled) { transform: none !important; }
 }
+
+/* ── Discounts: lucky wheel, tickets, Spin it page ─────────────────── */
+@keyframes discGlowPulse { 0%,100% { opacity: .35; transform: scale(1); } 50% { opacity: .7; transform: scale(1.08); } }
+@keyframes discPointerBob { 0%,100% { transform: translateX(-50%) rotate(0deg); } 50% { transform: translateX(-50%) rotate(-8deg); } }
+@keyframes discSparkle { 0% { opacity: 0; transform: scale(.4) translateY(0); } 40% { opacity: 1; } 100% { opacity: 0; transform: scale(1) translateY(-16px); } }
+@keyframes discPop { from { opacity: 0; transform: scale(.85) translateY(6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+@keyframes discFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes discShimmer { 0% { background-position: -150% 0; } 100% { background-position: 250% 0; } }
+@keyframes discConfettiFall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(170px) rotate(380deg); opacity: 0; } }
+
+.disc-glow { animation: discGlowPulse 2.6s ease-in-out infinite; }
+.disc-pointer-idle { animation: discPointerBob 2.2s ease-in-out infinite; }
+.disc-sparkle { position: absolute; pointer-events: none; animation: discSparkle 1.7s ease-out infinite; }
+.disc-pop { animation: discPop .4s cubic-bezier(0.34,1.56,0.64,1) both; }
+.disc-fade-up { animation: discFadeUp .45s ease-out both; }
+.disc-shimmer { background-image: linear-gradient(100deg, transparent 35%, rgba(255,255,255,0.45) 50%, transparent 65%); background-size: 250% 100%; animation: discShimmer 2.4s linear infinite; }
+.disc-confetti { position: absolute; top: 0; width: 7px; height: 12px; border-radius: 2px; animation: discConfettiFall 1.3s ease-in forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .disc-glow, .disc-pointer-idle, .disc-sparkle, .disc-pop, .disc-fade-up, .disc-shimmer, .disc-confetti {
+    animation: none !important;
+  }
+}
