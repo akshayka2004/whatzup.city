@@ -9,6 +9,9 @@ interface LaunchOfferStatus {
   packageName: string;
   price: number;
   durationDays: number;
+  /** Days covered by the payment; bonusDays are added free on top (durationDays = paid + bonus). */
+  paidDays: number;
+  bonusDays: number;
   /** Slots already used, keyed by category slug. */
   claimed: Record<string, number>;
 }

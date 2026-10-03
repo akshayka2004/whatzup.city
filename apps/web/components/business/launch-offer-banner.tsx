@@ -6,14 +6,17 @@ interface LaunchOfferBannerProps {
   slotsPerCategory: number;
   price: number;
   durationDays: number;
+  /** Free months added on top of the paid period. */
+  bonusDays: number;
   /** null until the business has chosen a category. */
   categoryName: string | null;
   slotsLeft: number;
 }
 
 /** "First N businesses per category get the launch price" — with the live count once a category is known. */
-export function LaunchOfferBanner({ slotsPerCategory, price, durationDays, categoryName, slotsLeft }: LaunchOfferBannerProps) {
+export function LaunchOfferBanner({ slotsPerCategory, price, durationDays, bonusDays, categoryName, slotsLeft }: LaunchOfferBannerProps) {
   const soldOut = categoryName !== null && slotsLeft <= 0;
+  const perk = `${Math.round((durationDays - bonusDays) / 30)} months + ${Math.round(bonusDays / 30)} months free, with unlimited offers.`;
   return (
     <div
       role="status"
@@ -30,7 +33,7 @@ export function LaunchOfferBanner({ slotsPerCategory, price, durationDays, categ
             <p className="font-semibold">Launch offer</p>
             <p className="text-xs text-muted-foreground mt-0.5">
               The first {slotsPerCategory} businesses in every category get our launch plan for just ₹{price.toLocaleString('en-IN')}
-              , valid {durationDays} days. Pick your category to see how many slots are left.
+              : {perk} Pick your category to see how many slots are left.
             </p>
           </>
         ) : soldOut ? (
@@ -47,7 +50,7 @@ export function LaunchOfferBanner({ slotsPerCategory, price, durationDays, categ
               launch-offer slots left in {categoryName}
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Register now for just ₹{price.toLocaleString('en-IN')}, valid {durationDays} days.
+              Register now for just ₹{price.toLocaleString('en-IN')}: {perk}
             </p>
           </>
         )}

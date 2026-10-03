@@ -42,18 +42,30 @@ export const TAX_PERCENT = 18;
  * verification). Set LAUNCH_OFFER_ENABLED=false to close the offer without a deploy.
  */
 export const LAUNCH_OFFER_SLOTS_PER_CATEGORY = 15;
-export const LAUNCH_OFFER_DAYS = 90;
+/** The ₹2500 pays for 3 months; 3 more are added free, so the plan runs LAUNCH_OFFER_DAYS in total. */
+export const LAUNCH_OFFER_PAID_DAYS = 90;
+export const LAUNCH_OFFER_BONUS_DAYS = 90;
+export const LAUNCH_OFFER_DAYS = LAUNCH_OFFER_PAID_DAYS + LAUNCH_OFFER_BONUS_DAYS;
 export const LAUNCH_OFFER_PRICE = 2500;
 /** Not a PackageNameEnum member — same convention as the HOTEL_/HOMECHEF_ packageName prefixes. */
 export const LAUNCH_OFFER_PACKAGE_NAME = 'LAUNCH_SPECIAL';
 const LAUNCH_OFFER_PLAN = {
-  postingLimits: 5,
+  // 1000 is the codebase's "effectively unlimited" posting cap (top-tier plan); offers/vouchers
+  // are not capped server-side, the flag documents the entitlement.
+  postingLimits: 1000,
   categoryLimits: 1,
-  featureFlags: { listingPackage: true, backlinks: true, offers: 5, vouchers: 5, launchOffer: true },
+  featureFlags: {
+    listingPackage: true,
+    backlinks: true,
+    offers: 'unlimited',
+    vouchers: 'unlimited',
+    launchOffer: true,
+  },
   features: [
     'Web App Listing',
     'Website Listing with backlinks',
-    '5 offers · 5 vouchers',
+    'Unlimited offers · unlimited vouchers',
+    '3 months paid + 3 months free (6 months total)',
     'Launch Offer price — limited to the first 15 businesses per category',
   ],
 };
@@ -326,6 +338,8 @@ export class SubscriptionsService {
       packageName: LAUNCH_OFFER_PACKAGE_NAME,
       price: LAUNCH_OFFER_PRICE,
       durationDays: LAUNCH_OFFER_DAYS,
+      paidDays: LAUNCH_OFFER_PAID_DAYS,
+      bonusDays: LAUNCH_OFFER_BONUS_DAYS,
     };
     if (!base.enabled) return { ...base, claimed: {} as Record<string, number> };
 

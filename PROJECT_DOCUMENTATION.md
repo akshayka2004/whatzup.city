@@ -845,7 +845,7 @@ overnight).
 | **Invoice page** at end of registration ([§12.10](#1210-invoicing)) | 2026-09-08 | `a0be7af` | — |
 | Movie multi-language support + DB-overflow fix + DTO hardening ([§10.5](#105-untyped-body-dto-any-skips-validationpipe-entirely)) | 2026-09-13 | *pending push* | — |
 | Movies made dormant; banners retired; food Menu Photos; friendlier error messages | 2026-09-24 | `d0a198b` | — |
-| **Launch offer: paid plan** — ₹2500/90-day plan, 15 slots/category, same payment+approval flow as any other plan (see below) | 2026-10-01 | *pending push* | — |
+| **Launch offer: paid plan** — ₹2500 for 3 months + 3 months free (180 days), unlimited offers/vouchers, 15 slots/category, same payment+approval flow as any other plan (see below) | 2026-10-01 | `27190f8` (+ bonus months 2026-10-03, *pending push*) | — |
 | **Lucky wheel discounts** — per-business spin-to-win campaigns, redeemable vouchers, "Spin it" discovery page (see below) | 2026-10-01 | *pending push* | — |
 
 **Launch offer (paid) — how it works.** `businesses.launch_offer_claimed_at` marks a
@@ -856,9 +856,11 @@ soft-deleted businesses free theirs. `POST /subscriptions/businesses/:id/claim-l
 takes a per-category Postgres advisory lock, re-counts, and reserves atomically, then
 queues a `LAUNCH_SPECIAL` subscription (`pricing 2500`, status `PENDING_PAYMENT`) —
 same payment-proof + admin-verification flow as every other plan, no auto-activation.
-Approval (`onboarding-verification.service.ts`) activates it with a 90-day window from
-the approval date. `GET /subscriptions/launch-offer` (public) feeds the registration
-banner. Kill switch: `LAUNCH_OFFER_ENABLED=false` on the API. Requires migration
+The ₹2500 covers 3 months (`LAUNCH_OFFER_PAID_DAYS` = 90) and 3 more are added free
+(`LAUNCH_OFFER_BONUS_DAYS` = 90), so the subscription runs `LAUNCH_OFFER_DAYS` = 180 days;
+offers and vouchers are flagged `unlimited` (not capped server-side). Subscriptions
+claimed before 2026-10-03 keep their original 90 days. `GET /subscriptions/launch-offer`
+(public) feeds the registration banner. Kill switch: `LAUNCH_OFFER_ENABLED=false` on the API. Requires migration
 `20260928000000_launch_offer`.
 
 **Lucky wheel discounts — how it works.** A business publishes one active campaign

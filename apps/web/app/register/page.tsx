@@ -988,7 +988,7 @@ export default function UnifiedRegisterPage() {
               </span>
               {claimLaunch ? (
                 <span className="font-semibold text-emerald-400">
-                  Launch Offer · {formatINR(launchOffer.status?.price ?? 2500)} · {launchOffer.status?.durationDays ?? 90} days
+                  Launch Offer · {formatINR(launchOffer.status?.price ?? 2500)} · {launchOffer.status?.durationDays ?? 180} days
                 </span>
               ) : isHotel ? (
                 hotelStarRating ? (
@@ -1017,6 +1017,7 @@ export default function UnifiedRegisterPage() {
             slotsPerCategory={launchOffer.status.slotsPerCategory}
             price={launchOffer.status.price}
             durationDays={launchOffer.status.durationDays}
+            bonusDays={launchOffer.status.bonusDays}
             categoryName={role === 'BUSINESS' && currentStep >= 2 ? categoryLabel : null}
             slotsLeft={launchSlotsLeft}
           />
@@ -1757,7 +1758,7 @@ export default function UnifiedRegisterPage() {
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-foreground">Claim launch offer</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            ₹{(launchOffer.status?.price ?? 2500).toLocaleString('en-IN')} for {launchOffer.status?.durationDays} days.{' '}
+                            ₹{(launchOffer.status?.price ?? 2500).toLocaleString('en-IN')} for 3 months, plus 3 months free and unlimited offers.{' '}
                             <span className="font-semibold text-emerald-400">
                               {launchSlotsLeft} of {launchOffer.status?.slotsPerCategory} slots left in {categoryLabel}
                             </span>
@@ -1781,7 +1782,12 @@ export default function UnifiedRegisterPage() {
                         Launch Offer · {launchOffer.status?.durationDays} days · ₹{(launchOffer.status?.price ?? 2500).toLocaleString('en-IN')}
                       </p>
                       <ul className="space-y-1">
-                        {['Web App Listing', 'Website Listing with backlinks', '5 offers · 5 vouchers'].map((f, i) => (
+                        {[
+                          'Web App Listing',
+                          'Website Listing with backlinks',
+                          'Unlimited offers · unlimited vouchers',
+                          '3 months paid + 3 months FREE (6 months total)',
+                        ].map((f, i) => (
                           <li key={i} className="flex items-start gap-1 text-[11px] text-muted-foreground">
                             <CheckCircle className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
                             {f}
@@ -1947,7 +1953,7 @@ export default function UnifiedRegisterPage() {
                     );
                     const amount = totals.total;
                     const durationDays = claimLaunch
-                      ? launchOffer.status?.durationDays ?? 90
+                      ? launchOffer.status?.durationDays ?? 180
                       : isHotel
                         ? HOTEL_DURATION_DAYS
                         : isHomeChef
@@ -2010,7 +2016,10 @@ export default function UnifiedRegisterPage() {
                           <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
                         </div>
                         <p className="text-[11px] text-muted-foreground">
-                          Valid for {durationDays} days from activation. Inclusive of {TAX_PERCENT}% GST.
+                          {claimLaunch
+                            ? `You pay for 3 months and get 3 more free: valid ${durationDays} days from activation.`
+                            : `Valid for ${durationDays} days from activation.`}{' '}
+                          Inclusive of {TAX_PERCENT}% GST.
                         </p>
                       </div>
                     );
