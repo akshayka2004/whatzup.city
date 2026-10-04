@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsArray, IsUrl } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsArray, IsUrl, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { StripHtmlInput } from '../../../common/decorators/sanitize.decorator';
 
@@ -6,6 +6,7 @@ export class CreateReportDto {
   @ApiProperty({ example: 'BUSINESS', required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(50, { message: 'The target type is too long (50 characters max).' })
   targetType?: string;
 
   @ApiProperty({ example: '00000000-0000-0000-0000-000000000001', required: false })
@@ -16,6 +17,7 @@ export class CreateReportDto {
   @ApiProperty({ example: 'SPAM' })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(50, { message: 'The type is too long (50 characters max).' })
   type!: string;
 
   @ApiProperty({ example: 'The listing is posting misleading advertisements.' })

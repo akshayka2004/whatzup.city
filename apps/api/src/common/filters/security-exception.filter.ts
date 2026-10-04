@@ -55,11 +55,20 @@ export class SecurityExceptionFilter implements ExceptionFilter {
           break;
         // A string value didn't fit its column (e.g. a VarChar length cap).
         // DTOs should catch this before it reaches Postgres, but this is the
-        // net for any field that doesn't have one yet.
-        case 'P2000':
+        // net for any field that doesn't have one yet. Prisma reports which
+        // column overflowed (names only, never values) — name it so the user
+        // knows what to shorten instead of hunting through the form.
+        case 'P2000': {
           status = HttpStatus.BAD_REQUEST;
-          message = 'One of the fields you entered is too long. Please shorten it and try again.';
+          const meta = exception.meta as any;
+          const column = meta?.column_name ?? meta?.column;
+          const label =
+            typeof column === 'string' && /^[A-Za-z0-9_]+$/.test(column) ? column.replace(/_/g, ' ') : null;
+          message = label
+            ? `The "${label}" value you entered is too long. Please shorten it and try again.`
+            : 'One of the fields you entered is too long. Please shorten it and try again.';
           break;
+        }
         // Schema drift — the running process's Prisma Client (or the DB
         // itself) doesn't have a table/column the code just tried to use.
         // Near-certain cause: a deploy applied new code without running

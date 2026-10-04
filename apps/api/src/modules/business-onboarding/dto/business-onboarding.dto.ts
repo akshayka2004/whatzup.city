@@ -6,6 +6,7 @@ import {
   IsArray,
   IsNumber,
   IsEnum,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BusinessProfileType } from '@saas/types';
@@ -44,6 +45,7 @@ export class UpdateBusinessDetailsDto {
   @ApiProperty({ example: 'Jane Business' })
   @IsOptional()
   @IsString()
+  @MaxLength(255, { message: 'The owner name is too long (255 characters max).' })
   ownerName?: string;
 
   @ApiProperty({ example: 'jane@sunrisecafe.com' })
@@ -69,16 +71,19 @@ export class UpdateBusinessDetailsDto {
   @ApiProperty({ example: 'Mumbai' })
   @IsOptional()
   @IsString()
+  @MaxLength(100, { message: 'The city is too long (100 characters max).' })
   city?: string;
 
   @ApiProperty({ example: 'Mumbai Suburban' })
   @IsOptional()
   @IsString()
+  @MaxLength(100, { message: 'The district is too long (100 characters max).' })
   district?: string;
 
   @ApiProperty({ example: 'Maharashtra' })
   @IsOptional()
   @IsString()
+  @MaxLength(100, { message: 'The state is too long (100 characters max).' })
   state?: string;
 
   @ApiProperty({ example: '400001' })

@@ -15,6 +15,7 @@
     "db:reset": "dotenv -e .env -- turbo run db:reset",
     "db:push": "dotenv -e .env -- turbo run db:push",
     "clean": "turbo run clean && rimraf node_modules",
+    "db:check-limits": "node scripts/check-column-limits.js --strict",
     "security:tenant-scope": "node scripts/check-tenant-scope.js",
     "security:tenant-scope:strict": "node scripts/check-tenant-scope.js --strict",
     "security:audit": "pnpm audit --audit-level=high",

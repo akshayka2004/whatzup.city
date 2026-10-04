@@ -531,6 +531,27 @@ keep restarting — delete and recreate the process. And when in doubt about
 which Supabase project is live, check row counts in that project's own SQL
 Editor before writing any connection string into a file.
 
+### 10.10 Encrypted values need `Text` columns; DTO caps must fit the column
+
+**Symptom:** the last registration step ("Submit Payment & Application") failed
+with *"One of the fields you entered is too long"* even though nothing looked long.
+
+**Cause:** `CryptoService.encrypt()` (AES-256-GCM, `v1:<iv>:<tag>:<data>`) turns a
+15-char GSTIN into ~65 chars, but `billing_profiles.gstin` was `VarChar(20)` and
+`pan` was `VarChar(15)`. The DTO validated the *plaintext*; Postgres rejected the
+*ciphertext* (Prisma `P2000`). Fixed by migration `20261004000000_billing_encrypted_columns`
+(both → `Text`).
+
+**Rules:**
+- A column that stores `encrypt()` output must be `Text`, never `VarChar`.
+- A DTO `@MaxLength` must be ≤ the `VarChar(n)` of the column it feeds, and every
+  string DTO field feeding a `VarChar` column should have one.
+- `pnpm db:check-limits` (`scripts/check-column-limits.js --strict`) enforces the first
+  two statically and lists uncapped fields as warnings. Run it after touching
+  `schema.prisma` or a DTO.
+- If a `P2000` still slips through, the API now names the column in the message
+  (`The "gstin" value you entered is too long…`) and logs the full Prisma error.
+
 ---
 
 ## 11. Region / infrastructure migration runbook

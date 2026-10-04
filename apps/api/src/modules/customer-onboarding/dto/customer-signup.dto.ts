@@ -1,9 +1,10 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CustomerSignupDto {
   @ApiProperty({ example: 'customer@example.com' })
   @IsEmail()
+  @MaxLength(255, { message: 'The email is too long (255 characters max).' })
   email!: string;
 
   @ApiProperty({ example: 'password123' })
@@ -13,15 +14,18 @@ export class CustomerSignupDto {
 
   @ApiProperty({ example: 'John' })
   @IsString()
+  @MaxLength(100, { message: 'The first name is too long (100 characters max).' })
   firstName!: string;
 
   @ApiProperty({ example: 'Doe' })
   @IsString()
+  @MaxLength(100, { message: 'The last name is too long (100 characters max).' })
   lastName!: string;
 
   @ApiProperty({ example: '+919999999999', required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(50, { message: 'The phone is too long (50 characters max).' })
   phone?: string;
 
   @ApiProperty({ example: 'default' })

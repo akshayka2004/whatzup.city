@@ -25,11 +25,13 @@ export class UpdateCivicProfileDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(255, { message: 'The organization name is too long (255 characters max).' })
   organizationName?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(255, { message: 'The contact name is too long (255 characters max).' })
   contactName?: string;
 
   @ApiProperty({ required: false })
@@ -50,6 +52,7 @@ export class UpdateCivicProfileDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(100, { message: 'The district is too long (100 characters max).' })
   district?: string;
 
   @ApiProperty({ required: false })

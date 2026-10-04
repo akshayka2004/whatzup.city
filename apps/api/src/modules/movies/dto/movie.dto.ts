@@ -32,6 +32,7 @@ export class MovieDto {
 
   @ApiProperty({ required: false, enum: CERTIFICATIONS })
   @IsOptional() @IsIn(CERTIFICATIONS)
+  @MaxLength(10, { message: 'The certification is too long (10 characters max).' })
   certification?: string;
 
   @ApiProperty({ required: false })
@@ -52,6 +53,7 @@ export class MovieDto {
 
   @ApiProperty({ required: false, enum: STATUSES })
   @IsOptional() @IsIn(STATUSES)
+  @MaxLength(20, { message: 'The status is too long (20 characters max).' })
   status?: string;
 
   @ApiProperty({ required: false, type: [String] })

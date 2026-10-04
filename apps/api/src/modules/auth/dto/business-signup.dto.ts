@@ -1,18 +1,21 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsArray, IsBoolean } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsArray, IsBoolean, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BusinessProfileType } from '@prisma/client';
 
 export class BusinessSignupDto {
   @ApiProperty({ example: 'John Owner', description: 'Business Owner Full Name' })
   @IsString()
+  @MaxLength(255, { message: 'The owner name is too long (255 characters max).' })
   ownerName!: string;
 
   @ApiProperty({ example: 'owner@sunrisecafe.com', description: 'Business/Owner Email' })
   @IsEmail()
+  @MaxLength(255, { message: 'The email is too long (255 characters max).' })
   email!: string;
 
   @ApiProperty({ example: '+912212345678', description: 'Business/Owner Phone' })
   @IsString()
+  @MaxLength(50, { message: 'The phone is too long (50 characters max).' })
   phone!: string;
 
   @ApiProperty({ example: 'SecurePassword123!', description: 'Strong password' })
@@ -36,6 +39,7 @@ export class BusinessSignupDto {
   @ApiProperty({ example: 'HALAL', enum: ['HALAL', 'NON_HALAL'], required: false, description: 'Food businesses only' })
   @IsOptional()
   @IsString()
+  @MaxLength(20, { message: 'The halal status is too long (20 characters max).' })
   halalStatus?: string;
 
   @ApiProperty({ enum: BusinessProfileType, default: BusinessProfileType.OWNER, required: false })

@@ -28,10 +28,12 @@ export class CreateMediaDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(20, { message: 'The type is too long (20 characters max).' })
   type!: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(255, { message: 'The filename is too long (255 characters max).' })
   filename!: string;
 
   @IsNumber()
@@ -40,6 +42,7 @@ export class CreateMediaDto {
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100, { message: 'The mime type is too long (100 characters max).' })
   mimeType!: string;
 
   @IsOptional()

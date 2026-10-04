@@ -52,10 +52,12 @@ export class EventDto {
 
   @ApiProperty({ required: false, enum: EVENT_CATEGORIES })
   @IsOptional() @IsIn(EVENT_CATEGORIES)
+  @MaxLength(30, { message: 'The category is too long (30 characters max).' })
   category?: string;
 
   @ApiProperty({ required: false, enum: TICKET_TYPES })
   @IsOptional() @IsIn(TICKET_TYPES)
+  @MaxLength(10, { message: 'The ticket type is too long (10 characters max).' })
   ticketType?: string;
 
   @ApiProperty({ required: false })

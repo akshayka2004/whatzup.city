@@ -1,4 +1,4 @@
-import { IsEnum, IsString, IsOptional } from 'class-validator';
+import { IsEnum, IsString, IsOptional, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRoleEnum, EntityType } from '@prisma/client';
 
@@ -14,6 +14,7 @@ export class SelectRoleDto {
   @ApiProperty({ example: 'My Custom Name', required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(100, { message: 'The name is too long (100 characters max).' })
   name?: string;
 
   @ApiProperty({ example: '+919999999999', required: false })

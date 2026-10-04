@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsInt, Min, Max, IsOptional, IsArray, IsUrl } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, Min, Max, IsOptional, IsArray, IsUrl, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { StripHtmlInput } from '../../../common/decorators/sanitize.decorator';
 
@@ -18,6 +18,7 @@ export class CreateReviewDto {
   @IsOptional()
   @IsString()
   @StripHtmlInput()
+  @MaxLength(255, { message: 'The title is too long (255 characters max).' })
   title?: string;
 
   @ApiProperty({ example: 'Really liked the cappuccino here. Fast service.' })

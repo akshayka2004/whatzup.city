@@ -2214,8 +2214,9 @@ model BillingProfile {
 
   billingName    String    @map("billing_name") @db.VarChar(255)
   hasGst         Boolean   @default(false) @map("has_gst")
-  gstin          String?   @db.VarChar(20)
-  pan            String?   @db.VarChar(15)
+  /// AES-256-GCM ciphertext (`v1:<iv>:<tag>:<data>`, ~65+ chars) — must stay Text, never VarChar.
+  gstin          String?   @db.Text
+  pan            String?   @db.Text
   addressLine    String    @map("address_line") @db.Text
   city           String?   @db.VarChar(100)
   state          String?   @db.VarChar(100)
