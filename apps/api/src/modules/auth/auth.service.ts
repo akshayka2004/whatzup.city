@@ -8,6 +8,7 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Logger,
@@ -435,11 +436,19 @@ export class AuthService {
     }).catch(() => {});
 
     // Return entity in response so frontend can skip a second /me roundtrip
-    const activeEntity = user.entities?.[0] ?? null;
+    let activeEntity = user.entities?.[0] ?? null;
+
+    // Brand accounts: honour the outlet the user last switched to (validated against their access).
+    const preferred = await this.resolvePreferredBusiness(user.id, (user as any).activeBusinessId);
 
     // For staff/moderator accounts without an entity, resolve businessId via BusinessStaff
     let staffBusinessId: string | undefined;
-    if (!activeEntity) {
+    if (preferred) {
+      staffBusinessId = preferred.id;
+      if (preferred.entityId) {
+        activeEntity = (await this.db.entity.findUnique({ where: { id: preferred.entityId } })) ?? activeEntity;
+      }
+    } else if (!activeEntity) {
       // Prefer isActive staff records; fallback without filter for robustness
       let staffRecord = await this.db.businessStaff.findFirst({
         where: { userId: user.id, deletedAt: null, isActive: true },
@@ -734,6 +743,38 @@ export class AuthService {
     return { message: 'Email verified successfully. You can now login.' };
   }
 
+  /**
+   * The business a user asked to operate as (brand outlet switcher), but only if they can actually
+   * access it: they own it or are on its active staff. A stale or foreign id resolves to null and the
+   * caller falls back to the default (newest entity) behaviour, so this can never widen access.
+   */
+  private async resolvePreferredBusiness(
+    userId: string,
+    activeBusinessId?: string | null,
+  ): Promise<{ id: string; entityId: string | null } | null> {
+    if (!activeBusinessId) return null;
+    // tenant-scope-ok: membership is checked by ownerId / staff userId below
+    const business = await this.db.business.findFirst({
+      where: {
+        id: activeBusinessId,
+        deletedAt: null,
+        OR: [{ ownerId: userId }, { staff: { some: { userId, deletedAt: null, isActive: true } } }],
+      },
+      select: { id: true, entityId: true },
+    });
+    return business ?? null;
+  }
+
+  /** Switch which outlet the owner/staff member is operating. Takes effect on the next /me. */
+  async setActiveBusiness(userId: string, businessId: string) {
+    const target = await this.resolvePreferredBusiness(userId, businessId);
+    if (!target) throw new ForbiddenException('You do not have access to that outlet.');
+    await this.db.user.update({ where: { id: userId }, data: { activeBusinessId: target.id } });
+    await this.redisService.del(`user:${userId}`);
+    await this.redisService.del(`user-permissions:${userId}`);
+    return { businessId: target.id };
+  }
+
   async validateUser(payload: JwtPayload) {
     // Check Cache
     const cached = await this.redisService.get<any>(`user:${payload.sub}`);
@@ -789,11 +830,31 @@ export class AuthService {
       });
     });
 
-    const activeEntity = user.entities[0] || null;
+    let activeEntity = user.entities[0] || null;
+
+    // Brand accounts: honour the outlet the user last switched to (validated against their access).
+    const preferred = await this.resolvePreferredBusiness(user.id, user.activeBusinessId);
 
     // Resolve associated businessId so the frontend can use it directly.
     let staffBusinessId: string | undefined;
-    if (!activeEntity) {
+    if (preferred) {
+      staffBusinessId = preferred.id;
+      if (preferred.entityId) {
+        activeEntity =
+          (await this.db.entity.findUnique({
+            where: { id: preferred.entityId },
+            include: {
+              influencerProfile: true,
+              professionalProfile: true,
+              eventOrganizerProfile: true,
+              organizationProfile: true,
+              governmentProfile: true,
+              civicProfile: true,
+              business: true,
+            } as any,
+          })) ?? activeEntity;
+      }
+    } else if (!activeEntity) {
       // Try active staff record first; fallback without isActive filter
       // in case isActive column has a null value (schema default may not apply retroactively)
       let staffRecord = await this.db.businessStaff.findFirst({
@@ -976,6 +1037,24 @@ export class AuthService {
 
     // Block duplicate company name (case-insensitive) and phone
     await this.assertCompanyUnique({ name: dto.businessName, phone: dto.phone });
+
+    // Brand accounts: the brand name is unique platform-wide, like a company name.
+    const isBrand = dto.accountType === 'BRAND';
+    const brandName = dto.brandName?.trim() ?? '';
+    const brandSeriesMode = dto.billSeriesMode === 'SHARED' ? 'SHARED' : 'PER_OUTLET';
+    const brandSeriesPrefix = dto.billSeriesPrefix?.trim() || null;
+    if (isBrand) {
+      if (!brandName) throw new BadRequestException('Enter the brand name.');
+      if (brandSeriesMode === 'SHARED' && !brandSeriesPrefix) {
+        throw new BadRequestException('Enter the bill series prefix your outlets share.');
+      }
+      // tenant-scope-ok: brand names are unique platform-wide; selects id only
+      const dupBrand = await this.db.brand.findFirst({
+        where: { name: { equals: brandName, mode: 'insensitive' }, deletedAt: null },
+        select: { id: true },
+      });
+      if (dupBrand) throw new ConflictException('A brand with this name is already registered');
+    }
 
     // Resolve default tenant
     const defaultTenant = await this.db.tenant.findUnique({
@@ -1225,6 +1304,48 @@ export class AuthService {
           role: memberRole,
         },
       });
+
+      // 9b. Brand account: create the Brand and make this first business its HQ outlet. The brand
+      // lives in the owner's tenant so every later outlet shares one login, staff and tenant.
+      if (isBrand) {
+        const brandSlug =
+          brandName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') +
+          '-' +
+          Date.now().toString(36);
+        const brand = await tx.brand.create({
+          data: {
+            tenantId: tenant.id,
+            ownerId: userRecord.id,
+            name: brandName,
+            slug: brandSlug,
+            billSeriesMode: brandSeriesMode,
+            billSeriesPrefix: brandSeriesMode === 'SHARED' ? brandSeriesPrefix : null,
+          },
+        });
+        await tx.business.update({
+          where: { id: businessRecord.id },
+          data: {
+            brandId: brand.id,
+            isBrandHq: true,
+            brandName: brand.name,
+            outletLabel: dto.outletLabel?.trim() || null,
+          },
+        });
+        // Pin the dashboard to the head outlet: the "newest entity" default would otherwise jump to
+        // whichever outlet is added next.
+        await tx.user.update({ where: { id: userRecord.id }, data: { activeBusinessId: businessRecord.id } });
+        await tx.brandEvent.create({
+          data: {
+            tenantId: tenant.id,
+            brandId: brand.id,
+            businessId: businessRecord.id,
+            actorId: userRecord.id,
+            type: 'BRAND_CREATED',
+            summary: `Brand "${brand.name}" registered with its first outlet "${dto.businessName}"`,
+            metadata: { via: 'signup', billSeriesMode: brandSeriesMode },
+          },
+        });
+      }
 
       // 10. Create onboarding progress
       await tx.onboardingProgress.create({

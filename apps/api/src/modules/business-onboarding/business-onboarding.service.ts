@@ -15,6 +15,7 @@ import {
 } from './dto/business-onboarding.dto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { operatingHoursForDb } from '../../common/utils/operating-hours.validator';
 
 @Injectable()
 export class BusinessOnboardingService {
@@ -219,7 +220,7 @@ export class BusinessOnboardingService {
     if (dto.postalCode !== undefined) updateData.zipCode = dto.postalCode;
     if (dto.latitude !== undefined) updateData.latitude = dto.latitude;
     if (dto.longitude !== undefined) updateData.longitude = dto.longitude;
-    if (dto.operatingHours !== undefined) updateData.operatingHours = dto.operatingHours;
+    if (dto.operatingHours !== undefined) updateData.operatingHours = operatingHoursForDb(dto.operatingHours);
     if (dto.googleMapsUrl !== undefined) updateData.googleMapsUrl = dto.googleMapsUrl;
     if (dto.socialLinks !== undefined) updateData.socialLinks = dto.socialLinks;
     if (dto.tags !== undefined) updateData.tags = dto.tags;
@@ -274,6 +275,9 @@ export class BusinessOnboardingService {
     });
 
     await this.searchService.indexBusiness(actualId, tenantId);
+    // The public business page is cached for 5 min under this key; without this the owner's new
+    // details (hours, brand, etc.) don't show up until it expires.
+    await this.redis.del(`business:${actualId}`);
 
     // Update progress tracker
     const progress = await this.db.onboardingProgress.findFirst({

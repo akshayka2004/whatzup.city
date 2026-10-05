@@ -177,8 +177,8 @@ export default function BillsPage() {
                         <FileText className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground text-base">
-                          Bill #{bill.invoiceRef}
+                        <h3 className="font-semibold text-foreground text-base break-all">
+                          Bill #{bill.billNumber && bill.billNumber !== '—' ? bill.billNumber : bill.invoiceRef}
                         </h3>
                         <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
                           <User className="h-3 w-3" />

@@ -6,6 +6,7 @@ import {
   Controller,
   Post,
   Get,
+  Put,
   Body,
   Param,
   HttpCode,
@@ -30,6 +31,7 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { BusinessSignupDto } from './dto/business-signup.dto';
 import { CivicSignupDto } from './dto/civic-signup.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
+import { SetActiveBusinessDto } from './dto/set-active-business.dto';
 import { ConfigService } from '@nestjs/config';
 
 @ApiTags('Authentication')
@@ -253,5 +255,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current authenticated user details' })
   async me(@CurrentUser() user: any) {
     return user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('active-business')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Switch the outlet (business) the signed-in owner/staff member is operating' })
+  async setActiveBusiness(@CurrentUser('id') userId: string, @Body() dto: SetActiveBusinessDto) {
+    return this.authService.setActiveBusiness(userId, dto.businessId);
   }
 }

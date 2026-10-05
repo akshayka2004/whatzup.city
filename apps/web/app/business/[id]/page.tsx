@@ -11,7 +11,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { HOTEL_AMENITIES } from '@/lib/hotel-pricing';
 import { labelsFor } from '@/components/business/amenity-details-editor';
 import { LuckyWheel } from '@/components/business/lucky-wheel';
+import { OpeningHoursCard } from '@/components/business/opening-hours-card';
+import { BrandPublicChip, OtherOutlets } from '@/components/business/brand-public-section';
+import { hasOperatingHours } from '@saas/types';
 import {
+  UtensilsCrossed,
+  ShoppingBag,
   ArrowLeft,
   Star,
   MapPin,
@@ -285,6 +290,7 @@ function BusinessDetailPageContent() {
         businessId,
         amount: parseFloat(billAmount),
         billDate,
+        billNumber: billNumber.trim().slice(0, 60),
         billImage: billImageRef,
         description: billReview || undefined,
       });
@@ -413,6 +419,7 @@ function BusinessDetailPageContent() {
                       {biz.category?.name || ''}
                       {biz.subcategory ? ` • ${biz.subcategory}` : ''}
                     </p>
+                    {biz.brand && <BrandPublicChip brand={biz.brand} />}
                   </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
@@ -464,7 +471,9 @@ function BusinessDetailPageContent() {
                     <span className="break-words min-w-0">{biz.phone || branch?.phone}</span>
                   </div>
                 )}
-                {branch?.operatingHours && (
+                {hasOperatingHours(biz.operatingHours) ? (
+                  <OpeningHoursCard hours={biz.operatingHours} className="bg-background/40" />
+                ) : branch?.operatingHours && (
                   <div className="flex items-center gap-3 text-foreground text-sm">
                     <Clock className="h-5 w-5 text-amber-400 flex-shrink-0" />
                     <span className="break-all min-w-0">{typeof branch.operatingHours === 'string' ? branch.operatingHours : JSON.stringify(branch.operatingHours)}</span>
@@ -837,6 +846,14 @@ function BusinessDetailPageContent() {
                     return (
                       <div key={o.id || i} className="ui-fade-up p-3 bg-white/5 rounded-xl border border-white/5" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
                         <p className="font-semibold text-foreground mb-1">{discount}</p>
+                        {(o.fulfilment === 'DINE_IN' || o.fulfilment === 'TAKEAWAY') && (
+                          <span className="mb-1.5 inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                            {o.fulfilment === 'DINE_IN'
+                              ? <UtensilsCrossed className="h-3 w-3" />
+                              : <ShoppingBag className="h-3 w-3" />}
+                            {o.fulfilment === 'DINE_IN' ? 'Dine-in only' : 'Takeaway only'}
+                          </span>
+                        )}
                         {o.description && <p className="text-xs text-muted-foreground mb-1">{o.description}</p>}
                         {expiry && <p className="text-xs text-muted-foreground mb-2">{expiry}</p>}
                         <Button
@@ -867,6 +884,12 @@ function BusinessDetailPageContent() {
             )}
           </div>
         </div>
+
+        {biz.brandId && (
+          <div className="mt-8">
+            <OtherOutlets brandId={biz.brandId} currentBusinessId={biz.id || businessId} />
+          </div>
+        )}
       </div>
 
       {/* ── MENU PHOTO LIGHTBOX */}

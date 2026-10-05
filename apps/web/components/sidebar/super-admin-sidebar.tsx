@@ -26,6 +26,7 @@ import {
   BadgeIndianRupee,
   Gift,
   Clapperboard,
+  Network,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MOVIES_ENABLED } from '@/lib/feature-flags';
@@ -54,6 +55,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     title: 'Business',
     items: [
       { label: 'Businesses', href: '/super-admin/businesses', icon: Building2 },
+      { label: 'Brand accounts', href: '/super-admin/brands', icon: Network },
       // Points at /admin/approvals (not /super-admin/approvals) — that page has
       // the payment-approval popup for a business's first payment; the old
       // super-admin-only approvals page never got it. AdminLayout already

@@ -19,6 +19,32 @@ export class OnboardingVerificationService {
     private readonly storage: StorageService,
   ) {}
 
+  /** Brand activity feed entry for a brand outlet's approval decision; no-op for single businesses. */
+  private async recordBrandEvent(
+    business: { id: string; tenantId: string; brandId: string | null },
+    adminId: string,
+    type: string,
+    summary: string,
+    metadata: Record<string, any> = {},
+  ) {
+    if (!business.brandId) return;
+    try {
+      await this.db.brandEvent.create({
+        data: {
+          tenantId: business.tenantId,
+          brandId: business.brandId,
+          businessId: business.id,
+          actorId: adminId,
+          type,
+          summary: summary.slice(0, 255),
+          metadata,
+        },
+      });
+    } catch (err: any) {
+      this.logger.warn(`Could not record brand event ${type}: ${err?.message ?? err}`);
+    }
+  }
+
   /**
    * Normalize a document row (UploadedDocument or BusinessDocument) into the
    * shape the admin review UI expects. Converts a stored {bucket,path} JSON
@@ -131,6 +157,8 @@ export class OnboardingVerificationService {
               business: {
                 include: {
                   category: { select: { id: true, name: true } },
+                  // Brand outlets show "Outlet of <Brand>" in the queue.
+                  brand: { select: { id: true, name: true } },
                   // Surface the plan opted for and the payment submitted, so the
                   // approver can verify both without leaving the queue.
                   subscriptions: {
@@ -259,6 +287,10 @@ export class OnboardingVerificationService {
           data: { status: 'APPROVED' },
         });
 
+        await this.recordBrandEvent(business, adminId, 'OUTLET_APPROVED', `Outlet "${business.name}" approved`, {
+          notes: dto.notes,
+        });
+
         // Sync to Search index
         try {
           await this.searchService.indexBusiness(business.id, business.tenantId);
@@ -382,6 +414,10 @@ export class OnboardingVerificationService {
         await this.db.businessDocument.updateMany({
           where: { businessId: business.id, status: 'PENDING' },
           data: { status: 'REJECTED', rejectionReason: dto.reason },
+        });
+
+        await this.recordBrandEvent(business, adminId, 'OUTLET_REJECTED', `Outlet "${business.name}" rejected`, {
+          reason: dto.reason,
         });
 
         // Remove from index if exists

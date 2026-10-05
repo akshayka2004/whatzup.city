@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Search, Download, Receipt, Tag, Building2, ShieldAlert,
-  UserCheck, Settings, Bell, RefreshCw, Loader2, History,
+  UserCheck, Settings, Bell, RefreshCw, Loader2, History, Store,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
 
-function deriveCategory(action = ''): EventCategory {
+function deriveCategory(action = '', resource = ''): EventCategory {
   const a = action.toUpperCase();
+  if (resource.toUpperCase() === 'BRAND' || a.startsWith('BRAND') || a.includes('OUTLET')) return 'BRAND';
   if (a.includes('BILL') || a.includes('INVOICE')) return 'BILL';
   if (a.includes('OFFER') || a.includes('COUPON') || a.includes('PROMO')) return 'OFFER';
   if (a.includes('BUSINESS') || a.includes('ONBOARDING') || a.includes('LISTING')) return 'BUSINESS';
@@ -23,12 +24,13 @@ function deriveCategory(action = ''): EventCategory {
   return 'SYSTEM';
 }
 
-type EventCategory = 'BILL' | 'OFFER' | 'BUSINESS' | 'USER' | 'MODERATION' | 'SYSTEM' | 'NOTICE';
+type EventCategory = 'BILL' | 'OFFER' | 'BUSINESS' | 'BRAND' | 'USER' | 'MODERATION' | 'SYSTEM' | 'NOTICE';
 
 const CATEGORY_CONFIG: Record<EventCategory, { label: string; color: string; bg: string; border: string; icon: React.ElementType }> = {
   BILL: { label: 'Bill', color: 'text-info', bg: 'bg-info/10', border: 'border-info/20', icon: Receipt },
   OFFER: { label: 'Offer', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', icon: Tag },
   BUSINESS: { label: 'Business', color: 'text-success', bg: 'bg-success/10', border: 'border-success/20', icon: Building2 },
+  BRAND: { label: 'Brand', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', icon: Store },
   USER: { label: 'User', color: 'text-info', bg: 'bg-info/10', border: 'border-info/20', icon: UserCheck },
   MODERATION: { label: 'Moderation', color: 'text-destructive', bg: 'bg-destructive/10', border: 'border-destructive/20', icon: ShieldAlert },
   SYSTEM: { label: 'System', color: 'text-muted-foreground', bg: 'bg-secondary', border: 'border-border', icon: Settings },
@@ -49,6 +51,7 @@ const FILTER_OPTIONS: { label: string; value: EventCategory | 'ALL' }[] = [
   { label: 'Bills', value: 'BILL' },
   { label: 'Offers', value: 'OFFER' },
   { label: 'Businesses', value: 'BUSINESS' },
+  { label: 'Brands', value: 'BRAND' },
   { label: 'Users', value: 'USER' },
   { label: 'Moderation', value: 'MODERATION' },
   { label: 'Notices', value: 'NOTICE' },
@@ -75,7 +78,7 @@ export default function SuperAdminAuditPage() {
             list.map((l: any, i: number) => ({
               id: l.id ?? i,
               action: l.action || l.eventType || 'UNKNOWN',
-              category: (l.category || l.eventCategory || deriveCategory(l.action || l.eventType)) as EventCategory,
+              category: (l.category || l.eventCategory || deriveCategory(l.action || l.eventType, l.resource || l.entityType)) as EventCategory,
               user: l.performedBy || l.user?.name || l.user?.email || l.userId || 'System',
               details: l.description || l.details || l.message || '',
               date: l.createdAt ? new Date(l.createdAt).toLocaleString('en-IN') : l.date || '—',

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { BillVerificationRepository } from '../../common/database/repositories/bill-verification.repository';
@@ -13,6 +14,9 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 import { AnalyticsSummaryService } from '../analytics/analytics-summary.service';
 import { DatabaseService } from '../../common/database/database.service';
+import { BrandScopeService } from '../brands/brand-scope.service';
+import { BrandsService } from '../brands/brands.service';
+import { billNumberMatchesSeries } from '../../common/utils/bill-number';
 
 // Business-level owner roles (string-literal comparison for forward compat)
 const OWNER_ROLES = ['BUSINESS_OWNER', 'BUSINESS_ADMIN', 'SUPER_ADMIN'] as const;
@@ -36,6 +40,8 @@ export class BillVerificationsService {
     private readonly notificationsService: NotificationsService,
     private readonly analyticsSummary: AnalyticsSummaryService,
     private readonly db: DatabaseService,
+    private readonly brandScope: BrandScopeService,
+    private readonly brands: BrandsService,
   ) {}
 
   /**
@@ -54,16 +60,38 @@ export class BillVerificationsService {
   }
 
   /**
-   * True if the bill's OCR-extracted invoice number starts with the
-   * business's registered bill series prefix (case-insensitive). Informational
-   * only — never auto-approves; moderators still review every bill, this just
-   * lets them see which ones already line up with the business's own series.
+   * True if the bill's invoice number starts with the applicable bill series prefix (the brand's
+   * when the brand shares one series, otherwise the business's own). Checks the number the customer
+   * typed first, then the OCR guess. Informational only — never auto-approves; moderators still
+   * review every bill, this just shows which ones already line up with the series.
    */
-  private seriesMatched(billSeriesPrefix: string | null | undefined, ocrMetadata: any): boolean {
-    if (!billSeriesPrefix) return false;
-    const invoiceNumber: string | undefined = ocrMetadata?.parsed?.invoiceNumber;
-    if (!invoiceNumber) return false;
-    return invoiceNumber.trim().toLowerCase().startsWith(billSeriesPrefix.trim().toLowerCase());
+  private seriesMatched(prefix: string | null | undefined, verification: any): boolean {
+    if (!prefix) return false;
+    return (
+      billNumberMatchesSeries(prefix, verification?.bill?.billNumber) ||
+      billNumberMatchesSeries(prefix, verification?.ocrMetadata?.parsed?.invoiceNumber)
+    );
+  }
+
+  /**
+   * The role guard only checks the actor's ROLE, not that they belong to the business in the URL —
+   * without this any owner/moderator could act on another business's bills by editing the path.
+   * Platform admins pass; everyone else must own the business or be on its active staff.
+   */
+  async assertCanModerate(actorId: string, actorRole: string, businessId: string): Promise<void> {
+    if (['SUPER_ADMIN', 'MASTER_ADMIN'].includes(actorRole)) return;
+    const business = await this.db.business.findUnique({
+      where: { id: businessId },
+      select: { ownerId: true },
+    });
+    if (!business) throw new NotFoundException('Business not found');
+    if (business.ownerId === actorId) return;
+    if (await this.brandScope.isBrandOwnerOf(actorId, businessId)) return;
+    const staff = await this.db.businessStaff.findFirst({
+      where: { businessId, userId: actorId, deletedAt: null, isActive: true },
+      select: { id: true },
+    });
+    if (!staff) throw new ForbiddenException('You are not part of this business.');
   }
 
   // ── BUSINESS-SCOPED QUEUE ─────────────────────────────────────────
@@ -131,17 +159,138 @@ export class BillVerificationsService {
     }
 
     if (result?.data?.length) {
-      const business = await this.db.business.findUnique({
-        where: { id: businessId },
-        select: { billSeriesPrefix: true },
-      });
+      const series = await this.brandScope.resolveBillSeries(businessId);
       result.data = result.data.map((v: any) => ({
         ...v,
-        seriesMatched: this.seriesMatched(business?.billSeriesPrefix, v.ocrMetadata),
+        seriesMatched: this.seriesMatched(series.prefix, v),
+        // 'SHARED' means the match only proves the bill is from the brand, not which outlet.
+        seriesScope: series.mode,
+        seriesPrefix: series.prefix,
       }));
     }
 
     return result;
+  }
+
+  // ── BRAND-WIDE QUEUE ──────────────────────────────────────────────
+
+  /**
+   * Every outlet's bills in one list, for the brand owner. Staff of a single outlet keep using the
+   * per-business queue; this is only for the account that owns the brand (or platform admins).
+   */
+  async getBrandQueue(
+    actorId: string,
+    actorRole: string,
+    brandId: string,
+    opts: { outletId?: string; status?: string; page?: number; limit?: number } = {},
+  ) {
+    const isPlatform = ['SUPER_ADMIN', 'MASTER_ADMIN'].includes(actorRole);
+    // tenant-scope-ok: ownership (ownerId) / platform role is the scope
+    const brand = await this.db.brand.findFirst({
+      where: { id: brandId, deletedAt: null, ...(isPlatform ? {} : { ownerId: actorId }) },
+      select: { id: true, billSeriesMode: true, billSeriesPrefix: true },
+    });
+    if (!brand) throw new NotFoundException('Brand not found');
+
+    const outletIds = await this.brandScope.outletIds(brandId);
+    if (opts.outletId && !outletIds.includes(opts.outletId)) {
+      throw new NotFoundException('Outlet not found in this brand');
+    }
+    const page = Math.max(1, Number(opts.page) || 1);
+    const limit = Math.min(Math.max(Number(opts.limit) || 20, 1), 100);
+    const where: Record<string, any> = {
+      deletedAt: null,
+      businessId: opts.outletId ? opts.outletId : { in: outletIds },
+    };
+    if (opts.status && opts.status !== 'ALL') where.status = opts.status;
+    else if (!opts.status) where.status = 'PENDING';
+
+    const [rows, total] = await Promise.all([
+      // tenant-scope-ok: bills live in the customer's tenant; the brand's outlets are the scope
+      this.db.billVerification.findMany({
+        where,
+        orderBy: { createdAt: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          bill: {
+            include: {
+              user: { select: { id: true, name: true, email: true } },
+              business: { select: { id: true, name: true } },
+              items: true,
+            },
+          },
+        },
+      }),
+      // tenant-scope-ok: bills live in the customer's tenant; the brand's outlets are the scope
+      this.db.billVerification.count({ where }),
+    ]);
+
+    const shared = brand.billSeriesMode === 'SHARED';
+    const data = rows.map((v: any) => {
+      const user = v.bill?.user && !isPlatform ? { id: v.bill.user.id, name: v.bill.user.name } : v.bill?.user;
+      return {
+        ...v,
+        bill: v.bill ? { ...v.bill, user } : v.bill,
+        seriesMatched: this.seriesMatched(shared ? brand.billSeriesPrefix : null, v),
+        seriesScope: shared ? 'SHARED' : 'PER_OUTLET',
+      };
+    });
+    return { data, total, page, limit };
+  }
+
+  /**
+   * Under a shared series the customer picks the outlet, so they can pick the wrong one. The brand
+   * owner moves a bill that has not been decided yet to the right outlet before it is approved, so
+   * the verified purchase, review eligibility and the moderator's queue all land on the right place.
+   */
+  async reassignOutlet(actorId: string, actorRole: string, verificationId: string, outletId: string) {
+    const verification = await this.verificationRepo.findByIdUnsafe(verificationId, { bill: true });
+    if (!verification || !verification.bill) throw new NotFoundException('Verification not found');
+    const fromId = verification.businessId ?? verification.bill.businessId;
+
+    // MASTER_ADMIN is read-only on bill verifications, so only SUPER_ADMIN may act for the platform.
+    const isPlatform = actorRole === 'SUPER_ADMIN';
+    // tenant-scope-ok: both outlets are looked up by id; brand match is checked below
+    const [from, to] = await Promise.all([
+      this.db.business.findUnique({ where: { id: fromId }, select: { id: true, name: true, brandId: true, tenantId: true, brand: { select: { ownerId: true, name: true } } } }),
+      this.db.business.findUnique({ where: { id: outletId }, select: { id: true, name: true, brandId: true, status: true, deletedAt: true } }),
+    ]);
+    if (!from || !to || to.deletedAt) throw new NotFoundException('Outlet not found');
+    if (!from.brandId || from.brandId !== to.brandId) {
+      throw new BadRequestException('A bill can only be moved between outlets of the same brand.');
+    }
+    if (!isPlatform && from.brand?.ownerId !== actorId) {
+      throw new ForbiddenException('Only the brand owner can move a bill to another outlet.');
+    }
+    if (from.id === to.id) return verification;
+    if (!['PENDING', 'FLAGGED', 'ESCALATED', 'RE_UPLOAD_REQUESTED'].includes(verification.status)) {
+      throw new BadRequestException('Only bills that have not been decided yet can be moved to another outlet.');
+    }
+
+    const updated = await this.db.$transaction(async (tx) => {
+      await tx.bill.update({ where: { id: verification.billId }, data: { businessId: to.id } });
+      return tx.billVerification.update({ where: { id: verification.id }, data: { businessId: to.id } });
+    });
+
+    await this.brands.recordEvent({
+      tenantId: from.tenantId,
+      brandId: from.brandId,
+      businessId: to.id,
+      actorId,
+      type: 'BILL_REASSIGNED',
+      summary: `A bill was moved from "${from.name}" to "${to.name}"`,
+      metadata: { billId: verification.billId, verificationId, fromBusinessId: from.id, toBusinessId: to.id },
+    });
+    await this.auditService.log({
+      tenantId: verification.tenantId,
+      userId: actorId,
+      action: 'REASSIGN_BILL_OUTLET',
+      resource: 'BILL_VERIFICATION',
+      resourceId: verificationId,
+      metadata: { billId: verification.billId, fromBusinessId: from.id, toBusinessId: to.id },
+    });
+    return updated;
   }
 
   /**
@@ -171,6 +320,7 @@ export class BillVerificationsService {
       verification.bill.businessId,
       verification.bill.userId,
       verification.ocrMetadata,
+      verification.billId,
     );
 
     await this.verificationRepo.update(tid, verification.id, { fraudScore: score });
@@ -231,7 +381,9 @@ export class BillVerificationsService {
     }
 
     const updated = await this.verificationRepo.update(tid, verificationId, updateData);
-    await this.billRepo.verifyBill(tid, verification.billId, 'APPROVED', actorId);
+    // Bill.status has no APPROVED value (that belongs to BillVerification.status); VERIFIED is
+    // what the analytics summaries and everything downstream read.
+    await this.billRepo.verifyBill(tid, verification.billId, 'VERIFIED', actorId);
 
     // Create verified purchase record
     await this.verifiedPurchasesService.createVerifiedPurchase(
@@ -384,7 +536,8 @@ export class BillVerificationsService {
       reUploadRequestedAt: new Date(),
     });
 
-    await this.billRepo.update(tid, verification.billId, { status: 'RE_UPLOAD_REQUESTED' });
+    // Bill.status has no RE_UPLOAD_REQUESTED; the re-upload state lives on the verification row.
+    await this.billRepo.update(tid, verification.billId, { status: 'UPLOADED' });
 
     await this.notificationsService.send({
       tenantId: tid,
@@ -439,7 +592,7 @@ export class BillVerificationsService {
     await this.billRepo.verifyBill(
       tid,
       verification.billId,
-      decision === 'APPROVED' ? 'APPROVED' : 'REJECTED',
+      decision === 'APPROVED' ? 'VERIFIED' : 'REJECTED',
       ownerId,
       reason,
     );

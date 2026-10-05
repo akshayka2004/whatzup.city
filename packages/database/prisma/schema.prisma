@@ -61,6 +61,8 @@ model Tenant {
   voucherClaims           VoucherClaim[]
   discounts               BusinessDiscount[]
   discountSpins           DiscountSpin[]
+  brands                  Brand[]
+  brandEvents             BrandEvent[]
   pointsEntries           PointsEntry[]
   platformVouchers        PlatformVoucher[]
   platformVoucherClaims   PlatformVoucherClaim[]
@@ -130,6 +132,9 @@ model User {
   acceptedPrivacyAt    DateTime?    @map("accepted_privacy_at")
   termsVersion         String?      @map("terms_version") @db.VarChar(20)
   privacyPolicyVersion String?      @map("privacy_policy_version") @db.VarChar(20)
+  // Outlet the owner/staff member is currently operating (brand accounts); validated
+  // against their memberships on every read, so a stale value just falls back to the default.
+  activeBusinessId     String?      @map("active_business_id") @db.Uuid
 
   // Core Audit Fields
   createdAt     DateTime     @default(now()) @map("created_at")
@@ -149,6 +154,7 @@ model User {
   offerRedemptions       OfferRedemption[]
   voucherClaims          VoucherClaim[]
   discountSpins          DiscountSpin[]
+  brandsOwned            Brand[]                  @relation("BrandOwner")
   pointsEntries          PointsEntry[]
   platformVoucherClaims  PlatformVoucherClaim[]
   reviews                Review[]
@@ -574,6 +580,15 @@ model Business {
   // the business claims a slot; the slot is released again if the application is rejected.
   launchOfferClaimedAt    DateTime?   @map("launch_offer_claimed_at")
 
+  // Brand accounts: an outlet is a full Business listing grouped under a Brand. NOT the legacy
+  // parentBusinessId / BusinessBranch (lightweight location rows), which stay untouched.
+  brandId           String?   @map("brand_id") @db.Uuid
+  outletLabel       String?   @map("outlet_label") @db.VarChar(100)
+  isBrandHq         Boolean   @default(false) @map("is_brand_hq")
+  // null = never asked; SNOOZED (ask again after brandPromptAt + 7d) | DECLINED (don't nudge again)
+  brandPromptStatus String?   @map("brand_prompt_status") @db.VarChar(20)
+  brandPromptAt     DateTime? @map("brand_prompt_at")
+
   // Core Audit Fields
   createdAt      DateTime       @default(now()) @map("created_at")
   updatedAt      DateTime       @updatedAt @map("updated_at")
@@ -582,6 +597,7 @@ model Business {
   updatedBy      String?        @map("updated_by") @db.Uuid
 
   // Relations
+  brand             Brand?                 @relation(fields: [brandId], references: [id])
   tenant            Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   owner             User                   @relation("BusinessOwner", fields: [ownerId], references: [id])
   category          Category               @relation(fields: [categoryId], references: [id])
@@ -631,6 +647,7 @@ model Business {
   @@index([categoryId, city])
   @@index([status, averageRating])
   @@index([categoryId, launchOfferClaimedAt])
+  @@index([brandId])
   @@map("businesses")
 }
 
@@ -907,6 +924,74 @@ model Product {
   @@map("products")
 }
 
+enum OfferFulfilment {
+  DINE_IN
+  TAKEAWAY
+  BOTH
+}
+
+enum BrandBillSeriesMode {
+  SHARED
+  PER_OUTLET
+}
+
+/// One brand with several outlets. Each outlet is a full Business row (own listing, offers, reviews,
+/// bills, plan) with brandId set. Lives in the owner's tenant so the owner and staff share one login.
+model Brand {
+  id               String              @id @default(uuid()) @db.Uuid
+  tenantId         String              @map("tenant_id") @db.Uuid
+  ownerId          String              @map("owner_id") @db.Uuid
+  name             String              @db.VarChar(255)
+  slug             String              @db.VarChar(255)
+  description      String?             @db.Text
+  logo             String?             @db.Text
+  /// ACTIVE | SUSPENDED (suspended = no new outlets / no conversions; set by super-admin)
+  status           String              @default("ACTIVE") @db.VarChar(20)
+  /// SHARED: every outlet bills in one series (billSeriesPrefix) | PER_OUTLET: each outlet has its own prefix
+  billSeriesMode   BrandBillSeriesMode @default(PER_OUTLET) @map("bill_series_mode")
+  billSeriesPrefix String?             @map("bill_series_prefix") @db.VarChar(30)
+
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  deletedAt        DateTime?           @map("deleted_at")
+  createdBy        String?             @map("created_by") @db.Uuid
+  updatedBy        String?             @map("updated_by") @db.Uuid
+
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner      User         @relation("BrandOwner", fields: [ownerId], references: [id])
+  businesses Business[]
+  events     BrandEvent[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("brands")
+}
+
+/// Activity feed for brand accounts, read by super-admin: conversions, outlets added/changed/
+/// approved/removed, bill-series changes, wrong-outlet bill reassignments.
+model BrandEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  brandId    String   @map("brand_id") @db.Uuid
+  businessId String?  @map("business_id") @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  type       String   @db.VarChar(50)
+  summary    String   @db.VarChar(255)
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brand  Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@index([brandId, createdAt])
+  @@index([tenantId])
+  @@index([type])
+  @@map("brand_events")
+}
+
 model Offer {
   id                 String      @id @default(uuid()) @db.Uuid
   tenantId           String      @map("tenant_id") @db.Uuid
@@ -923,6 +1008,8 @@ model Offer {
   currentRedemptions Int         @default(0) @map("current_redemptions")
   terms              String?     @db.Text
   targetCities       Json        @default("[]") @map("target_cities")
+  // Food-type businesses tag an offer as dine-in, takeaway or both (everyone else leaves BOTH).
+  fulfilment         OfferFulfilment @default(BOTH)
 
   // Core Audit Fields
   createdAt          DateTime    @default(now()) @map("created_at")
@@ -1526,7 +1613,10 @@ model Bill {
   verifiedAt      DateTime?  @map("verified_at")
   verifiedBy      String?    @map("verified_by") @db.Uuid
   rejectionReason String?    @map("rejection_reason") @db.Text
-  
+  // The invoice number the customer typed from the receipt. Drives duplicate detection (per
+  // business, or across a brand's outlets when the brand shares one bill series).
+  billNumber      String?    @map("bill_number") @db.VarChar(60)
+
   // Core Audit Fields
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
@@ -1550,6 +1640,7 @@ model Bill {
   @@index([status])
   @@index([deletedAt])
   @@index([businessId, status])
+  @@index([businessId, billNumber])
   @@map("bills")
 }
 

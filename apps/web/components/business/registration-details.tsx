@@ -7,10 +7,13 @@ import {
 import { COMPANY_TYPES, CONTACT_PREFERENCES } from '@/lib/constants';
 import { getCategoryAttributes } from '@/lib/category-attributes';
 import { cn } from '@/lib/utils';
+import type { OperatingHours } from '@saas/types';
+import { OperatingHoursEditor } from '@/components/business/operating-hours-editor';
 
 /** Shape persisted to Business (compliance/contacts/attributes JSON + scalars). */
 export type RegistrationDetails = {
   brandName?: string;
+  operatingHours?: OperatingHours;
   companyName?: string;
   companyType?: string;
   billSeriesPrefix?: string;
@@ -29,9 +32,9 @@ type Contact = { fullName?: string; designation?: string; email?: string; phone?
 const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/;
 
-function Section({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function Section({ title, hint, children, id }: { title: string; hint?: string; children: React.ReactNode; id?: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+    <div id={id} className="scroll-mt-24 rounded-2xl border border-border bg-card p-5">
       <h3 className="text-sm font-bold text-foreground">{title}</h3>
       {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
       <div className="mt-4 space-y-4">{children}</div>
@@ -97,10 +100,16 @@ export function RegistrationDetailsForm({
   value,
   onChange,
   categorySlug,
+  lockBrandName = false,
+  hideBillSeries = false,
 }: {
   value: RegistrationDetails;
   onChange: (next: RegistrationDetails) => void;
   categorySlug?: string | null;
+  /** Outlets of a brand account inherit the brand name; show it read-only. */
+  lockBrandName?: boolean;
+  /** A brand sharing one bill series sets the prefix on the brand, not per outlet. */
+  hideBillSeries?: boolean;
 }) {
   const v = value || {};
   const merge = (patch: Partial<RegistrationDetails>) => onChange({ ...v, ...patch });
@@ -131,7 +140,16 @@ export function RegistrationDetailsForm({
       <Section title="Company details">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Brand name">
-            <Input value={v.brandName || ''} onChange={(e) => merge({ brandName: e.target.value })} placeholder="Public-facing brand" />
+            <Input
+              value={v.brandName || ''}
+              onChange={(e) => merge({ brandName: e.target.value })}
+              placeholder="Public-facing brand"
+              readOnly={lockBrandName}
+              className={cn(lockBrandName && 'bg-muted text-muted-foreground')}
+            />
+            {lockBrandName && (
+              <span className="text-[11px] text-muted-foreground">Managed from your brand account</span>
+            )}
           </Field>
           <Field label="Company name (legal)">
             <Input value={v.companyName || ''} onChange={(e) => merge({ companyName: e.target.value })} />
@@ -144,21 +162,35 @@ export function RegistrationDetailsForm({
               </SelectContent>
             </Select>
           </Field>
-          <Field
-            label="Bill series prefix"
-          >
-            <Input
-              value={v.billSeriesPrefix || ''}
-              onChange={(e) => merge({ billSeriesPrefix: e.target.value })}
-              placeholder="e.g. INV- or SC/2026/"
-            />
-          </Field>
+          {!hideBillSeries && (
+            <Field
+              label="Bill series prefix"
+            >
+              <Input
+                value={v.billSeriesPrefix || ''}
+                onChange={(e) => merge({ billSeriesPrefix: e.target.value })}
+                placeholder="e.g. INV- or SC/2026/"
+                maxLength={30}
+              />
+            </Field>
+          )}
         </div>
-        <p className="text-[11px] text-muted-foreground">
-          Optional. If your own bills always start with a fixed prefix, entering it here lets us
-          auto-flag matching customer-submitted bills during review — you can also set this later
-          from Settings.
-        </p>
+        {!hideBillSeries && (
+          <p className="text-[11px] text-muted-foreground">
+            Optional. If your own bills always start with a fixed prefix, entering it here lets us
+            auto-flag matching customer-submitted bills during review — you can also set this later
+            from Settings.
+          </p>
+        )}
+      </Section>
+
+      {/* Opening hours */}
+      <Section
+        id="hours"
+        title="Opening hours & closed timings"
+        hint="Add a shift for split timings (e.g. 9 AM–1 PM and 4–9 PM). Shown on your public profile."
+      >
+        <OperatingHoursEditor value={v.operatingHours} onChange={(operatingHours) => merge({ operatingHours })} />
       </Section>
 
       {/* PAN */}

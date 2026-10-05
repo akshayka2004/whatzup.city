@@ -8,6 +8,30 @@ export class FraudService {
   constructor(private readonly db: DatabaseService) {}
 
   /**
+   * Other live bills with the same (normalised) invoice number inside `businessIds` — one business,
+   * or every outlet of a brand that shares a bill series. Rejected bills don't count, so a customer
+   * can resubmit after a rejection. Cross-tenant on purpose: bills live in the customer's tenant.
+   */
+  async findDuplicateBills(params: { billId: string; billNumber: string; businessIds: string[] }) {
+    // tenant-scope-ok: bills are stored under each customer's own tenant; businessIds is the scope
+    return this.db.bill.findMany({
+      where: {
+        id: { not: params.billId },
+        businessId: { in: params.businessIds },
+        billNumber: params.billNumber,
+        deletedAt: null,
+        status: { not: 'REJECTED' },
+        // A bill the moderator sent back for re-upload is being replaced, so its replacement
+        // (usually the same invoice number) must not be flagged as a duplicate of it.
+        NOT: { verifications: { some: { status: 'RE_UPLOAD_REQUESTED' } } },
+      },
+      select: { id: true, businessId: true, createdAt: true, business: { select: { name: true, outletLabel: true } } },
+      orderBy: { createdAt: 'asc' },
+      take: 3,
+    });
+  }
+
+  /**
    * Calculates a fraud score between 0.00 and 1.00 (1.00 = 100% likely fraud)
    */
   async analyzeBill(
@@ -15,6 +39,7 @@ export class FraudService {
     businessId: string,
     userId: string,
     ocrMetadata: any,
+    billId?: string,
   ): Promise<number> {
     let fraudScore = 0;
     this.logger.debug(`Starting fraud analysis for user: ${userId}, business: ${businessId}`);
@@ -24,7 +49,8 @@ export class FraudService {
       const existing = await this.db.billVerification.findFirst({
         where: {
           tenantId,
-          bill: { businessId },
+          // Never count the bill under analysis as its own duplicate.
+          bill: { businessId, ...(billId ? { id: { not: billId } } : {}) },
           ocrMetadata: {
             path: ['parsed', 'invoiceNumber'],
             equals: ocrMetadata.parsed.invoiceNumber,

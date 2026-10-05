@@ -3,6 +3,7 @@ import {
   Min, Max, MaxLength, ArrayMaxSize,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsOperatingHours } from '../../../common/utils/operating-hours.validator';
 
 /**
  * Shared across the owner-side create/update and the super-admin adminUpdate
@@ -143,7 +144,7 @@ export class BusinessDto {
   amenityDetails?: Record<string, any>;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsObject()
+  @IsOptional() @IsObject() @IsOperatingHours()
   operatingHours?: Record<string, any>;
 
   @ApiProperty({ required: false })

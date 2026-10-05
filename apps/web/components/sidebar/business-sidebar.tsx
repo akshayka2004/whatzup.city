@@ -21,6 +21,7 @@ import {
   UserCog,
   CreditCard,
   GitBranch,
+  Network,
   ClipboardList,
   MessageSquare,
   Package,
@@ -48,7 +49,8 @@ const OWNER_MENU = [
   { label: 'Events', href: '/dashboard/events', icon: CalendarDays },
   { label: 'Products', href: '/dashboard/products', icon: Package },
   { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
-  { label: 'Branches', href: '/dashboard/branches', icon: GitBranch },
+  { label: 'Branches', href: '/dashboard/branches', icon: GitBranch, legacyBranches: true },
+  { label: 'Outlets', href: '/dashboard/outlets', icon: Network },
   { label: 'QR Code', href: '/dashboard/qr-code', icon: QrCode },
   { label: 'Team', href: '/dashboard/team', icon: UserCog },
   { label: 'Subscriptions', href: '/dashboard/subscriptions', icon: CreditCard },
@@ -106,8 +108,9 @@ export function BusinessSidebar() {
   }, []);
 
   // Menu Photos are for food businesses only (owners/admins, not moderators).
-  const { isFood } = useOwnerBusiness(userRole !== 'BUSINESS_MODERATOR');
-  const baseMenu = getMenuForRole(userRole);
+  const { isFood, brandId } = useOwnerBusiness(userRole !== 'BUSINESS_MODERATOR');
+  // Brand accounts manage locations as full outlets, so the older lightweight Branches page is hidden for them.
+  const baseMenu = getMenuForRole(userRole).filter((item: any) => !(brandId && item.legacyBranches));
   const menuItems =
     isFood && userRole !== 'BUSINESS_MODERATOR'
       ? baseMenu.flatMap((item) =>

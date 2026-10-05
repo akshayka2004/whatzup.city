@@ -65,6 +65,7 @@ export class OffersService {
     if (data.maxRedemptions !== undefined) payload.maxRedemptions = data.maxRedemptions;
     if (data.terms !== undefined) payload.terms = data.terms;
     payload.targetCities = Array.isArray(data.targetCities) ? data.targetCities : [];
+    if (data.fulfilment !== undefined) payload.fulfilment = data.fulfilment;
 
     const offer = await this.offerRepo.create(tenantId, { businessId: actualBusinessId, ...payload });
     await this.redis.delPattern(`offers:${tenantId}:*`);
@@ -196,6 +197,7 @@ export class OffersService {
     if (data.maxRedemptions !== undefined) payload.maxRedemptions = data.maxRedemptions;
     if (data.terms !== undefined) payload.terms = data.terms;
     if (data.targetCities !== undefined) payload.targetCities = Array.isArray(data.targetCities) ? data.targetCities : [];
+    if (data.fulfilment !== undefined) payload.fulfilment = data.fulfilment;
 
     const offer = await this.offerRepo.update(tenantId, id, payload);
     await this.redis.delPattern(`offers:${tenantId}:*`);

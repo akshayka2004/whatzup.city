@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
+import { OutletSwitcher } from '@/components/business/outlet-switcher';
 import { apiService } from '@/lib/services/api-service';
 import Link from 'next/link';
 
@@ -148,6 +149,14 @@ export function Header() {
         >
           <Search className="h-5 w-5" />
         </Button>
+
+        {/* Brand owners switch between their outlets here (renders nothing for single businesses) */}
+        {user?.role === 'business' && (
+          <>
+            <div className="hidden sm:block"><OutletSwitcher /></div>
+            <div className="sm:hidden"><OutletSwitcher compact /></div>
+          </>
+        )}
 
         {/* Active Role Indicator */}
         {user && (

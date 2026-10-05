@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +30,23 @@ import {
   Mail,
   Globe,
   DollarSign,
+  Store,
 } from 'lucide-react';
+
+function OutletOfBadge({ business }: { business?: any }) {
+  const brand = business?.brand;
+  if (!brand) return null;
+  return (
+    <Link
+      href={`/super-admin/brands/${brand.id}`}
+      className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/15 transition-colors"
+    >
+      <Store className="h-3 w-3" />
+      Outlet of {brand.name}
+      {business?.outletLabel ? ` · ${business.outletLabel}` : ''}
+    </Link>
+  );
+}
 
 export default function SuperAdminApprovalsPage() {
   const [approvals, setApprovals] = useState<any[]>([]);
@@ -217,6 +234,12 @@ export default function SuperAdminApprovalsPage() {
                             <p className="text-[10px] text-muted-foreground font-mono">Request ID: {req.id}</p>
                           </div>
                         </div>
+                        {entity.business?.brand && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <OutletOfBadge business={entity.business} />
+                            <span className="text-[10px] text-muted-foreground">Additional outlet of an existing brand, not a new company.</span>
+                          </div>
+                        )}
                         <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 text-xs text-muted-foreground pt-1">
                           <span className="flex items-center gap-1">
                             <Mail className="h-3.5 w-3.5" />{entity.email || 'No email'}
@@ -288,6 +311,9 @@ export default function SuperAdminApprovalsPage() {
                 <h3 className="text-2xl font-bold text-muted-foreground mt-2">
                   Credential Audit: {reviewingItem.entity?.name}
                 </h3>
+                {reviewingItem.entity?.business?.brand && (
+                  <div className="mt-2"><OutletOfBadge business={reviewingItem.entity.business} /></div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden flex-1 pb-2">

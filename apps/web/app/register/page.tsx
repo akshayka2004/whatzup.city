@@ -21,6 +21,8 @@ import {
 import { AmenityDetailsEditor, type AmenityItem } from '@/components/business/amenity-details-editor';
 import { HOME_CHEF_PLANS, HOME_CHEF_DURATION_DAYS, getHomeChefPlan } from '@/lib/home-chef-pricing';
 import { useLaunchOffer } from '@/hooks/use-launch-offer';
+import { invalidateActiveBusinessCache } from '@/hooks/use-active-business';
+import { BillSeriesQuestion, type BillSeriesMode } from '@/components/business/brand-conversion-prompt';
 import { LaunchOfferBanner } from '@/components/business/launch-offer-banner';
 import {
   SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, HOTEL_DURATION_DAYS, getPlan, formatINR, withTax, TAX_PERCENT,
@@ -48,6 +50,7 @@ import {
   Heart,
   Users,
   Newspaper,
+  Store,
 } from 'lucide-react';
 
 type RegisterRole = 'CUSTOMER' | 'BUSINESS' | 'GOVERNMENT' | 'NGO_COMMUNITY';
@@ -261,6 +264,21 @@ export default function UnifiedRegisterPage() {
   const [halalStatus, setHalalStatus] = useState(''); // food businesses only
   const [referralCode, setReferralCode] = useState('');
 
+  // ── Brand account: several outlets under one brand ──
+  const [accountType, setAccountType] = useState<'SINGLE' | 'BRAND'>('SINGLE');
+  const [brandNameInput, setBrandNameInput] = useState('');
+  const [outletLabel, setOutletLabel] = useState('');
+  const [billSeriesMode, setBillSeriesMode] = useState<BillSeriesMode | null>(null);
+  const [sharedPrefix, setSharedPrefix] = useState('');
+  // Set once the business being registered belongs to a brand (fresh brand signup, or resuming / adding an outlet).
+  const [brandCtx, setBrandCtx] = useState<{ id?: string; name: string; mode: BillSeriesMode; prefix: string } | null>(null);
+  // /register?outlet=<id>: a signed-in brand owner finishing an outlet they just added.
+  const [outletMode, setOutletMode] = useState(false);
+  const [outletError, setOutletError] = useState('');
+  // The launch offer is one slot per brand — hide it once another outlet has claimed it.
+  const [brandLaunchUsed, setBrandLaunchUsed] = useState(false);
+  const [billingCity, setBillingCity] = useState('');
+
   // ── Step 3: business description, registration/KYC details, tags ──
   const [description, setDescription] = useState('');
   const [regDetails, setRegDetails] = useState<RegistrationDetails>({});
@@ -278,7 +296,7 @@ export default function UnifiedRegisterPage() {
   // ── Launch offer: first N registrations per category get one special-priced plan ──
   const launchOffer = useLaunchOffer();
   const launchSlotsLeft = launchOffer.slotsLeft(categorySlug);
-  const canClaimLaunch = launchOffer.enabled && launchSlotsLeft > 0;
+  const canClaimLaunch = launchOffer.enabled && launchSlotsLeft > 0 && !brandLaunchUsed;
   const categoryLabel = CATEGORIES.find((c) => c.slug === categorySlug)?.label || categorySlug;
   const [claimLaunch, setClaimLaunch] = useState(false);
   // The last slot can go while someone is deciding — fall back to the regular plans.
@@ -316,10 +334,30 @@ export default function UnifiedRegisterPage() {
         // session shape (it varies between owners and staff, and is written
         // asynchronously at login). This is the authoritative source and works
         // for any signed-in business owner.
+        // Outlet mode: pin the dashboard's active outlet to the one being finished, so the
+        // owner/mine lookup below (active outlet first) resumes exactly that outlet.
+        const outletParam = new URLSearchParams(window.location.search).get('outlet');
+        if (outletParam) {
+          setOutletMode(true);
+          const sw = await apiService.put<any>('/v1/auth/active-business', { businessId: outletParam });
+          if (cancelled) return;
+          if (sw.error) {
+            setOutletError(sw.error);
+            return;
+          }
+          invalidateActiveBusinessCache();
+          await refreshUser();
+        }
+
         let draft: any = null;
         const mine = await apiService.get<any>('/v1/businesses/owner/mine');
         const list = mine.data?.data || (Array.isArray(mine.data) ? mine.data : []);
         if (Array.isArray(list) && list.length > 0) draft = list[0];
+
+        if (outletParam && draft?.id !== outletParam) {
+          if (!cancelled) setOutletError('Could not open this outlet. Please try again from your outlets page.');
+          return;
+        }
 
         // Fall back to the session's entity id (covers a freshly created draft
         // that owner/mine hasn't picked up yet).
@@ -343,8 +381,11 @@ export default function UnifiedRegisterPage() {
         if (draft.address) setAddress(draft.address);
         if (draft.city) { setCity(draft.city); setDistrict(draft.district || draft.city); }
         if (Array.isArray(draft.tags)) setTags(draft.tags);
+        const draftBrand = draft.brand || null;
+        const sharedSeries = draftBrand?.billSeriesMode === 'SHARED';
         setRegDetails({
-          brandName: draft.brandName || '',
+          // Outlets of a brand carry the brand's name (the form locks that field).
+          brandName: draftBrand?.name || draft.brandName || '',
           companyName: draft.companyName || '',
           companyType: draft.companyType || '',
           compliance: draft.compliance || {},
@@ -353,7 +394,40 @@ export default function UnifiedRegisterPage() {
           supportContact: draft.supportContact || {},
           branchHead: draft.branchHead || {},
           categoryAttributes: draft.categoryAttributes || {},
+          billSeriesPrefix: (sharedSeries ? draftBrand.billSeriesPrefix : draft.billSeriesPrefix) || '',
+          operatingHours: draft.operatingHours ?? undefined,
         });
+        if (draft.brandId || draftBrand) {
+          setBrandCtx({
+            id: draft.brandId || draftBrand?.id,
+            name: draftBrand?.name || draft.brandName || '',
+            mode: sharedSeries ? 'SHARED' : 'PER_OUTLET',
+            prefix: draftBrand?.billSeriesPrefix || '',
+          });
+          setAccountType('BRAND');
+          // One invoice/GST profile per brand: prefill from the head outlet, and see whether
+          // another outlet already used the brand's single launch-offer slot.
+          const brandId = draft.brandId || draftBrand?.id;
+          const [bd, bm] = await Promise.all([
+            apiService.get<any>(`/v1/brands/${brandId}/billing-defaults`),
+            apiService.get<any>('/v1/brands/mine'),
+          ]);
+          if (cancelled) return;
+          const d = bd.error ? null : bd.data?.data ?? bd.data;
+          if (d?.billingName) {
+            setBillingName(d.billingName || '');
+            setBillingHasGst(typeof d.hasGst === 'boolean' ? d.hasGst : null);
+            setBillingGstin(d.gstin || '');
+            setBillingPan(d.pan || '');
+            setBillingAddress(d.addressLine || '');
+            setBillingPincode(d.pincode || '');
+            setInvoiceEmail(d.invoiceEmail || '');
+            setBillingCity(d.city || '');
+          }
+          const bmData = bm.error ? null : bm.data?.brand ? bm.data : bm.data?.data;
+          const siblings: any[] = bmData?.outlets || [];
+          setBrandLaunchUsed(siblings.some((o) => o.id !== draft.id && o.launchOfferClaimedAt));
+        }
         if (draft.hotelStarRating) setHotelStarRating(draft.hotelStarRating);
         if (draft.hotelAmenities) setHotelAmenities(draft.hotelAmenities);
         if (draft.amenityDetails) setAmenityDetails(draft.amenityDetails);
@@ -467,10 +541,33 @@ export default function UnifiedRegisterPage() {
           setLoading(false);
           return;
         }
+        if (accountType === 'BRAND') {
+          const brandProblem = !brandNameInput.trim()
+            ? 'Brand name is required for a brand account.'
+            : !billSeriesMode
+              ? 'Tell us whether the bill number series is the same across all your outlets.'
+              : billSeriesMode === 'SHARED' && !sharedPrefix.trim()
+                ? 'Enter the shared bill series prefix, e.g. SC/2026/.'
+                : '';
+          if (brandProblem) {
+            setError(brandProblem);
+            setLoading(false);
+            return;
+          }
+        }
 
         const res = await apiService.post<any>('/v1/auth/business/signup', {
           ownerName: name, email, phone, password,
           businessName: companyName, categorySlug, profileType: 'OWNER',
+          ...(accountType === 'BRAND'
+            ? {
+                accountType: 'BRAND',
+                brandName: brandNameInput.trim(),
+                ...(outletLabel.trim() ? { outletLabel: outletLabel.trim() } : {}),
+                billSeriesMode,
+                ...(billSeriesMode === 'SHARED' ? { billSeriesPrefix: sharedPrefix.trim() } : {}),
+              }
+            : {}),
           ...(referralCode.trim() ? { referralCode: referralCode.trim() } : {}),
           ...(categorySlug === 'food' && halalStatus ? { halalStatus } : {}),
           acceptedTerms,
@@ -484,6 +581,14 @@ export default function UnifiedRegisterPage() {
 
         setBusinessId(res.data.businessId || '');
         setTenantId(res.data.user?.tenantId || '');
+        if (accountType === 'BRAND' && billSeriesMode) {
+          setBrandCtx({ name: brandNameInput.trim(), mode: billSeriesMode, prefix: sharedPrefix.trim() });
+          setRegDetails((prev) => ({
+            ...prev,
+            brandName: brandNameInput.trim(),
+            billSeriesPrefix: billSeriesMode === 'SHARED' ? sharedPrefix.trim() : prev.billSeriesPrefix,
+          }));
+        }
 
         // Cookies set by signup API — refresh user state without redirecting
         const refreshedUser = await refreshUser();
@@ -698,7 +803,7 @@ export default function UnifiedRegisterPage() {
         gstin: billingHasGst ? billingGstin.trim().toUpperCase() : undefined,
         pan: billingPan.trim().toUpperCase() || undefined,
         addressLine: billingAddress.trim(),
-        city,
+        city: billingCity || city,
         state: 'Kerala',
         pincode: billingPincode.trim(),
         invoiceEmail: invoiceEmail.trim(),
@@ -796,7 +901,9 @@ export default function UnifiedRegisterPage() {
             supportContact: regDetails.supportContact,
             branchHead: regDetails.branchHead,
             categoryAttributes: regDetails.categoryAttributes,
-            billSeriesPrefix: regDetails.billSeriesPrefix,
+            // A brand with a shared series keeps the prefix on the brand, not on each outlet.
+            billSeriesPrefix: brandCtx?.mode === 'SHARED' ? undefined : regDetails.billSeriesPrefix,
+            operatingHours: regDetails.operatingHours,
           });
         } catch (e) { console.warn('Step 3 update failed:', e); }
 
@@ -923,6 +1030,21 @@ export default function UnifiedRegisterPage() {
     );
   }
 
+  if (outletError) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center p-4 text-foreground">
+        <Card className="w-full max-w-md p-6 rounded-2xl text-center space-y-4">
+          <AlertCircle className="h-8 w-8 text-rose-400 mx-auto" />
+          <h1 className="text-lg font-bold">We couldn&apos;t open this outlet</h1>
+          <p className="text-sm text-muted-foreground">{outletError}</p>
+          <Button asChild className="h-11 w-full rounded-xl cursor-pointer">
+            <Link href="/dashboard/outlets">Back to outlets</Link>
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen w-full font-sans flex flex-col"
          >
@@ -941,12 +1063,26 @@ export default function UnifiedRegisterPage() {
             <img src="/logo.png" alt="Whtzup.city Logo" className="h-5 w-auto object-contain" />
             <span className="font-semibold tracking-tight">whtzup.city</span>
           </div>
-          <h1 className="text-foreground text-3xl md:text-4xl font-extrabold tracking-tight">
-            Create Your Account
-          </h1>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Complete registration steps to unlock full catalog listings, reviews, and alerts.
-          </p>
+          {outletMode && brandCtx ? (
+            <>
+              <h1 className="text-foreground text-3xl md:text-4xl font-extrabold tracking-tight">
+                Adding an outlet to {brandCtx.name}
+              </h1>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Finish this outlet&apos;s details and choose its plan. Your brand&apos;s invoice details are
+                filled in for you.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-foreground text-3xl md:text-4xl font-extrabold tracking-tight">
+                Create Your Account
+              </h1>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                Complete registration steps to unlock full catalog listings, reviews, and alerts.
+              </p>
+            </>
+          )}
         </div>
 
         {/* Stepper bar */}
@@ -1012,7 +1148,7 @@ export default function UnifiedRegisterPage() {
         </div>
 
         {/* Launch offer — live slot count. Generic on step 1, per-category once a business account is being created. */}
-        {launchOffer.enabled && launchOffer.status && (currentStep === 1 || role === 'BUSINESS') && (
+        {launchOffer.enabled && launchOffer.status && !brandLaunchUsed && (currentStep === 1 || role === 'BUSINESS') && (
           <LaunchOfferBanner
             slotsPerCategory={launchOffer.status.slotsPerCategory}
             price={launchOffer.status.price}
@@ -1302,6 +1438,79 @@ export default function UnifiedRegisterPage() {
                 {/* BUSINESS Additional Fields */}
                 {role === 'BUSINESS' && (
                   <div className="space-y-4 pt-3 border-t border-border">
+                    {/* Single listing, or a brand whose outlets each get their own listing + plan */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground">How is your business set up?</label>
+                      <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Account type">
+                        {([
+                          { v: 'SINGLE', title: 'Single business', desc: 'One location with its own listing.', Icon: Building2 },
+                          {
+                            v: 'BRAND',
+                            title: 'Brand with multiple outlets',
+                            desc: 'Several outlets under one brand. Each has its own listing, offers and plan.',
+                            Icon: Store,
+                          },
+                        ] as const).map(({ v, title, desc, Icon }) => (
+                          <button
+                            key={v}
+                            type="button"
+                            role="radio"
+                            aria-checked={accountType === v}
+                            onClick={() => setAccountType(v)}
+                            className={`min-h-16 rounded-xl border p-3.5 text-left transition cursor-pointer ui-press ${
+                              accountType === v
+                                ? 'border-primary bg-primary/10'
+                                : 'border-input bg-background hover:bg-muted/40'
+                            }`}
+                          >
+                            <span className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                              <Icon className={`h-4 w-4 shrink-0 ${accountType === v ? 'text-primary' : 'text-muted-foreground'}`} />
+                              {title}
+                            </span>
+                            <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">{desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {accountType === 'BRAND' && (
+                      <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4 ui-fade-up">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-muted-foreground">
+                            Brand name <span className="text-rose-400">*</span>
+                          </label>
+                          <Input
+                            type="text"
+                            placeholder="e.g. Sunrise Cafe"
+                            value={brandNameInput}
+                            onChange={(e) => setBrandNameInput(e.target.value)}
+                            maxLength={255}
+                            className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-muted-foreground">
+                            This outlet&apos;s label <span className="text-muted-foreground/70">(optional)</span>
+                          </label>
+                          <Input
+                            type="text"
+                            placeholder="Kozhikode - Mavoor Road"
+                            value={outletLabel}
+                            onChange={(e) => setOutletLabel(e.target.value)}
+                            maxLength={100}
+                            className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
+                          />
+                          <p className="text-[11px] text-muted-foreground">e.g. Kozhikode - Mavoor Road</p>
+                        </div>
+                        <BillSeriesQuestion
+                          mode={billSeriesMode}
+                          prefix={sharedPrefix}
+                          onModeChange={setBillSeriesMode}
+                          onPrefixChange={setSharedPrefix}
+                        />
+                      </div>
+                    )}
+
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-muted-foreground">Company Name</label>
                       <div className="relative">
@@ -1690,10 +1899,18 @@ export default function UnifiedRegisterPage() {
                     <p className="text-xs text-muted-foreground mt-0.5 mb-3">
                       Company, PAN/GST, contacts and category status. Billing contact is required.
                     </p>
+                    {brandCtx?.mode === 'SHARED' && (
+                      <p className="mb-3 rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                        Your brand shares one bill series{brandCtx.prefix ? ` (${brandCtx.prefix})` : ''} across all
+                        outlets. It is set on the brand, so there is nothing to enter here.
+                      </p>
+                    )}
                     <RegistrationDetailsForm
                       value={regDetails}
                       onChange={setRegDetails}
                       categorySlug={categorySlug}
+                      lockBrandName={!!brandCtx}
+                      hideBillSeries={brandCtx?.mode === 'SHARED'}
                     />
                   </div>
                 </div>
@@ -1702,7 +1919,7 @@ export default function UnifiedRegisterPage() {
               <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-6 border-t border-border">
                 <Button
                   type="button"
-                  onClick={() => setCurrentStep(2)}
+                  onClick={() => (outletMode ? router.push('/dashboard/outlets') : setCurrentStep(2))}
                   disabled={loading}
                   className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer w-full sm:w-auto"
                 >

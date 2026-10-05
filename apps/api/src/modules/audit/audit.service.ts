@@ -47,7 +47,9 @@ export class AuditService {
     filters?: { userId?: string; action?: string; resource?: string },
     actorRole?: string,
   ): Promise<any> {
-    const where: any = { tenantId };
+    // Brand and outlet activity is written under each brand owner's own tenant, so the platform
+    // super-admin has to read across tenants to see it; everyone else stays inside their own.
+    const where: any = actorRole === 'SUPER_ADMIN' ? {} : { tenantId };
     if (filters?.userId) where.userId = filters.userId;
     if (filters?.action) where.action = filters.action;
     if (filters?.resource) where.resource = filters.resource;

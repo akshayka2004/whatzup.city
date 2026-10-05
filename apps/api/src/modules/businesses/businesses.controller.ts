@@ -113,6 +113,7 @@ export class BusinessesController {
     @Query('status') status?: string,
     @Query('isVerified') isVerified?: string,
     @Query('halalStatus') halalStatus?: string,
+    @Query('brandId') brandId?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
   ) {
@@ -123,6 +124,7 @@ export class BusinessesController {
       status,
       isVerified: isVerified === undefined ? undefined : isVerified === 'true',
       halalStatus,
+      brandId,
       sortBy,
       sortOrder,
     });

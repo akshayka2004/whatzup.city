@@ -402,6 +402,21 @@ export class SubscriptionsService {
         (fresh.status !== 'DRAFT' || fresh.launchOfferClaimedAt >= holdCutoff);
       if (alreadyHolds) return;
 
+      // One slot per brand: if another outlet of this brand already holds one, this outlet pays a
+      // regular plan. Locked per brand so two outlets claiming at once can't both get through.
+      if (business.brandId) {
+        await tx.$queryRaw`SELECT 1 AS ok FROM (SELECT pg_advisory_xact_lock(hashtext(${'launch-offer-brand:' + business.brandId}))) AS l`;
+        // tenant-scope-ok: sibling outlets of one brand are the scope
+        const siblingHolds = await tx.business.count({
+          where: { ...this.slotHolderWhere(), brandId: business.brandId, id: { not: business.id } },
+        });
+        if (siblingHolds > 0) {
+          throw new ConflictException(
+            'Your brand has already used its launch-offer slot on another outlet. This outlet can register with a regular plan.',
+          );
+        }
+      }
+
       // tenant-scope-ok: slots are counted platform-wide per category by design
       const taken = await tx.business.count({
         where: { ...this.slotHolderWhere(), categoryId: business.categoryId, id: { not: business.id } },

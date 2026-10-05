@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ import {
   Search,
   Shield,
   Loader2,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { canAccess, hasRole, getRoleLabel } from '@/lib/rbac';
@@ -39,6 +40,32 @@ import { useAuth } from '@/hooks/use-auth';
 type BillStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FLAGGED' | 'RE_UPLOAD_REQUESTED' | 'ESCALATED';
 type TabKey = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FLAGGED' | 'RE_UPLOAD_REQUESTED';
 type ActionModal = 'approve' | 'reject' | 'reupload' | 'flag' | 'override' | null;
+
+type BrandInfo = {
+  brand: { id: string; name: string; billSeriesMode?: string; billSeriesPrefix?: string | null };
+  outlets: { id: string; name: string; outletLabel?: string | null; status?: string; isBrandHq?: boolean }[];
+};
+
+const UNDECIDED: BillStatus[] = ['PENDING', 'FLAGGED', 'ESCALATED', 'RE_UPLOAD_REQUESTED'];
+
+const outletName = (o: { name: string; outletLabel?: string | null }) => o.outletLabel || o.name;
+
+function extractList(body: any): any[] {
+  if (Array.isArray(body)) return body;
+  if (Array.isArray(body?.data)) return body.data;
+  if (Array.isArray(body?.data?.data)) return body.data.data;
+  return body?.verifications ?? [];
+}
+
+// Never nags: "not matched" only shows when we know a series is actually configured.
+function getSeriesBadge(bill: any, brand: BrandInfo | null): { matched: boolean; label: string } | null {
+  if (bill.seriesMatched) {
+    return { matched: true, label: bill.seriesScope === 'SHARED' ? 'Brand series matched' : 'Series matched' };
+  }
+  if (bill.seriesScope === 'SHARED' && brand?.brand.billSeriesPrefix) return { matched: false, label: 'Series not matched' };
+  if (bill.seriesScope !== 'SHARED' && bill.seriesPrefix) return { matched: false, label: 'Series not matched' };
+  return null;
+}
 
 function mapApiBill(b: any) {
   // API returns BillVerification with nested `bill` containing Bill + User + Business
@@ -59,10 +86,14 @@ function mapApiBill(b: any) {
       avatar: customerName.substring(0, 2).toUpperCase(),
     },
     business: businessName,
+    businessId: bill.business?.id || b.businessId || bill.businessId || '',
     amount,
     billDate,
-    billNumber: b.ocrMetadata?.parsed?.invoiceNumber || b.billNumber || bill.billNumber || b.id.substring(0, 8).toUpperCase(),
+    billNumber: bill.billNumber || b.billNumber || b.ocrMetadata?.parsed?.invoiceNumber || b.id.substring(0, 8).toUpperCase(),
     seriesMatched: !!b.seriesMatched,
+    seriesScope: (b.seriesScope || 'SINGLE') as string,
+    seriesPrefix: (b.seriesPrefix || bill.business?.billSeriesPrefix || b.billSeriesPrefix || '') as string,
+    rejectionReason: (b.rejectionReason || '') as string,
     status: (b.status || 'PENDING') as BillStatus,
     ocrConfidence: b.ocrConfidence ?? (b.ocrMetadata?.confidence ?? 75),
     fraudScore: isNaN(fraudScore) ? 0.1 : fraudScore,
@@ -136,7 +167,40 @@ export default function BillModerationPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Brand owners: wider view across all outlets
+  const [brandInfo, setBrandInfo] = useState<BrandInfo | null>(null);
+  const [brandChecked, setBrandChecked] = useState(false);
+  const [outletFilter, setOutletFilter] = useState<string>('ALL');
+  const [brandPaging, setBrandPaging] = useState({ total: 0, page: 1 });
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [moveBill, setMoveBill] = useState<any | null>(null);
+  const [moveTarget, setMoveTarget] = useState('');
+  const [moveLoading, setMoveLoading] = useState(false);
+  const [moveError, setMoveError] = useState('');
+  const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const requestSeq = useRef(0);
+
   const businessId = user?.businessId || user?.entity?.id || '';
+  const isBrandView = !!brandInfo;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiService.get<any>('/v1/brands/mine');
+        const info = res.data?.data ?? res.data;
+        if (!cancelled && !res.error && info?.brand?.id) setBrandInfo(info as BrandInfo);
+      } catch (_) {}
+      if (!cancelled) setBrandChecked(true);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 6000);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -151,24 +215,43 @@ export default function BillModerationPage() {
     }
   }, []);
 
-  const fetchBills = async (status?: string) => {
-    if (!businessId) return;
-    setLoading(true);
+  const fetchBills = async (status?: string, page = 1) => {
+    if (!isBrandView && !businessId) return;
+    const seq = ++requestSeq.current;
+    if (page === 1) setLoading(true); else setLoadingMore(true);
     try {
-      const query = status ? `?status=${status}` : '';
-      const res = await apiService.get<any>(`/v1/businesses/${businessId}/bill-verifications${query}`);
+      let url: string;
+      if (isBrandView) {
+        const params = new URLSearchParams();
+        if (outletFilter !== 'ALL') params.set('outletId', outletFilter);
+        if (status) params.set('status', status);
+        if (page > 1) params.set('page', String(page));
+        const qs = params.toString();
+        url = `/v1/brands/${brandInfo!.brand.id}/bill-verifications${qs ? `?${qs}` : ''}`;
+      } else {
+        url = `/v1/businesses/${businessId}/bill-verifications${status ? `?status=${status}` : ''}`;
+      }
+      const res = await apiService.get<any>(url);
+      if (seq !== requestSeq.current) return;
       if (res.data && !res.error) {
-        const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.verifications ?? [];
-        setBills(list.map(mapApiBill));
+        const mapped = extractList(res.data).map(mapApiBill);
+        setBills((prev) => (page > 1 ? [...prev, ...mapped] : mapped));
+        if (isBrandView) {
+          const body = res.data?.data && !Array.isArray(res.data.data) ? res.data.data : res.data;
+          setBrandPaging({ total: Number(body?.total ?? 0), page: Number(body?.page ?? page) });
+        }
       }
     } catch (_) {}
+    if (seq !== requestSeq.current) return;
     setLoading(false);
+    setLoadingMore(false);
   };
 
   useEffect(() => {
+    if (!brandChecked) return;
     fetchBills(activeTab !== 'PENDING' ? activeTab : undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businessId, activeTab]);
+  }, [brandChecked, isBrandView, businessId, activeTab, outletFilter]);
 
   const canVerify = canAccess(userRole, 'business.bills.verify');
   const canOverride = canAccess(userRole, 'business.bills.override');
@@ -186,10 +269,11 @@ export default function BillModerationPage() {
   const rejectedCount = bills.filter((b) => b.status === 'REJECTED').length;
 
   const handleAction = async (action: ActionModal) => {
-    if (!selectedBill || !businessId) return;
+    const actingBusinessId = selectedBill?.businessId || businessId;
+    if (!selectedBill || !actingBusinessId) return;
     setActionLoading(true);
     try {
-      const base = `/v1/businesses/${businessId}/bill-verifications/${selectedBill.id}`;
+      const base = `/v1/businesses/${actingBusinessId}/bill-verifications/${selectedBill.id}`;
       if (action === 'approve') {
         await apiService.post(`${base}/approve`, { notes: actionReason || '' });
       } else if (action === 'reject') {
@@ -208,6 +292,34 @@ export default function BillModerationPage() {
     setSelectedBill(null);
     setActionModal(null);
     setActionReason('');
+  };
+
+  const handleMove = async () => {
+    if (!moveBill || !moveTarget) return;
+    setMoveLoading(true);
+    setMoveError('');
+    try {
+      const res = await apiService.post<any>(`/v1/bill-verifications/${moveBill.id}/reassign-outlet`, { outletId: moveTarget });
+      if (res.error) {
+        setMoveError(typeof res.error === 'string' ? res.error : "Couldn't move this bill. Please try again.");
+      } else {
+        const target = brandInfo?.outlets.find((o) => o.id === moveTarget);
+        setNotice({ type: 'success', text: `Bill moved to ${target ? outletName(target) : 'the selected outlet'}.` });
+        setMoveBill(null);
+        setMoveTarget('');
+        setSelectedBill(null);
+        await fetchBills(activeTab !== 'PENDING' ? activeTab : undefined);
+      }
+    } catch (err: any) {
+      setMoveError(err?.message || "Couldn't move this bill. Please try again.");
+    }
+    setMoveLoading(false);
+  };
+
+  const openMove = (bill: any) => {
+    setMoveBill(bill);
+    setMoveTarget('');
+    setMoveError('');
   };
 
   return (
@@ -300,6 +412,43 @@ export default function BillModerationPage() {
           </div>
         </div>
 
+        {/* ── OUTLET FILTER (brand owners) ───────────────────── */}
+        {isBrandView && (
+          <div className="ui-scroll-x">
+            <div className="flex gap-2 w-max pb-1">
+              {[{ id: 'ALL', label: 'All outlets' }, ...brandInfo!.outlets.map((o) => ({ id: o.id, label: outletName(o) }))].map((chip) => (
+                <button
+                  key={chip.id}
+                  onClick={() => setOutletFilter(chip.id)}
+                  className={cn(
+                    'ui-press h-10 shrink-0 rounded-full border px-4 text-xs font-medium whitespace-nowrap transition-colors cursor-pointer',
+                    outletFilter === chip.id
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-card/40 text-muted-foreground hover:text-foreground hover:bg-secondary',
+                  )}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {notice && (
+          <div
+            className={cn(
+              'ui-fade-up flex items-start gap-2 rounded-xl border p-3 text-sm',
+              notice.type === 'success' ? 'border-success/20 bg-success/10 text-success' : 'border-destructive/20 bg-destructive/10 text-destructive',
+            )}
+          >
+            {notice.type === 'success' ? <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" /> : <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />}
+            <span className="flex-1">{notice.text}</span>
+            <button onClick={() => setNotice(null)} className="p-1 -m-1 cursor-pointer" aria-label="Dismiss">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
         {/* ── BILL LIST ──────────────────────────────────────── */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
@@ -315,6 +464,9 @@ export default function BillModerationPage() {
           <div className="space-y-3">
             {filteredBills.map((bill, i) => {
               const statusCfg = STATUS_CONFIG[bill.status as BillStatus];
+              const seriesBadge = getSeriesBadge(bill, brandInfo);
+              const isDuplicate = bill.status === 'FLAGGED' && /duplicate/i.test(bill.rejectionReason);
+              const showMove = isBrandView && brandInfo!.outlets.length > 1 && UNDECIDED.includes(bill.status as BillStatus);
               return (
                 <Card
                   key={bill.id}
@@ -345,18 +497,35 @@ export default function BillModerationPage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                          <Building2 className="h-3 w-3 inline mr-1" />{bill.business}
-                          <span className="mx-1.5">·</span>
-                          <span className="font-mono">{bill.billNumber}</span>
-                          <span className="mx-1.5">·</span>
-                          {bill.billDate}
-                          {bill.seriesMatched && (
-                            <span className="ml-1.5 inline-flex items-center rounded-full bg-success/10 px-1.5 py-0.5 text-[10px] font-semibold text-success">
-                              Series matched
+                        <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                          {isBrandView ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                              <Building2 className="h-3 w-3" />{bill.business}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center"><Building2 className="h-3 w-3 mr-1" />{bill.business}</span>
+                          )}
+                          <span>·</span>
+                          <span>Bill # <span className="font-mono text-foreground/80 break-all">{bill.billNumber}</span></span>
+                          <span>·</span>
+                          <span>{bill.billDate}</span>
+                          {seriesBadge && (
+                            <span
+                              className={cn(
+                                'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
+                                seriesBadge.matched ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground',
+                              )}
+                            >
+                              {seriesBadge.label}
                             </span>
                           )}
-                        </p>
+                        </div>
+                        {isDuplicate && (
+                          <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-warning/20 bg-warning/10 px-2.5 py-1.5 text-xs text-warning">
+                            <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                            <span><span className="font-semibold">Possible duplicate</span>{bill.rejectionReason ? ` — ${bill.rejectionReason}` : ''}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -381,8 +550,9 @@ export default function BillModerationPage() {
                       </div>
 
                       {/* Action buttons */}
-                      {canVerify && bill.status === 'PENDING' && (
-                        <div className="flex gap-2 w-full lg:w-auto justify-end border-t border-border pt-3 lg:border-t-0 lg:pt-0" onClick={(e) => e.stopPropagation()}>
+                      {(showMove || (canVerify && (bill.status === 'PENDING' || bill.status === 'FLAGGED'))) && (
+                        <div className="flex flex-wrap lg:flex-nowrap gap-2 w-full lg:w-auto justify-end border-t border-border pt-3 lg:border-t-0 lg:pt-0" onClick={(e) => e.stopPropagation()}>
+                          {canVerify && bill.status === 'PENDING' && (<>
                           <Button
                             size="sm"
                             variant="outline"
@@ -406,11 +576,8 @@ export default function BillModerationPage() {
                           >
                             <Check className="h-3.5 w-3.5 mr-1" /> Approve
                           </Button>
-                        </div>
-                      )}
-
-                      {canVerify && bill.status === 'FLAGGED' && (
-                        <div className="flex gap-2 w-full lg:w-auto justify-end border-t border-border pt-3 lg:border-t-0 lg:pt-0" onClick={(e) => e.stopPropagation()}>
+                          </>)}
+                          {canVerify && bill.status === 'FLAGGED' && (<>
                           {canOverride && (
                             <Button
                               size="sm"
@@ -428,6 +595,17 @@ export default function BillModerationPage() {
                           >
                             <X className="h-3.5 w-3.5 mr-1" /> Reject
                           </Button>
+                          </>)}
+                          {showMove && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openMove(bill)}
+                              className="h-10 rounded-xl border-border text-foreground hover:bg-secondary text-xs px-3 cursor-pointer w-full lg:w-auto"
+                            >
+                              <ArrowRightLeft className="h-3.5 w-3.5 mr-1" /> Move to another outlet
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -512,6 +690,77 @@ export default function BillModerationPage() {
                 </Card>
               );
             })}
+          </div>
+        )}
+
+        {isBrandView && !loading && bills.length < brandPaging.total && (
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              disabled={loadingMore}
+              onClick={() => fetchBills(activeTab !== 'PENDING' ? activeTab : undefined, brandPaging.page + 1)}
+              className="h-10 rounded-xl border-border text-sm cursor-pointer"
+            >
+              {loadingMore && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Load more
+            </Button>
+          </div>
+        )}
+
+        {/* ── MOVE TO OUTLET MODAL ──────────────────────────── */}
+        {moveBill && brandInfo && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto ui-pop">
+              <div className="mx-auto h-12 w-12 rounded-full flex items-center justify-center mb-4 bg-primary/10 text-primary">
+                <ArrowRightLeft className="h-6 w-6" />
+              </div>
+              <h3 className="text-base font-bold text-foreground text-center mb-1">Move to another outlet</h3>
+              <p className="text-xs text-muted-foreground text-center mb-4">
+                {moveBill.customer.name} • {moveBill.billNumber} • currently at {moveBill.business}
+              </p>
+
+              <div className="space-y-2 mb-4">
+                {brandInfo.outlets.filter((o) => o.id !== moveBill.businessId).map((o) => (
+                  <button
+                    key={o.id}
+                    onClick={() => setMoveTarget(o.id)}
+                    className={cn(
+                      'ui-press w-full min-h-11 flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-sm transition-colors cursor-pointer',
+                      moveTarget === o.id ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card/40 text-foreground hover:bg-secondary',
+                    )}
+                  >
+                    <span className="min-w-0 truncate">{outletName(o)}</span>
+                    {moveTarget === o.id && <Check className="h-4 w-4 text-primary shrink-0" />}
+                  </button>
+                ))}
+              </div>
+
+              {moveError && (
+                <div className="flex items-start gap-2 p-3 mb-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  {moveError}
+                </div>
+              )}
+
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  disabled={moveLoading}
+                  onClick={() => { setMoveBill(null); setMoveError(''); }}
+                  className="h-10 rounded-xl border-border text-foreground hover:bg-muted text-sm cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleMove}
+                  disabled={!moveTarget || moveLoading}
+                  className="h-10 rounded-xl text-sm font-semibold cursor-pointer"
+                >
+                  {moveLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Move bill
+                </Button>
+              </div>
+            </Card>
           </div>
         )}
 

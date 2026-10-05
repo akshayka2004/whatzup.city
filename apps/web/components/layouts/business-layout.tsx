@@ -10,7 +10,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
 import { SubscriptionPaywall } from '@/components/business/subscription-paywall';
-import { MenuPhotoPrompt } from '@/components/business/menu-photo-prompt';
+import { BusinessNudges } from '@/components/business/business-nudges';
+import { OutletSwitcher } from '@/components/business/outlet-switcher';
 import { OnboardingTour } from '@/components/onboarding/platform-tour';
 import { BUSINESS_TOUR_STEPS, BUSINESS_MOBILE_TOUR_STEPS } from '@/lib/tour-steps';
 import { apiService } from '@/lib/services/api-service';
@@ -28,10 +29,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 // Paths allowed even when trial has expired
-const TRIAL_ALLOWED_PATHS = ['/dashboard/profile', '/dashboard/support', '/dashboard/subscriptions'];
+// /dashboard/outlets stays reachable so a brand owner stuck on one outlet can switch to another.
+const TRIAL_ALLOWED_PATHS = ['/dashboard/profile', '/dashboard/support', '/dashboard/subscriptions', '/dashboard/outlets'];
 // The invoice for a just-submitted payment must stay reachable even though the
 // business itself is still PENDING_VERIFICATION at that point.
-const VERIFICATION_ALLOWED_PATHS = ['/dashboard/invoice'];
+const VERIFICATION_ALLOWED_PATHS = ['/dashboard/invoice', '/dashboard/outlets'];
 
 type TrialStatus = 'NOT_STARTED' | 'ACTIVE' | 'EXPIRED' | 'CONVERTED';
 
@@ -246,6 +248,11 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
             </div>
           )}
 
+          {/* Brand owners can hop to another (live) outlet instead of being locked out. */}
+          <div className="flex justify-center empty:hidden">
+            <OutletSwitcher />
+          </div>
+
           {gate.cta && (
             <Button
               onClick={() => router.push(onboardingPath)}
@@ -329,6 +336,10 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
                     </p>
                   </div>
 
+                  <div className="flex justify-center empty:hidden">
+                    <OutletSwitcher />
+                  </div>
+
                   {/* CTA */}
                   <Button
                     onClick={() => router.push('/dashboard/subscriptions')}
@@ -353,9 +364,9 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
               Skipped while the trial modal is up so overlays never stack. */}
           {!showTrialModal && verificationStatus === 'APPROVED' && <SubscriptionPaywall />}
 
-          {/* Food businesses with no menu photos get a one-per-session nudge. Owners only —
-              moderators and staff can't manage the menu. */}
-          <MenuPhotoPrompt
+          {/* One dismissible nudge per session (menu photos > opening hours > brand account),
+              never stacked. Owners only — moderators and staff can't manage these. */}
+          <BusinessNudges
             enabled={
               !showTrialModal &&
               verificationStatus === 'APPROVED' &&

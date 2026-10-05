@@ -46,6 +46,7 @@ import {
   Gift,
   Percent,
   Disc3,
+  Network,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -91,7 +92,7 @@ export function MobileNav() {
   const isSuperAdmin = pathname.startsWith('/super-admin') || (pathname.startsWith('/admin') && isSuperAdminRole);
   const isAdmin = pathname.startsWith('/admin') && !isSuperAdminRole;
   // Menu Photos exist for food businesses only, so the drawer needs the category.
-  const { isFood } = useOwnerBusiness(isDashboard && activeRole !== 'BUSINESS_MODERATOR');
+  const { isFood, brandId } = useOwnerBusiness(isDashboard && activeRole !== 'BUSINESS_MODERATOR');
 
   // Helper to check if a tab is active
   const isActive = (href: string) => {
@@ -134,7 +135,8 @@ export function MobileNav() {
         { label: 'Discounts', href: '/dashboard/discounts', icon: Percent },
         { label: 'Events', href: '/dashboard/events', icon: CalendarDays },
         { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
-        { label: 'Branches', href: '/dashboard/branches', icon: GitBranch },
+        ...(brandId ? [] : [{ label: 'Branches', href: '/dashboard/branches', icon: GitBranch }]),
+        { label: 'Outlets', href: '/dashboard/outlets', icon: Network },
         ...(isFood ? [{ label: 'Menu Photos', href: '/dashboard/menu', icon: ImageIcon }] : []),
         { label: 'Team', href: '/dashboard/team', icon: UserCog },
         { label: 'Subscriptions', href: '/dashboard/subscriptions', icon: CreditCard },
@@ -177,6 +179,7 @@ export function MobileNav() {
     drawerItems = [
       { label: 'Manage Users', href: '/super-admin/users', icon: UserCog },
       { label: 'Businesses', href: '/super-admin/businesses', icon: Building2 },
+      { label: 'Brand accounts', href: '/super-admin/brands', icon: Network },
       { label: 'Approvals', href: '/super-admin/approvals', icon: CheckCircle },
       { label: 'Payments', href: '/admin/payments', icon: Receipt },
       { label: 'Payment Approvals', href: '/admin/payment-approvals', icon: BadgeIndianRupee },

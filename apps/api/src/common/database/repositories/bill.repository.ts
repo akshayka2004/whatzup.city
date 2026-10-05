@@ -20,7 +20,7 @@ export class BillRepository extends BaseRepository<any> {
   async verifyBill(
     tenantId: string,
     id: string,
-    status: 'APPROVED' | 'REJECTED',
+    status: 'VERIFIED' | 'REJECTED',
     verifiedBy: string,
     rejectionReason?: string,
   ): Promise<any> {

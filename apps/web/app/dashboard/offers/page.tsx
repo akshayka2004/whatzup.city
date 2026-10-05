@@ -5,10 +5,18 @@ import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Tag, Eye, Edit, Trash2, X, AlertTriangle, Clock, Calendar, Loader2 } from 'lucide-react';
+import { Plus, Tag, Eye, Edit, Trash2, X, AlertTriangle, Clock, Calendar, Loader2, UtensilsCrossed, ShoppingBag, Store } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
+import { useOwnerBusiness } from '@/hooks/use-owner-business';
 import { KERALA_CITIES } from '@/lib/constants';
+
+type Fulfilment = 'DINE_IN' | 'TAKEAWAY' | 'BOTH';
+const FULFILMENT_OPTIONS: { value: Fulfilment; label: string; icon: typeof Store }[] = [
+  { value: 'DINE_IN', label: 'Dine-in', icon: UtensilsCrossed },
+  { value: 'TAKEAWAY', label: 'Takeaway', icon: ShoppingBag },
+  { value: 'BOTH', label: 'Both', icon: Store },
+];
 
 interface Offer {
   id: string;
@@ -22,6 +30,7 @@ interface Offer {
   targetCities: string[];
   startsAt?: string;   // ISO date string
   expiresAt?: string;  // ISO date string — filtered out automatically when past
+  fulfilment?: Fulfilment;
 }
 
 const today = new Date().toISOString().slice(0, 10);
@@ -105,6 +114,7 @@ function TagInput({
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function OffersPage() {
   const { user } = useAuth();
+  const { isFood } = useOwnerBusiness();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -130,6 +140,7 @@ export default function OffersPage() {
           targetCities: Array.isArray(o.targetCities) ? o.targetCities : [],
           startsAt: o.startDate || o.startsAt || undefined,
           expiresAt: o.endDate || o.expiresAt || undefined,
+          fulfilment: o.fulfilment === 'DINE_IN' || o.fulfilment === 'TAKEAWAY' ? o.fulfilment : 'BOTH',
         })),
       );
     }
@@ -156,14 +167,39 @@ export default function OffersPage() {
   const [formStartsAt, setFormStartsAt] = useState('');
   const [formExpiresAt, setFormExpiresAt] = useState('');
   const [formCities, setFormCities] = useState<string[]>([]);
+  const [formFulfilment, setFormFulfilment] = useState<Fulfilment>('BOTH');
 
   const toggleCity = (c: string) =>
     setFormCities((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
 
   const resetForm = () => {
     setTitle(''); setDiscount(0); setDiscountType('PERCENT'); setDiscountAmount(0); setActive(true);
-    setFormTags([]); setFormStartsAt(''); setFormExpiresAt(''); setFormCities([]);
+    setFormTags([]); setFormStartsAt(''); setFormExpiresAt(''); setFormCities([]); setFormFulfilment('BOTH');
   };
+
+  // Food businesses only: whether the offer applies to dine-in, takeaway or both.
+  const FulfilmentField = () =>
+    isFood ? (
+      <div>
+        <label className="text-sm font-medium text-muted-foreground block mb-2">Available for</label>
+        <div className="grid grid-cols-3 gap-1 rounded-xl border border-input bg-background p-1">
+          {FULFILMENT_OPTIONS.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={formFulfilment === value}
+              onClick={() => setFormFulfilment(value)}
+              className={`ui-press flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium cursor-pointer transition-colors ${
+                formFulfilment === value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5 shrink-0" />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+    ) : null;
 
   // A reusable discount-type selector + value input for the create/edit modals.
   const DiscountField = () => (
@@ -208,6 +244,7 @@ export default function OffersPage() {
         startDate: formStartsAt ? new Date(formStartsAt).toISOString() : now,
         endDate: formExpiresAt ? new Date(formExpiresAt).toISOString() : defaultEnd,
         targetCities: formCities,
+        ...(isFood ? { fulfilment: formFulfilment } : {}),
       });
       if (res.data && !res.error) {
         // Refetch to get fresh list with whatever the DB returned
@@ -233,6 +270,7 @@ export default function OffersPage() {
     setFormStartsAt(offer.startsAt || '');
     setFormExpiresAt(offer.expiresAt || '');
     setFormCities([...(offer.targetCities || [])]);
+    setFormFulfilment(offer.fulfilment || 'BOTH');
   };
 
   const handleEdit = async (e: React.FormEvent) => {
@@ -249,6 +287,7 @@ export default function OffersPage() {
         status: active ? 'ACTIVE' : 'PAUSED',
         targetCities: formCities,
       };
+      if (isFood) body.fulfilment = formFulfilment;
       if (formStartsAt) body.startDate = new Date(formStartsAt).toISOString();
       if (formExpiresAt) body.endDate = new Date(formExpiresAt).toISOString();
       const res = await apiService.patch<any>(`/v1/offers/${editingOffer.id}`, body);
@@ -257,6 +296,7 @@ export default function OffersPage() {
           o.id === editingOffer.id
             ? { ...o, title, discount: Number(discount), active, tags: formTags,
                 targetCities: formCities,
+                ...(isFood ? { fulfilment: formFulfilment } : {}),
                 startsAt: formStartsAt || undefined, expiresAt: formExpiresAt || undefined }
             : o,
         ));
@@ -354,6 +394,14 @@ export default function OffersPage() {
                     >
                       {offer.active ? 'Active' : 'Inactive'}
                     </button>
+                    {(offer.fulfilment === 'DINE_IN' || offer.fulfilment === 'TAKEAWAY') && (
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary text-muted-foreground border border-border flex items-center gap-1">
+                        {offer.fulfilment === 'DINE_IN'
+                          ? <UtensilsCrossed className="h-2.5 w-2.5" />
+                          : <ShoppingBag className="h-2.5 w-2.5" />}
+                        {offer.fulfilment === 'DINE_IN' ? 'Dine-in' : 'Takeaway'}
+                      </span>
+                    )}
                     {isScheduled(offer) && (
                       <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-info/10 text-info border border-info/20 flex items-center gap-1">
                         <Clock className="h-2.5 w-2.5" />Scheduled
@@ -452,6 +500,7 @@ export default function OffersPage() {
                   />
                 </div>
                 {DiscountField()}
+                {FulfilmentField()}
                 <div>
                   <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Tags
@@ -560,6 +609,7 @@ export default function OffersPage() {
                   />
                 </div>
                 {DiscountField()}
+                {FulfilmentField()}
                 <div>
                   <label className="text-sm font-medium text-muted-foreground block mb-2">
                     Tags

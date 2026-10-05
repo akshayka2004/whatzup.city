@@ -1,5 +1,6 @@
 import { apiService, ApiResponse } from './api-service';
 import { storageUploadError } from '../upload-error';
+import type { OperatingHours } from '@saas/types';
 
 export interface BusinessOnboardingProgress {
   id: string;
@@ -73,6 +74,9 @@ class OnboardingService {
       supportContact?: any;
       branchHead?: any;
       categoryAttributes?: any;
+      billSeriesPrefix?: string;
+      // Opening hours + closed timings (shape and rules: @saas/types operating-hours)
+      operatingHours?: OperatingHours;
       // Hotel category pricing
       hotelStarRating?: number;
       hotelAmenities?: any;

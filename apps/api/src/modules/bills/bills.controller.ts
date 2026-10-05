@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { BillsService } from './bills.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { UploadBillDto } from './dto/upload-bill.dto';
 
 @ApiTags('Bills')
 @ApiBearerAuth()
@@ -16,14 +17,7 @@ export class BillsController {
   async upload(
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
-    @Body()
-    body: {
-      businessId: string;
-      amount: number;
-      billDate: string;
-      billImage: string;
-      description?: string;
-    },
+    @Body() body: UploadBillDto,
   ) {
     return this.billsService.upload(tenantId, userId, body);
   }

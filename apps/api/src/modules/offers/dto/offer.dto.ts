@@ -1,5 +1,5 @@
 import {
-  IsOptional, IsString, IsNumber, IsInt, IsDateString, IsArray, MaxLength, ArrayMaxSize,
+  IsOptional, IsString, IsNumber, IsInt, IsDateString, IsArray, IsIn, MaxLength, ArrayMaxSize,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -56,4 +56,8 @@ export class OfferDto {
   @IsOptional() @IsArray() @ArrayMaxSize(50)
   @IsString({ each: true }) @MaxLength(100, { each: true })
   targetCities?: string[];
+
+  @ApiProperty({ required: false, enum: ['DINE_IN', 'TAKEAWAY', 'BOTH'], description: 'Food-type businesses: where the offer applies. Defaults to BOTH.' })
+  @IsOptional() @IsIn(['DINE_IN', 'TAKEAWAY', 'BOTH'], { message: 'Choose dine-in, takeaway or both for where the offer applies.' })
+  fulfilment?: 'DINE_IN' | 'TAKEAWAY' | 'BOTH';
 }

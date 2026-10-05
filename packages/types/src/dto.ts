@@ -11,6 +11,7 @@ import {
   ReportStatus,
   ReportType,
 } from './enums';
+import type { OperatingHours } from './operating-hours';
 
 // ── Pagination ──────────────────────────────────────────────
 
@@ -96,7 +97,7 @@ export interface CreateBusinessDto {
   phone: string;
   email: string;
   website?: string;
-  operatingHours?: Record<string, { open: string; close: string }>;
+  operatingHours?: OperatingHours;
 }
 
 export interface BusinessDto {
@@ -119,7 +120,7 @@ export interface BusinessDto {
   website: string | null;
   logo: string | null;
   coverImage: string | null;
-  operatingHours: Record<string, { open: string; close: string }> | null;
+  operatingHours: OperatingHours | null;
   averageRating: number;
   totalReviews: number;
   isVerified: boolean;

@@ -9,6 +9,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
 import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/business/registration-details';
+import { BrandSettingsCard } from '@/components/business/brand-settings-card';
+import { validateOperatingHours, type OperatingHours } from '@saas/types';
 import {
   STAR_OPTIONS, STAR_PRICING, ADDON_PRICE, computeHotelCharge, type HotelAmenities,
 } from '@/lib/hotel-pricing';
@@ -43,6 +45,8 @@ interface SocialLink {
 
 interface BusinessRecord {
   id: string;
+  brandId?: string | null;
+  brand?: { id: string; name: string; billSeriesMode?: string } | null;
   name: string;
   email?: string;
   phone?: string;
@@ -157,6 +161,8 @@ export default function BusinessSettingsPage() {
             brandName: b.brandName || '',
             companyName: b.companyName || '',
             companyType: b.companyType || '',
+            billSeriesPrefix: b.billSeriesPrefix || '',
+            operatingHours: b.operatingHours || undefined,
             compliance: b.compliance || {},
             ownerContact: b.ownerContact || {},
             billingContact: b.billingContact || {},
@@ -209,12 +215,23 @@ export default function BusinessSettingsPage() {
   /* ── Save registration / KYC details ─────────────────────────── */
   const handleSaveReg = async () => {
     if (!business?.id) return;
+    let operatingHours: OperatingHours | undefined;
+    if (regDetails.operatingHours) {
+      const check = validateOperatingHours(regDetails.operatingHours);
+      if (!check.ok) {
+        setRegMsg(check.errors[0]);
+        return;
+      }
+      operatingHours = check.value;
+    }
     setSavingReg(true);
     setRegMsg('');
     const res = await apiService.patch<any>(`/v1/businesses/${business.id}`, {
       brandName: regDetails.brandName || undefined,
       companyName: regDetails.companyName || undefined,
       companyType: regDetails.companyType || undefined,
+      billSeriesPrefix: regDetails.billSeriesPrefix ?? '',
+      operatingHours,
       compliance: regDetails.compliance || {},
       ownerContact: regDetails.ownerContact || {},
       billingContact: regDetails.billingContact || {},
@@ -694,6 +711,9 @@ export default function BusinessSettingsPage() {
           )}
         </Card>
 
+        {/* ── Brand account (convert / manage) ─────────────────────── */}
+        <BrandSettingsCard />
+
         {/* ── Registration / KYC details ───────────────────────────── */}
         <div className="space-y-4 ui-fade-up" style={{ animationDelay: '0.15s' }}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -717,6 +737,8 @@ export default function BusinessSettingsPage() {
             value={regDetails}
             onChange={setRegDetails}
             categorySlug={categorySlug}
+            lockBrandName={!!business?.brandId}
+            hideBillSeries={business?.brand?.billSeriesMode === 'SHARED'}
           />
         </div>
 

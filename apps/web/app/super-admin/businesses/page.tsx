@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Building2, Search, RefreshCw, Pencil, X, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Tag, CalendarDays, ArrowUpDown, Wallet, Star, Trash2, AlertTriangle, QrCode } from 'lucide-react';
+import { Building2, Search, RefreshCw, Pencil, X, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Tag, CalendarDays, ArrowUpDown, Wallet, Star, Trash2, AlertTriangle, QrCode, Store } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES } from '@/lib/constants';
 import { BusinessQrCard } from '@/components/business/qr-card';
@@ -33,6 +34,9 @@ interface Biz {
   coverImage?: string | null;
   _count?: { offers?: number; events?: number };
   totalBillAmount?: number;
+  brand?: { id: string; name: string } | null;
+  outletLabel?: string | null;
+  isBrandHq?: boolean;
 }
 
 export default function SuperAdminBusinessesPage() {
@@ -50,6 +54,9 @@ export default function SuperAdminBusinessesPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [verifiedFilter, setVerifiedFilter] = useState('');
   const [halalFilter, setHalalFilter] = useState('');
+  const [brandId, setBrandId] = useState('');
+  const [brandName, setBrandName] = useState('');
+  const [urlReady, setUrlReady] = useState(false);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
@@ -74,10 +81,33 @@ export default function SuperAdminBusinessesPage() {
   }, [search]);
   // Seed search from header ?q= (role-aware global search lands here).
   useEffect(() => {
-    const q = new URLSearchParams(window.location.search).get('q');
+    const sp = new URLSearchParams(window.location.search);
+    const q = sp.get('q');
     if (q) setSearch(q);
+    const b = sp.get('brandId');
+    if (b) setBrandId(b);
+    setUrlReady(true);
   }, []);
-  useEffect(() => { setPage(1); }, [debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter]);
+  useEffect(() => { setPage(1); }, [debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter, brandId]);
+
+  // Resolve the brand's name for the "Showing outlets of" chip
+  useEffect(() => {
+    if (!brandId) { setBrandName(''); return; }
+    let cancelled = false;
+    apiService.get<any>(`/v1/admin/brands/${brandId}`).then((res) => {
+      const d = res.data?.data ?? res.data;
+      if (!cancelled) setBrandName(d?.brand?.name || '');
+    });
+    return () => { cancelled = true; };
+  }, [brandId]);
+
+  const clearBrandFilter = () => {
+    setBrandId('');
+    const sp = new URLSearchParams(window.location.search);
+    sp.delete('brandId');
+    const qs = sp.toString();
+    window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
+  };
 
   // Flat category list for the edit dropdown
   useEffect(() => {
@@ -90,6 +120,7 @@ export default function SuperAdminBusinessesPage() {
   }, []);
 
   const fetchRows = useCallback(async () => {
+    if (!urlReady) return;
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: '25', sortBy, sortOrder });
     if (debounced) params.set('search', debounced);
@@ -98,6 +129,7 @@ export default function SuperAdminBusinessesPage() {
     if (statusFilter) params.set('status', statusFilter);
     if (verifiedFilter) params.set('isVerified', verifiedFilter);
     if (halalFilter) params.set('halalStatus', halalFilter);
+    if (brandId) params.set('brandId', brandId);
     const res = await apiService.get<any>(`/v1/businesses/admin/all?${params}`);
     if (res.data && !res.error) {
       setRows(res.data.data || []);
@@ -106,7 +138,7 @@ export default function SuperAdminBusinessesPage() {
       setRows([]);
     }
     setLoading(false);
-  }, [page, debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter, sortBy, sortOrder]);
+  }, [urlReady, page, debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter, brandId, sortBy, sortOrder]);
 
   useEffect(() => { fetchRows(); }, [fetchRows]);
 
@@ -178,6 +210,23 @@ export default function SuperAdminBusinessesPage() {
           </Button>
         </div>
 
+        {brandId && (
+          <div className="ui-pop inline-flex max-w-full items-center gap-2 rounded-full border border-primary/25 bg-primary/10 py-1 pl-3 pr-1 text-xs text-primary">
+            <Store className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">
+              Showing outlets of{' '}
+              <Link href={`/super-admin/brands/${brandId}`} className="font-semibold underline-offset-2 hover:underline">{brandName || 'this brand'}</Link>
+            </span>
+            <button
+              onClick={clearBrandFilter}
+              aria-label="Clear brand filter"
+              className="ui-press flex h-8 w-8 shrink-0 items-center justify-center rounded-full hover:bg-primary/15 cursor-pointer"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-[220px] max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -233,6 +282,16 @@ export default function SuperAdminBusinessesPage() {
                       <td className="px-5 py-3">
                         <p className="font-semibold text-foreground flex items-center gap-1.5">{b.name}{b.isVerified && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}</p>
                         {b.email && <p className="text-xs text-muted-foreground">{b.email}</p>}
+                        {b.brand && (
+                          <Link
+                            href={`/super-admin/brands/${b.brand.id}`}
+                            className="mt-1 inline-flex max-w-[220px] items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/15 transition-colors"
+                          >
+                            <Store className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{b.brand.name}{b.outletLabel ? ` · ${b.outletLabel}` : ''}</span>
+                            {b.isBrandHq && <span className="rounded bg-primary px-1 text-[9px] text-primary-foreground">HQ</span>}
+                          </Link>
+                        )}
                       </td>
                       <td className="px-5 py-3 text-muted-foreground text-xs">{b.category?.name || '—'}</td>
                       <td className="px-5 py-3 text-muted-foreground text-xs">{b.city || '—'}</td>

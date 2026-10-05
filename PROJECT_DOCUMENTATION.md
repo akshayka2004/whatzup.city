@@ -206,6 +206,8 @@ launch page and launch-interest capture.
 - **Business core:** `Business`, `BusinessTag`, `BusinessBranch`,
   `BusinessDocument`, `BusinessStaff`, `BusinessVerification`, `BusinessCustomer`,
   `Category`, `ProductCategory`, `Product`.
+- **Brand accounts:** `Brand`, `BrandEvent` (monitoring feed); outlets are
+  `Business` rows linked by `brandId` ([§12.12](#1212-brand-accounts--outlets)).
 - **Engagement:** `Offer`, `OfferRedemption`, `Coupon`, `Review`, `ReviewMedia`,
   `ReviewVote`, `Bookmark`, `Favorite`, `UserFollow`, `Event`, `EventClick`.
 - **Bills / verification:** `Bill`, `BillItem`, `BillVerification`,
@@ -549,8 +551,11 @@ with *"One of the fields you entered is too long"* even though nothing looked lo
 - `pnpm db:check-limits` (`scripts/check-column-limits.js --strict`) enforces the first
   two statically and lists uncapped fields as warnings. Run it after touching
   `schema.prisma` or a DTO.
-- If a `P2000` still slips through, the API now names the column in the message
-  (`The "gstin" value you entered is too long…`) and logs the full Prisma error.
+- If a `P2000` still slips through, the API logs the full Prisma error plus its `meta`
+  and tells the user which record overflowed (`A value in your billing profile details
+  is too long…`). It cannot name the exact column: through pgbouncer Prisma reports
+  `Column: (not available)`, so the record type (from the `prisma.<model>.<op>()`
+  text) is the reliable fallback. To find the column, check the PM2 log line.
 
 ---
 
@@ -731,6 +736,113 @@ onboarding gate (§12.1) explicitly exempts `/dashboard/invoice/*` so the page
 doesn't get swallowed by the full-screen "Verification Pending" block. Also
 linked from the payment-history table on `/dashboard/subscriptions` so it
 stays reachable later.
+
+### 12.11 Opening hours, closed timings, dine-in / takeaway offers
+
+- **Storage:** `Business.operatingHours` (Json, no migration). Shape
+  `{ version:1, weekly:{ mon:{closed,shifts:[{open,close}]}…sun }, closures:[{id,from,to,reason}] }`.
+  Times are 24h IST; a shift never crosses midnight (`close` may be `24:00`);
+  max 4 shifts/day, no overlaps, max 20 closures, `from <= to`.
+- **One definition for API and web:** `packages/types/src/operating-hours.ts`
+  (`validateOperatingHours`, `hasOperatingHours`, `getOpenStatus`, `formatTime12`,
+  `istParts`). API side: `@IsOperatingHours()` + `operatingHoursForDb()` in
+  `apps/api/src/common/utils/operating-hours.validator.ts` (Prisma Json null needs
+  `Prisma.DbNull`). Validation is strict, so the editor validates with the same
+  helper before saving.
+- **Where it is asked:** registration step 3 and Settings → Registration details
+  both render the shared `RegistrationDetailsForm` → `OperatingHoursEditor`
+  (per-day open/closed toggle, "Add a shift", date-range closures with a reason).
+  Existing businesses get a one-per-session "Add your opening hours" nudge
+  (`BusinessNudges`). Public page shows `OpeningHoursCard` (live "Open now - closes
+  9 PM", today highlighted, upcoming closures).
+- **Dine-in / Takeaway:** `Offer.fulfilment` (`DINE_IN | TAKEAWAY | BOTH`, default
+  `BOTH`, migration `20261005000000_offer_fulfilment`). The selector shows only for
+  food-type categories (`isFoodCategory`, web `lib/food-category.ts`, API
+  `common/utils/food-category.ts`); chips show on the dashboard, public offers page
+  and the business page. `BOTH` shows no chip.
+- Any new profile field must be declared in the DTO: the global ValidationPipe runs
+  `whitelist + forbidNonWhitelisted`, so an undeclared field makes the save 400.
+  `BusinessOnboardingService.updateStep` busts `business:{id}` so the field shows
+  on the public page immediately.
+
+### 12.12 Brand accounts & outlets
+
+A brand with several outlets lives under one **brand account**. Each outlet is a
+**full business listing** (own address, hours, offers, reviews, QR, plan, bills)
+grouped by `Business.brandId`. The older lightweight `BusinessBranch` rows are
+untouched and still used by single businesses (promoting them to outlets is a
+future step; `parentBusinessId` is legacy and unused).
+
+**Data** (migration `20261005010000_brand_accounts`, additive): `Brand`
+(tenantId, ownerId, name, slug, `status ACTIVE|SUSPENDED`, `billSeriesMode
+SHARED|PER_OUTLET`, `billSeriesPrefix`), `BrandEvent` (the monitoring feed),
+`Business.brandId/outletLabel/isBrandHq/brandPromptStatus/brandPromptAt`,
+`User.activeBusinessId`, `Bill.billNumber`.
+
+**Tenancy:** every business signup creates its own Tenant, so a brand and all of
+its outlets live in the **owner's** tenant. `BrandsService.addOutlet` creates
+Entity + Business + VerificationRequest + staff row there, as
+`PENDING_VERIFICATION`, so the outlet shows in the normal approvals queue.
+Outlets need their own phone and email (unique per tenant) and a unique name
+(`<Brand> - <label>`, company names are globally unique).
+
+**Flows**
+- *Registration:* credentials step asks "Single business / Brand with multiple
+  outlets" (+ brand name, outlet label, "is the bill series the same across all
+  outlets?"). `POST /auth/business/signup` accepts `accountType`, `brandName`,
+  `outletLabel`, `billSeriesMode`, `billSeriesPrefix`.
+- *Existing businesses:* `BusinessNudges` shows a conversion dialog (not for
+  brands, not before APPROVED); "Not now" snoozes 7 days, "No, single business"
+  is remembered; Settings → Brand account always works
+  (`POST /brands/convert`, `POST /brands/prompt-response`).
+- *Add outlet:* `/dashboard/outlets` → `POST /brands/:id/outlets` → finish at
+  `/register?outlet=<id>` (details + its own plan; invoice/GST prefilled from the
+  head outlet via `GET /brands/:id/billing-defaults`). Head outlet cannot be
+  removed. Suspended brands cannot add outlets.
+- *Active outlet:* `PUT /auth/active-business` stores `User.activeBusinessId`
+  (validated: owner or active `BusinessStaff`), busts `user:{id}`. Login and
+  `validateUser` derive `user.businessId` from it (else newest entity).
+  `GET /businesses/owner/mine` returns the **active outlet first** so every page
+  doing `list[0]` follows the switcher. `OutletSwitcher` also sits inside the
+  `BusinessLayout` gate cards so a pending outlet never locks the owner out.
+- *Launch offer:* one slot per brand, first outlet only — `claimLaunchOffer`
+  rejects when a sibling holds a slot (advisory lock per brand).
+
+**Bill series & submissions**
+- Brand `SHARED`: one prefix for all outlets; customer picks the outlet; the
+  moderation queue badge reads "Brand series matched" (proves brand, not outlet).
+  Brand owner sees a brand-wide queue (`GET /brands/:id/bill-verifications`) and
+  can move an undecided bill to the right outlet
+  (`POST /bill-verifications/:id/reassign-outlet`, logs `BILL_REASSIGNED`).
+- Brand `PER_OUTLET`: each outlet keeps its own `billSeriesPrefix`.
+- Duplicate check runs on **upload** (it used to never run): normalised
+  `billNumber` (whitespace stripped, upper-cased, `-` and `/` kept) is matched
+  across all outlets when shared, otherwise within the business; rejected bills
+  and bills sent back for re-upload are ignored; a duplicate is created as
+  `FLAGGED` with the reason. Prefix match is informational, moderators still
+  review every bill.
+- Points are global; voucher spend, review eligibility and VerifiedPurchase stay
+  **per outlet**.
+- Bug fixes done with this work: `Bill.status` was written `APPROVED` /
+  `RE_UPLOAD_REQUESTED` (not valid values; now `VERIFIED` / `UPLOADED`), moderation
+  routes never checked the actor belonged to the business (`assertCanModerate`),
+  the settings page never saved `billSeriesPrefix`, OCR couldn't capture `/` in
+  invoice numbers, `billNumber` was never sent or stored.
+
+**Super-admin monitoring:** every brand/outlet action writes a `BrandEvent` and an
+audit row (outlet approve/reject included). `/super-admin/brands` (list + latest
+activity), `/super-admin/brands/:id` (outlets, series, plan, timeline, suspend /
+reactivate), Brand column + filter on `/super-admin/businesses`, "Outlet of
+<Brand>" badge on approvals. `AuditService.findAll` reads across tenants for
+`SUPER_ADMIN` because brand activity is written under each owner's tenant.
+Event types: `BRAND_CREATED`, `BRAND_CONVERTED`, `BRAND_UPDATED`,
+`BILL_SERIES_CHANGED`, `OUTLET_ADDED/UPDATED/REMOVED/APPROVED/REJECTED`,
+`BILL_REASSIGNED`, `BRAND_SUSPENDED/REACTIVATED`.
+
+**Out of scope for v1:** brand-wide manager role (access = brand owner +
+per-outlet staff), brand rating roll-up, brand-level voucher spend, Typesense
+brand fields (outlet names already contain the brand name), promoting legacy
+`BusinessBranch` rows to outlets.
 
 ---
 

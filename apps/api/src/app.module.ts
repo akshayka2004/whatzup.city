@@ -27,6 +27,7 @@ import { PlatformOffersModule } from './modules/platform-offers/platform-offers.
 import { VouchersModule } from './modules/vouchers/vouchers.module';
 import { PlatformVouchersModule } from './modules/platform-vouchers/platform-vouchers.module';
 import { DiscountsModule } from './modules/discounts/discounts.module';
+import { BrandsModule } from './modules/brands/brands.module';
 import { EventsModule } from './modules/events/events.module';
 import { MoviesModule } from './modules/movies/movies.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
@@ -147,6 +148,7 @@ import { TrialsModule } from './modules/trials/trials.module';
     VouchersModule,
     PlatformVouchersModule,
     DiscountsModule,
+    BrandsModule,
     EventsModule,
     MoviesModule,
     ReviewsModule,

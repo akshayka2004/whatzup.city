@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BusinessProfileType } from '@saas/types';
+import { IsOperatingHours } from '../../../common/utils/operating-hours.validator';
 
 export class StartBusinessOnboardingDto {
   @ApiProperty({ example: 'Sunrise Cafe' })
@@ -111,9 +112,12 @@ export class UpdateBusinessDetailsDto {
   @IsObject()
   socialLinks?: any;
 
-  @ApiProperty({ example: { monday: '09:00-21:00', tuesday: '09:00-21:00' } })
+  @ApiProperty({
+    example: { version: 1, weekly: { mon: { closed: false, shifts: [{ open: '09:00', close: '21:00' }] } }, closures: [] },
+  })
   @IsOptional()
   @IsObject()
+  @IsOperatingHours()
   operatingHours?: any;
 
   @ApiProperty({ example: ['cafe', 'coffee', 'breakfast'] })
@@ -136,7 +140,9 @@ export class UpdateBusinessDetailsDto {
   @IsOptional() @IsObject() supportContact?: any;
   @IsOptional() @IsObject() branchHead?: any;
   @IsOptional() @IsObject() categoryAttributes?: any;
-  @IsOptional() @IsString() billSeriesPrefix?: string;
+  @IsOptional() @IsString()
+  @MaxLength(30, { message: 'The bill series prefix is too long (30 characters max).' })
+  billSeriesPrefix?: string;
 
   // ── Hotel category pricing (star classification + priced amenities) ──
   @IsOptional() @IsNumber() hotelStarRating?: number;

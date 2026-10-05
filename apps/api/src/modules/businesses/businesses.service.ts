@@ -6,6 +6,7 @@ import { SearchService } from '../search/search.service';
 import { AuditService } from '../audit/audit.service';
 import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 import { BusinessStatus } from '@saas/types';
+import { operatingHoursForDb } from '../../common/utils/operating-hours.validator';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 import { PaginatedResult } from '../../common/database/pagination';
 
@@ -133,6 +134,7 @@ export class BusinessesService {
           where: { id, deletedAt: null },
           include: {
             category: true,
+            brand: { select: { id: true, name: true, slug: true, status: true } },
             branches: { where: { isActive: true } },
             _count: { select: { reviews: true, products: true, offers: true } },
           },
@@ -140,6 +142,7 @@ export class BusinessesService {
       : await this.businessRepo.findOne(tenantId, id, {
           include: {
             category: true,
+            brand: { select: { id: true, name: true, slug: true, status: true } },
             branches: { where: { isActive: true } },
             _count: { select: { reviews: true, products: true, offers: true } },
           },
@@ -165,6 +168,7 @@ export class BusinessesService {
           where: { slug, deletedAt: null },
           include: {
             category: true,
+            brand: { select: { id: true, name: true, slug: true, status: true } },
             branches: { where: { isActive: true } },
             _count: { select: { reviews: true, products: true, offers: true } },
           },
@@ -172,6 +176,7 @@ export class BusinessesService {
       : await this.businessRepo.findBySlug(tenantId, slug, {
           include: {
             category: true,
+            brand: { select: { id: true, name: true, slug: true, status: true } },
             branches: { where: { isActive: true } },
             _count: { select: { reviews: true, products: true, offers: true } },
           },
@@ -201,12 +206,14 @@ export class BusinessesService {
       // Registration / KYC details
       'brandName', 'companyName', 'companyType', 'compliance', 'ownerContact',
       'billingContact', 'supportContact', 'branchHead', 'categoryAttributes',
-      'subcategoryIds',
+      'subcategoryIds', 'billSeriesPrefix',
       // Hotel category pricing
       'hotelStarRating', 'hotelAmenities', 'amenityDetails',
     ];
     const payload: any = {};
     for (const k of ALLOWED) if (data[k] !== undefined) payload[k] = data[k];
+    if (payload.operatingHours !== undefined) payload.operatingHours = operatingHoursForDb(payload.operatingHours);
+    if (payload.billSeriesPrefix !== undefined) payload.billSeriesPrefix = String(payload.billSeriesPrefix).trim() || null;
 
     const updated = await this.businessRepo.update(tenantId, id, payload);
 
@@ -258,13 +265,14 @@ export class BusinessesService {
       status?: string;
       isVerified?: boolean;
       halalStatus?: string;
+      brandId?: string;
       sortBy?: string;
       sortOrder?: 'asc' | 'desc';
     } = {},
   ) {
     const pageVal = Math.max(1, Number(page) || 1);
     const limitVal = Math.min(Number(limit) || 25, 100);
-    const { search, categoryId, city, status, isVerified, halalStatus, sortBy, sortOrder } = opts;
+    const { search, categoryId, city, status, isVerified, halalStatus, brandId, sortBy, sortOrder } = opts;
 
     const where: any = { deletedAt: null };
     if (search) {
@@ -280,6 +288,7 @@ export class BusinessesService {
     if (status) where.status = status;
     if (typeof isVerified === 'boolean') where.isVerified = isVerified;
     if (halalStatus) where.halalStatus = halalStatus;
+    if (brandId) where.brandId = brandId;
 
     const SORTABLE: Record<string, string> = {
       name: 'name',
@@ -300,6 +309,7 @@ export class BusinessesService {
         orderBy,
         include: {
           category: { select: { id: true, name: true, slug: true } },
+          brand: { select: { id: true, name: true } },
           _count: {
             select: {
               offers: { where: { deletedAt: null } },
@@ -345,9 +355,12 @@ export class BusinessesService {
       'name', 'description', 'categoryId', 'ownerName', 'phone', 'email', 'website',
       'address', 'city', 'state', 'zipCode', 'district', 'googleMapsUrl', 'socialLinks',
       'tags', 'logo', 'coverImage', 'status', 'isVerified', 'halalStatus',
+      'operatingHours', 'billSeriesPrefix',
     ];
     const payload: any = {};
     for (const k of ALLOWED) if (data[k] !== undefined) payload[k] = data[k];
+    if (payload.operatingHours !== undefined) payload.operatingHours = operatingHoursForDb(payload.operatingHours);
+    if (payload.billSeriesPrefix !== undefined) payload.billSeriesPrefix = String(payload.billSeriesPrefix).trim() || null;
 
     const updated = await this.businessRepo.model.update({ where: { id }, data: payload });
     await this.redis.del(`business:${id}`);
@@ -395,15 +408,34 @@ export class BusinessesService {
     return removed;
   }
 
+  /**
+   * The owner's businesses with the one they're currently operating FIRST. Many dashboard pages do
+   * `list[0]`, so putting the active outlet first (instead of changing every page) makes the whole
+   * dashboard follow the outlet switcher. `activeBusinessId` is returned for the switcher itself.
+   */
   async getOwnerBusinesses(tenantId: string, ownerId: string) {
-    return this.businessRepo.findMany(
-      tenantId,
-      { ownerId },
-      { page: 1, limit: 100 },
-      {
-        include: { category: { select: { id: true, name: true, slug: true } } },
-      },
-    );
+    const [result, me] = await Promise.all([
+      this.businessRepo.findMany(
+        tenantId,
+        { ownerId },
+        { page: 1, limit: 100 },
+        {
+          include: {
+            category: { select: { id: true, name: true, slug: true } },
+            brand: { select: { id: true, name: true, slug: true, billSeriesMode: true, billSeriesPrefix: true, status: true } },
+          },
+        },
+      ),
+      this.db.user.findUnique({ where: { id: ownerId }, select: { activeBusinessId: true } }),
+    ]);
+    const list: any[] = Array.isArray((result as any)?.data) ? (result as any).data : [];
+    const wanted = me?.activeBusinessId;
+    const idx = wanted ? list.findIndex((b) => b.id === wanted) : -1;
+    if (idx > 0) {
+      const [active] = list.splice(idx, 1);
+      list.unshift(active);
+    }
+    return { ...(result as any), activeBusinessId: list[0]?.id ?? null };
   }
 
   async getNearby(tenantId: string, lat: number, lng: number, radiusKm = 10, isPublic = false) {
