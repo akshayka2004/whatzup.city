@@ -55,18 +55,26 @@ export class SecurityExceptionFilter implements ExceptionFilter {
           break;
         // A string value didn't fit its column (e.g. a VarChar length cap).
         // DTOs should catch this before it reaches Postgres, but this is the
-        // net for any field that doesn't have one yet. Prisma reports which
-        // column overflowed (names only, never values) — name it so the user
-        // knows what to shorten instead of hunting through the form.
+        // net for any field that doesn't have one yet. Point at what overflowed
+        // so the user isn't hunting through the form: the column when Prisma
+        // reports it, otherwise the record type taken from the invocation text
+        // ("prisma.billingProfile.upsert()" -> "billing profile"). With pgbouncer
+        // Prisma often says "Column: (not available)", so the model is the
+        // reliable fallback. Names only, never values.
         case 'P2000': {
           status = HttpStatus.BAD_REQUEST;
+          this.logger.error(`[P2000 meta]: ${JSON.stringify(exception.meta ?? {})}`, undefined, 'Database');
           const meta = exception.meta as any;
           const column = meta?.column_name ?? meta?.column;
-          const label =
+          const columnLabel =
             typeof column === 'string' && /^[A-Za-z0-9_]+$/.test(column) ? column.replace(/_/g, ' ') : null;
-          message = label
-            ? `The "${label}" value you entered is too long. Please shorten it and try again.`
-            : 'One of the fields you entered is too long. Please shorten it and try again.';
+          const modelName = /prisma\.(\w+)\.\w+\(\)/.exec(exception.message)?.[1];
+          const modelLabel = modelName ? modelName.replace(/([A-Z])/g, ' $1').toLowerCase() : null;
+          message = columnLabel
+            ? `The "${columnLabel}" value you entered is too long. Please shorten it and try again.`
+            : modelLabel
+              ? `A value in your ${modelLabel} details is too long. Please shorten it and try again.`
+              : 'One of the fields you entered is too long. Please shorten it and try again.';
           break;
         }
         // Schema drift — the running process's Prisma Client (or the DB
