@@ -1,5 +1,8 @@
 'use client';
 
+import { PageHeader } from '@/components/system/page-header';
+import { SectionNav } from '@/components/common/section-nav';
+import { toast } from '@/components/ui/sonner';
 import { useState, useEffect } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
@@ -381,6 +384,13 @@ export default function BusinessSettingsPage() {
   const removeTag = (t: string) => setTags((prev) => prev.filter((x) => x !== t));
 
   /* ── Render ───────────────────────────────────────────────────── */
+  useEffect(() => {
+    if (savedMsg) toast.success(savedMsg);
+  }, [savedMsg]);
+  useEffect(() => {
+    if (errMsg) toast.error(errMsg);
+  }, [errMsg]);
+
   if (authLoading || businessLoading) {
     return (
       <BusinessLayout>
@@ -395,27 +405,22 @@ export default function BusinessSettingsPage() {
 
   return (
     <BusinessLayout>
-      <div className="max-w-3xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Business Settings</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">Manage your profile, contacts, and social presence.</p>
-        </div>
+      <div className="mx-auto max-w-4xl space-y-8">
+        <PageHeader title="Settings" description="Your public profile, social links, brand and registration details.">
+          <SectionNav
+            sections={[
+              { id: 'profile', label: 'Profile' },
+              { id: 'social', label: 'Social links' },
+              { id: 'brand', label: 'Brand' },
+              { id: 'details', label: 'Registration & hours' },
+              ...(isHotel ? [{ id: 'hotel', label: 'Hotel' }] : []),
+            ]}
+          />
+        </PageHeader>
 
-        {savedMsg && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-success/10 border border-success/20 text-success text-sm font-semibold ui-pop">
-            <Check className="h-4 w-4" />
-            {savedMsg}
-          </div>
-        )}
-        {errMsg && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-semibold ui-pop">
-            <X className="h-4 w-4" />
-            {errMsg}
-          </div>
-        )}
 
         {/* Business Logo */}
-        <Card className="p-6 rounded-2xl border-border bg-card ui-fade-up">
+        <Card id="profile" className="scroll-mt-28 p-6">
           <h2 className="text-base font-bold text-foreground flex items-center gap-2 mb-5">
             <ImageIcon className="h-4 w-4 text-primary" /> Business Logo
           </h2>
@@ -445,7 +450,7 @@ export default function BusinessSettingsPage() {
         </Card>
 
         {/* Business Profile */}
-        <Card className="p-6 rounded-2xl border-border bg-card ui-fade-up" style={{ animationDelay: '0.05s' }}>
+        <Card className="p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Building2 className="h-4 w-4 text-primary" />
@@ -596,7 +601,7 @@ export default function BusinessSettingsPage() {
         </Card>
 
         {/* Social Media Links */}
-        <Card className="p-6 rounded-2xl border-border bg-card ui-fade-up" style={{ animationDelay: '0.1s' }}>
+        <Card id="social" className="scroll-mt-28 p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Globe className="h-4 w-4 text-primary" />
@@ -712,10 +717,12 @@ export default function BusinessSettingsPage() {
         </Card>
 
         {/* ── Brand account (convert / manage) ─────────────────────── */}
-        <BrandSettingsCard />
+        <div id="brand" className="scroll-mt-28">
+          <BrandSettingsCard />
+        </div>
 
         {/* ── Registration / KYC details ───────────────────────────── */}
-        <div className="space-y-4 ui-fade-up" style={{ animationDelay: '0.15s' }}>
+        <div id="details" className="scroll-mt-28 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold text-foreground tracking-tight">Registration details</h2>
@@ -744,7 +751,7 @@ export default function BusinessSettingsPage() {
 
         {/* ── Hotel classification & amenities ─────────────────────── */}
         {isHotel && (
-          <div className="space-y-4 ui-fade-up" style={{ animationDelay: '0.2s' }}>
+          <div id="hotel" className="scroll-mt-28 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold text-foreground tracking-tight">Hotel classification & amenities</h2>

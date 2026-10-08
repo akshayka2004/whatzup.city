@@ -33,7 +33,7 @@ export class DashboardService {
   }
 
   async getProfileCompleteness(tenantId: string, businessId: string) {
-    const cacheKey = `dashboard:completeness:${tenantId}:${businessId}`;
+    const cacheKey = `dashboard:completeness:v2:${tenantId}:${businessId}`;
 
     return this.redis.withCache(cacheKey, 600, async () => {
       // Select only the fields we need — no full include blobs
@@ -43,11 +43,11 @@ export class DashboardService {
           name: true,
           description: true,
           logo: true,
-          coverImage: true,
+          address: true,
           phone: true,
           email: true,
           operatingHours: true,
-          _count: { select: { branches: true, media: true } },
+          _count: { select: { media: true, offers: true } },
         },
       });
 
@@ -55,15 +55,16 @@ export class DashboardService {
 
       let score = 0;
       const missing: string[] = [];
-      const totalFields = 8;
+      // Cover banners and legacy branches are retired, so they no longer count against owners.
+      const totalFields = 7;
 
       if (business.name) score += 1; else missing.push('name');
       if (business.description) score += 1; else missing.push('description');
       if (business.logo) score += 1; else missing.push('logo');
-      if (business.coverImage) score += 1; else missing.push('coverImage');
+      if (business.address) score += 1; else missing.push('address');
       if (business.phone || business.email) score += 1; else missing.push('contact_info');
       if (business.operatingHours) score += 1; else missing.push('operating_hours');
-      if (business._count.branches > 0) score += 1; else missing.push('branches');
+      if (business._count.offers > 0) score += 1; else missing.push('first_offer');
       if (business._count.media > 0) score += 1; else missing.push('media');
 
       return { score: Math.round((score / totalFields) * 100), missing };
@@ -74,7 +75,7 @@ export class DashboardService {
   async invalidate(tenantId: string, businessId: string) {
     await Promise.all([
       this.redis.del(`dashboard:metrics:${tenantId}:${businessId}`),
-      this.redis.del(`dashboard:completeness:${tenantId}:${businessId}`),
+      this.redis.del(`dashboard:completeness:v2:${tenantId}:${businessId}`),
     ]);
   }
 }
