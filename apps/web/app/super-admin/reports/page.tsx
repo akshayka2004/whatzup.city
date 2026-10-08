@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useEffect } from 'react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
@@ -202,11 +203,7 @@ export default function SuperAdminReportsPage() {
 
         {/* VIEW REPORT MODAL */}
         {viewingReport && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
-              <button onClick={() => setViewingReport(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setViewingReport(null)} label="Investigate Report" className="sm:max-w-md">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-destructive/10 text-destructive rounded-xl">
                   <ShieldAlert className="h-6 w-6" />
@@ -249,17 +246,12 @@ export default function SuperAdminReportsPage() {
                   Close
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* DELETE MODAL */}
         {deletingReport && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
-              <button onClick={() => setDeletingReport(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer">
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setDeletingReport(null)} label="Dismiss / Delete Report" className="sm:max-w-sm text-center">
               <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
@@ -275,8 +267,7 @@ export default function SuperAdminReportsPage() {
                   Delete Report
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
       </div>
     </SuperAdminLayout>

@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useEffect, useCallback } from 'react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
@@ -186,9 +187,7 @@ export default function SuperAdminUsersPage() {
       </div>
 
       {editing && form && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="ui-pop w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[88vh] overflow-y-auto">
-            <button onClick={() => setEditing(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"><X className="h-5 w-5" /></button>
+        <ModalSurface onClose={() => setEditing(null)} label="Edit User" className="sm:max-w-lg">
             <h3 className="text-lg font-bold text-foreground mb-4">Edit User</h3>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -227,8 +226,7 @@ export default function SuperAdminUsersPage() {
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Save
               </Button>
             </div>
-          </Card>
-        </div>
+        </ModalSurface>
       )}
     </SuperAdminLayout>
   );

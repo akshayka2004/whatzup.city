@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
 import { Card } from '@/components/ui/card';
@@ -990,14 +991,7 @@ export default function ApprovalsPage() {
 
         {/* ── APPROVAL CONFIRMATION MODAL ──────────────────────────── */}
         {approvingItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border border-border bg-[#0c0c10] shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
-              <button
-                onClick={() => setApprovingItem(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setApprovingItem(null)} label="Approve Verification" className="sm:max-w-sm text-center">
               <div className="mx-auto w-12 h-12 rounded-full bg-success/10 flex items-center justify-center text-success mb-4">
                 <CheckCircle className="h-6 w-6" />
               </div>
@@ -1092,20 +1086,12 @@ export default function ApprovalsPage() {
                   Confirm Approval
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* ── REJECTION REASON MODAL ────────────────────────────────── */}
         {rejectingItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border border-border bg-[#0c0c10] shadow-2xl relative max-h-[90vh] overflow-y-auto">
-              <button
-                onClick={() => setRejectingItem(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setRejectingItem(null)} label="Reject Submission" className="sm:max-w-md">
               <h3 className="text-xl font-bold text-muted-foreground mb-2">Reject Submission</h3>
               <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
                 Provide a reason for rejecting{' '}
@@ -1143,8 +1129,7 @@ export default function ApprovalsPage() {
                   </Button>
                 </div>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
       </div>
     </AdminLayout>

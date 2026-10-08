@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useEffect } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
@@ -115,14 +116,7 @@ export default function ReviewsPage() {
         </div>
 
         {deletingReview && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center ui-pop">
-              <button
-                onClick={() => setDeletingReview(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setDeletingReview(null)} label="Delete Review" className="sm:max-w-sm text-center">
               <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
@@ -146,8 +140,7 @@ export default function ReviewsPage() {
                   Delete
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
       </div>
     </BusinessLayout>

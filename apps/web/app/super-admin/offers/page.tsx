@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useEffect, useCallback } from 'react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
@@ -188,14 +189,7 @@ export default function SuperAdminOffersPage() {
 
       {/* Delete confirm modal */}
       {confirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setConfirm(null)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
+        <ModalSurface onClose={() => setConfirm(null)} label="Delete offer?" className="sm:max-w-md">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 rounded-xl bg-destructive/10 text-destructive">
                 <AlertTriangle className="h-6 w-6" />
@@ -226,8 +220,7 @@ export default function SuperAdminOffersPage() {
                 Delete
               </Button>
             </div>
-          </Card>
-        </div>
+        </ModalSurface>
       )}
     </SuperAdminLayout>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useEffect } from 'react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
@@ -160,14 +161,7 @@ export default function TenantsPage() {
 
         {/* ── TENANT DEEP DIVE MODAL ───────────────────────── */}
         {managingTenant && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-2xl p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
-              <button
-                onClick={() => setManagingTenant(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setManagingTenant(null)} label="Dialog" className="sm:max-w-2xl">
 
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-primary/10 text-primary rounded-xl">
@@ -296,8 +290,7 @@ export default function TenantsPage() {
                   Close Deep Dive
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
       </div>
     </SuperAdminLayout>

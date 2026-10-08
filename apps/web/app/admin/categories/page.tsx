@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
 import { Card } from '@/components/ui/card';
@@ -217,14 +218,7 @@ export default function AdminCategoriesPage() {
 
         {/* ── ADD MODAL ────────────────────────────────────────────── */}
         {isAddOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
-              <button
-                onClick={() => setIsAddOpen(false)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setIsAddOpen(false)} label="Add Directory Category" className="sm:max-w-md">
               <h3 className="text-xl font-bold text-foreground mb-4">Add Directory Category</h3>
               <form onSubmit={handleAdd} className="space-y-4">
                 <div>
@@ -289,20 +283,12 @@ export default function AdminCategoriesPage() {
                   </Button>
                 </div>
               </form>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* ── EDIT MODAL ───────────────────────────────────────────── */}
         {editingCategory && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
-              <button
-                onClick={() => setEditingCategory(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setEditingCategory(null)} label="Edit Category Branch" className="sm:max-w-md">
               <h3 className="text-xl font-bold text-foreground mb-4">Edit Category Branch</h3>
               <form onSubmit={handleEdit} className="space-y-4">
                 <div>
@@ -356,20 +342,12 @@ export default function AdminCategoriesPage() {
                   </Button>
                 </div>
               </form>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* ── DELETE MODAL ─────────────────────────────────────────── */}
         {deletingCategory && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
-              <button
-                onClick={() => setDeletingCategory(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setDeletingCategory(null)} label="Delete Directory Category" className="sm:max-w-sm text-center">
               <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
@@ -394,8 +372,7 @@ export default function AdminCategoriesPage() {
                   Delete
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
       </div>
     </AdminLayout>

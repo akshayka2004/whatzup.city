@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
@@ -345,9 +346,7 @@ export default function SuperAdminBusinessesPage() {
 
       {/* Edit modal */}
       {editing && form && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="ui-pop w-full max-w-2xl p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[88vh] overflow-y-auto">
-            <button onClick={() => setEditing(null)} className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer"><X className="h-5 w-5" /></button>
+        <ModalSurface onClose={() => setEditing(null)} label="Edit Business" className="sm:max-w-2xl">
             <h3 className="text-lg font-bold text-foreground mb-4">Edit Business</h3>
 
             <div className="grid md:grid-cols-2 gap-4">
@@ -401,15 +400,12 @@ export default function SuperAdminBusinessesPage() {
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Save
               </Button>
             </div>
-          </Card>
-        </div>
+        </ModalSurface>
       )}
 
       {/* Delete confirm modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setConfirmDelete(null)} className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer"><X className="h-5 w-5" /></button>
+        <ModalSurface onClose={() => setConfirmDelete(null)} label="Delete business" className="sm:max-w-md">
             <div className="flex items-center gap-3 mb-3">
               <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
                 <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -431,14 +427,11 @@ export default function SuperAdminBusinessesPage() {
                 {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Delete
               </Button>
             </div>
-          </Card>
-        </div>
+        </ModalSurface>
       )}
       {/* QR preview / download modal */}
       {qrBiz && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setQrBiz(null)} className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer"><X className="h-5 w-5" /></button>
+        <ModalSurface onClose={() => setQrBiz(null)} label="Dialog" className="sm:max-w-md">
             <h3 className="text-lg font-bold text-foreground mb-1">{qrBiz.name}&apos;s QR code</h3>
             <p className="text-xs text-muted-foreground mb-4">Preview, print or download it for the business if they need a replacement.</p>
             <BusinessQrCard
@@ -447,8 +440,7 @@ export default function SuperAdminBusinessesPage() {
               category={qrBiz.category?.name}
               city={qrBiz.city}
             />
-          </Card>
-        </div>
+        </ModalSurface>
       )}
     </SuperAdminLayout>
   );

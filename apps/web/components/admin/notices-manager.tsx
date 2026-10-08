@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { toast } from '@/components/ui/sonner';
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
 import { Card } from '@/components/ui/card';
@@ -287,14 +288,7 @@ export function NoticesManager() {
 
       {/* VIEW MODAL */}
       {viewingNotice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative">
-            <button
-              onClick={() => setViewingNotice(null)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
+        <ModalSurface onClose={() => setViewingNotice(null)} label="Dialog" className="sm:max-w-md">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 bg-warning/10 text-warning rounded-xl">
                 <Bell className="h-6 w-6" />
@@ -333,20 +327,12 @@ export function NoticesManager() {
                 Close
               </Button>
             </div>
-          </Card>
-        </div>
+        </ModalSurface>
       )}
 
       {/* CREATE MODAL */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setIsCreateOpen(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
+        <ModalSurface onClose={() => setIsCreateOpen(false)} label="Create New Alert" className="sm:max-w-md">
             <h3 className="text-xl font-bold text-foreground mb-4">Create New Alert</h3>
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
@@ -439,20 +425,12 @@ export function NoticesManager() {
                 </Button>
               </div>
             </form>
-          </Card>
-        </div>
+        </ModalSurface>
       )}
 
       {/* DELETE MODAL */}
       {deletingNotice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center">
-            <button
-              onClick={() => setDeletingNotice(null)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
+        <ModalSurface onClose={() => setDeletingNotice(null)} label="Delete Notice" className="sm:max-w-sm text-center">
             <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
               <AlertTriangle className="h-6 w-6" />
             </div>
@@ -476,8 +454,7 @@ export function NoticesManager() {
                 Delete
               </Button>
             </div>
-          </Card>
-        </div>
+        </ModalSurface>
       )}
     </div>
   );

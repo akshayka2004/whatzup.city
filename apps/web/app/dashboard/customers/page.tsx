@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useEffect } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
@@ -404,14 +405,7 @@ export default function CustomersPage() {
 
         {/* Customer detail modal */}
         {viewing && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative overflow-y-auto max-h-[90vh]">
-              <button
-                onClick={() => setViewing(null)}
-                className="absolute top-4 right-4 p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setViewing(null)} label="Dialog" className="sm:max-w-lg">
 
               <div className="flex items-center gap-4 mb-6">
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-primary to-info flex items-center justify-center text-xl font-extrabold text-white">
@@ -494,8 +488,7 @@ export default function CustomersPage() {
               >
                 Close
               </Button>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
       </div>
     </BusinessLayout>

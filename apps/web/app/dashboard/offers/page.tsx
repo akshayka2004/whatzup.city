@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { toast } from '@/components/ui/sonner';
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
@@ -478,14 +479,7 @@ export default function OffersPage() {
 
         {/* ── CREATE MODAL ─────────────────────────────────────────── */}
         {isCreateOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto ui-pop">
-              <button
-                onClick={() => setIsCreateOpen(false)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setIsCreateOpen(false)} label="Create Promotional Offer" className="sm:max-w-md">
               <h3 className="text-xl font-bold text-foreground mb-4">Create Promotional Offer</h3>
               <form onSubmit={handleCreate} className="space-y-4">
                 <div>
@@ -582,20 +576,12 @@ export default function OffersPage() {
                   </Button>
                 </div>
               </form>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* ── EDIT MODAL ───────────────────────────────────────────── */}
         {editingOffer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto ui-pop">
-              <button
-                onClick={() => setEditingOffer(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setEditingOffer(null)} label="Edit Offer Details" className="sm:max-w-md">
               <h3 className="text-xl font-bold text-foreground mb-4">Edit Offer Details</h3>
               <form onSubmit={handleEdit} className="space-y-4">
                 <div>
@@ -679,20 +665,12 @@ export default function OffersPage() {
                   </Button>
                 </div>
               </form>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* ── DELETE MODAL ─────────────────────────────────────────── */}
         {deletingOffer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center ui-pop">
-              <button
-                onClick={() => setDeletingOffer(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setDeletingOffer(null)} label="Delete Promotional Offer" className="sm:max-w-sm text-center">
               <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
@@ -718,20 +696,12 @@ export default function OffersPage() {
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* ── DETAIL/VIEW MODAL ────────────────────────────────────── */}
         {viewingOffer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl relative ui-pop">
-              <button
-                onClick={() => setViewingOffer(null)}
-                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface onClose={() => setViewingOffer(null)} label="Dialog" className="sm:max-w-md">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-primary/10 text-primary rounded-xl">
                   <Tag className="h-6 w-6" />
@@ -792,8 +762,7 @@ export default function OffersPage() {
                   Close
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
       </div>
     </BusinessLayout>
