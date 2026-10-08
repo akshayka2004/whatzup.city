@@ -24,6 +24,7 @@ import {
   phoneOf,
   socialLinksOf,
   telHref,
+  trackBizEvent,
   type SocialKind,
 } from './profile-utils';
 
@@ -102,7 +103,7 @@ export function InfoCard({ biz }: { biz: any }) {
 
       {biz.website && (
         <Button asChild variant="outline" size="lg" className="ui-press w-full rounded-xl">
-          <a href={ensureHttp(biz.website)} target="_blank" rel="noreferrer">
+          <a href={ensureHttp(biz.website)} target="_blank" rel="noreferrer" onClick={() => trackBizEvent(biz, 'WEBSITE_CLICK')}>
             <Globe /> Visit Website
           </a>
         </Button>

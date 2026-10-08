@@ -1,450 +1,364 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { BusinessLayout } from '@/components/layouts/business-layout';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import {
-  TrendingUp, Users, Tag, Star, Eye,
-  ShoppingBag, RefreshCw, Loader2, UserCheck, Heart,
-} from 'lucide-react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import {
+  BadgeIndianRupee,
+  Bookmark,
+  Download,
+  Eye,
+  Gift,
+  MousePointerClick,
+  Percent,
+  QrCode,
+  RefreshCw,
+  Share2,
+  Sparkles,
+  Star,
+  TicketPercent,
+  UserPlus,
+  Users,
+} from 'lucide-react';
+import { BusinessLayout } from '@/components/layouts/business-layout';
+import { PageHeader } from '@/components/system/page-header';
+import { SectionCard } from '@/components/system/section-card';
+import { DataTable, downloadCsv, type Column } from '@/components/system/data-table';
+import { EmptyState } from '@/components/common/empty-state';
+import { StatusPill } from '@/components/common/status-pill';
+import { Button } from '@/components/ui/button';
+import { KpiCard } from '@/components/analytics/kpi-card';
+import { BarList } from '@/components/analytics/bar-list';
+import { Funnel } from '@/components/analytics/funnel';
+import { Heatmap } from '@/components/analytics/heatmap';
+import { RangePicker, useReportRange } from '@/components/analytics/range-picker';
+import { formatDateKey, formatNumber, formatPct, formatRange, type ValueFormat } from '@/components/analytics/format';
+import { analyticsV2, type BusinessReport } from '@/lib/services/analytics-v2';
+import { useActiveBusiness } from '@/hooks/use-active-business';
 
-const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.ResponsiveContainer), { ssr: false });
-const LineChart = dynamic(() => import('recharts').then(m => m.LineChart), { ssr: false });
-const Line = dynamic(() => import('recharts').then(m => m.Line), { ssr: false });
-const BarChart = dynamic(() => import('recharts').then(m => m.BarChart), { ssr: false });
-const Bar = dynamic(() => import('recharts').then(m => m.Bar), { ssr: false });
-const XAxis = dynamic(() => import('recharts').then(m => m.XAxis), { ssr: false });
-const YAxis = dynamic(() => import('recharts').then(m => m.YAxis), { ssr: false });
-const CartesianGrid = dynamic(() => import('recharts').then(m => m.CartesianGrid), { ssr: false });
-const Tooltip = dynamic(() => import('recharts').then(m => m.Tooltip), { ssr: false });
-const Legend = dynamic(() => import('recharts').then(m => m.Legend), { ssr: false });
-import { analyticsService } from '@/lib/services/analytics-service';
-import { useAuth } from '@/hooks/use-auth';
+const TimeSeriesChart = dynamic(() => import('@/components/analytics/time-series-chart').then((m) => m.TimeSeriesChart), {
+  ssr: false,
+  loading: () => <div className="ui-skeleton h-[280px] rounded-xl" />,
+});
 
-const RANGES = ['7D', '30D', '90D'] as const;
-type Range = (typeof RANGES)[number];
+type Pt = BusinessReport['series']['points'][number];
+type MainKey = 'visitors' | 'views' | 'actions' | 'actionRate' | 'offerClaims' | 'verifiedSpend';
 
-const tooltipStyle = {
-  background: '#0f0f0f',
-  borderColor: 'oklch(0.22 0 0)',
-  borderRadius: '10px',
-  fontSize: '11px',
+const MAIN: { key: MainKey; label: string; icon: typeof Users; format: ValueFormat; series?: keyof Pt; definition: string }[] = [
+  {
+    key: 'visitors',
+    label: 'Unique visitors',
+    icon: Users,
+    format: 'number',
+    series: 'visitors',
+    definition: 'Distinct people who opened your profile (one browser = one visitor). Bots and link-preview crawlers are excluded.',
+  },
+  {
+    key: 'views',
+    label: 'Profile views',
+    icon: Eye,
+    format: 'number',
+    series: 'views',
+    definition: 'Every time your profile page was opened, including repeat visits by the same person.',
+  },
+  {
+    key: 'actions',
+    label: 'Customer actions',
+    icon: MousePointerClick,
+    format: 'number',
+    series: 'actions',
+    definition: 'Taps on Call, Directions, WhatsApp and Website from your profile.',
+  },
+  {
+    key: 'actionRate',
+    label: 'Action rate',
+    icon: Percent,
+    format: 'pct',
+    definition: 'Share of unique visitors who took at least one customer action.',
+  },
+  {
+    key: 'offerClaims',
+    label: 'Offer claims',
+    icon: TicketPercent,
+    format: 'number',
+    series: 'claims',
+    definition: 'Offers claimed by customers in this period (each claim counted once).',
+  },
+  {
+    key: 'verifiedSpend',
+    label: 'Verified spend',
+    icon: BadgeIndianRupee,
+    format: 'inr',
+    series: 'spend',
+    definition: 'Total of customer bills you approved in this period, by approval date.',
+  },
+];
+
+const SOURCE_LABEL: Record<string, string> = {
+  home: 'Home page',
+  search: 'Search',
+  category: 'Browse',
+  nearby: 'Nearby',
+  offers: 'Offers page',
+  events: 'Events',
+  favorites: 'Saved list',
+  related: 'Other business pages',
+  qr: 'QR code scan',
+  external: 'Other websites & apps',
+  direct: 'Direct / shared link',
+  other: 'Other',
+  unknown: 'Not recorded (older visits)',
 };
 
-function StatCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  color,
-  bg,
-  loading,
-  delay,
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  icon: any;
-  color: string;
-  bg: string;
-  loading: boolean;
-  delay?: number;
-}) {
+const DEVICE_LABEL: Record<string, string> = {
+  mobile: 'Mobile',
+  desktop: 'Desktop',
+  tablet: 'Tablet',
+  unknown: 'Not recorded (older visits)',
+};
+
+type OfferRow = BusinessReport['offers'][number];
+const OFFER_COLUMNS: Column<OfferRow>[] = [
+  { key: 'title', header: 'Offer', sortable: true, cell: (o) => <span className="font-medium">{o.title}</span> },
+  { key: 'status', header: 'Status', cell: (o) => <StatusPill status={o.status} /> },
+  { key: 'viewers', header: 'Opened by', align: 'right', sortable: true, cell: (o) => formatNumber(o.viewers) },
+  { key: 'claims', header: 'Claims', align: 'right', sortable: true, cell: (o) => formatNumber(o.claims) },
+  {
+    key: 'conversion',
+    header: 'Conversion',
+    align: 'right',
+    sortable: true,
+    value: (o) => o.conversion ?? -1,
+    cell: (o) => (o.conversion == null ? '—' : formatPct(o.conversion)),
+  },
+  {
+    key: 'endDate',
+    header: 'Ends',
+    sortable: true,
+    hideOnMobile: true,
+    value: (o) => o.endDate,
+    cell: (o) => new Date(o.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+  },
+];
+
+function AnalyticsInner() {
+  const range = useReportRange();
+  const { activeBusinessId, activeBusiness, loading: bizLoading } = useActiveBusiness();
+  const [report, setReport] = useState<BusinessReport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<MainKey>('visitors');
+  const [nonce, setNonce] = useState(0);
+
+  const paramsKey = JSON.stringify(range.params);
+  useEffect(() => {
+    if (!activeBusinessId) return;
+    let alive = true;
+    setLoading(true);
+    setError(null);
+    analyticsV2.business(activeBusinessId, range.params).then((res) => {
+      if (!alive) return;
+      if (res.error || !res.data) setError(res.error || 'Could not load analytics');
+      else setReport(res.data);
+      setLoading(false);
+    });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeBusinessId, paramsKey, nonce]);
+
+  const sel = MAIN.find((m) => m.key === selected)!;
+  const points = report?.series.points ?? [];
+  const spark = (k?: keyof Pt) => (k ? points.map((p) => Number(p[k]) || 0) : undefined);
+
+  const chartPoints = useMemo(() => {
+    if (!report) return [];
+    if (selected === 'actionRate') {
+      return report.series.points.map((p) => ({ date: p.date, value: p.visitors ? Math.round((p.actions / p.visitors) * 1000) / 10 : 0 }));
+    }
+    return report.series.points.map((p) => ({ date: p.date, value: Number(p[sel.series as keyof Pt]) || 0 }));
+  }, [report, selected, sel.series]);
+
+  const exportCsv = () => {
+    if (!report) return;
+    downloadCsv(
+      `analytics-${report.range.from}-to-${report.range.to}`,
+      [
+        { key: 'date', header: 'Date (IST)' },
+        { key: 'visitors', header: report.series.visitorsAreDailyUnique ? 'Visitors (sum of daily uniques)' : 'Unique visitors' },
+        { key: 'views', header: 'Profile views' },
+        { key: 'actions', header: 'Customer actions' },
+        { key: 'claims', header: 'Offer claims' },
+        { key: 'spend', header: 'Verified spend (INR)' },
+      ],
+      report.series.points,
+    );
+  };
+
+  const noBusiness = !bizLoading && !activeBusinessId;
+
   return (
-    <Card
-      className="ui-fade-up p-4 md:p-5 rounded-2xl border-border bg-card/60 backdrop-blur-xl hover:shadow-lg transition-all group relative overflow-hidden"
-      style={{ animationDelay: `${delay ?? 0}s` }}
-    >
-      <div className="absolute top-0 right-0 w-28 h-28 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
-      <div className={`inline-flex p-2 md:p-2.5 rounded-xl mb-2 md:mb-3 ${bg}`}>
-        <Icon className={`h-4 w-4 ${color}`} />
-      </div>
-      <p className="text-[10px] md:text-xs text-muted-foreground mb-0.5 truncate">{label}</p>
-      {loading ? (
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mt-1" />
+    <>
+      <PageHeader
+        title="Analytics"
+        description={
+          activeBusiness?.name
+            ? `How customers find and act on ${activeBusiness.name}.`
+            : 'How customers find and act on your business.'
+        }
+        meta={report && <span className="text-caption text-muted-foreground">{formatRange(report.range.from, report.range.to)} · vs previous {report.range.days} days</span>}
+        actions={
+          <>
+            <Button variant="ghost" size="icon" aria-label="Refresh" onClick={() => setNonce((x) => x + 1)} disabled={loading}>
+              <RefreshCw className={loading ? 'animate-spin' : ''} />
+            </Button>
+            <Button variant="outline" onClick={exportCsv} disabled={!report}>
+              <Download /> Export
+            </Button>
+            <RangePicker range={range} />
+          </>
+        }
+      />
+
+      {noBusiness ? (
+        <EmptyState icon={Users} title="No business found" description="Analytics appear once your business profile is set up." />
+      ) : error && !report ? (
+        <EmptyState
+          icon={RefreshCw}
+          title="Analytics didn't load"
+          description={error}
+          action={{ label: 'Try again', onClick: () => setNonce((x) => x + 1) }}
+        />
       ) : (
-        <>
-          <p className="text-lg md:text-2xl font-extrabold text-foreground leading-tight">{value}</p>
-          {sub && <p className="text-[9px] md:text-[11px] text-muted-foreground mt-0.5 truncate">{sub}</p>}
-        </>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+            {MAIN.map((m) => (
+              <KpiCard
+                key={m.key}
+                label={m.label}
+                icon={m.icon}
+                format={m.format}
+                definition={m.definition}
+                metric={report?.kpis[m.key]}
+                spark={spark(m.series)}
+                loading={loading && !report}
+                selected={selected === m.key}
+                onSelect={() => setSelected(m.key)}
+              />
+            ))}
+          </div>
+
+          <SectionCard
+            title={sel.label}
+            description={
+              report
+                ? `${report.range.granularity === 'day' ? 'Daily' : report.range.granularity === 'week' ? 'Weekly' : 'Monthly'} · IST · today shown dashed while in progress`
+                : undefined
+            }
+          >
+            {loading && !report ? (
+              <div className="ui-skeleton h-[280px] rounded-xl" />
+            ) : (
+              <TimeSeriesChart points={chartPoints} label={sel.label} format={sel.format} granularity={report?.range.granularity} />
+            )}
+          </SectionCard>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <SectionCard title="Customer journey" description="From first visit to verified purchase, this period">
+              {report ? <Funnel stages={report.funnel} /> : <div className="ui-skeleton h-40" />}
+            </SectionCard>
+            <SectionCard title="How customers reach you" description="Taps on your profile's contact buttons">
+              {report ? (
+                <BarList items={report.actionsBreakdown.map((a) => ({ key: a.key, label: a.label, value: a.value }))} emptyLabel="No taps yet in this period" />
+              ) : (
+                <div className="ui-skeleton h-40" />
+              )}
+            </SectionCard>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <SectionCard title="Where visitors come from" description="Unique visitors by entry point">
+              {report ? (
+                <BarList items={report.sources.map((s) => ({ key: s.key, label: SOURCE_LABEL[s.key] ?? s.key, value: s.visitors }))} />
+              ) : (
+                <div className="ui-skeleton h-40" />
+              )}
+            </SectionCard>
+            <SectionCard title="Devices" description="Unique visitors by device">
+              {report ? (
+                <BarList items={report.devices.map((s) => ({ key: s.key, label: DEVICE_LABEL[s.key] ?? s.key, value: s.visitors }))} />
+              ) : (
+                <div className="ui-skeleton h-40" />
+              )}
+            </SectionCard>
+          </div>
+
+          <SectionCard title="When people look you up" description="Profile views by day and hour (IST)">
+            {report ? <Heatmap cells={report.heatmap} /> : <div className="ui-skeleton h-48" />}
+          </SectionCard>
+
+          <div>
+            <h2 className="mb-3 text-heading">Offer performance</h2>
+            <DataTable
+              caption="Offer performance"
+              columns={OFFER_COLUMNS}
+              rows={report?.offers ?? []}
+              rowKey={(o) => o.id}
+              loading={loading && !report}
+              defaultSort={{ key: 'claims', dir: 'desc' }}
+              empty={{ icon: TicketPercent, title: 'No offers yet', description: 'Create an offer to see how many people open and claim it.', action: { label: 'Create offer', href: '/dashboard/offers' } }}
+              mobileCard={(o) => (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{o.title}</p>
+                    <p className="text-caption text-muted-foreground">
+                      {formatNumber(o.viewers)} opened · {formatNumber(o.claims)} claimed
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold tabular-nums">{o.conversion == null ? '—' : formatPct(o.conversion)}</span>
+                </div>
+              )}
+            />
+          </div>
+
+          <div>
+            <h2 className="mb-3 text-heading">More activity</h2>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <KpiCard compact label="Spin wheel redeemed" icon={Sparkles} metric={report?.kpis.spinRedemptions} loading={loading && !report} />
+              <KpiCard compact label="Vouchers redeemed" icon={Gift} metric={report?.kpis.voucherRedemptions} loading={loading && !report} />
+              <KpiCard compact label="New customers" icon={UserPlus} metric={report?.kpis.newCustomers} loading={loading && !report} definition="Customers whose first interaction with you (claim, bill, spin) happened in this period." />
+              <KpiCard compact label="New reviews" icon={Star} metric={report?.kpis.newReviews} loading={loading && !report} />
+              <KpiCard compact label="Saved to favourites" icon={Bookmark} metric={report?.kpis.saves} loading={loading && !report} />
+              <KpiCard compact label="Shares" icon={Share2} metric={report?.kpis.shares} loading={loading && !report} />
+              <KpiCard compact label="QR scans" icon={QrCode} metric={report?.kpis.qrScans} loading={loading && !report} />
+              <KpiCard compact label="Verified bills" icon={BadgeIndianRupee} metric={report?.kpis.verifiedBills} loading={loading && !report} />
+            </div>
+            {report?.avgRatingInPeriod != null && (
+              <p className="mt-3 text-caption text-muted-foreground">
+                Average rating of reviews written in this period: <span className="font-semibold text-foreground">{report.avgRatingInPeriod} ★</span>
+              </p>
+            )}
+          </div>
+
+          {report && (
+            <p className="text-caption text-subtle-foreground">
+              All times in IST. Bots and link previews excluded. Visits recorded before {formatDateKey('2026-10-08')} have no device or source, and repeat
+              visits from that period may each count as a visitor. Updated {new Date(report.generatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+.
+            </p>
+          )}
+        </div>
       )}
-    </Card>
+    </>
   );
 }
 
 export default function AnalyticsPage() {
-  const { user } = useAuth();
-  const [range, setRange] = useState<Range>('30D');
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
-  const [error, setError] = useState(false);
-
-  const businessId = user?.businessId || user?.entity?.id;
-
-  const rangeToDays: Record<Range, number> = { '7D': 7, '30D': 30, '90D': 90 };
-
-  const fetchSummary = useCallback(async () => {
-    if (!businessId) { setLoading(false); return; }
-    setLoading(true);
-    setError(false);
-    try {
-      const result = await analyticsService.getBusinessSummary(businessId, rangeToDays[range]);
-      if (result) {
-        setData(result);
-      } else {
-        setError(true);
-      }
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [businessId, range]);
-
-  useEffect(() => { fetchSummary(); }, [fetchSummary]);
-
-  const kpis = data?.kpis ?? {};
-  const offerPerfRaw   = data?.offerPerformance ?? [];
-  const offerPerf = offerPerfRaw.map((o: any) => ({
-    ...o,
-    title: (o.title as string || '').length > 10
-      ? (o.title as string).slice(0, 10) + '…'
-      : (o.title as string || ''),
-  }));
-  const redemTrend  = data?.redemptionTrend ?? [];
-  const ratingDist  = data?.ratingDistribution ?? [];
-  const recentRevs  = data?.recentReviews ?? [];
-
-  const avgRatingDisplay = kpis.avgRating != null
-    ? Number(kpis.avgRating).toFixed(1)
-    : '—';
-
-  const statCards = [
-    {
-      label: 'Listing Impressions',
-      value: loading ? '…' : (kpis.impressions ?? 0).toLocaleString(),
-      sub: `past ${rangeToDays[range]} days`,
-      icon: Eye,
-      color: 'text-info',
-      bg: 'bg-info/10',
-    },
-    {
-      label: 'Active Offers',
-      value: loading ? '…' : `${kpis.activeOffers ?? 0} / ${kpis.totalOffers ?? 0}`,
-      sub: 'active / total',
-      icon: Tag,
-      color: 'text-warning',
-      bg: 'bg-warning/10',
-    },
-    {
-      label: 'Total Redemptions',
-      value: loading ? '…' : (kpis.totalRedemptions ?? 0).toLocaleString(),
-      sub: 'all-time across all offers',
-      icon: ShoppingBag,
-      color: 'text-success',
-      bg: 'bg-success/10',
-    },
-    {
-      label: 'Avg Rating',
-      value: loading ? '…' : avgRatingDisplay,
-      sub: kpis.totalReviews
-        ? `${kpis.totalReviews} review${kpis.totalReviews !== 1 ? 's' : ''}`
-        : 'no reviews yet',
-      icon: Star,
-      color: 'text-warning',
-      bg: 'bg-warning/10',
-    },
-    {
-      label: 'Total Reviews',
-      value: loading ? '…' : (kpis.totalReviews ?? 0).toLocaleString(),
-      sub: avgRatingDisplay !== '—' ? `${avgRatingDisplay} avg` : undefined,
-      icon: Users,
-      color: 'text-primary',
-      bg: 'bg-primary/10',
-    },
-    {
-      label: 'Team Members',
-      value: loading ? '…' : (kpis.teamCount ?? 0).toLocaleString(),
-      sub: 'active staff',
-      icon: UserCheck,
-      color: 'text-info',
-      bg: 'bg-info/10',
-    },
-    {
-      label: 'Customers',
-      value: loading ? '…' : (kpis.customerCount ?? 0).toLocaleString(),
-      sub: 'unique customers tracked',
-      icon: Heart,
-      color: 'text-destructive',
-      bg: 'bg-destructive/10',
-    },
-    {
-      label: 'Total Claims',
-      value: loading ? '…' : (kpis.totalClaims ?? 0).toLocaleString(),
-      sub: 'offer claims via CRM',
-      icon: Tag,
-      color: 'text-warning',
-      bg: 'bg-warning/10',
-    },
-    {
-      label: 'Redemption Rate',
-      value: loading ? '…' : `${kpis.redemptionRate ?? 0}%`,
-      sub: 'claims → redemptions',
-      icon: TrendingUp,
-      color: 'text-success',
-      bg: 'bg-success/10',
-    },
-  ];
-
   return (
     <BusinessLayout>
-      <div className="space-y-8">
-
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Analytics</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">
-              Real-time business performance from your database.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary border border-border">
-              {RANGES.map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setRange(r)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                    range === r
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchSummary}
-              disabled={loading}
-              className="rounded-xl border-border gap-1.5 text-foreground hover:bg-secondary"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-          </div>
-        </div>
-
-        {/* ── No business ── */}
-        {!businessId && (
-          <Card className="p-12 rounded-2xl border-border bg-card/40 text-center">
-            <TrendingUp className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
-            <p className="text-foreground font-semibold mb-1">No business linked</p>
-            <p className="text-sm text-muted-foreground">Your account is not linked to a business.</p>
-          </Card>
-        )}
-
-        {/* ── Error ── */}
-        {!loading && error && businessId && (
-          <Card className="p-12 rounded-2xl border-destructive/20 bg-destructive/5 text-center">
-            <TrendingUp className="h-10 w-10 mx-auto text-destructive mb-3 opacity-60" />
-            <p className="text-foreground font-semibold mb-1">Failed to load analytics</p>
-            <p className="text-sm text-muted-foreground mb-4">Could not fetch analytics data. Try refreshing.</p>
-            <Button onClick={fetchSummary} size="sm" className="rounded-xl bg-primary text-primary-foreground">
-              Retry
-            </Button>
-          </Card>
-        )}
-
-        {businessId && !error && (
-          <>
-            {/* ── KPI Cards ── */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-              {statCards.map((card, i) => (
-                <StatCard key={i} {...card} loading={loading} delay={Math.min(i, 9) * 0.05} />
-              ))}
-            </div>
-
-            {/* ── Redemption Trend Chart ── */}
-            <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
-              <div className="mb-5">
-                <h3 className="text-base font-bold text-foreground">Redemption Activity</h3>
-                <p className="text-xs text-muted-foreground">
-                  Daily redemptions in the last {rangeToDays[range]} days.
-                </p>
-              </div>
-              <div className="h-56">
-                {loading ? (
-                  <div className="h-full flex items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : redemTrend.every((d: any) => d.count === 0) ? (
-                  <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-                    No redemptions recorded in this period.
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={redemTrend} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.22 0 0)" />
-                      <XAxis
-                        dataKey="date"
-                        stroke="oklch(0.60 0 0)"
-                        fontSize={9}
-                        tickLine={false}
-                        interval={Math.floor(redemTrend.length / 8)}
-                      />
-                      <YAxis stroke="oklch(0.60 0 0)" fontSize={10} tickLine={false} allowDecimals={false} />
-                      <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff', fontWeight: 'bold' }} />
-                      <Line
-                        type="monotone"
-                        dataKey="count"
-                        name="Redemptions"
-                        stroke="oklch(0.630 0.045 15)"
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 4 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </Card>
-
-            {/* ── Offer Performance + Rating Distribution ── */}
-            <div className="grid lg:grid-cols-2 gap-6">
-
-              {/* Offer Performance */}
-              <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
-                <div className="mb-5">
-                  <h3 className="text-base font-bold text-foreground">Offer Performance</h3>
-                  <p className="text-xs text-muted-foreground">Claims and discount % per offer.</p>
-                </div>
-                <div className="h-56">
-                  {loading ? (
-                    <div className="h-full flex items-center justify-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : offerPerf.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-                      No offers yet.
-                    </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={offerPerf}
-                        margin={{ top: 5, right: 10, left: -25, bottom: 0 }}
-                        layout="vertical"
-                      >
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="oklch(0.22 0 0)" />
-                        <XAxis type="number" stroke="oklch(0.60 0 0)" fontSize={10} tickLine={false} />
-                        <YAxis
-                          type="category"
-                          dataKey="title"
-                          stroke="oklch(0.60 0 0)"
-                          fontSize={9}
-                          tickLine={false}
-                          width={75}
-                        />
-                        <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff', fontWeight: 'bold' }} />
-                        <Legend wrapperStyle={{ fontSize: 10, color: 'oklch(0.65 0 0)' }} />
-                        <Bar dataKey="redemptions" name="Claims" fill="oklch(0.630 0.045 15)" radius={[0, 4, 4, 0]} maxBarSize={18} />
-                        <Bar dataKey="discount" name="Discount %" fill="oklch(0.55 0.12 270)" radius={[0, 4, 4, 0]} maxBarSize={18} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
-              </Card>
-
-              {/* Rating Distribution */}
-              <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
-                <div className="mb-5">
-                  <h3 className="text-base font-bold text-foreground">Rating Distribution</h3>
-                  <p className="text-xs text-muted-foreground">Approved reviews by star rating.</p>
-                </div>
-                {loading ? (
-                  <div className="h-56 flex items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : ratingDist.every((r: any) => r.count === 0) ? (
-                  <div className="h-56 flex items-center justify-center text-sm text-muted-foreground">
-                    No approved reviews yet.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {ratingDist.map((r: any) => {
-                      const total = ratingDist.reduce((s: number, x: any) => s + x.count, 0);
-                      const pct = total > 0 ? Math.round((r.count / total) * 100) : 0;
-                      return (
-                        <div key={r.stars} className="flex items-center gap-3">
-                          <span className="text-xs font-semibold text-muted-foreground w-8 shrink-0">
-                            {r.stars}★
-                          </span>
-                          <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-warning transition-all duration-500"
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-muted-foreground w-10 text-right shrink-0">
-                            {r.count} ({pct}%)
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </Card>
-            </div>
-
-            {/* ── Recent Reviews ── */}
-            {!loading && recentRevs.length > 0 && (
-              <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
-                <h3 className="text-base font-bold text-foreground mb-4">Recent Reviews</h3>
-                <div className="space-y-4">
-                  {recentRevs.map((rev: any, i: number) => (
-                    <div
-                      key={i}
-                      className="ui-fade-up flex gap-4 p-4 rounded-xl bg-secondary border border-border"
-                      style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-                    >
-                      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary font-bold text-sm">
-                        {rev.author?.charAt(0)?.toUpperCase() ?? 'C'}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <span className="text-sm font-semibold text-foreground">{rev.author}</span>
-                          <span className="text-warning text-xs">{'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}</span>
-                          <span className="text-xs text-muted-foreground ml-auto">
-                            {new Date(rev.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </span>
-                        </div>
-                        {rev.title && (
-                          <p className="text-xs font-medium text-foreground mb-0.5">{rev.title}</p>
-                        )}
-                        <p className="text-sm text-muted-foreground line-clamp-2 break-words">{rev.comment}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )}
-
-            {/* ── Impressions note ── */}
-            <Card className="p-4 rounded-2xl border-border bg-card/20 text-center">
-              <p className="text-xs text-muted-foreground">
-                <Eye className="inline h-3.5 w-3.5 mr-1 opacity-60" />
-                Impressions are counted each time a customer opens your business listing. Counts are tracked
-                from the point of deployment — historical visits before tracking was enabled show as 0.
-              </p>
-            </Card>
-          </>
-        )}
-
-      </div>
+      <Suspense fallback={<div className="ui-skeleton h-96 rounded-card" />}>
+        <AnalyticsInner />
+      </Suspense>
     </BusinessLayout>
   );
 }

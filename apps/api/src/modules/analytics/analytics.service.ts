@@ -2,6 +2,16 @@ import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { AnalyticsSummaryService } from './analytics-summary.service';
+import { createHash } from 'crypto';
+import { ALLOWED_EVENTS, deviceOf, isBotUserAgent, normaliseSource } from './event-taxonomy';
+import { addDaysKey, istDateKey, istDayStart, pctChange } from '../../common/utils/ist';
+import { assertBusinessAccess, type AccessUser } from '../../common/utils/business-access';
+
+/** Daily-rotating salted hash: lets us dedupe a visitor within a day without storing the IP. */
+function hashIp(ip: string): string {
+  const salt = process.env.ANALYTICS_IP_SALT || process.env.JWT_SECRET || 'whtzup';
+  return createHash('sha256').update(`${salt}:${istDateKey(new Date())}:${ip}`).digest('hex').slice(0, 40);
+}
 
 @Injectable()
 export class AnalyticsService {
@@ -13,42 +23,90 @@ export class AnalyticsService {
     private readonly summaryService: AnalyticsSummaryService,
   ) {}
 
-  /**
-   * Tracks an analytics event securely.
-   */
-  async trackEvent(data: {
-    tenantId?: string;
-    userId?: string;
-    businessId?: string;
-    event: string;
-    metadata?: any;
-    ipAddress?: string;
-    userAgent?: string;
-    sessionId?: string;
-  }): Promise<any> {
-    const tenantId = data.tenantId || 'default';
+  private defaultTenantId: string | null = null;
 
-    // Create the event record
-    const eventRecord = await this.db.analyticsEvent.create({
+  private async resolveDefaultTenant(): Promise<string | null> {
+    if (this.defaultTenantId) return this.defaultTenantId;
+    const t = await this.db.tenant.findUnique({ where: { slug: 'default' }, select: { id: true } });
+    this.defaultTenantId = t?.id ?? null;
+    return this.defaultTenantId;
+  }
+
+  /**
+   * Ingests one analytics event. Everything that matters for precision is decided
+   * server-side: tenant (from the business), user agent, device, bot flag and a
+   * daily-salted IP hash (never the raw IP). Unknown event names are dropped.
+   */
+  async trackEvent(
+    data: {
+      tenantId?: string;
+      userId?: string;
+      businessId?: string;
+      event: string;
+      metadata?: any;
+      sessionId?: string;
+      visitorId?: string;
+      source?: string;
+    },
+    ctx: { ip?: string; userAgent?: string; userId?: string } = {},
+  ): Promise<{ accepted: boolean }> {
+    if (!ALLOWED_EVENTS.has(data.event)) return { accepted: false };
+
+    let tenantId: string | null = null;
+    if (data.businessId) {
+      const biz = await this.db.business.findUnique({
+        where: { id: data.businessId },
+        select: { tenantId: true },
+      });
+      if (!biz) return { accepted: false };
+      tenantId = biz.tenantId;
+    } else {
+      tenantId = await this.resolveDefaultTenant();
+    }
+    if (!tenantId) return { accepted: false };
+
+    const ua = ctx.userAgent?.slice(0, 500);
+    const meta = typeof data.metadata === 'object' && data.metadata ? data.metadata : {};
+    const visitorId = (data.visitorId || meta.visitorId || '').toString().slice(0, 64) || null;
+
+    await this.db.analyticsEvent.create({
       data: {
         tenantId,
-        userId: data.userId,
-        businessId: data.businessId,
+        userId: ctx.userId || data.userId || null,
+        businessId: data.businessId || null,
         event: data.event,
-        metadata: data.metadata || {},
-        ipAddress: data.ipAddress,
-        userAgent: data.userAgent,
-        sessionId: data.sessionId,
+        metadata: {
+          ...meta,
+          visitorId,
+          source: normaliseSource(data.source ?? meta.source),
+          device: deviceOf(ua),
+          isBot: isBotUserAgent(ua),
+        },
+        ipAddress: ctx.ip ? hashIp(ctx.ip) : null,
+        userAgent: ua,
+        sessionId: data.sessionId?.slice(0, 255) || null,
       },
     });
 
-    // Invalidate Redis overview cache on new events to keep stats fresh
-    await this.redis.del(`analytics:overview:${tenantId}`);
-    if (data.businessId) {
-      await this.redis.del(`analytics:business:${tenantId}:${data.businessId}`);
-    }
+    return { accepted: true };
+  }
 
-    return eventRecord;
+  /** Verified subscription cash this IST month (ex-GST) and % change vs last month. */
+  private async monthRevenue(tenantId: string | null) {
+    const now = new Date();
+    const key = istDateKey(now);
+    const thisStart = istDayStart(`${key.slice(0, 7)}-01`);
+    const prevKey = addDaysKey(`${key.slice(0, 7)}-01`, -1);
+    const prevStart = istDayStart(`${prevKey.slice(0, 7)}-01`);
+    const sum = async (gte: Date, lt: Date) => {
+      const r = await this.db.transaction.aggregate({
+        where: { type: 'PAYMENT_VERIFIED', createdAt: { gte, lt }, ...(tenantId ? { tenantId } : {}) },
+        _sum: { amountBase: true },
+      });
+      return Number(r._sum.amountBase ?? 0);
+    };
+    const [current, previous] = await Promise.all([sum(thisStart, now), sum(prevStart, thisStart)]);
+    return { revenueThisMonth: current, revenueLastMonth: previous, growthRate: pctChange(current, previous) };
   }
 
   /**
@@ -140,15 +198,14 @@ export class AnalyticsService {
       pendingApprovals,
       totalReviews,
       totalOffers,
-      activeOffers: totalOffers,
+      activeOffers: await this.db.offer.count({ where: { ...tScope, deletedAt: null, status: 'ACTIVE' as any, endDate: { gte: new Date() } } }),
       totalTenants,
       totalOfferCustomers: Number((offerCustomerIds as any)[0]?.count ?? 0),
       totalRedemptions,
       totalClaims,
       totalComplaints,
       totalPlatformSpend,
-      revenueThisMonth: 0,
-      growthRate: 12.5,
+      ...(await this.monthRevenue(isPlatform ? null : tenantId)),
     };
 
     await this.redis.set(cacheKey, overview, 300); // 5 mins cache TTL
@@ -158,7 +215,7 @@ export class AnalyticsService {
   /**
    * Fetch business-specific metrics safely isolated by tenant
    */
-  async getBusinessAnalytics(tenantId: string, businessId: string, days = 30) {
+  async getBusinessAnalytics(tenantId: string, businessId: string, days = 30, user?: AccessUser) {
     const cacheKey = `analytics:business:${tenantId}:${businessId}:${days}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) return cached;
@@ -176,6 +233,7 @@ export class AnalyticsService {
       throw new ForbiddenException('Access denied to this business analytics.');
     }
     const actualBusinessId = business.id;
+    if (user) await assertBusinessAccess(this.db, actualBusinessId, user);
 
     const since = new Date();
     since.setDate(since.getDate() - days);
@@ -209,7 +267,7 @@ export class AnalyticsService {
    * Rich business summary — all real DB data, no dependency on analytics event tracking.
    * Used by the business owner analytics dashboard.
    */
-  async getBusinessSummary(tenantId: string, businessId: string, days = 30) {
+  async getBusinessSummary(tenantId: string, businessId: string, days = 30, user?: AccessUser) {
     const cacheKey = `analytics:summary:${tenantId}:${businessId}:${days}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) return cached;
@@ -225,6 +283,7 @@ export class AnalyticsService {
     });
     if (!business) throw new ForbiddenException('Access denied to this business analytics.');
     const actualId = business.id;
+    if (user) await assertBusinessAccess(this.db, actualId, user);
 
     const since = new Date();
     since.setDate(since.getDate() - days);

@@ -3,6 +3,9 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TrialsService } from './trials.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '@saas/types';
 
 @ApiTags('Trials')
 @Controller('trials')
@@ -38,6 +41,8 @@ export class TrialsController {
   /**
    * Admin / Super-admin: platform-wide trial stats
    */
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @Get('admin/stats')
   @ApiOperation({ summary: 'Platform trial statistics (admin only)' })
   async getTrialStats(@CurrentUser('tenantId') tenantId: string) {

@@ -21,6 +21,7 @@ import { RelatedStrip } from '@/components/public/profile/related-strip';
 import { ProfileSkeleton } from '@/components/public/profile/profile-skeletons';
 import { useProfileActions } from '@/components/public/profile/use-profile-actions';
 import { asList, toNum, trackBizEvent } from '@/components/public/profile/profile-utils';
+import { inferSource } from '@/lib/analytics/track';
 
 export interface BusinessClientProps {
   /** The route param — a UUID or a slug; the API accepts both. */
@@ -63,7 +64,7 @@ export default function BusinessClient({ businessId, initialBusiness = null }: B
   useEffect(() => {
     if (!biz?.id || fromQr === null || tracked.current === businessId) return;
     tracked.current = businessId;
-    trackBizEvent(biz, 'BUSINESS_VIEW');
+    trackBizEvent(biz, 'BUSINESS_VIEW', { source: fromQr ? 'qr' : inferSource() });
     if (fromQr) trackBizEvent(biz, 'QR_SCAN');
   }, [biz, fromQr, businessId]);
 

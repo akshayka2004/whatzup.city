@@ -1,6 +1,7 @@
 import { Injectable, Logger, ConflictException } from '@nestjs/common';
 import { VerifiedPurchaseRepository } from '../../common/database/repositories/verified-purchase.repository';
 import { AuditService } from '../audit/audit.service';
+import { DatabaseService } from '../../common/database/database.service';
 
 @Injectable()
 export class VerifiedPurchasesService {
@@ -9,6 +10,7 @@ export class VerifiedPurchasesService {
   constructor(
     private readonly verifiedPurchaseRepo: VerifiedPurchaseRepository,
     private readonly auditService: AuditService,
+    private readonly db: DatabaseService,
   ) {}
 
   async createVerifiedPurchase(
@@ -41,6 +43,11 @@ export class VerifiedPurchasesService {
       resourceId: verifiedPurchase.id,
       metadata: { billId, businessId, amount },
     });
+
+    // The customer's purchase count moves on verification, never on upload.
+    await this.db.businessCustomer
+      .updateMany({ where: { userId, businessId, deletedAt: null }, data: { totalVerifiedPurchases: { increment: 1 } } })
+      .catch(() => undefined);
 
     this.logger.log(
       `Verified purchase created for user ${userId} at business ${businessId} via bill ${billId}`,

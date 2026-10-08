@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
@@ -9,7 +9,19 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { UserRole } from '@saas/types';
-import { TrackEventDto } from './dto/track-event.dto';
+import { TrackBatchDto, TrackEventDto } from './dto/track-event.dto';
+import type { Request } from 'express';
+
+function requestContext(req: Request) {
+  const fwd = req.headers['x-forwarded-for'];
+  const ip = (Array.isArray(fwd) ? fwd[0] : fwd)?.split(',')[0]?.trim() || req.ip || undefined;
+  const user = (req as any).user as { id?: string; userId?: string; sub?: string } | undefined;
+  return {
+    ip,
+    userAgent: (req.headers['user-agent'] as string | undefined) ?? undefined,
+    userId: user?.id || user?.userId || user?.sub,
+  };
+}
 
 @ApiTags('Analytics')
 @Controller('analytics')
@@ -25,8 +37,23 @@ export class AnalyticsController {
   @Public()
   @Post('track')
   @ApiOperation({ summary: 'Ingest analytics event' })
-  async track(@Body() data: TrackEventDto): Promise<any> {
-    return this.analyticsService.trackEvent(data);
+  async track(@Body() data: TrackEventDto, @Req() req: Request): Promise<any> {
+    return this.analyticsService.trackEvent(data, requestContext(req));
+  }
+
+  // Batched ingest (sendBeacon on page hide). Each event still counts against nothing
+  // extra server-side, so the batch is capped at 25 and throttled like single events.
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @Public()
+  @Post('track/batch')
+  @ApiOperation({ summary: 'Ingest up to 25 analytics events' })
+  async trackBatch(@Body() body: TrackBatchDto, @Req() req: Request) {
+    const ctx = requestContext(req);
+    let accepted = 0;
+    for (const e of body.events) {
+      if ((await this.analyticsService.trackEvent(e, ctx)).accepted) accepted++;
+    }
+    return { accepted };
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -57,12 +84,14 @@ export class AnalyticsController {
   async getBusinessAnalytics(
     @CurrentUser('tenantId') tenantId: string,
     @Param('businessId') businessId: string,
+    @CurrentUser() user: { id: string; role?: string },
     @Query('days') days?: number,
   ) {
     return this.analyticsService.getBusinessAnalytics(
       tenantId,
       businessId,
       days ? Number(days) : undefined,
+      user,
     );
   }
 
@@ -73,12 +102,14 @@ export class AnalyticsController {
   async getBusinessSummary(
     @CurrentUser('tenantId') tenantId: string,
     @Param('businessId') businessId: string,
+    @CurrentUser() user: { id: string; role?: string },
     @Query('days') days?: number,
   ) {
     return this.analyticsService.getBusinessSummary(
       tenantId,
       businessId,
       days ? Number(days) : undefined,
+      user,
     );
   }
 

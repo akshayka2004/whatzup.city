@@ -222,15 +222,28 @@ export class OffersService {
     // claimer's tenant previously threw "Offer not found or access denied".)
     const offer = await this.offerRepo.model.findFirst({ where: { id, deletedAt: null } });
     if (!offer) throw new NotFoundException('Offer not found');
-    if (offer.maxRedemptions && offer.currentRedemptions >= offer.maxRedemptions) {
-      throw new BadRequestException('Offer has reached its maximum redemption capacity');
-    }
     const tenantId = offer.tenantId;
 
-    const redeemed = await this.offerRepo.model.update({
-      where: { id },
+    // Idempotent: claiming the same offer twice returns the first claim instead of
+    // inflating the counter and the analytics.
+    const existing = await this.db.offerRedemption.findFirst({
+      where: { offerId: id, userId, deletedAt: null },
+      select: { id: true },
+    });
+    if (existing) return offer;
+
+    // Atomic capacity check: the increment only happens while there is room, so two
+    // simultaneous claims can't push the counter past maxRedemptions.
+    const bumped = await this.offerRepo.model.updateMany({
+      where: offer.maxRedemptions
+        ? { id, currentRedemptions: { lt: offer.maxRedemptions } }
+        : { id },
       data: { currentRedemptions: { increment: 1 } },
     });
+    if (bumped.count === 0) {
+      throw new BadRequestException('Offer has reached its maximum redemption capacity');
+    }
+    const redeemed = await this.offerRepo.model.findUniqueOrThrow({ where: { id } });
 
     // Write OfferRedemption record — claimer becomes a customer of this business
     try {
@@ -253,7 +266,7 @@ export class OffersService {
         tenantId,
         userId,
         redeemed.businessId,
-        'OFFER_REDEEM',
+        'OFFER_CLAIM',
       );
     } catch (_) {
       /* non-fatal */

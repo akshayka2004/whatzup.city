@@ -59,6 +59,7 @@ export function useProfileActions(businessId: string, biz: any) {
         ];
       }
       localStorage.setItem(FAVORITES_KEY, JSON.stringify(updated));
+      if (idx < 0) trackBizEvent(biz, 'SAVE');
       setIsSaved(!isSaved);
       window.dispatchEvent(new Event('favoritesUpdated'));
     } catch (_) {}
@@ -66,6 +67,7 @@ export function useProfileActions(businessId: string, biz: any) {
 
   const share = useCallback(async () => {
     if (!biz) return;
+    trackBizEvent(biz, 'SHARE');
     // Share the clean link — never the ?src=qr one, which would gate the offers for the recipient.
     const url = `${window.location.origin}${window.location.pathname}`;
     if (typeof navigator !== 'undefined' && navigator.share) {

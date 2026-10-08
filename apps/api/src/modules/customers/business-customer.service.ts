@@ -32,7 +32,6 @@ export class BusinessCustomerService {
       const increment: any = {};
       if (type === 'OFFER_CLAIM') increment.offersClaimedCount = { increment: 1 };
       if (type === 'OFFER_REDEEM') increment.offersRedeemedCount = { increment: 1 };
-      if (type === 'BILL_UPLOAD') increment.totalVerifiedPurchases = { increment: 1 };
 
       if (existing) {
         await db.businessCustomer.update({
@@ -57,7 +56,7 @@ export class BusinessCustomerService {
             customerStatus: 'ACTIVE',
             offersClaimedCount: type === 'OFFER_CLAIM' ? 1 : 0,
             offersRedeemedCount: type === 'OFFER_REDEEM' ? 1 : 0,
-            totalVerifiedPurchases: type === 'BILL_UPLOAD' ? 1 : 0,
+            totalVerifiedPurchases: 0,
           },
         });
       }

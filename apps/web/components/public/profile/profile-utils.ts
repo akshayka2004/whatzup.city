@@ -3,7 +3,7 @@
  * they can be imported from any client component without pulling extra code.
  */
 
-import { apiService } from '@/lib/services/api-service';
+import { track } from '@/lib/analytics/track';
 
 export const FAVORITES_KEY = 'saved_businesses';
 
@@ -107,11 +107,9 @@ export function whatsappUrl(biz: any): string | null {
 }
 
 /** Fire-and-forget analytics ping. Never blocks or throws. */
-export function trackBizEvent(biz: any, event: string) {
+export function trackBizEvent(biz: any, event: string, opts: { source?: string; metadata?: Record<string, unknown> } = {}) {
   if (!biz?.id) return;
-  apiService
-    .post('/v1/analytics/track', { event, businessId: biz.id, tenantId: biz.tenantId })
-    .catch(() => {});
+  track(event, { businessId: biz.id, ...opts });
 }
 
 export function shortDate(d: string | Date): string {
