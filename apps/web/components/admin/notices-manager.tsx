@@ -1,5 +1,6 @@
 'use client';
 
+import { toast } from '@/components/ui/sonner';
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -147,7 +148,7 @@ export function NoticesManager() {
     });
     setSubmitting(false);
     if (res.error) {
-      alert(`Failed to publish: ${res.error}`);
+      toast.error(`Failed to publish: ${res.error}`);
       return;
     }
     setIsCreateOpen(false);
@@ -164,7 +165,7 @@ export function NoticesManager() {
     if (!deletingNotice) return;
     const res = await apiService.delete<any>(`/v1/government-alerts/${deletingNotice.id}`);
     if (res.error) {
-      alert(`Failed to delete: ${res.error}`);
+      toast.error(`Failed to delete: ${res.error}`);
       return;
     }
     setNotices(notices.filter((n) => n.id !== deletingNotice.id));

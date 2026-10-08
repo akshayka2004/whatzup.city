@@ -1,5 +1,6 @@
 'use client';
 
+import { useConfirm } from '@/components/common/confirm-dialog';
 import { useState, useEffect, useCallback } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
@@ -141,9 +142,11 @@ export default function DashboardEventsPage() {
     fetchEvents();
   };
 
+  const confirmDialog = useConfirm();
+
   const remove = async (ev: Ev) => {
     if (!businessId) return;
-    if (!confirm(`Delete event "${ev.title}"?`)) return;
+    if (!(await confirmDialog({ title: 'Delete this event?', description: `"${ev.title}" will be removed permanently.`, confirmLabel: 'Delete', tone: 'danger' }))) return;
     await apiService.delete<any>(`/v1/events/${ev.id}?businessId=${businessId}`);
     fetchEvents();
   };

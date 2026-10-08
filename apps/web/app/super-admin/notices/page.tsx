@@ -1,5 +1,6 @@
 'use client';
 
+import { toast } from '@/components/ui/sonner';
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
@@ -124,7 +125,7 @@ export default function SuperAdminNoticesPage() {
     });
     setSubmitting(false);
     if (res.error) {
-      alert(`Failed to publish: ${res.error}`);
+      toast.error(`Failed to publish: ${res.error}`);
       return;
     }
     setIsCreateOpen(false);
@@ -136,7 +137,7 @@ export default function SuperAdminNoticesPage() {
     if (!deletingNotice) return;
     const res = await apiService.delete<any>(`/v1/government-alerts/${deletingNotice.id}`);
     if (res.error) {
-      alert(`Failed to delete: ${res.error}`);
+      toast.error(`Failed to delete: ${res.error}`);
       return;
     }
     setNotices(notices.filter((n) => n.id !== deletingNotice.id));

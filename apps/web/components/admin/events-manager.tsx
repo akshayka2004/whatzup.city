@@ -1,5 +1,6 @@
 'use client';
 
+import { useConfirm } from '@/components/common/confirm-dialog';
 import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -132,8 +133,10 @@ export function EventsManager() {
     load();
   };
 
+  const confirmDialog = useConfirm();
+
   const remove = async (e: any) => {
-    if (!confirm(`Delete event "${e.title}"?`)) return;
+    if (!(await confirmDialog({ title: 'Delete this event?', description: `"${e.title}" will be removed permanently.`, confirmLabel: 'Delete', tone: 'danger' }))) return;
     await apiService.delete<any>(`/v1/events/admin/${e.id}`);
     load();
   };

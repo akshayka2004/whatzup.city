@@ -1,5 +1,6 @@
 'use client';
 
+import { toast } from '@/components/ui/sonner';
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
@@ -252,7 +253,7 @@ export default function OffersPage() {
         setIsCreateOpen(false);
         resetForm();
       } else if (res.error) {
-        alert(`Failed to create offer: ${res.error}`);
+        toast.error(`Failed to create offer: ${res.error}`);
       }
     } finally {
       setSaving(false);
@@ -302,7 +303,7 @@ export default function OffersPage() {
         ));
         setEditingOffer(null);
       } else {
-        alert(`Failed to update offer: ${res.error}`);
+        toast.error(`Failed to update offer: ${res.error}`);
       }
     } finally {
       setSaving(false);

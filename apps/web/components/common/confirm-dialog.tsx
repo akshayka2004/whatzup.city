@@ -1,4 +1,5 @@
 'use client';
+// design-lint-disable-file: window.confirm is the deliberate fallback when no ConfirmProvider is mounted.
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 import {

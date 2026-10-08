@@ -1,5 +1,6 @@
 'use client';
 
+import { useConfirm } from '@/components/common/confirm-dialog';
 import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -105,8 +106,10 @@ export function MoviesManager() {
     load();
   };
 
+  const confirmDialog = useConfirm();
+
   const remove = async (m: any) => {
-    if (!confirm(`Delete "${m.name}"?`)) return;
+    if (!(await confirmDialog({ title: 'Delete this movie?', description: `"${m.name}" will be removed permanently.`, confirmLabel: 'Delete', tone: 'danger' }))) return;
     await apiService.delete<any>(`/v1/movies/admin/${m.id}`);
     load();
   };

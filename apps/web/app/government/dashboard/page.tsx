@@ -1,5 +1,6 @@
 'use client';
 
+import { toast } from '@/components/ui/sonner';
 import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -120,7 +121,7 @@ export default function GovDashboardPage() {
 
     if (res.error) {
       setSuccess('');
-      alert(`Failed to publish: ${res.error}`);
+      toast.error(`Failed to publish: ${res.error}`);
       return;
     }
 
@@ -135,7 +136,7 @@ export default function GovDashboardPage() {
   const handleDelete = async (id: number | string) => {
     const res = await apiService.delete<any>(`/v1/government-alerts/${id}`);
     if (res.error) {
-      alert(`Failed to delete: ${res.error}`);
+      toast.error(`Failed to delete: ${res.error}`);
       return;
     }
     setNotices((prev) => prev.filter((n) => n.id !== id));
