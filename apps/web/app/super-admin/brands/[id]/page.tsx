@@ -236,7 +236,7 @@ export default function SuperAdminBrandDetailPage() {
                 <span className="text-muted-foreground"> ({pending.map((o) => o.name).join(', ')})</span>
               </span>
             </p>
-            <Link href="/super-admin/approvals" className="shrink-0">
+            <Link href="/admin/approvals" className="shrink-0">
               <Button size="sm" className="ui-press h-10 w-full rounded-xl bg-warning text-primary-foreground hover:bg-warning/90 gap-1.5 cursor-pointer sm:w-auto">
                 Open approvals <ExternalLink className="h-3.5 w-3.5" />
               </Button>
@@ -298,7 +298,7 @@ export default function SuperAdminBrandDetailPage() {
                         )}
                       </div>
                       {isPending && (
-                        <Link href="/super-admin/approvals" className="shrink-0">
+                        <Link href="/admin/approvals" className="shrink-0">
                           <Button size="sm" variant="outline" className="ui-press h-10 w-full rounded-xl border-warning/40 text-warning hover:bg-warning/10 hover:text-warning gap-1.5 cursor-pointer sm:w-auto">
                             Review <ExternalLink className="h-3.5 w-3.5" />
                           </Button>

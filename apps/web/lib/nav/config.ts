@@ -303,7 +303,7 @@ function superAdminNav(): NavSpec {
           { label: 'Brand accounts', href: '/super-admin/brands', icon: Building2 },
           // /admin/approvals has the first-payment popup the super-admin copy lacks.
           { label: 'Approvals', href: '/admin/approvals', icon: ClipboardCheck },
-          { label: 'Categories', href: '/super-admin/categories', icon: Tags },
+          { label: 'Categories', href: '/admin/categories', icon: Tags },
         ],
       },
       {
@@ -311,7 +311,7 @@ function superAdminNav(): NavSpec {
         items: [
           { label: 'Payments', href: '/admin/payments', icon: CircleDollarSign },
           { label: 'Payment Approvals', href: '/admin/payment-approvals', icon: BadgeIndianRupee },
-          { label: 'Subscriptions', href: '/super-admin/subscriptions', icon: CreditCard },
+          { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
           { label: 'Platform Vouchers', href: '/super-admin/platform-vouchers', icon: Gift },
         ],
       },
@@ -322,15 +322,15 @@ function superAdminNav(): NavSpec {
           { label: 'Business Offers', href: '/super-admin/offers', icon: Ticket },
           { label: 'Events', href: '/super-admin/events', icon: CalendarDays },
           ...movies({ label: 'Movies', href: '/super-admin/movies', icon: Clapperboard }),
-          { label: 'Notices', href: '/super-admin/notices', icon: Megaphone },
+          { label: 'Notices', href: '/admin/notices', icon: Megaphone },
         ],
       },
       {
         title: 'Trust & Safety',
         items: [
-          { label: 'Reports', href: '/super-admin/reports', icon: ShieldAlert },
+          { label: 'Reports', href: '/admin/reports', icon: ShieldAlert },
           { label: 'Bill escalations', href: '/admin/bills', icon: ReceiptText },
-          { label: 'Audit Logs', href: '/super-admin/audit', icon: ScrollText },
+          { label: 'Audit Logs', href: '/admin/audit', icon: ScrollText },
           { label: 'Referrals', href: '/super-admin/referrals', icon: Share2 },
         ],
       },

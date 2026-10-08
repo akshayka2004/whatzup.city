@@ -93,14 +93,13 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
     [points, sel.series],
   );
 
-  const base = area === 'super-admin' ? '/super-admin' : '/admin';
   const snap = report?.snapshot;
   const attention = [
     { label: 'Approvals waiting', value: snap?.pendingApprovals, href: '/admin/approvals', icon: ClipboardCheck, urgent: (snap?.pendingApprovals ?? 0) > 0 },
     { label: 'Payments to verify', value: snap?.pendingPayments, href: '/admin/payment-approvals', icon: CircleDollarSign, urgent: (snap?.pendingPayments ?? 0) > 0 },
-    { label: 'Open reports', value: snap?.openReports, href: `${base}/reports`, icon: ShieldAlert, urgent: (snap?.openReports ?? 0) > 0 },
+    { label: 'Open reports', value: snap?.openReports, href: "/admin/reports", icon: ShieldAlert, urgent: (snap?.openReports ?? 0) > 0 },
     { label: 'Trials ending in 7 days', value: snap?.trialsEnding7d, href: area === 'super-admin' ? '/super-admin/businesses' : '/admin/subscriptions', icon: Clock, urgent: false },
-    { label: 'Renewals due in 30 days', value: snap?.renewalsDue30d, href: area === 'super-admin' ? '/super-admin/subscriptions' : '/admin/subscriptions', icon: CalendarClock, urgent: false },
+    { label: 'Renewals due in 30 days', value: snap?.renewalsDue30d, href: '/admin/subscriptions', icon: CalendarClock, urgent: false },
     { label: 'Live businesses', value: snap?.activeBusinesses, href: area === 'super-admin' ? '/super-admin/businesses' : '/admin/approvals', icon: Store, urgent: false },
   ];
 
@@ -276,7 +275,7 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
             title="Recent admin activity"
             action={
               <Button asChild variant="ghost" size="sm">
-                <Link href={`${base}/audit`}>
+                <Link href="/admin/audit">
                   View all <ChevronRight />
                 </Link>
               </Button>
