@@ -36,7 +36,7 @@ export class ReviewsController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.MASTER_ADMIN)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @Patch(':id/status')
   @ApiBearerAuth()
   async updateStatus(@Param('id') id: string, @Body('status') status: string) {
