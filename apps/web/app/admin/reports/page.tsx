@@ -1,324 +1,280 @@
 'use client';
 
-import { ModalSurface } from '@/components/system/modal-surface';
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { Check, ExternalLink, ShieldAlert, X } from 'lucide-react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
-import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/system/page-header';
+import { DataTable, downloadCsv, type Column } from '@/components/system/data-table';
+import { Toolbar, SearchInput } from '@/components/system/toolbar';
+import { FilterChip, ChipRow } from '@/components/system/filter-chip';
+import { Modal } from '@/components/system/modal';
+import { StatusPill } from '@/components/common/status-pill';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Eye, Trash2, X, ShieldAlert, Check, Flag, Search, Loader2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/components/ui/sonner';
 import { apiService } from '@/lib/services/api-service';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
 
-const ISSUE_REPORTS_KEY = 'issue_reports';
-
-type ReportStatus = 'Pending' | 'Under Review' | 'Resolved' | 'Dismissed';
-
-const statusColors: Record<string, string> = {
-  Pending: 'bg-warning/10 text-warning border border-warning/20',
-  'Under Review': 'bg-info/10 text-info border border-info/20',
-  Resolved: 'bg-success/10 text-success border border-success/20',
-  Dismissed: 'bg-muted text-muted-foreground border border-border',
+type Report = {
+  id: string;
+  type: string;
+  status: string;
+  targetType?: string | null;
+  targetId?: string | null;
+  description: string;
+  resolution?: string | null;
+  createdAt: string;
+  reporter?: { id: string; name?: string; email?: string } | null;
 };
 
 const TYPE_LABELS: Record<string, string> = {
-  fake_business: 'Fake Business',
-  fraudulent_offer: 'Fraudulent Offer',
-  fake_review: 'Fake Review',
-  inappropriate_content: 'Inappropriate Content',
-  wrong_info: 'Wrong Information',
-  other: 'Other Issue',
+  fake_business: 'Fake business',
+  fraudulent_offer: 'Fraudulent offer',
+  fake_review: 'Fake review',
+  inappropriate_content: 'Inappropriate content',
+  wrong_info: 'Wrong information',
+  other: 'Other',
 };
 
+const STATUSES = ['PENDING', 'RESOLVED', 'DISMISSED'] as const;
+
+/** Subject / business prefix that the API folds into the description ("Business: X | Subject: Y"). */
+function split(desc: string) {
+  const [head, ...rest] = desc.split('\n\n');
+  if (rest.length && /^(Business:|Subject:)/.test(head)) {
+    const subject = head.match(/Subject: ([^|]+)/)?.[1]?.trim();
+    const business = head.match(/Business: ([^|]+)/)?.[1]?.trim();
+    return { subject, business, body: rest.join('\n\n') };
+  }
+  return { subject: undefined, business: undefined, body: desc };
+}
+
+function targetHref(r: Report) {
+  if (!r.targetId) return null;
+  const t = (r.targetType || '').toUpperCase();
+  if (t === 'BUSINESS') return `/business/${r.targetId}`;
+  return null;
+}
+
 export default function ReportsPage() {
-  const [reports, setReports] = useState<any[]>([]);
+  const [rows, setRows] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewingReport, setViewingReport] = useState<any>(null);
-  const [deletingReport, setDeletingReport] = useState<any>(null);
-  const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<ReportStatus | 'all'>('all');
+  const [status, setStatus] = useState<(typeof STATUSES)[number] | 'ALL'>('PENDING');
+  const [q, setQ] = useState('');
+  const [active, setActive] = useState<Report | null>(null);
+  const [resolution, setResolution] = useState('');
+  const [saving, setSaving] = useState<'resolve' | 'dismiss' | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await apiService.get<any>(`/v1/reports${status === 'ALL' ? '' : `?status=${status}`}`);
+    setLoading(false);
+    if (res.error) {
+      toast.error(res.error);
+      return;
+    }
+    setRows(Array.isArray(res.data) ? res.data : (res.data?.data ?? []));
+  }, [status]);
 
   useEffect(() => {
-    setLoading(true);
-    apiService
-      .get<any>('/v1/reports')
-      .then((res) => {
-        if (res.data && !res.error) {
-          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
-          const apiReports = list.map((r: any) => ({
-            id: r.id,
-            type: TYPE_LABELS[r.type] ?? r.type ?? 'Other Issue',
-            reported: r.targetName || r.businessName || r.entityName || 'Unknown',
-            date: r.createdAt
-              ? new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-              : r.date || '—',
-            status: r.status === 'submitted' ? 'Pending' : r.status === 'under_review' ? 'Under Review' :
-              r.status === 'resolved' ? 'Resolved' : r.status === 'dismissed' ? 'Dismissed' : r.status || 'Pending',
-            details: r.description || r.details || '',
-            source: 'api',
-          }));
-          // Also merge any localStorage customer reports
-          try {
-            const stored = localStorage.getItem(ISSUE_REPORTS_KEY);
-            if (stored) {
-              const customerReports = JSON.parse(stored).map((r: any) => ({
-                id: r.id,
-                type: TYPE_LABELS[r.type] ?? r.type,
-                reported: r.businessName || 'Unknown',
-                date: r.submittedAt,
-                status: r.status === 'submitted' ? 'Pending' : r.status === 'under_review' ? 'Under Review' : 'Resolved',
-                details: r.description,
-                source: 'customer',
-              }));
-              setReports([...apiReports, ...customerReports]);
-            } else {
-              setReports(apiReports);
-            }
-          } catch (_) {
-            setReports(apiReports);
-          }
-        }
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    load();
+  }, [load]);
 
-  const filtered = reports.filter((r) => {
-    if (filter !== 'all' && r.status !== filter) return false;
-    if (search &&
-      !r.type.toLowerCase().includes(search.toLowerCase()) &&
-      !r.reported.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  const shown = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return rows;
+    return rows.filter((r) => [r.description, r.type, r.reporter?.name, r.reporter?.email].some((v) => v?.toLowerCase().includes(term)));
+  }, [rows, q]);
 
-  const pending = reports.filter((r) => r.status === 'Pending').length;
-
-  const handleUpdateStatus = (id: any, newStatus: string) => {
-    setReports(reports.map((r) => (r.id === id ? { ...r, status: newStatus } : r)));
-    if (viewingReport && viewingReport.id === id) {
-      setViewingReport({ ...viewingReport, status: newStatus });
+  const act = async (kind: 'resolve' | 'dismiss') => {
+    if (!active) return;
+    if (kind === 'resolve' && resolution.trim().length < 5) {
+      toast.error('Write a short resolution note — it is kept on record.');
+      return;
     }
+    setSaving(kind);
+    const res =
+      kind === 'resolve'
+        ? await apiService.patch(`/v1/reports/${active.id}/resolve`, { resolution: resolution.trim() })
+        : await apiService.patch(`/v1/reports/${active.id}/dismiss`, {});
+    setSaving(null);
+    if (res.error) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success(kind === 'resolve' ? 'Report resolved' : 'Report dismissed');
+    setActive(null);
+    setResolution('');
+    load();
   };
 
-  const handleDeleteReport = () => {
-    setReports(reports.filter((r) => r.id !== deletingReport.id));
-    setDeletingReport(null);
-  };
+  const columns: Column<Report>[] = [
+    { key: 'type', header: 'Type', sortable: true, cell: (r) => <span className="font-medium">{TYPE_LABELS[r.type] ?? r.type}</span> },
+    {
+      key: 'subject',
+      header: 'About',
+      value: (r) => split(r.description).business ?? split(r.description).subject ?? '',
+      cell: (r) => {
+        const s = split(r.description);
+        return <span className="line-clamp-1 max-w-[28ch]">{s.business ?? s.subject ?? s.body}</span>;
+      },
+    },
+    { key: 'reporter', header: 'Reported by', value: (r) => r.reporter?.name ?? '', cell: (r) => r.reporter?.name ?? '—', hideOnMobile: true },
+    { key: 'status', header: 'Status', cell: (r) => <StatusPill status={r.status} /> },
+    {
+      key: 'createdAt',
+      header: 'Received',
+      sortable: true,
+      value: (r) => r.createdAt,
+      cell: (r) => new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }),
+    },
+  ];
+
+  const pendingCount = status === 'PENDING' ? rows.length : undefined;
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Infraction Reports</h1>
-          <p className="text-muted-foreground">
-            Manage user flag requests, spam reviews, and listing policy violations.
-          </p>
-        </div>
+      <PageHeader
+        title="Reports"
+        description="Problems flagged by customers and businesses: fake listings, misleading offers, abusive reviews."
+        meta={pendingCount != null && <StatusPill tone={pendingCount ? 'warning' : 'success'} label={`${pendingCount} pending`} dot={false} />}
+      />
 
-        {loading && (
-          <div className="flex items-center justify-center h-20">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        )}
-
-        {/* Search + filter */}
-        <div className="flex gap-2 flex-wrap">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Search reports…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-9 w-52 rounded-xl border-border bg-secondary text-sm"
-            />
-          </div>
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as any)}
-            className="h-9 rounded-xl border border-border bg-card text-sm text-foreground px-2 cursor-pointer"
+      <Toolbar
+        actions={
+          <Button
+            variant="outline"
+            disabled={!shown.length}
+            onClick={() =>
+              downloadCsv(
+                `reports-${status.toLowerCase()}`,
+                [
+                  { key: 'createdAt', header: 'Received' },
+                  { key: 'type', header: 'Type' },
+                  { key: 'status', header: 'Status' },
+                  { key: 'description', header: 'Description' },
+                  { key: 'resolution', header: 'Resolution' },
+                ],
+                shown,
+              )
+            }
           >
-            <option value="all">All Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Under Review">Under Review</option>
-            <option value="Resolved">Resolved</option>
-            <option value="Dismissed">Dismissed</option>
-          </select>
-          {pending > 0 && (
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-warning bg-warning/10 border border-warning/20 px-3 py-1.5 rounded-xl">
-              <AlertTriangle className="h-3.5 w-3.5" />
-              {pending} pending review
-            </span>
-          )}
-        </div>
+            Export CSV
+          </Button>
+        }
+      >
+        <SearchInput value={q} onChange={setQ} placeholder="Search reports" />
+        <ChipRow label="Status">
+          {(['PENDING', 'RESOLVED', 'DISMISSED', 'ALL'] as const).map((s) => (
+            <FilterChip key={s} selected={status === s} onClick={() => setStatus(s)}>
+              {s === 'ALL' ? 'All' : s.charAt(0) + s.slice(1).toLowerCase()}
+            </FilterChip>
+          ))}
+        </ChipRow>
+      </Toolbar>
 
-        <div className="space-y-4">
-          {filtered.length === 0 ? (
-            <Card className="p-8 text-center border-dashed border-border bg-secondary">
-              <Check className="mx-auto h-12 w-12 text-success mb-3" />
-              <h3 className="text-lg font-bold text-foreground mb-1">Queue Clear</h3>
-              <p className="text-sm text-muted-foreground">All content reports resolved.</p>
-            </Card>
-          ) : (
-            filtered.map((report, i) => (
-              <Card
-                key={report.id}
-                className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all duration-300 relative overflow-hidden group ui-fade-up"
-                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="rounded-xl bg-destructive/10 p-3 text-destructive">
-                      <AlertTriangle className="h-5 w-5" />
+      <DataTable
+        caption="Reports"
+        columns={columns}
+        rows={shown}
+        rowKey={(r) => r.id}
+        loading={loading}
+        onRowClick={(r) => {
+          setActive(r);
+          setResolution(r.resolution ?? '');
+        }}
+        defaultSort={{ key: 'createdAt', dir: 'desc' }}
+        empty={{ icon: ShieldAlert, title: status === 'PENDING' ? 'No open reports' : 'No reports here', description: 'New reports from customers and businesses show up here.' }}
+        mobileCard={(r) => (
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate font-medium">{TYPE_LABELS[r.type] ?? r.type}</p>
+              <p className="truncate text-caption text-muted-foreground">{split(r.description).business ?? split(r.description).body}</p>
+            </div>
+            <StatusPill status={r.status} />
+          </div>
+        )}
+      />
+
+      <Modal
+        open={!!active}
+        onOpenChange={(o) => !o && setActive(null)}
+        title={active ? (TYPE_LABELS[active.type] ?? active.type) : 'Report'}
+        description={active ? `Received ${new Date(active.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}` : undefined}
+        size="lg"
+        footer={
+          active?.status === 'PENDING' ? (
+            <>
+              <Button variant="outline" loading={saving === 'dismiss'} onClick={() => act('dismiss')}>
+                <X /> Dismiss
+              </Button>
+              <Button loading={saving === 'resolve'} onClick={() => act('resolve')}>
+                <Check /> Mark resolved
+              </Button>
+            </>
+          ) : undefined
+        }
+      >
+        {active &&
+          (() => {
+            const s = split(active.description);
+            const href = targetHref(active);
+            return (
+              <div className="space-y-4">
+                <dl className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <dt className="text-caption text-muted-foreground">Status</dt>
+                    <dd className="mt-1">
+                      <StatusPill status={active.status} />
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-caption text-muted-foreground">Reported by</dt>
+                    <dd className="mt-0.5 font-medium">{active.reporter?.name ?? '—'}</dd>
+                    {active.reporter?.email && <dd className="text-caption text-muted-foreground">{active.reporter.email}</dd>}
+                  </div>
+                  {(s.business || active.targetType) && (
+                    <div className="col-span-2">
+                      <dt className="text-caption text-muted-foreground">About</dt>
+                      <dd className="mt-0.5 flex items-center gap-2 font-medium">
+                        {s.business ?? `${active.targetType?.toLowerCase()} ${active.targetId?.slice(0, 8) ?? ''}`}
+                        {href && (
+                          <Link href={href} target="_blank" className="inline-flex items-center gap-1 text-label text-primary hover:underline">
+                            Open <ExternalLink className="size-3.5" />
+                          </Link>
+                        )}
+                      </dd>
                     </div>
+                  )}
+                </dl>
+                <div className="rounded-xl bg-surface-sunken p-4">
+                  {s.subject && <p className="mb-1 font-medium">{s.subject}</p>}
+                  <p className="whitespace-pre-line text-body">{s.body}</p>
+                </div>
+                {active.status === 'PENDING' ? (
+                  <div className="space-y-1.5">
+                    <label htmlFor="resolution" className="text-label">
+                      Resolution note (required to resolve)
+                    </label>
+                    <Textarea
+                      id="resolution"
+                      value={resolution}
+                      onChange={(e) => setResolution(e.target.value)}
+                      placeholder="What did you check and what action was taken?"
+                    />
+                  </div>
+                ) : (
+                  active.resolution && (
                     <div>
-                      <h3 className="font-semibold text-foreground text-base">{report.type}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Reported Target:{' '}
-                        <span className="text-foreground font-semibold">{report.reported}</span> •
-                        Received {report.date}
-                      </p>
+                      <p className="text-caption text-muted-foreground">Resolution</p>
+                      <p className="mt-0.5 text-body">{active.resolution}</p>
                     </div>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-semibold sm:ml-auto ${statusColors[report.status]}`}
-                    >
-                      {report.status}
-                    </span>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      onClick={() => setViewingReport(report)}
-                      size="icon"
-                      variant="outline"
-                      className="rounded-xl border-border text-foreground hover:bg-secondary h-10 w-10"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={() => setDeletingReport(report)}
-                      size="icon"
-                      variant="outline"
-                      className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive h-10 w-10"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
-
-        {/* ── INVESTIGATE/VIEW REPORT MODAL ────────────────────────── */}
-        {viewingReport && (
-          <ModalSurface onClose={() => setViewingReport(null)} label="Investigate Report" className="sm:max-w-md">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-destructive/10 text-destructive rounded-xl">
-                  <ShieldAlert className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-foreground">Investigate Report</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">Type: {viewingReport.type}</p>
-                </div>
+                  )
+                )}
               </div>
-              <div className="space-y-4 mb-6">
-                <div className="bg-secondary p-4 rounded-xl border border-border">
-                  <p className="text-xs text-muted-foreground font-semibold mb-1">
-                    Target Entity Under Report
-                  </p>
-                  <p className="text-sm font-bold text-foreground">{viewingReport.reported}</p>
-                </div>
-                <div className="bg-secondary p-4 rounded-xl border border-border">
-                  <p className="text-xs text-muted-foreground font-semibold mb-1">
-                    Report Description & Evidence
-                  </p>
-                  <p className="text-sm text-foreground leading-relaxed">{viewingReport.details}</p>
-                </div>
-                <div className="bg-secondary p-4 rounded-xl border border-border">
-                  <p className="text-xs text-muted-foreground font-semibold mb-2">Resolution Status</p>
-                  <div className="flex gap-2 flex-wrap">
-                    <button
-                      onClick={() => handleUpdateStatus(viewingReport.id, 'Pending')}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                        viewingReport.status === 'Pending'
-                          ? 'bg-warning/10 text-warning border-warning/30'
-                          : 'bg-secondary text-muted-foreground border-border hover:bg-secondary'
-                      }`}
-                    >
-                      Pending
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatus(viewingReport.id, 'Under Review')}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                        viewingReport.status === 'Under Review'
-                          ? 'bg-info/10 text-info border-info/30'
-                          : 'bg-secondary text-muted-foreground border-border hover:bg-secondary'
-                      }`}
-                    >
-                      Under Review
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatus(viewingReport.id, 'Resolved')}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                        viewingReport.status === 'Resolved'
-                          ? 'bg-success/10 text-success border-success/30'
-                          : 'bg-secondary text-muted-foreground border-border hover:bg-secondary'
-                      }`}
-                    >
-                      Resolved
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatus(viewingReport.id, 'Dismissed')}
-                      className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
-                        viewingReport.status === 'Dismissed'
-                          ? 'bg-muted text-muted-foreground border-border'
-                          : 'bg-secondary text-muted-foreground border-border hover:bg-secondary'
-                      }`}
-                    >
-                      Dismissed
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => setViewingReport(null)}
-                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold"
-                >
-                  Close
-                </Button>
-              </div>
-          </ModalSurface>
-        )}
-
-        {/* ── DISMISS REPORT MODAL ─────────────────────────────────── */}
-        {deletingReport && (
-          <ModalSurface onClose={() => setDeletingReport(null)} label="Dismiss / Delete Report" className="sm:max-w-sm text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Dismiss / Delete Report</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                Are you sure you want to delete this {deletingReport.type} report? This removes it
-                from the moderation queue.
-              </p>
-              <div className="flex justify-center gap-3">
-                <Button
-                  onClick={() => setDeletingReport(null)}
-                  variant="outline"
-                  className="rounded-xl border-border hover:bg-secondary text-foreground px-4"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleDeleteReport}
-                  className="rounded-xl bg-destructive hover:bg-destructive text-white px-4"
-                >
-                  Delete Report
-                </Button>
-              </div>
-          </ModalSurface>
-        )}
-      </div>
+            );
+          })()}
+      </Modal>
     </AdminLayout>
   );
 }
