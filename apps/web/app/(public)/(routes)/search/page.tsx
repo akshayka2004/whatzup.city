@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Search, Loader2, Building2, Tag, Clock, X } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useCachedGet } from '@/lib/use-cached-get';
+import { track } from '@/lib/analytics/track';
 import { categoryLabel } from '@/lib/platform-offers';
 import { GridSkeleton } from '@/components/common/skeletons';
 import { EmptyState } from '@/components/common/empty-state';
@@ -113,6 +114,18 @@ function SearchContent() {
   }, [page1, extra.items]);
   const hasMore =
     !extra.done && all.length > 0 && (total != null ? all.length < total : page1.length >= PAGE_SIZE);
+
+  // One SEARCH event per distinct query once results land (feeds "what people search for").
+  const trackedQuery = useRef<string | null>(null);
+  useEffect(() => {
+    const q = state.q?.trim();
+    if (!q || first.loading || first.data === undefined || trackedQuery.current === baseQuery) return;
+    trackedQuery.current = baseQuery;
+    track('SEARCH', {
+      source: 'search',
+      metadata: { query: q.slice(0, 80), resultCount: total ?? page1.length, city: state.city || undefined },
+    });
+  }, [state.q, state.city, baseQuery, first.loading, first.data, total, page1.length]);
 
   const loadMore = useCallback(async () => {
     if (extra.loading || extra.done) return;

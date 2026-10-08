@@ -46,7 +46,7 @@ export function Heatmap({ cells, label = 'views' }: { cells: { dow: number; hour
                 <span
                   key={h}
                   title={`${DAYS[d]} ${HOUR_LABEL(h)}: ${formatNumber(v)} ${label}`}
-                  className="aspect-square rounded-[4px]"
+                  className="h-5 rounded-[4px] sm:h-6"
                   style={{
                     background:
                       v === 0

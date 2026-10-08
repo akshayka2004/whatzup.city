@@ -106,12 +106,12 @@ export function KpiCard({
             {metric && (
               <p className="mt-1 flex items-center gap-1.5">
                 <Delta change={metric.change} goodWhen={goodWhen} />
-                <span className="truncate text-caption text-subtle-foreground">vs {formatValue(metric.previous, format, true)}</span>
+                <span className="whitespace-nowrap text-caption text-subtle-foreground">vs {formatValue(metric.previous, format, true)}</span>
               </p>
             )}
           </div>
           {spark && spark.length > 1 && (
-            <Sparkline data={spark} width={72} height={28} className={selected ? 'text-primary' : 'text-chart-axis'} />
+            <Sparkline data={spark} width={56} height={26} className={selected ? 'text-primary' : 'text-chart-axis'} />
           )}
         </div>
       )}

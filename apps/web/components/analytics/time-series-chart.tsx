@@ -96,7 +96,7 @@ export function TimeSeriesChart({
             }}
           />
           <Area
-            type="monotone"
+            type="monotoneX"
             dataKey="solid"
             stroke={color}
             strokeWidth={2}
@@ -107,7 +107,7 @@ export function TimeSeriesChart({
             isAnimationActive={false}
           />
           <Area
-            type="monotone"
+            type="monotoneX"
             dataKey="partial"
             stroke={color}
             strokeWidth={2}

@@ -24,7 +24,7 @@ export function BarList({
         <li key={it.key} className="relative flex h-9 items-center justify-between gap-3 overflow-hidden rounded-md px-2.5">
           <span
             className="absolute inset-y-0 left-0 rounded-md bg-brand-soft"
-            style={{ width: `${Math.max(2, (it.value / max) * 100)}%` }}
+            style={{ width: it.value > 0 ? `${Math.max(2, (it.value / max) * 100)}%` : 0 }}
             aria-hidden
           />
           <span className="relative min-w-0 truncate text-sm text-foreground">
