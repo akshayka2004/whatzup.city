@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { Check, Clock, Loader2, Lock, ShoppingBag, Ticket, UtensilsCrossed } from 'lucide-react';
+import { Check, Clock, Loader2, Lock, ShoppingBag, Sparkles, Ticket, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/empty-state';
 import { StatusPill } from '@/components/common/status-pill';
@@ -81,6 +81,13 @@ export function OffersSection({
   fromQr: boolean | null;
 }) {
   const router = useRouter();
+
+  // ── Guest teaser for the spin wheel (public, no personal data)
+  const [wheelPreview, setWheelPreview] = useState<{ itemName: string; maxPercent: number | null } | null>(null);
+  useEffect(() => {
+    if (user || !businessId) return;
+    apiService.get<any>(`/v1/discounts/business/${businessId}/preview`).then((r) => !r.error && r.data && setWheelPreview(r.data));
+  }, [user, businessId]);
 
   // ── Vouchers (spend-gated) — needs a logged-in user for spend + unlock state
   const [vouchers, setVouchers] = useState<any[]>([]);
@@ -184,6 +191,29 @@ export function OffersSection({
           {offers.map((o, i) => (
             <OfferCard key={o.id || i} offer={o} index={i} onClaim={() => handleClaimClick(o)} />
           ))}
+        </div>
+      )}
+
+      {/* ── Lucky wheel: guests see what they could win and sign in to spin */}
+      {!user && !authLoading && wheelPreview && (
+        <div className="mt-6 flex flex-col gap-4 rounded-card border border-primary/15 bg-brand-soft p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-card text-primary shadow-e1">
+              <Sparkles className="size-5" aria-hidden />
+            </span>
+            <div>
+              <p className="font-semibold text-foreground">
+                Spin to win{wheelPreview.maxPercent ? ` up to ${wheelPreview.maxPercent}% off` : ' a discount'}
+              </p>
+              <p className="text-caption text-muted-foreground">On {wheelPreview.itemName}. One spin per customer.</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => router.push(`/login?redirect=${encodeURIComponent(`/business/${businessId}`)}`)}
+            className="shrink-0"
+          >
+            Sign in to spin
+          </Button>
         </div>
       )}
 

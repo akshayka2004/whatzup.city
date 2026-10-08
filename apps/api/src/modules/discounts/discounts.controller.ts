@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 import { UserRole } from '@saas/types';
 import { DiscountsService } from './discounts.service';
 import { CreateDiscountDto, RedeemSpinDto } from './dto/discount.dto';
@@ -44,6 +45,18 @@ export class DiscountsController {
   }
 
   // ── CUSTOMER ───────────────────────────────────────────────────────────
+
+  // Guests: just enough to tease the wheel on a business page. Public routes never carry the
+  // signed-in user, so the full /active endpoint (with the viewer's own ticket) stays authenticated.
+  @Public()
+  @Get('business/:businessId/preview')
+  @ApiOperation({ summary: "Public summary of a business's live discount wheel (no personal data)" })
+  async preview(@Param('businessId') businessId: string) {
+    const d = await this.discounts.getActive(businessId);
+    if (!d) return null;
+    const pcts = Array.isArray(d.wheelPercentages) ? (d.wheelPercentages as unknown[]).map(Number).filter(Number.isFinite) : [];
+    return { itemName: d.itemName, maxPercent: pcts.length ? Math.max(...pcts) : null };
+  }
 
   @Get('business/:businessId/active')
   @ApiOperation({ summary: "A business's active discount wheel, plus the viewer's own ticket if they already spun" })
