@@ -292,8 +292,7 @@ export default function SuperAdminApprovalsPage() {
 
         {/* REVIEW MODAL */}
         {reviewingItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
-            <Card className="ui-pop w-full max-w-6xl p-6 rounded-3xl border border-border bg-[#0c0c10] shadow-2xl relative max-h-[90vh] flex flex-col">
+          <ModalSurface onClose={() => { setReviewingItem(null); setSelectedDoc(null); }} label={`Credential audit: ${reviewingItem.entity?.name ?? 'application'}`} className="sm:max-w-6xl" hideClose>
               <button
                 onClick={() => { setReviewingItem(null); setSelectedDoc(null); }}
                 className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer bg-secondary rounded-full transition-colors"
@@ -561,8 +560,7 @@ export default function SuperAdminApprovalsPage() {
                   Approve Application
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* APPROVE MODAL */}

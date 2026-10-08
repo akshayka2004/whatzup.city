@@ -405,7 +405,7 @@ export default function CustomersPage() {
 
         {/* Customer detail modal */}
         {viewing && (
-          <ModalSurface onClose={() => setViewing(null)} label="Dialog" className="sm:max-w-lg">
+          <ModalSurface onClose={() => setViewing(null)} label="Customer details" className="sm:max-w-lg">
 
               <div className="flex items-center gap-4 mb-6">
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-primary to-info flex items-center justify-center text-xl font-extrabold text-white">

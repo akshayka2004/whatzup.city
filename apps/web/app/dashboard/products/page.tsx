@@ -408,7 +408,7 @@ export default function ProductsPage() {
 
         {/* ── VIEW MODAL ── */}
         {viewingProduct && (
-          <ModalSurface onClose={() => setViewingProduct(null)} label="Dialog" className="sm:max-w-md">
+          <ModalSurface onClose={() => setViewingProduct(null)} label="Product details" className="sm:max-w-md">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-primary/10 text-primary rounded-xl">
                   <Box className="h-6 w-6" />

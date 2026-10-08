@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useEffect } from 'react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
@@ -197,8 +198,7 @@ export default function AdminManagementPage() {
 
         {/* Create Admin Modal */}
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
+          <ModalSurface onClose={() => setIsOpen(false)} label="Create Admin Account" className="sm:max-w-md" hideClose>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                   <Shield className="h-5 w-5 text-primary" />
@@ -309,8 +309,7 @@ export default function AdminManagementPage() {
                   </Button>
                 </div>
               </form>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
       </div>
     </SuperAdminLayout>

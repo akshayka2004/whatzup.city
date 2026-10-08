@@ -288,7 +288,7 @@ export function NoticesManager() {
 
       {/* VIEW MODAL */}
       {viewingNotice && (
-        <ModalSurface onClose={() => setViewingNotice(null)} label="Dialog" className="sm:max-w-md">
+        <ModalSurface onClose={() => setViewingNotice(null)} label="Notice details" className="sm:max-w-md">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 bg-warning/10 text-warning rounded-xl">
                 <Bell className="h-6 w-6" />

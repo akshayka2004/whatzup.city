@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -318,8 +319,7 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
         )}
 
         {viewingOffer && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
-            <div className="ui-pop relative w-full max-w-md p-6 rounded-2xl border border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
+          <ModalSurface onClose={() => setViewingOffer(null)} label="Offer details" className="sm:max-w-md" hideClose>
               <button
                 onClick={() => setViewingOffer(null)}
                 aria-label="Close"
@@ -451,8 +451,7 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
                   </Button>
                 </div>
               )}
-            </div>
-          </div>
+          </ModalSurface>
         )}
 
         {scanMounted && (

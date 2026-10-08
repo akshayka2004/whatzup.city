@@ -11,6 +11,7 @@
  * priced amenities, matching the onboarding wizard.
  */
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useEffect, useState } from 'react';
 import { apiService } from '@/lib/services/api-service';
 import { onboardingService } from '@/lib/services/onboarding-service';
@@ -146,8 +147,13 @@ export function SubscriptionPaywall() {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-4 sm:p-8">
-      <div className="w-full max-w-3xl rounded-2xl border border-border bg-card shadow-2xl my-auto">
+    <ModalSurface
+      // Only the reminder states can be dismissed; "choose a plan" is mandatory.
+      onClose={() => (expiringSoon || awaiting) && setDismissed(true)}
+      label={awaiting ? 'Payment awaiting verification' : expiringSoon ? 'Your plan is expiring soon' : 'Choose a plan to continue'}
+      className="p-0 sm:max-w-3xl"
+      hideClose
+    >
         <div className="flex items-start justify-between gap-4 p-6 border-b border-border">
           <div>
             <h2 className="text-xl font-bold text-foreground">
@@ -315,7 +321,6 @@ export function SubscriptionPaywall() {
             </Button>
           </div>
         )}
-      </div>
-    </div>
+    </ModalSurface>
   );
 }

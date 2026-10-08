@@ -701,7 +701,7 @@ export default function OffersPage() {
 
         {/* ── DETAIL/VIEW MODAL ────────────────────────────────────── */}
         {viewingOffer && (
-          <ModalSurface onClose={() => setViewingOffer(null)} label="Dialog" className="sm:max-w-md">
+          <ModalSurface onClose={() => setViewingOffer(null)} label="Offer details" className="sm:max-w-md">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-primary/10 text-primary rounded-xl">
                   <Tag className="h-6 w-6" />

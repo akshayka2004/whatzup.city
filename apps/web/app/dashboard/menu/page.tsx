@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
@@ -442,8 +443,7 @@ export default function MenuPhotosPage() {
 
         {/* Delete modal */}
         {deleting && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
+          <ModalSurface onClose={() => setDeleting(null)} label="Delete menu photo" className="sm:max-w-sm text-center" hideClose>
               <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
@@ -471,8 +471,7 @@ export default function MenuPhotosPage() {
                   {deleteBusy && <Loader2 className="h-4 w-4 animate-spin" />} Delete
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
       </div>
     </BusinessLayout>

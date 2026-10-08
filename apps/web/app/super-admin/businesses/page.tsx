@@ -431,7 +431,7 @@ export default function SuperAdminBusinessesPage() {
       )}
       {/* QR preview / download modal */}
       {qrBiz && (
-        <ModalSurface onClose={() => setQrBiz(null)} label="Dialog" className="sm:max-w-md">
+        <ModalSurface onClose={() => setQrBiz(null)} label="Business QR code" className="sm:max-w-md">
             <h3 className="text-lg font-bold text-foreground mb-1">{qrBiz.name}&apos;s QR code</h3>
             <p className="text-xs text-muted-foreground mb-4">Preview, print or download it for the business if they need a replacement.</p>
             <BusinessQrCard

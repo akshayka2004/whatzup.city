@@ -13,18 +13,22 @@ export function ModalSurface({
   onClose,
   label,
   className,
+  hideClose = false,
   children,
 }: {
   onClose: () => void;
   /** Accessible name (visually hidden; the content usually shows its own heading). */
   label: string;
   className?: string;
+  /** The content already renders its own close control. */
+  hideClose?: boolean;
   children: ReactNode;
 }) {
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         aria-describedby={undefined}
+        showCloseButton={!hideClose}
         className={cn('block max-h-[90dvh] overflow-y-auto sm:max-w-md', className)}
       >
         <DialogTitle className="sr-only">{label}</DialogTitle>

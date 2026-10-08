@@ -12,6 +12,7 @@
  * different Layout wrapper.
  */
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -418,8 +419,7 @@ export function PlatformOffersManager() {
 
       {/* ── Composer ─────────────────────────────────────────────── */}
       {open && (
-        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-4 sm:p-8">
-          <div className="w-full max-w-2xl rounded-2xl border border-border bg-card shadow-2xl my-auto">
+        <ModalSurface onClose={() => { setOpen(false); resetForm(); }} label="Platform offer" className="sm:max-w-2xl" hideClose>
             <div className="flex items-start justify-between gap-4 p-5 border-b border-border">
               <div>
                 <h2 className="text-lg font-bold text-foreground">
@@ -948,8 +948,7 @@ export function PlatformOffersManager() {
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+        </ModalSurface>
       )}
     </>
   );

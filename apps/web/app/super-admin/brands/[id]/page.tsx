@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -351,8 +352,7 @@ export default function SuperAdminBrandDetailPage() {
 
       {/* Suspend / reactivate confirm */}
       {confirming && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="ui-pop relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border-border bg-card p-6 shadow-2xl">
+        <ModalSurface onClose={() => setConfirming(false)} label="Confirm brand status change" className="sm:max-w-md" hideClose>
             <button onClick={() => setConfirming(false)} aria-label="Close" className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"><X className="h-5 w-5" /></button>
             <div className="mb-3 flex items-center gap-3 pr-8">
               <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full', suspended ? 'bg-success/10' : 'bg-destructive/10')}>
@@ -380,8 +380,7 @@ export default function SuperAdminBrandDetailPage() {
                 {suspended ? 'Reactivate' : 'Suspend'}
               </Button>
             </div>
-          </Card>
-        </div>
+        </ModalSurface>
       )}
     </SuperAdminLayout>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { BusinessLayout } from '@/components/layouts/business-layout';
@@ -456,8 +457,7 @@ export default function BranchesPage() {
 
         {/* Add modal */}
         {isAddOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-xl p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
+          <ModalSurface onClose={() => setIsAddOpen(false)} label="Add Branch Location" className="sm:max-w-xl" hideClose>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-lg font-bold text-foreground">Add Branch Location</h3>
                 <button onClick={() => setIsAddOpen(false)} className="p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer">
@@ -476,14 +476,12 @@ export default function BranchesPage() {
                   </Button>
                 </div>
               </form>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* Edit modal */}
         {editingBranch && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-xl p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
+          <ModalSurface onClose={() => setEditingBranch(null)} label="Edit Branch" className="sm:max-w-xl" hideClose>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-lg font-bold text-foreground">Edit Branch</h3>
                 <button onClick={() => setEditingBranch(null)} className="p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer">
@@ -502,14 +500,12 @@ export default function BranchesPage() {
                   </Button>
                 </div>
               </form>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* Delete confirm */}
         {deletingBranch && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl text-center max-h-[90vh] overflow-y-auto">
+          <ModalSurface onClose={() => setDeletingBranch(null)} label="Delete Branch?" className="sm:max-w-sm text-center" hideClose>
               <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
@@ -523,8 +519,7 @@ export default function BranchesPage() {
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
       </div>
     </BusinessLayout>

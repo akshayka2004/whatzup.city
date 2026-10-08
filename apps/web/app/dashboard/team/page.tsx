@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useEffect } from 'react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
@@ -358,8 +359,7 @@ export default function TeamManagementPage() {
 
         {/* ── CREATE MODAL ────────────────────────────────────── */}
         {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl overflow-y-auto max-h-[90vh] ui-pop">
+          <ModalSurface onClose={() => setShowCreateModal(false)} label="Create Team Account" className="sm:max-w-md" hideClose>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <UserPlus className="h-4 w-4 text-primary" />
@@ -423,14 +423,12 @@ export default function TeamManagementPage() {
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserPlus className="h-4 w-4" /> Create Account</>}
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* ── EDIT MODAL ──────────────────────────────────────── */}
         {editingMember && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-border bg-card shadow-2xl overflow-y-auto max-h-[90vh] ui-pop">
+          <ModalSurface onClose={() => setEditingMember(null)} label="Edit Team Member" className="sm:max-w-md" hideClose>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <Edit2 className="h-4 w-4 text-primary" />
@@ -484,14 +482,12 @@ export default function TeamManagementPage() {
                   </Button>
                 </div>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* ── RESET PASSWORD MODAL ─────────────────────────────── */}
         {resetMember && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl ui-pop">
+          <ModalSurface onClose={() => setResetMember(null)} label="Reset Password" className="sm:max-w-sm" hideClose>
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <Lock className="h-4 w-4 text-info" />
@@ -525,14 +521,12 @@ export default function TeamManagementPage() {
                   </Button>
                 </div>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* ── CREATED CREDENTIALS DISPLAY ─────────────────────── */}
         {createdCredentials && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md p-6 rounded-2xl border-success/20 bg-card shadow-2xl ui-pop">
+          <ModalSurface onClose={() => setCreatedCredentials(null)} label="Credentials Ready" className="sm:max-w-md" hideClose>
               <div className="flex items-center gap-2 mb-4">
                 <CheckCircle2 className="h-5 w-5 text-success" />
                 <h3 className="text-base font-bold text-foreground">Credentials Ready</h3>
@@ -561,14 +555,12 @@ export default function TeamManagementPage() {
                   Done
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* ── REMOVE CONFIRM ──────────────────────────────────── */}
         {confirmRemove && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-xs p-6 rounded-2xl border-border bg-card shadow-2xl text-center ui-pop">
+          <ModalSurface onClose={() => setConfirmRemove(null)} label="Remove Member" className="sm:max-w-xs text-center" hideClose>
               <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
                 <Trash2 className="h-6 w-6 text-destructive" />
               </div>
@@ -581,8 +573,7 @@ export default function TeamManagementPage() {
                 <Button variant="outline" onClick={() => setConfirmRemove(null)} className="flex-1 rounded-xl border-border text-sm cursor-pointer">Cancel</Button>
                 <Button onClick={() => handleRemove(confirmRemove)} className="flex-1 rounded-xl bg-destructive hover:bg-destructive text-white text-sm cursor-pointer">Remove</Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
       </div>
     </BusinessLayout>

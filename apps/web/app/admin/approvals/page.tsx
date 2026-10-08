@@ -361,8 +361,7 @@ export default function ApprovalsPage() {
             ── SIDE-BY-SIDE MODAL PREVIEW FOR SYSTEM VERIFICATION ──
            ============================================================ */}
         {reviewingItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
-            <Card className="ui-pop w-full max-w-6xl p-6 rounded-3xl border border-border bg-[#0c0c10] shadow-2xl relative max-h-[90vh] flex flex-col">
+          <ModalSurface onClose={() => { setReviewingItem(null); setSelectedDoc(null); }} label={`Credential audit: ${reviewingItem.entity?.name ?? 'application'}`} className="sm:max-w-6xl" hideClose>
               <button
                 onClick={() => {
                   setReviewingItem(null);
@@ -985,8 +984,7 @@ export default function ApprovalsPage() {
                   Approve Application
                 </Button>
               </div>
-            </Card>
-          </div>
+          </ModalSurface>
         )}
 
         {/* ── APPROVAL CONFIRMATION MODAL ──────────────────────────── */}

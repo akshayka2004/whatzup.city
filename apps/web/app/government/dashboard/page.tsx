@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { toast } from '@/components/ui/sonner';
 import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
@@ -299,8 +300,7 @@ export default function GovDashboardPage() {
 
       {/* ── New Notice Modal ─────────────────────────────────────── */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="w-full max-w-lg p-6 rounded-2xl border-white/10 bg-zinc-900 shadow-2xl max-h-[90vh] overflow-y-auto ui-pop">
+        <ModalSurface onClose={() => setShowForm(false)} label="Publish New Notice" className="sm:max-w-lg" hideClose>
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                 <Plus className="h-4 w-4 text-primary" />
@@ -425,8 +425,7 @@ export default function GovDashboardPage() {
                 </Button>
               </div>
             </form>
-          </Card>
-        </div>
+        </ModalSurface>
       )}
     </div>
   );

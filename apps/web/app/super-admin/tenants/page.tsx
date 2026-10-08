@@ -161,7 +161,7 @@ export default function TenantsPage() {
 
         {/* ── TENANT DEEP DIVE MODAL ───────────────────────── */}
         {managingTenant && (
-          <ModalSurface onClose={() => setManagingTenant(null)} label="Dialog" className="sm:max-w-2xl">
+          <ModalSurface onClose={() => setManagingTenant(null)} label="Manage tenant" className="sm:max-w-2xl">
 
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-primary/10 text-primary rounded-xl">

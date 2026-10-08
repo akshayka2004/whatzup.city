@@ -250,7 +250,7 @@ export function EventsManager() {
       </div>
 
       {open && (
-        <ModalSurface onClose={() => setOpen(false)} label="Dialog" className="sm:max-w-lg">
+        <ModalSurface onClose={() => setOpen(false)} label="Event" className="sm:max-w-lg">
             <h3 className="text-lg font-bold text-foreground mb-4">{editing ? 'Edit Event' : 'New Event'}</h3>
             <div className="space-y-3">
               <div>
