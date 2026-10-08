@@ -8,7 +8,6 @@ import {
   ClipboardCheck,
   Clapperboard,
   CreditCard,
-  Database,
   Flag,
   Gift,
   GitBranch,
@@ -18,7 +17,6 @@ import {
   KeyRound,
   LayoutDashboard,
   LifeBuoy,
-  Lock,
   MapPin,
   Megaphone,
   MessageSquareWarning,
@@ -270,13 +268,13 @@ function adminNav(): NavSpec {
         title: 'Trust & Safety',
         items: [
           { label: 'Reports', href: '/admin/reports', icon: ShieldAlert },
+          { label: 'Bill escalations', href: '/admin/bills', icon: ReceiptText },
           { label: 'Audit Logs', href: '/admin/audit', icon: ScrollText },
         ],
       },
     ],
     footer: [
       { label: 'My Profile', href: '/admin/profile', icon: CircleUserRound },
-      { label: 'Settings', href: '/admin/settings', icon: Settings },
     ],
     mobileTabs: ['/admin', '/admin/approvals', '/admin/payments', '/admin/reports'],
   };
@@ -331,6 +329,7 @@ function superAdminNav(): NavSpec {
         title: 'Trust & Safety',
         items: [
           { label: 'Reports', href: '/super-admin/reports', icon: ShieldAlert },
+          { label: 'Bill escalations', href: '/admin/bills', icon: ReceiptText },
           { label: 'Audit Logs', href: '/super-admin/audit', icon: ScrollText },
           { label: 'Referrals', href: '/super-admin/referrals', icon: Share2 },
         ],
@@ -338,16 +337,13 @@ function superAdminNav(): NavSpec {
       {
         title: 'System',
         items: [
-          { label: 'Security', href: '/super-admin/security', icon: Lock },
           { label: 'System Health', href: '/super-admin/health', icon: Activity },
-          { label: 'Feature Flags', href: '/super-admin/flags', icon: Flag },
-          { label: 'Infrastructure', href: '/super-admin/infrastructure', icon: Database },
+          { label: 'Configuration', href: '/super-admin/flags', icon: Flag },
         ],
       },
     ],
     footer: [
       { label: 'My Profile', href: '/super-admin/profile', icon: CircleUserRound },
-      { label: 'Settings', href: '/super-admin/settings', icon: Settings },
     ],
     mobileTabs: ['/super-admin', '/admin/approvals', '/super-admin/businesses', '/admin/payments'],
     mobileLabels: { '/super-admin': 'Overview', '/super-admin/businesses': 'Businesses' },

@@ -1,163 +1,81 @@
 'use client';
 
+import { Flag, Globe, Receipt, Settings2 } from 'lucide-react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Flag, Plus, ToggleLeft } from 'lucide-react';
+import { PageHeader } from '@/components/system/page-header';
+import { SectionCard } from '@/components/system/section-card';
+import { StatusPill } from '@/components/common/status-pill';
+import { MOVIES_ENABLED } from '@/lib/feature-flags';
+import { TAX_PERCENT } from '@/lib/subscription-plans';
+import { SITE_URL } from '@/lib/server-api';
 
-const flags = [
-  // ── Release 1 — Billing & Trial Flags ────────────────────────────
+const FLAGS = [
   {
-    key: 'ENABLE_SUBSCRIPTIONS',
-    name: 'Subscriptions',
-    description: 'Show subscription plans and upgrade flows in business dashboard',
-    enabled: false,
-    rollout: '0%',
-    category: 'Release 1',
-  },
-  {
-    key: 'ENABLE_PAYMENTS',
-    name: 'Payments',
-    description: 'Enable payment gateway and checkout flows',
-    enabled: false,
-    rollout: '0%',
-    category: 'Release 1',
-  },
-  {
-    key: 'ENABLE_BILLING_PORTAL',
-    name: 'Billing Portal',
-    description: 'Show billing portal, invoices and payment history to businesses',
-    enabled: false,
-    rollout: '0%',
-    category: 'Release 1',
-  },
-  {
-    key: 'ENABLE_TRIALS',
-    name: 'Free Trials',
-    description: '15-day free trial automatically starts on business approval',
-    enabled: true,
-    rollout: '100%',
-    category: 'Release 1',
-  },
-  {
-    key: 'ENABLE_INTRO_OFFER',
-    name: 'Introductory Offer',
-    description: '20% discount on first subscription — claimable during trial',
-    enabled: true,
-    rollout: '100%',
-    category: 'Release 1',
-  },
-  // ── Platform Features ─────────────────────────────────────────────
-  {
-    key: 'verification-ocr-scanning',
-    name: 'OCR Receipt Scanning',
-    description: 'Automated OCR extraction for bill verification documents',
-    enabled: true,
-    rollout: '100%',
-    category: 'Platform',
-  },
-  {
-    key: 'recommendations-engine-v2',
-    name: 'Vector Recommendation Fallback',
-    description: 'Semantic vector similarity fallback for business recommendations',
-    enabled: false,
-    rollout: '15%',
-    category: 'Platform',
-  },
-  {
-    key: 'civic-notices-push-broadcast',
-    name: 'Government Push Broadcasts',
-    description: 'Push broadcast channel for civic alerts and government notices',
-    enabled: true,
-    rollout: '100%',
-    category: 'Platform',
+    name: 'Movies',
+    on: MOVIES_ENABLED,
+    env: 'NEXT_PUBLIC_MOVIES_ENABLED (web) + MOVIES_ENABLED (API)',
+    effect: 'Shows the Movies section, home strip and admin editors.',
   },
 ];
 
-const CATEGORY_ORDER = ['Release 1', 'Platform'];
-
-export default function SuperAdminFlagsPage() {
-  const grouped = CATEGORY_ORDER.map((cat) => ({
-    category: cat,
-    items: flags.filter((f) => (f as any).category === cat),
-  }));
-
+/**
+ * Read-only view of how this deployment is configured. Flags are build-time environment
+ * variables, so they change with a redeploy, not from this screen.
+ */
+export default function ConfigurationPage() {
   return (
     <SuperAdminLayout>
-      <div className="space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
-              <ToggleLeft className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Feature Flags</h1>
-              <p className="text-muted-foreground">
-                Control feature rollout, billing activation, and experimental capabilities
-              </p>
-            </div>
-          </div>
-          <Button className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground shrink-0">
-            <Plus className="h-4 w-4" />
-            Add Feature Flag
-          </Button>
+      <PageHeader
+        title="Configuration"
+        description="How this deployment is set up. Values come from environment variables and change on redeploy."
+      />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard icon={Flag} title="Feature flags" padded={false}>
+          <ul className="divide-y divide-border/60">
+            {FLAGS.map((f) => (
+              <li key={f.name} className="flex items-start justify-between gap-4 px-5 py-4 sm:px-6">
+                <div className="min-w-0">
+                  <p className="font-medium">{f.name}</p>
+                  <p className="text-caption text-muted-foreground">{f.effect}</p>
+                  <p className="mt-1 font-mono text-caption text-subtle-foreground">{f.env}</p>
+                </div>
+                <StatusPill tone={f.on ? 'success' : 'neutral'} label={f.on ? 'On' : 'Off'} />
+              </li>
+            ))}
+          </ul>
+        </SectionCard>
+
+        <div className="space-y-6">
+          <SectionCard icon={Globe} title="Site">
+            <dl className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <dt className="text-caption text-muted-foreground">Public URL</dt>
+                <dd className="mt-0.5 break-all font-medium">{SITE_URL}</dd>
+              </div>
+              <div>
+                <dt className="text-caption text-muted-foreground">Timezone for reports</dt>
+                <dd className="mt-0.5 font-medium">Asia/Kolkata (IST)</dd>
+              </div>
+            </dl>
+          </SectionCard>
+          <SectionCard icon={Receipt} title="Billing">
+            <dl className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <dt className="text-caption text-muted-foreground">GST on plans</dt>
+                <dd className="mt-0.5 font-medium">{TAX_PERCENT}%</dd>
+              </div>
+              <div>
+                <dt className="text-caption text-muted-foreground">Payment method</dt>
+                <dd className="mt-0.5 font-medium">UPI QR + proof, admin-verified</dd>
+              </div>
+            </dl>
+          </SectionCard>
+          <SectionCard icon={Settings2} title="Changing these">
+            <p className="text-body text-muted-foreground">
+              Update the environment variable on the server, then rebuild and restart the web and API apps.
+            </p>
+          </SectionCard>
         </div>
-
-        {grouped.map(({ category, items }) => (
-          <div key={category}>
-            <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-3">
-              {category}
-            </h2>
-            <div className="space-y-3">
-              {items.map((flag, i) => (
-                <Card
-                  key={flag.key}
-                  className="ui-fade-up p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
-                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <div
-                        className={`p-2.5 rounded-xl h-10 w-10 flex items-center justify-center shrink-0 ${
-                          flag.enabled
-                            ? 'bg-success/10 text-success'
-                            : 'bg-muted text-muted-foreground'
-                        }`}
-                      >
-                        <Flag className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground text-sm">{flag.name}</h3>
-                        {(flag as any).description && (
-                          <p className="text-xs text-muted-foreground mt-0.5">{(flag as any).description}</p>
-                        )}
-                        <p className="text-[10px] text-muted-foreground/60 font-mono mt-1">
-                          {flag.key}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-sm border-t sm:border-t-0 pt-3 sm:pt-0 border-border">
-                      <div className="text-right">
-                        <p className="text-[10px] text-muted-foreground">Rollout</p>
-                        <p className="font-bold text-foreground text-sm mt-0.5">{flag.rollout}</p>
-                      </div>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                          flag.enabled
-                            ? 'bg-success/10 text-success border border-success/20'
-                            : 'bg-secondary text-muted-foreground border border-border'
-                        }`}
-                      >
-                        {flag.enabled ? 'Enabled' : 'Disabled'}
-                      </span>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        ))}
       </div>
     </SuperAdminLayout>
   );

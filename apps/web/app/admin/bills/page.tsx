@@ -1,324 +1,278 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Check, Eye, ShieldAlert, X } from 'lucide-react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
-import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/system/page-header';
+import { DataTable, type Column } from '@/components/system/data-table';
+import { Modal } from '@/components/system/modal';
+import { StatusPill } from '@/components/common/status-pill';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  ShieldAlert,
-  Eye,
-  ArrowUpRight,
-  Building2,
-  User,
-  Clock,
-  AlertTriangle,
-  TrendingUp,
-  Info,
-  CheckCircle2,
-  Flag,
-  Search,
-  Filter,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/components/ui/sonner';
+import { useAuth } from '@/hooks/use-auth';
+import { apiService } from '@/lib/services/api-service';
+import { formatINR } from '@/components/analytics/format';
 
-// ── MOCK DATA — Platform-escalated bills only ─────────────────────────
+type Escalation = {
+  id: string;
+  status: string;
+  fraudScore: string | number | null;
+  createdAt: string;
+  rejectionReason?: string | null;
+  bill?: {
+    id: string;
+    amount: string | number;
+    billNumber?: string | null;
+    billDate?: string;
+    billImage?: string;
+    user?: { id: string; name?: string; email?: string } | null;
+    business?: { id: string; name: string } | null;
+  } | null;
+};
 
-const ESCALATED_BILLS = [
-  {
-    id: 'esc-001',
-    business: 'Luxe Salon & Spa',
-    customer: { name: 'Ananya Patel', email: 'ananya@example.com' },
-    amount: 8500,
-    billNumber: 'INV-10293',
-    fraudScore: 0.72,
-    escalatedBy: 'Business Owner',
-    escalatedAt: '2026-05-21T08:30:00Z',
-    reason: 'OCR confidence too low (51%), suspicious pattern detected',
-    previousAttempts: 3,
-    status: 'ESCALATED',
-  },
-  {
-    id: 'esc-002',
-    business: 'Urban Mart Grocery',
-    customer: { name: 'Ravi Shankar', email: 'ravi@example.com' },
-    amount: 18200,
-    billNumber: 'INV-55932',
-    fraudScore: 0.88,
-    escalatedBy: 'Auto-Fraud Detector',
-    escalatedAt: '2026-05-20T15:45:00Z',
-    reason: 'Duplicate invoice hash detected. Same bill submitted 3 times in 48 hours',
-    previousAttempts: 3,
-    status: 'ESCALATED',
-  },
-  {
-    id: 'esc-003',
-    business: 'CloudBurst Electronics',
-    customer: { name: 'Meena Iyer', email: 'meena@example.com' },
-    amount: 95000,
-    billNumber: 'INV-90001',
-    fraudScore: 0.81,
-    escalatedBy: 'Business Moderator',
-    escalatedAt: '2026-05-19T12:00:00Z',
-    reason: 'Unusually high amount for product category. Customer has no purchase history',
-    previousAttempts: 1,
-    status: 'ESCALATED',
-  },
-];
+const PAGE_SIZE = 20;
 
-function FraudBar({ score }: { score: number }) {
-  const pct = Math.round(score * 100);
-  return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">Fraud Score</span>
-        <span className={cn('text-xs font-bold', pct >= 80 ? 'text-destructive' : pct >= 60 ? 'text-warning' : 'text-warning')}>
-          {pct}%
-        </span>
-      </div>
-      <div className="h-1.5 rounded-full bg-secondary">
-        <div
-          className={cn('h-1.5 rounded-full', pct >= 80 ? 'bg-destructive' : pct >= 60 ? 'bg-warning' : 'bg-warning')}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  );
+function risk(score: Escalation['fraudScore']) {
+  const n = score == null ? null : Number(score);
+  if (n == null || !Number.isFinite(n)) return { label: 'Not scored', tone: 'neutral' as const };
+  const pct = Math.round(n * 100);
+  return { label: `${pct}% risk`, tone: pct >= 70 ? ('danger' as const) : pct >= 40 ? ('warning' as const) : ('success' as const) };
 }
 
-export default function FraudEscalationsPage() {
-  const [bills, setBills] = useState(ESCALATED_BILLS);
-  const [reviewingItem, setReviewingItem] = useState<(typeof ESCALATED_BILLS)[0] | null>(null);
-  const [search, setSearch] = useState('');
+/**
+ * Platform escalation queue: bills a business could not settle (owner/moderator escalated or
+ * auto-flagged). Super admins decide; master admins see the queue read-only.
+ */
+export default function EscalatedBillsPage() {
+  const { user } = useAuth();
+  const canDecide = user?.rbacRole === 'SUPER_ADMIN' || user?.role === 'super-admin';
+  const [rows, setRows] = useState<Escalation[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [active, setActive] = useState<Escalation | null>(null);
+  const [decision, setDecision] = useState<'APPROVED' | 'REJECTED' | null>(null);
+  const [reason, setReason] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const filtered = bills.filter(
-    (b) =>
-      !search ||
-      b.business.toLowerCase().includes(search.toLowerCase()) ||
-      b.customer.name.toLowerCase().includes(search.toLowerCase()) ||
-      b.billNumber.toLowerCase().includes(search.toLowerCase()),
-  );
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await apiService.get<any>(`/v1/admin/bill-verifications/escalated?page=${page}`);
+    setLoading(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    setError(null);
+    setRows(res.data?.data ?? []);
+    setTotal(res.data?.total ?? 0);
+  }, [page]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const decide = async () => {
+    if (!active || !decision) return;
+    if (decision === 'REJECTED' && reason.trim().length < 5) {
+      toast.error('Add a short reason so the customer and business know why.');
+      return;
+    }
+    setSaving(true);
+    const res = await apiService.post(`/v1/admin/bill-verifications/${active.id}/platform-intervene`, {
+      decision,
+      reason: reason.trim() || undefined,
+    });
+    setSaving(false);
+    if (res.error) {
+      toast.error(res.error);
+      return;
+    }
+    toast.success(decision === 'APPROVED' ? 'Bill approved' : 'Bill rejected');
+    setActive(null);
+    setDecision(null);
+    setReason('');
+    load();
+  };
+
+  const columns: Column<Escalation>[] = [
+    {
+      key: 'business',
+      header: 'Business',
+      sortable: true,
+      value: (r) => r.bill?.business?.name ?? '',
+      cell: (r) =>
+        r.bill?.business ? (
+          <Link href={`/business/${r.bill.business.id}`} className="font-medium hover:underline">
+            {r.bill.business.name}
+          </Link>
+        ) : (
+          '—'
+        ),
+    },
+    { key: 'customer', header: 'Customer', value: (r) => r.bill?.user?.name ?? '', cell: (r) => r.bill?.user?.name ?? '—', hideOnMobile: true },
+    {
+      key: 'amount',
+      header: 'Amount',
+      align: 'right',
+      sortable: true,
+      value: (r) => Number(r.bill?.amount ?? 0),
+      cell: (r) => formatINR(Number(r.bill?.amount ?? 0)),
+    },
+    {
+      key: 'fraudScore',
+      header: 'Risk',
+      sortable: true,
+      value: (r) => (r.fraudScore == null ? -1 : Number(r.fraudScore)),
+      cell: (r) => {
+        const k = risk(r.fraudScore);
+        return <StatusPill tone={k.tone} label={k.label} />;
+      },
+    },
+    { key: 'status', header: 'Status', cell: (r) => <StatusPill status={r.status} /> },
+    {
+      key: 'createdAt',
+      header: 'Raised',
+      sortable: true,
+      value: (r) => r.createdAt,
+      hideOnMobile: true,
+      cell: (r) => new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }),
+    },
+  ];
 
   return (
     <AdminLayout>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <PageHeader
+        title="Bill escalations"
+        description={
+          canDecide
+            ? 'Bills a business could not settle. Review the receipt and decide; the customer and business are notified.'
+            : 'Bills escalated to the platform. Super admins make the final decision; you have read-only access.'
+        }
+        meta={<StatusPill tone={total > 0 ? 'warning' : 'success'} label={`${total} open`} dot={false} />}
+      />
 
-        {/* ── HEADER ─────────────────────────────────────────── */}
-        <div>
-          <div className="flex items-center gap-3 flex-wrap mb-1">
-            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-destructive/10 text-destructive shrink-0">
-              <ShieldAlert className="h-5 w-5" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground">Fraud Escalation Queue</h1>
-            <span className="px-2 py-0.5 rounded-full bg-destructive/15 text-destructive text-xs font-semibold">
-              {bills.length} Escalated
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Platform-level fraud escalations. Bills here have been escalated by businesses or auto-detected.
-          </p>
+      {error ? (
+        <div role="alert" className="rounded-card bg-danger-soft p-4 text-sm text-danger-soft-foreground">
+          {error}
         </div>
-
-        {/* ── ARCHITECTURE NOTE ───────────────────────────────── */}
-        <Card className="p-4 rounded-2xl border-info/20 bg-info/5">
-          <div className="flex items-start gap-3">
-            <div className="h-8 w-8 rounded-lg bg-info/15 flex items-center justify-center shrink-0">
-              <Info className="h-4 w-4 text-info" />
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-info mb-1">Admin Role — Read-Only Monitoring</h4>
-              <p className="text-xs text-info/80 leading-relaxed">
-                As Master Admin, you monitor fraud escalations raised by businesses. Bill verification is now
-                managed by Business Owners and Business Moderators within each business. You may intervene
-                via Super Admin override if platform policy requires it.
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        {/* ── STATS ──────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { label: 'Total Escalated', value: bills.length, icon: ShieldAlert, color: 'text-destructive', bg: 'bg-destructive/10' },
-            { label: 'High Risk (>80%)', value: bills.filter((b) => b.fraudScore >= 0.8).length, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10' },
-            { label: 'Avg Fraud Score', value: `${Math.round((bills.reduce((a, b) => a + b.fraudScore, 0) / bills.length) * 100)}%`, icon: TrendingUp, color: 'text-warning', bg: 'bg-warning/10' },
-          ].map((stat) => (
-            <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground">{stat.label}</span>
-                <div className={cn('h-7 w-7 rounded-lg flex items-center justify-center', stat.bg)}>
-                  <stat.icon className={cn('h-3.5 w-3.5', stat.color)} />
-                </div>
+      ) : (
+        <DataTable
+          caption="Escalated bills"
+          columns={columns}
+          rows={rows}
+          rowKey={(r) => r.id}
+          loading={loading}
+          onRowClick={(r) => setActive(r)}
+          page={page}
+          pageSize={PAGE_SIZE}
+          total={total}
+          onPageChange={setPage}
+          defaultSort={{ key: 'fraudScore', dir: 'desc' }}
+          empty={{ icon: ShieldAlert, title: 'No escalations', description: 'Businesses are handling their own bill queues. Nothing needs the platform right now.' }}
+          mobileCard={(r) => (
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate font-medium">{r.bill?.business?.name ?? 'Unknown business'}</p>
+                <p className="text-caption text-muted-foreground">
+                  {formatINR(Number(r.bill?.amount ?? 0))} · {r.bill?.user?.name ?? 'Customer'}
+                </p>
               </div>
-              <p className={cn('text-xl font-bold', stat.color)}>{stat.value}</p>
-            </Card>
-          ))}
-        </div>
+              <StatusPill tone={risk(r.fraudScore).tone} label={risk(r.fraudScore).label} />
+            </div>
+          )}
+        />
+      )}
 
-        {/* ── SEARCH ─────────────────────────────────────────── */}
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Search by business or bill #..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 h-9 rounded-xl border-input bg-background text-sm"
-          />
-        </div>
-
-        {/* ── ESCALATED BILL LIST ─────────────────────────────── */}
-        {filtered.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary/20 text-center">
-            <CheckCircle2 className="h-10 w-10 text-success mx-auto mb-3 opacity-50" />
-            <h3 className="text-base font-semibold text-foreground mb-1">No Escalations</h3>
-            <p className="text-sm text-muted-foreground">Platform fraud queue is clear.</p>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {filtered.map((item, i) => {
-              const fraudPct = Math.round(item.fraudScore * 100);
-              return (
-                <Card
-                  key={item.id}
-                  className={cn(
-                    'ui-fade-up p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all',
-                    fraudPct >= 80 && 'border-l-2 border-l-destructive/60',
-                    fraudPct >= 60 && fraudPct < 80 && 'border-l-2 border-l-warning/50',
-                  )}
-                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-                >
-                  <div className="flex flex-col lg:flex-row gap-5">
-                    <div className="flex-1 space-y-3">
-                      {/* Bill header */}
-                      <div className="flex items-start justify-between gap-2 flex-wrap">
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-bold text-foreground">{item.business}</h3>
-                            <span className="px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive text-[10px] font-semibold flex items-center gap-0.5">
-                              <ArrowUpRight className="h-3 w-3" />
-                              Platform Escalated
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
-                            <span className="flex items-center gap-1"><User className="h-3 w-3" />{item.customer.name}</span>
-                            <span>·</span>
-                            <span className="font-mono">{item.billNumber}</span>
-                            <span>·</span>
-                            <span>₹{item.amount.toLocaleString('en-IN')}</span>
-                          </p>
-                        </div>
-                        <span className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
-                          <Clock className="h-3 w-3" />
-                          {new Date(item.escalatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                        </span>
-                      </div>
-
-                      {/* Escalation reason */}
-                      <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-destructive/5 border border-destructive/10">
-                        <Flag className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
-                        <div>
-                          <p className="text-[10px] text-destructive font-semibold mb-0.5">
-                            Escalated by: {item.escalatedBy} • {item.previousAttempts} submission attempt{item.previousAttempts > 1 ? 's' : ''}
-                          </p>
-                          <p className="text-xs text-foreground/80">{item.reason}</p>
-                        </div>
-                      </div>
-
-                      {/* Fraud bar */}
-                      <FraudBar score={item.fraudScore} />
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-row lg:flex-col items-center justify-end gap-2 shrink-0 flex-wrap">
-                      <Button
-                        onClick={() => setReviewingItem(item)}
-                        size="sm"
-                        variant="outline"
-                        className="rounded-xl border-border text-foreground hover:bg-muted gap-1.5 text-xs h-10 cursor-pointer"
-                      >
-                        <Eye className="h-3.5 w-3.5" /> View Details
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 gap-1.5 text-xs h-10"
-                        disabled
-                        title="Super Admin action only"
-                      >
-                        <ShieldAlert className="h-3.5 w-3.5" /> Intervene
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-
-        {/* ── DETAIL MODAL ─────────────────────────────────────── */}
-        {reviewingItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-            <Card className="ui-pop w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <ShieldAlert className="h-4 w-4 text-destructive" />
-                  Escalation Detail
-                </h3>
-                <button onClick={() => setReviewingItem(null)} className="text-muted-foreground hover:text-foreground text-lg leading-none cursor-pointer">×</button>
-              </div>
-
-              <div className="space-y-4 text-sm">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Business</p>
-                    <p className="font-semibold text-foreground">{reviewingItem.business}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Bill Amount</p>
-                    <p className="font-bold text-foreground">₹{reviewingItem.amount.toLocaleString('en-IN')}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Customer</p>
-                    <p className="text-foreground">{reviewingItem.customer.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{reviewingItem.customer.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground uppercase mb-1">Bill Number</p>
-                    <p className="font-mono text-foreground">{reviewingItem.billNumber}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase mb-2">Fraud Score</p>
-                  <FraudBar score={reviewingItem.fraudScore} />
-                </div>
-
-                <div className="px-3 py-3 rounded-xl bg-destructive/5 border border-destructive/10">
-                  <p className="text-[10px] text-destructive font-semibold mb-1 flex items-center gap-1">
-                    <Flag className="h-3 w-3" /> Escalation Reason
-                  </p>
-                  <p className="text-xs text-foreground/80">{reviewingItem.reason}</p>
-                </div>
-
-                <div className="px-3 py-3 rounded-xl bg-info/5 border border-info/10">
-                  <p className="text-xs text-info flex items-center gap-1.5">
-                    <Info className="h-3.5 w-3.5 shrink-0" />
-                    Intervention requires Super Admin authority. Contact your Super Admin or use the Super Admin panel.
-                  </p>
-                </div>
-
-                <Button
-                  onClick={() => setReviewingItem(null)}
-                  className="w-full rounded-xl bg-secondary hover:bg-secondary/80 text-secondary-foreground text-sm cursor-pointer"
-                >
-                  Close
+      <Modal
+        open={!!active}
+        onOpenChange={(o) => {
+          if (!o) {
+            setActive(null);
+            setDecision(null);
+            setReason('');
+          }
+        }}
+        title={active?.bill?.business?.name ?? 'Escalated bill'}
+        description={active ? `Raised ${new Date(active.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}` : undefined}
+        size="lg"
+        footer={
+          canDecide ? (
+            decision ? (
+              <>
+                <Button variant="outline" onClick={() => setDecision(null)}>
+                  Back
                 </Button>
-              </div>
-            </Card>
+                <Button variant={decision === 'REJECTED' ? 'destructive' : 'default'} loading={saving} onClick={decide}>
+                  {decision === 'APPROVED' ? 'Approve bill' : 'Reject bill'}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="danger" onClick={() => setDecision('REJECTED')}>
+                  <X /> Reject
+                </Button>
+                <Button onClick={() => setDecision('APPROVED')}>
+                  <Check /> Approve
+                </Button>
+              </>
+            )
+          ) : undefined
+        }
+      >
+        {active && (
+          <div className="grid gap-5 md:grid-cols-[1fr_1.1fr]">
+            <div className="overflow-hidden rounded-xl border border-border bg-surface-sunken">
+              {active.bill?.billImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={active.bill.billImage} alt="Uploaded bill" className="max-h-[50dvh] w-full object-contain" />
+              ) : (
+                <p className="p-6 text-center text-caption text-muted-foreground">No image attached</p>
+              )}
+            </div>
+            <dl className="grid content-start grid-cols-2 gap-4 text-sm">
+              {[
+                ['Amount', formatINR(Number(active.bill?.amount ?? 0))],
+                ['Bill number', active.bill?.billNumber || '—'],
+                ['Bill date', active.bill?.billDate ? new Date(active.bill.billDate).toLocaleDateString('en-IN') : '—'],
+                ['Customer', active.bill?.user?.name || '—'],
+                ['Email', active.bill?.user?.email || (canDecide ? '—' : 'Hidden')],
+                ['Risk', risk(active.fraudScore).label],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <dt className="text-caption text-muted-foreground">{k}</dt>
+                  <dd className="mt-0.5 font-medium">{v}</dd>
+                </div>
+              ))}
+              {active.bill?.billImage && (
+                <div className="col-span-2">
+                  <Button asChild variant="outline" size="sm">
+                    <a href={active.bill.billImage} target="_blank" rel="noreferrer">
+                      <Eye /> Open full image
+                    </a>
+                  </Button>
+                </div>
+              )}
+              {decision && (
+                <div className="col-span-2 space-y-1.5">
+                  <label htmlFor="decision-reason" className="text-label">
+                    {decision === 'REJECTED' ? 'Reason (shared with customer and business)' : 'Note (optional)'}
+                  </label>
+                  <Textarea
+                    id="decision-reason"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder={decision === 'REJECTED' ? 'e.g. Amount on receipt does not match the claim' : 'Anything worth recording'}
+                  />
+                </div>
+              )}
+            </dl>
           </div>
         )}
-      </div>
+      </Modal>
     </AdminLayout>
   );
 }

@@ -633,6 +633,34 @@ export class BillVerificationsService {
     pagination.sortBy = 'createdAt';
     pagination.sortOrder = SortOrder.ASC;
 
+    // Escalations come from every business, and every business has its own tenant, so the
+    // platform queue must not be filtered by the admin's tenant (it would always be empty).
+    if (actorRole === 'SUPER_ADMIN' || actorRole === 'MASTER_ADMIN') {
+      const where = { escalationLevel: 'PLATFORM', deletedAt: null };
+      const [data, total] = await Promise.all([
+        this.db.billVerification.findMany({
+          where,
+          orderBy: { createdAt: 'asc' },
+          skip: (pagination.page - 1) * pagination.limit,
+          take: pagination.limit,
+          include: {
+            bill: {
+              include: {
+                user: { select: { id: true, name: true, email: true } },
+                business: { select: { id: true, name: true } },
+              },
+            },
+          },
+        }),
+        this.db.billVerification.count({ where }),
+      ]);
+      const visible =
+        actorRole === 'SUPER_ADMIN'
+          ? data
+          : data.map((v: any) => ({ ...v, bill: v.bill ? { ...v.bill, user: v.bill.user ? { id: v.bill.user.id, name: v.bill.user.name } : null } : null }));
+      return { data: visible, total, page: pagination.page, limit: pagination.limit };
+    }
+
     const result = await this.verificationRepo.findMany(
       tenantId,
       { escalationLevel: 'PLATFORM' },
