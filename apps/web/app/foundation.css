@@ -335,3 +335,44 @@
 .ui-scroll-x::-webkit-scrollbar {
   display: none;
 }
+
+/* Map pins (components/public/map/business-map.tsx): Airbnb-style pills, active one inverts. */
+.map-pin {
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  box-shadow: var(--shadow-2);
+  transition: transform 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+.map-pin:hover,
+.map-pin:focus-visible,
+.map-pin.is-active {
+  background: var(--foreground);
+  color: var(--background);
+  transform: scale(1.06);
+  outline: none;
+}
+.map-me {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: var(--info);
+  border: 3px solid var(--card);
+  box-shadow: 0 0 0 6px color-mix(in oklab, var(--info) 25%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .map-pin {
+    transition: none;
+  }
+  .map-pin.is-active {
+    transform: none;
+  }
+}

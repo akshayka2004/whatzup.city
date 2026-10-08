@@ -13,7 +13,7 @@ import { categoryLabel } from '@/lib/platform-offers';
 import { GridSkeleton } from '@/components/common/skeletons';
 import { EmptyState } from '@/components/common/empty-state';
 import { ActiveFilters, FilterBar, type FilterShow } from '@/components/public/search/filter-bar';
-import { ResultsGrid } from '@/components/public/search/results-grid';
+import { ResultsView, ViewToggle, type ResultsMode } from '@/components/public/search/results-view';
 import { SearchPageSkeleton } from '@/components/public/search/search-skeleton';
 import { useRecentSearches } from '@/components/public/search/use-recent-searches';
 import { useUrlState } from '@/components/public/search/use-url-state';
@@ -54,12 +54,14 @@ function matchesPlatformOffer(o: any, term: string): boolean {
 /* ── URL <-> state ──────────────────────────────────────────────────────
    q, open, rating, halal, fulfilment, sort, city. Everything else in the URL
    is left alone. The landing page links to /search?open=1. */
-type SearchState = Filters & { q: string };
+type SearchState = Filters & { q: string; view: ResultsMode };
 const URL_KEYS: (keyof Filters)[] = ['open', 'rating4', 'halal', 'fulfilment', 'sort', 'city'];
-const parseSearch = (sp: URLSearchParams): SearchState => ({ ...parseFilters(sp), q: sp.get('q') || '' });
+const parseSearch = (sp: URLSearchParams): SearchState => ({ ...parseFilters(sp), q: sp.get('q') || '', view: sp.get('view') === 'map' ? 'map' : 'list' });
 const applySearch = (sp: URLSearchParams, v: SearchState) => {
   if (v.q.trim()) sp.set('q', v.q.trim());
   else sp.delete('q');
+  if (v.view === 'map') sp.set('view', 'map');
+  else sp.delete('view');
   writeFilters(sp, v, URL_KEYS);
 };
 
@@ -441,9 +443,12 @@ function SearchContent() {
 
       <ActiveFilters className="mt-3" filters={state} onChange={setFilters} show={showChips} />
 
-      <p aria-live="polite" className="mb-3 mt-3 min-h-5 text-sm text-muted-foreground">
-        {loading ? 'Searching…' : failed ? '' : countLabel}
-      </p>
+      <div className="mb-3 mt-3 flex min-h-10 items-center justify-between gap-3">
+        <p aria-live="polite" className="text-sm text-muted-foreground">
+          {loading ? 'Searching…' : failed ? '' : countLabel}
+        </p>
+        <ViewToggle value={state.view} onChange={(view) => update({ view })} />
+      </div>
 
       {platformResults.length > 0 && (
         <div className="mb-6 space-y-2">
@@ -517,7 +522,7 @@ function SearchContent() {
         ) : null
       ) : (
         <div aria-busy={refreshing} className={refreshing ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
-          <ResultsGrid items={results} showLinks onLinkClick={rememberSearch} />
+          <ResultsView mode={state.view} items={results} showLinks onLinkClick={rememberSearch} mapClassName="lg:top-48 lg:h-[calc(100dvh-13rem)]" />
           {hasMore && (
             <div className="mt-6 flex justify-center">
               <Button

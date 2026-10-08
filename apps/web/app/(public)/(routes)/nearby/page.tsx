@@ -14,7 +14,7 @@ import { KERALA_CITIES, getViewerCity, setViewerCity } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { ActiveFilters, FilterBar, type FilterShow } from '@/components/public/search/filter-bar';
 import { LocationExplainer, type GeoState } from '@/components/public/search/location-explainer';
-import { ResultsGrid } from '@/components/public/search/results-grid';
+import { ResultsView, ViewToggle, type ResultsMode } from '@/components/public/search/results-view';
 import { distanceTo } from '@/components/public/search/geo';
 import {
   applyClientFilters, sortItems, toList, totalOf, DEFAULT_FILTERS, type Filters, type SortKey,
@@ -42,6 +42,18 @@ function NearbyContent() {
   const [radius, setRadius] = useState<number>(5);
   const [city, setCity] = useState('');
   const [cityReady, setCityReady] = useState(false);
+  const [resultsMode, setResultsMode] = useState<ResultsMode>('list');
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('view') === 'map') setResultsMode('map');
+  }, []);
+  const changeMode = (m: ResultsMode) => {
+    setResultsMode(m);
+    const u = new URL(window.location.href);
+    if (m === 'map') u.searchParams.set('view', 'map');
+    else u.searchParams.delete('view');
+    window.history.replaceState(window.history.state, '', u);
+  };
 
   const onFilters = useCallback((patch: Partial<Filters>) => setFilters((f) => ({ ...f, ...patch })), []);
 
@@ -247,13 +259,16 @@ function NearbyContent() {
       </div>
       <ActiveFilters className="mt-3" filters={view} onChange={onFilters} show={show} defaultSort={defaultSort} />
 
-      <p aria-live="polite" className="mb-3 mt-3 min-h-5 text-sm text-muted-foreground">
-        {loading || failed
-          ? ''
-          : mode === 'near'
-            ? `${results.length} ${results.length === 1 ? 'business' : 'businesses'} within ${radius} km`
-            : `${results.length}${hasMoreCity && filtersActive ? '+' : ''} ${results.length === 1 ? 'business' : 'businesses'}${city ? ` in ${city}` : ''}`}
-      </p>
+      <div className="mb-3 mt-3 flex min-h-10 items-center justify-between gap-3">
+        <p aria-live="polite" className="text-sm text-muted-foreground">
+          {loading || failed
+            ? ''
+            : mode === 'near'
+              ? `${results.length} ${results.length === 1 ? 'business' : 'businesses'} within ${radius} km`
+              : `${results.length}${hasMoreCity && filtersActive ? '+' : ''} ${results.length === 1 ? 'business' : 'businesses'}${city ? ` in ${city}` : ''}`}
+        </p>
+        <ViewToggle value={resultsMode} onChange={changeMode} />
+      </div>
 
       {loading ? (
         <GridSkeleton variant="business" count={6} />
@@ -301,7 +316,7 @@ function NearbyContent() {
         )
       ) : (
         <div aria-busy={refreshing} className={refreshing ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
-          <ResultsGrid items={results} distances={coords ? distances : undefined} />
+          <ResultsView mode={resultsMode} items={results} distances={coords ? distances : undefined} center={mode === 'near' ? coords : null} />
           {hasMoreCity && (
             <div className="mt-6 flex justify-center">
               <Button
