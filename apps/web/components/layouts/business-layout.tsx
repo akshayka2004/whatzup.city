@@ -2,9 +2,8 @@
 
 import React, { ReactNode, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { BusinessSidebar } from '../sidebar/business-sidebar';
-import { Header } from '../common/header';
-import { MobileNav } from '../navigation/mobile-nav';
+import { AppShell, AppShellSkeleton } from './app-shell';
+import { StatusScreen } from './status-screen';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/use-auth';
 import { useRequireAuth } from '@/hooks/use-require-auth';
@@ -17,16 +16,13 @@ import { BUSINESS_TOUR_STEPS, BUSINESS_MOBILE_TOUR_STEPS } from '@/lib/tour-step
 import { apiService } from '@/lib/services/api-service';
 import {
   AlertTriangle,
-  ShieldAlert,
   FileClock,
   XCircle,
   ArrowRight,
-  Loader2,
   Clock,
   CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 
 // Paths allowed even when trial has expired
 // /dashboard/outlets stays reachable so a brand owner stuck on one outlet can switch to another.
@@ -172,14 +168,8 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   const isTrialAllowedPath = TRIAL_ALLOWED_PATHS.some((p) => pathname.startsWith(p));
   const showTrialModal = trialExpired && !isTrialAllowedPath && verificationStatus === 'APPROVED';
 
-  if (loading) {
-    return (
-      <div className="flex h-dvh w-full items-center justify-center bg-background text-foreground">
-        <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
-        <span className="text-sm text-muted-foreground">Authenticating workspace…</span>
-      </div>
-    );
-  }
+
+  if (loading) return <AppShellSkeleton />;
 
   const activeEntityId = user?.entity?.id || user?.businessId || '';
   const activeEntityType = user?.entity?.type || 'BUSINESS';
@@ -192,85 +182,47 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
       verificationStatus === 'REJECTED'
         ? {
             icon: XCircle,
-            tone: 'rose',
-            title: 'Onboarding Rejected',
-            body:
-              'Your registration was not approved. Review the reason below, update your details, and resubmit for verification.',
-            cta: 'Resubmit Application',
+            tone: 'danger' as const,
+            title: 'Application not approved',
+            body: 'Review the reason below, update your details and resubmit for verification.',
+            cta: 'Resubmit application',
           }
         : verificationStatus === 'PENDING_VERIFICATION' || verificationStatus === 'UNDER_REVIEW'
-        ? {
-            icon: FileClock,
-            tone: 'cyan',
-            title: 'Verification Pending',
-            body:
-              'Your documents are under review by our moderators. You will get full access once approved. Please check back soon.',
-            cta: '',
-          }
-        : {
-            icon: AlertTriangle,
-            tone: 'amber',
-            title: 'Setup Incomplete',
-            body:
-              'Your workspace is still in draft. Complete the onboarding wizard to submit your business for verification.',
-            cta: 'Complete Setup',
-          };
-    const GateIcon = gate.icon;
-    const toneMap: Record<string, string> = {
-      rose: 'bg-rose-500/10 border-rose-500/20 text-rose-400',
-      cyan: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400',
-      amber: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
-    };
-    const btnMap: Record<string, string> = {
-      rose: 'bg-rose-600 hover:bg-rose-500',
-      amber: 'bg-amber-600 hover:bg-amber-500',
-      cyan: 'bg-cyan-600 hover:bg-cyan-500',
-    };
+          ? {
+              icon: FileClock,
+              tone: 'info' as const,
+              title: 'Verification in progress',
+              body: 'Our team is reviewing your documents. You will get full access as soon as they are approved.',
+              cta: '',
+            }
+          : {
+              icon: AlertTriangle,
+              tone: 'warning' as const,
+              title: 'Finish setting up',
+              body: 'Your workspace is still a draft. Complete onboarding to submit your business for verification.',
+              cta: 'Complete setup',
+            };
     return (
-      <div className="flex h-dvh w-full items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md p-8 rounded-3xl border border-white/10 bg-[#0d0d12]/90 shadow-2xl text-center space-y-6">
-          <div className={`w-20 h-20 rounded-full border flex items-center justify-center mx-auto ${toneMap[gate.tone]}`}>
-            <GateIcon className="h-8 w-8" />
+      <StatusScreen icon={gate.icon} tone={gate.tone} title={gate.title} body={gate.body}>
+        {verificationStatus === 'REJECTED' && (
+          <div className="rounded-2xl bg-danger-soft p-4 text-left">
+            <p className="text-overline text-danger-soft-foreground">Reason</p>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
+              {rejectionReason || 'Documents did not meet criteria.'}
+            </p>
           </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-extrabold text-foreground tracking-tight">{gate.title}</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">{gate.body}</p>
-          </div>
-
-          {verificationStatus === 'REJECTED' && (
-            <div className="text-left rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-rose-400 mb-1">
-                Reason for rejection
-              </p>
-              <p className="text-sm text-rose-200/90 whitespace-pre-wrap">
-                {rejectionReason || 'Documents did not meet criteria.'}
-              </p>
-            </div>
-          )}
-
-          {/* Brand owners can hop to another (live) outlet instead of being locked out. */}
-          <div className="flex justify-center empty:hidden">
-            <OutletSwitcher />
-          </div>
-
-          {gate.cta && (
-            <Button
-              onClick={() => router.push(onboardingPath)}
-              className={`w-full h-12 rounded-xl text-white font-bold text-base cursor-pointer ${btnMap[gate.tone]}`}
-            >
-              {gate.cta}
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          )}
-
-          <p className="text-[10px] text-muted-foreground/60">
-            Questions? Contact{' '}
-            <a href="mailto:support@lifeartgroup.in" className="text-primary underline">
-              support@lifeartgroup.in
-            </a>
-          </p>
-        </Card>
-      </div>
+        )}
+        {/* Brand owners can hop to another (live) outlet instead of being locked out. */}
+        <div className="flex justify-center empty:hidden">
+          <OutletSwitcher />
+        </div>
+        {gate.cta && (
+          <Button size="lg" className="w-full" onClick={() => router.push(onboardingPath)}>
+            {gate.cta}
+            <ArrowRight />
+          </Button>
+        )}
+      </StatusScreen>
     );
   }
 
@@ -279,113 +231,73 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
     ['MASTER_ADMIN', 'SUPER_ADMIN'].includes((user as any)?.rbacRole || '');
   const showTour = mounted && !isAdminViewer && !showTrialModal;
 
-  return (
-    <div className="flex h-dvh w-full bg-background relative overflow-hidden">
-      {showTour && (
-        isMobile
-          ? <OnboardingTour steps={BUSINESS_MOBILE_TOUR_STEPS} storageKey="onboarding_tour_business_mobile_v1" />
-          : <OnboardingTour steps={BUSINESS_TOUR_STEPS} storageKey="onboarding_tour_business_v1" />
-      )}
-      {/* Sidebar - Hidden on mobile, and on print (invoice download) */}
-      {!isMobile && <div className="print:hidden"><BusinessSidebar /></div>}
-
-      {/* Main content area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="print:hidden"><Header /></div>
-
-        {/* ── Trial expiry banner (ACTIVE trial, days remaining) ── */}
-        {trialStatus === 'ACTIVE' && trialDaysRemaining <= 5 && (
-          <div className="print:hidden w-full bg-amber-500/10 border-b border-amber-500/20 px-4 py-2.5 flex items-center justify-between text-xs text-amber-300 z-40 relative">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 shrink-0 text-amber-400 animate-pulse" />
-              <span>
-                <strong>Trial expires in {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''}.</strong>{' '}
-                Choose a subscription plan to keep uninterrupted access.
-              </span>
-            </div>
-            <Button
-              onClick={() => router.push('/dashboard/subscriptions')}
-              className="h-7 px-3 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer shrink-0"
-            >
-              View Plans <ArrowRight className="h-3 w-3" />
-            </Button>
-          </div>
-        )}
-
-        {/* Content */}
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto relative focus:outline-none">
-          {/* ── Trial expired: full-screen non-dismissible modal ─────────── */}
-          {showTrialModal && (
-            <div className="fixed inset-0 z-[200] bg-background/95 backdrop-blur-xl flex items-center justify-center p-4">
-              <div className="w-full max-w-md">
-                <Card className="p-8 rounded-3xl border border-white/10 bg-[#0d0d12]/90 shadow-2xl text-center space-y-6">
-                  {/* Icon */}
-                  <div className="w-20 h-20 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto">
-                    <CreditCard className="h-8 w-8 text-rose-400" />
-                  </div>
-
-                  {/* Message */}
-                  <div className="space-y-2">
-                    <h2 className="text-2xl font-extrabold text-foreground tracking-tight">
-                      Free Trial Expired
-                    </h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Your free trial has expired.
-                      <br />
-                      Please select a subscription plan to continue using the platform.
-                    </p>
-                  </div>
-
-                  <div className="flex justify-center empty:hidden">
-                    <OutletSwitcher />
-                  </div>
-
-                  {/* CTA */}
-                  <Button
-                    onClick={() => router.push('/dashboard/subscriptions')}
-                    className="w-full h-12 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold text-base cursor-pointer"
-                  >
-                    Choose Subscription
-                  </Button>
-
-                  <p className="text-[10px] text-muted-foreground/60">
-                    Questions? Contact{' '}
-                    <a href="mailto:support@lifeartgroup.in" className="text-primary underline">
-                      support@lifeartgroup.in
-                    </a>
-                  </p>
-                </Card>
-              </div>
-            </div>
-          )}
-
-          {/* Payment is mandatory: approved workspaces without an active paid
-              plan get a blocking prompt; those nearing expiry get a reminder.
-              Skipped while the trial modal is up so overlays never stack. */}
-          {!showTrialModal && verificationStatus === 'APPROVED' && <SubscriptionPaywall />}
-
-          {/* One dismissible nudge per session (menu photos > opening hours > brand account),
-              never stacked. Owners only — moderators and staff can't manage these. */}
-          <BusinessNudges
-            enabled={
-              !showTrialModal &&
-              verificationStatus === 'APPROVED' &&
-              !isAdminViewer &&
-              !['business_moderator', 'business_staff'].includes(user?.role || '') &&
-              (user?.rbacRole || '') !== 'BUSINESS_MODERATOR'
-            }
-          />
-
-          <div
-            className={`container mx-auto px-4 pt-6 ${isMobile ? 'pb-28' : 'pb-6'}`}
-          >
-            {children}
-          </div>
-        </main>
+  const trialBanner =
+    trialStatus === 'ACTIVE' && trialDaysRemaining <= 5 ? (
+      <div className="flex items-center justify-between gap-3 border-b border-warning/25 bg-warning-soft px-4 py-2.5 text-sm text-warning-soft-foreground sm:px-6 lg:px-8">
+        <div className="flex min-w-0 items-center gap-2">
+          <Clock className="size-4 shrink-0" aria-hidden />
+          <span className="min-w-0">
+            <strong className="font-semibold">
+              Trial ends in {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''}.
+            </strong>{' '}
+            <span className="hidden sm:inline">Choose a plan to keep uninterrupted access.</span>
+          </span>
+        </div>
+        <Button size="sm" variant="outline" className="shrink-0" onClick={() => router.push('/dashboard/subscriptions')}>
+          View plans <ArrowRight />
+        </Button>
       </div>
+    ) : null;
 
-      {/* Mobile navigation - Visible only on mobile, hidden on print */}
-      {isMobile && <div className="print:hidden"><MobileNav /></div>}
-    </div>
+  return (
+    <AppShell
+      area="business"
+      banner={trialBanner}
+      before={
+        showTour &&
+        (isMobile ? (
+          <OnboardingTour steps={BUSINESS_MOBILE_TOUR_STEPS} storageKey="onboarding_tour_business_mobile_v1" />
+        ) : (
+          <OnboardingTour steps={BUSINESS_TOUR_STEPS} storageKey="onboarding_tour_business_v1" />
+        ))
+      }
+    >
+      {/* Trial expired: non-dismissible, everything except the allowed paths is blocked. */}
+      {showTrialModal && (
+        <StatusScreen
+          overlay
+          icon={CreditCard}
+          tone="danger"
+          title="Your free trial has ended"
+          body="Choose a subscription plan to keep using your dashboard. Your listing and data are safe."
+        >
+          <div className="flex justify-center empty:hidden">
+            <OutletSwitcher />
+          </div>
+          <Button size="lg" className="w-full" onClick={() => router.push('/dashboard/subscriptions')}>
+            Choose a plan
+          </Button>
+        </StatusScreen>
+      )}
+
+      {/* Payment is mandatory: approved workspaces without an active paid
+          plan get a blocking prompt; those nearing expiry get a reminder.
+          Skipped while the trial modal is up so overlays never stack. */}
+      {!showTrialModal && verificationStatus === 'APPROVED' && <SubscriptionPaywall />}
+
+      {/* One dismissible nudge per session (menu photos > opening hours > brand account),
+          never stacked. Owners only — moderators and staff can't manage these. */}
+      <BusinessNudges
+        enabled={
+          !showTrialModal &&
+          verificationStatus === 'APPROVED' &&
+          !isAdminViewer &&
+          !['business_moderator', 'business_staff'].includes(user?.role || '') &&
+          (user?.rbacRole || '') !== 'BUSINESS_MODERATOR'
+        }
+      />
+
+      {children}
+    </AppShell>
   );
 }

@@ -1,307 +1,286 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { BrandLogo } from '@/components/common/brand-logo';
-import { useRouter } from 'next/navigation';
-import {
-  Moon,
-  Sun,
-  Search,
-  Bell,
-  Settings,
-  LogIn,
-  Sparkles,
-  CheckCheck,
-  BellOff,
-} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useTheme } from 'next-themes';
+import { Bell, BellOff, CheckCheck, CircleUserRound, LogIn, LogOut, Search } from 'lucide-react';
+import { BrandLogo } from '@/components/common/brand-logo';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { OutletSwitcher } from '@/components/business/outlet-switcher';
-import { LanguageSwitcher } from '@/components/common/language-switcher';
 import { apiService } from '@/lib/services/api-service';
-import Link from 'next/link';
+import { LOCALES } from '@/lib/i18n';
+import { useI18n } from '@/lib/i18n/provider';
+import { getRoleLabel } from '@/lib/rbac';
+import { cn } from '@/lib/utils';
+
+type Notif = { id: string; title?: string; type?: string; body?: string; message?: string; isRead?: boolean; createdAt?: string };
+
+const initials = (name: string) =>
+  name
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+function profileHref(role?: string) {
+  switch (role) {
+    case 'business':
+      return '/dashboard/settings';
+    case 'admin':
+      return '/admin/profile';
+    case 'super-admin':
+      return '/super-admin/profile';
+    case 'government':
+      return '/government/dashboard';
+    default:
+      return '/profile';
+  }
+}
 
 export function Header() {
-  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
-  const router = useRouter();
+  const { locale, setLocale, t } = useI18n();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const openPalette = () =>
-    typeof window !== 'undefined' && window.dispatchEvent(new Event('open-command-palette'));
+  const openPalette = () => window.dispatchEvent(new Event('open-command-palette'));
 
   // ── Notifications ─────────────────────────────────────────────
-  const [notifs, setNotifs] = useState<any[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifs, setNotifs] = useState<Notif[]>([]);
+  const [unread, setUnread] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
-  const notifFetched = useRef(false);
+  const fetched = useRef(false);
 
-  // Fetch unread count on mount (authenticated users only)
   useEffect(() => {
     if (!user) return;
-    apiService.get<{ unreadCount: number }>('/v1/notifications/unread-count')
-      .then((r) => { if (r.data) setUnreadCount(r.data.unreadCount); })
+    apiService
+      .get<{ unreadCount: number }>('/v1/notifications/unread-count')
+      .then((r) => r.data && setUnread(r.data.unreadCount))
       .catch(() => {});
   }, [user]);
 
-  const openNotifDropdown = async () => {
+  const openNotifs = async () => {
     setNotifOpen(true);
-    if (notifFetched.current) return;
-    notifFetched.current = true;
+    if (fetched.current) return;
+    fetched.current = true;
     const r = await apiService.get<any>('/v1/notifications?limit=20');
-    if (r.data) {
-      const list = Array.isArray(r.data) ? r.data : r.data?.data ?? r.data?.items ?? [];
-      setNotifs(list);
-    }
+    if (r.data) setNotifs(Array.isArray(r.data) ? r.data : (r.data?.data ?? r.data?.items ?? []));
   };
 
   const markAllRead = async () => {
     await apiService.patch('/v1/notifications/mark-all-read', {});
-    setUnreadCount(0);
+    setUnread(0);
     setNotifs((prev) => prev.map((n) => ({ ...n, isRead: true })));
   };
 
   const markOneRead = async (id: string) => {
     await apiService.patch(`/v1/notifications/${id}/read`, {});
-    setNotifs((prev) => prev.map((n) => n.id === id ? { ...n, isRead: true } : n));
-    setUnreadCount((c) => Math.max(0, c - 1));
+    setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
+    setUnread((c) => Math.max(0, c - 1));
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-  };
-
-  const roleColors: Record<string, string> = {
-    user: 'bg-blue-600/20 text-blue-400 border-blue-500/20',
-    business: 'bg-purple-600/20 text-purple-400 border-purple-500/20',
-    admin: 'bg-amber-600/20 text-amber-400 border-amber-500/20',
-    'super-admin': 'bg-rose-600/20 text-rose-400 border-rose-500/20',
-    government: 'bg-emerald-600/20 text-emerald-400 border-emerald-500/20',
-  };
-
-  const roleLabels: Record<string, string> = {
-    user: 'Public User',
-    business: 'Business Owner',
-    admin: 'Admin Moderator',
-    'super-admin': 'Super Admin',
-    government: 'Government',
-  };
-
-  // Profile destination based on role
-  const getProfileHref = () => {
-    if (!user) return '/login';
-    switch (user.role) {
-      case 'business': return '/dashboard/settings';
-      case 'admin': return '/admin';
-      case 'super-admin': return '/super-admin/tenants';
-      case 'government': return '/government/dashboard';
-      default: return '/profile';
-    }
-  };
-  const profileHref = getProfileHref();
+  const roleLabel = user ? getRoleLabel(user.rbacRole || user.role) : '';
 
   return (
-    <header className="border-b border-border bg-card px-4 py-3 md:px-6 md:py-4 shadow-sm flex items-center justify-between h-16">
-      {/* Mobile Logo Fallback */}
-      <div className="flex items-center gap-2 md:hidden">
-        <Link href="/">
-          <BrandLogo alt="Whtzup.city Logo" className="h-8 w-auto object-contain cursor-pointer" />
-        </Link>
-      </div>
+    <header className="flex h-16 items-center justify-between gap-3 border-b border-border/80 bg-card/85 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-card/70 sm:px-6 lg:px-8">
+      <Link href="/" className="flex items-center md:hidden" aria-label="Whtzup.city home">
+        <BrandLogo alt="Whtzup.city" className="h-8 w-auto object-contain" />
+      </Link>
 
-      {/* Desktop command-bar trigger — opens the ⌘K palette (Spotlight) */}
-      <div className="hidden md:flex items-center gap-4 flex-1 max-w-lg">
-        <button
-          type="button"
-          onClick={openPalette}
-          aria-label="Search businesses, offers, events, and services"
-          className="group flex h-11 w-full items-center gap-2.5 rounded-xl border border-border bg-background px-3.5 text-left text-sm text-muted-foreground shadow-sm transition-colors hover:border-primary/40 hover:text-foreground cursor-pointer"
-        >
-          <Search className="h-4 w-4 shrink-0 transition-colors group-hover:text-primary" />
-          <span className="flex-1">Search everything…</span>
-          <kbd className="hidden items-center gap-0.5 rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] font-semibold lg:inline-flex">
-            Ctrl K
-          </kbd>
-        </button>
-      </div>
+      {/* ⌘K command palette trigger */}
+      <button
+        type="button"
+        onClick={openPalette}
+        aria-label="Search businesses, offers, events and services"
+        className="group hidden h-10 w-full max-w-md items-center gap-2.5 rounded-full border border-border bg-background/70 px-4 text-left text-sm text-muted-foreground transition-[border-color,background-color] hover:border-border-strong hover:bg-background md:flex"
+      >
+        <Search className="size-4 shrink-0 transition-colors group-hover:text-foreground" aria-hidden />
+        <span className="flex-1 truncate">Search everything…</span>
+        <kbd className="hidden rounded-md border border-border bg-card px-1.5 py-0.5 font-mono text-caption text-muted-foreground lg:inline">
+          Ctrl K
+        </kbd>
+      </button>
 
-      <div className="flex items-center gap-2 md:gap-4">
-        {/* Mobile search trigger */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={openPalette}
-          aria-label="Search"
-          className="md:hidden rounded-lg h-11 w-11 flex items-center justify-center"
-        >
-          <Search className="h-5 w-5" />
+      <div className="flex items-center gap-1 sm:gap-1.5">
+        <Button variant="ghost" size="icon" onClick={openPalette} aria-label="Search" className="md:hidden">
+          <Search className="size-5" />
         </Button>
 
-        {/* Brand owners switch between their outlets here (renders nothing for single businesses) */}
         {user?.role === 'business' && (
           <>
-            <div className="hidden sm:block"><OutletSwitcher /></div>
-            <div className="sm:hidden"><OutletSwitcher compact /></div>
+            <div className="hidden sm:block">
+              <OutletSwitcher />
+            </div>
+            <div className="sm:hidden">
+              <OutletSwitcher compact />
+            </div>
           </>
         )}
 
-        {/* Active Role Indicator */}
-        {user && (
-          <div
-            className={`hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold ${roleColors[user.role]}`}
-          >
-            <Sparkles className="h-3 w-3" />
-            {roleLabels[user.role]}
-          </div>
-        )}
-
-        <LanguageSwitcher />
-
-        {/* Theme toggle — mounted guard prevents hydration mismatch */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-          className="rounded-lg h-11 w-11 md:h-9 md:w-9 flex items-center justify-center cursor-pointer"
-          suppressHydrationWarning
-        >
-          {mounted && resolvedTheme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        </Button>
-
         {/* Notifications */}
         {user ? (
-          <DropdownMenu open={notifOpen} onOpenChange={(open) => { if (open) openNotifDropdown(); else setNotifOpen(false); }}>
+          <DropdownMenu open={notifOpen} onOpenChange={(o) => (o ? openNotifs() : setNotifOpen(false))}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative rounded-lg h-11 w-11 md:h-9 md:w-9 flex items-center justify-center cursor-pointer">
-                <Bell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 md:top-0.5 md:right-0.5 h-4 w-4 rounded-full bg-rose-500 text-[9px] font-bold text-white flex items-center justify-center leading-none">
-                    {unreadCount > 9 ? '9+' : unreadCount}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                aria-label={unread > 0 ? `Notifications, ${unread} unread` : 'Notifications'}
+              >
+                <Bell className="size-5" />
+                {unread > 0 && (
+                  <span className="absolute right-1 top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-caption font-bold leading-none text-primary-foreground ring-2 ring-card">
+                    {unread > 9 ? '9+' : unread}
                   </span>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 rounded-xl border-border bg-card/95 backdrop-blur-xl p-0 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <DropdownMenuLabel className="font-semibold text-sm text-foreground p-0">
-                  Notifications {unreadCount > 0 && <span className="ml-1.5 text-xs text-rose-400">({unreadCount} new)</span>}
+            <DropdownMenuContent align="end" className="w-[min(22rem,calc(100vw-2rem))] overflow-hidden p-0">
+              <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                <DropdownMenuLabel className="p-0 text-sm font-semibold">
+                  Notifications
+                  {unread > 0 && <span className="ml-1.5 text-caption font-medium text-brand-soft-foreground">{unread} new</span>}
                 </DropdownMenuLabel>
-                {unreadCount > 0 && (
-                  <button onClick={markAllRead} className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer transition-colors">
-                    <CheckCheck className="h-3 w-3" /> Mark all read
+                {unread > 0 && (
+                  <button
+                    type="button"
+                    onClick={markAllRead}
+                    className="flex items-center gap-1 rounded-md px-1.5 py-1 text-caption text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
+                    <CheckCheck className="size-3.5" /> Mark all read
                   </button>
                 )}
               </div>
-              <div className="max-h-80 overflow-y-auto">
+              <div className="max-h-96 overflow-y-auto">
                 {notifs.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-10 text-muted-foreground gap-2">
-                    <BellOff className="h-7 w-7 opacity-30" />
-                    <p className="text-xs">No notifications yet</p>
+                  <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
+                    <BellOff className="size-7 opacity-40" />
+                    <p className="text-caption">You are all caught up</p>
                   </div>
                 ) : (
                   notifs.map((n) => (
                     <button
                       key={n.id}
-                      onClick={() => { if (!n.isRead) markOneRead(n.id); }}
-                      className={`w-full text-left px-4 py-3 border-b border-border/50 last:border-0 hover:bg-muted/40 transition-colors cursor-pointer ${n.isRead ? 'opacity-60' : ''}`}
+                      type="button"
+                      onClick={() => !n.isRead && markOneRead(n.id)}
+                      className={cn(
+                        'flex w-full items-start gap-2.5 border-b border-border/60 px-4 py-3 text-left transition-colors last:border-0 hover:bg-secondary/60',
+                        n.isRead && 'opacity-60',
+                      )}
                     >
-                      <div className="flex items-start gap-2">
-                        {!n.isRead && <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
-                        <div className={`flex-1 ${n.isRead ? 'ml-3.5' : ''}`}>
-                          <p className="text-xs font-semibold text-foreground leading-snug">{n.title || n.type || 'Notification'}</p>
-                          {(n.body || n.message) && (
-                            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2 break-words">{n.body || n.message}</p>
-                          )}
-                          {n.createdAt && (
-                            <p className="text-[10px] text-muted-foreground/50 mt-1">
-                              {new Date(n.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                      <span className={cn('mt-1.5 size-2 shrink-0 rounded-full', n.isRead ? 'bg-transparent' : 'bg-primary')} aria-hidden />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-medium leading-snug text-foreground">{n.title || n.type || 'Notification'}</span>
+                        {(n.body || n.message) && (
+                          <span className="mt-0.5 line-clamp-2 block break-words text-caption text-muted-foreground">{n.body || n.message}</span>
+                        )}
+                        {n.createdAt && (
+                          <span className="mt-1 block text-caption text-subtle-foreground">
+                            {new Date(n.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
+                          </span>
+                        )}
+                      </span>
                     </button>
                   ))
                 )}
               </div>
+              <Link href="/notifications" className="block border-t border-border px-4 py-2.5 text-center text-sm font-medium text-primary hover:bg-secondary/60">
+                View all
+              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
-          <Button variant="ghost" size="icon" className="rounded-lg h-11 w-11 md:h-9 md:w-9 flex items-center justify-center cursor-pointer" onClick={() => router.push('/login')}>
-            <Bell className="h-5 w-5" />
-          </Button>
-        )}
+        ) : null}
 
-        {/* User menu */}
+        {/* Account */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-lg h-11 w-11 md:h-9 md:w-9 flex items-center justify-center cursor-pointer">
-              <Settings className="h-5 w-5" />
-            </Button>
+            {user ? (
+              <button
+                type="button"
+                aria-label="Account menu"
+                className="ml-1 flex size-9 items-center justify-center rounded-full bg-brand-soft text-sm font-semibold text-brand-soft-foreground ring-1 ring-primary/15 transition-shadow hover:ring-primary/40"
+              >
+                {initials(user.name || user.email || '?')}
+              </button>
+            ) : (
+              <Button variant="ghost" size="icon" aria-label="Account menu">
+                <CircleUserRound className="size-5" />
+              </Button>
+            )}
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-56 rounded-xl border-border bg-card/95 backdrop-blur-xl"
-          >
-            <DropdownMenuLabel className="font-semibold text-xs text-muted-foreground">
-              Account Actions
-            </DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-64">
             {user ? (
               <>
-                <Link href={profileHref}>
-                  <DropdownMenuItem className="cursor-pointer rounded-lg">
-                    Profile Settings
-                  </DropdownMenuItem>
-                </Link>
-                <DropdownMenuItem
-                  onClick={() => signOut()}
-                  className="text-destructive cursor-pointer rounded-lg"
-                >
-                  Sign Out
+                <div className="px-2.5 py-2">
+                  <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
+                  <p className="truncate text-caption text-muted-foreground">{user.email}</p>
+                  {roleLabel && (
+                    <span className="mt-1.5 inline-flex rounded-full bg-brand-soft px-2 py-0.5 text-caption font-medium text-brand-soft-foreground">
+                      {roleLabel}
+                    </span>
+                  )}
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href={profileHref(user.role)}>Profile &amp; settings</Link>
                 </DropdownMenuItem>
               </>
             ) : (
-              <Link href="/login">
-                <DropdownMenuItem className="text-primary font-semibold cursor-pointer rounded-lg gap-2">
-                  <LogIn className="h-4 w-4" />
-                  Sign In
+              <DropdownMenuItem asChild>
+                <Link href="/login" className="font-semibold text-primary">
+                  <LogIn /> Sign in
+                </Link>
+              </DropdownMenuItem>
+            )}
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-overline text-subtle-foreground">Theme</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={mounted ? (theme ?? 'light') : 'light'} onValueChange={setTheme}>
+              <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="system">Match device</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-overline text-subtle-foreground">{t('common.language')}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={locale} onValueChange={(v) => setLocale(v as typeof locale)}>
+              {LOCALES.map((l) => (
+                <DropdownMenuRadioItem key={l.code} value={l.code}>
+                  <span lang={l.code}>{l.native}</span>
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+
+            {user && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onSelect={() => signOut()}>
+                  <LogOut /> Sign out
                 </DropdownMenuItem>
-              </Link>
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* User avatar */}
-        {user ? (
-          <Link href={profileHref}>
-            <div className="h-10 w-10 md:h-9 md:w-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-md cursor-pointer hover:opacity-80 transition-opacity">
-              {getInitials(user.name)}
-            </div>
-          </Link>
-        ) : (
-          <Link href="/login">
-            <Button
-              size="sm"
-              className="gap-2 font-semibold shadow-sm h-10 px-4 md:h-9 md:px-3"
-            >
-              <LogIn className="h-4 w-4" />
-              Sign In
-            </Button>
-          </Link>
+        {!user && (
+          <Button asChild size="sm" className="ml-1">
+            <Link href="/login">
+              <LogIn /> Sign in
+            </Link>
+          </Button>
         )}
       </div>
     </header>

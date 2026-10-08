@@ -1,42 +1,15 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { SuperAdminSidebar } from '../sidebar/super-admin-sidebar';
-import { Header } from '../common/header';
-import { MobileNav } from '../navigation/mobile-nav';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useRequireAuth } from '@/hooks/use-require-auth';
-import { Loader2 } from 'lucide-react';
+import { AppShell, AppShellSkeleton } from './app-shell';
 
-interface SuperAdminLayoutProps {
-  children: ReactNode;
-}
-
-export function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
-  const isMobile = useIsMobile();
+export function SuperAdminLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useRequireAuth(['super-admin', 'SUPER_ADMIN']);
-
-  if (loading || !user) {
-    return (
-      <div className="flex h-dvh w-full items-center justify-center bg-background text-foreground">
-        <Loader2 className="h-8 w-8 text-primary animate-spin mr-2" />
-        <span className="text-sm text-muted-foreground">Authenticating…</span>
-      </div>
-    );
-  }
-
+  if (loading || !user) return <AppShellSkeleton />;
   return (
-    <div className="flex h-dvh w-full bg-background">
-      {!isMobile && <SuperAdminSidebar />}
-
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto focus:outline-none">
-          <div className={`container mx-auto px-4 pt-6 ${isMobile ? 'pb-28' : 'pb-6'}`}>{children}</div>
-        </main>
-      </div>
-
-      {isMobile && <MobileNav />}
-    </div>
+    <AppShell area="super-admin" wide>
+      {children}
+    </AppShell>
   );
 }

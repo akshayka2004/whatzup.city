@@ -1,352 +1,147 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { LogOut, Menu } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { useOwnerBusiness } from '@/hooks/use-owner-business';
-import { MOVIES_ENABLED } from '@/lib/feature-flags';
-import {
-  Home,
-  Search,
-  MapPin,
-  Heart,
-  Menu,
-  BarChart3,
-  TrendingUp,
-  Tag,
-  Package,
-  CheckCircle,
-  AlertTriangle,
-  UserPlus,
-  Users,
-  Activity,
-  LogOut,
-  Settings,
-  Folder,
-  Share2,
-  Lock,
-  Flag,
-  Database,
-  Bell,
-  FileText,
-  Star,
-  GitBranch,
-  Image as ImageIcon,
-  UserCog,
-  CreditCard,
-  LifeBuoy,
-  CalendarDays,
-  Clapperboard,
-  Building2,
-  Megaphone,
-  Grid,
-  Receipt,
-  BadgeIndianRupee,
-  Gift,
-  Percent,
-  Disc3,
-  Network,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useNavArea, useNavSpec } from '@/hooks/use-nav';
 import { useI18n } from '@/lib/i18n/provider';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+import { allItems, isItemActive, type NavArea } from '@/lib/nav/config';
+import { cn } from '@/lib/utils';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
-// ── NAVIGATION TYPES & CONFIGS ────────────────────────────────────────
+const SHEET_COPY: Record<NavArea, string> = {
+  public: 'Browse your city and manage your account',
+  business: 'Run your business',
+  staff: 'Platform data-entry workspace',
+  admin: 'Approvals, payments and moderation',
+  'super-admin': 'Platform control',
+};
 
-interface NavItem {
-  icon: React.ElementType;
-  label: string;
-  href: string;
-  tour?: string;
-}
-
-export function MobileNav() {
+/**
+ * Phone navigation: four primary tabs + "More". The sheet lists every other item from the
+ * same nav config as the desktop sidebar, grouped the same way, so the two can never drift.
+ */
+export function MobileNav({ area: layoutArea }: { area?: NavArea }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, signOut } = useAuth();
   const { t, tl } = useI18n();
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeRole, setActiveRole] = useState<string>('USER');
+  const [open, setOpen] = useState(false);
+  const area = useNavArea(layoutArea);
+  const spec = useNavSpec(area);
 
-  useEffect(() => {
-    if (user) {
-      setActiveRole(user.rbacRole || user.role?.toUpperCase() || 'USER');
-    } else {
-      setActiveRole('USER');
-    }
-  }, [user]);
+  const items = allItems(spec);
+  const tabs = spec.mobileTabs.map((href) => items.find((i) => i.href === href)).filter(Boolean) as typeof items;
+  const tabHrefs = new Set(spec.mobileTabs);
+  const moreActive = !tabs.some((tab) => isItemActive(pathname, tab)) && items.some((i) => isItemActive(pathname, i));
 
-  // Determine Routing Context. A super-admin following an /admin/* link
-  // (Payments, Approvals, etc.) still gets the super-admin menu — those
-  // pages render AdminLayout, but the viewer's own role decides their nav,
-  // not the URL prefix (otherwise their menu options appear to vanish).
-  const isDashboard = pathname.startsWith('/dashboard');
-  const isStaff = pathname.startsWith('/staff');
-  const isSuperAdminRole = activeRole === 'SUPER_ADMIN';
-  const isSuperAdmin = pathname.startsWith('/super-admin') || (pathname.startsWith('/admin') && isSuperAdminRole);
-  const isAdmin = pathname.startsWith('/admin') && !isSuperAdminRole;
-  // Menu Photos exist for food businesses only, so the drawer needs the category.
-  const { isFood, brandId } = useOwnerBusiness(isDashboard && activeRole !== 'BUSINESS_MODERATOR');
-
-  // Helper to check if a tab is active
-  const isActive = (href: string) => {
-    if (href === '/') return pathname === '/';
-    return pathname.startsWith(href);
-  };
-
-  // Bottom Tabs Generation. Primary tabs are quick-access; the Menu drawer
-  // lists EVERY remaining item from the matching desktop sidebar so nothing is
-  // unreachable on mobile. Kept in sync with the *-sidebar.tsx menus.
-  const isModerator = activeRole === 'BUSINESS_MODERATOR';
-  let primaryTabs: NavItem[] = [];
-  let drawerItems: { label: string; href: string; icon: React.ElementType; action?: () => void }[] = [];
-
-  if (isDashboard) {
-    if (isModerator) {
-      // BUSINESS_MODERATOR — restricted menu (mirrors MODERATOR_MENU)
-      primaryTabs = [
-        { label: 'Overview', href: '/dashboard', icon: Home },
-        { label: 'Bill Queue', href: '/dashboard/moderation', icon: CheckCircle },
-        { label: 'Offers', href: '/dashboard/offers', icon: Tag },
-        { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
-      ];
-      drawerItems = [
-        { label: 'Customer Reports', href: '/dashboard/customers', icon: Users },
-        { label: 'Profile', href: '/profile', icon: UserCog },
-      ];
-    } else {
-      // BUSINESS_OWNER / other business roles (mirrors OWNER_MENU)
-      primaryTabs = [
-        { label: 'Overview', href: '/dashboard', icon: Home, tour: 'mnav-overview' },
-        { label: 'Analytics', href: '/dashboard/analytics', icon: TrendingUp },
-        { label: 'Offers', href: '/dashboard/offers', icon: Tag, tour: 'mnav-offers' },
-        { label: 'Products', href: '/dashboard/products', icon: Package },
-      ];
-      drawerItems = [
-        { label: 'Bill Moderation', href: '/dashboard/moderation', icon: CheckCircle },
-        { label: 'Customers', href: '/dashboard/customers', icon: Users },
-        { label: 'Campaigns', href: '/dashboard/campaigns', icon: Megaphone },
-        { label: 'Discounts', href: '/dashboard/discounts', icon: Percent },
-        { label: 'Events', href: '/dashboard/events', icon: CalendarDays },
-        { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
-        ...(brandId ? [] : [{ label: 'Branches', href: '/dashboard/branches', icon: GitBranch }]),
-        { label: 'Outlets', href: '/dashboard/outlets', icon: Network },
-        ...(isFood ? [{ label: 'Menu Photos', href: '/dashboard/menu', icon: ImageIcon }] : []),
-        { label: 'Team', href: '/dashboard/team', icon: UserCog },
-        { label: 'Subscriptions', href: '/dashboard/subscriptions', icon: CreditCard },
-        { label: 'Support', href: '/dashboard/support', icon: LifeBuoy },
-        { label: 'Report Issue', href: '/report', icon: Flag },
-        { label: 'Settings', href: '/dashboard/settings', icon: Settings },
-        { label: 'Profile', href: '/profile', icon: UserCog },
-      ];
-    }
-  } else if (isAdmin) {
-    // mirrors admin-sidebar menuItems
-    primaryTabs = [
-      { label: 'Dashboard', href: '/admin', icon: BarChart3 },
-      { label: 'Registrations', href: '/admin/registrations', icon: UserPlus },
-      { label: 'Approvals', href: '/admin/approvals', icon: CheckCircle },
-      { label: 'Reports', href: '/admin/reports', icon: AlertTriangle },
-    ];
-
-    drawerItems = [
-      { label: 'Payments', href: '/admin/payments', icon: Receipt },
-      { label: 'Payment Approvals', href: '/admin/payment-approvals', icon: BadgeIndianRupee },
-      { label: 'Notices', href: '/admin/notices', icon: Bell },
-      { label: 'Audit Logs', href: '/admin/audit', icon: FileText },
-      { label: 'Categories', href: '/admin/categories', icon: Building2 },
-      { label: 'Platform Offers', href: '/admin/platform-offers', icon: Tag },
-      { label: 'Discounts', href: '/admin/discounts', icon: Percent },
-      { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
-      { label: 'My Profile', href: '/admin/profile', icon: UserCog },
-      { label: 'Settings', href: '/admin/settings', icon: Settings },
-    ];
-  } else if (isSuperAdmin) {
-    // mirrors super-admin-sidebar menuItems
-    primaryTabs = [
-      { label: 'Tenants', href: '/super-admin', icon: Users },
-      { label: 'Users', href: '/super-admin/registrations', icon: UserPlus },
-      { label: 'Offers', href: '/super-admin/offers', icon: Tag },
-      { label: 'Health', href: '/super-admin/health', icon: Activity },
-    ];
-
-    drawerItems = [
-      { label: 'Manage Users', href: '/super-admin/users', icon: UserCog },
-      { label: 'Businesses', href: '/super-admin/businesses', icon: Building2 },
-      { label: 'Brand accounts', href: '/super-admin/brands', icon: Network },
-      { label: 'Approvals', href: '/super-admin/approvals', icon: CheckCircle },
-      { label: 'Payments', href: '/admin/payments', icon: Receipt },
-      { label: 'Payment Approvals', href: '/admin/payment-approvals', icon: BadgeIndianRupee },
-      { label: 'Platform Offers', href: '/admin/platform-offers', icon: Tag },
-      { label: 'Platform Vouchers', href: '/super-admin/platform-vouchers', icon: Gift },
-      { label: 'Reports', href: '/super-admin/reports', icon: AlertTriangle },
-      { label: 'Notices', href: '/super-admin/notices', icon: Bell },
-      { label: 'Audit Logs', href: '/super-admin/audit', icon: FileText },
-      { label: 'Categories', href: '/super-admin/categories', icon: Folder },
-      { label: 'Subscriptions', href: '/super-admin/subscriptions', icon: CreditCard },
-      { label: 'Referrals', href: '/super-admin/referrals', icon: Share2 },
-      { label: 'Events', href: '/super-admin/events', icon: CalendarDays },
-      ...(MOVIES_ENABLED ? [{ label: 'Movies', href: '/super-admin/movies', icon: Clapperboard }] : []),
-      { label: 'Security', href: '/super-admin/security', icon: Lock },
-      { label: 'Admins', href: '/super-admin/roles', icon: UserCog },
-      { label: 'Feature Flags', href: '/super-admin/flags', icon: Flag },
-      { label: 'Infrastructure', href: '/super-admin/infrastructure', icon: Database },
-      { label: 'My Profile', href: '/super-admin/profile', icon: UserCog },
-      { label: 'Settings', href: '/super-admin/settings', icon: Settings },
-    ];
-  } else if (isStaff) {
-    // Platform staff (mirrors staff-sidebar.tsx)
-    primaryTabs = [
-      { label: 'Overview', href: '/staff', icon: Home },
-      { label: 'Events', href: '/staff/events', icon: CalendarDays },
-      ...(MOVIES_ENABLED ? [{ label: 'Movies', href: '/staff/movies', icon: Clapperboard }] : []),
-      { label: 'Offers', href: '/staff/platform-offers', icon: Tag },
-    ];
-    drawerItems = [
-      { label: 'Announcements', href: '/staff/announcements', icon: Bell },
-      { label: 'Businesses', href: '/staff/businesses', icon: Building2 },
-    ];
-  } else {
-    // Public User context (mirrors public-sidebar menuItems)
-    primaryTabs = [
-      { label: 'Home', href: '/', icon: Home, tour: 'mnav-home' },
-      { label: 'Search', href: '/search', icon: Search, tour: 'mnav-search' },
-      { label: 'Map', href: '/nearby', icon: MapPin },
-      { label: 'Saved', href: '/favorites', icon: Heart, tour: 'mnav-saved' },
-    ];
-
-    drawerItems = [
-      { label: 'Browse', href: '/category', icon: Grid },
-      { label: 'Offers', href: '/offers', icon: Tag },
-      { label: 'Spin it', href: '/spin-it', icon: Disc3 },
-      { label: 'Events', href: '/events', icon: CalendarDays },
-      ...(MOVIES_ENABLED ? [{ label: 'Movies', href: '/movies', icon: Clapperboard }] : []),
-      { label: 'Announcements', href: '/government', icon: FileText },
-      { label: 'Notifications', href: '/notifications', icon: Bell },
-      { label: 'Report Issue', href: '/report', icon: Flag },
-      ...(user
-        ? [
-            { label: 'Profile Settings', href: '/profile', icon: Settings },
-            { label: 'Help & Support', href: '/support', icon: LifeBuoy },
-          ]
-        : [
-            { label: 'Sign In / Register', href: '/login', icon: UserPlus },
-            { label: 'Help & Support', href: '/support', icon: LifeBuoy },
-          ]),
-    ];
-  }
-
-  const handleDrawerItemClick = (href: string, action?: () => void) => {
-    setIsOpen(false);
-    if (action) {
-      action();
-    } else {
-      router.push(href);
-    }
-  };
-
-  const handleSignOutClick = async () => {
-    setIsOpen(false);
-    await signOut();
-  };
+  const sheetGroups = [
+    ...spec.groups.map((g) => ({ title: g.title, items: g.items.filter((i) => !tabHrefs.has(i.href)) })),
+    { title: undefined, items: spec.footer.filter((i) => !tabHrefs.has(i.href)) },
+  ].filter((g) => g.items.length);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/90 backdrop-blur-md px-2 py-1 flex items-center justify-around z-40 h-16 pb-safe">
-      {primaryTabs.map((item) => {
+    <nav
+      aria-label="Primary"
+      className="fixed inset-x-0 bottom-0 z-[var(--z-nav)] flex h-16 items-stretch border-t border-border/80 bg-card/92 px-1.5 pb-safe backdrop-blur-md supports-[backdrop-filter]:bg-card/80"
+    >
+      {tabs.map((item) => {
         const Icon = item.icon;
-        const active = isActive(item.href);
+        const active = isItemActive(pathname, item);
+        const label = tl(spec.mobileLabels?.[item.href] ?? item.label);
         return (
           <Link
-            key={item.label}
+            key={item.href}
             href={item.href}
-            className="flex-1"
-            data-tour={item.tour}
+            data-tour={item.mobileTour}
             aria-current={active ? 'page' : undefined}
+            className="flex flex-1 flex-col items-center justify-center gap-0.5 active:scale-95 motion-reduce:active:scale-100"
           >
             <span
-              className={`flex w-full flex-col items-center justify-center gap-0.5 rounded-xl py-1 text-[10px] font-medium transition-colors duration-150 active:scale-90 motion-reduce:active:scale-100 ${
-                active ? 'text-primary' : 'text-muted-foreground hover:text-foreground active:text-primary'
-              }`}
+              className={cn(
+                'flex h-7 w-14 items-center justify-center rounded-full transition-[background-color] duration-200',
+                active ? 'bg-brand-soft text-brand-soft-foreground' : 'text-muted-foreground',
+              )}
             >
-              {/* Icon rides on a soft pill that grows in when the tab becomes active */}
-              <span
-                className={`flex h-7 w-12 items-center justify-center rounded-full transition-[background-color,transform] duration-300 ease-out ${
-                  active ? 'bg-primary/12 scale-100' : 'bg-transparent scale-90'
-                }`}
-              >
-                <Icon className={`h-5 w-5 shrink-0 transition-transform duration-300 ${active ? 'scale-110' : ''}`} />
-              </span>
-              <span className={active ? 'font-semibold' : ''}>{tl(item.label)}</span>
+              <Icon className="size-5" aria-hidden />
+            </span>
+            <span className={cn('max-w-full truncate text-caption', active ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
+              {label}
             </span>
           </Link>
         );
       })}
 
-      {/* Menu Trigger Sheet */}
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetTrigger asChild>
-          <button
-            data-tour="mnav-menu"
-            className="flex-1 flex flex-col items-center justify-center gap-1 rounded-xl py-1 text-[10px] font-medium text-muted-foreground transition-all duration-150 hover:text-foreground active:scale-90 active:text-primary motion-reduce:active:scale-100"
-            onClick={() => setIsOpen(true)}
-          >
-            <Menu className="h-5 w-5 shrink-0" />
-            <span>{t('nav.menu')}</span>
-          </button>
-        </SheetTrigger>
-        <SheetContent
-          side="bottom"
-          className="rounded-t-[32px] max-h-[85vh] overflow-y-auto pb-10 bg-card border-t border-border text-foreground z-50"
+      <Sheet open={open} onOpenChange={setOpen}>
+        <button
+          type="button"
+          data-tour="mnav-menu"
+          onClick={() => setOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 active:scale-95 motion-reduce:active:scale-100"
         >
-          <SheetHeader className="text-left pb-4 border-b border-border">
-            <SheetTitle className="text-lg font-bold text-foreground tracking-tight flex items-center gap-2">
-              <Menu className="h-5 w-5 text-primary" />
-              {t('nav.navigationMenu')}
-            </SheetTitle>
-            <SheetDescription className="text-xs text-muted-foreground">
-              {isDashboard
-                ? 'Manage your business operations and listings'
-                : isAdmin
-                ? 'System approvals and platform moderation'
-                : isSuperAdmin
-                ? 'Tenants & multi-tenant cluster management'
-                : isStaff
-                ? 'Platform data-entry workspace'
-                : 'Browse city offers and manage your profile'}
-            </SheetDescription>
+          <span
+            className={cn(
+              'flex h-7 w-14 items-center justify-center rounded-full',
+              moreActive ? 'bg-brand-soft text-brand-soft-foreground' : 'text-muted-foreground',
+            )}
+          >
+            <Menu className="size-5" aria-hidden />
+          </span>
+          <span className={cn('text-caption', moreActive ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
+            {t('nav.menu')}
+          </span>
+        </button>
+
+        <SheetContent side="bottom" className="overflow-y-auto px-4 pb-8 pt-2">
+          <SheetHeader className="px-1 pb-2 text-left">
+            <SheetTitle className="text-heading">{spec.title}</SheetTitle>
+            <SheetDescription>{SHEET_COPY[spec.area]}</SheetDescription>
           </SheetHeader>
 
-          <div className="grid grid-cols-2 gap-3 py-6">
-            {drawerItems.map((item) => {
-              const ItemIcon = item.icon;
-              return (
-                <button
-                  key={item.label}
-                  onClick={() => handleDrawerItemClick(item.href, item.action)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/40 border border-border hover:bg-secondary/80 active:scale-[0.96] active:bg-secondary text-foreground transition-all duration-150 text-left text-xs font-semibold cursor-pointer h-12 motion-reduce:active:scale-100"
-                >
-                  <ItemIcon className="h-4 w-4 text-primary shrink-0" />
-                  <span className="truncate">{tl(item.label)}</span>
-                </button>
-              );
-            })}
+          <div className="space-y-5">
+            {sheetGroups.map((group, gi) => (
+              <div key={group.title ?? `g${gi}`}>
+                {group.title && <p className="px-1 pb-2 text-overline text-subtle-foreground">{tl(group.title)}</p>}
+                <div className="grid grid-cols-2 gap-2">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const active = isItemActive(pathname, item);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        aria-current={active ? 'page' : undefined}
+                        className={cn(
+                          'flex h-12 items-center gap-2.5 rounded-xl border px-3 text-sm font-medium transition-colors active:scale-[0.98]',
+                          active
+                            ? 'border-primary/25 bg-brand-soft text-brand-soft-foreground'
+                            : 'border-border/70 bg-card text-foreground hover:bg-secondary',
+                        )}
+                      >
+                        <Icon className={cn('size-[18px] shrink-0', active ? 'text-primary' : 'text-muted-foreground')} aria-hidden />
+                        <span className="truncate">{tl(item.label)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
 
-            {/* Logout/Sign Out Option inside Drawer */}
             {user && (
               <button
-                onClick={handleSignOutClick}
-                className="col-span-2 flex items-center gap-3 px-4 py-3 rounded-2xl bg-destructive/10 border border-destructive/20 hover:bg-destructive/20 active:scale-[0.96] transition-all duration-150 text-left text-xs font-semibold text-destructive cursor-pointer h-12 mt-2 motion-reduce:active:scale-100"
+                type="button"
+                onClick={async () => {
+                  setOpen(false);
+                  await signOut();
+                }}
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-danger-soft text-sm font-semibold text-danger-soft-foreground active:scale-[0.98]"
               >
-                <LogOut className="h-4 w-4 shrink-0 text-destructive" />
-                <span>{t('nav.signOut')}</span>
+                <LogOut className="size-[18px]" aria-hidden />
+                {t('nav.signOut')}
               </button>
             )}
           </div>
@@ -355,4 +150,3 @@ export function MobileNav() {
     </nav>
   );
 }
-
