@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/empty-state';
 import { StatusPill } from '@/components/common/status-pill';
 import { apiService } from '@/lib/services/api-service';
+import { toast } from '@/components/ui/sonner';
 import { ModalShell, SectionHeading } from './profile-ui';
 import { OfferListSkeleton } from './profile-skeletons';
 import { offerExpiry } from './profile-utils';
@@ -114,10 +115,10 @@ export function OffersSection({
   const [claimedCode, setClaimedCode] = useState<string | null>(null);
   const [claiming, setClaiming] = useState(false);
 
-  // Only logged-in users may claim. Guests are redirected to registration.
+  // Only logged-in users may claim. Guests sign in and come straight back here.
   const handleClaimClick = (offer: any) => {
     if (!user) {
-      router.push(`/register?redirect=/business/${businessId}`);
+      router.push(`/login?redirect=${encodeURIComponent(`/business/${businessId}`)}`);
       return;
     }
     setClaimingOffer(offer);
@@ -127,7 +128,7 @@ export function OffersSection({
     if (!claimingOffer) return;
     if (!user) {
       setClaimingOffer(null);
-      router.push(`/register?redirect=/business/${businessId}`);
+      router.push(`/login?redirect=${encodeURIComponent(`/business/${businessId}`)}`);
       return;
     }
     setClaiming(true);
@@ -136,11 +137,15 @@ export function OffersSection({
     setClaiming(false);
     if (res.status === 401) {
       setClaimingOffer(null);
-      router.push(`/register?redirect=/business/${businessId}`);
+      router.push(`/login?redirect=${encodeURIComponent(`/business/${businessId}`)}`);
       return;
     }
-    const code = res.data?.code || `CLAIM-${Math.floor(1000 + Math.random() * 9000)}`;
-    setClaimedCode(code);
+    if (res.error) {
+      // Never invent a code: a failed claim must look failed.
+      toast.error(res.error || "Could not claim this offer. Please try again.");
+      return;
+    }
+    setClaimedCode(res.data?.code || claimingOffer.code || "CLAIMED");
     setClaimingOffer(null);
   };
 

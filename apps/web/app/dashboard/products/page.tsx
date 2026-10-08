@@ -253,7 +253,7 @@ export default function ProductsPage() {
                       <div>
                         <p className="text-muted-foreground text-xs">Price</p>
                         <p className="font-semibold text-foreground">
-                          {parseFloat(product.price) > 0 ? `$${parseFloat(product.price).toFixed(2)}` : '—'}
+                          {parseFloat(product.price) > 0 ? `₹${parseFloat(product.price).toLocaleString("en-IN", { maximumFractionDigits: 2 })}` : '—'}
                         </p>
                       </div>
                     </div>
@@ -307,7 +307,7 @@ export default function ProductsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">Price ($) *</label>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">Price (₹) *</label>
                   <Input
                     placeholder="e.g. 99.99"
                     value={price}
@@ -365,7 +365,7 @@ export default function ProductsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">Price ($) *</label>
+                  <label className="text-sm font-medium text-muted-foreground block mb-2">Price (₹) *</label>
                   <Input
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
@@ -445,7 +445,7 @@ export default function ProductsPage() {
               <div className="bg-secondary/50 p-4 rounded-xl border border-border mb-4">
                 <p className="text-xs text-muted-foreground mb-1">Price</p>
                 <p className="text-2xl font-extrabold text-foreground">
-                  {parseFloat(viewingProduct.price) > 0 ? `$${parseFloat(viewingProduct.price).toFixed(2)}` : '—'}
+                  {parseFloat(viewingProduct.price) > 0 ? `₹${parseFloat(viewingProduct.price).toLocaleString("en-IN", { maximumFractionDigits: 2 })}` : '—'}
                 </p>
               </div>
               {viewingProduct.description && (

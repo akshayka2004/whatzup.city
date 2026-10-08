@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
+import { BusinessCard } from '@/components/business-card';
 import Link from 'next/link';
-import { CalendarDays, CheckCircle2, Clapperboard, MapPin, Star, Tag } from 'lucide-react';
-import { getOpenStatus } from '@saas/types';
+import { CalendarDays, Clapperboard, MapPin, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ResponsiveImage } from '@/components/common/responsive-image';
-import { StatusPill } from '@/components/common/status-pill';
 import {
   BusinessCardSkeleton, OfferCardSkeleton, Skel, SkeletonRegion,
 } from '@/components/common/skeletons';
@@ -159,10 +158,6 @@ export function TrendingOffers({ body, loading }: { body: unknown; loading: bool
 
 export function TrendingBusinesses({ body, loading }: { body: unknown; loading: boolean }) {
   const items = listOf(body).slice(0, 8);
-  // Evaluated after mount only: "open now" depends on the visitor's clock, and the
-  // server-rendered HTML must match the first client render.
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => setNow(new Date()), []);
   const W = 'w-[72%] sm:w-64';
 
   return (
@@ -175,54 +170,11 @@ export function TrendingBusinesses({ body, loading }: { body: unknown; loading: 
       cols="md:grid-cols-3 lg:grid-cols-4"
       skeleton={<SkeletonSlots width={W}><BusinessCardSkeleton /></SkeletonSlots>}
     >
-      {items.map((b: any) => {
-        const open = now && b.operatingHours ? getOpenStatus(b.operatingHours, now)?.isOpen : false;
-        const avg = Number(b.averageRating ?? b.avgRating ?? 0);
-        const reviews = Number(b.totalReviews ?? b.reviewCount ?? 0);
-        const meta = [b.category?.name, b.city].filter(Boolean).join(' · ');
-        return (
-          <Slot key={b.id} width={W} height={268}>
-            <Link href={`/business/${b.id}`} className={CARD}>
-              <div className="relative bg-secondary/60">
-                <ResponsiveImage
-                  src={b.logo}
-                  alt={`${b.name} logo`}
-                  ratio="16 / 10"
-                  sizes="(max-width: 768px) 72vw, 25vw"
-                  imgClassName="object-contain p-5 group-hover:scale-105"
-                  fallback={<span className="text-3xl font-black text-primary/70">{String(b.name || '?').charAt(0).toUpperCase()}</span>}
-                />
-                {open && (
-                  <StatusPill live tone="success" label="Open now" className="absolute left-2.5 top-2.5 bg-card/90" />
-                )}
-                {b.isVerified && (
-                  <span
-                    className="absolute right-2.5 top-2.5 inline-flex items-center gap-1 rounded-full border border-primary/25 bg-card/90 px-2 py-0.5 text-[10px] font-bold text-primary"
-                    title="Verified business"
-                  >
-                    <CheckCircle2 className="h-3 w-3" /> Verified
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-1 flex-col gap-1 p-4">
-                <h3 className="line-clamp-1 text-sm font-bold text-foreground">{b.name}</h3>
-                {meta && <p className="flex items-center gap-1 truncate text-xs text-muted-foreground"><MapPin className="h-3 w-3 shrink-0" />{meta}</p>}
-                <div className="mt-auto flex items-center gap-1 pt-2">
-                  {avg > 0 || reviews > 0 ? (
-                    <>
-                      <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-                      <span className="text-xs font-bold text-foreground">{avg > 0 ? avg.toFixed(1) : '—'}</span>
-                      <span className="text-xs text-muted-foreground">({reviews} {reviews === 1 ? 'review' : 'reviews'})</span>
-                    </>
-                  ) : (
-                    <span className="text-xs font-medium text-muted-foreground">New on Whtzup.city</span>
-                  )}
-                </div>
-              </div>
-            </Link>
-          </Slot>
-        );
-      })}
+      {items.map((b: any, i: number) => (
+        <Slot key={b.id} width={W} height={248}>
+          <BusinessCard business={b} priority={i < 2} />
+        </Slot>
+      ))}
     </Strip>
   );
 }

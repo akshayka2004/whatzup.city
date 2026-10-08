@@ -1,65 +1,105 @@
 'use client';
 
 import Link from 'next/link';
-import { SectionHeader } from './section-header';
+import { ChevronLeft, ChevronRight, LayoutGrid } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { SkeletonRegion, Skel } from '@/components/common/skeletons';
 import { FALLBACK_CATEGORIES, iconForCategory, type HomeCategory } from './home-data';
 
 /**
- * Category tiles: a swipeable icon row on phones, a grid from md up.
- * `.ui-scroll-x` is unlayered CSS, so the md: resets below need `!` to win.
+ * Airbnb-style category bar: one horizontal row of icon + label stops that
+ * scrolls on every screen size, with arrow buttons on pointer devices.
+ * Keeps the home page's first screen for content instead of a 20-tile grid.
  */
 export function CategoryRow({ categories, loading }: { categories: HomeCategory[]; loading: boolean }) {
   const list = categories.length > 0 ? categories : loading ? [] : FALLBACK_CATEGORIES;
+  const scroller = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ start: true, end: false });
+
+  const measure = () => {
+    const el = scroller.current;
+    if (!el) return;
+    setEdges({ start: el.scrollLeft <= 24, end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 24 });
+  };
+  useEffect(() => {
+    measure();
+    const el = scroller.current;
+    if (!el) return;
+    el.addEventListener('scroll', measure, { passive: true });
+    window.addEventListener('resize', measure);
+    return () => {
+      el.removeEventListener('scroll', measure);
+      window.removeEventListener('resize', measure);
+    };
+  }, [list.length]);
+
+  const nudge = (dir: 1 | -1) => scroller.current?.scrollBy({ left: dir * scroller.current.clientWidth * 0.8, behavior: 'smooth' });
 
   return (
-    <section className="mb-10 md:mb-14">
-      <SectionHeader
-        title="Browse Categories"
-        subtitle="Explore services and listings filtered by sector"
-        href="/category"
-        linkLabel="View all"
-      />
-
+    <nav aria-label="Browse by category" className="relative mb-10 md:mb-12">
       {list.length === 0 ? (
-        <SkeletonRegion
-          label="Loading categories"
-          className="ui-scroll-x flex gap-3 md:grid md:grid-cols-4 lg:grid-cols-5 md:overflow-visible! md:mx-0! md:px-0!"
-        >
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skel key={i} className="h-[104px] w-[92px] shrink-0 rounded-2xl md:h-[68px] md:w-auto" />
+        <SkeletonRegion label="Loading categories" className="flex gap-4 overflow-hidden">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <Skel key={i} className="h-[76px] w-[84px] shrink-0 rounded-2xl" />
           ))}
         </SkeletonRegion>
       ) : (
-        <div className="ui-scroll-x ui-stagger flex gap-3 pb-1 md:grid md:grid-cols-4 md:gap-3 md:pb-0 lg:grid-cols-5 md:overflow-visible! md:mx-0! md:px-0!">
-          {list.map((c) => {
-            const Icon = iconForCategory(c);
-            const count = Number(c.listingsCount) || 0;
-            return (
-              <div key={c.slug} className="shrink-0 md:shrink">
+        <>
+          <div
+            ref={scroller}
+            className="ui-scroll-x flex gap-1 border-b border-border/70 pb-2 sm:mx-0! sm:px-0!"
+          >
+            <Link
+              href="/category"
+              className="group flex w-[84px] shrink-0 flex-col items-center gap-1.5 rounded-xl px-1 py-2 text-center"
+            >
+              <span className="flex size-11 items-center justify-center rounded-full bg-foreground text-background">
+                <LayoutGrid className="size-5" aria-hidden />
+              </span>
+              <span className="line-clamp-2 text-caption font-semibold text-foreground">All</span>
+            </Link>
+            {list.map((c) => {
+              const Icon = iconForCategory(c);
+              const count = Number(c.listingsCount) || 0;
+              return (
                 <Link
+                  key={c.slug}
                   href={`/category?type=${encodeURIComponent(c.slug)}`}
-                  className="ui-lift ui-press group flex h-full min-h-[104px] w-[92px] flex-col items-center gap-2 rounded-2xl border border-border bg-card px-2 py-3 text-center md:min-h-0 md:w-auto md:flex-row md:gap-3 md:px-4 md:py-3.5 md:text-left"
+                  title={count ? `${c.name} · ${count} ${count === 1 ? 'listing' : 'listings'}` : c.name}
+                  className="group flex w-[84px] shrink-0 flex-col items-center gap-1.5 rounded-xl px-1 py-2 text-center"
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/12 transition-colors group-hover:bg-primary/20">
-                    <Icon className="h-5 w-5 text-primary" />
+                  <span className="flex size-11 items-center justify-center rounded-full bg-brand-soft text-brand-soft-foreground transition-[background-color,transform] duration-200 group-hover:scale-105 group-hover:bg-primary/15 motion-reduce:group-hover:scale-100">
+                    <Icon className="size-5" aria-hidden />
                   </span>
-                  <span className="min-w-0">
-                    <span className="line-clamp-2 block text-xs font-bold leading-tight text-foreground md:text-sm">
-                      {c.name}
-                    </span>
-                    {count > 0 && (
-                      <span className="mt-0.5 hidden text-[11px] text-muted-foreground md:block">
-                        {count.toLocaleString('en-IN')} {count === 1 ? 'listing' : 'listings'}
-                      </span>
-                    )}
+                  <span className="line-clamp-2 text-caption font-medium leading-tight text-muted-foreground group-hover:text-foreground">
+                    {c.name}
                   </span>
                 </Link>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+          {!edges.start && (
+            <button
+              type="button"
+              onClick={() => nudge(-1)}
+              aria-label="Scroll categories left"
+              className="absolute -left-3 top-6 hidden size-9 items-center justify-center rounded-full border border-border bg-card shadow-e2 hover:bg-secondary md:flex"
+            >
+              <ChevronLeft className="size-4" />
+            </button>
+          )}
+          {!edges.end && (
+            <button
+              type="button"
+              onClick={() => nudge(1)}
+              aria-label="Scroll categories right"
+              className="absolute -right-3 top-6 hidden size-9 items-center justify-center rounded-full border border-border bg-card shadow-e2 hover:bg-secondary md:flex"
+            >
+              <ChevronRight className="size-4" />
+            </button>
+          )}
+        </>
       )}
-    </section>
+    </nav>
   );
 }

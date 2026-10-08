@@ -12,7 +12,6 @@ import {
   NowShowing, TrendingBusinesses, TrendingOffers, UpcomingEvents,
 } from '@/components/public/home/strips';
 import { SpinPromo } from '@/components/public/home/spin-promo';
-import { FeatureGrid } from '@/components/public/home/feature-grid';
 import { HomeCta } from '@/components/public/home/home-cta';
 import { listOf, sumListings, type HomeCategory } from '@/components/public/home/home-data';
 import { useFeed } from '@/components/public/home/use-feed';
@@ -113,8 +112,6 @@ export function HomeClient({
 
       <MobileNotice announcement={latestAnnouncement} />
 
-      <TrustStats stats={stats} />
-
       <CategoryRow categories={categories} loading={cats.loading} />
 
       <TrendingOffers body={offers.body} loading={offers.loading} />
@@ -123,7 +120,7 @@ export function HomeClient({
       <UpcomingEvents body={events.body} loading={events.loading} />
       <NowShowing body={movies.body} loading={movies.loading} />
 
-      <FeatureGrid />
+      <TrustStats stats={stats} />
       <HomeCta />
     </PublicLayout>
   );

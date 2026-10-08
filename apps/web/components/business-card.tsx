@@ -1,27 +1,34 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getOpenStatus, hasOperatingHours } from '@saas/types';
-import { Button } from '@/components/ui/button';
-import { Star, MapPin, Tag, BadgeCheck, Heart, Navigation, Store, Globe, Instagram } from 'lucide-react';
+import { BadgeCheck, Globe, Heart, Instagram, MapPin, Navigation, Star, Store, TicketPercent } from 'lucide-react';
 import { ReportButton } from './report-button';
 import { VerifiedBadge } from './common/verified-badge';
 import { ResponsiveImage } from './common/responsive-image';
 import { formatDistance } from './public/search/geo';
 import { isFavorite, toggleFavorite, FAVORITES_EVENT } from '@/lib/favorites';
+import { track } from '@/lib/analytics/track';
 import { cn } from '@/lib/utils';
 
+const SOURCE_BY_PATH: [RegExp, string][] = [
+  [/^\/$/, 'home'],
+  [/^\/search/, 'search'],
+  [/^\/category/, 'category'],
+  [/^\/nearby/, 'nearby'],
+  [/^\/favorites/, 'favorites'],
+  [/^\/business\//, 'related'],
+];
+
 /**
- * Public business card (Browse / Search / Category / Nearby).
+ * Public business card (home strips, search, browse, nearby, related).
  *
- * Cover (logo or initial) with category pill, bookmark, optional distance and
- * live-offer badges; then name + trust markers, brand/outlet line, rating and
- * city, a live "Open now · closes 9 PM" status when the business has listed
- * hours, tags and actions. Tokens only — inherits the brand palette.
- *
- * Only `business` is required; every other prop is optional so existing
- * callers keep working unchanged.
+ * The whole card is one link (stretched over the card); the heart and the
+ * report flag sit above it as separate controls. Media shows the logo on a
+ * soft tint with category, open status, distance and live-offer chips; the
+ * body keeps to name + trust marks, one context line and the rating.
  */
 export function BusinessCard({
   business,
@@ -31,23 +38,20 @@ export function BusinessCard({
   showLinks = false,
 }: {
   business: any;
-  /** Shown as a "1.2 km" badge on the cover (Nearby). */
+  /** Shown as a "1.2 km" chip on the media (Nearby). */
   distanceKm?: number | null;
   className?: string;
-  /** Eager-load the cover (use for the first row of a long list). */
+  /** Eager-load the media (first row of a long list). */
   priority?: boolean;
   /** Also show the street address and Instagram / website links (Search results). */
   showLinks?: boolean;
 }) {
-  const tags: string[] = Array.isArray(business.tags) ? business.tags : [];
-  const isFood = /food|restaurant|cafe|bakery|hotel/i.test(
-    business.category?.slug || business.category?.name || '',
-  );
+  const pathname = usePathname();
+  const isFood = /food|restaurant|cafe|bakery|hotel/i.test(business.category?.slug || business.category?.name || '');
   const rating = business.avgRating ?? business.averageRating;
   const ratingNum = rating != null && rating !== '' ? Number(rating) : null;
-  const reviews = business.reviewCount ?? business.totalReviews ?? 0;
-  // Cover banners are retired; the card shows the logo (or an initial) instead.
-  const cover: string | undefined = business.logo || undefined;
+  const reviews = Number(business.reviewCount ?? business.totalReviews ?? 0) || 0;
+  const logo: string | undefined = business.logo || undefined;
   const categoryName: string = business.category?.name || business.categoryName || '';
   const offerCount = Number(business.activeOfferCount ?? business.offerCount ?? 0) || 0;
   const brandName: string = business.brand?.name || '';
@@ -63,8 +67,7 @@ export function BusinessCard({
     return () => window.removeEventListener(FAVORITES_EVENT, sync);
   }, [business.id]);
 
-  // Open/closed depends on "now", so it is computed after mount (never during
-  // SSR) to avoid a hydration mismatch. Only businesses with listed hours get a line.
+  // Open/closed depends on "now": computed after mount to avoid a hydration mismatch.
   const hasHours = hasOperatingHours(business.operatingHours);
   const [status, setStatus] = useState<{ isOpen: boolean; label: string } | null>(null);
   useEffect(() => {
@@ -74,153 +77,147 @@ export function BusinessCard({
   const onBookmark = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setSaved(toggleFavorite(business));
+    const next = toggleFavorite(business);
+    setSaved(next);
+    if (next) track('SAVE', { businessId: business.id });
   };
 
-  const address = showLinks
-    ? [business.address, business.city, business.state].filter(Boolean).join(', ')
-    : '';
+  const onOpen = () => {
+    const source = SOURCE_BY_PATH.find(([re]) => re.test(pathname || ''))?.[1] ?? 'other';
+    track('CARD_CLICK', { businessId: business.id, source });
+  };
+
+  const context =
+    brandName || outlet
+      ? brandName && outlet
+        ? `${brandName} · ${outlet}`
+        : brandName || outlet
+      : business.city || '';
+
+  const address = showLinks ? [business.address, business.city, business.state].filter(Boolean).join(', ') : '';
   const instagram: string | undefined = showLinks ? business.socialLinks?.instagram : undefined;
   const website: string | undefined = showLinks ? business.website : undefined;
 
   return (
-    <div
+    <article
       className={cn(
-        'group ui-lift ui-press flex h-full flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-sm hover:border-primary/25',
+        'group relative flex h-full flex-col overflow-hidden rounded-card border border-border/70 bg-card shadow-e1 transition-[box-shadow,border-color,transform] duration-200 ease-out-quint hover:border-border-strong hover:shadow-e2 focus-within:border-border-strong active:scale-[0.99] motion-reduce:active:scale-100',
         className,
       )}
     >
-      {/* Cover */}
+      {/* Media */}
       <div className="relative">
-        <Link href={href} className="block" aria-label={business.name}>
-          <ResponsiveImage
-            src={cover}
-            alt={business.name || 'Business'}
-            ratio="16 / 8"
-            priority={priority}
-            className="bg-gradient-to-br from-secondary to-secondary/40"
-            imgClassName="transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-            fallback={<span className="text-4xl font-black text-muted-foreground/25">{initial}</span>}
-          />
-          <span className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3">
-            <span className="flex min-w-0 flex-wrap gap-1.5">
-              {distanceKm != null && Number.isFinite(distanceKm) && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-card/90 px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm backdrop-blur-sm">
-                  <Navigation className="h-3 w-3 shrink-0 text-primary" />
-                  {formatDistance(distanceKm)}
-                </span>
-              )}
+        <ResponsiveImage
+          src={logo}
+          alt=""
+          ratio="2 / 1"
+          priority={priority}
+          className="bg-brand-soft"
+          imgClassName="!object-contain p-6 transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+          fallback={
+            <span className="flex size-16 items-center justify-center rounded-2xl bg-card text-2xl font-bold text-brand-soft-foreground shadow-e1 ring-1 ring-primary/10">
+              {initial}
             </span>
-            {offerCount > 0 && (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground shadow-sm">
-                <Tag className="h-3 w-3" />
-                {offerCount} {offerCount === 1 ? 'offer' : 'offers'}
+          }
+        />
+
+        {categoryName && (
+          <span className="pointer-events-none absolute left-3 top-3 max-w-[65%] truncate rounded-full bg-card/92 px-2.5 py-1 text-caption font-semibold text-foreground shadow-e1 backdrop-blur-sm">
+            {categoryName}
+          </span>
+        )}
+
+        <span className="pointer-events-none absolute inset-x-3 bottom-3 flex items-end justify-between gap-2">
+          <span className="flex min-w-0 flex-wrap gap-1.5">
+            {status && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-card/92 px-2.5 py-1 text-caption font-semibold shadow-e1 backdrop-blur-sm">
+                <span aria-hidden className={status.isOpen ? 'ui-live-dot' : 'size-2 rounded-full bg-muted-foreground/60'} />
+                <span className={status.isOpen ? 'text-success-soft-foreground' : 'text-muted-foreground'}>
+                  {status.isOpen ? 'Open' : 'Closed'}
+                </span>
+              </span>
+            )}
+            {distanceKm != null && Number.isFinite(distanceKm) && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-card/92 px-2.5 py-1 text-caption font-semibold text-foreground shadow-e1 backdrop-blur-sm">
+                <Navigation className="size-3 text-primary" aria-hidden />
+                {formatDistance(distanceKm)}
               </span>
             )}
           </span>
-          {categoryName && (
-            <span className="pointer-events-none absolute left-3 top-3 max-w-[65%] truncate rounded-full bg-card/90 px-2.5 py-1 text-[11px] font-semibold text-primary shadow-sm backdrop-blur-sm">
-              {categoryName}
+          {offerCount > 0 && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-caption font-semibold text-primary-foreground shadow-e1">
+              <TicketPercent className="size-3.5" aria-hidden />
+              {offerCount} {offerCount === 1 ? 'offer' : 'offers'}
             </span>
           )}
-        </Link>
-
-        {/* Bookmark — 44px hit area around a 36px visual */}
-        <button
-          type="button"
-          onClick={onBookmark}
-          aria-label={saved ? 'Remove from favorites' : 'Save to favorites'}
-          aria-pressed={saved}
-          className="absolute right-1.5 top-1.5 flex h-11 w-11 cursor-pointer items-center justify-center"
-        >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white backdrop-blur-md transition-transform duration-150 hover:scale-110 active:scale-90 motion-reduce:transition-none">
-            <Heart className={cn('h-4 w-4 transition-colors', saved && 'fill-rose-500 text-rose-500')} />
-          </span>
-        </button>
+        </span>
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 flex-col p-4">
-        <div className="mb-1 flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-1 flex-col gap-1.5 p-4">
+        <h3 className="flex min-w-0 items-center gap-1.5">
           <Link
             href={href}
-            className="min-w-0 max-w-full truncate font-semibold text-foreground transition-colors hover:text-primary"
+            onClick={onOpen}
+            className="min-w-0 truncate text-base font-semibold tracking-tight text-foreground outline-none after:absolute after:inset-0 after:rounded-card after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-ring"
           >
             {business.name}
           </Link>
           {business.isVerified && <VerifiedBadge />}
           {isFood && business.halalStatus === 'HALAL' && (
-            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-success/25 bg-success/12 px-1.5 py-0.5 text-[10px] font-semibold text-success">
-              <BadgeCheck className="h-3 w-3 shrink-0" />
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-success-soft px-1.5 py-0.5 text-caption font-semibold text-success-soft-foreground">
+              <BadgeCheck className="size-3" aria-hidden />
               Halal
             </span>
           )}
-        </div>
+        </h3>
 
-        {(brandName || outlet) && (
-          <p className="mb-1 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-            <Store className="h-3 w-3 shrink-0" />
-            <span className="truncate">
-              {brandName && outlet ? `${brandName} · ${outlet}` : brandName || outlet}
-            </span>
+        {context && (
+          <p className="flex min-w-0 items-center gap-1 text-label font-normal text-muted-foreground">
+            {brandName || outlet ? <Store className="size-3.5 shrink-0" aria-hidden /> : <MapPin className="size-3.5 shrink-0" aria-hidden />}
+            <span className="truncate">{context}</span>
           </p>
         )}
 
-        {business.description && (
-          <p className="mb-2 line-clamp-2 break-words text-xs leading-relaxed text-muted-foreground">
-            {business.description}
-          </p>
+        {showLinks && business.description && (
+          <p className="line-clamp-2 break-words text-label font-normal text-muted-foreground">{business.description}</p>
         )}
 
-        {/* Rating + city. Wraps on narrow screens, and the city truncates
-            instead of overflowing the card — flex children default to
-            min-width:auto, so min-w-0 is required for truncate to work. */}
-        <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-          <span className="inline-flex shrink-0 items-center gap-1">
-            <Star className="h-4 w-4 shrink-0 fill-warning text-warning" />
-            <span className="font-semibold tabular-nums text-foreground">
-              {ratingNum != null && Number.isFinite(ratingNum) ? ratingNum.toFixed(1) : '—'}
-            </span>
-            <span className="text-xs text-muted-foreground">({reviews})</span>
-          </span>
-          {business.city && (
-            <span className="inline-flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">{business.city}</span>
-            </span>
-          )}
-        </div>
-
-        {hasHours && (
-          <p className="mb-2 flex min-h-5 items-center gap-1.5 text-xs font-medium">
-            {status && (
+        <div className="mt-auto flex items-center justify-between gap-2 pt-1.5">
+          <span className="inline-flex items-center gap-1 text-sm">
+            {ratingNum != null && Number.isFinite(ratingNum) && reviews > 0 ? (
               <>
-                <span
-                  aria-hidden
-                  className={status.isOpen ? 'ui-live-dot shrink-0' : 'h-2 w-2 shrink-0 rounded-full bg-muted-foreground/50'}
-                />
-                <span
-                  className={cn(
-                    'truncate',
-                    status.isOpen ? 'text-success-foreground dark:text-success' : 'text-muted-foreground',
-                  )}
-                >
-                  {status.label}
-                </span>
+                <Star className="size-4 fill-warning text-warning" aria-hidden />
+                <span className="font-semibold tabular-nums text-foreground">{ratingNum.toFixed(1)}</span>
+                <span className="text-caption text-muted-foreground">({reviews})</span>
               </>
+            ) : (
+              <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-caption font-medium text-muted-foreground">New</span>
             )}
-          </p>
-        )}
+            {(brandName || outlet) && business.city && (
+              <span className="ml-2 inline-flex min-w-0 items-center gap-0.5 text-caption text-muted-foreground">
+                <MapPin className="size-3 shrink-0" aria-hidden />
+                <span className="truncate">{business.city}</span>
+              </span>
+            )}
+          </span>
+          <ReportButton
+            kind="business"
+            targetId={business.id}
+            targetName={business.name}
+            className="relative z-[1] flex size-8 shrink-0 items-center justify-center rounded-full text-subtle-foreground opacity-70 transition-[opacity,color,background-color] hover:bg-danger-soft hover:text-danger-soft-foreground hover:opacity-100 focus-visible:opacity-100"
+          />
+        </div>
 
         {address && (
-          <p className="mb-2 flex min-w-0 items-start gap-1 text-xs text-muted-foreground">
-            <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
+          <p className="relative z-[1] flex min-w-0 items-start gap-1 text-caption text-muted-foreground">
+            <MapPin className="mt-0.5 size-3 shrink-0" aria-hidden />
             <span className="line-clamp-2 break-words">{address}</span>
           </p>
         )}
 
         {(instagram || website) && (
-          <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <div className="relative z-[1] flex flex-wrap gap-x-4 gap-y-1 text-caption">
             {instagram && (
               <a
                 href={`https://instagram.com/${instagram.replace('@', '')}`}
@@ -228,7 +225,7 @@ export function BusinessCard({
                 rel="noreferrer"
                 className="inline-flex min-h-6 min-w-0 items-center gap-1 text-primary hover:underline"
               >
-                <Instagram className="h-3 w-3 shrink-0" />
+                <Instagram className="size-3 shrink-0" aria-hidden />
                 <span className="truncate">{instagram}</span>
               </a>
             )}
@@ -237,41 +234,29 @@ export function BusinessCard({
                 href={website.startsWith('http') ? website : `https://${website}`}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => track('WEBSITE_CLICK', { businessId: business.id, source: 'search' })}
                 className="inline-flex min-h-6 min-w-0 items-center gap-1 text-primary hover:underline"
               >
-                <Globe className="h-3 w-3 shrink-0" />
+                <Globe className="size-3 shrink-0" aria-hidden />
                 <span className="truncate">{website}</span>
               </a>
             )}
           </div>
         )}
-
-        {tags.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-1">
-            {tags.slice(0, 4).map((t) => (
-              <span
-                key={t}
-                className="inline-flex max-w-full items-center gap-0.5 rounded-full border border-border bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"
-              >
-                <Tag className="h-2.5 w-2.5 shrink-0" />
-                <span className="truncate">{t}</span>
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-auto flex gap-2 pt-1">
-          <Button asChild variant="outline" size="sm" className="h-11 flex-1">
-            <Link href={href}>View business</Link>
-          </Button>
-          <ReportButton
-            kind="business"
-            targetId={business.id}
-            targetName={business.name}
-            className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-rose-500/30 hover:text-rose-400"
-          />
-        </div>
       </div>
-    </div>
+
+      {/* Bookmark — above the stretched link; 44px hit area around a 36px visual */}
+      <button
+        type="button"
+        onClick={onBookmark}
+        aria-label={saved ? `Remove ${business.name} from favorites` : `Save ${business.name} to favorites`}
+        aria-pressed={saved}
+        className="absolute right-1.5 top-1.5 z-[1] flex size-11 items-center justify-center"
+      >
+        <span className="flex size-9 items-center justify-center rounded-full bg-card/92 shadow-e1 backdrop-blur-sm transition-transform duration-150 hover:scale-110 active:scale-90 motion-reduce:transition-none">
+          <Heart className={cn('size-[18px] transition-colors', saved ? 'fill-primary text-primary' : 'text-foreground')} />
+        </span>
+      </button>
+    </article>
   );
 }

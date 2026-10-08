@@ -50,7 +50,11 @@ export function toggleFavorite(biz: FavBusiness): boolean {
         name: biz.name,
         logo: biz.logo ?? null,
         city: biz.city ?? null,
-        category: biz.category ?? null,
+        category: typeof biz.category === 'string' ? biz.category : (biz.category?.name ?? ''),
+        rating: biz.averageRating != null ? String(Number(biz.averageRating).toFixed(1)) : (biz.rating ?? ''),
+        reviews: biz.totalReviews ?? biz._count?.reviews ?? biz.reviews ?? 0,
+        isVerified: biz.isVerified ?? biz.status === 'APPROVED',
+        savedAt: new Date().toLocaleDateString('en-IN'),
       },
       ...existing,
     ];

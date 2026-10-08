@@ -21,10 +21,25 @@ export interface SavedBusiness {
 
 export const FAVORITES_KEY = 'saved_businesses';
 
+/** Saved entries come from two writers over time; normalise so old rows (category object, no rating) render. */
+function normalise(raw: any): SavedBusiness {
+  const cat = raw?.category;
+  return {
+    id: raw?.id,
+    name: String(raw?.name ?? 'Saved business'),
+    category: typeof cat === 'string' ? cat : (cat?.name ?? ''),
+    rating: raw?.rating != null && raw.rating !== '' ? String(raw.rating) : '',
+    reviews: Number(raw?.reviews ?? 0) || 0,
+    savedAt: String(raw?.savedAt ?? ''),
+    isVerified: !!raw?.isVerified,
+  };
+}
+
 export function getSavedBusinesses(): SavedBusiness[] {
   if (typeof window === 'undefined') return [];
   try {
-    return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+    const list = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+    return Array.isArray(list) ? list.filter((b) => b?.id).map(normalise) : [];
   } catch {
     return [];
   }
@@ -199,13 +214,15 @@ export default function FavoritesPage() {
                     </div>
                     <Heart className="h-5 w-5 shrink-0 fill-destructive text-destructive" />
                   </div>
-                  <div className="mb-4 flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1">
+                  {fav.rating && Number(fav.rating) > 0 ? (
+                    <div className="mb-4 flex items-center gap-1 text-sm">
                       <Star className="h-4 w-4 fill-warning text-warning" />
                       <span className="font-medium">{fav.rating}</span>
-                      <span className="text-muted-foreground">({fav.reviews})</span>
+                      {fav.reviews > 0 && <span className="text-muted-foreground">({fav.reviews})</span>}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="mb-4" />
+                  )}
                   <div className="mt-auto flex gap-2">
                     <Link
                       href={`/business/${fav.id}`}

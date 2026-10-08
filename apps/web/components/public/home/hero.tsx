@@ -3,12 +3,10 @@
 import Link from 'next/link';
 import { CheckCircle2, MapPin, Search, Star, Store, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { ResponsiveImage } from '@/components/common/responsive-image';
-import { StatusPill } from '@/components/common/status-pill';
 import { Skel, SkeletonRegion } from '@/components/common/skeletons';
 import { KERALA_CITIES } from '@/lib/constants';
 import { getCityIdentity } from '@/lib/city-identity';
@@ -17,7 +15,7 @@ import { discountText } from './home-data';
 const TRENDING_CHIPS = ['Restaurants', 'Healthcare', 'Retail', 'Services'];
 
 const CHIP =
-  'inline-flex min-h-11 shrink-0 items-center rounded-xl border border-border bg-secondary px-3.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground ui-press sm:min-h-9 sm:px-3';
+  'hidden h-10 shrink-0 items-center rounded-full border border-border-strong/60 bg-card px-3.5 text-label text-foreground transition-colors hover:border-border-strong hover:bg-secondary sm:inline-flex';
 
 export type HeroProps = {
   city: string;
@@ -73,76 +71,64 @@ export function HomeHero({
           background: `radial-gradient(120% 120% at 100% 0%, oklch(0.62 0.10 ${identity.hue} / 0.14), transparent 55%), linear-gradient(135deg, oklch(0.62 0.10 ${identity.hue} / 0.06), transparent 60%)`,
         }}
       />
-      {/* Slow decorative drift (transform only, still under reduced motion) */}
-      <div aria-hidden className="ui-drift pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
-      <div aria-hidden className="ui-drift-slow pointer-events-none absolute -bottom-28 -left-16 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
 
-      <div className="relative grid grid-cols-1 items-stretch gap-6 lg:min-h-[440px] lg:grid-cols-12 lg:gap-0">
-        <div className="ui-stagger flex flex-col justify-center space-y-5 px-5 py-8 sm:px-6 sm:py-10 lg:col-span-7 lg:space-y-6 lg:px-10 lg:py-14">
-          <div className="inline-flex w-fit max-w-full items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
-            <MapPin className="h-3.5 w-3.5 shrink-0" />
+      <div className="relative grid grid-cols-1 items-stretch lg:min-h-[400px] lg:grid-cols-12">
+        <div className="flex flex-col justify-center gap-5 px-5 py-7 sm:px-8 sm:py-10 lg:col-span-7 lg:gap-6 lg:px-10 lg:py-12">
+          <p className="inline-flex w-fit max-w-full items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-caption font-semibold text-brand-soft-foreground">
+            <MapPin className="size-3.5 shrink-0" aria-hidden />
             <span className="truncate">{identity.landmark}</span>
-          </div>
+          </p>
 
-          <div className="space-y-3">
-            <h1 className="text-balance text-4xl font-black leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-[3.5rem]">
-              Stronger Communities,<br />
-              <span className="ui-text-shine">Smarter Connections.</span>
+          <div className="space-y-2.5">
+            <h1 className="text-display text-foreground">
+              Find what&apos;s good in <span className="text-primary">{city || 'Kerala'}</span>
             </h1>
-            <p className="max-w-md text-pretty text-sm leading-relaxed text-muted-foreground md:text-base">
-              Discover trusted businesses, government services, offers, events, and
-              announcements from across {city || 'Kerala'} — all in one place.
+            <p className="hidden max-w-md text-body text-muted-foreground sm:block">
+              Verified businesses, live offers, events and civic updates — all in one place.
             </p>
           </div>
 
-          <div className="flex max-w-lg flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={searchQuery}
-                onChange={(e) => onSearchQueryChange(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && onSearch()}
-                placeholder="Restaurants, doctors, shops…"
-                aria-label="Search businesses"
-                className="h-11 rounded-xl border-border bg-background pl-10 text-sm focus:border-primary"
-              />
-            </div>
-            <Button
-              onClick={onSearch}
-              className="ui-press h-11 shrink-0 cursor-pointer rounded-xl bg-primary px-5 font-semibold text-primary-foreground hover:bg-primary/90"
-            >
-              Search
+          <form
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onSearch();
+            }}
+            className="flex max-w-xl items-center gap-1.5 rounded-full border border-border-strong/70 bg-background p-1.5 shadow-e1 transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/30"
+          >
+            <Search className="ml-3 size-[18px] shrink-0 text-muted-foreground" aria-hidden />
+            <input
+              value={searchQuery}
+              onChange={(e) => onSearchQueryChange(e.target.value)}
+              placeholder="Restaurants, doctors, shops…"
+              aria-label="Search businesses"
+              className="h-10 min-w-0 flex-1 bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
+            />
+            <Button type="submit" shape="pill" className="h-10 shrink-0 px-5" aria-label="Search">
+              <Search className="sm:hidden" />
+              <span className="hidden sm:inline">Search</span>
             </Button>
-          </div>
+          </form>
 
-          <div className="flex max-w-lg items-center gap-2">
-            <MapPin className="h-4 w-4 shrink-0 text-primary" />
-            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              Your city:
-            </span>
+          <div className="flex flex-wrap items-center gap-2">
             <Select value={city || 'all'} onValueChange={onCityChange}>
-              <SelectTrigger className="h-11 min-w-0 flex-1 rounded-xl border-border bg-background text-sm sm:h-9 sm:w-48 sm:flex-none">
-                <SelectValue placeholder="All Cities" />
+              <SelectTrigger aria-label="Your city" className="h-10 w-auto min-w-36 gap-1.5 rounded-full border-border-strong/60 bg-card text-sm">
+                <MapPin className="size-4 text-primary" aria-hidden />
+                <SelectValue placeholder="All cities" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Cities</SelectItem>
+                <SelectItem value="all">All cities</SelectItem>
                 {KERALA_CITIES.map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="ui-scroll-x flex items-center gap-2 pb-1 sm:flex-wrap sm:pb-0 sm:overflow-visible! sm:mx-0! sm:px-0!">
             <Link
               href="/search?open=1"
-              className="ui-press inline-flex min-h-11 shrink-0 items-center rounded-full sm:min-h-9"
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-success-soft px-3.5 text-label font-semibold text-success-soft-foreground transition-colors hover:bg-success/20"
             >
-              <StatusPill live tone="success" label="Open now near you" className="px-3.5 py-1.5 text-xs" />
+              <span className="ui-live-dot" aria-hidden /> Open now
             </Link>
-            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-              Trending:
-            </span>
             {TRENDING_CHIPS.map((cat) => (
               <Link key={cat} href={`/category?type=${cat.toLowerCase()}`} className={CHIP}>
                 {cat}
@@ -153,9 +139,7 @@ export function HomeHero({
 
         {/* Right panel — live data (desktop) */}
         <div className="relative hidden items-center justify-center overflow-hidden border-l border-border bg-secondary/60 p-8 lg:col-span-5 lg:flex">
-          <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-primary/10 blur-2xl" />
-
+          
           {panelLoading ? (
             <SkeletonRegion label="Loading featured content" className="relative w-full max-w-xs space-y-4">
               <Skel className="h-[104px] w-full rounded-xl" />
