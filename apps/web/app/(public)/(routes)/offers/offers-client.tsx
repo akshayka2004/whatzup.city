@@ -3,11 +3,14 @@
 import { ModalSurface } from '@/components/system/modal-surface';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Button } from '@/components/ui/button';
-import { Tag, X, CheckCircle2, Sparkles, Phone, QrCode } from 'lucide-react';
+import { Tag, X, CheckCircle2, Sparkles, Phone, QrCode, SlidersHorizontal } from 'lucide-react';
+import { PageHeader } from '@/components/system/page-header';
+import { Modal } from '@/components/system/modal';
+import { toast } from '@/components/ui/sonner';
 import { extractBusinessIdFromScan } from '@/lib/qr';
 import {
   Select,
@@ -33,7 +36,7 @@ import {
   type OfferChip,
   type OfferSort,
 } from '@/components/public/offers/offer-model';
-import { OfferCoupon, TickIcon } from '@/components/public/offers/offer-coupon';
+import { OfferCoupon } from '@/components/public/offers/offer-coupon';
 import { OfferFilterChips, SORT_OPTIONS } from '@/components/public/offers/offer-filters';
 import { CouponGridSkeleton } from '@/components/public/offers/skeletons';
 import { StaggerGrid } from '@/components/public/offers/stagger-grid';
@@ -63,9 +66,22 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
   const [offers, setOffers] = useState<Offer[]>(() => (seeded ? buildOffers(initialOffers, initialPlatformOffers, true) : []));
   const [loading, setLoading] = useState(!seeded);
   const [viewingOffer, setViewingOffer] = useState<Offer | null>(null);
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [chip, setChip] = useState<OfferChip>('all');
-  const [sort, setSort] = useState<OfferSort>('featured');
+  // Filters live in the URL so a filtered view can be shared or survives a reload.
+  const sp = useSearchParams();
+  const pathname = usePathname();
+  const typeFilter = sp.get('type') || 'all';
+  const chip = (sp.get('chip') as OfferChip) || 'all';
+  const sort = (sp.get('sort') as OfferSort) || 'featured';
+  const setParam = (key: string, value: string, fallback: string) => {
+    const next = new URLSearchParams(sp.toString());
+    if (!value || value === fallback) next.delete(key);
+    else next.set(key, value);
+    router.replace(`${pathname}${next.toString() ? `?${next}` : ''}`, { scroll: false });
+  };
+  const setTypeFilter = (v: string) => setParam('type', v, 'all');
+  const setChip = (v: OfferChip) => setParam('chip', v, 'all');
+  const setSort = (v: OfferSort) => setParam('sort', v, 'featured');
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [city, setCity] = useState('');
   const [claimedIds, setClaimedIds] = useState<string[]>([]);
   const [justClaimed, setJustClaimed] = useState<string | null>(null);
@@ -151,10 +167,7 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
   );
 
   const filtersActive = chip !== 'all' || typeFilter !== 'all';
-  const resetFilters = () => {
-    setChip('all');
-    setTypeFilter('all');
-  };
+  const resetFilters = () => router.replace(pathname, { scroll: false });
 
   const openOffer = (offer: Offer) => {
     setViewingOffer(offer);
@@ -167,23 +180,27 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
   const handleClaim = async (offer: Offer) => {
     // Only logged-in users may claim — guests go to registration.
     if (!user) {
-      router.push('/register?redirect=/offers');
+      router.push('/login?redirect=%2Foffers');
       return;
     }
     // Server-side redemption is authoritative (JWT-guarded). Only mark claimed
     // locally when it actually succeeds.
     const res = await apiService.post<any>(`/v1/offers/${offer.id}/redeem`, {});
     if (res.status === 401) {
-      router.push('/register?redirect=/offers');
+      router.push('/login?redirect=%2Foffers');
       return;
     }
-    if (res.error) return; // surfaced elsewhere; don't fake a claim
+    if (res.error) {
+      toast.error(res.error);
+      return;
+    }
     const existing = getClaimedOffers();
     if (!existing.includes(offer.id)) {
       const updated = [...existing, offer.id];
       localStorage.setItem(CLAIMED_STORAGE_KEY, JSON.stringify(updated));
     }
     setClaimedIds(getClaimedOffers());
+    toast.success('Offer claimed — show it at the counter.');
     setJustClaimed(offer.id);
     setTimeout(() => setJustClaimed(null), 2500);
     if (viewingOffer?.id === offer.id) setViewingOffer(null);
@@ -204,11 +221,11 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
   return (
     <PublicLayout>
       <div>
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="mb-1 text-2xl font-bold tracking-tight sm:text-3xl">Exclusive Offers</h1>
-            <p className="text-sm text-muted-foreground sm:text-base">Find the best deals from businesses near you</p>
-          </div>
+        <PageHeader
+          title="Offers"
+          description="Live deals from businesses near you."
+          className="mb-4 sm:mb-5"
+          actions={
           <div className="flex flex-wrap items-center gap-2">
             {claimedIds.length > 0 && (
               <div
@@ -233,26 +250,62 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
               <QrCode className="h-4 w-4" /> Scan QR
             </Button>
           </div>
-        </div>
+          }
+        />
         {scanError && (
           <p className="-mt-2 mb-4 text-xs text-destructive">{scanError}</p>
         )}
 
-        {justClaimed && (
-          <div
-            role="status"
-            className="ui-pop fixed inset-x-4 top-4 z-[60] mx-auto flex w-fit max-w-full items-center gap-2 rounded-2xl bg-success px-4 py-3 text-sm font-semibold text-success-foreground shadow-2xl sm:inset-x-auto sm:right-6 sm:top-6 sm:mx-0"
-          >
-            <TickIcon animate className="h-5 w-5" />
-            Offer claimed successfully!
-          </div>
-        )}
 
         <div className="mb-3">
           <OfferFilterChips value={chip} onChange={setChip} />
         </div>
 
-        <div className="mb-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
+        <div className="mb-5 sm:hidden">
+          <Button variant="outline" className="w-full justify-between" onClick={() => setFiltersOpen(true)}>
+            <span className="flex items-center gap-2">
+              <SlidersHorizontal /> Filters & sort
+            </span>
+            <span className="truncate text-caption text-muted-foreground">
+              {[city || 'All cities', typeFilter !== 'all' ? typeFilter : null, SORT_OPTIONS.find((o) => o.value === sort)?.label].filter(Boolean).join(' · ')}
+            </span>
+          </Button>
+        </div>
+        <Modal
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          title="Filters & sort"
+          footer={
+            <Button size="lg" onClick={() => setFiltersOpen(false)}>
+              Show {filtered.length} {filtered.length === 1 ? 'offer' : 'offers'}
+            </Button>
+          }
+        >
+          <div className="grid gap-4 pb-2">
+            {[
+              ['City', city || 'all', handleCityChange, [['all', 'All cities'], ...KERALA_CITIES.map((c) => [c, c])]],
+              ...(categories.length ? [['Category', typeFilter, setTypeFilter, [['all', 'All categories'], ...categories.map((c) => [c, c])]]] : []),
+              ['Sort by', sort, (v: string) => setSort(v as OfferSort), SORT_OPTIONS.map((o) => [o.value, o.label])],
+            ].map(([label, value, onChange, opts]: any) => (
+              <div key={label} className="space-y-1.5">
+                <span className="text-label">{label}</span>
+                <Select value={value} onValueChange={onChange}>
+                  <SelectTrigger aria-label={label} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {opts.map(([v, l]: [string, string]) => (
+                      <SelectItem key={v} value={v}>
+                        {l}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
+          </div>
+        </Modal>
+        <div className="mb-5 hidden gap-3 sm:flex sm:flex-wrap">
           <Select value={city || 'all'} onValueChange={handleCityChange}>
             <SelectTrigger className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
               <SelectValue placeholder="Filter by city" />

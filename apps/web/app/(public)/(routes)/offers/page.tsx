@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+import OffersLoading from './loading';
 import { serverGet } from '@/lib/server-api';
 import OffersClient from './offers-client';
 
@@ -14,5 +16,9 @@ export default async function OffersPage() {
     serverGet('/v1/platform-offers/public', { revalidate: 120 }),
   ]);
 
-  return <OffersClient initialOffers={offers} initialPlatformOffers={platformOffers} />;
+  return (
+    <Suspense fallback={<OffersLoading />}>
+      <OffersClient initialOffers={offers} initialPlatformOffers={platformOffers} />
+    </Suspense>
+  );
 }
