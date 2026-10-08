@@ -1438,7 +1438,12 @@ model Review {
   status             ReviewStatus @default(PENDING)
   isVerifiedPurchase Boolean      @default(false) @map("is_verified_purchase")
   helpfulCount       Int          @default(0) @map("helpful_count")
-  
+
+  // Public reply from the business (one per review, editable)
+  ownerReply         String?      @map("owner_reply") @db.Text
+  ownerReplyAt       DateTime?    @map("owner_reply_at")
+  ownerReplyBy       String?      @map("owner_reply_by") @db.Uuid
+
   // Core Audit Fields
   createdAt          DateTime     @default(now()) @map("created_at")
   updatedAt          DateTime     @updatedAt @map("updated_at")
@@ -2796,3 +2801,74 @@ model Movie {
   @@map("movies")
 }
 
+
+// ============================================================
+// Support tickets (business <-> platform team)
+// ============================================================
+
+model SupportTicket {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  businessId  String?   @map("business_id") @db.Uuid
+  openedBy    String    @map("opened_by") @db.Uuid
+  subject     String    @db.VarChar(200)
+  category    String    @default("GENERAL") @db.VarChar(30)
+  status      String    @default("OPEN") @db.VarChar(20)
+  priority    String    @default("NORMAL") @db.VarChar(20)
+  lastReplyAt DateTime  @default(now()) @map("last_reply_at")
+  lastReplyBy String    @default("CUSTOMER") @map("last_reply_by") @db.VarChar(20)
+  closedAt    DateTime? @map("closed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  messages SupportMessage[]
+
+  @@index([businessId, createdAt])
+  @@index([status, lastReplyAt])
+  @@index([openedBy])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @map("ticket_id") @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  fromStaff Boolean  @default(false) @map("from_staff")
+  body      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@map("support_messages")
+}
+
+// ============================================================
+// Analytics rollup: one row per business per IST day
+// ============================================================
+
+model DailyBusinessStat {
+  id            String   @id @default(uuid()) @db.Uuid
+  businessId    String   @map("business_id") @db.Uuid
+  date          DateTime @db.Date
+  views         Int      @default(0)
+  visitors      Int      @default(0)
+  actions       Int      @default(0)
+  calls         Int      @default(0)
+  directions    Int      @default(0)
+  whatsapp      Int      @default(0)
+  website       Int      @default(0)
+  shares        Int      @default(0)
+  saves         Int      @default(0)
+  impressions   Int      @default(0)
+  cardClicks    Int      @default(0) @map("card_clicks")
+  claims        Int      @default(0)
+  verifiedBills Int      @default(0) @map("verified_bills")
+  verifiedSpend Decimal  @default(0) @map("verified_spend") @db.Decimal(14, 2)
+  computedAt    DateTime @default(now()) @map("computed_at")
+
+  @@unique([businessId, date])
+  @@index([date])
+  @@map("daily_business_stats")
+}

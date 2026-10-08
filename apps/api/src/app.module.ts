@@ -35,6 +35,7 @@ import { BillsModule } from './modules/bills/bills.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AnnouncementsModule } from './modules/announcements/announcements.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { SupportModule } from './modules/support/support.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { CategoriesModule } from './modules/categories/categories.module';
@@ -156,6 +157,7 @@ import { TrialsModule } from './modules/trials/trials.module';
     NotificationsModule,
     AnnouncementsModule,
     ReportsModule,
+    SupportModule,
     AnalyticsModule,
     AuditModule,
     CategoriesModule,

@@ -1,3 +1,4 @@
+import { assertBusinessAccess, type AccessUser } from '../../common/utils/business-access';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { VerifiedPurchaseRepository } from '../../common/database/repositories/verified-purchase.repository';
@@ -119,6 +120,24 @@ export class ReviewsService {
     await this.refreshBusinessRating(review.businessId);
     return review;
   }
+  /**
+   * Public reply from the business. Owner, active team member or brand owner only.
+   * An empty reply removes it. Replies are plain text and capped at 1,000 characters.
+   */
+  async reply(id: string, user: AccessUser, text: string) {
+    const review = await this.db.review.findFirst({ where: { id, deletedAt: null }, select: { id: true, businessId: true } });
+    if (!review) throw new NotFoundException('Review not found');
+    await assertBusinessAccess(this.db, review.businessId, user);
+    const clean = (text ?? '').replace(/<[^>]*>/g, '').trim().slice(0, 1000);
+    return this.db.review.update({
+      where: { id },
+      data: clean
+        ? { ownerReply: clean, ownerReplyAt: new Date(), ownerReplyBy: user.id }
+        : { ownerReply: null, ownerReplyAt: null, ownerReplyBy: null },
+      select: { id: true, ownerReply: true, ownerReplyAt: true },
+    });
+  }
+
   async markHelpful(id: string) {
     return this.db.review.update({ where: { id }, data: { helpfulCount: { increment: 1 } } });
   }

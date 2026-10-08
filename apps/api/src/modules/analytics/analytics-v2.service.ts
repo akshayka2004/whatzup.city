@@ -3,7 +3,8 @@ import { Prisma } from '@prisma/client';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { assertBusinessAccess, type AccessUser } from '../../common/utils/business-access';
-import { bucketKey, dayKeys, istRange, pctChange, previousRange, type IstRange } from '../../common/utils/ist';
+import { addDaysKey, bucketKey, dayKeys, istDateKey, istDayStart, istRange, pctChange, previousRange, type IstRange } from '../../common/utils/ist';
+import { AnalyticsRollupService } from './analytics-rollup.service';
 import { ACTION_GROUPS, EVENT_GROUPS, eventsFor, groupOf, type EventGroup } from './event-taxonomy';
 
 export type Granularity = 'day' | 'week' | 'month';
@@ -36,6 +37,7 @@ export class AnalyticsV2Service {
   constructor(
     private readonly db: DatabaseService,
     private readonly redis: RedisService,
+    private readonly rollups: AnalyticsRollupService,
   ) {}
 
   private range(q: RangeQuery) {
@@ -187,27 +189,46 @@ export class AnalyticsV2Service {
   private async businessSeries(businessId: string, r: IstRange, g: Granularity) {
     const views = Prisma.join(eventsFor('profileView'));
     const acts = Prisma.join(eventsFor(...ACTION_GROUPS));
-    const [ev, claims, spend] = await Promise.all([
+
+    // Completed days come from the nightly rollup when every one of them has been computed;
+    // today (and anything not yet rolled up) always comes from the raw rows.
+    const today = istDateKey(new Date());
+    const lastDone = r.to < today ? r.to : addDaysKey(today, -1);
+    let rawStart = r.start;
+    let rolled: { date: Date; views: number; visitors: number; actions: number; claims: number; verifiedSpend: Prisma.Decimal }[] = [];
+    if (r.from <= lastDone) {
+      const needed = dayKeys(istRange({ from: r.from, to: lastDone, maxDays: 400 }));
+      const done = await this.rollups.computedDays(r.from, lastDone);
+      if (needed.every((d) => done.has(d))) {
+        rolled = await this.db.dailyBusinessStat.findMany({
+          where: { businessId, date: { gte: new Date(`${r.from}T00:00:00Z`), lte: new Date(`${lastDone}T00:00:00Z`) } },
+          select: { date: true, views: true, visitors: true, actions: true, claims: true, verifiedSpend: true },
+        });
+        rawStart = istDayStart(addDaysKey(lastDone, 1));
+      }
+    }
+    const rawNeeded = rawStart < r.end;
+    const [ev, claims, spend] = !rawNeeded ? [[], [], []] as const : await Promise.all([
       this.db.$queryRaw<{ d: string; views: bigint; visitors: bigint; actions: bigint }[]>(Prisma.sql`
         SELECT ${istDay('created_at')} AS d,
           count(*) FILTER (WHERE event IN (${views})) AS views,
           count(DISTINCT ${VID}) FILTER (WHERE event IN (${views})) AS visitors,
           count(*) FILTER (WHERE event IN (${acts})) AS actions
         FROM analytics_events
-        WHERE business_id = ${businessId}::uuid AND created_at >= ${r.start} AND created_at < ${r.end}
+        WHERE business_id = ${businessId}::uuid AND created_at >= ${rawStart} AND created_at < ${r.end}
           AND deleted_at IS NULL AND ${HUMAN}
         GROUP BY d`),
       this.db.$queryRaw<{ d: string; claims: bigint }[]>(Prisma.sql`
         SELECT ${istDay('r.created_at')} AS d, count(*) AS claims
         FROM offer_redemptions r JOIN offers o ON o.id = r.offer_id
         WHERE o.business_id = ${businessId}::uuid AND r.deleted_at IS NULL
-          AND r.created_at >= ${r.start} AND r.created_at < ${r.end}
+          AND r.created_at >= ${rawStart} AND r.created_at < ${r.end}
         GROUP BY d`),
       this.db.$queryRaw<{ d: string; spend: Prisma.Decimal }[]>(Prisma.sql`
         SELECT ${istDay('verified_at')} AS d, sum(amount) AS spend
         FROM bills
         WHERE business_id = ${businessId}::uuid AND deleted_at IS NULL AND status = 'VERIFIED'
-          AND verified_at >= ${r.start} AND verified_at < ${r.end}
+          AND verified_at >= ${rawStart} AND verified_at < ${r.end}
         GROUP BY d`),
     ]);
 
@@ -227,6 +248,15 @@ export class AnalyticsV2Service {
         b.views += n(row.views);
         b.visitors += n(row.visitors);
         b.actions += n(row.actions);
+      }),
+    );
+    rolled.forEach((row) =>
+      add(row.date.toISOString().slice(0, 10), (b) => {
+        b.views += row.views;
+        b.visitors += row.visitors;
+        b.actions += row.actions;
+        b.claims += row.claims;
+        b.spend += Number(row.verifiedSpend ?? 0);
       }),
     );
     claims.forEach((row) => add(row.d, (b) => (b.claims += n(row.claims))));

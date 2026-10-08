@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Put, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -26,6 +26,17 @@ export class ReviewsController {
   @ApiBearerAuth()
   async create(@CurrentUser('id') userId: string, @Body() data: CreateReviewDto) {
     return this.reviewsService.create(userId, data);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/reply')
+  @ApiBearerAuth()
+  async reply(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string; role?: string },
+    @Body('reply') reply: string,
+  ) {
+    return this.reviewsService.reply(id, user, reply);
   }
 
   @UseGuards(JwtAuthGuard)
