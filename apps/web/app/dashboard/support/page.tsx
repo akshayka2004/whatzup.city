@@ -185,11 +185,11 @@ export default function BusinessSupportPage() {
                 >
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <p className="text-sm font-semibold text-foreground line-clamp-1 break-words">{ticket.title}</p>
-                    <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0', cfg.color)}>
+                    <span className={cn('text-xs font-bold px-1.5 py-0.5 rounded-full border shrink-0', cfg.color)}>
                       {cfg.label}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <User className="h-3 w-3" />
                     <span>{ticket.customerName}</span>
                     <span className="mx-1">·</span>
@@ -203,7 +203,7 @@ export default function BusinessSupportPage() {
           {/* Thread */}
           <div className="lg:col-span-2">
             {selected ? (
-              <Card className="rounded-2xl border-border bg-card/60 backdrop-blur-xl flex flex-col h-full">
+              <Card className="rounded-2xl border-border bg-card flex flex-col h-full">
                 {/* Header */}
                 <div className="p-5 border-b border-border">
                   <div className="flex items-start justify-between gap-3">
@@ -250,7 +250,7 @@ export default function BusinessSupportPage() {
                           {msg.from === 'support' ? 'You (Business)' : selected.customerName}
                         </p>
                         <p className="text-sm text-foreground">{msg.text}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1.5">{msg.timestamp}</p>
+                        <p className="text-xs text-muted-foreground mt-1.5">{msg.timestamp}</p>
                       </div>
                     </div>
                   ))}

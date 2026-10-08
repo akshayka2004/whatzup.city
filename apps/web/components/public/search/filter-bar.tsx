@@ -89,7 +89,7 @@ export function FilterBar({
             <SlidersHorizontal className="h-4 w-4" />
             Filters
             {active > 0 && (
-              <span className="ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">
+              <span className="ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs font-bold text-primary-foreground">
                 {active}
               </span>
             )}

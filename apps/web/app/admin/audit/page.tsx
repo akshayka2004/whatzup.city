@@ -243,7 +243,7 @@ export default function AdminAuditPage() {
         </p>
 
         {/* Table */}
-        <Card className="p-0 rounded-2xl border-border bg-card/40 backdrop-blur-xl overflow-hidden">
+        <Card className="p-0 rounded-2xl border-border bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -281,7 +281,7 @@ export default function AdminAuditPage() {
                         <td className="px-5 py-3.5">
                           <span
                             className={cn(
-                              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border',
+                              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border',
                               cfg.bg,
                               cfg.color,
                               cfg.border,
@@ -292,7 +292,7 @@ export default function AdminAuditPage() {
                           </span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className="px-2 py-0.5 rounded bg-secondary border border-border text-[10px] font-mono font-bold text-foreground whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded bg-secondary border border-border text-xs font-mono font-bold text-foreground whitespace-nowrap">
                             {log.action}
                           </span>
                         </td>

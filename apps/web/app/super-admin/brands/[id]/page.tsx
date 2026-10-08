@@ -275,8 +275,8 @@ export default function SuperAdminBrandDetailPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold text-foreground">{o.name}</p>
                           {o.outletLabel && <span className="text-xs text-muted-foreground">· {o.outletLabel}</span>}
-                          {o.isBrandHq && <span className="rounded bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">HQ</span>}
-                          <span className={cn('rounded-full border px-2 py-0.5 text-[10px] font-bold', OUTLET_STATUS[o.status] || OUTLET_STATUS.DRAFT)}>
+                          {o.isBrandHq && <span className="rounded bg-primary px-1.5 py-0.5 text-xs font-bold text-primary-foreground">HQ</span>}
+                          <span className={cn('rounded-full border px-2 py-0.5 text-xs font-bold', OUTLET_STATUS[o.status] || OUTLET_STATUS.DRAFT)}>
                             {o.status.replace(/_/g, ' ')}
                           </span>
                         </div>
@@ -292,7 +292,7 @@ export default function SuperAdminBrandDetailPage() {
                           )}
                         </div>
                         {o.launchOfferClaimedAt && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-success/20 bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success" title={fullDate(o.launchOfferClaimedAt)}>
+                          <span className="inline-flex items-center gap-1 rounded-full border border-success/20 bg-success/10 px-2 py-0.5 text-xs font-semibold text-success" title={fullDate(o.launchOfferClaimedAt)}>
                             <Gift className="h-3 w-3" /> Launch offer claimed {shortDate(o.launchOfferClaimedAt)}
                           </span>
                         )}
@@ -335,9 +335,9 @@ export default function SuperAdminBrandDetailPage() {
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                           <span className={cn('text-xs font-semibold', m.color)}>{m.label}</span>
                           {outlet && (
-                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">{outlet.name}</span>
+                            <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">{outlet.name}</span>
                           )}
-                          <span className="text-[11px] text-muted-foreground" title={fullDate(ev.createdAt)}>{timeAgo(ev.createdAt)}</span>
+                          <span className="text-xs text-muted-foreground" title={fullDate(ev.createdAt)}>{timeAgo(ev.createdAt)}</span>
                         </div>
                         <p className="mt-0.5 text-sm text-foreground break-words">{ev.summary}</p>
                       </div>

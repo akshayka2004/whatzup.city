@@ -164,7 +164,7 @@ export function OperatingHoursEditor({
                       <div key={i} className="space-y-1.5">
                         <div className="grid grid-cols-[1fr_1fr_2.5rem] items-end gap-2">
                           <label className="block space-y-1">
-                            <span className="text-[11px] font-medium text-muted-foreground">
+                            <span className="text-xs font-medium text-muted-foreground">
                               {sched.shifts.length > 1 ? `Shift ${i + 1} opens` : 'Opens'}
                             </span>
                             <input
@@ -175,7 +175,7 @@ export function OperatingHoursEditor({
                             />
                           </label>
                           <label className="block space-y-1">
-                            <span className="text-[11px] font-medium text-muted-foreground">Closes</span>
+                            <span className="text-xs font-medium text-muted-foreground">Closes</span>
                             {midnight ? (
                               <div className={cn(timeInputCls, 'flex items-center text-muted-foreground')}>12:00 AM</div>
                             ) : (
@@ -265,7 +265,7 @@ export function OperatingHoursEditor({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <label className="block space-y-1">
-                  <span className="text-[11px] font-medium text-muted-foreground">From</span>
+                  <span className="text-xs font-medium text-muted-foreground">From</span>
                   <input
                     type="date"
                     value={c.from}
@@ -274,7 +274,7 @@ export function OperatingHoursEditor({
                   />
                 </label>
                 <label className="block space-y-1">
-                  <span className="text-[11px] font-medium text-muted-foreground">To (inclusive)</span>
+                  <span className="text-xs font-medium text-muted-foreground">To (inclusive)</span>
                   <input
                     type="date"
                     value={c.to}
@@ -285,7 +285,7 @@ export function OperatingHoursEditor({
                 </label>
               </div>
               <label className="block space-y-1">
-                <span className="text-[11px] font-medium text-muted-foreground">Reason (optional)</span>
+                <span className="text-xs font-medium text-muted-foreground">Reason (optional)</span>
                 <input
                   type="text"
                   value={c.reason}

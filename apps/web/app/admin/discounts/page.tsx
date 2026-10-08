@@ -115,7 +115,7 @@ export default function AdminDiscountsPage() {
                       </td>
                       <td className="px-5 py-3 text-foreground">{d._count?.spins ?? 0}</td>
                       <td className="px-5 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${d.isActive ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${d.isActive ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground'}`}>
                           {d.isActive ? 'Active' : 'Retired'}
                         </span>
                       </td>

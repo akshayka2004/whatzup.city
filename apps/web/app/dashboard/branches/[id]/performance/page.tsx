@@ -155,7 +155,7 @@ export default function BranchPerformancePage() {
               })}
             </div>
 
-            <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
+            <Card className="p-6 rounded-2xl border-border bg-card">
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h3 className="text-base font-bold text-foreground">Event Activity</h3>

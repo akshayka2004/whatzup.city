@@ -83,7 +83,7 @@ export function MenuSection({
                   fallback={<UtensilsCrossed className="h-6 w-6" />}
                 />
                 {p.title && (
-                  <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-2 py-1 text-[11px] font-medium text-white">
+                  <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-2 py-1 text-xs font-medium text-white">
                     {p.title}
                   </span>
                 )}

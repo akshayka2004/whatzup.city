@@ -40,7 +40,7 @@ export function DiscountTicket({ businessName, itemName, discountPercent, code, 
         </div>
 
         <div className="border-t border-dashed border-primary/30 px-5 py-4 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-1">
             Show this code in-store
           </p>
           <p className="text-2xl font-mono font-extrabold tracking-wider text-foreground">{code}</p>

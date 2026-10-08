@@ -92,7 +92,7 @@ export default function AdminPaymentsPage() {
           </div>
         ) : rows.length === 0 ? (
           <Card className="p-10 text-center">
-            <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto mb-3" />
+            <CheckCircle2 className="h-10 w-10 text-success-soft-foreground mx-auto mb-3" />
             <p className="text-sm font-semibold text-foreground">No payments awaiting verification</p>
             <p className="text-xs text-muted-foreground mt-1">New submissions will appear here.</p>
           </Card>
@@ -110,7 +110,7 @@ export default function AdminPaymentsPage() {
                           alt="Payment screenshot"
                           className="w-full h-48 object-cover rounded-xl border border-border"
                         />
-                        <span className="text-[11px] text-primary flex items-center gap-1 mt-1.5">
+                        <span className="text-xs text-primary flex items-center gap-1 mt-1.5">
                           Open full size <ExternalLink className="h-3 w-3" />
                         </span>
                       </a>
@@ -137,7 +137,7 @@ export default function AdminPaymentsPage() {
                         <div className="text-xl font-extrabold text-foreground">
                           {formatINR(Number(p.amount))}
                         </div>
-                        <div className="text-[11px] text-muted-foreground">{p.method}</div>
+                        <div className="text-xs text-muted-foreground">{p.method}</div>
                       </div>
                     </div>
 

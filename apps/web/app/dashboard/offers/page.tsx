@@ -218,7 +218,7 @@ export default function OffersPage() {
           <Input key="amt" type="number" min="1" value={discountAmount || ''} onChange={(e) => setDiscountAmount(Number(e.target.value))} placeholder="e.g. 500" className="rounded-xl border-input bg-background focus:border-primary text-foreground" />
         )}
       </div>
-      <p className="text-[10px] text-muted-foreground mt-1">{discountType === 'PERCENT' ? 'Percentage off the bill.' : 'Flat amount (₹) off the bill.'}</p>
+      <p className="text-xs text-muted-foreground mt-1">{discountType === 'PERCENT' ? 'Percentage off the bill.' : 'Flat amount (₹) off the bill.'}</p>
     </div>
   );
 
@@ -397,7 +397,7 @@ export default function OffersPage() {
                       {offer.active ? 'Active' : 'Inactive'}
                     </button>
                     {(offer.fulfilment === 'DINE_IN' || offer.fulfilment === 'TAKEAWAY') && (
-                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-secondary text-muted-foreground border border-border flex items-center gap-1">
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold bg-secondary text-muted-foreground border border-border flex items-center gap-1">
                         {offer.fulfilment === 'DINE_IN'
                           ? <UtensilsCrossed className="h-2.5 w-2.5" />
                           : <ShoppingBag className="h-2.5 w-2.5" />}
@@ -405,12 +405,12 @@ export default function OffersPage() {
                       </span>
                     )}
                     {isScheduled(offer) && (
-                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-info/10 text-info border border-info/20 flex items-center gap-1">
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold bg-info/10 text-info border border-info/20 flex items-center gap-1">
                         <Clock className="h-2.5 w-2.5" />Scheduled
                       </span>
                     )}
                     {offer.expiresAt && !isExpired(offer) && (
-                      <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-warning/10 text-warning border border-warning/20 flex items-center gap-1">
+                      <span className="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold bg-warning/10 text-warning border border-warning/20 flex items-center gap-1">
                         <Calendar className="h-2.5 w-2.5" />Expires {offer.expiresAt}
                       </span>
                     )}
@@ -422,7 +422,7 @@ export default function OffersPage() {
                       {offer.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-[10px] text-muted-foreground"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-xs text-muted-foreground"
                         >
                           <Tag className="h-2.5 w-2.5" />
                           {tag}
@@ -535,7 +535,7 @@ export default function OffersPage() {
                         key={c}
                         type="button"
                         onClick={() => toggleCity(c)}
-                        className={`px-2 py-1 rounded-lg text-[11px] border cursor-pointer ${
+                        className={`px-2 py-1 rounded-lg text-xs border cursor-pointer ${
                           formCities.includes(c)
                             ? 'bg-primary/20 border-primary text-primary'
                             : 'bg-background border-input text-muted-foreground'
@@ -624,7 +624,7 @@ export default function OffersPage() {
                         key={c}
                         type="button"
                         onClick={() => toggleCity(c)}
-                        className={`px-2 py-1 rounded-lg text-[11px] border cursor-pointer ${
+                        className={`px-2 py-1 rounded-lg text-xs border cursor-pointer ${
                           formCities.includes(c)
                             ? 'bg-primary/20 border-primary text-primary'
                             : 'bg-background border-input text-muted-foreground'

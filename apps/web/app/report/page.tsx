@@ -23,11 +23,11 @@ type IssueType =
   | 'other';
 
 const ISSUE_TYPES: { id: IssueType; label: string; desc: string; icon: any; color: string }[] = [
-  { id: 'fake_business', label: 'Fake / Duplicate Business', desc: 'Business listing appears fraudulent or is a duplicate.', icon: Store, color: 'text-rose-400' },
-  { id: 'fraudulent_offer', label: 'Fraudulent Offer', desc: 'Offer is misleading, expired, or not honored.', icon: Tag, color: 'text-amber-400' },
-  { id: 'fake_review', label: 'Fake Review', desc: 'Review appears to be fabricated or purchased.', icon: Star, color: 'text-yellow-400' },
-  { id: 'inappropriate_content', label: 'Inappropriate Content', desc: 'Media or description violates community guidelines.', icon: ShieldAlert, color: 'text-violet-400' },
-  { id: 'wrong_info', label: 'Wrong Information', desc: 'Address, hours, or contact info is incorrect.', icon: Globe, color: 'text-cyan-400' },
+  { id: 'fake_business', label: 'Fake / Duplicate Business', desc: 'Business listing appears fraudulent or is a duplicate.', icon: Store, color: 'text-danger-soft-foreground' },
+  { id: 'fraudulent_offer', label: 'Fraudulent Offer', desc: 'Offer is misleading, expired, or not honored.', icon: Tag, color: 'text-warning-soft-foreground' },
+  { id: 'fake_review', label: 'Fake Review', desc: 'Review appears to be fabricated or purchased.', icon: Star, color: 'text-warning-soft-foreground' },
+  { id: 'inappropriate_content', label: 'Inappropriate Content', desc: 'Media or description violates community guidelines.', icon: ShieldAlert, color: 'text-brand-soft-foreground' },
+  { id: 'wrong_info', label: 'Wrong Information', desc: 'Address, hours, or contact info is incorrect.', icon: Globe, color: 'text-info-soft-foreground' },
   { id: 'other', label: 'Other Issue', desc: 'Something else that needs admin attention.', icon: MessageSquare, color: 'text-muted-foreground' },
 ];
 
@@ -119,7 +119,7 @@ export default function ReportPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-2">
-            <Flag className="h-5 w-5 text-rose-400" />
+            <Flag className="h-5 w-5 text-danger-soft-foreground" />
             <span className="font-bold text-foreground">Report an Issue</span>
           </div>
         </div>
@@ -183,7 +183,7 @@ export default function ReportPage() {
               </div>
             </div>
 
-            <Card className="p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl ui-pop">
+            <Card className="p-6 rounded-2xl border-border bg-card ui-pop">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground block mb-1.5">
@@ -209,7 +209,7 @@ export default function ReportPage() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-                    Description <span className="text-rose-400">*</span>
+                    Description <span className="text-danger-soft-foreground">*</span>
                   </label>
                   <textarea
                     value={description}
@@ -221,21 +221,21 @@ export default function ReportPage() {
                   />
                 </div>
                 {!user && (
-                  <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                    <AlertTriangle className="h-3.5 w-3.5 text-blue-400 shrink-0 mt-0.5" />
-                    <p className="text-xs text-blue-300">
+                  <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-info-soft border border-info/25">
+                    <AlertTriangle className="h-3.5 w-3.5 text-info-soft-foreground shrink-0 mt-0.5" />
+                    <p className="text-xs text-info-soft-foreground">
                       You are not logged in. <Link href="/login" className="underline font-medium">Sign in</Link> so admins can follow up with you.
                     </p>
                   </div>
                 )}
-                <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-300">
+                <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-warning-soft border border-warning/30">
+                  <AlertTriangle className="h-3.5 w-3.5 text-warning-soft-foreground shrink-0 mt-0.5" />
+                  <p className="text-xs text-warning-soft-foreground">
                     False reports may result in account restrictions. Only report genuine issues.
                   </p>
                 </div>
                 {error && (
-                  <p className="text-xs text-rose-400">{error}</p>
+                  <p className="text-xs text-danger-soft-foreground">{error}</p>
                 )}
                 <Button
                   type="submit"
@@ -253,8 +253,8 @@ export default function ReportPage() {
         {/* Step: Success */}
         {step === 'success' && (
           <Card className="p-10 rounded-2xl border-border bg-card/60 text-center space-y-4 ui-pop">
-            <div className="mx-auto w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center ui-glow">
-              <Check className="h-8 w-8 text-emerald-400" />
+            <div className="mx-auto w-16 h-16 rounded-full bg-success-soft flex items-center justify-center ui-glow">
+              <Check className="h-8 w-8 text-success-soft-foreground" />
             </div>
             <h2 className="text-xl font-extrabold text-foreground">Report Submitted</h2>
             <p className="text-muted-foreground text-sm">

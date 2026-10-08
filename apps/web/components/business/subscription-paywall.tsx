@@ -185,7 +185,7 @@ export function SubscriptionPaywall() {
 
         {awaiting ? (
           <div className="p-6 flex items-center gap-3 text-sm text-muted-foreground">
-            <ShieldCheck className="h-5 w-5 text-emerald-400 shrink-0" />
+            <ShieldCheck className="h-5 w-5 text-success-soft-foreground shrink-0" />
             Nothing more to do right now — you'll be notified once it's approved.
           </div>
         ) : (
@@ -214,12 +214,12 @@ export function SubscriptionPaywall() {
                       'p-4 rounded-xl border text-left transition cursor-pointer',
                       homeChefTier === p.code
                         ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-slate-500',
+                        : 'border-border hover:border-border',
                     )}
                   >
                     <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
                     <div className="text-lg font-extrabold text-foreground">{formatINR(p.price)}</div>
-                    <div className="text-[11px] text-muted-foreground mt-1">
+                    <div className="text-xs text-muted-foreground mt-1">
                       {p.offers} offers · {p.vouchers} vouchers
                     </div>
                   </button>
@@ -236,15 +236,15 @@ export function SubscriptionPaywall() {
                       'p-4 rounded-xl border text-left transition cursor-pointer',
                       selectedPlan === p.code
                         ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-slate-500',
+                        : 'border-border hover:border-border',
                     )}
                   >
                     <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-lg font-extrabold text-foreground">{formatINR(p.offerPrice)}</span>
-                      <span className="text-[11px] text-muted-foreground line-through">{formatINR(p.mrp)}</span>
+                      <span className="text-xs text-muted-foreground line-through">{formatINR(p.mrp)}</span>
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-1">
+                    <div className="text-xs text-muted-foreground mt-1">
                       {p.offers} offers · {p.vouchers} vouchers
                     </div>
                   </button>
@@ -255,13 +255,13 @@ export function SubscriptionPaywall() {
             <div className="flex justify-between items-baseline rounded-xl border border-border p-4">
               <div>
                 <span className="text-sm font-bold text-foreground">Amount payable</span>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-xs text-muted-foreground">
                   {formatINR(totals.base)} + {formatINR(totals.tax)} GST ({TAX_PERCENT}%)
                 </div>
               </div>
               <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
             </div>
-            <p className="text-[11px] text-muted-foreground -mt-4">
+            <p className="text-xs text-muted-foreground -mt-4">
               Valid for {isHotel ? HOTEL_DURATION_DAYS : isHomeChef ? HOME_CHEF_DURATION_DAYS : PLAN_DURATION_DAYS} days from activation.
             </p>
 
@@ -279,7 +279,7 @@ export function SubscriptionPaywall() {
                 <p className="text-sm font-bold text-foreground tracking-wide select-all">
                   {PAYMENT_UPI_ID}
                 </p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {PAYMENT_PAYEE_NAME} · pay the exact amount shown above
                 </p>
               </div>

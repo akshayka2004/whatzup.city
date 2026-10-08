@@ -498,7 +498,7 @@ export default function RoleOnboardingWizard() {
             </span>
           </div>
           <Progress value={(currentStep / totalSteps) * 100} className="h-2 bg-background" />
-          <div className="grid grid-cols-4 gap-2 mt-4 text-[10px] text-center font-mono">
+          <div className="grid grid-cols-4 gap-2 mt-4 text-xs text-center font-mono">
             {currentRoleConfig.steps.map((title, i) => (
               <span
                 key={i}
@@ -530,7 +530,7 @@ export default function RoleOnboardingWizard() {
           </div>
         )}
 
-        <Card className="bg-card/80 backdrop-blur-xl border border-border p-6 md:p-8 rounded-3xl shadow-xl">
+        <Card className="bg-card border border-border p-6 md:p-8 rounded-3xl shadow-xl">
           {/* Dynamically render step form */}
           {currentStep < totalSteps ? (
             <form onSubmit={handleStepSubmit} className="space-y-6 ui-pop">
@@ -1009,7 +1009,7 @@ export default function RoleOnboardingWizard() {
                           >
                             <div>
                               <p className="font-bold text-foreground">{ev.name}</p>
-                              <p className="text-[10px] text-muted-foreground">{ev.date} - {ev.description}</p>
+                              <p className="text-xs text-muted-foreground">{ev.date} - {ev.description}</p>
                             </div>
                             <Button
                               type="button"
@@ -1259,19 +1259,19 @@ export default function RoleOnboardingWizard() {
                   {verificationDoc ? (
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-violet-400">{verificationDoc.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{(verificationDoc.size / 1024 / 1024).toFixed(2)} MB • Click to replace</p>
+                      <p className="text-xs text-muted-foreground">{(verificationDoc.size / 1024 / 1024).toFixed(2)} MB • Click to replace</p>
                     </div>
                   ) : (
                     <div>
                       <p className="text-sm font-semibold text-foreground">Drag files here or click to browse</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">Supports PDF, PNG, JPG, WEBP (Max 10MB)</p>
+                      <p className="text-xs text-muted-foreground mt-1">Supports PDF, PNG, JPG, WEBP (Max 10MB)</p>
                     </div>
                   )}
                 </div>
 
                 {uploadProgress > 0 && (
                   <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <div className="flex justify-between text-xs text-muted-foreground">
                       <span>Transmitting file chunks...</span>
                       <span>{uploadProgress}%</span>
                     </div>
@@ -1310,12 +1310,12 @@ export default function RoleOnboardingWizard() {
                             <FileCheck className="h-4 w-4 text-emerald-400 shrink-0" />
                             {doc.documentType}
                           </p>
-                          {doc.documentNumber && <p className="text-[10px] text-muted-foreground font-mono">ID: {doc.documentNumber}</p>}
+                          {doc.documentNumber && <p className="text-xs text-muted-foreground font-mono">ID: {doc.documentNumber}</p>}
                           <a
                             href={doc.fileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[10px] text-cyan-400 hover:underline inline-block pt-1"
+                            className="text-xs text-cyan-400 hover:underline inline-block pt-1"
                           >
                             View Document File
                           </a>

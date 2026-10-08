@@ -179,7 +179,7 @@ export default function TenantsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                 <div className="bg-secondary/50 p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
-                    <span className="text-[10px] uppercase font-bold tracking-wider">
+                    <span className="text-xs uppercase font-bold tracking-wider">
                       Total Sales
                     </span>
                     <BarChart3 className="h-4 w-4 text-success" />
@@ -188,7 +188,7 @@ export default function TenantsPage() {
                 </div>
                 <div className="bg-secondary/50 p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
-                    <span className="text-[10px] uppercase font-bold tracking-wider">
+                    <span className="text-xs uppercase font-bold tracking-wider">
                       Active Offers
                     </span>
                     <Tag className="h-4 w-4 text-primary" />
@@ -199,7 +199,7 @@ export default function TenantsPage() {
                 </div>
                 <div className="bg-secondary/50 p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
-                    <span className="text-[10px] uppercase font-bold tracking-wider">
+                    <span className="text-xs uppercase font-bold tracking-wider">
                       Events Published
                     </span>
                     <FileText className="h-4 w-4 text-primary" />
@@ -212,17 +212,17 @@ export default function TenantsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 <div className="bg-secondary/50 p-4 rounded-xl border border-border">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
-                    <span className="text-[10px] uppercase font-bold tracking-wider">
+                    <span className="text-xs uppercase font-bold tracking-wider">
                       Location
                     </span>
                     <Building2 className="h-4 w-4 text-info" />
                   </div>
                   <p className="text-lg font-extrabold text-foreground">{managingTenant.city}</p>
-                  <p className="text-[10px] text-muted-foreground mt-1">{managingTenant.category}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{managingTenant.category}</p>
                 </div>
                 <div className="bg-success/5 p-4 rounded-xl border border-success/20">
                   <div className="flex items-center justify-between text-muted-foreground mb-1">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-success">
+                    <span className="text-xs uppercase font-bold tracking-wider text-success">
                       Total Received
                     </span>
                     <TrendingUp className="h-4 w-4 text-success" />
@@ -230,7 +230,7 @@ export default function TenantsPage() {
                   <p className="text-lg font-extrabold text-success">
                     ₹{Number(managingTenant.totalReceived || 0).toLocaleString('en-IN')}
                   </p>
-                  <p className="text-[10px] text-muted-foreground mt-1">Verified bill total</p>
+                  <p className="text-xs text-muted-foreground mt-1">Verified bill total</p>
                 </div>
               </div>
 

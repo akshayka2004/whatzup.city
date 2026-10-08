@@ -261,7 +261,7 @@ export default function CustomersPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{s.sub}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{s.sub}</p>
                 </Card>
               );
             })}
@@ -360,7 +360,7 @@ export default function CustomersPage() {
 
                   <span
                     className={cn(
-                      'text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0',
+                      'text-xs font-semibold px-2 py-0.5 rounded-full shrink-0',
                       c.customerStatus === 'ACTIVE'
                         ? 'bg-success/10 text-success'
                         : 'bg-muted text-muted-foreground',
@@ -415,7 +415,7 @@ export default function CustomersPage() {
                   <h3 className="text-lg font-bold text-foreground">{viewing.name}</h3>
                   <span
                     className={cn(
-                      'text-[10px] font-semibold px-2 py-0.5 rounded-full',
+                      'text-xs font-semibold px-2 py-0.5 rounded-full',
                       viewing.customerStatus === 'ACTIVE'
                         ? 'bg-success/10 text-success'
                         : 'bg-muted text-muted-foreground',

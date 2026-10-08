@@ -70,7 +70,7 @@ export function BrandStatusPill({ status, className }: { status?: string; classN
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold',
+        'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-bold',
         suspended
           ? 'border-destructive/20 bg-destructive/10 text-destructive'
           : 'border-success/20 bg-success/10 text-success',

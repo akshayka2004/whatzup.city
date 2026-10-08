@@ -44,7 +44,7 @@ const LIMIT = 20;
 function PendingBadge({ count }: { count: number }) {
   if (!count) return null;
   return (
-    <span className="inline-flex items-center rounded-full border border-warning/25 bg-warning/10 px-2 py-0.5 text-[10px] font-bold text-warning">
+    <span className="inline-flex items-center rounded-full border border-warning/25 bg-warning/10 px-2 py-0.5 text-xs font-bold text-warning">
       {count} pending
     </span>
   );
@@ -134,7 +134,7 @@ export default function SuperAdminBrandsPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-foreground line-clamp-2">{ev.summary}</p>
-                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
                         {ev.brand && (
                           <Link href={`/super-admin/brands/${ev.brand.id}`} className="font-semibold text-primary hover:underline">{ev.brand.name}</Link>
                         )}
@@ -206,9 +206,9 @@ export default function SuperAdminBrandsPage() {
                         <Store className="h-3 w-3 text-primary" />{b.outletCount} outlet{b.outletCount === 1 ? '' : 's'}
                       </span>
                       <PendingBadge count={b.pendingOutlets} />
-                      <span className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground">{seriesLabel(b.billSeriesMode, b.billSeriesPrefix)}</span>
+                      <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">{seriesLabel(b.billSeriesMode, b.billSeriesPrefix)}</span>
                     </div>
-                    <div className="flex items-center justify-between gap-2 border-t border-border pt-2.5 text-[11px] text-muted-foreground">
+                    <div className="flex items-center justify-between gap-2 border-t border-border pt-2.5 text-xs text-muted-foreground">
                       <span className="line-clamp-1 min-w-0">{b.lastEvent ? b.lastEvent.summary : 'No activity yet'}</span>
                       {b.lastEvent && <span className="shrink-0 inline-flex items-center gap-1"><Clock className="h-3 w-3" />{timeAgo(b.lastEvent.createdAt)}</span>}
                     </div>
@@ -237,11 +237,11 @@ export default function SuperAdminBrandsPage() {
                       <tr key={b.id} className="ui-fade-up border-b border-border last:border-0 hover:bg-secondary/20 transition-colors" style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}>
                         <td className="px-5 py-3">
                           <Link href={`/super-admin/brands/${b.id}`} className="font-semibold text-foreground hover:text-primary transition-colors">{b.name}</Link>
-                          <p className="text-[11px] text-muted-foreground">Since {new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                          <p className="text-xs text-muted-foreground">Since {new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                         </td>
                         <td className="px-5 py-3">
                           <p className="text-xs font-medium text-foreground">{b.owner?.name || '—'}</p>
-                          <p className="text-[11px] text-muted-foreground">{b.owner?.email || b.owner?.phone || ''}</p>
+                          <p className="text-xs text-muted-foreground">{b.owner?.email || b.owner?.phone || ''}</p>
                         </td>
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-2">
@@ -255,7 +255,7 @@ export default function SuperAdminBrandsPage() {
                           {b.lastEvent ? (
                             <>
                               <p className="text-xs text-foreground line-clamp-1">{b.lastEvent.summary}</p>
-                              <p className="text-[11px] text-muted-foreground" title={fullDate(b.lastEvent.createdAt)}>{timeAgo(b.lastEvent.createdAt)}</p>
+                              <p className="text-xs text-muted-foreground" title={fullDate(b.lastEvent.createdAt)}>{timeAgo(b.lastEvent.createdAt)}</p>
                             </>
                           ) : <span className="text-xs text-muted-foreground">—</span>}
                         </td>

@@ -186,11 +186,11 @@ export function EventsManager() {
                             {e.title}
                             <div className="flex items-center gap-1.5 mt-1">
                               {e.category && (
-                                <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-secondary text-muted-foreground">
+                                <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-secondary text-muted-foreground">
                                   {EVENT_CATEGORIES.find((c) => c.value === e.category)?.label || e.category}
                                 </span>
                               )}
-                              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${e.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
+                              <span className={`px-1.5 py-0.5 rounded-md text-xs font-medium ${e.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
                                 {e.ticketType !== 'PAID'
                                   ? 'Free'
                                   : Array.isArray(e.ticketTiers) && e.ticketTiers.length
@@ -237,8 +237,8 @@ export function EventsManager() {
                         <p className="text-xs text-muted-foreground">{r.event?.business?.name || ''}</p>
                       </div>
                       <div className="text-right shrink-0 ml-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${r.type === 'TICKET' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>{r.type}</span>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{fmt(r.createdAt)}</p>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${r.type === 'TICKET' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>{r.type}</span>
+                        <p className="text-xs text-muted-foreground mt-0.5">{fmt(r.createdAt)}</p>
                       </div>
                     </div>
                   ))}
@@ -254,7 +254,7 @@ export function EventsManager() {
             <h3 className="text-lg font-bold text-foreground mb-4">{editing ? 'Edit Event' : 'New Event'}</h3>
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] text-muted-foreground">Host business</label>
+                <label className="text-xs text-muted-foreground">Host business</label>
                 <select value={form.businessId} onChange={(e) => set('businessId', e.target.value)} disabled={!!editing}
                   className="w-full h-10 px-3 bg-background border border-input rounded-xl text-sm text-foreground disabled:opacity-60">
                   <option value="">Select business…</option>
@@ -270,7 +270,7 @@ export function EventsManager() {
               <textarea placeholder="Description" value={form.description} onChange={(e) => set('description', e.target.value)} className="w-full min-h-20 p-3 bg-background border border-input rounded-xl text-sm text-foreground" />
 
               <div>
-                <label className="text-[11px] text-muted-foreground">Poster image</label>
+                <label className="text-xs text-muted-foreground">Poster image</label>
                 <div className="flex items-center gap-3 mt-1">
                   {form.posterImage && (
                     <img src={form.posterImage} alt="Poster" className="h-14 w-14 rounded-lg object-cover border border-border shrink-0" />
@@ -309,7 +309,7 @@ export function EventsManager() {
 
               {form.ticketType === 'PAID' && (
                 <div>
-                  <label className="text-[11px] text-muted-foreground">Ticket tiers (optional — e.g. Gold, Platinum). Leave empty to use the flat price above.</label>
+                  <label className="text-xs text-muted-foreground">Ticket tiers (optional — e.g. Gold, Platinum). Leave empty to use the flat price above.</label>
                   <div className="space-y-2 mt-1">
                     {tiers.map((t, i) => (
                       <div key={i} className="flex gap-2">
@@ -328,8 +328,8 @@ export function EventsManager() {
               )}
 
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="text-[11px] text-muted-foreground">Start date &amp; time</label><Input type="datetime-local" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
-                <div><label className="text-[11px] text-muted-foreground">End date &amp; time</label><Input type="datetime-local" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
+                <div><label className="text-xs text-muted-foreground">Start date &amp; time</label><Input type="datetime-local" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
+                <div><label className="text-xs text-muted-foreground">End date &amp; time</label><Input type="datetime-local" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
               </div>
               <Input placeholder="Registration URL (external)" value={form.registrationUrl} onChange={(e) => set('registrationUrl', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
               <Input placeholder="Ticket / booking URL (external)" value={form.ticketUrl} onChange={(e) => set('ticketUrl', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />

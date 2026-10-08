@@ -201,7 +201,7 @@ export function OnboardingTour({ steps, storageKey, startDelayMs = 600 }: Onboar
         {!isLast && (
           <button
             onClick={finish}
-            className="mt-3 text-[11px] text-muted-foreground hover:text-foreground cursor-pointer"
+            className="mt-3 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
           >
             Skip tour
           </button>

@@ -177,7 +177,7 @@ export default function SelectRolePage() {
                         <CheckCircle className="h-4 w-4" />
                       </span>
                     ) : (
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${option.badgeColor}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${option.badgeColor}`}>
                         {option.entityType}
                       </span>
                     )}
@@ -193,7 +193,7 @@ export default function SelectRolePage() {
 
           {/* Extra fields once role selected */}
           {selectedType && (
-            <Card className="bg-card/80 backdrop-blur-xl border border-border p-6 rounded-2xl space-y-4 ui-pop">
+            <Card className="bg-card border border-border p-6 rounded-2xl space-y-4 ui-pop">
               <h3 className="text-sm font-bold text-foreground">Additional Details (optional)</h3>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>

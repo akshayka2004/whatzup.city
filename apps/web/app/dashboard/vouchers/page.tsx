@@ -278,7 +278,7 @@ export default function VouchersPage() {
                         : r.rewardType === 'AMOUNT' ? `₹${Number(r.rewardValue || 0).toLocaleString('en-IN')} off`
                           : r.rewardLabel || 'Reward'}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {new Date(r.redeemedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
@@ -376,7 +376,7 @@ export default function VouchersPage() {
                     </p>
                   </div>
                   <span className={cn(
-                    'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                    'shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold',
                     v.status === 'ACTIVE' ? 'bg-success/12 text-success' : 'bg-muted text-muted-foreground',
                   )}>
                     {v.status}

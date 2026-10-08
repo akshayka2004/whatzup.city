@@ -126,7 +126,7 @@ export default function AdminProfilePage() {
       <div className="max-w-3xl mx-auto space-y-6">
 
         {/* Hero Profile Card */}
-        <Card className="rounded-2xl border-border bg-card/40 backdrop-blur-xl relative overflow-hidden ui-fade-up">
+        <Card className="rounded-2xl border-border bg-card relative overflow-hidden ui-fade-up">
           <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-primary/10 via-transparent to-transparent pointer-events-none" />
           <div className="p-7 pt-9">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -146,7 +146,7 @@ export default function AdminProfilePage() {
                   <h2 className="text-2xl font-extrabold text-foreground">
                     {profile.firstName} {profile.lastName}
                   </h2>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-warning/10 text-warning border border-warning/20 uppercase tracking-wide">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-warning/10 text-warning border border-warning/20 uppercase tracking-wide">
                     {(user as any).role || 'Admin'}
                   </span>
                 </div>
@@ -158,7 +158,7 @@ export default function AdminProfilePage() {
                 {referralCode && (
                   <div className="mt-3 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Referral Code</span>
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Referral Code</span>
                       <span className="font-mono text-sm font-bold text-primary tracking-widest">{referralCode}</span>
                       <button
                         onClick={() => { navigator.clipboard.writeText(referralCode); setReferralCopied(true); setTimeout(() => setReferralCopied(false), 2000); }}
@@ -171,7 +171,7 @@ export default function AdminProfilePage() {
                     {referralCount !== null && (
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 border border-success/20">
                         <Users className="h-3.5 w-3.5 text-success" />
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Referrals</span>
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Referrals</span>
                         <span className="text-sm font-bold text-success">{referralCount}</span>
                       </div>
                     )}
@@ -223,7 +223,7 @@ export default function AdminProfilePage() {
         )}
 
         {/* Personal Information */}
-        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl ui-fade-up" style={{ animationDelay: '0.05s' }}>
+        <Card className="p-6 rounded-2xl border-border bg-card ui-fade-up" style={{ animationDelay: '0.05s' }}>
           <h3 className="text-base font-bold text-foreground mb-5">Personal Information</h3>
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -259,7 +259,7 @@ export default function AdminProfilePage() {
         </Card>
 
         {/* Account Settings */}
-        <Card className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl ui-fade-up" style={{ animationDelay: '0.1s' }}>
+        <Card className="p-6 rounded-2xl border-border bg-card ui-fade-up" style={{ animationDelay: '0.1s' }}>
           <h3 className="text-base font-bold text-foreground mb-4">Account Settings</h3>
           <div className="space-y-2">
             <Button
@@ -281,7 +281,7 @@ export default function AdminProfilePage() {
         </Card>
 
         {/* Support & Legal */}
-        <Card className="p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl ui-fade-up" style={{ animationDelay: '0.15s' }}>
+        <Card className="p-5 rounded-2xl border-border bg-card ui-fade-up" style={{ animationDelay: '0.15s' }}>
           <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <HeadphonesIcon className="h-4 w-4 text-primary" />
             Help & Support
@@ -327,7 +327,7 @@ function ContactRow({
     <div className="flex items-center gap-3 p-3.5 bg-secondary rounded-xl border border-border">
       <Icon className="h-5 w-5 text-primary shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] text-muted-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
         {editable && onChange ? (
           <Input
             value={value}

@@ -292,7 +292,7 @@ export default function ApprovalsPage() {
                             <h3 className="font-bold text-muted-foreground text-base">
                               {entity.name || 'Unnamed Entity'}
                             </h3>
-                            <p className="text-[10px] text-muted-foreground font-mono">
+                            <p className="text-xs text-muted-foreground font-mono">
                               Request ID: {req.id}
                             </p>
                           </div>
@@ -311,7 +311,7 @@ export default function ApprovalsPage() {
                             <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                             Submitted: {new Date(req.createdAt).toLocaleDateString()}
                           </span>
-                          <span className="px-2 py-0.5 rounded bg-secondary text-[10px] font-semibold text-foreground">
+                          <span className="px-2 py-0.5 rounded bg-secondary text-xs font-semibold text-foreground">
                             {docCount} docs uploaded
                           </span>
                         </div>
@@ -539,7 +539,7 @@ export default function ApprovalsPage() {
                           </a>
                         </div>
                         {reviewingItem.entity.influencerProfile.mediaKitUrl && (
-                          <div className="pt-2 text-muted-foreground text-[11px] flex items-center gap-1.5">
+                          <div className="pt-2 text-muted-foreground text-xs flex items-center gap-1.5">
                             <FileText className="h-4 w-4 text-primary" />
                             <span>Media Kit linked at: </span>
                             <a href={reviewingItem.entity.influencerProfile.mediaKitUrl} target="_blank" rel="noreferrer" className="text-info hover:underline truncate max-w-[150px]">
@@ -579,7 +579,7 @@ export default function ApprovalsPage() {
                           <div className="flex flex-wrap gap-1">
                             {Array.isArray(reviewingItem.entity.professionalProfile.certifications) &&
                               reviewingItem.entity.professionalProfile.certifications.map((c: string, i: number) => (
-                                <span key={i} className="px-2 py-0.5 rounded bg-secondary text-[9px] text-foreground border border-border">
+                                <span key={i} className="px-2 py-0.5 rounded bg-secondary text-xs text-foreground border border-border">
                                   {c}
                                 </span>
                               ))}
@@ -587,7 +587,7 @@ export default function ApprovalsPage() {
                         </div>
                         <div className="py-1 border-t border-border mt-2">
                           <span className="text-muted-foreground block mb-1">Weekly Availability:</span>
-                          <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground">
+                          <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
                             {Object.entries(reviewingItem.entity.professionalProfile.availability || {}).map(([day, hrs]: any) => (
                               <div key={day} className="flex justify-between pr-2">
                                 <span className="capitalize">{day}:</span>
@@ -690,12 +690,12 @@ export default function ApprovalsPage() {
                             <span className="text-muted-foreground block mb-1">Previous Events Portfolio:</span>
                             <div className="space-y-1.5 max-h-[100px] overflow-y-auto pr-1">
                               {reviewingItem.entity.eventOrganizerProfile.previousEvents.map((ev: any, idx: number) => (
-                                <div key={idx} className="bg-secondary p-1.5 rounded border border-border text-[10px]">
+                                <div key={idx} className="bg-secondary p-1.5 rounded border border-border text-xs">
                                   <div className="flex justify-between font-bold text-foreground">
                                     <span>{ev.name}</span>
                                     <span className="text-muted-foreground">{ev.date}</span>
                                   </div>
-                                  <p className="text-muted-foreground text-[9px] mt-0.5 leading-tight">{ev.desc}</p>
+                                  <p className="text-muted-foreground text-xs mt-0.5 leading-tight">{ev.desc}</p>
                                 </div>
                               ))}
                             </div>
@@ -707,7 +707,7 @@ export default function ApprovalsPage() {
 
                   {/* Documents Selection Queue */}
                   <div className="space-y-2 flex-1">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
                       Verification Credentials ({ (reviewingItem.entity?.documents || []).length } files)
                     </label>
                     <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
@@ -736,7 +736,7 @@ export default function ApprovalsPage() {
                                   <p className="text-xs font-semibold truncate max-w-[170px]">
                                     {doc.name}
                                   </p>
-                                  <p className="text-[9px] text-muted-foreground">
+                                  <p className="text-xs text-muted-foreground">
                                     {doc.documentType || 'PROOF'} {doc.documentNumber ? `(${doc.documentNumber})` : ''}
                                   </p>
                                 </div>
@@ -746,7 +746,7 @@ export default function ApprovalsPage() {
                                 target="_blank"
                                 rel="noreferrer"
                                 onClick={(e) => e.stopPropagation()}
-                                className="p-1.5 rounded-lg bg-secondary border border-border text-info hover:bg-info/10 flex items-center gap-1 text-[9px] font-semibold"
+                                className="p-1.5 rounded-lg bg-secondary border border-border text-info hover:bg-info/10 flex items-center gap-1 text-xs font-semibold"
                               >
                                 <ExternalLink className="h-3.5 w-3.5" />
                               </a>
@@ -767,7 +767,7 @@ export default function ApprovalsPage() {
                           <h4 className="text-xs font-bold text-muted-foreground truncate max-w-[320px]">
                             {selectedDoc.name}
                           </h4>
-                          <p className="text-[9px] text-muted-foreground font-mono mt-0.5">
+                          <p className="text-xs text-muted-foreground font-mono mt-0.5">
                             {selectedDoc.documentType || 'VERIFICATION_CREDENTIAL'} {selectedDoc.issuedAuthority ? `• Issued by ${selectedDoc.issuedAuthority}` : ''}
                           </p>
                         </div>
@@ -776,7 +776,7 @@ export default function ApprovalsPage() {
                             href={selectedDoc.fileUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-[10px] text-info hover:underline flex items-center gap-1 font-semibold"
+                            className="text-xs text-info hover:underline flex items-center gap-1 font-semibold"
                           >
                             Fullscreen <ExternalLink className="h-3 w-3" />
                           </a>
@@ -819,7 +819,7 @@ export default function ApprovalsPage() {
                           // Fallback Mock Preview for Local Development
                           if (isPdf) {
                             return (
-                              <div className="w-full h-full min-h-[300px] bg-slate-900 border border-border rounded-lg p-6 flex flex-col justify-between font-serif relative overflow-hidden select-none">
+                              <div className="w-full h-full min-h-[300px] bg-card border border-border rounded-lg p-6 flex flex-col justify-between font-serif relative overflow-hidden select-none">
                                 {/* Diagonal watermark */}
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] rotate-[-30deg] text-3xl font-sans font-bold tracking-widest text-white">
                                   VERIFICATION AUDIT ONLY
@@ -828,12 +828,12 @@ export default function ApprovalsPage() {
                                   <h5 className="text-sm font-bold tracking-wider text-warning uppercase">
                                     State Registry Authority
                                   </h5>
-                                  <p className="text-[9px] text-muted-foreground uppercase tracking-widest font-sans mt-1">
+                                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-sans mt-1">
                                     Official Credential Certificate
                                   </p>
                                 </div>
 
-                                <div className="space-y-4 my-4 font-sans text-left text-[11px] text-muted-foreground">
+                                <div className="space-y-4 my-4 font-sans text-left text-xs text-muted-foreground">
                                   <div className="grid grid-cols-3 gap-2">
                                     <span className="text-muted-foreground font-semibold">
                                       Owner Entity:
@@ -875,14 +875,14 @@ export default function ApprovalsPage() {
                                   </div>
                                 </div>
 
-                                <div className="border-t border-border pt-4 flex justify-between items-center text-[8px] font-sans text-muted-foreground">
+                                <div className="border-t border-border pt-4 flex justify-between items-center text-xs font-sans text-muted-foreground">
                                   <div>
                                     <p>
                                       Authorized Signatory: <i>Registrar of Public Credentials</i>
                                     </p>
                                     <p className="mt-0.5">Hash: {reviewingItem.entity?.id}</p>
                                   </div>
-                                  <div className="h-8 w-8 rounded-full border border-warning/20 bg-warning/5 flex items-center justify-center text-warning/45 text-[9px] font-bold">
+                                  <div className="h-8 w-8 rounded-full border border-warning/20 bg-warning/5 flex items-center justify-center text-warning/45 text-xs font-bold">
                                     SEAL
                                   </div>
                                 </div>
@@ -904,19 +904,19 @@ export default function ApprovalsPage() {
                       {/* Per-document review — actioned individually */}
                       <div className="shrink-0 border-t border-border pt-3 mt-3 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Document status</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${docStatusClass(selectedDoc.status)}`}>
+                          <span className="text-xs text-muted-foreground uppercase tracking-wider">Document status</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${docStatusClass(selectedDoc.status)}`}>
                             {selectedDoc.status || 'PENDING'}
                           </span>
                         </div>
                         {(selectedDoc.documentCategory || selectedDoc.documentSubtype) && (
-                          <p className="text-[10px] text-muted-foreground">
+                          <p className="text-xs text-muted-foreground">
                             {selectedDoc.documentCategory || ''}
                             {selectedDoc.documentSubtype ? ` • ${selectedDoc.documentSubtype}` : ''}
                           </p>
                         )}
                         {selectedDoc.verificationNotes && (
-                          <p className="text-[10px] text-warning/80 italic">Note: {selectedDoc.verificationNotes}</p>
+                          <p className="text-xs text-warning/80 italic">Note: {selectedDoc.verificationNotes}</p>
                         )}
                         <div className="flex gap-2">
                           <Button
@@ -954,7 +954,7 @@ export default function ApprovalsPage() {
                       <p className="text-xs font-bold text-muted-foreground">
                         No Document Selected
                       </p>
-                      <p className="text-[10px] text-muted-foreground mt-1 max-w-[240px]">
+                      <p className="text-xs text-muted-foreground mt-1 max-w-[240px]">
                         Click any of the credentials on the left list to review its pre-signed URL or mock verification certificate here.
                       </p>
                     </div>
@@ -1007,7 +1007,7 @@ export default function ApprovalsPage() {
                 const sub = approvingItem.entity?.business?.subscriptions?.[0];
                 return (
                   <div className="space-y-3 mb-5 text-left rounded-xl border border-border bg-secondary/50 p-4">
-                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
                       Payment
                     </p>
                     {pay ? (
@@ -1038,7 +1038,7 @@ export default function ApprovalsPage() {
                             </button>
                           ))}
                         </div>
-                        <p className="text-[10px] text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {paymentApproved === true
                             ? 'Payment will be verified and the subscription activated.'
                             : paymentApproved === false
@@ -1056,7 +1056,7 @@ export default function ApprovalsPage() {
               })()}
 
               <div className="space-y-3 mb-6 text-left">
-                <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest block">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest block">
                   Moderator Notes
                 </label>
                 <Input

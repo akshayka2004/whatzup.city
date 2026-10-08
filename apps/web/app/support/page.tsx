@@ -46,10 +46,10 @@ const CATEGORIES: { id: TicketCategory; label: string }[] = [
 ];
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; icon: any }> = {
-  open: { label: 'Open', color: 'bg-amber-500/15 text-amber-400 border-amber-500/20', icon: Clock },
-  in_progress: { label: 'In Progress', color: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/20', icon: MessageSquare },
-  resolved: { label: 'Resolved', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
-  closed: { label: 'Closed', color: 'bg-slate-500/15 text-muted-foreground border-slate-500/20', icon: X },
+  open: { label: 'Open', color: 'bg-warning-soft text-warning-soft-foreground border-warning/30', icon: Clock },
+  in_progress: { label: 'In Progress', color: 'bg-info-soft text-info-soft-foreground border-info/25', icon: MessageSquare },
+  resolved: { label: 'Resolved', color: 'bg-success-soft text-success-soft-foreground border-success/25', icon: CheckCircle2 },
+  closed: { label: 'Closed', color: 'bg-surface-sunken text-muted-foreground border-border', icon: X },
 };
 
 const INITIAL_TICKETS: Ticket[] = [
@@ -234,11 +234,11 @@ export default function SupportPage() {
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2 break-words">{ticket.title}</p>
-                    <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0', cfg.color)}>
+                    <span className={cn('text-xs font-bold px-1.5 py-0.5 rounded-full border shrink-0', cfg.color)}>
                       {cfg.label}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Tag className="h-3 w-3" />
                     <span className="capitalize">{ticket.category}</span>
                     <span className="mx-1">·</span>
@@ -255,7 +255,7 @@ export default function SupportPage() {
           <div className="lg:col-span-2">
             {/* New Ticket Form */}
             {showNew && (
-              <Card className="p-6 rounded-2xl border-border bg-card/60 backdrop-blur-xl ui-pop">
+              <Card className="p-6 rounded-2xl border-border bg-card ui-pop">
                 <h2 className="text-base font-bold text-foreground mb-5 flex items-center gap-2">
                   <Plus className="h-4 w-4 text-primary" />
                   New Support Ticket
@@ -316,7 +316,7 @@ export default function SupportPage() {
 
             {/* Ticket Thread */}
             {selected && !showNew && (
-              <Card className="rounded-2xl border-border bg-card/60 backdrop-blur-xl flex flex-col min-h-[420px] sm:min-h-[520px] ui-pop">
+              <Card className="rounded-2xl border-border bg-card flex flex-col min-h-[420px] sm:min-h-[520px] ui-pop">
                 {/* Header */}
                 <div className="p-5 border-b border-border">
                   <div className="flex items-start justify-between gap-3">
@@ -324,7 +324,7 @@ export default function SupportPage() {
                       <p className="text-xs text-muted-foreground mb-1">{selected.id} · {selected.category}</p>
                       <h2 className="text-base font-bold text-foreground">{selected.title}</h2>
                     </div>
-                    <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0', STATUS_CONFIG[selected.status].color)}>
+                    <span className={cn('text-xs font-bold px-2 py-0.5 rounded-full border shrink-0', STATUS_CONFIG[selected.status].color)}>
                       {STATUS_CONFIG[selected.status].label}
                     </span>
                   </div>
@@ -344,7 +344,7 @@ export default function SupportPage() {
                           {msg.from === 'user' ? 'You' : 'Support Team'}
                         </p>
                         <p className="text-sm text-foreground">{msg.text}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1.5">{msg.timestamp}</p>
+                        <p className="text-xs text-muted-foreground mt-1.5">{msg.timestamp}</p>
                       </div>
                     </div>
                   ))}

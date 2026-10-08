@@ -131,7 +131,7 @@ export function TrendingOffers({ body, loading }: { body: unknown; loading: bool
                   </p>
                 </div>
                 {o.code && (
-                  <span className="shrink-0 rounded-lg border border-primary/20 bg-card px-2 py-1 font-mono text-[10px] font-extrabold text-primary">
+                  <span className="shrink-0 rounded-lg border border-primary/20 bg-card px-2 py-1 font-mono text-xs font-extrabold text-primary">
                     {o.code}
                   </span>
                 )}
@@ -141,7 +141,7 @@ export function TrendingOffers({ body, loading }: { body: unknown; loading: bool
                 {o.description && (
                   <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{o.description}</p>
                 )}
-                <div className="mt-auto flex items-center justify-between gap-2 pt-2 text-[11px] text-muted-foreground">
+                <div className="mt-auto flex items-center justify-between gap-2 pt-2 text-xs text-muted-foreground">
                   <span>{ends ? `Ends ${ends}` : ''}</span>
                   {claimed > 0 && <span className="font-semibold text-foreground/70">{claimed.toLocaleString('en-IN')} claimed</span>}
                 </div>
@@ -214,7 +214,7 @@ export function UpcomingEvents({ body, loading }: { body: unknown; loading: bool
                 {day && (
                   <div className="absolute left-2.5 top-2.5 rounded-xl border border-border bg-card/95 px-2.5 py-1 text-center leading-none shadow-sm">
                     <span className="block text-base font-black tabular-nums text-foreground">{day.day}</span>
-                    <span className="block text-[10px] font-bold uppercase tracking-wide text-primary">{day.month}</span>
+                    <span className="block text-xs font-bold uppercase tracking-wide text-primary">{day.month}</span>
                   </div>
                 )}
               </div>
@@ -223,14 +223,14 @@ export function UpcomingEvents({ body, loading }: { body: unknown; loading: bool
                 {host && <p className="truncate text-xs text-muted-foreground">by {host}</p>}
                 <div className="mt-auto flex items-center justify-between gap-2 pt-2">
                   {where ? (
-                    <span className="flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
+                    <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
                       <MapPin className="h-3 w-3 shrink-0" />
                       <span className="truncate">{where}</span>
                     </span>
                   ) : <span />}
                   <span
                     className={cn(
-                      'shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold',
+                      'shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold',
                       ev.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success-foreground dark:text-success',
                     )}
                   >
@@ -288,14 +288,14 @@ export function NowShowing({ body, loading }: { body: unknown; loading: boolean 
                   fallback={<Clapperboard className="h-8 w-8" />}
                 />
                 {m.certification && (
-                  <span className="absolute left-2 top-2 rounded-md bg-card/95 px-1.5 py-0.5 text-[10px] font-bold text-foreground">
+                  <span className="absolute left-2 top-2 rounded-md bg-card/95 px-1.5 py-0.5 text-xs font-bold text-foreground">
                     {m.certification}
                   </span>
                 )}
               </div>
               <div className="px-0.5 pt-2">
                 <h3 className="line-clamp-1 text-sm font-bold text-foreground">{m.name}</h3>
-                <p className="line-clamp-1 text-[11px] text-muted-foreground">
+                <p className="line-clamp-1 text-xs text-muted-foreground">
                   {[meta, runtime].filter(Boolean).join(' · ') || 'Now showing'}
                 </p>
               </div>

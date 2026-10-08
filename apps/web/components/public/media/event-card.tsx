@@ -88,13 +88,13 @@ export function EventCard({
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-1.5">
           {ev.category && (
-            <span className="rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
               {EVENT_CATEGORIES.find((c) => c.value === ev.category)?.label || ev.category}
             </span>
           )}
           <span
             className={cn(
-              'rounded-md px-2 py-0.5 text-[11px] font-semibold',
+              'rounded-md px-2 py-0.5 text-xs font-semibold',
               ev.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success',
             )}
           >
@@ -110,7 +110,7 @@ export function EventCard({
         {tiers.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {tiers.map((t, i) => (
-              <span key={i} className="break-words rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-foreground">
+              <span key={i} className="break-words rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
                 {t.name}: ₹{Number(t.price).toLocaleString('en-IN')}
               </span>
             ))}

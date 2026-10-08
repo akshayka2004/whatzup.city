@@ -200,7 +200,7 @@ export default function SuperAdminPlatformVouchersPage() {
                     </p>
                   </div>
                   <span className={cn(
-                    'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                    'shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold',
                     t.status === 'ACTIVE' ? 'bg-success/12 text-success' : 'bg-muted text-muted-foreground',
                   )}>
                     {t.status}

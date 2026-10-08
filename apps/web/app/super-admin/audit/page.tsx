@@ -151,7 +151,7 @@ export default function SuperAdminAuditPage() {
             { label: 'Moderation', value: allLogs.filter((l) => l.category === 'MODERATION').length, color: 'text-destructive' },
             { label: 'Business Events', value: allLogs.filter((l) => l.category === 'BUSINESS').length, color: 'text-success' },
           ].map((stat, i) => (
-            <Card key={stat.label} className="ui-fade-up p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl" style={{ animationDelay: `${i * 0.05}s` }}>
+            <Card key={stat.label} className="ui-fade-up p-4 rounded-2xl border-border bg-card" style={{ animationDelay: `${i * 0.05}s` }}>
               <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
               <p className={cn('text-2xl font-bold', stat.color)}>{stat.value}</p>
             </Card>
@@ -198,7 +198,7 @@ export default function SuperAdminAuditPage() {
         <p className="text-xs text-muted-foreground">Showing {paginated.length} of {filtered.length} events</p>
 
         {/* Table */}
-        <Card className="p-0 rounded-2xl border-border bg-card/40 backdrop-blur-xl overflow-hidden">
+        <Card className="p-0 rounded-2xl border-border bg-card overflow-hidden">
           <div className="ui-scroll-x">
             <table className="w-full text-sm">
               <thead>
@@ -228,12 +228,12 @@ export default function SuperAdminAuditPage() {
                           <span className="truncate block">{log.user}</span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border', cfg.bg, cfg.color, cfg.border)}>
+                          <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border', cfg.bg, cfg.color, cfg.border)}>
                             <IconComp className="h-3 w-3" />{cfg.label}
                           </span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <span className="px-2 py-0.5 rounded bg-secondary border border-border text-[10px] font-mono font-bold text-foreground whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded bg-secondary border border-border text-xs font-mono font-bold text-foreground whitespace-nowrap">
                             {log.action}
                           </span>
                         </td>

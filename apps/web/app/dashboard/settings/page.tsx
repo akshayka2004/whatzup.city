@@ -783,11 +783,11 @@ export default function BusinessSettingsPage() {
                       onClick={() => setHotelStarRating(star)}
                       className={cn(
                         'p-3 rounded-xl border text-center transition cursor-pointer',
-                        hotelStarRating === star ? 'border-primary bg-primary/10' : 'border-border hover:border-slate-500',
+                        hotelStarRating === star ? 'border-primary bg-primary/10' : 'border-border hover:border-border',
                       )}
                     >
                       <div className="text-sm font-extrabold text-foreground">{star}★</div>
-                      <div className="text-[11px] text-muted-foreground mt-1">₹{STAR_PRICING[star].toLocaleString('en-IN')}</div>
+                      <div className="text-xs text-muted-foreground mt-1">₹{STAR_PRICING[star].toLocaleString('en-IN')}</div>
                     </button>
                   ))}
                 </div>

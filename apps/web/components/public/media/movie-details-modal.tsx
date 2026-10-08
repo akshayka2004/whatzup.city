@@ -66,14 +66,14 @@ export function MovieDetailsModal({ movie, onClose }: { movie: Movie; onClose: (
               <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                 <span
                   className={cn(
-                    'rounded-full px-2 py-0.5 text-[10px] font-bold',
+                    'rounded-full px-2 py-0.5 text-xs font-bold',
                     movie.status === 'NOW_SHOWING' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary',
                   )}
                 >
                   {STATUS_LABEL[movie.status] || movie.status}
                 </span>
                 {movie.certification && (
-                  <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-bold">{movie.certification}</span>
+                  <span className="rounded-md bg-secondary px-1.5 py-0.5 text-xs font-bold">{movie.certification}</span>
                 )}
                 {duration && (
                   <span className="flex items-center gap-1">
@@ -93,7 +93,7 @@ export function MovieDetailsModal({ movie, onClose }: { movie: Movie; onClose: (
           {genres.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-1.5">
               {genres.map((g, i) => (
-                <span key={i} className="break-words rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground">
+                <span key={i} className="break-words rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
                   {g}
                 </span>
               ))}

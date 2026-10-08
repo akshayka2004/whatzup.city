@@ -290,7 +290,7 @@ export default function BillsPage() {
                       <>
                         <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
                         <p className="text-xs text-muted-foreground">Click to upload receipt image</p>
-                        <p className="text-[10px] text-muted-foreground mt-1">JPG, PNG, WebP, PDF — max 10MB</p>
+                        <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP, PDF — max 10MB</p>
                       </>
                     )}
                   </div>

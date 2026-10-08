@@ -64,11 +64,11 @@ export function BillSeriesQuestion({
             aria-label="Bill series prefix"
             className="h-11 rounded-xl bg-background"
           />
-          <p className="text-[11px] text-muted-foreground">e.g. SC/2026/ — every outlet's bills start with this.</p>
+          <p className="text-xs text-muted-foreground">e.g. SC/2026/ — every outlet's bills start with this.</p>
         </div>
       )}
       {mode === 'PER_OUTLET' && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Each outlet sets its own bill prefix in its details.
         </p>
       )}
@@ -152,7 +152,7 @@ export function BrandConvertForm({
           placeholder="Kozhikode - Mavoor Road"
           className="h-11 rounded-xl bg-background"
         />
-        <p className="text-[11px] text-muted-foreground">e.g. Kozhikode - Mavoor Road</p>
+        <p className="text-xs text-muted-foreground">e.g. Kozhikode - Mavoor Road</p>
       </div>
 
       <BillSeriesQuestion mode={mode} prefix={prefix} onModeChange={setMode} onPrefixChange={setPrefix} />

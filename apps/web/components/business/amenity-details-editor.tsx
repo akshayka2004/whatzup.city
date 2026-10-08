@@ -164,7 +164,7 @@ function ItemForm({ labels, initial, onSave, onCancel }: ItemFormProps) {
         {features.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {features.map((f, i) => (
-              <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-secondary text-foreground">
+              <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-secondary text-foreground">
                 {f}
                 <button type="button" onClick={() => setFeatures((fs) => fs.filter((_, idx) => idx !== i))} className="cursor-pointer">
                   <X className="h-2.5 w-2.5" />
@@ -257,10 +257,10 @@ export function AmenityDetailsEditor({ amenities, onAmenitiesChange, details, on
                 <div>
                   <div className="text-sm font-semibold text-foreground">{a.label}</div>
                   {a.subOptions && (
-                    <div className="text-[11px] text-muted-foreground mt-0.5">{a.subOptions.join(' · ')}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{a.subOptions.join(' · ')}</div>
                   )}
                 </div>
-                <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${on ? 'bg-primary/15 text-primary' : 'bg-secondary text-muted-foreground'}`}>
+                <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${on ? 'bg-primary/15 text-primary' : 'bg-secondary text-muted-foreground'}`}>
                   {on ? `Selected · ₹${ADDON_PRICE.toLocaleString('en-IN')}` : 'Not selected'}
                 </span>
               </button>
@@ -268,7 +268,7 @@ export function AmenityDetailsEditor({ amenities, onAmenitiesChange, details, on
                 <button
                   type="button"
                   onClick={() => toggleExpanded(a.key)}
-                  className="shrink-0 flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground cursor-pointer px-2 py-1 rounded-lg hover:bg-secondary"
+                  className="shrink-0 flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer px-2 py-1 rounded-lg hover:bg-secondary"
                 >
                   {itemList.length > 0 ? `${itemList.length} item${itemList.length === 1 ? '' : 's'}` : 'Add details'}
                   {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -291,18 +291,18 @@ export function AmenityDetailsEditor({ amenities, onAmenitiesChange, details, on
                     <div key={item.id} className="rounded-xl border border-border bg-background p-3 flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="text-sm font-semibold text-foreground break-words">{item.title}</div>
-                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[11px] text-muted-foreground">
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
                           {item.capacity && <span>{labels.capacity}: {item.capacity}</span>}
                           {item.price && <span>{labels.price}: {item.price}</span>}
                         </div>
                         {item.features.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {item.features.map((f, i) => (
-                              <span key={i} className="px-1.5 py-0.5 rounded-full text-[10px] bg-secondary text-muted-foreground break-words">{f}</span>
+                              <span key={i} className="px-1.5 py-0.5 rounded-full text-xs bg-secondary text-muted-foreground break-words">{f}</span>
                             ))}
                           </div>
                         )}
-                        {item.notes && <p className="text-[11px] text-muted-foreground mt-1.5 break-words">{item.notes}</p>}
+                        {item.notes && <p className="text-xs text-muted-foreground mt-1.5 break-words">{item.notes}</p>}
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         <button type="button" onClick={() => setEditingItem({ key: a.key, id: item.id })} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer">

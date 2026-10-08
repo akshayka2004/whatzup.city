@@ -1097,7 +1097,7 @@ export default function UnifiedRegisterPage() {
           </div>
           <Progress value={(currentStep / TOTAL_STEPS) * 100} className="h-2 bg-background" />
           <div
-            className={`grid gap-2 mt-4 text-[10px] text-center font-mono ${
+            className={`grid gap-2 mt-4 text-xs text-center font-mono ${
               TOTAL_STEPS === 4 ? 'grid-cols-4' : 'grid-cols-3'
             }`}
           >
@@ -1247,7 +1247,7 @@ export default function UnifiedRegisterPage() {
                       </div>
                       <div>
                         <h3 className="font-bold text-foreground mb-1 text-sm">{item.title}</h3>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">{item.description}</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
                       </div>
                     </button>
                   );
@@ -1275,8 +1275,8 @@ export default function UnifiedRegisterPage() {
                         }`}
                       >
                         <OIcon className="h-4 w-4" />
-                        <span className="text-[11px] font-semibold">{label}</span>
-                        <span className="text-[9px] opacity-60">{desc}</span>
+                        <span className="text-xs font-semibold">{label}</span>
+                        <span className="text-xs opacity-60">{desc}</span>
                       </button>
                     ))}
                   </div>
@@ -1343,7 +1343,7 @@ export default function UnifiedRegisterPage() {
                       />
                     </div>
                     {email && !isEmailValid && (
-                      <p className="text-[10px] text-rose-400">Please enter a valid email format</p>
+                      <p className="text-xs text-rose-400">Please enter a valid email format</p>
                     )}
                   </div>
                 </div>
@@ -1366,7 +1366,7 @@ export default function UnifiedRegisterPage() {
                       />
                     </div>
                     {phone && !isPhoneValid && (
-                      <p className="text-[10px] text-rose-400">Phone must contain exactly 10 digits</p>
+                      <p className="text-xs text-rose-400">Phone must contain exactly 10 digits</p>
                     )}
                   </div>
 
@@ -1468,7 +1468,7 @@ export default function UnifiedRegisterPage() {
                               <Icon className={`h-4 w-4 shrink-0 ${accountType === v ? 'text-primary' : 'text-muted-foreground'}`} />
                               {title}
                             </span>
-                            <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">{desc}</span>
+                            <span className="mt-1 block text-xs leading-snug text-muted-foreground">{desc}</span>
                           </button>
                         ))}
                       </div>
@@ -1501,7 +1501,7 @@ export default function UnifiedRegisterPage() {
                             maxLength={100}
                             className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
                           />
-                          <p className="text-[11px] text-muted-foreground">e.g. Kozhikode - Mavoor Road</p>
+                          <p className="text-xs text-muted-foreground">e.g. Kozhikode - Mavoor Road</p>
                         </div>
                         <BillSeriesQuestion
                           mode={billSeriesMode}
@@ -1592,7 +1592,7 @@ export default function UnifiedRegisterPage() {
                             </button>
                           ))}
                         </div>
-                        <p className="text-[11px] text-muted-foreground">Displayed as a tag on your business profile.</p>
+                        <p className="text-xs text-muted-foreground">Displayed as a tag on your business profile.</p>
                       </div>
                     )}
                   </div>
@@ -1766,9 +1766,9 @@ export default function UnifiedRegisterPage() {
                         />
                         <UploadCloud className="h-6 w-6 text-muted-foreground mx-auto mb-1.5" />
                         {certFile ? (
-                          <p className="text-[11px] font-semibold text-muted-foreground truncate">{certFile.name}</p>
+                          <p className="text-xs font-semibold text-muted-foreground truncate">{certFile.name}</p>
                         ) : (
-                          <p className="text-[10px] text-muted-foreground">Click to select registration file (Max 10MB)</p>
+                          <p className="text-xs text-muted-foreground">Click to select registration file (Max 10MB)</p>
                         )}
                       </div>
                     </div>
@@ -1787,9 +1787,9 @@ export default function UnifiedRegisterPage() {
                         />
                         <UploadCloud className="h-6 w-6 text-muted-foreground mx-auto mb-1.5" />
                         {logoFile ? (
-                          <p className="text-[11px] font-semibold text-muted-foreground truncate">{logoFile.name}</p>
+                          <p className="text-xs font-semibold text-muted-foreground truncate">{logoFile.name}</p>
                         ) : (
-                          <p className="text-[10px] text-muted-foreground">Click to select company logo (Max 10MB)</p>
+                          <p className="text-xs text-muted-foreground">Click to select company logo (Max 10MB)</p>
                         )}
                       </div>
                     </div>
@@ -1812,9 +1812,9 @@ export default function UnifiedRegisterPage() {
                       />
                       <UploadCloud className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                       {govtIdFile ? (
-                        <p className="text-[11px] font-semibold text-amber-400 truncate">{govtIdFile.name}</p>
+                        <p className="text-xs font-semibold text-amber-400 truncate">{govtIdFile.name}</p>
                       ) : (
-                        <p className="text-[10px] text-muted-foreground">Click to select verification authority letter (Max 10MB)</p>
+                        <p className="text-xs text-muted-foreground">Click to select verification authority letter (Max 10MB)</p>
                       )}
                     </div>
                   </div>
@@ -1823,7 +1823,7 @@ export default function UnifiedRegisterPage() {
                 {/* Uploading progress tracker */}
                 {uploadProgress > 0 && (
                   <div className="space-y-2">
-                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <div className="flex justify-between text-xs text-muted-foreground">
                       <span>Uploading document files...</span>
                       <span>{uploadProgress}%</span>
                     </div>
@@ -1850,7 +1850,7 @@ export default function UnifiedRegisterPage() {
 
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground">
-                      Search tags <span className="text-[10px]">(help customers find you)</span>
+                      Search tags <span className="text-xs">(help customers find you)</span>
                     </label>
                     <div className="flex gap-2">
                       <Input
@@ -2006,13 +2006,13 @@ export default function UnifiedRegisterPage() {
                           'Unlimited offers · unlimited vouchers',
                           '3 months paid + 3 months FREE (6 months total)',
                         ].map((f, i) => (
-                          <li key={i} className="flex items-start gap-1 text-[11px] text-muted-foreground">
+                          <li key={i} className="flex items-start gap-1 text-xs text-muted-foreground">
                             <CheckCircle className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
                             {f}
                           </li>
                         ))}
                       </ul>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         Pay via the QR code on the next screen, same as any other plan.
                       </p>
                     </div>
@@ -2042,7 +2042,7 @@ export default function UnifiedRegisterPage() {
                         <h3 className="text-sm font-bold text-foreground mb-2">
                           Services &amp; amenities you offer
                         </h3>
-                        <p className="text-[11px] text-muted-foreground mb-2">
+                        <p className="text-xs text-muted-foreground mb-2">
                           Select each service you offer, then add the specific rooms, halls, menus, etc. so guests know what to expect.
                         </p>
                         <AmenityDetailsEditor
@@ -2068,13 +2068,13 @@ export default function UnifiedRegisterPage() {
                         >
                           <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
                           <div className="text-lg font-extrabold text-foreground">{formatINR(p.price)}</div>
-                          <div className="text-[11px] text-muted-foreground mt-0.5">per year</div>
-                          <div className="text-[11px] text-muted-foreground mt-1">
+                          <div className="text-xs text-muted-foreground mt-0.5">per year</div>
+                          <div className="text-xs text-muted-foreground mt-1">
                             {p.offers} offers · {p.vouchers} vouchers
                           </div>
                           <ul className="mt-2 space-y-1">
                             {p.features.map((f, i) => (
-                              <li key={i} className="flex items-start gap-1 text-[11px] text-muted-foreground">
+                              <li key={i} className="flex items-start gap-1 text-xs text-muted-foreground">
                                 <CheckCircle className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
                                 {f}
                               </li>
@@ -2101,19 +2101,19 @@ export default function UnifiedRegisterPage() {
                             <span className="text-lg font-extrabold text-foreground">
                               {formatINR(p.offerPrice)}
                             </span>
-                            <span className="text-[11px] text-muted-foreground line-through">
+                            <span className="text-xs text-muted-foreground line-through">
                               {formatINR(p.mrp)}
                             </span>
                           </div>
-                          <div className="text-[11px] text-emerald-400 font-semibold mt-0.5">
+                          <div className="text-xs text-emerald-400 font-semibold mt-0.5">
                             50% launch offer
                           </div>
-                          <div className="text-[11px] text-muted-foreground mt-1">
+                          <div className="text-xs text-muted-foreground mt-1">
                             {p.offers} offers · {p.vouchers} vouchers
                           </div>
                           <ul className="mt-2 space-y-1">
                             {p.features.map((f, i) => (
-                              <li key={i} className="flex items-start gap-1 text-[11px] text-muted-foreground">
+                              <li key={i} className="flex items-start gap-1 text-xs text-muted-foreground">
                                 <CheckCircle className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
                                 {f}
                               </li>
@@ -2233,7 +2233,7 @@ export default function UnifiedRegisterPage() {
                           <span className="text-sm font-bold text-foreground">Amount payable</span>
                           <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
                         </div>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {claimLaunch
                             ? `You pay for 3 months and get 3 more free: valid ${durationDays} days from activation.`
                             : `Valid for ${durationDays} days from activation.`}{' '}
@@ -2259,7 +2259,7 @@ export default function UnifiedRegisterPage() {
                       <p className="text-sm font-bold text-foreground tracking-wide select-all">
                         {PAYMENT_UPI_ID}
                       </p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {PAYMENT_PAYEE_NAME} · pay the exact amount shown above
                       </p>
                     </div>
@@ -2271,7 +2271,7 @@ export default function UnifiedRegisterPage() {
                     </label>
                     <label className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-dashed border-input cursor-pointer hover:bg-muted/40 transition">
                       <UploadCloud className="h-5 w-5 text-muted-foreground" />
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         {paymentProof ? paymentProof.name : 'Click to upload your payment screenshot'}
                       </span>
                       <input

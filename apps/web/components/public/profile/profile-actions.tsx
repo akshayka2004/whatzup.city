@@ -50,7 +50,7 @@ export function DesktopActions({ actions, className }: { actions: ProfileActions
 }
 
 const barBtn =
-  'ui-press flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[11px] font-semibold leading-tight text-foreground transition-colors hover:bg-secondary';
+  'ui-press flex min-h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-xs font-semibold leading-tight text-foreground transition-colors hover:bg-secondary';
 
 /**
  * Phone-only sticky action bar. Sits directly above the fixed bottom nav

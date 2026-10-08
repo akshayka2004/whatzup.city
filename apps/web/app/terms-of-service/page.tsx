@@ -73,7 +73,7 @@ export default function TermsOfServicePage() {
         {/* Sticky TOC — desktop only */}
         <aside className="hidden lg:block w-56 shrink-0">
           <div className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-2 space-y-0.5">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-3 px-2">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 px-2">
               Contents
             </p>
             {SECTIONS.map((s) => (

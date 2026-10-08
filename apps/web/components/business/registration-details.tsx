@@ -148,7 +148,7 @@ export function RegistrationDetailsForm({
               className={cn(lockBrandName && 'bg-muted text-muted-foreground')}
             />
             {lockBrandName && (
-              <span className="text-[11px] text-muted-foreground">Managed from your brand account</span>
+              <span className="text-xs text-muted-foreground">Managed from your brand account</span>
             )}
           </Field>
           <Field label="Company name (legal)">
@@ -176,7 +176,7 @@ export function RegistrationDetailsForm({
           )}
         </div>
         {!hideBillSeries && (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             Optional. If your own bills always start with a fixed prefix, entering it here lets us
             auto-flag matching customer-submitted bills during review — you can also set this later
             from Settings.
@@ -208,7 +208,7 @@ export function RegistrationDetailsForm({
                 maxLength={10}
                 className={cn(!panValid && 'border-destructive')}
               />
-              {!panValid && <span className="text-[11px] text-destructive">Format: 5 letters, 4 digits, 1 letter</span>}
+              {!panValid && <span className="text-xs text-destructive">Format: 5 letters, 4 digits, 1 letter</span>}
             </Field>
             <Field label="Name as per PAN">
               <Input value={pan.nameAsPerPan || ''} onChange={(e) => setPan({ nameAsPerPan: e.target.value })} />
@@ -232,7 +232,7 @@ export function RegistrationDetailsForm({
                 maxLength={15}
                 className={cn(!gstValid && 'border-destructive')}
               />
-              {!gstValid && <span className="text-[11px] text-destructive">Enter a valid 15-character GSTIN</span>}
+              {!gstValid && <span className="text-xs text-destructive">Enter a valid 15-character GSTIN</span>}
             </Field>
             <Field label="Registration type">
               <Select value={gst.regType || ''} onValueChange={(val) => setGst({ regType: val })}>

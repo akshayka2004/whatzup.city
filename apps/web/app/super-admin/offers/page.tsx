@@ -142,7 +142,7 @@ export default function SuperAdminOffersPage() {
                     >
                       <td className="px-5 py-3">
                         <p className="font-semibold text-foreground">{o.title}</p>
-                        {o.code && <p className="text-[11px] font-mono text-primary">{o.code}</p>}
+                        {o.code && <p className="text-xs font-mono text-primary">{o.code}</p>}
                       </td>
                       <td className="px-5 py-3">
                         <span className="inline-flex items-center gap-1.5 text-foreground">
@@ -150,7 +150,7 @@ export default function SuperAdminOffersPage() {
                           {o.business?.name || '—'}
                         </span>
                         {(o.business?.tenant?.name || o.business?.city) && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                          <p className="text-xs text-muted-foreground mt-0.5">
                             {[o.business?.city, o.business?.tenant?.name].filter(Boolean).join(' · ')}
                           </p>
                         )}

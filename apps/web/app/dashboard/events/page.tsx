@@ -185,11 +185,11 @@ export default function DashboardEventsPage() {
                     <h3 className="font-semibold text-foreground">{ev.title}</h3>
                     <div className="flex items-center gap-1.5 mt-1">
                       {ev.category && (
-                        <span className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-secondary text-muted-foreground">
+                        <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-secondary text-muted-foreground">
                           {EVENT_CATEGORIES.find((c) => c.value === ev.category)?.label || ev.category}
                         </span>
                       )}
-                      <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-medium ${ev.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
+                      <span className={`px-1.5 py-0.5 rounded-md text-xs font-medium ${ev.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
                         {ev.ticketType !== 'PAID'
                           ? 'Free'
                           : Array.isArray(ev.ticketTiers) && ev.ticketTiers.length
@@ -200,7 +200,7 @@ export default function DashboardEventsPage() {
                     <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
                       <MapPin className="h-3 w-3" /> {[ev.venue, ev.city].filter(Boolean).join(', ') || '—'}
                     </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       {ev.startDate?.slice(0, 10)} → {ev.endDate?.slice(0, 10)}
                     </p>
                   </div>
@@ -228,7 +228,7 @@ export default function DashboardEventsPage() {
               <textarea placeholder="Description" value={form.description} onChange={(e) => set('description', e.target.value)} className="w-full min-h-20 p-3 bg-background border border-input rounded-xl text-sm text-foreground" />
 
               <div>
-                <label className="text-[11px] text-muted-foreground">Poster image</label>
+                <label className="text-xs text-muted-foreground">Poster image</label>
                 <div className="flex items-center gap-3 mt-1">
                   {form.posterImage && (
                     <img src={form.posterImage} alt="Poster" className="h-14 w-14 rounded-lg object-cover border border-border shrink-0" />
@@ -267,7 +267,7 @@ export default function DashboardEventsPage() {
 
               {form.ticketType === 'PAID' && (
                 <div>
-                  <label className="text-[11px] text-muted-foreground">Ticket tiers (optional — e.g. Gold, Platinum). Leave empty to use the flat price above.</label>
+                  <label className="text-xs text-muted-foreground">Ticket tiers (optional — e.g. Gold, Platinum). Leave empty to use the flat price above.</label>
                   <div className="space-y-2 mt-1">
                     {tiers.map((t, i) => (
                       <div key={i} className="flex gap-2">
@@ -286,18 +286,18 @@ export default function DashboardEventsPage() {
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className="text-[11px] text-muted-foreground">Start date &amp; time</label><Input type="datetime-local" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
-                <div><label className="text-[11px] text-muted-foreground">End date &amp; time</label><Input type="datetime-local" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
+                <div><label className="text-xs text-muted-foreground">Start date &amp; time</label><Input type="datetime-local" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
+                <div><label className="text-xs text-muted-foreground">End date &amp; time</label><Input type="datetime-local" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" /></div>
               </div>
               <Input placeholder="Registration URL (external)" value={form.registrationUrl} onChange={(e) => set('registrationUrl', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
               <Input placeholder="Ticket / booking URL (external)" value={form.ticketUrl} onChange={(e) => set('ticketUrl', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
 
               <div>
-                <label className="text-[11px] text-muted-foreground">Show in cities (none = all cities)</label>
+                <label className="text-xs text-muted-foreground">Show in cities (none = all cities)</label>
                 <div className="flex flex-wrap gap-1.5 mt-1 max-h-28 overflow-y-auto">
                   {KERALA_CITIES.map((c) => (
                     <button key={c} type="button" onClick={() => toggleCity(c)}
-                      className={`px-2 py-1 rounded-lg text-[11px] border cursor-pointer ${targetCities.includes(c) ? 'bg-primary/20 border-primary text-primary' : 'bg-background border-input text-muted-foreground'}`}>
+                      className={`px-2 py-1 rounded-lg text-xs border cursor-pointer ${targetCities.includes(c) ? 'bg-primary/20 border-primary text-primary' : 'bg-background border-input text-muted-foreground'}`}>
                       {c}
                     </button>
                   ))}

@@ -201,7 +201,7 @@ export default function FavoritesPage() {
                       <div className="mb-1 flex flex-wrap items-center gap-1.5">
                         <h3 className="truncate text-lg font-semibold text-foreground">{fav.name}</h3>
                         {fav.isVerified && (
-                          <span className="inline-flex items-center gap-0.5 rounded-full border border-success/25 bg-success/12 px-1.5 py-0.5 text-[10px] font-semibold text-success">
+                          <span className="inline-flex items-center gap-0.5 rounded-full border border-success/25 bg-success/12 px-1.5 py-0.5 text-xs font-semibold text-success">
                             <CheckCircle2 className="h-3 w-3" />
                             Verified
                           </span>
@@ -209,7 +209,7 @@ export default function FavoritesPage() {
                       </div>
                       <p className="text-sm text-muted-foreground">{fav.category}</p>
                       {fav.savedAt && (
-                        <p className="mt-0.5 text-[10px] text-muted-foreground">Saved {fav.savedAt}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">Saved {fav.savedAt}</p>
                       )}
                     </div>
                     <Heart className="h-5 w-5 shrink-0 fill-destructive text-destructive" />

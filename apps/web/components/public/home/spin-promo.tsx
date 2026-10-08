@@ -19,7 +19,7 @@ export function SpinPromo() {
         </div>
 
         <div className="relative min-w-0 flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-primary">Spin &amp; Win</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-primary">Spin &amp; Win</p>
           <h2 className="text-lg font-black leading-tight text-foreground sm:text-xl">
             Try your luck at a local lucky wheel
           </h2>

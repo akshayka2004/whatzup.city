@@ -86,7 +86,7 @@ export default function StaffBusinessesPage() {
                         {b.phone ? <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {b.phone}</span> : (b.email || '—')}
                       </td>
                       <td className="px-5 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${b.status === 'APPROVED' ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${b.status === 'APPROVED' ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
                           {b.status}
                         </span>
                       </td>

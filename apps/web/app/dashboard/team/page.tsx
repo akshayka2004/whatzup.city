@@ -232,7 +232,7 @@ export default function TeamManagementPage() {
           ].map((stat) => {
             const cfg = ROLE_CONFIG[stat.role];
             return (
-              <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl text-center">
+              <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card text-center">
                 <div className={cn('h-8 w-8 rounded-lg flex items-center justify-center mx-auto mb-2', cfg.bg)}>
                   <cfg.icon className={cn('h-4 w-4', cfg.color)} />
                 </div>
@@ -274,12 +274,12 @@ export default function TeamManagementPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold text-foreground truncate">{member.name}</p>
-                        <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shrink-0', cfg.bg, cfg.color)}>
+                        <span className={cn('text-xs font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shrink-0', cfg.bg, cfg.color)}>
                           <cfg.icon className="h-2.5 w-2.5" />
                           {cfg.label}
                         </span>
                         <span className={cn(
-                          'text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0',
+                          'text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0',
                           member.isActive
                             ? 'bg-success/10 text-success'
                             : 'bg-destructive/10 text-destructive',
@@ -348,7 +348,7 @@ export default function TeamManagementPage() {
                       </>
                     )}
                     {isOwner && (
-                      <span className="text-[10px] text-muted-foreground px-2 py-1 rounded-lg border border-border">You</span>
+                      <span className="text-xs text-muted-foreground px-2 py-1 rounded-lg border border-border">You</span>
                     )}
                   </div>
                 </div>
@@ -410,7 +410,7 @@ export default function TeamManagementPage() {
                             <cfg.icon className={cn('h-3.5 w-3.5', cfg.color)} />
                             <span className={cn('text-xs font-semibold', cfg.color)}>{cfg.label}</span>
                           </div>
-                          <p className="text-[10px] text-muted-foreground leading-relaxed">
+                          <p className="text-xs text-muted-foreground leading-relaxed">
                             {role === 'BUSINESS_MODERATOR' ? 'Bill review, customer moderation' : 'Offers, listings, media upload'}
                           </p>
                         </button>
@@ -467,7 +467,7 @@ export default function TeamManagementPage() {
                             <cfg.icon className={cn('h-3.5 w-3.5', cfg.color)} />
                             <span className={cn('text-xs font-semibold', cfg.color)}>{cfg.label}</span>
                           </div>
-                          <p className="text-[10px] text-muted-foreground leading-relaxed">
+                          <p className="text-xs text-muted-foreground leading-relaxed">
                             {role === 'BUSINESS_MODERATOR' ? 'Bill review, customer moderation' : 'Offers, listings, media upload'}
                           </p>
                         </button>
@@ -537,11 +537,11 @@ export default function TeamManagementPage() {
               </p>
               <div className="space-y-2 mb-4">
                 <div className="bg-secondary border border-border rounded-lg p-3">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-0.5">Email</p>
+                  <p className="text-xs text-muted-foreground uppercase mb-0.5">Email</p>
                   <p className="text-sm font-mono text-foreground">{createdCredentials.email}</p>
                 </div>
                 <div className="bg-secondary border border-border rounded-lg p-3">
-                  <p className="text-[10px] text-muted-foreground uppercase mb-0.5">Password</p>
+                  <p className="text-xs text-muted-foreground uppercase mb-0.5">Password</p>
                   <p className="text-sm font-mono text-foreground">{createdCredentials.password}</p>
                 </div>
               </div>

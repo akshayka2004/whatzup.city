@@ -203,7 +203,7 @@ export default function DiscountsPage() {
                   onChange={(e) => setMaxDiscountPercent(e.target.value)}
                   placeholder="e.g. 10"
                 />
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   We generate 7 wheel segments from 1% up to this max — some customers win less, the luckiest win this much.
                 </p>
               </div>
@@ -249,7 +249,7 @@ export default function DiscountsPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-foreground">{d.itemName}</h3>
-                      <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', d.isActive ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground')}>
+                      <span className={cn('px-2 py-0.5 rounded-full text-xs font-bold', d.isActive ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground')}>
                         {d.isActive ? 'Active' : 'Retired'}
                       </span>
                     </div>

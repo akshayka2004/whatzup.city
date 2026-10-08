@@ -139,7 +139,7 @@ function BranchFormFields({
       {!isEdit && (
         <div className="pt-2 border-t border-border">
           <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Branch Admin Account</p>
-          <p className="text-[11px] text-muted-foreground/60 mb-3">
+          <p className="text-xs text-muted-foreground/60 mb-3">
             Optional — creates a staff login account for this branch admin so they can access the dashboard immediately.
           </p>
           <div className="grid sm:grid-cols-2 gap-4">

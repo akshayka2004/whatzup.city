@@ -40,7 +40,7 @@ function OfferCard({ offer, index, onClaim }: { offer: any; index: number; onCla
         )}
       </div>
       {(offer.fulfilment === 'DINE_IN' || offer.fulfilment === 'TAKEAWAY') && (
-        <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+        <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs font-medium text-muted-foreground">
           {offer.fulfilment === 'DINE_IN' ? <UtensilsCrossed className="h-3 w-3" /> : <ShoppingBag className="h-3 w-3" />}
           {offer.fulfilment === 'DINE_IN' ? 'Dine-in only' : 'Takeaway only'}
         </span>
@@ -247,7 +247,7 @@ export function OffersSection({
                 {v.unlocked ? (
                   <div className="mt-3 flex items-center justify-between rounded-lg border border-success/25 bg-success/12 px-3 py-2">
                     <span className="font-mono text-sm font-bold tracking-wider text-success">{v.code}</span>
-                    <span className="text-[10px] font-semibold uppercase text-success">
+                    <span className="text-xs font-semibold uppercase text-success">
                       {v.status === 'REDEEMED' ? 'Redeemed' : 'Show in-store'}
                     </span>
                   </div>
@@ -314,7 +314,7 @@ export function OffersSection({
             Present this code at the business counter to redeem your discount.
           </p>
           <div className="mb-6 rounded-xl border border-border bg-muted/50 p-4">
-            <p className="mb-1 text-[10px] font-semibold uppercase text-muted-foreground">Redemption Code</p>
+            <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Redemption Code</p>
             <p className="font-mono text-2xl font-extrabold tracking-wider text-success">{claimedCode}</p>
           </div>
           <Button onClick={() => setClaimedCode(null)} size="lg" className="ui-press w-full rounded-xl font-semibold">

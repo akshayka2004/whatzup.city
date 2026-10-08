@@ -144,7 +144,7 @@ export default function AdminProfilePage() {
         </div>
 
         {/* Avatar + basic info */}
-        <Card className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl">
+        <Card className="ui-fade-up p-6 rounded-2xl border-border bg-card">
           <div className="flex items-center gap-5 mb-6">
             <div className="relative">
               <div className="h-16 w-16 rounded-2xl overflow-hidden bg-gradient-to-tr from-primary to-info flex items-center justify-center text-2xl font-extrabold text-white">
@@ -170,7 +170,7 @@ export default function AdminProfilePage() {
             <div>
               <p className="text-lg font-bold text-foreground">{user?.name}</p>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
-              <span className="mt-1 inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+              <span className="mt-1 inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
                 {roleLabel}
               </span>
             </div>
@@ -237,7 +237,7 @@ export default function AdminProfilePage() {
         </Card>
 
         {/* Password change */}
-        <Card className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl" style={{ animationDelay: '0.05s' }}>
+        <Card className="ui-fade-up p-6 rounded-2xl border-border bg-card" style={{ animationDelay: '0.05s' }}>
           <h3 className="text-base font-bold text-foreground flex items-center gap-2 mb-5">
             <KeyRound className="h-4 w-4 text-warning" />
             Change Password

@@ -29,10 +29,10 @@ interface UiNotification {
 }
 
 const iconColors: Record<string, string> = {
-  offer: 'text-blue-600 dark:text-blue-400',
-  review: 'text-green-600 dark:text-green-400',
-  alert: 'text-orange-600 dark:text-orange-400',
-  info: 'text-purple-600 dark:text-purple-400',
+  offer: 'text-info-soft-foreground dark:text-info-soft-foreground',
+  review: 'text-success-soft-foreground dark:text-success-soft-foreground',
+  alert: 'text-warning-soft-foreground dark:text-warning-soft-foreground',
+  info: 'text-brand-soft-foreground dark:text-brand-soft-foreground',
   default: 'text-muted-foreground',
 };
 
@@ -168,7 +168,7 @@ export default function NotificationsPage() {
                         <h3 className="font-semibold text-foreground truncate">
                           {notification.title}
                         </h3>
-                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
                           {notification.timestamp}
                         </span>
                       </div>

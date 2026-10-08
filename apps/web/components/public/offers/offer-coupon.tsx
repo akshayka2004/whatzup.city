@@ -105,9 +105,9 @@ function OpenPill({ hours }: { hours: unknown }) {
   }, [hours]);
   if (open == null) return null;
   return open ? (
-    <StatusPill live tone="success" label="Open now" className="px-2 py-0.5 text-[10px] leading-4" />
+    <StatusPill live tone="success" label="Open now" className="px-2 py-0.5 text-xs leading-4" />
   ) : (
-    <StatusPill tone="neutral" label="Closed" className="px-2 py-0.5 text-[10px] leading-4" />
+    <StatusPill tone="neutral" label="Closed" className="px-2 py-0.5 text-xs leading-4" />
   );
 }
 
@@ -214,7 +214,7 @@ export function OfferCoupon({
                     <>
                       {offer.discountLabel}
                       {!offer.isPlatform && (
-                        <span className="block text-[10px] font-semibold uppercase leading-3 tracking-wide opacity-80">off</span>
+                        <span className="block text-xs font-semibold uppercase leading-3 tracking-wide opacity-80">off</span>
                       )}
                     </>
                   )}
@@ -224,17 +224,17 @@ export function OfferCoupon({
 
             <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
               {offer.businessType && (
-                <span className="inline-block rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                <span className="inline-block rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                   {offer.businessType}
                 </span>
               )}
               {offer.isPlatform && (
-                <span className="inline-block rounded-full border border-warning/25 bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
+                <span className="inline-block rounded-full border border-warning/25 bg-warning/10 px-2 py-0.5 text-xs font-semibold text-warning">
                   Platform exclusive
                 </span>
               )}
               {(offer.fulfilment === 'DINE_IN' || offer.fulfilment === 'TAKEAWAY') && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs font-medium text-muted-foreground">
                   {offer.fulfilment === 'DINE_IN' ? <UtensilsCrossed className="h-3 w-3" /> : <ShoppingBag className="h-3 w-3" />}
                   {offer.fulfilment === 'DINE_IN' ? 'Dine-in only' : 'Takeaway only'}
                 </span>

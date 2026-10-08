@@ -76,7 +76,7 @@ const needsSetup = (o: BrandOutlet) =>
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-muted/50 px-3 py-2">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-0.5 text-base font-semibold text-foreground tabular-nums">{value}</p>
     </div>
   );
@@ -161,7 +161,7 @@ function AddOutletDialog({
               placeholder="Kozhikode - Mavoor Road"
               className="h-11 rounded-xl bg-background"
             />
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Listed as &ldquo;{brandName} - {label.trim() || 'your label'}&rdquo;
             </p>
           </div>
@@ -194,7 +194,7 @@ function AddOutletDialog({
               />
             </div>
           </div>
-          <p className="-mt-2 text-[11px] text-muted-foreground">
+          <p className="-mt-2 text-xs text-muted-foreground">
             Each outlet needs its own phone number and email, not the ones used by another outlet.
           </p>
 
@@ -472,10 +472,10 @@ function OutletsContent() {
                     <h2 className="truncate text-base font-semibold text-foreground">{outletDisplayName(o)}</h2>
                     <OutletStatusPill status={o.status} />
                     {o.isBrandHq && (
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">HQ</span>
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">HQ</span>
                     )}
                     {isActive && (
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
                         Current
                       </span>
                     )}

@@ -58,11 +58,11 @@ interface BillRow {
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  APPROVED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  VERIFIED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  PENDING: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  REJECTED: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-  FLAGGED: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  APPROVED: 'bg-success-soft text-success-soft-foreground border-success/25',
+  VERIFIED: 'bg-success-soft text-success-soft-foreground border-success/25',
+  PENDING: 'bg-warning-soft text-warning-soft-foreground border-warning/30',
+  REJECTED: 'bg-danger-soft text-danger-soft-foreground border-destructive/25',
+  FLAGGED: 'bg-danger-soft text-danger-soft-foreground border-destructive/25',
 };
 
 export default function ProfilePage() {
@@ -343,7 +343,7 @@ export default function ProfilePage() {
                 />
               </div>
               {avatarError && (
-                <p className="text-xs text-rose-400 mt-1">{avatarError}</p>
+                <p className="text-xs text-danger-soft-foreground mt-1">{avatarError}</p>
               )}
 
               {/* Name + meta */}
@@ -367,7 +367,7 @@ export default function ProfilePage() {
                   </span>
                   {referralCount !== null && referralCount > 0 && (
                     <span className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5 text-emerald-400" />
+                      <Users className="h-3.5 w-3.5 text-success-soft-foreground" />
                       <span className="font-semibold text-foreground">{referralCount}</span> referrals
                     </span>
                   )}
@@ -378,7 +378,7 @@ export default function ProfilePage() {
                   <div className="mt-3 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                     {/* Code chip */}
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Referral Code</span>
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Referral Code</span>
                       <span className="font-mono text-sm font-bold text-primary tracking-widest">{referralCode}</span>
                       <button
                         onClick={() => {
@@ -389,14 +389,14 @@ export default function ProfilePage() {
                         className="text-primary hover:text-primary/70 cursor-pointer transition-colors"
                         title="Copy referral code"
                       >
-                        {referralCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                        {referralCopied ? <Check className="h-3.5 w-3.5 text-success-soft-foreground" /> : <Copy className="h-3.5 w-3.5" />}
                       </button>
                     </div>
                     {/* Referral count chip */}
                     {referralCount !== null && (
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Referrals</span>
-                        <span className="text-sm font-bold text-emerald-400">{referralCount}</span>
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success-soft border border-success/25">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Referrals</span>
+                        <span className="text-sm font-bold text-success-soft-foreground">{referralCount}</span>
                       </div>
                     )}
                   </div>
@@ -416,7 +416,7 @@ export default function ProfilePage() {
                   <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className="rounded-xl gap-2 bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer disabled:opacity-60"
+                    className="rounded-xl gap-2 bg-success hover:bg-success text-white cursor-pointer disabled:opacity-60"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                     Save
@@ -436,12 +436,12 @@ export default function ProfilePage() {
 
         {/* Save banners */}
         {saveMsg && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-success-soft border border-success/25 text-success-soft-foreground text-sm font-medium flex items-center gap-2">
             <Check className="h-4 w-4" /> {saveMsg}
           </div>
         )}
         {saveErr && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-danger-soft border border-destructive/25 text-danger-soft-foreground text-sm font-medium flex items-center gap-2">
             <X className="h-4 w-4" /> {saveErr}
           </div>
         )}
@@ -451,10 +451,10 @@ export default function ProfilePage() {
           <Card className="p-6 rounded-2xl border-border bg-card">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Users className="h-4 w-4 text-emerald-400" />
+                <Users className="h-4 w-4 text-success-soft-foreground" />
                 Referred Users
               </h3>
-              <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold">
+              <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-success-soft text-success-soft-foreground border border-success/25 text-xs font-bold">
                 {referralCount}
               </span>
             </div>
@@ -471,7 +471,7 @@ export default function ProfilePage() {
                       <p className="text-sm font-semibold text-foreground truncate">{r.name || 'Unnamed'}</p>
                       <p className="text-xs text-muted-foreground truncate">{r.email}</p>
                     </div>
-                    <span className="text-[11px] text-muted-foreground whitespace-nowrap ml-3">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap ml-3">
                       {r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}
                     </span>
                   </div>
@@ -616,7 +616,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3 p-3.5 bg-secondary/60 rounded-xl border border-border">
               <Users className="h-5 w-5 text-primary shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] text-muted-foreground">Profession</p>
+                <p className="text-xs text-muted-foreground">Profession</p>
                 {isEditing ? (
                   <select
                     value={tempProfile.profession || ''}
@@ -662,7 +662,7 @@ export default function ProfilePage() {
                       <Building2 className="h-3 w-3" /> {o.business}
                     </p>
                   </div>
-                  <p className="text-[10px] text-muted-foreground">{o.date}</p>
+                  <p className="text-xs text-muted-foreground">{o.date}</p>
                 </div>
               ))}
             </div>
@@ -707,7 +707,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-bold text-foreground">{typeof amount === 'number' ? `₹${amount.toLocaleString()}` : amount}</p>
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${STATUS_STYLE[status] || STATUS_STYLE.PENDING}`}>
+                      <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border ${STATUS_STYLE[status] || STATUS_STYLE.PENDING}`}>
                         {status}
                       </span>
                     </div>
@@ -732,7 +732,7 @@ export default function ProfilePage() {
             <Button
               variant="outline"
               onClick={() => signOut()}
-              className="w-full rounded-xl justify-start border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 cursor-pointer"
+              className="w-full rounded-xl justify-start border-destructive/25 text-danger-soft-foreground hover:bg-danger-soft hover:text-danger-soft-foreground cursor-pointer"
             >
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
@@ -743,16 +743,16 @@ export default function ProfilePage() {
               <Button
                 variant="outline"
                 onClick={() => setDeleteConfirm(true)}
-                className="w-full rounded-xl justify-start border-rose-500/30 text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 cursor-pointer"
+                className="w-full rounded-xl justify-start border-destructive/25 text-danger-soft-foreground hover:bg-danger-soft hover:text-danger-soft-foreground cursor-pointer"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Account
               </Button>
             ) : (
-              <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-500/5 space-y-3 ui-pop">
+              <div className="p-4 rounded-xl border border-destructive/25 bg-danger-soft space-y-3 ui-pop">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
-                  <p className="text-sm text-rose-300 font-medium">
+                  <AlertTriangle className="h-4 w-4 text-danger-soft-foreground shrink-0 mt-0.5" />
+                  <p className="text-sm text-danger-soft-foreground font-medium">
                     This will permanently delete your account and all associated data. This cannot be undone.
                   </p>
                 </div>
@@ -760,7 +760,7 @@ export default function ProfilePage() {
                   <Button
                     onClick={handleDeleteAccount}
                     disabled={deleting}
-                    className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-500 text-white cursor-pointer flex items-center justify-center gap-1.5"
+                    className="flex-1 rounded-xl bg-destructive hover:bg-destructive text-white cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                     Confirm Delete
@@ -829,7 +829,7 @@ function ContactRow({
     <div className="flex items-center gap-3 p-3.5 bg-secondary/60 rounded-xl border border-border">
       <Icon className="h-5 w-5 text-primary shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] text-muted-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground">{label}</p>
         {editable && onChange ? (
           <Input
             value={value}

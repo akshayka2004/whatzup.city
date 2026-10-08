@@ -247,7 +247,7 @@ export default function SuperAdminUsersPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3">
-                        <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', roleColor(u.role))}>
+                        <span className={cn('px-2 py-0.5 rounded-full text-xs font-bold', roleColor(u.role))}>
                           {u.role}
                         </span>
                       </td>
@@ -255,7 +255,7 @@ export default function SuperAdminUsersPage() {
                       <td className="px-5 py-3 text-muted-foreground">
                         <p className="text-foreground text-xs font-medium">{u.business?.name || u.tenant?.name || '—'}</p>
                         {u.business?.status && (
-                          <p className="text-[10px] text-muted-foreground">{u.business.status}</p>
+                          <p className="text-xs text-muted-foreground">{u.business.status}</p>
                         )}
                       </td>
                       <td className="px-5 py-3 text-right">
@@ -269,11 +269,11 @@ export default function SuperAdminUsersPage() {
                       <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{fmtDate(u.createdAt)}</td>
                       <td className="px-5 py-3 text-right">
                         {u.isActive ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 text-[10px] font-bold">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 text-xs font-bold">
                             <ShieldCheck className="h-3 w-3" /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20 text-[10px] font-bold">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20 text-xs font-bold">
                             <ShieldX className="h-3 w-3" /> Inactive
                           </span>
                         )}

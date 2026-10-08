@@ -118,7 +118,7 @@ export function ReviewsSection({
                   );
                 })}
                 {loaded < reviewCount && (
-                  <p className="pt-1 text-[11px] text-muted-foreground">Based on the latest {loaded} reviews</p>
+                  <p className="pt-1 text-xs text-muted-foreground">Based on the latest {loaded} reviews</p>
                 )}
               </div>
             )}

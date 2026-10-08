@@ -163,11 +163,11 @@ export default function AdminManagementPage() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-semibold text-foreground">{admin.name}</p>
-                          <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full border', color)}>
+                          <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full border', color)}>
                             {label}
                           </span>
                           {!admin.isActive && (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-destructive/20 bg-destructive/10 text-destructive">
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-destructive/20 bg-destructive/10 text-destructive">
                               Inactive
                             </span>
                           )}

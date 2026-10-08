@@ -286,11 +286,11 @@ export default function SuperAdminBusinessesPage() {
                         {b.brand && (
                           <Link
                             href={`/super-admin/brands/${b.brand.id}`}
-                            className="mt-1 inline-flex max-w-[220px] items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/15 transition-colors"
+                            className="mt-1 inline-flex max-w-[220px] items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary hover:bg-primary/15 transition-colors"
                           >
                             <Store className="h-3 w-3 shrink-0" />
                             <span className="truncate">{b.brand.name}{b.outletLabel ? ` · ${b.outletLabel}` : ''}</span>
-                            {b.isBrandHq && <span className="rounded bg-primary px-1 text-[9px] text-primary-foreground">HQ</span>}
+                            {b.isBrandHq && <span className="rounded bg-primary px-1 text-xs text-primary-foreground">HQ</span>}
                           </Link>
                         )}
                       </td>
@@ -306,7 +306,7 @@ export default function SuperAdminBusinessesPage() {
                       <td className="px-5 py-3 text-xs font-semibold text-foreground">
                         <span className="inline-flex items-center gap-1"><Wallet className="h-3 w-3 text-primary" />₹{Number(b.totalBillAmount || 0).toLocaleString('en-IN')}</span>
                       </td>
-                      <td className="px-5 py-3"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-foreground">{b.status}</span></td>
+                      <td className="px-5 py-3"><span className="px-2 py-0.5 rounded-full text-xs font-bold bg-muted text-foreground">{b.status}</span></td>
                       <td className="px-5 py-3 text-right">
                         <div className="flex justify-end gap-2">
                           <Button onClick={() => openEdit(b)} variant="outline" size="sm" className="rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer">

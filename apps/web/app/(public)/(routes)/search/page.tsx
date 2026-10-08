@@ -349,7 +349,7 @@ function SearchContent() {
             {showRecents && (
               <div className="ui-pop absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
                 <div className="flex items-center justify-between px-4 pb-1 pt-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Recent searches</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Recent searches</p>
                   <button
                     type="button"
                     onClick={clearRecents}
@@ -387,7 +387,7 @@ function SearchContent() {
               <div className="ui-pop absolute left-0 right-0 top-full z-50 mt-1 max-h-[60vh] overflow-y-auto overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
                 {suggestions.businesses.length > 0 && (
                   <div>
-                    <p className="px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Businesses</p>
+                    <p className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Businesses</p>
                     {suggestions.businesses.map((b) => (
                       <Link
                         key={b.id}
@@ -409,7 +409,7 @@ function SearchContent() {
                 )}
                 {suggestions.categories.length > 0 && (
                   <div>
-                    <p className="px-4 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Categories</p>
+                    <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Categories</p>
                     {suggestions.categories.map((cat) => (
                       <button
                         type="button"
@@ -425,7 +425,7 @@ function SearchContent() {
                 )}
                 {suggestions.subcategories.filter(Boolean).length > 0 && (
                   <div>
-                    <p className="px-4 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Subcategories</p>
+                    <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Subcategories</p>
                     {suggestions.subcategories.filter(Boolean).map((sub) => (
                       <button
                         type="button"

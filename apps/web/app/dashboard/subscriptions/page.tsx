@@ -175,20 +175,20 @@ export default function BusinessSubscriptionsPage() {
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-bold text-primary">{p.name}</span>
                           {current && (
-                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                               Current
                             </span>
                           )}
                         </div>
                         <div className="text-xl font-extrabold text-foreground">{formatINR(p.price)}</div>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">per year</p>
-                        <p className="text-[11px] text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground mt-0.5">per year</p>
+                        <p className="text-xs text-muted-foreground mt-1">
                           {p.offers} offers · {p.vouchers} vouchers
                         </p>
                         <ul className="mt-2 space-y-1">
                           {p.features.map((f, i) => (
-                            <li key={i} className="flex items-start gap-1 text-[11px] text-muted-foreground">
-                              <Check className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
+                            <li key={i} className="flex items-start gap-1 text-xs text-muted-foreground">
+                              <Check className="h-3 w-3 text-success-soft-foreground shrink-0 mt-0.5" />
                               {f}
                             </li>
                           ))}
@@ -210,7 +210,7 @@ export default function BusinessSubscriptionsPage() {
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-bold text-primary">{p.name}</span>
                           {current && (
-                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                               Current
                             </span>
                           )}
@@ -219,20 +219,20 @@ export default function BusinessSubscriptionsPage() {
                           <span className="text-xl font-extrabold text-foreground">
                             {formatINR(p.offerPrice)}
                           </span>
-                          <span className="text-[11px] text-muted-foreground line-through">
+                          <span className="text-xs text-muted-foreground line-through">
                             {formatINR(p.mrp)}
                           </span>
                         </div>
-                        <p className="text-[11px] text-emerald-400 font-semibold mt-0.5">
+                        <p className="text-xs text-success-soft-foreground font-semibold mt-0.5">
                           50% launch offer
                         </p>
-                        <p className="text-[11px] text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {p.offers} offers · {p.vouchers} vouchers
                         </p>
                         <ul className="mt-2 space-y-1">
                           {p.features.map((f, i) => (
-                            <li key={i} className="flex items-start gap-1 text-[11px] text-muted-foreground">
-                              <Check className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
+                            <li key={i} className="flex items-start gap-1 text-xs text-muted-foreground">
+                              <Check className="h-3 w-3 text-success-soft-foreground shrink-0 mt-0.5" />
                               {f}
                             </li>
                           ))}
@@ -242,7 +242,7 @@ export default function BusinessSubscriptionsPage() {
                   })}
                 </div>
               )}
-              <p className="text-[11px] text-muted-foreground mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 Hotels are billed by star classification and selected services; Home Chefs are billed annually on exclusive tiers, instead of these plans.
               </p>
             </div>
@@ -278,7 +278,7 @@ export default function BusinessSubscriptionsPage() {
                       </span>
                     </div>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-3">
+                  <p className="text-xs text-muted-foreground mt-3">
                     Invoices are raised by our office and sent to the email above.
                   </p>
                 </Card>

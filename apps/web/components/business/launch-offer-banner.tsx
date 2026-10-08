@@ -23,10 +23,10 @@ export function LaunchOfferBanner({ slotsPerCategory, price, durationDays, bonus
       className={`flex items-start gap-3 rounded-xl border p-4 text-sm ${
         soldOut
           ? 'border-border bg-secondary/50 text-muted-foreground'
-          : 'border-emerald-500/30 bg-emerald-500/10 text-foreground'
+          : 'border-success/25 bg-success-soft text-foreground'
       }`}
     >
-      <Gift className={`mt-0.5 h-5 w-5 shrink-0 ${soldOut ? 'text-muted-foreground' : 'text-emerald-400'}`} />
+      <Gift className={`mt-0.5 h-5 w-5 shrink-0 ${soldOut ? 'text-muted-foreground' : 'text-success-soft-foreground'}`} />
       <div className="min-w-0">
         {categoryName === null ? (
           <>
@@ -44,7 +44,7 @@ export function LaunchOfferBanner({ slotsPerCategory, price, durationDays, bonus
         ) : (
           <>
             <p className="font-semibold">
-              <span className="text-emerald-400">
+              <span className="text-success-soft-foreground">
                 {slotsLeft} of {slotsPerCategory}
               </span>{' '}
               launch-offer slots left in {categoryName}

@@ -161,7 +161,7 @@ export function BrandSettingsCard() {
           setSaved(false);
         }}
       />
-      <p className="rounded-xl bg-muted/50 px-3 py-2 text-[11px] text-muted-foreground">
+      <p className="rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
         Bill checks at every outlet follow this setting.
       </p>
 

@@ -78,7 +78,7 @@ function WheelCard({ wheel }: { wheel: ActiveWheel }) {
 
         <div className="mt-3 flex flex-wrap gap-1">
           {wheel.wheelPercentages.slice(0, 7).map((p, i) => (
-            <span key={i} className="px-1.5 py-0.5 rounded-md bg-secondary text-[10px] font-bold text-muted-foreground">
+            <span key={i} className="px-1.5 py-0.5 rounded-md bg-secondary text-xs font-bold text-muted-foreground">
               {p}%
             </span>
           ))}

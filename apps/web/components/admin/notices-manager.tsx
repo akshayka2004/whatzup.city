@@ -242,7 +242,7 @@ export function NoticesManager() {
                       {note.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/20 text-warning text-[10px] font-medium"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/20 text-warning text-xs font-medium"
                         >
                           <Tag className="h-2.5 w-2.5" />
                           {tag}
@@ -388,7 +388,7 @@ export function NoticesManager() {
                   <span className="ml-1 text-xs text-muted-foreground font-normal">(press Enter or comma to add)</span>
                 </label>
                 <TagInput tags={formTags} onChange={setFormTags} />
-                <p className="text-[10px] text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Create custom tags relevant to this alert (e.g. weather, road-closure, health)
                 </p>
               </div>

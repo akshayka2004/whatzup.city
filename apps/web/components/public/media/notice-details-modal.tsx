@@ -107,7 +107,7 @@ export function NoticeDetailsModal({
                       )}
                       <div className="min-w-0">
                         <p className="break-words text-sm font-semibold text-foreground">{a.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{a.size}</p>
+                        <p className="text-xs text-muted-foreground">{a.size}</p>
                       </div>
                     </div>
                     <Button

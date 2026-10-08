@@ -49,11 +49,11 @@ export function HomeHero({
           <p className="truncate text-sm font-bold text-foreground">{featuredOffer.title || featuredOffer.name}</p>
         </div>
         {featuredOffer.code ? (
-          <span className="rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 font-mono text-[10px] font-extrabold text-primary">
+          <span className="rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 font-mono text-xs font-extrabold text-primary">
             {featuredOffer.code}
           </span>
         ) : discountText(featuredOffer) ? (
-          <span className="rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-[10px] font-extrabold text-primary">
+          <span className="rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-xs font-extrabold text-primary">
             {discountText(featuredOffer)}
           </span>
         ) : null}
@@ -190,7 +190,7 @@ export function HomeHero({
                       <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Civic Notice</p>
+                      <p className="text-xs font-bold uppercase tracking-wider text-primary">Civic Notice</p>
                       <p className="truncate text-xs font-semibold text-foreground">{announcement.title}</p>
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export function MobileNotice({ announcement }: { announcement: any }) {
         <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Civic Notice</p>
+        <p className="text-xs font-bold uppercase tracking-wider text-primary">Civic Notice</p>
         <p className="truncate text-xs font-semibold text-foreground">{announcement.title}</p>
       </div>
     </div>

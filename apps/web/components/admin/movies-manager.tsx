@@ -167,7 +167,7 @@ export function MoviesManager() {
                           {Array.isArray(m.languages) && m.languages.length ? m.languages.join(', ') : '—'}
                         </td>
                         <td className="px-5 py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${m.status === 'NOW_SHOWING' ? 'bg-success/10 text-success' : m.status === 'ENDED' ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${m.status === 'NOW_SHOWING' ? 'bg-success/10 text-success' : m.status === 'ENDED' ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
                             {STATUSES.find((s) => s.value === m.status)?.label || m.status}
                           </span>
                         </td>
@@ -195,7 +195,7 @@ export function MoviesManager() {
               <Input placeholder="Movie name" value={form.name} onChange={(e) => set('name', e.target.value)} className="h-10 bg-background border-input rounded-xl text-foreground" />
 
               <div>
-                <label className="text-[11px] text-muted-foreground">Poster</label>
+                <label className="text-xs text-muted-foreground">Poster</label>
                 <div className="flex items-center gap-3 mt-1">
                   {form.posterImage && (
                     <img src={form.posterImage} alt="Poster" className="h-16 w-16 rounded-lg object-cover border border-border shrink-0" />
@@ -230,11 +230,11 @@ export function MoviesManager() {
               </select>
 
               <div>
-                <label className="text-[11px] text-muted-foreground">Show in cities (none = all cities)</label>
+                <label className="text-xs text-muted-foreground">Show in cities (none = all cities)</label>
                 <div className="flex flex-wrap gap-1.5 mt-1 max-h-28 overflow-y-auto">
                   {KERALA_CITIES.map((c) => (
                     <button key={c} type="button" onClick={() => toggleCity(c)}
-                      className={`px-2 py-1 rounded-lg text-[11px] border cursor-pointer ${targetCities.includes(c) ? 'bg-primary/20 border-primary text-primary' : 'bg-background border-input text-muted-foreground'}`}>
+                      className={`px-2 py-1 rounded-lg text-xs border cursor-pointer ${targetCities.includes(c) ? 'bg-primary/20 border-primary text-primary' : 'bg-background border-input text-muted-foreground'}`}>
                       {c}
                     </button>
                   ))}

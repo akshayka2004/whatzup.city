@@ -76,7 +76,7 @@ export function TrendBadge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums',
+        'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums',
         flat ? 'bg-muted text-muted-foreground' : good ? 'bg-success/15 text-success-foreground dark:text-success' : 'bg-destructive/10 text-destructive',
         className,
       )}

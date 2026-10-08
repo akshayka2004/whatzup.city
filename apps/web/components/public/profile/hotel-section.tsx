@@ -32,14 +32,14 @@ export default function HotelSection({ biz }: { biz: any }) {
               <div key={a.key} className="rounded-xl border border-border bg-secondary/50 p-3">
                 <div className="text-sm font-semibold text-foreground">{a.label}</div>
                 {a.subOptions && (
-                  <div className="mt-0.5 text-[11px] text-muted-foreground">{a.subOptions.join(' · ')}</div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">{a.subOptions.join(' · ')}</div>
                 )}
                 {items.length > 0 && (
                   <div className="mt-2.5 space-y-2 border-t border-border pt-2.5">
                     {items.map((item: any) => (
                       <div key={item.id}>
                         <div className="break-words text-xs font-semibold text-foreground">{item.title}</div>
-                        <div className="mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5 text-[11px] text-muted-foreground">
+                        <div className="mt-0.5 flex flex-wrap gap-x-2.5 gap-y-0.5 text-xs text-muted-foreground">
                           {item.capacity && (
                             <span>
                               {labels.capacity}: {item.capacity}
@@ -56,7 +56,7 @@ export default function HotelSection({ biz }: { biz: any }) {
                             {item.features.map((f: string, i: number) => (
                               <span
                                 key={i}
-                                className="break-words rounded-full bg-card px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                                className="break-words rounded-full bg-card px-1.5 py-0.5 text-xs text-muted-foreground"
                               >
                                 {f}
                               </span>

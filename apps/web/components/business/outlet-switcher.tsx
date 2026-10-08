@@ -44,7 +44,7 @@ export function OutletStatusPill({ status, className }: { status?: string | null
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize',
+        'inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-semibold capitalize',
         TONE_CLASS[tone],
         className,
       )}
@@ -117,7 +117,7 @@ export function OutletSwitcher({ compact }: { compact?: boolean }) {
       >
         <DropdownMenuLabel className="px-2 pb-1 pt-1.5">
           <span className="block truncate text-sm font-semibold text-foreground">{brand.name}</span>
-          <span className="block text-[11px] font-normal text-muted-foreground">
+          <span className="block text-xs font-normal text-muted-foreground">
             {outlets.length} outlet{outlets.length === 1 ? '' : 's'}
           </span>
         </DropdownMenuLabel>

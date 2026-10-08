@@ -393,7 +393,7 @@ export default function BillModerationPage() {
                   <tab.icon className="h-3.5 w-3.5" />
                   {tab.label}
                   {count !== undefined && count > 0 && (
-                    <span className="ml-0.5 h-4 min-w-4 rounded-full bg-destructive text-[9px] font-bold text-white flex items-center justify-center px-1">
+                    <span className="ml-0.5 h-4 min-w-4 rounded-full bg-destructive text-xs font-bold text-white flex items-center justify-center px-1">
                       {count}
                     </span>
                   )}
@@ -487,11 +487,11 @@ export default function BillModerationPage() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold text-foreground text-sm">{bill.customer.name}</h3>
-                          <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full', statusCfg.bg, statusCfg.color)}>
+                          <span className={cn('text-xs font-semibold px-1.5 py-0.5 rounded-full', statusCfg.bg, statusCfg.color)}>
                             {statusCfg.label}
                           </span>
                           {bill.escalationLevel !== 'NONE' && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive flex items-center gap-0.5">
+                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive flex items-center gap-0.5">
                               <ArrowUpRight className="h-3 w-3" />
                               Escalated to {bill.escalationLevel}
                             </span>
@@ -499,7 +499,7 @@ export default function BillModerationPage() {
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
                           {isBrandView ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                               <Building2 className="h-3 w-3" />{bill.business}
                             </span>
                           ) : (
@@ -512,7 +512,7 @@ export default function BillModerationPage() {
                           {seriesBadge && (
                             <span
                               className={cn(
-                                'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
+                                'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-semibold',
                                 seriesBadge.matched ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground',
                               )}
                             >
@@ -534,17 +534,17 @@ export default function BillModerationPage() {
                       {/* Metrics Group */}
                       <div className="grid grid-cols-3 gap-2 lg:flex lg:items-center lg:gap-6 w-full lg:w-auto border-t border-border pt-3 lg:border-t-0 lg:pt-0">
                         <div className="text-center lg:text-left">
-                          <p className="text-[10px] text-muted-foreground mb-0.5">Amount</p>
+                          <p className="text-xs text-muted-foreground mb-0.5">Amount</p>
                           <p className="font-bold text-foreground text-sm">₹{bill.amount.toLocaleString('en-IN')}</p>
                         </div>
                         <div className="text-center lg:text-left">
-                          <p className="text-[10px] text-muted-foreground mb-0.5">OCR Conf</p>
+                          <p className="text-xs text-muted-foreground mb-0.5">OCR Conf</p>
                           <p className={cn('font-semibold text-sm', bill.ocrConfidence >= 80 ? 'text-success' : bill.ocrConfidence >= 60 ? 'text-warning' : 'text-destructive')}>
                             {bill.ocrConfidence}%
                           </p>
                         </div>
                         <div className="text-center lg:text-left">
-                          <p className="text-[10px] text-muted-foreground mb-0.5">Risk Score</p>
+                          <p className="text-xs text-muted-foreground mb-0.5">Risk Score</p>
                           <FraudBadge score={bill.fraudScore} />
                         </div>
                       </div>
@@ -639,7 +639,7 @@ export default function BillModerationPage() {
                             <p className="text-xs"><span className="text-muted-foreground">Total: </span><span className="text-foreground font-bold">{bill.ocrData.total}</span></p>
                             <p className="text-xs"><span className="text-muted-foreground">Date: </span><span className="text-foreground">{bill.ocrData.date}</span></p>
                             <div className="pt-1.5 border-t border-border">
-                              <p className="text-[10px] text-muted-foreground mb-1">Line Items:</p>
+                              <p className="text-xs text-muted-foreground mb-1">Line Items:</p>
                               {(bill.ocrData.items as string[]).map((item: string, i: number) => (
                                 <p key={i} className="text-xs text-foreground/80">• {item}</p>
                               ))}
@@ -663,7 +663,7 @@ export default function BillModerationPage() {
                               />
                             </div>
                             {bill.fraudScore >= 0.6 && (
-                              <p className="text-[10px] text-destructive mt-2 flex items-center gap-1">
+                              <p className="text-xs text-destructive mt-2 flex items-center gap-1">
                                 <AlertTriangle className="h-3 w-3" />
                                 High risk — manual review recommended
                               </p>

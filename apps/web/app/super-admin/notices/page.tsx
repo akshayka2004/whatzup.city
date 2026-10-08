@@ -180,7 +180,7 @@ export default function SuperAdminNoticesPage() {
 
         <div className="space-y-4">
           {notices.map((note, i) => (
-            <Card key={note.id} className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
+            <Card key={note.id} className="ui-fade-up p-6 rounded-2xl border-border bg-card hover:bg-card/50 transition-colors" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex items-start gap-4 flex-1 min-w-0">
                   <div className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center shrink-0 ${note.status === 'BROADCASTING' ? 'bg-warning/10 text-warning' : 'bg-secondary text-muted-foreground'}`}>
@@ -192,7 +192,7 @@ export default function SuperAdminNoticesPage() {
                     {note.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {note.tags.map((tag) => (
-                          <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/20 text-warning text-[10px] font-medium">
+                          <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/20 text-warning text-xs font-medium">
                             <Tag className="h-2.5 w-2.5" />{tag}
                           </span>
                         ))}

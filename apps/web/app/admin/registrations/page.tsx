@@ -56,7 +56,7 @@ function DetailRow({
     <div className="flex items-start gap-2">
       <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
       <div className="min-w-0">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{label}</p>
+        <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">{label}</p>
         <p className={cn('text-sm text-foreground break-all', mono && 'font-mono')}>{value}</p>
       </div>
     </div>
@@ -275,7 +275,7 @@ function BusinessRow({
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-sm text-foreground truncate">{item.businessName}</span>
               {item.category && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-info/15 text-info">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-info/15 text-info">
                   {item.category}
                 </span>
               )}
@@ -302,13 +302,13 @@ function BusinessRow({
         <div className="bg-secondary border-t border-border px-5 py-5 ui-pop">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
             <div className="space-y-3">
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Business Info</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Business Info</p>
               <DetailRow icon={Building2} label="Business Name" value={item.businessName} />
               <DetailRow icon={Tag} label="Category" value={item.category || '—'} />
               {item.website && <DetailRow icon={Globe} label="Website" value={item.website} />}
             </div>
             <div className="space-y-3">
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Contact Details</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Contact Details</p>
               <DetailRow icon={UserCheck} label="Contact Name" value={item.contactName} />
               <DetailRow icon={Mail} label="Email" value={item.email} />
               {item.phone && <DetailRow icon={Phone} label="Phone" value={item.phone} />}
@@ -320,7 +320,7 @@ function BusinessRow({
             </div>
             {item.notes && (
               <div className="space-y-3">
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Notes</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Notes</p>
                 <div className="flex items-start gap-2">
                   <FileText className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
                   <p className="text-sm text-foreground whitespace-pre-wrap">{item.notes}</p>
@@ -380,7 +380,7 @@ function IndividualRow({
         <div className="bg-secondary border-t border-border px-5 py-5 ui-pop">
           <div className="grid sm:grid-cols-2 gap-6 text-sm">
             <div className="space-y-3">
-              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Personal Details</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Personal Details</p>
               <DetailRow icon={UserCheck} label="Name" value={item.name} />
               <DetailRow icon={Mail} label="Email" value={item.email} />
               {item.phone && <DetailRow icon={Phone} label="Phone" value={item.phone} />}
@@ -392,7 +392,7 @@ function IndividualRow({
             </div>
             {item.interests && (
               <div className="space-y-3">
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Interests</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Interests</p>
                 <div className="flex items-start gap-2">
                   <FileText className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
                   <p className="text-sm text-foreground whitespace-pre-wrap">{item.interests}</p>

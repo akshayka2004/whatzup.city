@@ -35,9 +35,9 @@ function isNoticeExpired(n: Notice): boolean {
 type NoticeType = 'ALERT' | 'ANNOUNCEMENT' | 'NOTICE';
 
 const TYPE_CONFIG: Record<NoticeType, { label: string; color: string; bg: string; border: string; icon: React.ElementType }> = {
-  ALERT: { label: 'Alert', color: 'text-rose-400', bg: 'bg-rose-500/10', border: 'border-rose-500/20', icon: ShieldAlert },
-  ANNOUNCEMENT: { label: 'Announcement', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Megaphone },
-  NOTICE: { label: 'Notice', color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20', icon: FileText },
+  ALERT: { label: 'Alert', color: 'text-danger-soft-foreground', bg: 'bg-danger-soft', border: 'border-destructive/25', icon: ShieldAlert },
+  ANNOUNCEMENT: { label: 'Announcement', color: 'text-warning-soft-foreground', bg: 'bg-warning-soft', border: 'border-warning/30', icon: Megaphone },
+  NOTICE: { label: 'Notice', color: 'text-info-soft-foreground', bg: 'bg-info-soft', border: 'border-info/25', icon: FileText },
 };
 
 export default function GovDashboardPage() {
@@ -151,15 +151,15 @@ export default function GovDashboardPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="border-b border-white/5 bg-card/40 backdrop-blur-xl sticky top-0 z-40">
+      <header className="border-b border-border/70 bg-card/40 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-              <Building2 className="h-5 w-5 text-amber-400" />
+            <div className="h-9 w-9 rounded-xl bg-warning-soft border border-warning/30 flex items-center justify-center shrink-0">
+              <Building2 className="h-5 w-5 text-warning-soft-foreground" />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-foreground truncate">Government Portal</p>
-              <p className="text-[10px] text-muted-foreground truncate">Official Civic Communications</p>
+              <p className="text-xs text-muted-foreground truncate">Official Civic Communications</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -174,7 +174,7 @@ export default function GovDashboardPage() {
               onClick={handleSignOut}
               variant="outline"
               size="sm"
-              className="rounded-xl border-white/10 text-rose-400 hover:bg-rose-500/10 cursor-pointer gap-1.5"
+              className="rounded-xl border-border/70 text-danger-soft-foreground hover:bg-danger-soft cursor-pointer gap-1.5"
             >
               <LogOut className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Sign Out</span>
@@ -194,7 +194,7 @@ export default function GovDashboardPage() {
 
         {/* Success toast */}
         {success && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold">
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-success-soft border border-success/25 text-success-soft-foreground text-sm font-semibold">
             <CheckCircle2 className="h-4 w-4" />
             {success}
           </div>
@@ -203,15 +203,15 @@ export default function GovDashboardPage() {
         {/* Stats */}
         <div className="grid sm:grid-cols-3 gap-4">
           {[
-            { label: 'Active Notices', value: activeCount, icon: Bell, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
-            { label: 'Active Alerts', value: alertCount, icon: ShieldAlert, color: 'text-rose-400', bg: 'bg-rose-500/10' },
-            { label: 'Total Published', value: notices.length, icon: Megaphone, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+            { label: 'Active Notices', value: activeCount, icon: Bell, color: 'text-info-soft-foreground', bg: 'bg-info-soft' },
+            { label: 'Active Alerts', value: alertCount, icon: ShieldAlert, color: 'text-danger-soft-foreground', bg: 'bg-danger-soft' },
+            { label: 'Total Published', value: notices.length, icon: Megaphone, color: 'text-warning-soft-foreground', bg: 'bg-warning-soft' },
           ].map((s, i) => {
             const Icon = s.icon;
             return (
               <Card
                 key={s.label}
-                className="p-5 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl ui-fade-up"
+                className="p-5 rounded-2xl border-border/70 bg-card/60 backdrop-blur-xl ui-fade-up"
                 style={{ animationDelay: `${i * 0.05}s` }}
               >
                 <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
@@ -229,7 +229,7 @@ export default function GovDashboardPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold text-foreground">Published Notices</h2>
             <div className="flex gap-2 text-xs text-muted-foreground">
-              <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10">{activeCount} active</span>
+              <span className="px-2 py-0.5 rounded-full bg-white/5 border border-border/70">{activeCount} active</span>
             </div>
           </div>
 
@@ -238,7 +238,7 @@ export default function GovDashboardPage() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : visibleNotices.length === 0 ? (
-            <Card className="p-10 rounded-2xl text-center border-dashed border-white/10 bg-white/5">
+            <Card className="p-10 rounded-2xl text-center border-dashed border-border/70 bg-white/5">
               <Bell className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-40" />
               <p className="text-foreground font-semibold mb-1">No notices published</p>
               <p className="text-sm text-muted-foreground">Use "New Notice" to publish an alert or announcement.</p>
@@ -252,7 +252,7 @@ export default function GovDashboardPage() {
                 return (
                   <Card
                     key={notice.id}
-                    className="p-5 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all ui-fade-up"
+                    className="p-5 rounded-2xl border-border/70 bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all ui-fade-up"
                     style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                   >
                     <div className="flex items-start gap-4">
@@ -262,20 +262,20 @@ export default function GovDashboardPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <h3 className="text-sm font-bold text-foreground">{notice.title}</h3>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${cfg.border} ${cfg.bg} ${cfg.color}`}>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${cfg.border} ${cfg.bg} ${cfg.color}`}>
                             {cfg.label}
                           </span>
                           {notice.status === 'EXPIRED' && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-muted-foreground">
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full border border-border/70 bg-white/5 text-muted-foreground">
                               Expired
                             </span>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground mb-2 leading-relaxed">{notice.body}</p>
-                        <p className="text-[10px] text-muted-foreground flex items-center gap-2 flex-wrap">
+                        <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
                           <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> Published {notice.publishedAt}</span>
                           {notice.expiresAt && (
-                            <span className="flex items-center gap-1 text-amber-400">
+                            <span className="flex items-center gap-1 text-warning-soft-foreground">
                               · Expires {notice.expiresAt}
                             </span>
                           )}
@@ -285,7 +285,7 @@ export default function GovDashboardPage() {
                         onClick={() => handleDelete(notice.id)}
                         size="sm"
                         variant="outline"
-                        className="rounded-xl border-rose-500/20 text-rose-400 hover:bg-rose-500/10 cursor-pointer shrink-0 h-8 w-8 p-0"
+                        className="rounded-xl border-destructive/25 text-danger-soft-foreground hover:bg-danger-soft cursor-pointer shrink-0 h-8 w-8 p-0"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -326,7 +326,7 @@ export default function GovDashboardPage() {
                         type="button"
                         onClick={() => setFormType(t)}
                         className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 justify-center transition cursor-pointer ${
-                          selected ? `${cfg.bg} ${cfg.border} ${cfg.color}` : 'border-white/10 text-slate-400 hover:bg-white/5'
+                          selected ? `${cfg.bg} ${cfg.border} ${cfg.color}` : 'border-border/70 text-muted-foreground hover:bg-white/5'
                         }`}
                       >
                         <Icon className="h-3.5 w-3.5" />
@@ -343,7 +343,7 @@ export default function GovDashboardPage() {
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="Road closure on MG Road..."
-                  className="rounded-xl border-white/10 bg-white/5 text-foreground"
+                  className="rounded-xl border-border/70 bg-white/5 text-foreground"
                   required
                 />
               </div>
@@ -355,7 +355,7 @@ export default function GovDashboardPage() {
                   onChange={(e) => setFormBody(e.target.value)}
                   placeholder="Provide full details of this notice..."
                   rows={4}
-                  className="rounded-xl border-white/10 bg-white/5 text-foreground resize-none"
+                  className="rounded-xl border-border/70 bg-white/5 text-foreground resize-none"
                   required
                 />
               </div>
@@ -369,18 +369,18 @@ export default function GovDashboardPage() {
                   value={formExpiresAt}
                   onChange={(e) => setFormExpiresAt(e.target.value)}
                   min={new Date().toISOString().slice(0, 10)}
-                  className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm"
+                  className="rounded-xl border-border/70 bg-white/5 text-foreground text-sm"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground block mb-1.5">Start / Issue date</label>
-                  <Input type="date" value={formStartAt} onChange={(e) => setFormStartAt(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
+                  <Input type="date" value={formStartAt} onChange={(e) => setFormStartAt(e.target.value)} className="rounded-xl border-border/70 bg-white/5 text-foreground text-sm" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground block mb-1.5">Link (optional)</label>
-                  <Input placeholder="https://…" value={formLink} onChange={(e) => setFormLink(e.target.value)} className="rounded-xl border-white/10 bg-white/5 text-foreground text-sm" />
+                  <Input placeholder="https://…" value={formLink} onChange={(e) => setFormLink(e.target.value)} className="rounded-xl border-border/70 bg-white/5 text-foreground text-sm" />
                 </div>
               </div>
 
@@ -394,10 +394,10 @@ export default function GovDashboardPage() {
                       key={c}
                       type="button"
                       onClick={() => toggleCity(c)}
-                      className={`px-2 py-1 rounded-lg text-[11px] border cursor-pointer ${
+                      className={`px-2 py-1 rounded-lg text-xs border cursor-pointer ${
                         formCities.includes(c)
                           ? 'bg-primary/20 border-primary text-primary'
-                          : 'bg-white/5 border-white/10 text-muted-foreground'
+                          : 'bg-white/5 border-border/70 text-muted-foreground'
                       }`}
                     >
                       {c}
@@ -411,7 +411,7 @@ export default function GovDashboardPage() {
                   type="button"
                   onClick={() => setShowForm(false)}
                   variant="outline"
-                  className="flex-1 rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
+                  className="flex-1 rounded-xl border-border/70 text-muted-foreground hover:bg-white/5 cursor-pointer"
                 >
                   Cancel
                 </Button>

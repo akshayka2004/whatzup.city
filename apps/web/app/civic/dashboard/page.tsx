@@ -35,9 +35,9 @@ function isExpired(n: Notice): boolean {
 type NoticeType = 'ALERT' | 'ANNOUNCEMENT' | 'NOTICE';
 
 const TYPE_CONFIG: Record<NoticeType, { label: string; color: string; bg: string; border: string; icon: React.ElementType }> = {
-  ALERT:        { label: 'Alert',        color: 'text-rose-400',  bg: 'bg-rose-500/10',  border: 'border-rose-500/20',  icon: AlertTriangle },
-  ANNOUNCEMENT: { label: 'Announcement', color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Megaphone },
-  NOTICE:       { label: 'Notice',       color: 'text-cyan-400',  bg: 'bg-cyan-500/10',  border: 'border-cyan-500/20',  icon: FileText },
+  ALERT:        { label: 'Alert',        color: 'text-danger-soft-foreground',  bg: 'bg-danger-soft',  border: 'border-destructive/25',  icon: AlertTriangle },
+  ANNOUNCEMENT: { label: 'Announcement', color: 'text-warning-soft-foreground', bg: 'bg-warning-soft', border: 'border-warning/30', icon: Megaphone },
+  NOTICE:       { label: 'Notice',       color: 'text-info-soft-foreground',  bg: 'bg-info-soft',  border: 'border-info/25',  icon: FileText },
 };
 
 const ORG_ICON: Record<string, React.ElementType> = {
@@ -47,9 +47,9 @@ const ORG_ICON: Record<string, React.ElementType> = {
 };
 
 const ORG_COLOR: Record<string, string> = {
-  NGO: 'text-rose-400 bg-rose-500/10 border-rose-500/20',
-  COMMUNITY: 'text-violet-400 bg-violet-500/10 border-violet-500/20',
-  NEWS_FORUM: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
+  NGO: 'text-danger-soft-foreground bg-danger-soft border-destructive/25',
+  COMMUNITY: 'text-brand-soft-foreground bg-brand-soft border-primary/25',
+  NEWS_FORUM: 'text-info-soft-foreground bg-info-soft border-info/25',
 };
 
 export default function CivicDashboardPage() {
@@ -183,7 +183,7 @@ export default function CivicDashboardPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="border-b border-white/5 bg-card/40 backdrop-blur-xl sticky top-0 z-40">
+      <header className="border-b border-border/70 bg-card/40 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className={`h-9 w-9 rounded-xl border flex items-center justify-center shrink-0 ${orgColorClass}`}>
@@ -191,7 +191,7 @@ export default function CivicDashboardPage() {
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-foreground truncate">{orgLabel[orgType] ?? 'Civic Portal'}</p>
-              <p className="text-[10px] text-muted-foreground">{user?.entity?.name ?? 'Organisation'}</p>
+              <p className="text-xs text-muted-foreground">{user?.entity?.name ?? 'Organisation'}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -206,7 +206,7 @@ export default function CivicDashboardPage() {
               onClick={() => router.push('/civic/profile')}
               variant="outline"
               size="sm"
-              className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer gap-1.5 h-9"
+              className="rounded-xl border-border/70 text-muted-foreground hover:bg-white/5 cursor-pointer gap-1.5 h-9"
             >
               <UserCog className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Profile</span>
@@ -215,7 +215,7 @@ export default function CivicDashboardPage() {
               onClick={handleSignOut}
               variant="outline"
               size="sm"
-              className="rounded-xl border-white/10 text-rose-400 hover:bg-rose-500/10 cursor-pointer gap-1.5 h-9"
+              className="rounded-xl border-border/70 text-danger-soft-foreground hover:bg-danger-soft cursor-pointer gap-1.5 h-9"
             >
               <LogOut className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Sign Out</span>
@@ -228,10 +228,10 @@ export default function CivicDashboardPage() {
 
         {/* Verification pending banner */}
         {user?.entity?.status === 'PENDING_VERIFICATION' && (
-          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
-            <Clock className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+          <div className="p-4 rounded-xl bg-warning-soft border border-warning/30 flex items-start gap-3">
+            <Clock className="h-5 w-5 text-warning-soft-foreground shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-amber-400">Verification Pending</p>
+              <p className="text-sm font-semibold text-warning-soft-foreground">Verification Pending</p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Your organisation is under admin review. Full features unlock after approval.
               </p>
@@ -241,7 +241,7 @@ export default function CivicDashboardPage() {
 
         {/* Success banner */}
         {success && (
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-success-soft border border-success/25 text-success-soft-foreground text-sm font-medium flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 shrink-0" /> {success}
           </div>
         )}
@@ -262,25 +262,25 @@ export default function CivicDashboardPage() {
             { label: 'Total Published', value: notices.length, icon: Bell, accent: 'text-muted-foreground' },
             { label: 'Active Now',      value: visible.length, icon: Globe, accent: 'text-muted-foreground' },
             { label: 'Alerts',          value: visible.filter((n) => n.type === 'ALERT').length, icon: AlertTriangle, accent: 'text-muted-foreground' },
-            { label: 'Referrals',       value: referralCount, icon: Gift, accent: 'text-emerald-400' },
+            { label: 'Referrals',       value: referralCount, icon: Gift, accent: 'text-success-soft-foreground' },
           ].map(({ label, value, icon: Icon, accent }, i) => (
             <Card
               key={label}
-              className="p-4 rounded-2xl border-white/5 bg-card/60 backdrop-blur-xl ui-fade-up"
+              className="p-4 rounded-2xl border-border/70 bg-card/60 backdrop-blur-xl ui-fade-up"
               style={{ animationDelay: `${i * 0.05}s` }}
             >
               <div className="flex items-center gap-2 mb-2">
                 <Icon className={`h-4 w-4 ${accent}`} />
               </div>
               <h3 className="text-2xl font-extrabold text-foreground">{value}</h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
             </Card>
           ))}
         </div>
 
         {/* Publish form (inline panel) */}
         {showForm && (
-          <Card className="p-5 sm:p-6 rounded-2xl border-white/5 bg-card/80 backdrop-blur-xl ui-pop">
+          <Card className="p-5 sm:p-6 rounded-2xl border-border/70 bg-card ui-pop">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-foreground">New Publication</h3>
               <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground">
@@ -352,7 +352,7 @@ export default function CivicDashboardPage() {
                       key={c}
                       type="button"
                       onClick={() => toggleCity(c)}
-                      className={`px-2 py-1 rounded-lg text-[11px] border cursor-pointer ${
+                      className={`px-2 py-1 rounded-lg text-xs border cursor-pointer ${
                         formCities.includes(c)
                           ? 'bg-primary/20 border-primary text-primary'
                           : 'bg-background border-input text-muted-foreground'
@@ -397,7 +397,7 @@ export default function CivicDashboardPage() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : visible.length === 0 ? (
-            <Card className="p-8 rounded-2xl border-white/5 bg-card/40 text-center">
+            <Card className="p-8 rounded-2xl border-border/70 bg-card/40 text-center">
               <Bell className="h-8 w-8 mx-auto text-muted-foreground opacity-30 mb-2" />
               <p className="text-sm text-muted-foreground">No active publications yet.</p>
               <Button
@@ -425,10 +425,10 @@ export default function CivicDashboardPage() {
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-[10px] font-bold uppercase tracking-widest ${cfg.color}`}>
+                            <span className={`text-xs font-bold uppercase tracking-widest ${cfg.color}`}>
                               {cfg.label}
                             </span>
-                            <span className="text-[10px] text-muted-foreground">{n.publishedAt}</span>
+                            <span className="text-xs text-muted-foreground">{n.publishedAt}</span>
                           </div>
                           <h4 className="text-sm font-semibold text-foreground mt-0.5 truncate">{n.title}</h4>
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">{n.body}</p>
@@ -436,7 +436,7 @@ export default function CivicDashboardPage() {
                       </div>
                       <button
                         onClick={() => handleDelete(n.id)}
-                        className="text-muted-foreground hover:text-rose-400 transition-colors shrink-0 p-1"
+                        className="text-muted-foreground hover:text-danger-soft-foreground transition-colors shrink-0 p-1"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>

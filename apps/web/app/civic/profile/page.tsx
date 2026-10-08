@@ -154,7 +154,7 @@ export default function CivicProfilePage() {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
         <Card className="p-8 rounded-2xl text-center max-w-md">
-          <AlertTriangle className="h-8 w-8 mx-auto text-rose-400 mb-3" />
+          <AlertTriangle className="h-8 w-8 mx-auto text-danger-soft-foreground mb-3" />
           <p className="text-sm text-muted-foreground">{msg?.text || 'Profile unavailable.'}</p>
           <Button onClick={() => router.push('/civic/dashboard')} className="mt-4 rounded-xl">
             Back to Dashboard
@@ -166,14 +166,14 @@ export default function CivicProfilePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-white/5 bg-card/40 backdrop-blur-xl sticky top-0 z-40">
+      <header className="border-b border-border/70 bg-card/40 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <Button
               onClick={() => router.push('/civic/dashboard')}
               variant="outline"
               size="sm"
-              className="rounded-xl border-white/10 h-9 gap-1.5 cursor-pointer"
+              className="rounded-xl border-border/70 h-9 gap-1.5 cursor-pointer"
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="hidden sm:inline">Back</span>
@@ -196,8 +196,8 @@ export default function CivicProfilePage() {
           <div
             className={`p-3 rounded-xl border text-sm font-medium flex items-center gap-2 ${
               msg.type === 'ok'
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                ? 'bg-success-soft border-success/25 text-success-soft-foreground'
+                : 'bg-danger-soft border-destructive/25 text-danger-soft-foreground'
             }`}
           >
             {msg.type === 'ok' ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertTriangle className="h-4 w-4 shrink-0" />}
@@ -206,7 +206,7 @@ export default function CivicProfilePage() {
         )}
 
         {/* Banner + Logo */}
-        <Card className="rounded-2xl border-white/5 bg-card/60 overflow-hidden ui-fade-up">
+        <Card className="rounded-2xl border-border/70 bg-card/60 overflow-hidden ui-fade-up">
           <div className="relative h-32 sm:h-40 bg-gradient-to-r from-primary/20 to-accent/20">
             {profile.bannerUrl && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -254,11 +254,11 @@ export default function CivicProfilePage() {
               </div>
               <div className="min-w-0 pb-1">
                 <p className="text-sm font-bold truncate">{profile.organizationName || 'Organisation'}</p>
-                <p className="text-[11px] text-muted-foreground">{profile.entityType} · {profile.email}</p>
+                <p className="text-xs text-muted-foreground">{profile.entityType} · {profile.email}</p>
               </div>
             </div>
             {!isUploadConfigured() && (
-              <p className="text-[11px] text-amber-400/80 mt-3">
+              <p className="text-xs text-warning-soft-foreground mt-3">
                 Direct upload not configured — paste image URLs in the fields below.
               </p>
             )}
@@ -274,7 +274,7 @@ export default function CivicProfilePage() {
         </Card>
 
         {/* Details */}
-        <Card className="p-5 sm:p-6 rounded-2xl border-white/5 bg-card/60 space-y-4">
+        <Card className="p-5 sm:p-6 rounded-2xl border-border/70 bg-card/60 space-y-4">
           <h2 className="text-sm font-bold">Organisation Details</h2>
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Organisation Name">
@@ -302,7 +302,7 @@ export default function CivicProfilePage() {
         </Card>
 
         {/* Social Links */}
-        <Card className="p-5 sm:p-6 rounded-2xl border-white/5 bg-card/60 space-y-4">
+        <Card className="p-5 sm:p-6 rounded-2xl border-border/70 bg-card/60 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Link2 className="h-4 w-4 text-primary" />
@@ -312,7 +312,7 @@ export default function CivicProfilePage() {
               <Plus className="h-3.5 w-3.5" /> Add
             </Button>
           </div>
-          <p className="text-[11px] text-muted-foreground -mt-2">
+          <p className="text-xs text-muted-foreground -mt-2">
             These appear as clickable buttons on your public notice cards.
           </p>
           {profile.socialLinks.length === 0 ? (
@@ -336,7 +336,7 @@ export default function CivicProfilePage() {
                     />
                     <button
                       onClick={() => removeLink(i)}
-                      className="shrink-0 text-muted-foreground hover:text-rose-400 p-2 cursor-pointer"
+                      className="shrink-0 text-muted-foreground hover:text-danger-soft-foreground p-2 cursor-pointer"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -348,7 +348,7 @@ export default function CivicProfilePage() {
         </Card>
 
         {/* Change Password */}
-        <Card className="p-5 sm:p-6 rounded-2xl border-white/5 bg-card/60 space-y-4">
+        <Card className="p-5 sm:p-6 rounded-2xl border-border/70 bg-card/60 space-y-4">
           <div className="flex items-center gap-2">
             <KeyRound className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-bold">Change Password</h2>
@@ -357,8 +357,8 @@ export default function CivicProfilePage() {
             <div
               className={`p-2.5 rounded-xl border text-xs font-medium flex items-center gap-2 ${
                 pwMsg.type === 'ok'
-                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                  : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                  ? 'bg-success-soft border-success/25 text-success-soft-foreground'
+                  : 'bg-danger-soft border-destructive/25 text-danger-soft-foreground'
               }`}
             >
               {pwMsg.type === 'ok' ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}

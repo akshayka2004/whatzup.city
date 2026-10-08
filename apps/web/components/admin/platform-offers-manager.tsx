@@ -153,7 +153,7 @@ function Field({
     <label className="block space-y-1.5">
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
       {children}
-      {hint && <span className="block text-[11px] text-muted-foreground">{hint}</span>}
+      {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
     </label>
   );
 }
@@ -353,7 +353,7 @@ export function PlatformOffersManager() {
                       </div>
                       <span
                         className={cn(
-                          'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold border',
+                          'shrink-0 rounded-full px-2 py-0.5 text-xs font-bold border',
                           r.status === 'PUBLISHED'
                             ? 'bg-success/10 text-success border-success/20'
                             : 'bg-muted text-muted-foreground border-border',
@@ -362,7 +362,7 @@ export function PlatformOffersManager() {
                         {r.status}
                       </span>
                     </div>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
                       <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 font-medium">
                         {categoryLabel(r.category)}
                       </span>
@@ -457,11 +457,11 @@ export function PlatformOffersManager() {
                         'p-3 rounded-xl border text-left transition cursor-pointer',
                         category === c.value
                           ? 'border-primary bg-primary/10'
-                          : 'border-border hover:border-slate-500',
+                          : 'border-border hover:border-border',
                       )}
                     >
                       <div className="text-sm font-semibold text-foreground">{c.label}</div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5">{c.blurb}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{c.blurb}</div>
                     </button>
                   ))}
                 </div>
@@ -481,11 +481,11 @@ export function PlatformOffersManager() {
                           'p-3 rounded-xl border text-left transition cursor-pointer',
                           subType === s.value
                             ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-slate-500',
+                            : 'border-border hover:border-border',
                         )}
                       >
                         <div className="text-sm font-semibold text-foreground">{s.label}</div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5">{s.blurb}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{s.blurb}</div>
                       </button>
                     ))}
                   </div>
@@ -601,7 +601,7 @@ export function PlatformOffersManager() {
                         </label>
                         {details.hasDelivery && (
                           <div className="pl-6 space-y-2">
-                            <p className="text-[11px] text-muted-foreground">
+                            <p className="text-xs text-muted-foreground">
                               Shown to customers for information only — orders are not taken on the platform.
                             </p>
                             <div className="flex flex-wrap gap-2">
@@ -900,7 +900,7 @@ export function PlatformOffersManager() {
                   <Field label="Poster / image" hint="Optional. JPG, PNG, WEBP or PDF.">
                     <label className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-dashed border-input cursor-pointer hover:bg-muted/40 transition">
                       <UploadCloud className="h-5 w-5 text-muted-foreground" />
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         {poster ? poster.name : existingImage ? 'Replace current image' : 'Click to upload'}
                       </span>
                       <input

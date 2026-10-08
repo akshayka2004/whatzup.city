@@ -111,16 +111,16 @@ export default function SuperAdminSubscriptionsPage() {
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-bold text-primary">{p.name}</span>
                   {p.highlight && (
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-success-soft text-success-soft-foreground">
                       Popular
                     </span>
                   )}
                 </div>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-xl font-extrabold text-foreground">{formatINR(p.offerPrice)}</span>
-                  <span className="text-[11px] text-muted-foreground line-through">{formatINR(p.mrp)}</span>
+                  <span className="text-xs text-muted-foreground line-through">{formatINR(p.mrp)}</span>
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {p.offers} offers · {p.vouchers} vouchers
                 </p>
                 <p className="text-xs font-semibold text-foreground mt-2">
@@ -209,7 +209,7 @@ export default function SuperAdminSubscriptionsPage() {
                     >
                       <td className="px-4 py-3">
                         <div className="font-medium text-foreground">{r.business?.name || '—'}</div>
-                        <div className="text-[11px] text-muted-foreground">
+                        <div className="text-xs text-muted-foreground">
                           {r.business?.city}
                           {r.business?.category?.name ? ` · ${r.business.category.name}` : ''}
                         </div>
@@ -226,7 +226,7 @@ export default function SuperAdminSubscriptionsPage() {
                       <td className="px-4 py-3">
                         <span
                           className={cn(
-                            'px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                            'px-2 py-0.5 rounded-full text-xs font-bold border',
                             STATUS_STYLE[r.status] || 'bg-muted text-muted-foreground border-border',
                           )}
                         >
@@ -247,7 +247,7 @@ export default function SuperAdminSubscriptionsPage() {
                               <div className="text-xs text-foreground">
                                 {formatINR(Number(r.latestPayment.amount))} · {r.latestPayment.method}
                               </div>
-                              <div className="text-[10px] text-muted-foreground">
+                              <div className="text-xs text-muted-foreground">
                                 {r.latestPayment.transactionRef || fmtDate(r.latestPayment.createdAt)}
                               </div>
                             </div>

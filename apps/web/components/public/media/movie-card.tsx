@@ -61,14 +61,14 @@ export function MovieCard({
         />
         <span
           className={cn(
-            'absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-bold',
+            'absolute left-2 top-2 rounded-full px-2 py-0.5 text-xs font-bold',
             m.status === 'NOW_SHOWING' ? 'bg-success text-success-foreground' : 'bg-primary text-primary-foreground',
           )}
         >
           {STATUS_LABEL[m.status] || m.status}
         </span>
         {m.certification && (
-          <span className="absolute right-2 top-2 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
+          <span className="absolute right-2 top-2 rounded-md bg-black/70 px-1.5 py-0.5 text-xs font-bold text-white">
             {m.certification}
           </span>
         )}
@@ -79,29 +79,29 @@ export function MovieCard({
 
         <div className="mt-2 flex flex-wrap items-center gap-1">
           {langs.slice(0, 3).map((l) => (
-            <span key={l} className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+            <span key={l} className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
               {l}
             </span>
           ))}
           {langs.length > 3 && (
-            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
               +{langs.length - 3}
             </span>
           )}
           {genres.map((g) => (
-            <span key={g} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
+            <span key={g} className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
               {g}
             </span>
           ))}
           {duration && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" /> {duration}
             </span>
           )}
         </div>
 
         {showRelease && (
-          <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+          <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3 shrink-0" /> Releases {fmtDateIST(m.releaseDate)}
           </p>
         )}

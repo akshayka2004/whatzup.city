@@ -158,7 +158,7 @@ export default function SuperAdminUsersPage() {
                       <td className="px-5 py-3 text-xs text-muted-foreground">{roleLabel(u.role)}</td>
                       <td className="px-5 py-3 text-xs text-muted-foreground">{u.profession || '—'}</td>
                       <td className="px-5 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${u.isActive ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${u.isActive ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
                           {u.isActive ? 'Active' : 'Suspended'}
                         </span>
                       </td>
@@ -216,7 +216,7 @@ export default function SuperAdminUsersPage() {
             </label>
 
             {form.role === 'SUPER_ADMIN' && (
-              <p className="mt-3 text-[11px] text-warning flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5" /> Granting Super Admin gives full platform control.</p>
+              <p className="mt-3 text-xs text-warning flex items-center gap-1.5"><ShieldAlert className="h-3.5 w-3.5" /> Granting Super Admin gives full platform control.</p>
             )}
             {err && <p className="text-xs text-destructive mt-3">{err}</p>}
 

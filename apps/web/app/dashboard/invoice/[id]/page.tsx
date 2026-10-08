@@ -121,7 +121,7 @@ export default function InvoicePage() {
 
             {/* Bill to */}
             <div className="py-6 border-b border-border">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-2">Billed to</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Billed to</p>
               {invoice.billingProfile ? (
                 <div className="text-sm space-y-0.5">
                   <p className="font-semibold text-foreground break-words">{invoice.billingProfile.billingName}</p>
@@ -145,7 +145,7 @@ export default function InvoicePage() {
             <div className="py-6 border-b border-border overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                  <tr className="text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     <th className="pb-2">Description</th>
                     <th className="pb-2 text-right">Amount</th>
                   </tr>
