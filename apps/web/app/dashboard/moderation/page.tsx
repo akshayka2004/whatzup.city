@@ -1,35 +1,35 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { BusinessLayout } from '@/components/layouts/business-layout';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ShieldCheck,
-  ShieldAlert,
-  FileText,
-  Check,
-  X,
-  Eye,
   AlertTriangle,
-  RefreshCw,
-  Flag,
-  Clock,
-  TrendingUp,
-  User,
-  Building2,
-  CheckCircle2,
-  XCircle,
-  ArrowUpRight,
-  Filter,
-  Search,
-  Shield,
-  Loader2,
   ArrowRightLeft,
+  ArrowUpRight,
+  Building2,
+  Check,
+  CheckCircle2,
+  Clock,
+  Flag,
+  Keyboard,
+  ReceiptText,
+  RefreshCw,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  X,
+  XCircle,
 } from 'lucide-react';
+import { BusinessLayout } from '@/components/layouts/business-layout';
+import { PageHeader } from '@/components/system/page-header';
+import { FilterChip, ChipRow } from '@/components/system/filter-chip';
+import { SearchInput } from '@/components/system/toolbar';
+import { Modal } from '@/components/system/modal';
+import { StatusPill, type PillTone } from '@/components/common/status-pill';
+import { EmptyState } from '@/components/common/empty-state';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/components/ui/sonner';
 import { cn } from '@/lib/utils';
 import { canAccess, hasRole, getRoleLabel } from '@/lib/rbac';
 import { apiService } from '@/lib/services/api-service';
@@ -39,7 +39,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 type BillStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FLAGGED' | 'RE_UPLOAD_REQUESTED' | 'ESCALATED';
 type TabKey = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FLAGGED' | 'RE_UPLOAD_REQUESTED';
-type ActionModal = 'approve' | 'reject' | 'reupload' | 'flag' | 'override' | null;
+type Action = 'approve' | 'reject' | 'reupload' | 'flag' | 'override';
 
 type BrandInfo = {
   brand: { id: string; name: string; billSeriesMode?: string; billSeriesPrefix?: string | null };
@@ -98,58 +98,241 @@ function mapApiBill(b: any) {
     ocrConfidence: b.ocrConfidence ?? (b.ocrMetadata?.confidence ?? 75),
     fraudScore: isNaN(fraudScore) ? 0.1 : fraudScore,
     escalationLevel: b.escalationLevel || 'NONE',
-    ocrData: b.ocrData || (b.ocrMetadata ? {
+    ocrData: b.ocrData || {
       merchant: businessName,
       total: `₹${amount}`,
       date: billDate,
       items: b.ocrMetadata?.lineItems || [],
-    } : {
-      merchant: businessName,
-      total: `₹${amount}`,
-      date: billDate,
-      items: [],
-    }),
+    },
     receiptUrl: b.receiptUrl || bill.billImage || '',
     uploadedAt: b.createdAt || new Date().toISOString(),
   };
 }
 
-const TABS: { key: TabKey; label: string; icon: React.ElementType }[] = [
+type Bill = ReturnType<typeof mapApiBill>;
+
+const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: 'PENDING', label: 'Pending', icon: Clock },
   { key: 'FLAGGED', label: 'Flagged', icon: ShieldAlert },
-  { key: 'RE_UPLOAD_REQUESTED', label: 'Re-Upload', icon: RefreshCw },
+  { key: 'RE_UPLOAD_REQUESTED', label: 'Re-upload', icon: RefreshCw },
   { key: 'APPROVED', label: 'Approved', icon: CheckCircle2 },
   { key: 'REJECTED', label: 'Rejected', icon: XCircle },
 ];
 
-const STATUS_CONFIG: Record<BillStatus, { label: string; color: string; bg: string }> = {
-  PENDING: { label: 'Pending', color: 'text-warning', bg: 'bg-warning/10' },
-  APPROVED: { label: 'Approved', color: 'text-success', bg: 'bg-success/10' },
-  REJECTED: { label: 'Rejected', color: 'text-destructive', bg: 'bg-destructive/10' },
-  FLAGGED: { label: 'Flagged', color: 'text-warning', bg: 'bg-warning/10' },
-  RE_UPLOAD_REQUESTED: { label: 'Re-Upload Requested', color: 'text-info', bg: 'bg-info/10' },
-  ESCALATED: { label: 'Escalated', color: 'text-destructive', bg: 'bg-destructive/10' },
+const STATUS_PILL: Record<BillStatus, { label: string; tone: PillTone }> = {
+  PENDING: { label: 'Pending', tone: 'warning' },
+  APPROVED: { label: 'Approved', tone: 'success' },
+  REJECTED: { label: 'Rejected', tone: 'danger' },
+  FLAGGED: { label: 'Flagged', tone: 'warning' },
+  RE_UPLOAD_REQUESTED: { label: 'Re-upload requested', tone: 'info' },
+  ESCALATED: { label: 'Escalated', tone: 'danger' },
 };
 
-// ── FRAUD SCORE BADGE ─────────────────────────────────────────────────
-// (empty MOCK_BILLS removed — data comes from real API)
+const ACTION_META: Record<Action, { title: string; icon: React.ComponentType<{ className?: string }>; tone: string; button: 'primary' | 'destructive' | 'outline'; placeholder?: string; templates?: string[]; needsReason?: boolean }> = {
+  approve: { title: 'Approve bill', icon: Check, tone: 'bg-success-soft text-success-soft-foreground', button: 'primary', placeholder: 'Note (optional)' },
+  override: { title: 'Owner override — approve', icon: Shield, tone: 'bg-success-soft text-success-soft-foreground', button: 'primary', placeholder: 'Override reason (optional)' },
+  reject: {
+    title: 'Reject bill',
+    icon: X,
+    tone: 'bg-danger-soft text-danger-soft-foreground',
+    button: 'destructive',
+    placeholder: 'Reason for rejection…',
+    needsReason: true,
+    templates: ['Bill is from another business', "Amount doesn't match the bill", 'Duplicate submission', 'Bill is older than allowed'],
+  },
+  reupload: {
+    title: 'Request re-upload',
+    icon: RefreshCw,
+    tone: 'bg-info-soft text-info-soft-foreground',
+    button: 'outline',
+    placeholder: 'What needs to be corrected?',
+    needsReason: true,
+    templates: ['Photo is blurry — please retake', 'Total amount is not visible', 'Bill number is cut off', 'Please upload the full bill'],
+  },
+  flag: { title: 'Flag for escalation', icon: Flag, tone: 'bg-warning-soft text-warning-soft-foreground', button: 'outline', placeholder: 'Escalation reason…', needsReason: true },
+};
 
-function FraudBadge({ score }: { score: number }) {
+const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
+
+function riskTone(score: number): PillTone {
+  return score >= 0.7 ? 'danger' : score >= 0.4 ? 'warning' : 'success';
+}
+
+function RiskPill({ score }: { score: number }) {
   const pct = Math.round(score * 100);
-  if (pct >= 70) return (
-    <span className="flex items-center gap-1 text-destructive font-bold text-sm">
-      <ShieldAlert className="h-3.5 w-3.5" /> {pct}% HIGH
-    </span>
-  );
-  if (pct >= 40) return (
-    <span className="flex items-center gap-1 text-warning font-semibold text-sm">
-      <AlertTriangle className="h-3.5 w-3.5" /> {pct}% MED
-    </span>
-  );
+  const tone = riskTone(score);
+  return <StatusPill tone={tone} label={`${pct}% ${tone === 'danger' ? 'high' : tone === 'warning' ? 'medium' : 'low'} risk`} />;
+}
+
+function useMinWidth(px: number) {
+  const [match, setMatch] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia(`(min-width: ${px}px)`);
+    const on = () => setMatch(mql.matches);
+    on();
+    mql.addEventListener('change', on);
+    return () => mql.removeEventListener('change', on);
+  }, [px]);
+  return match;
+}
+
+const isTyping = (el: EventTarget | null) => {
+  const t = el as HTMLElement | null;
+  if (!t) return false;
+  return t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName) || !!t.closest('[role="dialog"]');
+};
+
+// ── BILL PREVIEW ──────────────────────────────────────────────────────
+
+function BillPreview({
+  bill,
+  brandInfo,
+  canVerify,
+  canOverride,
+  showMove,
+  onAction,
+  onMove,
+}: {
+  bill: Bill;
+  brandInfo: BrandInfo | null;
+  canVerify: boolean;
+  canOverride: boolean;
+  showMove: boolean;
+  onAction: (a: Action) => void;
+  onMove: () => void;
+}) {
+  const seriesBadge = getSeriesBadge(bill, brandInfo);
+  const isDuplicate = bill.status === 'FLAGGED' && /duplicate/i.test(bill.rejectionReason);
+  const items = (bill.ocrData.items ?? []) as string[];
+
   return (
-    <span className="flex items-center gap-1 text-success font-semibold text-sm">
-      <ShieldCheck className="h-3.5 w-3.5" /> {pct}% LOW
-    </span>
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-title font-semibold tabular-nums">{inr(bill.amount)}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {bill.customer.name}
+            {bill.customer.email ? ` · ${bill.customer.email}` : ''}
+          </p>
+        </div>
+        <StatusPill tone={STATUS_PILL[bill.status].tone} label={STATUS_PILL[bill.status].label} />
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        <StatusPill tone="neutral" label={`Bill # ${bill.billNumber}`} />
+        {bill.billDate && <StatusPill tone="neutral" label={bill.billDate} />}
+        <StatusPill tone={brandInfo ? 'primary' : 'neutral'} label={bill.business || 'Business'} />
+        {seriesBadge && <StatusPill tone={seriesBadge.matched ? 'success' : 'neutral'} label={seriesBadge.label} />}
+        {bill.escalationLevel !== 'NONE' && <StatusPill tone="danger" label={`Escalated to ${bill.escalationLevel}`} />}
+      </div>
+
+      {isDuplicate && (
+        <div className="flex items-start gap-2 rounded-xl bg-warning-soft p-3 text-sm text-warning-soft-foreground">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <span>
+            <span className="font-semibold">Possible duplicate</span>
+            {bill.rejectionReason ? ` — ${bill.rejectionReason}` : ''}
+          </span>
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-xl border border-border bg-surface-sunken">
+        {bill.receiptUrl ? (
+          <a href={bill.receiptUrl} target="_blank" rel="noreferrer" title="Open full size">
+            {/* eslint-disable-next-line @next/next/no-img-element -- receipts come from arbitrary upload hosts */}
+            <img src={bill.receiptUrl} alt={`Receipt ${bill.billNumber}`} className="h-72 w-full object-contain" />
+          </a>
+        ) : (
+          <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">No receipt image</div>
+        )}
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <h4 className="text-overline text-muted-foreground">Read from the bill</h4>
+          <dl className="mt-2 space-y-1.5 rounded-xl border border-border p-3 text-sm">
+            <div className="flex justify-between gap-2">
+              <dt className="text-muted-foreground">Merchant</dt>
+              <dd className="truncate font-medium">{bill.ocrData.merchant || '—'}</dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-muted-foreground">Total</dt>
+              <dd className="font-semibold tabular-nums">{bill.ocrData.total || '—'}</dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-muted-foreground">Date</dt>
+              <dd>{bill.ocrData.date || '—'}</dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-muted-foreground">Read confidence</dt>
+              <dd className={cn('font-semibold', bill.ocrConfidence >= 80 ? 'text-success' : bill.ocrConfidence >= 60 ? 'text-warning' : 'text-destructive')}>
+                {bill.ocrConfidence}%
+              </dd>
+            </div>
+            {items.length > 0 && (
+              <ul className="space-y-0.5 border-t border-border pt-2 text-caption text-muted-foreground">
+                {items.slice(0, 8).map((it, i) => (
+                  <li key={i} className="truncate">
+                    {String(it)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </dl>
+        </div>
+        <div>
+          <h4 className="text-overline text-muted-foreground">Fraud check</h4>
+          <div className="mt-2 space-y-2 rounded-xl border border-border p-3">
+            <RiskPill score={bill.fraudScore} />
+            <div className="h-1.5 w-full rounded-full bg-secondary" role="presentation">
+              <div
+                className={cn('h-1.5 rounded-full', bill.fraudScore >= 0.7 ? 'bg-destructive' : bill.fraudScore >= 0.4 ? 'bg-warning' : 'bg-success')}
+                style={{ width: `${Math.min(100, bill.fraudScore * 100)}%` }}
+              />
+            </div>
+            {bill.fraudScore >= 0.6 && <p className="text-caption text-destructive">High risk — check the photo carefully.</p>}
+          </div>
+        </div>
+      </div>
+
+      {(showMove || (canVerify && (bill.status === 'PENDING' || bill.status === 'FLAGGED' || bill.status === 'ESCALATED'))) && (
+        <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+          {canVerify && bill.status === 'PENDING' && (
+            <>
+              <Button onClick={() => onAction('approve')} className="bg-success text-white hover:bg-success/90">
+                <Check /> Approve <kbd className="ml-1 hidden rounded bg-white/20 px-1 text-caption lg:inline">A</kbd>
+              </Button>
+              <Button variant="danger" onClick={() => onAction('reject')}>
+                <X /> Reject <kbd className="ml-1 hidden rounded bg-black/5 px-1 text-caption lg:inline">R</kbd>
+              </Button>
+              <Button variant="outline" onClick={() => onAction('reupload')}>
+                <RefreshCw /> Ask to re-upload <kbd className="ml-1 hidden rounded bg-secondary px-1 text-caption lg:inline">U</kbd>
+              </Button>
+              <Button variant="ghost" onClick={() => onAction('flag')}>
+                <Flag /> Flag
+              </Button>
+            </>
+          )}
+          {canVerify && (bill.status === 'FLAGGED' || bill.status === 'ESCALATED') && (
+            <>
+              {canOverride && (
+                <Button onClick={() => onAction('override')}>
+                  <Shield /> Override &amp; approve
+                </Button>
+              )}
+              <Button variant="danger" onClick={() => onAction('reject')}>
+                <X /> Reject
+              </Button>
+            </>
+          )}
+          {showMove && (
+            <Button variant="outline" onClick={onMove}>
+              <ArrowRightLeft /> Move to another outlet
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -159,13 +342,17 @@ export default function BillModerationPage() {
   const { user } = useAuth();
   const [userRole, setUserRole] = useState<string>('BUSINESS_OWNER');
   const [activeTab, setActiveTab] = useState<TabKey>('PENDING');
-  const [bills, setBills] = useState<any[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBill, setSelectedBill] = useState<any | null>(null);
-  const [actionModal, setActionModal] = useState<ActionModal>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [actionModal, setActionModal] = useState<Action | null>(null);
   const [actionReason, setActionReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const isDesktop = useMinWidth(1024);
 
   // Brand owners: wider view across all outlets
   const [brandInfo, setBrandInfo] = useState<BrandInfo | null>(null);
@@ -173,12 +360,12 @@ export default function BillModerationPage() {
   const [outletFilter, setOutletFilter] = useState<string>('ALL');
   const [brandPaging, setBrandPaging] = useState({ total: 0, page: 1 });
   const [loadingMore, setLoadingMore] = useState(false);
-  const [moveBill, setMoveBill] = useState<any | null>(null);
+  const [moveBill, setMoveBill] = useState<Bill | null>(null);
   const [moveTarget, setMoveTarget] = useState('');
   const [moveLoading, setMoveLoading] = useState(false);
   const [moveError, setMoveError] = useState('');
-  const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const requestSeq = useRef(0);
+  const rowRefs = useRef(new Map<string, HTMLButtonElement>());
 
   const businessId = user?.businessId || user?.entity?.id || '';
   const isBrandView = !!brandInfo;
@@ -193,32 +380,27 @@ export default function BillModerationPage() {
       } catch (_) {}
       if (!cancelled) setBrandChecked(true);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
-    if (!notice) return;
-    const t = setTimeout(() => setNotice(null), 6000);
-    return () => clearTimeout(t);
-  }, [notice]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
-        if (stored) {
-          const u = JSON.parse(stored);
-          const role = u?.rbacRole || (u?.role === 'business' ? 'BUSINESS_OWNER' : u?.role);
-          if (role) setUserRole(role);
-        }
-      } catch (_) {}
-    }
+    try {
+      const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        const role = u?.rbacRole || (u?.role === 'business' ? 'BUSINESS_OWNER' : u?.role);
+        if (role) setUserRole(role);
+      }
+    } catch (_) {}
   }, []);
 
   const fetchBills = async (status?: string, page = 1) => {
     if (!isBrandView && !businessId) return;
     const seq = ++requestSeq.current;
-    if (page === 1) setLoading(true); else setLoadingMore(true);
+    if (page === 1) setLoading(true);
+    else setLoadingMore(true);
     try {
       let url: string;
       if (isBrandView) {
@@ -249,6 +431,7 @@ export default function BillModerationPage() {
 
   useEffect(() => {
     if (!brandChecked) return;
+    setChecked(new Set());
     fetchBills(activeTab !== 'PENDING' ? activeTab : undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandChecked, isBrandView, businessId, activeTab, outletFilter]);
@@ -257,41 +440,109 @@ export default function BillModerationPage() {
   const canOverride = canAccess(userRole, 'business.bills.override');
   const isOwner = hasRole(userRole, 'BUSINESS_OWNER');
 
-  const filteredBills = bills.filter((b) => {
-    const matchesTab = b.status === activeTab || (activeTab === 'FLAGGED' && (b.status === 'FLAGGED' || b.status === 'ESCALATED'));
-    const matchesSearch = !searchQuery || b.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) || b.billNumber.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTab && matchesSearch;
-  });
+  const filteredBills = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return bills.filter((b) => {
+      const matchesTab = b.status === activeTab || (activeTab === 'FLAGGED' && (b.status === 'FLAGGED' || b.status === 'ESCALATED'));
+      const matchesSearch = !q || b.customer.name.toLowerCase().includes(q) || b.billNumber.toLowerCase().includes(q);
+      return matchesTab && matchesSearch;
+    });
+  }, [bills, activeTab, searchQuery]);
 
-  const pendingCount = bills.filter((b) => b.status === 'PENDING').length;
-  const flaggedCount = bills.filter((b) => b.status === 'FLAGGED' || b.status === 'ESCALATED').length;
-  const approvedCount = bills.filter((b) => b.status === 'APPROVED').length;
-  const rejectedCount = bills.filter((b) => b.status === 'REJECTED').length;
+  const counts = useMemo(
+    () => ({
+      PENDING: bills.filter((b) => b.status === 'PENDING').length,
+      FLAGGED: bills.filter((b) => b.status === 'FLAGGED' || b.status === 'ESCALATED').length,
+    }),
+    [bills],
+  );
 
-  const handleAction = async (action: ActionModal) => {
-    const actingBusinessId = selectedBill?.businessId || businessId;
-    if (!selectedBill || !actingBusinessId) return;
+  const selectedBill = filteredBills.find((b) => b.id === selectedId) ?? null;
+
+  // Desktop always has something in the preview pane.
+  useEffect(() => {
+    if (!isDesktop) return;
+    if (!selectedBill && filteredBills.length) setSelectedId(filteredBills[0].id);
+  }, [isDesktop, selectedBill, filteredBills]);
+
+  const select = useCallback(
+    (id: string) => {
+      setSelectedId(id);
+      if (!isDesktop) setMobileOpen(true);
+      rowRefs.current.get(id)?.scrollIntoView({ block: 'nearest' });
+    },
+    [isDesktop],
+  );
+
+  const showMoveFor = (b: Bill | null) => !!b && isBrandView && brandInfo!.outlets.length > 1 && UNDECIDED.includes(b.status);
+
+  const openAction = (a: Action) => {
+    if (!selectedBill || !canVerify) return;
+    if (a === 'override' && !canOverride) return;
+    setActionReason('');
+    setActionModal(a);
+  };
+
+  const postAction = async (bill: Bill, action: Action, reason: string) => {
+    const actingBusinessId = bill.businessId || businessId;
+    if (!actingBusinessId) return 'No business selected';
+    const base = `/v1/businesses/${actingBusinessId}/bill-verifications/${bill.id}`;
+    const path = { approve: 'approve', reject: 'reject', reupload: 'request-reupload', flag: 'flag', override: 'owner-override' }[action];
+    const body = action === 'approve' || action === 'override' ? { notes: reason } : { reason };
+    const res = await apiService.post(`${base}/${path}`, body);
+    return res.error ? (typeof res.error === 'string' ? res.error : 'Something went wrong') : null;
+  };
+
+  const removeAndAdvance = (ids: string[]) => {
+    const idx = filteredBills.findIndex((b) => b.id === selectedId);
+    const remaining = filteredBills.filter((b) => !ids.includes(b.id));
+    setBills((prev) => prev.filter((b) => !ids.includes(b.id)));
+    setChecked((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+    const next = remaining[Math.min(Math.max(idx, 0), remaining.length - 1)];
+    setSelectedId(next?.id ?? null);
+    if (!next) setMobileOpen(false);
+  };
+
+  const handleAction = async () => {
+    if (!selectedBill || !actionModal) return;
+    const meta = ACTION_META[actionModal];
+    if (meta.needsReason && !actionReason.trim()) {
+      toast.error('Add a short reason so the customer knows what to do.');
+      return;
+    }
     setActionLoading(true);
-    try {
-      const base = `/v1/businesses/${actingBusinessId}/bill-verifications/${selectedBill.id}`;
-      if (action === 'approve') {
-        await apiService.post(`${base}/approve`, { notes: actionReason || '' });
-      } else if (action === 'reject') {
-        await apiService.post(`${base}/reject`, { reason: actionReason });
-      } else if (action === 'reupload') {
-        await apiService.post(`${base}/request-reupload`, { reason: actionReason });
-      } else if (action === 'flag') {
-        await apiService.post(`${base}/flag`, { reason: actionReason });
-      } else if (action === 'override') {
-        await apiService.post(`${base}/owner-override`, { notes: actionReason || '' });
-      }
-      // Optimistically remove from current tab list
-      setBills((prev) => prev.filter((b) => b.id !== selectedBill.id));
-    } catch (_) {}
+    const err = await postAction(selectedBill, actionModal, actionReason.trim());
     setActionLoading(false);
-    setSelectedBill(null);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    const done = { approve: 'Bill approved', override: 'Bill approved by override', reject: 'Bill rejected', reupload: 'Re-upload requested', flag: 'Bill flagged' }[actionModal];
+    toast.success(`${done} · ${selectedBill.customer.name}`);
     setActionModal(null);
     setActionReason('');
+    removeAndAdvance([selectedBill.id]);
+  };
+
+  const bulkApprove = async () => {
+    const targets = filteredBills.filter((b) => checked.has(b.id) && b.status === 'PENDING');
+    if (!targets.length) return;
+    setBulkBusy(true);
+    const ok: string[] = [];
+    let failed = 0;
+    for (const b of targets) {
+      const err = await postAction(b, 'approve', '');
+      if (err) failed++;
+      else ok.push(b.id);
+    }
+    setBulkBusy(false);
+    if (ok.length) removeAndAdvance(ok);
+    if (failed) toast.error(`${ok.length} approved, ${failed} failed. Try the failed ones one by one.`);
+    else toast.success(`${ok.length} bill${ok.length === 1 ? '' : 's'} approved`);
   };
 
   const handleMove = async () => {
@@ -304,10 +555,10 @@ export default function BillModerationPage() {
         setMoveError(typeof res.error === 'string' ? res.error : "Couldn't move this bill. Please try again.");
       } else {
         const target = brandInfo?.outlets.find((o) => o.id === moveTarget);
-        setNotice({ type: 'success', text: `Bill moved to ${target ? outletName(target) : 'the selected outlet'}.` });
+        toast.success(`Bill moved to ${target ? outletName(target) : 'the selected outlet'}`);
         setMoveBill(null);
         setMoveTarget('');
-        setSelectedBill(null);
+        setSelectedId(null);
         await fetchBills(activeTab !== 'PENDING' ? activeTab : undefined);
       }
     } catch (err: any) {
@@ -316,522 +567,355 @@ export default function BillModerationPage() {
     setMoveLoading(false);
   };
 
-  const openMove = (bill: any) => {
-    setMoveBill(bill);
-    setMoveTarget('');
-    setMoveError('');
-  };
+  // ── Keyboard: J/K move, A approve, R reject, U re-upload, X tick ──
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target) || actionModal || moveBill) return;
+      const k = e.key.toLowerCase();
+      const idx = filteredBills.findIndex((b) => b.id === selectedId);
+      if (k === 'j' || k === 'arrowdown') {
+        const n = filteredBills[Math.min(idx + 1, filteredBills.length - 1)];
+        if (n) {
+          e.preventDefault();
+          select(n.id);
+        }
+      } else if (k === 'k' || k === 'arrowup') {
+        const n = filteredBills[Math.max(idx - 1, 0)];
+        if (n) {
+          e.preventDefault();
+          select(n.id);
+        }
+      } else if (k === 'x' && selectedBill?.status === 'PENDING') {
+        setChecked((prev) => {
+          const next = new Set(prev);
+          if (next.has(selectedBill.id)) next.delete(selectedBill.id);
+          else next.add(selectedBill.id);
+          return next;
+        });
+      } else if (selectedBill?.status === 'PENDING' && (k === 'a' || k === 'r' || k === 'u')) {
+        e.preventDefault();
+        openAction(k === 'a' ? 'approve' : k === 'r' ? 'reject' : 'reupload');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredBills, selectedId, selectedBill, actionModal, moveBill, select]);
+
+  const pendingVisible = filteredBills.filter((b) => b.status === 'PENDING');
+  const allChecked = pendingVisible.length > 0 && pendingVisible.every((b) => checked.has(b.id));
+  const checkedCount = pendingVisible.filter((b) => checked.has(b.id)).length;
+  const bulkEnabled = canVerify && activeTab === 'PENDING' && pendingVisible.length > 1;
+
+  const preview = selectedBill ? (
+    <BillPreview
+      bill={selectedBill}
+      brandInfo={brandInfo}
+      canVerify={canVerify}
+      canOverride={canOverride}
+      showMove={showMoveFor(selectedBill)}
+      onAction={openAction}
+      onMove={() => {
+        setMoveBill(selectedBill);
+        setMoveTarget('');
+        setMoveError('');
+      }}
+    />
+  ) : null;
+
+  const meta = actionModal ? ACTION_META[actionModal] : null;
 
   return (
     <BusinessLayout>
-      <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl">
+        <PageHeader
+          title="Bill queue"
+          description={isOwner ? 'Check customer bills before they earn rewards.' : 'Check customer bills before they earn rewards. Analytics stay with the owner.'}
+          meta={<StatusPill tone={isOwner ? 'primary' : 'warning'} label={getRoleLabel(userRole)} />}
+          actions={
+            <span className="hidden items-center gap-1.5 text-caption text-muted-foreground lg:inline-flex">
+              <Keyboard className="size-4" aria-hidden /> J/K move · A approve · R reject · U re-upload · X select
+            </span>
+          }
+        />
 
-        {/* ── PAGE HEADER ────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <ShieldCheck className="h-6 w-6 text-primary" />
-              Bill Moderation
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {isOwner
-                ? 'Review, approve, reject, and override customer bill submissions'
-                : 'Review and action customer bill submissions — analytics restricted'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold',
-              isOwner ? 'bg-primary/15 text-primary' : 'bg-warning/15 text-warning',
-            )}>
-              <Shield className="h-3 w-3" />
-              {getRoleLabel(userRole)}
-            </div>
-          </div>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <ChipRow label="Status">
+            {TABS.map((t) => (
+              <FilterChip
+                key={t.key}
+                icon={t.icon}
+                selected={activeTab === t.key}
+                count={t.key === 'PENDING' || t.key === 'FLAGGED' ? counts[t.key] || undefined : undefined}
+                onClick={() => {
+                  setActiveTab(t.key);
+                  setSelectedId(null);
+                }}
+              >
+                {t.label}
+              </FilterChip>
+            ))}
+          </ChipRow>
+          <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search customer or bill #" />
         </div>
 
-        {/* ── STATS ROW ──────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: 'Pending Review', value: loading ? '…' : pendingCount, icon: Clock, color: 'text-warning', bg: 'bg-warning/10' },
-            { label: 'Approved', value: loading ? '…' : approvedCount, icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10' },
-            { label: 'Rejected', value: loading ? '…' : rejectedCount, icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10' },
-            { label: 'Fraud Flagged', value: loading ? '…' : flaggedCount, icon: ShieldAlert, color: 'text-warning', bg: 'bg-warning/10' },
-          ].map((stat, i) => (
-            <Card
-              key={stat.label}
-              className="p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl ui-fade-up"
-              style={{ animationDelay: `${i * 0.05}s` }}
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs text-muted-foreground">{stat.label}</span>
-                <div className={cn('h-7 w-7 rounded-lg flex items-center justify-center', stat.bg)}>
-                  <stat.icon className={cn('h-3.5 w-3.5', stat.color)} />
-                </div>
-              </div>
-              <p className={cn('text-2xl font-bold', stat.color)}>{stat.value}</p>
-            </Card>
-          ))}
-        </div>
-
-        {/* ── TABS + SEARCH ──────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="flex flex-wrap gap-1 bg-card/40 p-1 rounded-xl border border-border">
-            {TABS.map((tab) => {
-              const count = tab.key === 'PENDING' ? pendingCount : tab.key === 'FLAGGED' ? flaggedCount : undefined;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer',
-                    activeTab === tab.key
-                      ? 'bg-primary text-primary-foreground shadow'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary',
-                  )}
-                >
-                  <tab.icon className="h-3.5 w-3.5" />
-                  {tab.label}
-                  {count !== undefined && count > 0 && (
-                    <span className="ml-0.5 h-4 min-w-4 rounded-full bg-destructive text-xs font-bold text-white flex items-center justify-center px-1">
-                      {count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          <div className="relative flex-1 sm:max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Search customer or bill #..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-9 rounded-xl border-border bg-card/40 text-sm"
-            />
-          </div>
-        </div>
-
-        {/* ── OUTLET FILTER (brand owners) ───────────────────── */}
         {isBrandView && (
-          <div className="ui-scroll-x">
-            <div className="flex gap-2 w-max pb-1">
-              {[{ id: 'ALL', label: 'All outlets' }, ...brandInfo!.outlets.map((o) => ({ id: o.id, label: outletName(o) }))].map((chip) => (
-                <button
-                  key={chip.id}
-                  onClick={() => setOutletFilter(chip.id)}
-                  className={cn(
-                    'ui-press h-10 shrink-0 rounded-full border px-4 text-xs font-medium whitespace-nowrap transition-colors cursor-pointer',
-                    outletFilter === chip.id
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border bg-card/40 text-muted-foreground hover:text-foreground hover:bg-secondary',
-                  )}
-                >
-                  {chip.label}
-                </button>
+          <ChipRow label="Outlet" className="mb-4">
+            {[{ id: 'ALL', label: 'All outlets' }, ...brandInfo!.outlets.map((o) => ({ id: o.id, label: outletName(o) }))].map((chip) => (
+              <FilterChip key={chip.id} icon={chip.id === 'ALL' ? undefined : Building2} selected={outletFilter === chip.id} onClick={() => setOutletFilter(chip.id)}>
+                {chip.label}
+              </FilterChip>
+            ))}
+          </ChipRow>
+        )}
+
+        {loading ? (
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+            <div className="space-y-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="ui-skeleton h-[4.5rem] rounded-card" />
               ))}
             </div>
-          </div>
-        )}
-
-        {notice && (
-          <div
-            className={cn(
-              'ui-fade-up flex items-start gap-2 rounded-xl border p-3 text-sm',
-              notice.type === 'success' ? 'border-success/20 bg-success/10 text-success' : 'border-destructive/20 bg-destructive/10 text-destructive',
-            )}
-          >
-            {notice.type === 'success' ? <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" /> : <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />}
-            <span className="flex-1">{notice.text}</span>
-            <button onClick={() => setNotice(null)} className="p-1 -m-1 cursor-pointer" aria-label="Dismiss">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-
-        {/* ── BILL LIST ──────────────────────────────────────── */}
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="ui-skeleton hidden h-[32rem] rounded-card lg:block" />
           </div>
         ) : filteredBills.length === 0 ? (
-          <Card className="p-12 rounded-2xl border-dashed border-border bg-secondary text-center">
-            <CheckCircle2 className="h-10 w-10 text-success mx-auto mb-3 opacity-50" />
-            <h3 className="text-base font-semibold text-foreground mb-1">Queue Clear</h3>
-            <p className="text-sm text-muted-foreground">No bills in this category.</p>
-          </Card>
+          <EmptyState
+            icon={activeTab === 'PENDING' ? CheckCircle2 : ReceiptText}
+            title={searchQuery ? 'No matching bills' : activeTab === 'PENDING' ? 'Queue clear' : 'Nothing here'}
+            description={searchQuery ? 'Try a different name or bill number.' : activeTab === 'PENDING' ? 'New bills from customers show up here.' : 'No bills with this status.'}
+          />
         ) : (
-          <div className="space-y-3">
-            {filteredBills.map((bill, i) => {
-              const statusCfg = STATUS_CONFIG[bill.status as BillStatus];
-              const seriesBadge = getSeriesBadge(bill, brandInfo);
-              const isDuplicate = bill.status === 'FLAGGED' && /duplicate/i.test(bill.rejectionReason);
-              const showMove = isBrandView && brandInfo!.outlets.length > 1 && UNDECIDED.includes(bill.status as BillStatus);
-              return (
-                <Card
-                  key={bill.id}
-                  className={cn(
-                    'p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/60 transition-all duration-200 ease-out cursor-pointer ui-fade-up hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100',
-                    selectedBill?.id === bill.id && 'ring-1 ring-primary/50 bg-primary/5',
-                    bill.fraudScore >= 0.6 && 'border-l-2 border-l-destructive/50',
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+            {/* ── LIST ── */}
+            <div className="min-w-0">
+              {bulkEnabled && (
+                <div className="mb-2 flex min-h-11 items-center justify-between gap-3 rounded-control border border-border bg-card px-3 py-1.5">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <Checkbox
+                      checked={allChecked ? true : checkedCount ? 'indeterminate' : false}
+                      onCheckedChange={(v) => setChecked(v ? new Set(pendingVisible.map((b) => b.id)) : new Set())}
+                      aria-label="Select all pending bills"
+                    />
+                    {checkedCount ? `${checkedCount} selected` : 'Select all'}
+                  </label>
+                  {checkedCount > 0 && (
+                    <Button size="sm" loading={bulkBusy} onClick={bulkApprove} className="bg-success text-white hover:bg-success/90">
+                      <Check /> Approve {checkedCount}
+                    </Button>
                   )}
-                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-                  onClick={() => setSelectedBill(selectedBill?.id === bill.id ? null : bill)}
-                >
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                    {/* Left: Bill info */}
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 text-xs font-bold">
-                        {bill.customer.avatar}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-foreground text-sm">{bill.customer.name}</h3>
-                          <span className={cn('text-xs font-semibold px-1.5 py-0.5 rounded-full', statusCfg.bg, statusCfg.color)}>
-                            {statusCfg.label}
-                          </span>
-                          {bill.escalationLevel !== 'NONE' && (
-                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-destructive/10 text-destructive flex items-center gap-0.5">
-                              <ArrowUpRight className="h-3 w-3" />
-                              Escalated to {bill.escalationLevel}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                          {isBrandView ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                              <Building2 className="h-3 w-3" />{bill.business}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center"><Building2 className="h-3 w-3 mr-1" />{bill.business}</span>
-                          )}
-                          <span>·</span>
-                          <span>Bill # <span className="font-mono text-foreground/80 break-all">{bill.billNumber}</span></span>
-                          <span>·</span>
-                          <span>{bill.billDate}</span>
-                          {seriesBadge && (
-                            <span
-                              className={cn(
-                                'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-semibold',
-                                seriesBadge.matched ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground',
-                              )}
-                            >
-                              {seriesBadge.label}
-                            </span>
-                          )}
-                        </div>
-                        {isDuplicate && (
-                          <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-warning/20 bg-warning/10 px-2.5 py-1.5 text-xs text-warning">
-                            <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                            <span><span className="font-semibold">Possible duplicate</span>{bill.rejectionReason ? ` — ${bill.rejectionReason}` : ''}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Right: Metrics + Actions */}
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-6 w-full lg:w-auto">
-                      {/* Metrics Group */}
-                      <div className="grid grid-cols-3 gap-2 lg:flex lg:items-center lg:gap-6 w-full lg:w-auto border-t border-border pt-3 lg:border-t-0 lg:pt-0">
-                        <div className="text-center lg:text-left">
-                          <p className="text-xs text-muted-foreground mb-0.5">Amount</p>
-                          <p className="font-bold text-foreground text-sm">₹{bill.amount.toLocaleString('en-IN')}</p>
-                        </div>
-                        <div className="text-center lg:text-left">
-                          <p className="text-xs text-muted-foreground mb-0.5">OCR Conf</p>
-                          <p className={cn('font-semibold text-sm', bill.ocrConfidence >= 80 ? 'text-success' : bill.ocrConfidence >= 60 ? 'text-warning' : 'text-destructive')}>
-                            {bill.ocrConfidence}%
-                          </p>
-                        </div>
-                        <div className="text-center lg:text-left">
-                          <p className="text-xs text-muted-foreground mb-0.5">Risk Score</p>
-                          <FraudBadge score={bill.fraudScore} />
-                        </div>
-                      </div>
-
-                      {/* Action buttons */}
-                      {(showMove || (canVerify && (bill.status === 'PENDING' || bill.status === 'FLAGGED'))) && (
-                        <div className="flex flex-wrap lg:flex-nowrap gap-2 w-full lg:w-auto justify-end border-t border-border pt-3 lg:border-t-0 lg:pt-0" onClick={(e) => e.stopPropagation()}>
-                          {canVerify && bill.status === 'PENDING' && (<>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => { setSelectedBill(bill); setActionModal('reupload'); }}
-                            className="h-10 rounded-xl border-info/20 text-info hover:bg-info/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
-                          >
-                            <RefreshCw className="h-3.5 w-3.5 mr-1" /> Re-upload
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => { setSelectedBill(bill); setActionModal('reject'); }}
-                            className="h-10 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
-                          >
-                            <X className="h-3.5 w-3.5 mr-1" /> Reject
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => { setSelectedBill(bill); setActionModal('approve'); }}
-                            className="h-10 rounded-xl bg-success hover:bg-success text-white text-xs px-3 cursor-pointer flex-1 lg:flex-none"
-                          >
-                            <Check className="h-3.5 w-3.5 mr-1" /> Approve
-                          </Button>
-                          </>)}
-                          {canVerify && bill.status === 'FLAGGED' && (<>
-                          {canOverride && (
-                            <Button
-                              size="sm"
-                              onClick={() => { setSelectedBill(bill); setActionModal('override'); }}
-                              className="h-10 rounded-xl bg-primary hover:bg-primary text-white text-xs px-3 cursor-pointer flex-1 lg:flex-none"
-                            >
-                              <Shield className="h-3.5 w-3.5 mr-1" /> Override
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => { setSelectedBill(bill); setActionModal('reject'); }}
-                            className="h-10 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 text-xs px-3 cursor-pointer flex-1 lg:flex-none"
-                          >
-                            <X className="h-3.5 w-3.5 mr-1" /> Reject
-                          </Button>
-                          </>)}
-                          {showMove && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openMove(bill)}
-                              className="h-10 rounded-xl border-border text-foreground hover:bg-secondary text-xs px-3 cursor-pointer w-full lg:w-auto"
-                            >
-                              <ArrowRightLeft className="h-3.5 w-3.5 mr-1" /> Move to another outlet
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* ── EXPANDED DETAIL PANEL ───────────────── */}
-                  {selectedBill?.id === bill.id && (
-                    <div className="mt-5 pt-5 border-t border-border grid md:grid-cols-2 gap-6">
-                      {/* Receipt Image */}
-                      <div>
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                          Uploaded Receipt
-                        </h4>
-                        <div className="h-56 rounded-xl overflow-hidden border border-border bg-black">
-                          <img
-                            src={bill.receiptUrl}
-                            alt="Receipt"
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
-                      </div>
-
-                      {/* OCR & Fraud Data */}
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                            OCR Extraction
-                          </h4>
-                          <div className="rounded-xl border border-border bg-secondary p-3 space-y-1.5">
-                            <p className="text-xs"><span className="text-muted-foreground">Merchant: </span><span className="text-foreground font-medium">{bill.ocrData.merchant}</span></p>
-                            <p className="text-xs"><span className="text-muted-foreground">Total: </span><span className="text-foreground font-bold">{bill.ocrData.total}</span></p>
-                            <p className="text-xs"><span className="text-muted-foreground">Date: </span><span className="text-foreground">{bill.ocrData.date}</span></p>
-                            <div className="pt-1.5 border-t border-border">
-                              <p className="text-xs text-muted-foreground mb-1">Line Items:</p>
-                              {(bill.ocrData.items as string[]).map((item: string, i: number) => (
-                                <p key={i} className="text-xs text-foreground/80">• {item}</p>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
-                            Fraud Analysis
-                          </h4>
-                          <div className={cn('rounded-xl border p-3', bill.fraudScore >= 0.7 ? 'border-destructive/20 bg-destructive/5' : bill.fraudScore >= 0.4 ? 'border-warning/20 bg-warning/5' : 'border-success/20 bg-success/5')}>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs text-muted-foreground">Overall Risk Score</span>
-                              <FraudBadge score={bill.fraudScore} />
-                            </div>
-                            <div className="w-full bg-secondary rounded-full h-1.5">
-                              <div
-                                className={cn('h-1.5 rounded-full transition-all', bill.fraudScore >= 0.7 ? 'bg-destructive' : bill.fraudScore >= 0.4 ? 'bg-warning' : 'bg-success')}
-                                style={{ width: `${bill.fraudScore * 100}%` }}
-                              />
-                            </div>
-                            {bill.fraudScore >= 0.6 && (
-                              <p className="text-xs text-destructive mt-2 flex items-center gap-1">
-                                <AlertTriangle className="h-3 w-3" />
-                                High risk — manual review recommended
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Customer info */}
-                        <div>
-                          <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Customer</h4>
-                          <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
-                              {bill.customer.avatar}
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-foreground">{bill.customer.name}</p>
-                              <p className="text-xs text-muted-foreground">{bill.customer.email}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
-        )}
-
-        {isBrandView && !loading && bills.length < brandPaging.total && (
-          <div className="flex justify-center">
-            <Button
-              variant="outline"
-              disabled={loadingMore}
-              onClick={() => fetchBills(activeTab !== 'PENDING' ? activeTab : undefined, brandPaging.page + 1)}
-              className="h-10 rounded-xl border-border text-sm cursor-pointer"
-            >
-              {loadingMore && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Load more
-            </Button>
-          </div>
-        )}
-
-        {/* ── MOVE TO OUTLET MODAL ──────────────────────────── */}
-        {moveBill && brandInfo && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto ui-pop">
-              <div className="mx-auto h-12 w-12 rounded-full flex items-center justify-center mb-4 bg-primary/10 text-primary">
-                <ArrowRightLeft className="h-6 w-6" />
-              </div>
-              <h3 className="text-base font-bold text-foreground text-center mb-1">Move to another outlet</h3>
-              <p className="text-xs text-muted-foreground text-center mb-4">
-                {moveBill.customer.name} • {moveBill.billNumber} • currently at {moveBill.business}
-              </p>
-
-              <div className="space-y-2 mb-4">
-                {brandInfo.outlets.filter((o) => o.id !== moveBill.businessId).map((o) => (
-                  <button
-                    key={o.id}
-                    onClick={() => setMoveTarget(o.id)}
-                    className={cn(
-                      'ui-press w-full min-h-11 flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-sm transition-colors cursor-pointer',
-                      moveTarget === o.id ? 'border-primary bg-primary/10 text-foreground' : 'border-border bg-card/40 text-foreground hover:bg-secondary',
-                    )}
-                  >
-                    <span className="min-w-0 truncate">{outletName(o)}</span>
-                    {moveTarget === o.id && <Check className="h-4 w-4 text-primary shrink-0" />}
-                  </button>
-                ))}
-              </div>
-
-              {moveError && (
-                <div className="flex items-start gap-2 p-3 mb-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                  {moveError}
                 </div>
               )}
+              <ul className="space-y-2" aria-label="Bills">
+                {filteredBills.map((bill) => {
+                  const active = bill.id === selectedId;
+                  const pill = STATUS_PILL[bill.status];
+                  return (
+                    <li key={bill.id} className="flex items-stretch gap-2">
+                      {bulkEnabled && (
+                        <div className="flex items-center pl-1">
+                          <Checkbox
+                            checked={checked.has(bill.id)}
+                            onCheckedChange={(v) =>
+                              setChecked((prev) => {
+                                const next = new Set(prev);
+                                if (v) next.add(bill.id);
+                                else next.delete(bill.id);
+                                return next;
+                              })
+                            }
+                            aria-label={`Select bill from ${bill.customer.name}`}
+                          />
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        ref={(el) => {
+                          if (el) rowRefs.current.set(bill.id, el);
+                          else rowRefs.current.delete(bill.id);
+                        }}
+                        onClick={() => select(bill.id)}
+                        aria-current={active ? 'true' : undefined}
+                        className={cn(
+                          'ui-press flex min-w-0 flex-1 items-center gap-3 rounded-card border bg-card p-3 text-left shadow-e1 transition-colors',
+                          active ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:bg-secondary',
+                          bill.fraudScore >= 0.6 && 'border-l-4 border-l-destructive',
+                        )}
+                      >
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-caption font-bold text-brand-soft-foreground">
+                          {bill.customer.avatar}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2">
+                            <span className="truncate text-sm font-semibold">{bill.customer.name}</span>
+                            {bill.escalationLevel !== 'NONE' && <ArrowUpRight className="size-4 shrink-0 text-destructive" aria-label="Escalated" />}
+                          </span>
+                          <span className="block truncate text-caption text-muted-foreground">
+                            {isBrandView ? `${bill.business} · ` : ''}#{bill.billNumber}
+                            {bill.billDate ? ` · ${bill.billDate}` : ''}
+                          </span>
+                        </span>
+                        <span className="flex shrink-0 flex-col items-end gap-1">
+                          <span className="text-sm font-semibold tabular-nums">{inr(bill.amount)}</span>
+                          {bill.status === 'PENDING' ? (
+                            bill.fraudScore >= 0.4 ? (
+                              <StatusPill tone={riskTone(bill.fraudScore)} label={`${Math.round(bill.fraudScore * 100)}% risk`} />
+                            ) : (
+                              <ShieldCheck className="size-4 text-success" aria-label="Low risk" />
+                            )
+                          ) : (
+                            <StatusPill tone={pill.tone} label={pill.label} />
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
 
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  disabled={moveLoading}
-                  onClick={() => { setMoveBill(null); setMoveError(''); }}
-                  className="h-10 rounded-xl border-border text-foreground hover:bg-muted text-sm cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleMove}
-                  disabled={!moveTarget || moveLoading}
-                  className="h-10 rounded-xl text-sm font-semibold cursor-pointer"
-                >
-                  {moveLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                  Move bill
-                </Button>
+              {isBrandView && bills.length < brandPaging.total && (
+                <div className="mt-4 flex justify-center">
+                  <Button variant="outline" loading={loadingMore} onClick={() => fetchBills(activeTab !== 'PENDING' ? activeTab : undefined, brandPaging.page + 1)}>
+                    Load more
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* ── PREVIEW (desktop) ── */}
+            <aside className="hidden lg:block" aria-label="Selected bill">
+              <div className="sticky top-6 max-h-[calc(100dvh-3rem)] overflow-y-auto rounded-card border border-border bg-card p-5 shadow-e1">
+                {preview ?? <p className="text-sm text-muted-foreground">Select a bill to review it.</p>}
               </div>
-            </Card>
+            </aside>
           </div>
         )}
 
-        {/* ── ACTION MODAL ──────────────────────────────────── */}
-        {actionModal && selectedBill && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl max-h-[90vh] overflow-y-auto ui-pop">
-              <div className={cn(
-                'mx-auto h-12 w-12 rounded-full flex items-center justify-center mb-4',
-                actionModal === 'approve' || actionModal === 'override' ? 'bg-success/10 text-success'
-                  : actionModal === 'reject' ? 'bg-destructive/10 text-destructive'
-                  : actionModal === 'reupload' ? 'bg-info/10 text-info'
-                  : 'bg-warning/10 text-warning',
-              )}>
-                {actionModal === 'approve' && <Check className="h-6 w-6" />}
-                {actionModal === 'override' && <Shield className="h-6 w-6" />}
-                {actionModal === 'reject' && <X className="h-6 w-6" />}
-                {actionModal === 'reupload' && <RefreshCw className="h-6 w-6" />}
-                {actionModal === 'flag' && <Flag className="h-6 w-6" />}
-              </div>
+        {/* ── PREVIEW (phones/tablets) ── */}
+        <Modal
+          open={!isDesktop && mobileOpen && !!selectedBill && !actionModal && !moveBill}
+          onOpenChange={(o) => !o && setMobileOpen(false)}
+          title={selectedBill ? `Bill from ${selectedBill.customer.name}` : 'Bill'}
+          hideTitle
+          size="lg"
+        >
+          {preview}
+        </Modal>
 
-              <h3 className="text-base font-bold text-foreground text-center mb-1">
-                {actionModal === 'approve' && 'Approve Bill'}
-                {actionModal === 'override' && 'Owner Override — Approve'}
-                {actionModal === 'reject' && 'Reject Bill'}
-                {actionModal === 'reupload' && 'Request Re-Upload'}
-                {actionModal === 'flag' && 'Flag for Escalation'}
-              </h3>
-              <p className="text-xs text-muted-foreground text-center mb-4">
-                {selectedBill.customer.name} • {selectedBill.billNumber} • ₹{selectedBill.amount.toLocaleString('en-IN')}
-              </p>
-
-              {actionModal !== 'approve' && (
-                <Textarea
-                  placeholder={
-                    actionModal === 'reject' ? 'Reason for rejection...'
-                      : actionModal === 'reupload' ? 'What needs to be corrected?'
-                      : actionModal === 'override' ? 'Override reason (optional)...'
-                      : 'Escalation reason...'
-                  }
-                  value={actionReason}
-                  onChange={(e) => setActionReason(e.target.value)}
-                  className="mb-4 rounded-xl border-input bg-background text-sm resize-none h-20"
-                />
-              )}
-
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => { setActionModal(null); setActionReason(''); }}
-                  className="rounded-xl border-border text-foreground hover:bg-muted text-sm cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => handleAction(actionModal)}
-                  disabled={actionLoading}
+        {/* ── MOVE TO OUTLET ── */}
+        <Modal
+          open={!!moveBill && !!brandInfo}
+          onOpenChange={(o) => {
+            if (!o) {
+              setMoveBill(null);
+              setMoveError('');
+            }
+          }}
+          title="Move to another outlet"
+          description={moveBill ? `${moveBill.customer.name} · #${moveBill.billNumber} · currently at ${moveBill.business}` : undefined}
+          size="sm"
+          footer={
+            <>
+              <Button variant="outline" disabled={moveLoading} onClick={() => setMoveBill(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleMove} disabled={!moveTarget} loading={moveLoading}>
+                Move bill
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-2" role="radiogroup" aria-label="Outlet">
+            {brandInfo?.outlets
+              .filter((o) => o.id !== moveBill?.businessId)
+              .map((o) => (
+                <button
+                  key={o.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={moveTarget === o.id}
+                  onClick={() => setMoveTarget(o.id)}
                   className={cn(
-                    'rounded-xl text-sm font-semibold cursor-pointer',
-                    actionModal === 'approve' || actionModal === 'override' ? 'bg-success hover:bg-success text-white'
-                      : actionModal === 'reject' ? 'bg-destructive hover:bg-destructive text-white'
-                      : actionModal === 'reupload' ? 'bg-info hover:bg-info text-white'
-                      : 'bg-warning hover:bg-warning text-white',
+                    'ui-press flex min-h-11 w-full items-center justify-between gap-2 rounded-control border px-3 py-2 text-left text-sm transition-colors',
+                    moveTarget === o.id ? 'border-primary bg-brand-soft' : 'border-border hover:bg-secondary',
                   )}
                 >
-                  Confirm
-                </Button>
-              </div>
-            </Card>
+                  <span className="min-w-0 truncate">{outletName(o)}</span>
+                  {moveTarget === o.id && <Check className="size-4 shrink-0 text-primary" />}
+                </button>
+              ))}
           </div>
-        )}
+          {moveError && (
+            <p className="mt-3 flex items-start gap-2 rounded-control bg-danger-soft p-3 text-sm text-danger-soft-foreground" role="alert">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+              {moveError}
+            </p>
+          )}
+        </Modal>
+
+        {/* ── ACTION CONFIRM ── */}
+        <Modal
+          open={!!actionModal && !!selectedBill}
+          onOpenChange={(o) => {
+            if (!o) {
+              setActionModal(null);
+              setActionReason('');
+            }
+          }}
+          title={meta?.title ?? ''}
+          description={selectedBill ? `${selectedBill.customer.name} · #${selectedBill.billNumber} · ${inr(selectedBill.amount)}` : undefined}
+          size="sm"
+          footer={
+            <>
+              <Button variant="outline" onClick={() => setActionModal(null)}>
+                Cancel
+              </Button>
+              <Button
+                autoFocus={actionModal === 'approve'}
+                loading={actionLoading}
+                variant={meta?.button === 'destructive' ? 'destructive' : 'default'}
+                className={actionModal === 'approve' || actionModal === 'override' ? 'bg-success text-white hover:bg-success/90' : undefined}
+                onClick={handleAction}
+              >
+                Confirm
+              </Button>
+            </>
+          }
+        >
+          {meta && (
+            <form
+              className="space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleAction();
+              }}
+            >
+              {meta.templates && (
+                <ChipRow label="Common reasons" wrap>
+                  {meta.templates.map((t) => (
+                    <FilterChip key={t} selected={actionReason === t} onClick={() => setActionReason(t)}>
+                      {t}
+                    </FilterChip>
+                  ))}
+                </ChipRow>
+              )}
+              <label htmlFor="bill-action-reason" className="sr-only">
+                {meta.placeholder}
+              </label>
+              <Textarea
+                id="bill-action-reason"
+                autoFocus={actionModal !== 'approve'}
+                placeholder={meta.placeholder}
+                value={actionReason}
+                onChange={(e) => setActionReason(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleAction();
+                }}
+                className="h-20 resize-none"
+              />
+              {actionModal === 'approve' && <p className="text-caption text-muted-foreground">Press Enter to approve.</p>}
+            </form>
+          )}
+        </Modal>
       </div>
     </BusinessLayout>
   );
