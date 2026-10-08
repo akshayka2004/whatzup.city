@@ -18,6 +18,7 @@ export const EVENT_GROUPS = {
   save: ['SAVE', 'FAVORITE_ADD'],
   qrScan: ['QR_SCAN'],
   offerView: ['OFFER_VIEW'],
+  eventView: ['EVENT_VIEW'],
   search: ['SEARCH', 'SEARCH_QUERY'],
 } as const;
 

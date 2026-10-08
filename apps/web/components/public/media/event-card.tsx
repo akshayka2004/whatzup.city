@@ -1,6 +1,7 @@
 'use client';
 
 import { Calendar, CalendarDays, ChevronDown, ChevronUp, ExternalLink, MapPin, Ticket } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ResponsiveImage } from '@/components/common/responsive-image';
 import { StatusPill } from '@/components/common/status-pill';
@@ -102,7 +103,11 @@ export function EventCard({
           </span>
         </div>
 
-        <h3 className="mt-2 break-words text-lg font-semibold leading-tight text-foreground">{ev.title}</h3>
+        <h3 className="mt-2 break-words text-lg font-semibold leading-tight text-foreground">
+          <Link href={`/events/${ev.id}`} className="hover:underline">
+            {ev.title}
+          </Link>
+        </h3>
         {(ev.business?.name || ev.hostLabel) && (
           <p className="mt-0.5 text-xs text-muted-foreground">by {ev.business?.name || ev.hostLabel}</p>
         )}

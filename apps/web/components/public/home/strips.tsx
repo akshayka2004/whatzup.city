@@ -201,7 +201,7 @@ export function UpcomingEvents({ body, loading }: { body: unknown; loading: bool
         const price = eventPrice(ev);
         return (
           <Slot key={ev.id} width={W} height={276}>
-            <Link href="/events" className={CARD}>
+            <Link href={`/events/${ev.id}`} className={CARD}>
               <div className="relative">
                 <ResponsiveImage
                   src={ev.posterImage}

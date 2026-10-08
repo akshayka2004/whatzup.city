@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { SITE_URL, serverGet } from '@/lib/server-api';
+import { MOVIES_ENABLED } from '@/lib/feature-flags';
 
 // Rebuilt at most once an hour; never fails the build if the API is unreachable.
 export const revalidate = 3600;
@@ -10,11 +11,11 @@ const STATIC_ROUTES: { path: string; priority: number; changeFrequency: 'daily' 
   { path: '/offers', priority: 0.9, changeFrequency: 'daily' },
   { path: '/category', priority: 0.8, changeFrequency: 'weekly' },
   { path: '/events', priority: 0.7, changeFrequency: 'daily' },
-  { path: '/movies', priority: 0.6, changeFrequency: 'weekly' },
   { path: '/government', priority: 0.6, changeFrequency: 'daily' },
+  ...(MOVIES_ENABLED ? [{ path: '/movies', priority: 0.6, changeFrequency: 'weekly' as const }] : []),
   { path: '/spin-it', priority: 0.5, changeFrequency: 'weekly' },
   { path: '/support', priority: 0.3, changeFrequency: 'monthly' },
-  { path: '/terms', priority: 0.2, changeFrequency: 'monthly' },
+  { path: '/terms-of-service', priority: 0.2, changeFrequency: 'monthly' },
   { path: '/privacy-policy', priority: 0.2, changeFrequency: 'monthly' },
 ];
 
@@ -42,6 +43,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
     }
     if (!body?.meta?.hasNext) break;
+  }
+
+  // Upcoming and current events (the public list only returns live ones).
+  const events = await serverGet<any>('/v1/events', { revalidate: 3600, timeoutMs: 8000 });
+  const evList: any[] = events?.data ?? events?.items ?? (Array.isArray(events) ? events : []);
+  for (const e of evList) {
+    if (!e?.id) continue;
+    entries.push({ url: `${SITE_URL}/events/${e.id}`, lastModified: e.updatedAt ? new Date(e.updatedAt) : now, changeFrequency: 'daily', priority: 0.6 });
   }
 
   return entries;
