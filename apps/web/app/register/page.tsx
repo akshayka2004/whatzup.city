@@ -1035,7 +1035,7 @@ export default function UnifiedRegisterPage() {
     return (
       <div className="min-h-screen w-full flex items-center justify-center p-4 text-foreground">
         <Card className="w-full max-w-md p-6 rounded-2xl text-center space-y-4">
-          <AlertCircle className="h-8 w-8 text-rose-400 mx-auto" />
+          <AlertCircle className="h-8 w-8 text-danger-soft-foreground mx-auto" />
           <h1 className="text-lg font-bold">We couldn&apos;t open this outlet</h1>
           <p className="text-sm text-muted-foreground">{outletError}</p>
           <Button asChild className="h-11 w-full rounded-xl cursor-pointer">
@@ -1106,7 +1106,7 @@ export default function UnifiedRegisterPage() {
                 key={i}
                 className={
                   i + 1 < currentStep
-                    ? 'text-emerald-400 font-bold'
+                    ? 'text-success-soft-foreground font-bold'
                     : i + 1 === currentStep
                       ? 'text-muted-foreground font-bold border-b border-border pb-1'
                       : 'text-muted-foreground/50'
@@ -1124,7 +1124,7 @@ export default function UnifiedRegisterPage() {
                 {isHotel ? 'Hotel listing' : 'Business listing'}
               </span>
               {claimLaunch ? (
-                <span className="font-semibold text-emerald-400">
+                <span className="font-semibold text-success-soft-foreground">
                   Launch Offer · {formatINR(launchOffer.status?.price ?? 2500)} · {launchOffer.status?.durationDays ?? 180} days
                 </span>
               ) : isHotel ? (
@@ -1162,14 +1162,14 @@ export default function UnifiedRegisterPage() {
 
         {/* Main Alert Banners */}
         {error && (
-          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium flex items-center gap-3">
+          <div className="p-4 rounded-xl bg-danger-soft border border-destructive/25 text-danger-soft-foreground text-sm font-medium flex items-center gap-3">
             <AlertCircle className="h-5 w-5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium flex items-center gap-3">
+          <div className="p-4 rounded-xl bg-success-soft border border-success/25 text-success-soft-foreground text-sm font-medium flex items-center gap-3">
             <CheckCircle className="h-5 w-5 shrink-0" />
             <span>{success}</span>
           </div>
@@ -1196,32 +1196,32 @@ export default function UnifiedRegisterPage() {
                     title: 'Customer',
                     description: 'Explore verified business catalogs, post public ratings, claim offer coupons.',
                     icon: UserIcon,
-                    color: 'from-violet-600/20 to-violet-500/5 hover:border-border',
-                    iconColor: 'text-violet-400',
+                    color: 'from-primary/15 to-primary/5 hover:border-border',
+                    iconColor: 'text-brand-soft-foreground',
                   },
                   {
                     type: 'BUSINESS',
                     title: 'Company / Business',
                     description: 'Register Kerala-based companies. Upload certificates, manage listings & campaigns.',
                     icon: Building2,
-                    color: 'from-cyan-600/20 to-cyan-500/5 hover:border-cyan-500/50',
-                    iconColor: 'text-cyan-400',
+                    color: 'from-info/15 to-info/5 hover:border-info/25',
+                    iconColor: 'text-info-soft-foreground',
                   },
                   {
                     type: 'GOVERNMENT',
                     title: 'Govt Body',
                     description: 'Publish administrative alerts, notices, and manage district announcements.',
                     icon: ShieldAlert,
-                    color: 'from-amber-600/20 to-amber-500/5 hover:border-amber-500/50',
-                    iconColor: 'text-amber-400',
+                    color: 'from-warning/15 to-warning/5 hover:border-warning/30',
+                    iconColor: 'text-warning-soft-foreground',
                   },
                   {
                     type: 'NGO_COMMUNITY',
                     title: 'NGO / Community',
                     description: 'Register NGOs, community groups, and news forums. Publish notices and alerts.',
                     icon: Heart,
-                    color: 'from-rose-600/20 to-rose-500/5 hover:border-rose-500/50',
-                    iconColor: 'text-rose-400',
+                    color: 'from-destructive/15 to-destructive/5 hover:border-destructive/25',
+                    iconColor: 'text-danger-soft-foreground',
                   },
                 ].map((item) => {
                   const Icon = item.icon;
@@ -1240,7 +1240,7 @@ export default function UnifiedRegisterPage() {
                           <Icon className={`h-5 w-5 ${item.iconColor}`} />
                         </div>
                         {isSelected && (
-                          <span className="p-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
+                          <span className="p-1 rounded-full bg-success-soft border border-success/25 text-success-soft-foreground">
                             <CheckCircle className="h-3.5 w-3.5" />
                           </span>
                         )}
@@ -1256,8 +1256,8 @@ export default function UnifiedRegisterPage() {
 
               {/* Civic org sub-type selector */}
               {role === 'NGO_COMMUNITY' && (
-                <div className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/20 space-y-3">
-                  <p className="text-xs font-semibold text-rose-400">Select Organisation Type</p>
+                <div className="p-4 rounded-xl bg-danger-soft border border-destructive/25 space-y-3">
+                  <p className="text-xs font-semibold text-danger-soft-foreground">Select Organisation Type</p>
                   <div className="grid grid-cols-3 gap-2">
                     {[
                       { value: 'NGO', label: 'NGO', icon: Heart, desc: 'Non-Governmental' },
@@ -1270,8 +1270,8 @@ export default function UnifiedRegisterPage() {
                         onClick={() => setCivicOrgType(value as CivicOrgType)}
                         className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1.5 cursor-pointer transition ${
                           civicOrgType === value
-                            ? 'border-rose-400/60 bg-rose-500/10 text-rose-400'
-                            : 'border-border text-muted-foreground hover:border-rose-500/30'
+                            ? 'border-destructive/25 bg-danger-soft text-danger-soft-foreground'
+                            : 'border-border text-muted-foreground hover:border-destructive/25'
                         }`}
                       >
                         <OIcon className="h-4 w-4" />
@@ -1290,7 +1290,7 @@ export default function UnifiedRegisterPage() {
 
                 <Button
                   onClick={() => setCurrentStep(2)}
-                  className="rounded-xl h-11 px-6 font-semibold text-[#D3DAD9] hover:opacity-90 transition-opacity w-full sm:w-auto"
+                  className="rounded-xl h-11 px-6 font-semibold hover:opacity-90 transition-opacity w-full sm:w-auto"
                 >
                   Continue <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Button>
@@ -1337,13 +1337,13 @@ export default function UnifiedRegisterPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className={`pl-10 h-11 bg-background text-sm text-foreground rounded-xl ${
-                          email && !isEmailValid ? 'border-rose-500/50' : 'border-input'
+                          email && !isEmailValid ? 'border-destructive/25' : 'border-input'
                         }`}
                         required
                       />
                     </div>
                     {email && !isEmailValid && (
-                      <p className="text-xs text-rose-400">Please enter a valid email format</p>
+                      <p className="text-xs text-danger-soft-foreground">Please enter a valid email format</p>
                     )}
                   </div>
                 </div>
@@ -1360,13 +1360,13 @@ export default function UnifiedRegisterPage() {
                         onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} // Clean up non-digits
                         maxLength={10}
                         className={`pl-10 h-11 bg-background text-sm text-foreground rounded-xl ${
-                          phone && !isPhoneValid ? 'border-rose-500/50' : 'border-input'
+                          phone && !isPhoneValid ? 'border-destructive/25' : 'border-input'
                         }`}
                         required
                       />
                     </div>
                     {phone && !isPhoneValid && (
-                      <p className="text-xs text-rose-400">Phone must contain exactly 10 digits</p>
+                      <p className="text-xs text-danger-soft-foreground">Phone must contain exactly 10 digits</p>
                     )}
                   </div>
 
@@ -1380,7 +1380,7 @@ export default function UnifiedRegisterPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         className={`pl-10 pr-10 h-11 bg-background text-sm text-foreground rounded-xl ${
-                          password && !isPasswordValid ? 'border-rose-500/50' : 'border-input'
+                          password && !isPasswordValid ? 'border-destructive/25' : 'border-input'
                         }`}
                         required
                       />
@@ -1401,11 +1401,11 @@ export default function UnifiedRegisterPage() {
                   <div className="p-3 bg-muted/40 border border-border rounded-xl text-xs space-y-1">
                     <p className="font-semibold text-muted-foreground">Password strength checklist:</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-                      <p className={hasMinLength ? 'text-emerald-400' : 'text-muted-foreground'}>✔ Minimum 8 characters</p>
-                      <p className={hasUppercase ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one uppercase letter</p>
-                      <p className={hasLowercase ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one lowercase letter</p>
-                      <p className={hasDigit ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one number digit</p>
-                      <p className={hasSpecialChar ? 'text-emerald-400' : 'text-muted-foreground'}>✔ At least one special character</p>
+                      <p className={hasMinLength ? 'text-success-soft-foreground' : 'text-muted-foreground'}>✔ Minimum 8 characters</p>
+                      <p className={hasUppercase ? 'text-success-soft-foreground' : 'text-muted-foreground'}>✔ At least one uppercase letter</p>
+                      <p className={hasLowercase ? 'text-success-soft-foreground' : 'text-muted-foreground'}>✔ At least one lowercase letter</p>
+                      <p className={hasDigit ? 'text-success-soft-foreground' : 'text-muted-foreground'}>✔ At least one number digit</p>
+                      <p className={hasSpecialChar ? 'text-success-soft-foreground' : 'text-muted-foreground'}>✔ At least one special character</p>
                     </div>
                   </div>
                 )}
@@ -1478,7 +1478,7 @@ export default function UnifiedRegisterPage() {
                       <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4 ui-fade-up">
                         <div className="space-y-1.5">
                           <label className="text-xs font-medium text-muted-foreground">
-                            Brand name <span className="text-rose-400">*</span>
+                            Brand name <span className="text-danger-soft-foreground">*</span>
                           </label>
                           <Input
                             type="text"
@@ -1584,7 +1584,7 @@ export default function UnifiedRegisterPage() {
                               onClick={() => setHalalStatus(opt.val)}
                               className={`h-11 rounded-xl border text-sm font-medium transition cursor-pointer ${
                                 halalStatus === opt.val
-                                  ? 'bg-violet-600/20 border-violet-500 text-violet-300'
+                                  ? 'bg-brand-soft border-primary/25 text-brand-soft-foreground'
                                   : 'bg-background border-input text-muted-foreground hover:bg-muted/40'
                               }`}
                             >
@@ -1624,7 +1624,7 @@ export default function UnifiedRegisterPage() {
                     type="checkbox"
                     checked={acceptedTerms}
                     onChange={(e) => setAcceptedTerms(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-[#715A5A] cursor-pointer"
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
                     required
                   />
                   <span className="text-xs text-muted-foreground group-hover:text-muted-foreground transition-colors leading-relaxed">
@@ -1633,11 +1633,11 @@ export default function UnifiedRegisterPage() {
                       href="/terms-of-service"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#c4a8a8] underline underline-offset-2 hover:text-white"
+                      className="text-primary underline underline-offset-2 hover:text-primary/80"
                     >
                       Terms of Service
                     </Link>
-                    {' '}of Whtzup.city <span className="text-rose-400">*</span>
+                    {' '}of Whtzup.city <span className="text-danger-soft-foreground">*</span>
                   </span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer group">
@@ -1645,7 +1645,7 @@ export default function UnifiedRegisterPage() {
                     type="checkbox"
                     checked={acceptedPrivacy}
                     onChange={(e) => setAcceptedPrivacy(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 shrink-0 accent-[#715A5A] cursor-pointer"
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
                     required
                   />
                   <span className="text-xs text-muted-foreground group-hover:text-muted-foreground transition-colors leading-relaxed">
@@ -1654,11 +1654,11 @@ export default function UnifiedRegisterPage() {
                       href="/privacy-policy"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#c4a8a8] underline underline-offset-2 hover:text-white"
+                      className="text-primary underline underline-offset-2 hover:text-primary/80"
                     >
                       Privacy Policy
                     </Link>
-                    {' '}<span className="text-rose-400">*</span>
+                    {' '}<span className="text-danger-soft-foreground">*</span>
                   </span>
                 </label>
               </div>
@@ -1676,7 +1676,7 @@ export default function UnifiedRegisterPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 text-[#D3DAD9] hover:opacity-90 transition-opacity w-full sm:w-auto"
+                  className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity w-full sm:w-auto"
                 >
                   {loading ? (
                     <>
@@ -1697,7 +1697,7 @@ export default function UnifiedRegisterPage() {
             <form onSubmit={handleStep4Submit} className="space-y-6 ui-pop">
               <div>
                 <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-zinc-400" />
+                  <Building2 className="h-5 w-5 text-muted-foreground" />
                   Kerala Regional Profile Setup
                 </h2>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -1754,7 +1754,7 @@ export default function UnifiedRegisterPage() {
                   <div className="grid md:grid-cols-2 gap-4 pt-3 border-t border-border">
                     <div className="space-y-2">
                       <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                        <FileCheck className="h-4 w-4 text-cyan-400" />
+                        <FileCheck className="h-4 w-4 text-info-soft-foreground" />
                         1. Registration Certificate (PDF/Image)
                       </label>
                       <div className="p-4 rounded-xl border border-dashed border-input hover:border-border bg-white/[0.01] text-center cursor-pointer relative">
@@ -1775,7 +1775,7 @@ export default function UnifiedRegisterPage() {
 
                     <div className="space-y-2">
                       <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                        <Layers className="h-4 w-4 text-cyan-400" />
+                        <Layers className="h-4 w-4 text-info-soft-foreground" />
                         2. Company Brand Logo (Image)
                       </label>
                       <div className="p-4 rounded-xl border border-dashed border-input hover:border-border bg-white/[0.01] text-center cursor-pointer relative">
@@ -1800,7 +1800,7 @@ export default function UnifiedRegisterPage() {
                 {role === 'GOVERNMENT' && (
                   <div className="space-y-2 pt-3 border-t border-border">
                     <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                      <FileCheck className="h-4 w-4 text-amber-400" />
+                      <FileCheck className="h-4 w-4 text-warning-soft-foreground" />
                       Official ID Proof / Gazette Certificate (PDF/Image)
                     </label>
                     <div className="p-5 rounded-xl border border-dashed border-input hover:border-border bg-white/[0.01] text-center cursor-pointer relative">
@@ -1812,7 +1812,7 @@ export default function UnifiedRegisterPage() {
                       />
                       <UploadCloud className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                       {govtIdFile ? (
-                        <p className="text-xs font-semibold text-amber-400 truncate">{govtIdFile.name}</p>
+                        <p className="text-xs font-semibold text-warning-soft-foreground truncate">{govtIdFile.name}</p>
                       ) : (
                         <p className="text-xs text-muted-foreground">Click to select verification authority letter (Max 10MB)</p>
                       )}
@@ -1929,7 +1929,7 @@ export default function UnifiedRegisterPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:opacity-90 transition text-[#D3DAD9] w-full sm:w-auto"
+                  className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 cursor-pointer hover:opacity-90 transition w-full sm:w-auto"
                 >
                   {loading ? (
                     <>
@@ -1954,7 +1954,7 @@ export default function UnifiedRegisterPage() {
                 <>
                   <div>
                     <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                      <Layers className="h-5 w-5 text-zinc-400" />
+                      <Layers className="h-5 w-5 text-muted-foreground" />
                       {isHotel ? 'Hotel Classification & Services' : isHomeChef ? 'Choose Your Home Chef Plan' : 'Choose Your Plan'}
                     </h2>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -1969,7 +1969,7 @@ export default function UnifiedRegisterPage() {
                   {canClaimLaunch && (
                     <div
                       className={`rounded-xl border p-4 ${
-                        claimLaunch ? 'border-emerald-500 bg-emerald-500/10' : 'border-emerald-500/30 bg-emerald-500/5'
+                        claimLaunch ? 'border-success/25 bg-success-soft' : 'border-success/25 bg-success-soft'
                       }`}
                     >
                       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1977,7 +1977,7 @@ export default function UnifiedRegisterPage() {
                           <p className="text-sm font-bold text-foreground">Claim launch offer</p>
                           <p className="text-xs text-muted-foreground mt-1">
                             ₹{(launchOffer.status?.price ?? 2500).toLocaleString('en-IN')} for 3 months, plus 3 months free and unlimited offers.{' '}
-                            <span className="font-semibold text-emerald-400">
+                            <span className="font-semibold text-success-soft-foreground">
                               {launchSlotsLeft} of {launchOffer.status?.slotsPerCategory} slots left in {categoryLabel}
                             </span>
                           </p>
@@ -2007,7 +2007,7 @@ export default function UnifiedRegisterPage() {
                           '3 months paid + 3 months FREE (6 months total)',
                         ].map((f, i) => (
                           <li key={i} className="flex items-start gap-1 text-xs text-muted-foreground">
-                            <CheckCircle className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
+                            <CheckCircle className="h-3 w-3 text-success-soft-foreground shrink-0 mt-0.5" />
                             {f}
                           </li>
                         ))}
@@ -2029,7 +2029,7 @@ export default function UnifiedRegisterPage() {
                               className={`p-3 rounded-xl border text-center transition-all duration-200 ease-out cursor-pointer hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${
                                 hotelStarRating === star
                                   ? 'border-primary bg-primary/10'
-                                  : 'border-border hover:border-slate-500'
+                                  : 'border-border hover:border-border'
                               }`}
                             >
                               <div className="text-sm font-extrabold text-foreground">{star}★</div>
@@ -2063,7 +2063,7 @@ export default function UnifiedRegisterPage() {
                           className={`p-4 rounded-xl border text-left transition-all duration-200 ease-out cursor-pointer flex flex-col hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${
                             homeChefTier === p.code
                               ? 'border-primary bg-primary/10'
-                              : 'border-border hover:border-slate-500'
+                              : 'border-border hover:border-border'
                           }`}
                         >
                           <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
@@ -2075,7 +2075,7 @@ export default function UnifiedRegisterPage() {
                           <ul className="mt-2 space-y-1">
                             {p.features.map((f, i) => (
                               <li key={i} className="flex items-start gap-1 text-xs text-muted-foreground">
-                                <CheckCircle className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
+                                <CheckCircle className="h-3 w-3 text-success-soft-foreground shrink-0 mt-0.5" />
                                 {f}
                               </li>
                             ))}
@@ -2093,7 +2093,7 @@ export default function UnifiedRegisterPage() {
                           className={`p-4 rounded-xl border text-left transition-all duration-200 ease-out cursor-pointer flex flex-col hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ${
                             selectedPlan === p.code
                               ? 'border-primary bg-primary/10'
-                              : 'border-border hover:border-slate-500'
+                              : 'border-border hover:border-border'
                           }`}
                         >
                           <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
@@ -2105,7 +2105,7 @@ export default function UnifiedRegisterPage() {
                               {formatINR(p.mrp)}
                             </span>
                           </div>
-                          <div className="text-xs text-emerald-400 font-semibold mt-0.5">
+                          <div className="text-xs text-success-soft-foreground font-semibold mt-0.5">
                             50% launch offer
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
@@ -2114,7 +2114,7 @@ export default function UnifiedRegisterPage() {
                           <ul className="mt-2 space-y-1">
                             {p.features.map((f, i) => (
                               <li key={i} className="flex items-start gap-1 text-xs text-muted-foreground">
-                                <CheckCircle className="h-3 w-3 text-emerald-400 shrink-0 mt-0.5" />
+                                <CheckCircle className="h-3 w-3 text-success-soft-foreground shrink-0 mt-0.5" />
                                 {f}
                               </li>
                             ))}
@@ -2141,7 +2141,7 @@ export default function UnifiedRegisterPage() {
                       // a star rating for hotels, a tier for Home Chefs, a plan for everyone else
                       // (the launch offer stands in for that last choice).
                       disabled={isHotel ? !hotelStarRating : claimLaunch ? false : isHomeChef ? !homeChefTier : !selectedPlan}
-                      className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 cursor-pointer text-[#D3DAD9] w-full sm:w-auto"
+                      className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
                     >
                       Proceed to Payment <ArrowRight className="h-4 w-4" />
                     </Button>
@@ -2151,7 +2151,7 @@ export default function UnifiedRegisterPage() {
                 <>
                   <div>
                     <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                      <FileCheck className="h-5 w-5 text-emerald-400" />
+                      <FileCheck className="h-5 w-5 text-success-soft-foreground" />
                       Payment
                     </h2>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -2213,7 +2213,7 @@ export default function UnifiedRegisterPage() {
                               <span>{plan?.name}</span>
                               <span className="line-through text-xs">{formatINR(plan?.mrp || 0)}</span>
                             </div>
-                            <div className="flex justify-between text-emerald-400 text-xs font-semibold">
+                            <div className="flex justify-between text-success-soft-foreground text-xs font-semibold">
                               <span>50% launch offer applied</span>
                               <span>−{formatINR((plan?.mrp || 0) - (plan?.offerPrice || 0))}</span>
                             </div>
@@ -2303,7 +2303,7 @@ export default function UnifiedRegisterPage() {
                       type="button"
                       onClick={() => setShowInvoice(true)}
                       disabled={loading || !paymentProof}
-                      className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 cursor-pointer text-[#D3DAD9] w-full sm:w-auto"
+                      className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
                     >
                       Continue to Invoice Details <ArrowRight className="h-4 w-4" />
                     </Button>
@@ -2317,7 +2317,7 @@ export default function UnifiedRegisterPage() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                      <FileCheck className="h-5 w-5 text-emerald-400" />
+                      <FileCheck className="h-5 w-5 text-success-soft-foreground" />
                       Invoice Details
                     </h2>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -2328,7 +2328,7 @@ export default function UnifiedRegisterPage() {
                   <div className="space-y-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-muted-foreground">
-                        Billing name <span className="text-rose-400">*</span>
+                        Billing name <span className="text-danger-soft-foreground">*</span>
                       </label>
                       <Input
                         value={billingName}
@@ -2340,7 +2340,7 @@ export default function UnifiedRegisterPage() {
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-muted-foreground">
-                        Do you have GST? <span className="text-rose-400">*</span>
+                        Do you have GST? <span className="text-danger-soft-foreground">*</span>
                       </label>
                       <div className="inline-flex rounded-xl border border-input p-0.5">
                         {[{ l: 'Yes', v: true }, { l: 'No', v: false }].map((o) => (
@@ -2363,7 +2363,7 @@ export default function UnifiedRegisterPage() {
                     {billingHasGst && (
                       <div className="space-y-1.5">
                         <label className="text-xs font-medium text-muted-foreground">
-                          GSTIN <span className="text-rose-400">*</span>
+                          GSTIN <span className="text-danger-soft-foreground">*</span>
                         </label>
                         <Input
                           value={billingGstin}
@@ -2388,7 +2388,7 @@ export default function UnifiedRegisterPage() {
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-muted-foreground">
-                        Billing address <span className="text-rose-400">*</span>
+                        Billing address <span className="text-danger-soft-foreground">*</span>
                       </label>
                       <textarea
                         value={billingAddress}
@@ -2401,7 +2401,7 @@ export default function UnifiedRegisterPage() {
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-muted-foreground">
-                        Pincode <span className="text-rose-400">*</span>
+                        Pincode <span className="text-danger-soft-foreground">*</span>
                       </label>
                       <Input
                         value={billingPincode}
@@ -2415,7 +2415,7 @@ export default function UnifiedRegisterPage() {
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-muted-foreground">
-                        Email for invoice <span className="text-rose-400">*</span>
+                        Email for invoice <span className="text-danger-soft-foreground">*</span>
                       </label>
                       <Input
                         type="email"
@@ -2449,7 +2449,7 @@ export default function UnifiedRegisterPage() {
                         billingPincode.trim().length !== 6 ||
                         !invoiceEmail.trim()
                       }
-                      className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 cursor-pointer text-[#D3DAD9] w-full sm:w-auto"
+                      className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto"
                     >
                       {loading ? (
                         <>

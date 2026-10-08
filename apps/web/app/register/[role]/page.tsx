@@ -215,12 +215,12 @@ export default function RoleOnboardingWizard() {
   if (!isValidRole) {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
-        <ShieldAlert className="h-12 w-12 text-rose-500 mb-4 animate-bounce" />
+        <ShieldAlert className="h-12 w-12 text-danger-soft-foreground mb-4 animate-bounce" />
         <h1 className="text-2xl font-bold">Invalid Onboarding Role</h1>
         <p className="text-muted-foreground text-sm mt-2 text-center max-w-sm">
           The requested onboarding role parameter is invalid. Please return to selection panel.
         </p>
-        <Button onClick={() => router.push('/register/select-role')} className="mt-6 bg-violet-600">
+        <Button onClick={() => router.push('/register/select-role')} className="mt-6 bg-primary">
           Go to Selector
         </Button>
       </div>
@@ -230,7 +230,7 @@ export default function RoleOnboardingWizard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center">
-        <Loader2 className="h-10 w-10 text-cyan-400 animate-spin mb-4" />
+        <Loader2 className="h-10 w-10 text-info-soft-foreground animate-spin mb-4" />
         <p className="text-muted-foreground text-sm">Synchronizing onboarding session...</p>
       </div>
     );
@@ -472,13 +472,13 @@ export default function RoleOnboardingWizard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground py-10 px-4 relative overflow-hidden font-sans">
-      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-violet-600/5 rounded-full blur-[160px] pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-cyan-500/5 rounded-full blur-[140px] pointer-events-none"></div>
+      <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-brand-soft rounded-full blur-[160px] pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-info-soft rounded-full blur-[140px] pointer-events-none"></div>
 
       <div className="max-w-4xl mx-auto space-y-8 relative z-10">
         {/* Header Title */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-info-soft border border-info/25 text-info-soft-foreground text-xs font-semibold uppercase tracking-wider">
             {role.replace('-', ' ')} Onboarding
           </div>
           <h1 className="text-foreground text-3xl md:text-4xl font-extrabold tracking-tight">
@@ -493,7 +493,7 @@ export default function RoleOnboardingWizard() {
         <div className="w-full p-4 rounded-2xl" >
           <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground mb-3 px-2">
             <span>Progress Status</span>
-            <span className="text-cyan-400">
+            <span className="text-info-soft-foreground">
               Step {currentStep} of {totalSteps}: {currentRoleConfig.steps[currentStep - 1]}
             </span>
           </div>
@@ -504,9 +504,9 @@ export default function RoleOnboardingWizard() {
                 key={i}
                 className={
                   i + 1 < currentStep
-                    ? 'text-emerald-400 font-bold'
+                    ? 'text-success-soft-foreground font-bold'
                     : i + 1 === currentStep
-                    ? 'text-cyan-400 font-bold border-b border-cyan-500 pb-1'
+                    ? 'text-info-soft-foreground font-bold border-b border-info/25 pb-1'
                     : 'text-muted-foreground/50'
                 }
               >
@@ -517,14 +517,14 @@ export default function RoleOnboardingWizard() {
         </div>
 
         {error && (
-          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium flex items-center gap-3">
+          <div className="p-4 rounded-xl bg-danger-soft border border-destructive/25 text-danger-soft-foreground text-sm font-medium flex items-center gap-3">
             <AlertCircle className="h-5 w-5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium flex items-center gap-3">
+          <div className="p-4 rounded-xl bg-success-soft border border-success/25 text-success-soft-foreground text-sm font-medium flex items-center gap-3">
             <CheckCircle className="h-5 w-5 shrink-0" />
             <span>{success}</span>
           </div>
@@ -536,7 +536,7 @@ export default function RoleOnboardingWizard() {
             <form onSubmit={handleStepSubmit} className="space-y-6 ui-pop">
               <div>
                 <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <ActiveStepIcon className="h-5 w-5 text-violet-400 animate-pulse" />
+                  <ActiveStepIcon className="h-5 w-5 text-brand-soft-foreground animate-pulse" />
                   {currentRoleConfig.steps[currentStep - 1]}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -704,13 +704,13 @@ export default function RoleOnboardingWizard() {
                         {certifications.map((c, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-mono"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-soft border border-primary/25 text-brand-soft-foreground text-xs font-mono"
                           >
                             {c}
                             <button
                               type="button"
                               onClick={() => setCertifications(certifications.filter((_, i) => i !== idx))}
-                              className="text-rose-400 hover:text-rose-600 ml-1"
+                              className="text-danger-soft-foreground hover:text-danger-soft-foreground ml-1"
                             >
                               &times;
                             </button>
@@ -773,13 +773,13 @@ export default function RoleOnboardingWizard() {
                         {serviceAreas.map((a, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-info-soft border border-info/25 text-info-soft-foreground text-xs font-mono"
                           >
                             {a}
                             <button
                               type="button"
                               onClick={() => setServiceAreas(serviceAreas.filter((_, i) => i !== idx))}
-                              className="text-rose-400 hover:text-rose-600 ml-1"
+                              className="text-danger-soft-foreground hover:text-danger-soft-foreground ml-1"
                             >
                               &times;
                             </button>
@@ -884,13 +884,13 @@ export default function RoleOnboardingWizard() {
                         {eventCategories.map((ec, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-mono"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-soft border border-primary/25 text-brand-soft-foreground text-xs font-mono"
                           >
                             {ec}
                             <button
                               type="button"
                               onClick={() => setEventCategories(eventCategories.filter((_, i) => i !== idx))}
-                              className="text-rose-400 hover:text-rose-600 ml-1"
+                              className="text-danger-soft-foreground hover:text-danger-soft-foreground ml-1"
                             >
                               &times;
                             </button>
@@ -925,13 +925,13 @@ export default function RoleOnboardingWizard() {
                         {venuePartnerships.map((v, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-warning-soft border border-warning/30 text-warning-soft-foreground text-xs font-mono"
                           >
                             {v}
                             <button
                               type="button"
                               onClick={() => setVenuePartnerships(venuePartnerships.filter((_, i) => i !== idx))}
-                              className="text-rose-400 hover:text-rose-600 ml-1"
+                              className="text-danger-soft-foreground hover:text-danger-soft-foreground ml-1"
                             >
                               &times;
                             </button>
@@ -946,7 +946,7 @@ export default function RoleOnboardingWizard() {
                         id="ticketingCheck"
                         checked={ticketingSupport}
                         onChange={(e) => setTicketingSupport(e.target.checked)}
-                        className="h-4 w-4 rounded bg-background border-input text-cyan-600 focus:ring-cyan-500"
+                        className="h-4 w-4 rounded bg-background border-input text-info-soft-foreground focus:ring-info/30"
                       />
                       <label htmlFor="ticketingCheck" className="text-xs text-muted-foreground font-medium cursor-pointer">
                         Do you require integrated digital ticketing support?
@@ -993,7 +993,7 @@ export default function RoleOnboardingWizard() {
                             setNewEvDesc('');
                           }
                         }}
-                        className="bg-cyan-600 hover:bg-cyan-500 text-white w-full h-8 rounded-xl text-xs"
+                        className="bg-info hover:bg-info text-white w-full h-8 rounded-xl text-xs"
                       >
                         Add Past Event to List
                       </Button>
@@ -1014,7 +1014,7 @@ export default function RoleOnboardingWizard() {
                             <Button
                               type="button"
                               onClick={() => setPreviousEvents(previousEvents.filter((_, i) => i !== idx))}
-                              className="h-10 w-10 p-0 bg-transparent text-rose-400 hover:bg-rose-500/10"
+                              className="h-10 w-10 p-0 bg-transparent text-danger-soft-foreground hover:bg-danger-soft"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -1098,13 +1098,13 @@ export default function RoleOnboardingWizard() {
                         {operationalAreas.map((a, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-mono"
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-danger-soft border border-destructive/25 text-danger-soft-foreground text-xs font-mono"
                           >
                             {a}
                             <button
                               type="button"
                               onClick={() => setOperationalAreas(operationalAreas.filter((_, i) => i !== idx))}
-                              className="text-rose-400 hover:text-rose-600 ml-1"
+                              className="text-danger-soft-foreground hover:text-danger-soft-foreground ml-1"
                             >
                               &times;
                             </button>
@@ -1146,10 +1146,10 @@ export default function RoleOnboardingWizard() {
                         onChange={(e) => setDepartmentType(e.target.value)}
                         className="w-full h-11 px-3 bg-background border border-input text-muted-foreground rounded-xl text-sm focus:outline-none cursor-pointer"
                       >
-                        <option value="Local" className="bg-[#0f0f13]">Local Civic Body / Municipality</option>
-                        <option value="District" className="bg-[#0f0f13]">District Commissioner Office</option>
-                        <option value="State" className="bg-[#0f0f13]">State Administration</option>
-                        <option value="Federal" className="bg-[#0f0f13]">Federal Ministry</option>
+                        <option value="Local" className="bg-card">Local Civic Body / Municipality</option>
+                        <option value="District" className="bg-card">District Commissioner Office</option>
+                        <option value="State" className="bg-card">State Administration</option>
+                        <option value="Federal" className="bg-card">Federal Ministry</option>
                       </select>
                     </div>
                   </>
@@ -1187,7 +1187,7 @@ export default function RoleOnboardingWizard() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="h-11 px-6 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl font-semibold cursor-pointer w-full sm:w-auto"
+                  className="h-11 px-6 bg-info hover:bg-info text-white rounded-xl font-semibold cursor-pointer w-full sm:w-auto"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1205,7 +1205,7 @@ export default function RoleOnboardingWizard() {
             <div className="space-y-8 animate-in fade-in duration-300">
               <div>
                 <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <UploadCloud className="h-5 w-5 text-violet-400" />
+                  <UploadCloud className="h-5 w-5 text-brand-soft-foreground" />
                   Submit Verification Documents
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -1248,7 +1248,7 @@ export default function RoleOnboardingWizard() {
                 </div>
 
                 {/* File picker */}
-                <div className="p-6 rounded-2xl border-2 border-dashed border-input hover:border-violet-500/50 bg-white/[0.01] text-center cursor-pointer transition relative">
+                <div className="p-6 rounded-2xl border-2 border-dashed border-input hover:border-primary/25 bg-white/[0.01] text-center cursor-pointer transition relative">
                   <input
                     type="file"
                     accept="application/pdf,image/png,image/jpeg,image/webp"
@@ -1258,7 +1258,7 @@ export default function RoleOnboardingWizard() {
                   <UploadCloud className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
                   {verificationDoc ? (
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-violet-400">{verificationDoc.name}</p>
+                      <p className="text-sm font-semibold text-brand-soft-foreground">{verificationDoc.name}</p>
                       <p className="text-xs text-muted-foreground">{(verificationDoc.size / 1024 / 1024).toFixed(2)} MB • Click to replace</p>
                     </div>
                   ) : (
@@ -1282,7 +1282,7 @@ export default function RoleOnboardingWizard() {
                 <Button
                   type="submit"
                   disabled={!verificationDoc || submitting}
-                  className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold h-10 rounded-xl text-xs cursor-pointer disabled:opacity-40"
+                  className="w-full bg-primary hover:bg-primary text-white font-semibold h-10 rounded-xl text-xs cursor-pointer disabled:opacity-40"
                 >
                   Upload & Register Document
                 </Button>
@@ -1307,7 +1307,7 @@ export default function RoleOnboardingWizard() {
                       >
                         <div className="space-y-1">
                           <p className="font-semibold text-foreground flex items-center gap-1.5">
-                            <FileCheck className="h-4 w-4 text-emerald-400 shrink-0" />
+                            <FileCheck className="h-4 w-4 text-success-soft-foreground shrink-0" />
                             {doc.documentType}
                           </p>
                           {doc.documentNumber && <p className="text-xs text-muted-foreground font-mono">ID: {doc.documentNumber}</p>}
@@ -1315,7 +1315,7 @@ export default function RoleOnboardingWizard() {
                             href={doc.fileUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-cyan-400 hover:underline inline-block pt-1"
+                            className="text-xs text-info-soft-foreground hover:underline inline-block pt-1"
                           >
                             View Document File
                           </a>
@@ -1323,7 +1323,7 @@ export default function RoleOnboardingWizard() {
                         <Button
                           type="button"
                           onClick={() => handleDeleteDoc(doc.id)}
-                          className="h-10 w-10 p-0 bg-transparent text-rose-400 hover:bg-rose-500/10 rounded-lg cursor-pointer"
+                          className="h-10 w-10 p-0 bg-transparent text-danger-soft-foreground hover:bg-danger-soft rounded-lg cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -1351,7 +1351,7 @@ export default function RoleOnboardingWizard() {
                   type="button"
                   onClick={handleFinalSubmit}
                   disabled={uploadedDocs.length === 0 || submitting}
-                  className="h-11 px-6 bg-gradient-to-r from-emerald-600 to-cyan-500 text-white rounded-xl font-semibold cursor-pointer shadow-lg shadow-emerald-500/10 hover:opacity-90 transition disabled:opacity-40 w-full sm:w-auto"
+                  className="h-11 px-6 bg-gradient-to-r from-success/15 to-info/5 text-white rounded-xl font-semibold cursor-pointer shadow-lg shadow-e2 hover:opacity-90 transition disabled:opacity-40 w-full sm:w-auto"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

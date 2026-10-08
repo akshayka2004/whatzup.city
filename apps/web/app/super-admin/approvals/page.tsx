@@ -203,7 +203,7 @@ export default function SuperAdminApprovalsPage() {
               <p className="text-muted-foreground text-sm">Querying pending moderation requests...</p>
             </div>
           ) : displayApprovals.length === 0 ? (
-            <Card className="p-12 text-center border border-dashed border-border bg-[#0d0d12]/30 rounded-3xl">
+            <Card className="p-12 text-center border border-dashed border-border bg-surface-sunken rounded-3xl">
               <Check className="mx-auto h-12 w-12 text-success mb-4 bg-success/10 p-2 rounded-full" />
               <h3 className="text-lg font-bold text-foreground mb-1">Moderation Queue Clean</h3>
               <p className="text-xs text-muted-foreground">
@@ -468,7 +468,7 @@ export default function SuperAdminApprovalsPage() {
                 </div>
 
                 {/* RIGHT - File Viewer */}
-                <div className="lg:col-span-7 flex flex-col bg-[#08080c] border border-border rounded-2xl p-4 min-h-[400px] overflow-hidden relative">
+                <div className="lg:col-span-7 flex flex-col bg-surface-sunken border border-border rounded-2xl p-4 min-h-[400px] overflow-hidden relative">
                   {selectedDoc ? (
                     <div className="h-full flex flex-col">
                       <div className="border-b border-border pb-2 mb-3 flex items-center justify-between shrink-0">

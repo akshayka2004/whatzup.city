@@ -34,10 +34,10 @@ const ROLES: RoleOption[] = [
     title: 'Customer',
     description: 'Discover local businesses, claim offers, submit bills, and leave reviews.',
     icon: UserIcon,
-    color: 'from-violet-600/20 to-violet-500/5 hover:to-violet-600/10',
-    borderColor: 'border-violet-500/20 hover:border-violet-500/50',
-    badgeColor: 'bg-violet-500/10 text-violet-400',
-    iconColor: 'text-violet-400',
+    color: 'from-primary/15 to-primary/5 hover:to-primary/5',
+    borderColor: 'border-primary/25 hover:border-primary/25',
+    badgeColor: 'bg-brand-soft text-brand-soft-foreground',
+    iconColor: 'text-brand-soft-foreground',
   },
   {
     entityType: 'BUSINESS',
@@ -45,10 +45,10 @@ const ROLES: RoleOption[] = [
     title: 'Business / Organisation',
     description: 'List your business, manage inventory and offers, verify bills, and grow your customer base.',
     icon: Building2,
-    color: 'from-cyan-600/20 to-cyan-500/5 hover:to-cyan-600/10',
-    borderColor: 'border-cyan-500/20 hover:border-cyan-500/50',
-    badgeColor: 'bg-cyan-500/10 text-cyan-400',
-    iconColor: 'text-cyan-400',
+    color: 'from-info/15 to-info/5 hover:to-info/5',
+    borderColor: 'border-info/25 hover:border-info/25',
+    badgeColor: 'bg-info-soft text-info-soft-foreground',
+    iconColor: 'text-info-soft-foreground',
   },
   {
     entityType: 'GOVERNMENT',
@@ -56,10 +56,10 @@ const ROLES: RoleOption[] = [
     title: 'Government / Public Sector',
     description: 'Issue official alerts, publish civic announcements, and manage district notifications.',
     icon: ShieldAlert,
-    color: 'from-amber-600/20 to-amber-500/5 hover:to-amber-600/10',
-    borderColor: 'border-amber-500/20 hover:border-amber-500/50',
-    badgeColor: 'bg-amber-500/10 text-amber-400',
-    iconColor: 'text-amber-400',
+    color: 'from-warning/15 to-warning/5 hover:to-warning/5',
+    borderColor: 'border-warning/30 hover:border-warning/30',
+    badgeColor: 'bg-warning-soft text-warning-soft-foreground',
+    iconColor: 'text-warning-soft-foreground',
   },
 ];
 
@@ -132,13 +132,13 @@ export default function SelectRolePage() {
       <div className="max-w-3xl w-full space-y-8 relative z-10">
         {/* Header */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-semibold mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-soft border border-primary/25 text-brand-soft-foreground text-xs font-semibold mb-2">
             <Sparkles className="h-3.5 w-3.5" />
             Welcome — Choose Your Path
           </div>
           <h1 className="text-foreground text-3xl md:text-4xl font-extrabold tracking-tight">
             How will you use{' '}
-            <span className="bg-gradient-to-r from-violet-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary via-info/80 to-primary/70 bg-clip-text text-transparent">
               the platform?
             </span>
           </h1>
@@ -148,7 +148,7 @@ export default function SelectRolePage() {
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm text-center">
+          <div className="p-3 rounded-xl bg-danger-soft border border-destructive/25 text-danger-soft-foreground text-sm text-center">
             {error}
           </div>
         )}
@@ -173,7 +173,7 @@ export default function SelectRolePage() {
                       <Icon className={`h-6 w-6 ${option.iconColor}`} />
                     </div>
                     {selected ? (
-                      <span className="p-1 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
+                      <span className="p-1 rounded-full bg-success-soft border border-success/25 text-success-soft-foreground">
                         <CheckCircle className="h-4 w-4" />
                       </span>
                     ) : (
@@ -221,7 +221,7 @@ export default function SelectRolePage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 bg-gradient-to-r from-violet-600 to-cyan-500 hover:opacity-90 text-white rounded-xl font-semibold cursor-pointer flex items-center justify-center gap-2"
+                className="w-full h-11 bg-gradient-to-r from-primary/15 to-info/5 hover:opacity-90 text-white rounded-xl font-semibold cursor-pointer flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <><Loader2 className="h-4 w-4 animate-spin" /> Setting up profile...</>
