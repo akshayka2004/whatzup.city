@@ -269,6 +269,7 @@ function adminNav(): NavSpec {
         items: [
           { label: 'Reports', href: '/admin/reports', icon: ShieldAlert },
           { label: 'Bill escalations', href: '/admin/bills', icon: ReceiptText },
+          { label: 'Support inbox', href: '/admin/support', icon: LifeBuoy },
           { label: 'Audit Logs', href: '/admin/audit', icon: ScrollText },
         ],
       },
@@ -330,6 +331,7 @@ function superAdminNav(): NavSpec {
         items: [
           { label: 'Reports', href: '/admin/reports', icon: ShieldAlert },
           { label: 'Bill escalations', href: '/admin/bills', icon: ReceiptText },
+          { label: 'Support inbox', href: '/admin/support', icon: LifeBuoy },
           { label: 'Audit Logs', href: '/admin/audit', icon: ScrollText },
           { label: 'Referrals', href: '/super-admin/referrals', icon: Share2 },
         ],

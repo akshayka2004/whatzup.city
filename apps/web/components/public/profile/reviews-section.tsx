@@ -235,6 +235,12 @@ export function ReviewsSection({
                       {review.comment && (
                         <p className="mt-1.5 break-words text-sm text-muted-foreground">{review.comment}</p>
                       )}
+                      {review.ownerReply && (
+                        <div className="mt-3 rounded-xl border-l-2 border-primary bg-brand-soft/60 px-3.5 py-2.5">
+                          <p className="text-caption font-semibold text-brand-soft-foreground">Reply from the business</p>
+                          <p className="mt-0.5 whitespace-pre-line break-words text-sm text-foreground">{review.ownerReply}</p>
+                        </div>
+                      )}
                     </div>
                   </li>
                 );

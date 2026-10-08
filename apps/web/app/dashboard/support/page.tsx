@@ -7,6 +7,8 @@ import { PageHeader } from '@/components/system/page-header';
 import { SectionCard } from '@/components/system/section-card';
 import { Button } from '@/components/ui/button';
 import { useActiveBusiness } from '@/hooks/use-active-business';
+import { Suspense } from 'react';
+import { BusinessTickets } from '@/components/support/business-tickets';
 
 const SUPPORT_EMAIL = 'support@lifeartgroup.in';
 
@@ -34,9 +36,8 @@ const FAQ = [
 ];
 
 /**
- * Business help centre. Replaces the old browser-only ticket list (it never reached our team):
- * real contact routes, a pre-filled email with the business id, and answers to the
- * questions owners ask most.
+ * Business help centre: support tickets with the platform team, a pre-filled email fallback
+ * with the business id, and answers to the questions owners ask most.
  */
 export default function BusinessSupportPage() {
   const { activeBusiness, activeBusinessId } = useActiveBusiness();
@@ -49,9 +50,15 @@ export default function BusinessSupportPage() {
     <BusinessLayout>
       <PageHeader title="Help & support" description="Reach the Whtzup.city team or find a quick answer." />
 
+      <div className="mb-6">
+        <Suspense fallback={<div className="ui-skeleton h-40 rounded-card" />}>
+          <BusinessTickets businessId={activeBusinessId} />
+        </Suspense>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <div className="space-y-6">
-          <SectionCard icon={Mail} title="Email the team" description="We reply within one working day (Mon–Sat, IST).">
+          <SectionCard icon={Mail} title="Prefer email?" description="We reply within one working day (Mon–Sat, IST).">
             <p className="mb-4 text-body text-muted-foreground">
               The email opens pre-filled with your business ID so we can look things up straight away.
             </p>

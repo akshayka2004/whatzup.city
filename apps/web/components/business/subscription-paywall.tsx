@@ -13,6 +13,7 @@
 
 import { ModalSurface } from '@/components/system/modal-surface';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { apiService } from '@/lib/services/api-service';
 import { onboardingService } from '@/lib/services/onboarding-service';
 import { Button } from '@/components/ui/button';
@@ -41,7 +42,11 @@ function daysUntil(iso?: string | null) {
   return Math.ceil(ms / (1000 * 60 * 60 * 24));
 }
 
+// Pages an unpaid business must still reach: ask for help, see plans/invoices, switch outlet.
+const PAYWALL_EXEMPT = ['/dashboard/support', '/dashboard/subscriptions', '/dashboard/invoice', '/dashboard/outlets'];
+
 export function SubscriptionPaywall() {
+  const pathname = usePathname();
   const [biz, setBiz] = useState<Biz | null>(null);
   const [sub, setSub] = useState<any>(null);
   const [pendingPayment, setPendingPayment] = useState(false);
@@ -100,7 +105,7 @@ export function SubscriptionPaywall() {
   const mustPay = ready && !!biz && !hasPaidActive && !pendingPayment;
   const show = ready && !!biz && !done && !dismissed && (mustPay || expiringSoon || (pendingPayment && !hasPaidActive));
 
-  if (!show) return null;
+  if (!show || PAYWALL_EXEMPT.some((p) => pathname?.startsWith(p))) return null;
 
   const awaiting = pendingPayment && !hasPaidActive;
 

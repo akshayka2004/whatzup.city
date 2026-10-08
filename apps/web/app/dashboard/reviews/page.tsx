@@ -15,7 +15,16 @@ import { useActiveBusiness } from '@/hooks/use-active-business';
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
 
-type Review = { id: string; author: string; rating: number; text: string; createdAt: string | null; verified: boolean };
+type Review = {
+  id: string;
+  author: string;
+  rating: number;
+  text: string;
+  createdAt: string | null;
+  verified: boolean;
+  reply: string | null;
+  replyAt: string | null;
+};
 
 function Stars({ value, size = 'size-4' }: { value: number; size?: string }) {
   return (
@@ -39,6 +48,23 @@ export default function ReviewsPage() {
   const [reason, setReason] = useState('');
   const [sending, setSending] = useState(false);
   const [reported, setReported] = useState<Set<string>>(new Set());
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  const [savingReply, setSavingReply] = useState(false);
+
+  const saveReply = async (id: string, text: string) => {
+    setSavingReply(true);
+    const res = await apiService.put<any>(`/v1/reviews/${id}/reply`, { reply: text });
+    setSavingReply(false);
+    if (res.error) {
+      toast.error(res.error);
+      return;
+    }
+    setReviews((list) => (list ?? []).map((r) => (r.id === id ? { ...r, reply: res.data?.ownerReply ?? null, replyAt: res.data?.ownerReplyAt ?? null } : r)));
+    setEditing(null);
+    setDraft('');
+    toast.success(text.trim() ? 'Reply published' : 'Reply removed');
+  };
 
   useEffect(() => {
     if (!activeBusinessId) return;
@@ -52,6 +78,8 @@ export default function ReviewsPage() {
           text: r.comment || r.text || r.body || '',
           createdAt: r.createdAt ?? null,
           verified: !!r.isVerifiedPurchase,
+          reply: r.ownerReply ?? null,
+          replyAt: r.ownerReplyAt ?? null,
         })),
       );
     });
@@ -93,7 +121,7 @@ export default function ReviewsPage() {
 
   return (
     <BusinessLayout>
-      <PageHeader title="Reviews" description="What customers say about you. Reviews with a verified bill carry more weight." />
+      <PageHeader title="Reviews" description="What customers say about you. Reply publicly to thank them or address concerns." />
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         <SectionCard title="Rating" className="h-fit">
@@ -190,6 +218,66 @@ export default function ReviewsPage() {
                     </Button>
                   </div>
                   {r.text && <p className="mt-3 whitespace-pre-line text-body text-foreground">{r.text}</p>}
+
+                  {editing === r.id ? (
+                    <div className="mt-4 space-y-2 rounded-xl bg-surface-sunken p-3">
+                      <label htmlFor={`reply-${r.id}`} className="text-label">
+                        Your public reply
+                      </label>
+                      <Textarea
+                        id={`reply-${r.id}`}
+                        value={draft}
+                        maxLength={1000}
+                        onChange={(e) => setDraft(e.target.value)}
+                        placeholder="Thank them, answer their point, or explain what you've changed."
+                      />
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-caption text-muted-foreground">{draft.length}/1000 · shown on your public page</span>
+                        <div className="flex gap-2">
+                          {r.reply && (
+                            <Button variant="ghost" size="sm" onClick={() => saveReply(r.id, '')} disabled={savingReply}>
+                              Remove
+                            </Button>
+                          )}
+                          <Button variant="outline" size="sm" onClick={() => setEditing(null)}>
+                            Cancel
+                          </Button>
+                          <Button size="sm" loading={savingReply} disabled={!draft.trim()} onClick={() => saveReply(r.id, draft)}>
+                            Publish reply
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : r.reply ? (
+                    <div className="mt-4 rounded-xl border-l-2 border-primary bg-brand-soft/60 px-4 py-3">
+                      <p className="flex items-center justify-between gap-2 text-caption font-semibold text-brand-soft-foreground">
+                        Your reply{r.replyAt ? ` · ${new Date(r.replyAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : ''}
+                        <button
+                          type="button"
+                          className="font-medium text-primary hover:underline"
+                          onClick={() => {
+                            setEditing(r.id);
+                            setDraft(r.reply ?? '');
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </p>
+                      <p className="mt-1 whitespace-pre-line text-body">{r.reply}</p>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="tonal"
+                      size="sm"
+                      className="mt-4"
+                      onClick={() => {
+                        setEditing(r.id);
+                        setDraft('');
+                      }}
+                    >
+                      <MessageSquareText /> Reply
+                    </Button>
+                  )}
                 </li>
               ))}
             </ul>
