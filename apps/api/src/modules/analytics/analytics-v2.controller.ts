@@ -37,6 +37,16 @@ export class AnalyticsV2Controller {
     return this.v2.businessReport(businessId, user, toQuery(q));
   }
 
+  @Get('business/:businessId/offers')
+  @ApiOperation({ summary: 'Per-offer viewers, claims and conversion (default last 30 IST days)' })
+  offerStats(
+    @Param('businessId', new ParseUUIDPipe()) businessId: string,
+    @CurrentUser() user: { id: string; role?: string },
+    @Query() q: RangeParams,
+  ) {
+    return this.v2.offerStats(businessId, user, toQuery(q));
+  }
+
   @UseGuards(RolesGuard)
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @Get('platform/report')

@@ -63,6 +63,17 @@ export class AnalyticsV2Service {
     return this.cached(key, 120, () => this.computeBusiness(businessId, r, prev, g));
   }
 
+  /** Per-offer viewers and claims for the promotions page (default last 30 IST days). */
+  async offerStats(businessId: string, user: AccessUser, q: RangeQuery) {
+    await assertBusinessAccess(this.db, businessId, user);
+    const { r } = this.range(q);
+    return this.cached(`analytics:v2:offers:${businessId}:${r.from}:${r.to}`, 120, async () => ({
+      from: r.from,
+      to: r.to,
+      offers: await this.offerTable(businessId, r),
+    }));
+  }
+
   private async eventTotals(businessId: string | null, r: IstRange) {
     const where = businessId ? Prisma.sql`business_id = ${businessId}::uuid AND` : Prisma.empty;
     const rows = await this.db.$queryRaw<{ event: string; total: bigint; visitors: bigint }[]>(Prisma.sql`

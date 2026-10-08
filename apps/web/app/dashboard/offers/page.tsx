@@ -1,17 +1,25 @@
 'use client';
 
-import { ModalSurface } from '@/components/system/modal-surface';
-import { toast } from '@/components/ui/sonner';
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { Copy, Eye, Pause, Pencil, Play, Plus, ShoppingBag, Store, Tag, TicketPercent, Trash2, UtensilsCrossed, X } from 'lucide-react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
-import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/system/page-header';
+import { FilterChip, ChipRow } from '@/components/system/filter-chip';
+import { Modal } from '@/components/system/modal';
+import { EmptyState } from '@/components/common/empty-state';
+import { useConfirm } from '@/components/common/confirm-dialog';
+import { PromoCard, PromoGrid, PromoGridSkeleton } from '@/components/promotions/promo-card';
+import { OfferCoupon } from '@/components/public/offers/offer-coupon';
+import { mapApiOffer } from '@/components/public/offers/offer-model';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Tag, Eye, Edit, Trash2, X, AlertTriangle, Clock, Calendar, Loader2, UtensilsCrossed, ShoppingBag, Store } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { toast } from '@/components/ui/sonner';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
 import { useOwnerBusiness } from '@/hooks/use-owner-business';
 import { KERALA_CITIES } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
 type Fulfilment = 'DINE_IN' | 'TAKEAWAY' | 'BOTH';
 const FULFILMENT_OPTIONS: { value: Fulfilment; label: string; icon: typeof Store }[] = [
@@ -24,109 +32,134 @@ interface Offer {
   id: string;
   title: string;
   discount: number;
-  discountAmount?: number;
+  discountAmount: number;
   active: boolean;
-  views: number;
-  clicks: number;
   tags: string[];
   targetCities: string[];
-  startsAt?: string;   // ISO date string
-  expiresAt?: string;  // ISO date string — filtered out automatically when past
-  fulfilment?: Fulfilment;
+  startsAt?: string;
+  expiresAt?: string;
+  fulfilment: Fulfilment;
+  claimsTotal: number;
+  maxRedemptions: number | null;
 }
 
-const today = new Date().toISOString().slice(0, 10);
+type OfferStat = { viewers: number; claims: number; conversion: number | null };
+type Bucket = 'current' | 'live' | 'scheduled' | 'paused' | 'ended';
 
-function isExpired(offer: Offer): boolean {
-  if (!offer.expiresAt) return false;
-  return new Date(offer.expiresAt) < new Date();
+const dateOnly = (iso?: string) => (iso ? iso.slice(0, 10) : '');
+const todayKey = () => new Date().toISOString().slice(0, 10);
+const fmtDay = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }) : '');
+
+function bucketOf(o: Offer, now = Date.now()): Exclude<Bucket, 'current'> {
+  if (o.expiresAt && new Date(o.expiresAt).getTime() < now) return 'ended';
+  if (!o.active) return 'paused';
+  if (o.startsAt && new Date(o.startsAt).getTime() > now) return 'scheduled';
+  return 'live';
 }
 
-function isScheduled(offer: Offer): boolean {
-  if (!offer.startsAt) return false;
-  return new Date(offer.startsAt) > new Date();
-}
+const BUCKET_PILL = {
+  live: { tone: 'success', label: 'Live', live: true },
+  scheduled: { tone: 'info', label: 'Scheduled' },
+  paused: { tone: 'neutral', label: 'Paused' },
+  ended: { tone: 'neutral', label: 'Ended' },
+} as const;
 
-// ── Reusable tag input component ──────────────────────────────────────────────
-function TagInput({
-  tags,
-  onChange,
-}: {
-  tags: string[];
-  onChange: (tags: string[]) => void;
-}) {
-  const [inputVal, setInputVal] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
+const valueLabel = (o: { discount: number; discountAmount: number }) =>
+  o.discountAmount > 0 && !(o.discount > 0) ? `₹${o.discountAmount.toLocaleString('en-IN')}` : `${o.discount || 0}%`;
 
-  const addTag = (val: string) => {
-    const trimmed = val.trim().toLowerCase().replace(/\s+/g, '-');
-    if (trimmed && !tags.includes(trimmed) && tags.length < 10) {
-      onChange([...tags, trimmed]);
-    }
-    setInputVal('');
+// Tags have no column yet; they ride in the description as "Tags: a, b".
+const parseTags = (description?: string | null) => {
+  const m = /^Tags:\s*(.+)$/m.exec(description || '');
+  return m ? m[1].split(',').map((t) => t.trim()).filter(Boolean) : [];
+};
+
+function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
+  const [val, setVal] = useState('');
+  const ref = useRef<HTMLInputElement>(null);
+  const add = (v: string) => {
+    const t = v.trim().toLowerCase().replace(/\s+/g, '-');
+    if (t && !tags.includes(t) && tags.length < 10) onChange([...tags, t]);
+    setVal('');
   };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
-      addTag(inputVal);
-    } else if (e.key === 'Backspace' && !inputVal && tags.length > 0) {
-      onChange(tags.slice(0, -1));
-    }
+      add(val);
+    } else if (e.key === 'Backspace' && !val && tags.length) onChange(tags.slice(0, -1));
   };
-
-  const removeTag = (tag: string) => {
-    onChange(tags.filter((t) => t !== tag));
-  };
-
   return (
     <div
-      className="min-h-[42px] flex flex-wrap gap-1.5 items-center border border-border bg-secondary rounded-xl px-3 py-2 cursor-text focus-within:border-primary transition-colors"
-      onClick={() => inputRef.current?.focus()}
+      className="flex min-h-11 cursor-text flex-wrap items-center gap-1.5 rounded-control border border-input bg-card px-3 py-2 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/40"
+      onClick={() => ref.current?.focus()}
     >
-      {tags.map((tag) => (
-        <span
-          key={tag}
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-medium"
-        >
-          <Tag className="h-2.5 w-2.5" />
-          {tag}
+      {tags.map((t) => (
+        <span key={t} className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-caption font-medium text-brand-soft-foreground">
+          {t}
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
-            className="ml-0.5 text-primary/60 hover:text-primary cursor-pointer"
+            aria-label={`Remove ${t}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange(tags.filter((x) => x !== t));
+            }}
           >
-            <X className="h-3 w-3" />
+            <X className="size-3" />
           </button>
         </span>
       ))}
       <input
-        ref={inputRef}
-        value={inputVal}
-        onChange={(e) => setInputVal(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onBlur={() => { if (inputVal.trim()) addTag(inputVal); }}
-        placeholder={tags.length === 0 ? 'Type a tag and press Enter or comma...' : ''}
-        className="flex-1 min-w-[140px] bg-transparent text-foreground text-sm outline-none placeholder:text-muted-foreground"
+        id="offer-tags"
+        ref={ref}
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onKeyDown={onKey}
+        onBlur={() => val.trim() && add(val)}
+        placeholder={tags.length ? '' : 'Type and press Enter'}
+        className="min-w-[8rem] flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
       />
     </div>
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+type Form = {
+  title: string;
+  discountType: 'PERCENT' | 'AMOUNT';
+  discount: string;
+  discountAmount: string;
+  active: boolean;
+  tags: string[];
+  startsAt: string;
+  expiresAt: string;
+  cities: string[];
+  fulfilment: Fulfilment;
+};
+
+const EMPTY: Form = { title: '', discountType: 'PERCENT', discount: '', discountAmount: '', active: true, tags: [], startsAt: '', expiresAt: '', cities: [], fulfilment: 'BOTH' };
+
+const label = 'mb-1.5 block text-sm font-medium';
+
 export default function OffersPage() {
   const { user } = useAuth();
-  const { isFood } = useOwnerBusiness();
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [loading, setLoading] = useState(true);
-
+  const { business, isFood } = useOwnerBusiness();
+  const confirm = useConfirm();
   const businessId = user?.businessId || user?.entity?.id;
 
-  const fetchOffers = async () => {
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [stats, setStats] = useState<Record<string, OfferStat>>({});
+  const [loading, setLoading] = useState(true);
+  const [bucket, setBucket] = useState<Bucket>('current');
+  const [editor, setEditor] = useState<{ mode: 'create' | 'edit'; id?: string } | null>(null);
+  const [form, setForm] = useState<Form>(EMPTY);
+  const [saving, setSaving] = useState(false);
+  const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
+
+  const fetchOffers = useCallback(async () => {
     if (!businessId) return;
     setLoading(true);
-    // Use authenticated route — passes JWT tenantId so resolution is accurate
-    const res = await apiService.get<any>(`/v1/offers/my/${businessId}`);
+    const [res, st] = await Promise.all([
+      apiService.get<any>(`/v1/offers/my/${businessId}`),
+      apiService.get<any>(`/v1/analytics/v2/business/${businessId}/offers?days=30`),
+    ]);
     if (res.data && !res.error) {
       const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.items ?? [];
       setOffers(
@@ -136,635 +169,347 @@ export default function OffersPage() {
           discount: o.discountPercent ?? o.discount ?? 0,
           discountAmount: o.discountAmount != null ? Number(o.discountAmount) : 0,
           active: o.status === 'ACTIVE',
-          views: o.views ?? 0,
-          clicks: o.clickCount ?? o.clicks ?? 0,
-          tags: Array.isArray(o.tags) ? o.tags : [],
+          tags: Array.isArray(o.tags) ? o.tags : parseTags(o.description),
           targetCities: Array.isArray(o.targetCities) ? o.targetCities : [],
           startsAt: o.startDate || o.startsAt || undefined,
           expiresAt: o.endDate || o.expiresAt || undefined,
           fulfilment: o.fulfilment === 'DINE_IN' || o.fulfilment === 'TAKEAWAY' ? o.fulfilment : 'BOTH',
+          claimsTotal: Number(o.currentRedemptions ?? 0),
+          maxRedemptions: o.maxRedemptions ?? null,
         })),
       );
     }
+    const rows = Array.isArray(st.data?.offers) ? st.data.offers : [];
+    setStats(Object.fromEntries(rows.map((r: any) => [r.id, { viewers: r.viewers ?? 0, claims: r.claims ?? 0, conversion: r.conversion ?? null }])));
     setLoading(false);
-  };
+  }, [businessId]);
 
   useEffect(() => {
     fetchOffers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businessId]);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
-  const [deletingOffer, setDeletingOffer] = useState<Offer | null>(null);
-  const [viewingOffer, setViewingOffer] = useState<Offer | null>(null);
-  const [saving, setSaving] = useState(false);
+  }, [fetchOffers]);
 
-  // Form states
-  const [title, setTitle] = useState('');
-  const [discount, setDiscount] = useState(0);
-  const [discountType, setDiscountType] = useState<'PERCENT' | 'AMOUNT'>('PERCENT');
-  const [discountAmount, setDiscountAmount] = useState(0);
-  const [active, setActive] = useState(true);
-  const [formTags, setFormTags] = useState<string[]>([]);
-  const [formStartsAt, setFormStartsAt] = useState('');
-  const [formExpiresAt, setFormExpiresAt] = useState('');
-  const [formCities, setFormCities] = useState<string[]>([]);
-  const [formFulfilment, setFormFulfilment] = useState<Fulfilment>('BOTH');
+  const counts = useMemo(() => {
+    const c = { current: 0, live: 0, scheduled: 0, paused: 0, ended: 0 };
+    for (const o of offers) {
+      const b = bucketOf(o);
+      c[b]++;
+      if (b !== 'ended') c.current++;
+    }
+    return c;
+  }, [offers]);
 
-  const toggleCity = (c: string) =>
-    setFormCities((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
+  const visible = offers.filter((o) => {
+    const b = bucketOf(o);
+    return bucket === 'current' ? b !== 'ended' : b === bucket;
+  });
 
-  const resetForm = () => {
-    setTitle(''); setDiscount(0); setDiscountType('PERCENT'); setDiscountAmount(0); setActive(true);
-    setFormTags([]); setFormStartsAt(''); setFormExpiresAt(''); setFormCities([]); setFormFulfilment('BOTH');
+  const openCreate = () => {
+    setForm(EMPTY);
+    setEditor({ mode: 'create' });
   };
 
-  // Food businesses only: whether the offer applies to dine-in, takeaway or both.
-  const FulfilmentField = () =>
-    isFood ? (
-      <div>
-        <label className="text-sm font-medium text-muted-foreground block mb-2">Available for</label>
-        <div className="grid grid-cols-3 gap-1 rounded-xl border border-input bg-background p-1">
-          {FULFILMENT_OPTIONS.map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={formFulfilment === value}
-              onClick={() => setFormFulfilment(value)}
-              className={`ui-press flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium cursor-pointer transition-colors ${
-                formFulfilment === value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0" />
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-    ) : null;
-
-  // A reusable discount-type selector + value input for the create/edit modals.
-  const DiscountField = () => (
-    <div>
-      <label className="text-sm font-medium text-muted-foreground block mb-2">Discount</label>
-      <div className="flex gap-2">
-        <div className="flex rounded-xl border border-input overflow-hidden shrink-0">
-          <button type="button" onClick={() => setDiscountType('PERCENT')} className={`h-11 px-3 flex items-center text-sm font-semibold cursor-pointer ${discountType === 'PERCENT' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground'}`}>%</button>
-          <button type="button" onClick={() => setDiscountType('AMOUNT')} className={`h-11 px-3 flex items-center text-sm font-semibold cursor-pointer ${discountType === 'AMOUNT' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground'}`}>₹</button>
-        </div>
-        {discountType === 'PERCENT' ? (
-          <Input key="pct" type="number" min="1" max="100" value={discount || ''} onChange={(e) => setDiscount(Number(e.target.value))} placeholder="e.g. 20" className="rounded-xl border-input bg-background focus:border-primary text-foreground" />
-        ) : (
-          <Input key="amt" type="number" min="1" value={discountAmount || ''} onChange={(e) => setDiscountAmount(Number(e.target.value))} placeholder="e.g. 500" className="rounded-xl border-input bg-background focus:border-primary text-foreground" />
-        )}
-      </div>
-      <p className="text-xs text-muted-foreground mt-1">{discountType === 'PERCENT' ? 'Percentage off the bill.' : 'Flat amount (₹) off the bill.'}</p>
-    </div>
-  );
-
-  const handleOpenCreate = () => {
-    resetForm();
-    setIsCreateOpen(true);
+  const openEdit = (o: Offer, duplicate = false) => {
+    const amount = o.discountAmount > 0 && !(o.discount > 0);
+    setForm({
+      title: duplicate ? `${o.title} (copy)` : o.title,
+      discountType: amount ? 'AMOUNT' : 'PERCENT',
+      discount: o.discount ? String(o.discount) : '',
+      discountAmount: o.discountAmount ? String(o.discountAmount) : '',
+      active: duplicate ? true : o.active,
+      tags: [...o.tags],
+      startsAt: duplicate ? '' : dateOnly(o.startsAt),
+      expiresAt: duplicate ? '' : dateOnly(o.expiresAt),
+      cities: [...o.targetCities],
+      fulfilment: o.fulfilment,
+    });
+    setEditor(duplicate ? { mode: 'create' } : { mode: 'edit', id: o.id });
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !businessId) return;
+  const save = async () => {
+    if (!businessId || !editor) return;
+    const pct = Number(form.discount);
+    const amt = Number(form.discountAmount);
+    if (!form.title.trim()) return toast.error('Give the offer a title.');
+    if (form.discountType === 'PERCENT' && !(pct >= 1 && pct <= 100)) return toast.error('Enter a discount between 1% and 100%.');
+    if (form.discountType === 'AMOUNT' && !(amt >= 1)) return toast.error('Enter the amount off in ₹.');
+    if (form.startsAt && form.expiresAt && form.expiresAt < form.startsAt) return toast.error('The end date is before the start date.');
+
+    const body: Record<string, unknown> = {
+      title: form.title.trim(),
+      description: form.tags.length ? `Tags: ${form.tags.join(', ')}` : '',
+      discountPercent: form.discountType === 'PERCENT' ? pct : null,
+      discountAmount: form.discountType === 'AMOUNT' ? amt : null,
+      status: form.active ? 'ACTIVE' : 'PAUSED',
+      targetCities: form.cities,
+      ...(isFood ? { fulfilment: form.fulfilment } : {}),
+    };
     setSaving(true);
-    try {
-      const now = new Date().toISOString();
-      const defaultEnd = new Date(Date.now() + 30 * 86_400_000).toISOString();
-      // NOTE: Offer schema has no `tags` field — store them in description for now.
-      const desc = formTags.length > 0 ? `Tags: ${formTags.join(', ')}` : '';
-      const res = await apiService.post<any>('/v1/offers', {
+    let res;
+    if (editor.mode === 'create') {
+      res = await apiService.post<any>('/v1/offers', {
+        ...body,
         businessId,
-        title,
-        description: desc,
-        discountPercent: discountType === 'PERCENT' ? Number(discount) : null,
-        discountAmount: discountType === 'AMOUNT' ? Number(discountAmount) : null,
-        status: active ? 'ACTIVE' : 'PAUSED',
-        startDate: formStartsAt ? new Date(formStartsAt).toISOString() : now,
-        endDate: formExpiresAt ? new Date(formExpiresAt).toISOString() : defaultEnd,
-        targetCities: formCities,
-        ...(isFood ? { fulfilment: formFulfilment } : {}),
+        startDate: form.startsAt ? new Date(form.startsAt).toISOString() : new Date().toISOString(),
+        endDate: form.expiresAt ? new Date(form.expiresAt).toISOString() : new Date(Date.now() + 30 * 86_400_000).toISOString(),
       });
-      if (res.data && !res.error) {
-        // Refetch to get fresh list with whatever the DB returned
-        await fetchOffers();
-        setIsCreateOpen(false);
-        resetForm();
-      } else if (res.error) {
-        toast.error(`Failed to create offer: ${res.error}`);
-      }
-    } finally {
-      setSaving(false);
+    } else {
+      if (form.startsAt) body.startDate = new Date(form.startsAt).toISOString();
+      if (form.expiresAt) body.endDate = new Date(form.expiresAt).toISOString();
+      res = await apiService.patch<any>(`/v1/offers/${editor.id}`, body);
     }
+    setSaving(false);
+    if (res.error) return toast.error(res.error);
+    toast.success(editor.mode === 'create' ? 'Offer published' : 'Offer updated');
+    setEditor(null);
+    fetchOffers();
   };
 
-  const handleOpenEdit = (offer: Offer) => {
-    setEditingOffer(offer);
-    setTitle(offer.title);
-    setDiscount(offer.discount);
-    if (offer.discountAmount && !offer.discount) { setDiscountType('AMOUNT'); setDiscountAmount(offer.discountAmount); }
-    else { setDiscountType('PERCENT'); setDiscountAmount(offer.discountAmount || 0); }
-    setActive(offer.active);
-    setFormTags([...offer.tags]);
-    setFormStartsAt(offer.startsAt || '');
-    setFormExpiresAt(offer.expiresAt || '');
-    setFormCities([...(offer.targetCities || [])]);
-    setFormFulfilment(offer.fulfilment || 'BOTH');
+  const toggleActive = async (o: Offer) => {
+    const next = !o.active;
+    setOffers((list) => list.map((x) => (x.id === o.id ? { ...x, active: next } : x)));
+    const res = await apiService.patch(`/v1/offers/${o.id}`, { status: next ? 'ACTIVE' : 'PAUSED' });
+    if (res.error) {
+      setOffers((list) => list.map((x) => (x.id === o.id ? { ...x, active: o.active } : x)));
+      toast.error(res.error);
+    } else toast.success(next ? 'Offer is live again' : 'Offer paused');
   };
 
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !editingOffer) return;
-    setSaving(true);
-    try {
-      const desc = formTags.length > 0 ? `Tags: ${formTags.join(', ')}` : '';
-      const body: Record<string, unknown> = {
-        title,
-        description: desc,
-        discountPercent: discountType === 'PERCENT' ? Number(discount) : null,
-        discountAmount: discountType === 'AMOUNT' ? Number(discountAmount) : null,
-        status: active ? 'ACTIVE' : 'PAUSED',
-        targetCities: formCities,
-      };
-      if (isFood) body.fulfilment = formFulfilment;
-      if (formStartsAt) body.startDate = new Date(formStartsAt).toISOString();
-      if (formExpiresAt) body.endDate = new Date(formExpiresAt).toISOString();
-      const res = await apiService.patch<any>(`/v1/offers/${editingOffer.id}`, body);
-      if (!res.error) {
-        setOffers(offers.map((o) =>
-          o.id === editingOffer.id
-            ? { ...o, title, discount: Number(discount), active, tags: formTags,
-                targetCities: formCities,
-                ...(isFood ? { fulfilment: formFulfilment } : {}),
-                startsAt: formStartsAt || undefined, expiresAt: formExpiresAt || undefined }
-            : o,
-        ));
-        setEditingOffer(null);
-      } else {
-        toast.error(`Failed to update offer: ${res.error}`);
-      }
-    } finally {
-      setSaving(false);
-    }
+  const remove = async (o: Offer) => {
+    const ok = await confirm({ title: `Delete “${o.title}”?`, description: 'Customers who already claimed it keep their code. This cannot be undone.', confirmLabel: 'Delete', tone: 'danger' });
+    if (!ok) return;
+    const res = await apiService.delete(`/v1/offers/${o.id}`);
+    if (res.error) return toast.error(res.error);
+    setOffers((list) => list.filter((x) => x.id !== o.id));
+    toast.success('Offer deleted');
   };
 
-  // Auto-filter: hide expired offers from active view
-  const activeOffers = offers.filter((o) => !isExpired(o));
-  const expiredOffers = offers.filter(isExpired);
-
-  const handleDelete = async () => {
-    if (!deletingOffer) return;
-    setSaving(true);
-    try {
-      const res = await apiService.delete(`/v1/offers/${deletingOffer.id}`);
-      if (!res.error) {
-        setOffers(offers.filter((o) => o.id !== deletingOffer.id));
-        setDeletingOffer(null);
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const toggleActive = async (id: string) => {
-    const offer = offers.find((o) => o.id === id);
-    if (!offer) return;
-    const newStatus = offer.active ? 'PAUSED' : 'ACTIVE';
-    // Optimistic update
-    setOffers(offers.map((o) => (o.id === id ? { ...o, active: !o.active } : o)));
-    try {
-      await apiService.patch(`/v1/offers/${id}`, { status: newStatus });
-    } catch {
-      // Revert on error
-      setOffers(offers.map((o) => (o.id === id ? { ...o, active: offer.active } : o)));
-    }
-  };
+  // What customers will see, rendered with the real public coupon.
+  const preview = mapApiOffer({
+    id: 'preview',
+    title: form.title || 'Your offer title',
+    description: '',
+    discountPercent: form.discountType === 'PERCENT' ? Number(form.discount) || 0 : null,
+    discountAmount: form.discountType === 'AMOUNT' ? Number(form.discountAmount) || 0 : null,
+    endDate: form.expiresAt ? new Date(`${form.expiresAt}T23:59:59+05:30`).toISOString() : new Date(Date.now() + 30 * 86_400_000).toISOString(),
+    fulfilment: isFood ? form.fulfilment : 'BOTH',
+    business: { name: business?.name || 'Your business', city: business?.city ?? null, operatingHours: business?.operatingHours ?? undefined },
+  });
 
   return (
     <BusinessLayout>
-      <div className="space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Promotional Offers</h1>
-            <p className="text-muted-foreground">
-              Manage active deals, discount campaigns, and coupons
-            </p>
-          </div>
-          <Button
-            onClick={handleOpenCreate}
-            className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground cursor-pointer shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            Create Offer
+      <PageHeader
+        title="Offers"
+        description="Deals customers claim from your profile and the Offers page. Stats cover the last 30 days."
+        actions={
+          <Button onClick={openCreate}>
+            <Plus /> New offer
           </Button>
-        </div>
+        }
+      />
 
-        {loading ? (
-          <div className="flex items-center justify-center h-40">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : activeOffers.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
-            <Tag className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
-            <p className="text-foreground font-semibold mb-1">No active offers</p>
-            <p className="text-sm text-muted-foreground">Create your first promotional offer to attract customers.</p>
-          </Card>
-        ) : null}
+      <ChipRow label="Status" className="mb-4">
+        {(
+          [
+            ['current', 'All current'],
+            ['live', 'Live'],
+            ['scheduled', 'Scheduled'],
+            ['paused', 'Paused'],
+            ['ended', 'Ended'],
+          ] as const
+        ).map(([k, l]) => (
+          <FilterChip key={k} selected={bucket === k} count={counts[k] || undefined} onClick={() => setBucket(k)}>
+            {l}
+          </FilterChip>
+        ))}
+      </ChipRow>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {activeOffers.map((offer, i) => (
-            <Card
-              key={offer.id}
-              className="p-6 rounded-2xl transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden group ui-fade-up"
-              style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <h3 className="font-semibold text-foreground text-lg truncate">{offer.title}</h3>
+      {loading ? (
+        <PromoGridSkeleton />
+      ) : visible.length === 0 ? (
+        <EmptyState
+          icon={TicketPercent}
+          title={offers.length ? 'Nothing in this view' : 'No offers yet'}
+          description={offers.length ? 'Try another status.' : 'Publish your first offer — it shows on your profile and the Offers page.'}
+          action={offers.length ? undefined : { label: 'New offer', onClick: openCreate }}
+        />
+      ) : (
+        <PromoGrid>
+          {visible.map((o) => {
+            const b = bucketOf(o);
+            const st = stats[o.id];
+            const chips: { label: string; tone?: 'info' | 'warning' | 'neutral' }[] = [];
+            if (b === 'scheduled' && o.startsAt) chips.push({ label: `Starts ${fmtDay(o.startsAt)}`, tone: 'info' });
+            if (b !== 'ended' && o.expiresAt) {
+              const days = Math.ceil((new Date(o.expiresAt).getTime() - Date.now()) / 86_400_000);
+              chips.push({ label: days <= 3 ? `Ends in ${Math.max(days, 0)}d` : `Ends ${fmtDay(o.expiresAt)}`, tone: days <= 3 ? 'warning' : 'neutral' });
+            }
+            if (o.fulfilment !== 'BOTH') chips.push({ label: o.fulfilment === 'DINE_IN' ? 'Dine-in' : 'Takeaway' });
+            if (o.targetCities.length) chips.push({ label: o.targetCities.length === 1 ? o.targetCities[0] : `${o.targetCities.length} cities` });
+            return (
+              <PromoCard
+                key={o.id}
+                icon={Tag}
+                value={valueLabel(o)}
+                valueCaption="off"
+                title={o.title}
+                subtitle={o.tags.length ? o.tags.map((t) => `#${t}`).join(' ') : undefined}
+                status={BUCKET_PILL[b]}
+                chips={chips}
+                muted={b === 'ended'}
+                onOpen={() => openEdit(o)}
+                stats={[
+                  { label: 'Viewers', value: st?.viewers ?? 0, hint: 'People who opened this offer in the last 30 days' },
+                  { label: 'Claims', value: st?.claims ?? 0, hint: 'Claims in the last 30 days' },
+                  { label: 'Conversion', value: st?.conversion != null ? `${st.conversion}%` : '—', hint: 'Claims ÷ viewers' },
+                ]}
+                primary={
+                  b !== 'ended' ? (
+                    <Button size="sm" variant="outline" onClick={() => toggleActive(o)}>
+                      {o.active ? <Pause /> : <Play />}
+                      {o.active ? 'Pause' : 'Resume'}
+                    </Button>
+                  ) : undefined
+                }
+                menu={[
+                  { label: 'Edit', icon: Pencil, onClick: () => openEdit(o) },
+                  { label: 'Duplicate', icon: Copy, onClick: () => openEdit(o, true) },
+                  { label: 'View public page', icon: Eye, onClick: () => window.open('/offers', '_blank', 'noopener') },
+                  { label: 'Delete', icon: Trash2, onClick: () => remove(o), danger: true },
+                ]}
+              />
+            );
+          })}
+        </PromoGrid>
+      )}
+
+      <Modal
+        open={!!editor}
+        onOpenChange={(o) => !o && setEditor(null)}
+        title={editor?.mode === 'edit' ? 'Edit offer' : 'New offer'}
+        description="The preview shows exactly what customers see."
+        size="xl"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditor(null)}>
+              Cancel
+            </Button>
+            <Button loading={saving} onClick={save}>
+              {editor?.mode === 'edit' ? 'Save changes' : form.active ? 'Publish offer' : 'Save as paused'}
+            </Button>
+          </>
+        }
+      >
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_18rem]">
+          <form
+            className="space-y-5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              save();
+            }}
+          >
+            <div>
+              <label htmlFor="offer-title" className={label}>
+                Title
+              </label>
+              <Input id="offer-title" value={form.title} maxLength={255} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Weekday lunch special" />
+            </div>
+
+            <div>
+              <span className={label} id="offer-discount-label">
+                Discount
+              </span>
+              <div className="flex gap-2" role="group" aria-labelledby="offer-discount-label">
+                <div className="flex shrink-0 overflow-hidden rounded-control border border-input" role="radiogroup" aria-label="Discount type">
+                  {(['PERCENT', 'AMOUNT'] as const).map((t) => (
                     <button
-                      onClick={() => toggleActive(offer.id)}
-                      className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold hover:opacity-85 transition-opacity cursor-pointer ${
-                        offer.active
-                          ? 'bg-success/10 text-success border border-success/20'
-                          : 'bg-secondary text-muted-foreground border border-border'
-                      }`}
+                      key={t}
+                      type="button"
+                      role="radio"
+                      aria-checked={form.discountType === t}
+                      onClick={() => set('discountType', t)}
+                      className={cn('h-11 w-11 text-sm font-semibold transition-colors', form.discountType === t ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-secondary')}
                     >
-                      {offer.active ? 'Active' : 'Inactive'}
+                      {t === 'PERCENT' ? '%' : '₹'}
                     </button>
-                    {(offer.fulfilment === 'DINE_IN' || offer.fulfilment === 'TAKEAWAY') && (
-                      <span className="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold bg-secondary text-muted-foreground border border-border flex items-center gap-1">
-                        {offer.fulfilment === 'DINE_IN'
-                          ? <UtensilsCrossed className="h-2.5 w-2.5" />
-                          : <ShoppingBag className="h-2.5 w-2.5" />}
-                        {offer.fulfilment === 'DINE_IN' ? 'Dine-in' : 'Takeaway'}
-                      </span>
-                    )}
-                    {isScheduled(offer) && (
-                      <span className="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold bg-info/10 text-info border border-info/20 flex items-center gap-1">
-                        <Clock className="h-2.5 w-2.5" />Scheduled
-                      </span>
-                    )}
-                    {offer.expiresAt && !isExpired(offer) && (
-                      <span className="shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold bg-warning/10 text-warning border border-warning/20 flex items-center gap-1">
-                        <Calendar className="h-2.5 w-2.5" />Expires {offer.expiresAt}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Tags */}
-                  {offer.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {offer.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary border border-border text-xs text-muted-foreground"
-                        >
-                          <Tag className="h-2.5 w-2.5" />
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-6 text-sm">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Discount</p>
-                      <p className="font-bold text-foreground text-base">{offer.discount}%</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Views</p>
-                      <p className="font-bold text-foreground text-base">{offer.views}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Clicks</p>
-                      <p className="font-bold text-foreground text-base">{offer.clicks}</p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-                <div className="flex gap-2 shrink-0 ml-3">
-                  <Button
-                    onClick={() => setViewingOffer(offer)}
-                    size="icon"
-                    variant="outline"
-                    className="rounded-xl border-border hover:bg-secondary text-foreground h-10 w-10 cursor-pointer"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => handleOpenEdit(offer)}
-                    size="icon"
-                    variant="outline"
-                    className="rounded-xl border-border hover:bg-secondary text-foreground h-10 w-10 cursor-pointer"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => setDeletingOffer(offer)}
-                    size="icon"
-                    variant="outline"
-                    className="rounded-xl border-border hover:bg-destructive/10 text-destructive hover:text-destructive border-destructive/20 h-10 w-10 cursor-pointer"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                {form.discountType === 'PERCENT' ? (
+                  <Input key="pct" type="number" inputMode="numeric" min={1} max={100} aria-label="Percent off" value={form.discount} onChange={(e) => set('discount', e.target.value)} placeholder="20" />
+                ) : (
+                  <Input key="amt" type="number" inputMode="numeric" min={1} aria-label="Rupees off" value={form.discountAmount} onChange={(e) => set('discountAmount', e.target.value)} placeholder="500" />
+                )}
               </div>
-            </Card>
-          ))}
+            </div>
+
+            {isFood && (
+              <div>
+                <span className={label}>Available for</span>
+                <ChipRow label="Available for" wrap>
+                  {FULFILMENT_OPTIONS.map(({ value, label: l, icon }) => (
+                    <FilterChip key={value} icon={icon} selected={form.fulfilment === value} onClick={() => set('fulfilment', value)}>
+                      {l}
+                    </FilterChip>
+                  ))}
+                </ChipRow>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="offer-start" className={label}>
+                  Starts
+                </label>
+                <Input id="offer-start" type="date" value={form.startsAt} min={editor?.mode === 'create' ? todayKey() : undefined} onChange={(e) => set('startsAt', e.target.value)} />
+              </div>
+              <div>
+                <label htmlFor="offer-end" className={label}>
+                  Ends
+                </label>
+                <Input id="offer-end" type="date" value={form.expiresAt} min={form.startsAt || todayKey()} onChange={(e) => set('expiresAt', e.target.value)} />
+              </div>
+              <p className="col-span-2 -mt-1 text-caption text-muted-foreground">Leave empty to start today and run for 30 days.</p>
+            </div>
+
+            <div>
+              <span className={label}>
+                Show in cities <span className="font-normal text-muted-foreground">(none = everywhere)</span>
+              </span>
+              <div className="max-h-32 overflow-y-auto rounded-control border border-border p-2">
+                <ChipRow label="Cities" wrap>
+                  {KERALA_CITIES.map((c) => (
+                    <FilterChip key={c} selected={form.cities.includes(c)} onClick={() => set('cities', form.cities.includes(c) ? form.cities.filter((x) => x !== c) : [...form.cities, c])}>
+                      {c}
+                    </FilterChip>
+                  ))}
+                </ChipRow>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="offer-tags" className={label}>
+                Tags <span className="font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <TagInput tags={form.tags} onChange={(t) => set('tags', t)} />
+            </div>
+
+            <label className="flex items-center justify-between gap-3 rounded-control border border-border p-3">
+              <span>
+                <span className="block text-sm font-medium">Live</span>
+                <span className="block text-caption text-muted-foreground">Turn off to keep it as a paused draft.</span>
+              </span>
+              <Switch checked={form.active} onCheckedChange={(v) => set('active', v)} />
+            </label>
+            <button type="submit" hidden />
+          </form>
+
+          <aside className="md:sticky md:top-0 md:self-start" aria-label="Customer preview">
+            <p className="mb-2 text-overline text-muted-foreground">Customer preview</p>
+            <div className="pointer-events-none select-none" aria-hidden>
+              <OfferCoupon offer={preview} claimed={false} justClaimed={false} onView={() => {}} onClaim={() => {}} />
+            </div>
+          </aside>
         </div>
-
-        {/* ── CREATE MODAL ─────────────────────────────────────────── */}
-        {isCreateOpen && (
-          <ModalSurface onClose={() => setIsCreateOpen(false)} label="Create Promotional Offer" className="sm:max-w-md">
-              <h3 className="text-xl font-bold text-foreground mb-4">Create Promotional Offer</h3>
-              <form onSubmit={handleCreate} className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Offer Title
-                  </label>
-                  <Input
-                    placeholder="e.g. Summer Special"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                  />
-                </div>
-                {DiscountField()}
-                {FulfilmentField()}
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Tags
-                    <span className="ml-1 text-xs text-muted-foreground font-normal">(type & press Enter or comma to add)</span>
-                  </label>
-                  <TagInput tags={formTags} onChange={setFormTags} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground block mb-2">Starts On</label>
-                    <Input
-                      type="date"
-                      value={formStartsAt}
-                      onChange={(e) => setFormStartsAt(e.target.value)}
-                      min={today}
-                      className="rounded-xl border-input bg-background text-foreground text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground block mb-2">Expires On</label>
-                    <Input
-                      type="date"
-                      value={formExpiresAt}
-                      onChange={(e) => setFormExpiresAt(e.target.value)}
-                      min={formStartsAt || today}
-                      className="rounded-xl border-input bg-background text-foreground text-sm"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Show in cities <span className="text-xs font-normal">(none = all cities)</span>
-                  </label>
-                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                    {KERALA_CITIES.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => toggleCity(c)}
-                        className={`px-2 py-1 rounded-lg text-xs border cursor-pointer ${
-                          formCities.includes(c)
-                            ? 'bg-primary/20 border-primary text-primary'
-                            : 'bg-background border-input text-muted-foreground'
-                        }`}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 pt-2">
-                  <input
-                    type="checkbox"
-                    id="active-chk"
-                    checked={active}
-                    onChange={(e) => setActive(e.target.checked)}
-                    className="rounded bg-background border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer"
-                  />
-                  <label htmlFor="active-chk" className="text-sm text-muted-foreground cursor-pointer">
-                    Set active immediately
-                  </label>
-                </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsCreateOpen(false)}
-                    className="rounded-xl border-border hover:bg-muted text-foreground cursor-pointer"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={saving}
-                    className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
-                  >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Offer'}
-                  </Button>
-                </div>
-              </form>
-          </ModalSurface>
-        )}
-
-        {/* ── EDIT MODAL ───────────────────────────────────────────── */}
-        {editingOffer && (
-          <ModalSurface onClose={() => setEditingOffer(null)} label="Edit Offer Details" className="sm:max-w-md">
-              <h3 className="text-xl font-bold text-foreground mb-4">Edit Offer Details</h3>
-              <form onSubmit={handleEdit} className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Offer Title
-                  </label>
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                  />
-                </div>
-                {DiscountField()}
-                {FulfilmentField()}
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Tags
-                    <span className="ml-1 text-xs text-muted-foreground font-normal">(type & press Enter or comma)</span>
-                  </label>
-                  <TagInput tags={formTags} onChange={setFormTags} />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground block mb-2">Starts On</label>
-                    <Input type="date" value={formStartsAt} onChange={(e) => setFormStartsAt(e.target.value)} className="rounded-xl border-input bg-background text-foreground text-sm" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground block mb-2">Expires On</label>
-                    <Input type="date" value={formExpiresAt} onChange={(e) => setFormExpiresAt(e.target.value)} min={formStartsAt || today} className="rounded-xl border-input bg-background text-foreground text-sm" />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Show in cities <span className="text-xs font-normal">(none = all cities)</span>
-                  </label>
-                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                    {KERALA_CITIES.map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => toggleCity(c)}
-                        className={`px-2 py-1 rounded-lg text-xs border cursor-pointer ${
-                          formCities.includes(c)
-                            ? 'bg-primary/20 border-primary text-primary'
-                            : 'bg-background border-input text-muted-foreground'
-                        }`}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 pt-2">
-                  <input
-                    type="checkbox"
-                    id="edit-active-chk"
-                    checked={active}
-                    onChange={(e) => setActive(e.target.checked)}
-                    className="rounded bg-background border-input text-primary focus:ring-primary h-4 w-4 cursor-pointer"
-                  />
-                  <label htmlFor="edit-active-chk" className="text-sm text-muted-foreground cursor-pointer">
-                    Active status
-                  </label>
-                </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setEditingOffer(null)}
-                    className="rounded-xl border-border hover:bg-muted text-foreground cursor-pointer"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={saving}
-                    className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
-                  >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
-                  </Button>
-                </div>
-              </form>
-          </ModalSurface>
-        )}
-
-        {/* ── DELETE MODAL ─────────────────────────────────────────── */}
-        {deletingOffer && (
-          <ModalSurface onClose={() => setDeletingOffer(null)} label="Delete Promotional Offer" className="sm:max-w-sm text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Delete Promotional Offer</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                Are you sure you want to delete{' '}
-                <span className="font-semibold text-foreground">"{deletingOffer.title}"</span>? This
-                action is permanent.
-              </p>
-              <div className="flex justify-center gap-3">
-                <Button
-                  onClick={() => setDeletingOffer(null)}
-                  variant="outline"
-                  className="rounded-xl border-border hover:bg-muted text-foreground px-4 cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleDelete}
-                  disabled={saving}
-                  className="rounded-xl bg-destructive hover:bg-destructive text-white px-4 cursor-pointer"
-                >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
-                </Button>
-              </div>
-          </ModalSurface>
-        )}
-
-        {/* ── DETAIL/VIEW MODAL ────────────────────────────────────── */}
-        {viewingOffer && (
-          <ModalSurface onClose={() => setViewingOffer(null)} label="Offer details" className="sm:max-w-md">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-primary/10 text-primary rounded-xl">
-                  <Tag className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-foreground">{viewingOffer.title}</h3>
-                  <span
-                    className={`inline-block px-2 py-0.5 mt-1 rounded-full text-xs font-semibold ${
-                      viewingOffer.active
-                        ? 'bg-success/10 text-success border border-success/20'
-                        : 'bg-secondary/40 text-muted-foreground border border-border'
-                    }`}
-                  >
-                    {viewingOffer.active ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Tags section */}
-              {viewingOffer.tags.length > 0 && (
-                <div className="mb-5">
-                  <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Tags</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {viewingOffer.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium"
-                      >
-                        <Tag className="h-2.5 w-2.5" />
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-secondary/50 p-4 rounded-xl text-center border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Discount</p>
-                  <p className="text-2xl font-extrabold text-foreground">
-                    {viewingOffer.discount}%
-                  </p>
-                </div>
-                <div className="bg-secondary/50 p-4 rounded-xl text-center border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Total Views</p>
-                  <p className="text-2xl font-extrabold text-foreground">{viewingOffer.views}</p>
-                </div>
-                <div className="bg-secondary/50 p-4 rounded-xl text-center border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Total Clicks</p>
-                  <p className="text-2xl font-extrabold text-foreground">{viewingOffer.clicks}</p>
-                </div>
-              </div>
-              <div className="flex justify-end pt-2">
-                <Button
-                  onClick={() => setViewingOffer(null)}
-                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
-                >
-                  Close
-                </Button>
-              </div>
-          </ModalSurface>
-        )}
-      </div>
+      </Modal>
     </BusinessLayout>
   );
 }
