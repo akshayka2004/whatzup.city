@@ -82,7 +82,7 @@ export class BusinessesService {
     const skipVal = (pageVal - 1) * limitVal;
 
     const where = isPublic 
-      ? { ...criteria, deletedAt: null }
+      ? { ...criteria, status: 'APPROVED', deletedAt: null } // public listings never show unreviewed businesses
       : { ...criteria, tenantId, deletedAt: null };
 
     const [data, total] = await Promise.all([
@@ -91,7 +91,10 @@ export class BusinessesService {
         skip: skipVal,
         take: limitVal,
         orderBy: { createdAt: 'desc' },
-        include: { category: { select: { id: true, name: true, slug: true } } },
+        include: {
+          category: { select: { id: true, name: true, slug: true } },
+          brand: { select: { id: true, name: true, slug: true } },
+        },
       }),
       this.businessRepo.model.count({ where }),
     ]);
@@ -105,6 +108,8 @@ export class BusinessesService {
         delete copy.ownerId;
         return copy;
       });
+      // Additive: live-offer count + fulfilment modes for the public cards.
+      result.data = await this.searchService.attachOfferSummary(result.data as Record<string, any>[]);
     }
 
     return result;
@@ -440,6 +445,9 @@ export class BusinessesService {
 
   async getNearby(tenantId: string, lat: number, lng: number, radiusKm = 10, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
+    lat = Number(lat);
+    lng = Number(lng);
+    radiusKm = Number(radiusKm) || 10;
     const latDelta = radiusKm / 111;
     const lngDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
 
@@ -447,6 +455,7 @@ export class BusinessesService {
       ? {
           latitude: { gte: lat - latDelta, lte: lat + latDelta },
           longitude: { gte: lng - lngDelta, lte: lng + lngDelta },
+          status: 'APPROVED',
           deletedAt: null,
         }
       : {
@@ -456,19 +465,39 @@ export class BusinessesService {
           deletedAt: null,
         };
 
-    const data = await this.businessRepo.model.findMany({
+    const rows = await this.businessRepo.model.findMany({
       where,
-      take: 50,
-      include: { category: { select: { id: true, name: true } } },
+      take: 200,
+      include: {
+        category: { select: { id: true, name: true } },
+        brand: { select: { id: true, name: true, slug: true } },
+      },
     });
 
+    // Additive: distance from the caller (km, 1 dp) and nearest-first order, so
+    // the cap keeps the closest listings instead of an arbitrary slice.
+    const toRad = (d: number) => (d * Math.PI) / 180;
+    const data = (rows as any[])
+      .map((biz: any) => {
+        const bLat = Number(biz.latitude);
+        const bLng = Number(biz.longitude);
+        const a =
+          Math.sin(toRad(bLat - lat) / 2) ** 2 +
+          Math.cos(toRad(lat)) * Math.cos(toRad(bLat)) * Math.sin(toRad(bLng - lng) / 2) ** 2;
+        const km = 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return { ...biz, distanceKm: Number.isFinite(km) ? Math.round(km * 10) / 10 : null };
+      })
+      .sort((x: any, y: any) => (x.distanceKm ?? Infinity) - (y.distanceKm ?? Infinity))
+      .slice(0, 100);
+
     if (isPublic && data) {
-      return data.map((biz: any) => {
+      const stripped = data.map((biz: any) => {
         const copy = { ...biz };
         delete copy.ownerName;
         delete copy.ownerId;
         return copy;
       });
+      return this.searchService.attachOfferSummary(stripped);
     }
     return data;
   }
@@ -512,7 +541,7 @@ export class BusinessesService {
 
     const [rows, total] = await Promise.all([
       (this.db as any).businessTag.findMany({
-        where: { tenantId, tag: { contains: normalized } },
+        where: { tenantId, tag: { contains: normalized }, business: { status: 'APPROVED', deletedAt: null } },
         include: {
           business: {
             include: { category: { select: { id: true, name: true, slug: true } } },
@@ -522,7 +551,7 @@ export class BusinessesService {
         take: limit,
       }),
       (this.db as any).businessTag.count({
-        where: { tenantId, tag: { contains: normalized } },
+        where: { tenantId, tag: { contains: normalized }, business: { status: 'APPROVED', deletedAt: null } },
       }),
     ]);
 

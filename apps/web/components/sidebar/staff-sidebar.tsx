@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { BrandLogo } from '@/components/common/brand-logo';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -50,7 +51,7 @@ export function StaffSidebar() {
     <aside className="flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <div className="px-5 py-5">
         <Link href="/staff" className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="Whtzup.city" className="h-9 w-auto object-contain" />
+          <BrandLogo alt="Whtzup.city" className="h-9 w-auto object-contain" />
           <span className="flex flex-col leading-tight">
             <span className="text-sm font-semibold tracking-tight text-foreground">Platform Staff</span>
             <span className="text-[11px] text-muted-foreground">Data entry</span>

@@ -115,7 +115,7 @@ export class OffersService {
           skip: skipVal,
           take: limitVal,
           orderBy: { endDate: 'asc' },
-          include: { business: { select: { id: true, name: true, slug: true, logo: true } } },
+          include: { business: { select: { id: true, name: true, slug: true, logo: true, city: true, operatingHours: true } } },
         }),
         this.offerRepo.model.count({ where }),
       ]);

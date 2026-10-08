@@ -49,6 +49,7 @@ import {
   Network,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useI18n } from '@/lib/i18n/provider';
 import {
   Sheet,
   SheetContent,
@@ -71,6 +72,7 @@ export function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { t, tl } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [activeRole, setActiveRole] = useState<string>('USER');
 
@@ -262,15 +264,28 @@ export function MobileNav() {
         const Icon = item.icon;
         const active = isActive(item.href);
         return (
-          <Link key={item.label} href={item.href} className="flex-1" data-tour={item.tour}>
-            <button
-              className={`w-full flex flex-col items-center justify-center gap-1 rounded-xl py-1 text-[10px] font-medium transition-all duration-150 active:scale-90 motion-reduce:active:scale-100 ${
+          <Link
+            key={item.label}
+            href={item.href}
+            className="flex-1"
+            data-tour={item.tour}
+            aria-current={active ? 'page' : undefined}
+          >
+            <span
+              className={`flex w-full flex-col items-center justify-center gap-0.5 rounded-xl py-1 text-[10px] font-medium transition-colors duration-150 active:scale-90 motion-reduce:active:scale-100 ${
                 active ? 'text-primary' : 'text-muted-foreground hover:text-foreground active:text-primary'
               }`}
             >
-              <Icon className="h-5 w-5 shrink-0" />
-              <span>{item.label}</span>
-            </button>
+              {/* Icon rides on a soft pill that grows in when the tab becomes active */}
+              <span
+                className={`flex h-7 w-12 items-center justify-center rounded-full transition-[background-color,transform] duration-300 ease-out ${
+                  active ? 'bg-primary/12 scale-100' : 'bg-transparent scale-90'
+                }`}
+              >
+                <Icon className={`h-5 w-5 shrink-0 transition-transform duration-300 ${active ? 'scale-110' : ''}`} />
+              </span>
+              <span className={active ? 'font-semibold' : ''}>{tl(item.label)}</span>
+            </span>
           </Link>
         );
       })}
@@ -284,7 +299,7 @@ export function MobileNav() {
             onClick={() => setIsOpen(true)}
           >
             <Menu className="h-5 w-5 shrink-0" />
-            <span>Menu</span>
+            <span>{t('nav.menu')}</span>
           </button>
         </SheetTrigger>
         <SheetContent
@@ -294,7 +309,7 @@ export function MobileNav() {
           <SheetHeader className="text-left pb-4 border-b border-border">
             <SheetTitle className="text-lg font-bold text-foreground tracking-tight flex items-center gap-2">
               <Menu className="h-5 w-5 text-primary" />
-              Navigation Menu
+              {t('nav.navigationMenu')}
             </SheetTitle>
             <SheetDescription className="text-xs text-muted-foreground">
               {isDashboard
@@ -319,7 +334,7 @@ export function MobileNav() {
                   className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-secondary/40 border border-border hover:bg-secondary/80 active:scale-[0.96] active:bg-secondary text-foreground transition-all duration-150 text-left text-xs font-semibold cursor-pointer h-12 motion-reduce:active:scale-100"
                 >
                   <ItemIcon className="h-4 w-4 text-primary shrink-0" />
-                  <span className="truncate">{item.label}</span>
+                  <span className="truncate">{tl(item.label)}</span>
                 </button>
               );
             })}
@@ -331,7 +346,7 @@ export function MobileNav() {
                 className="col-span-2 flex items-center gap-3 px-4 py-3 rounded-2xl bg-destructive/10 border border-destructive/20 hover:bg-destructive/20 active:scale-[0.96] transition-all duration-150 text-left text-xs font-semibold text-destructive cursor-pointer h-12 mt-2 motion-reduce:active:scale-100"
               >
                 <LogOut className="h-4 w-4 shrink-0 text-destructive" />
-                <span>Sign Out</span>
+                <span>{t('nav.signOut')}</span>
               </button>
             )}
           </div>

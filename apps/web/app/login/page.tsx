@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Suspense, useState } from 'react';
+import { BrandLogo } from '@/components/common/brand-logo';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -137,7 +138,7 @@ function LoginForm() {
               className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide"
               style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${C.border}`, color: C.para }}
             >
-              <img src="/logo.png" alt="Whtzup.city" className="h-5 w-auto object-contain" />
+              <BrandLogo alt="Whtzup.city" className="h-5 w-auto object-contain" />
               <span className="tracking-tight" style={{ color: C.heading }}>whtzup.city</span>
             </div>
 

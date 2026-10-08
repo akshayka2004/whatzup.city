@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BrandLogo } from '@/components/common/brand-logo';
 
 export function LegalFooter() {
   const year = new Date().getFullYear();
@@ -9,7 +10,7 @@ export function LegalFooter() {
 
           {/* Brand */}
           <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="Whtzup.city" className="h-7 w-auto object-contain" />
+            <BrandLogo alt="Whtzup.city" className="h-7 w-auto object-contain" />
             <span className="text-sm font-semibold text-foreground">whtzup.city</span>
           </div>
 

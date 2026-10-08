@@ -42,7 +42,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
 
         {/* Content — extra bottom padding on mobile so the fixed bottom nav
             never covers the last controls (buttons, forms). */}
-        <main className="flex-1 overflow-auto">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto focus:outline-none">
           <div className={`container mx-auto px-4 pt-6 ${isMobile ? 'pb-28' : 'pb-6'}`}>{children}</div>
         </main>
       </div>

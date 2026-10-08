@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { BrandLogo } from '@/components/common/brand-logo';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 // mock-db removed — all registration flows through real API
@@ -1060,7 +1061,7 @@ export default function UnifiedRegisterPage() {
         {/* Top Header */}
         <div className="text-center space-y-2 mb-2">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted border border-border text-muted-foreground text-xs font-semibold tracking-wide">
-            <img src="/logo.png" alt="Whtzup.city Logo" className="h-5 w-auto object-contain" />
+            <BrandLogo alt="Whtzup.city Logo" className="h-5 w-auto object-contain" />
             <span className="font-semibold tracking-tight">whtzup.city</span>
           </div>
           {outletMode && brandCtx ? (

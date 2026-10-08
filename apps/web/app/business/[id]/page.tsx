@@ -1,1184 +1,238 @@
-'use client';
+import { cache } from 'react';
+import type { Metadata } from 'next';
+import { SITE_URL, serverGet, unwrapOne } from '@/lib/server-api';
+import BusinessClient from './business-client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
-import { PublicLayout } from '@/components/layouts/public-layout';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { HOTEL_AMENITIES } from '@/lib/hotel-pricing';
-import { labelsFor } from '@/components/business/amenity-details-editor';
-import { LuckyWheel } from '@/components/business/lucky-wheel';
-import { OpeningHoursCard } from '@/components/business/opening-hours-card';
-import { BrandPublicChip, OtherOutlets } from '@/components/business/brand-public-section';
-import { hasOperatingHours } from '@saas/types';
-import {
-  UtensilsCrossed,
-  ShoppingBag,
-  ArrowLeft,
-  Star,
-  MapPin,
-  Clock,
-  Phone,
-  Share2,
-  Heart,
-  Globe,
-  Instagram,
-  Facebook,
-  Linkedin,
-  Twitter,
-  Youtube,
-  Ticket,
-  Check,
-  X,
-  Receipt,
-  Upload,
-  CalendarDays,
-  Hash,
-  IndianRupee,
-  Loader2,
-  CheckCircle2,
-  Lock,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { apiService } from '@/lib/services/api-service';
-import { optimizeImage } from '@/lib/utils/image-optimizer';
+// Cached + re-rendered at most every 2 minutes; the client refreshes live data itself.
+export const revalidate = 120;
 
-const FAVORITES_KEY = 'saved_businesses';
+type RouteParams = { id: string };
 
-function getFavIds(): string[] {
-  if (typeof window === 'undefined') return [];
-  try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]').map((b: any) => b.id); }
-  catch { return []; }
+const DAYS = [
+  ['mon', 'Monday'],
+  ['tue', 'Tuesday'],
+  ['wed', 'Wednesday'],
+  ['thu', 'Thursday'],
+  ['fri', 'Friday'],
+  ['sat', 'Saturday'],
+  ['sun', 'Sunday'],
+] as const;
+
+/**
+ * Server fetch of the public business. Never throws — null means "let the client fetch it".
+ * Wrapped in cache() so generateMetadata and the page share one request.
+ */
+const getBusiness = cache(async (id: string): Promise<any | null> => {
+  if (!id) return null;
+  const body = await serverGet(`/v1/businesses/${encodeURIComponent(id)}`, { revalidate: 120 });
+  const biz = unwrapOne<any>(body);
+  return biz && typeof biz === 'object' && typeof biz.name === 'string' ? biz : null;
+});
+
+const isHttp = (v: unknown): v is string => typeof v === 'string' && /^https?:\/\//i.test(v);
+
+function trimDescription(text: string, max = 155): string {
+  const clean = text.replace(/\s+/g, ' ').trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > 100 ? cut.slice(0, lastSpace) : cut).replace(/[\s,.;:–-]+$/, '')}…`;
 }
 
-function timeAgo(dateStr: string): string {
-  try {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const days = Math.floor(diff / 86400000);
-    if (days < 1) return 'today';
-    if (days === 1) return '1 day ago';
-    if (days < 7) return `${days} days ago`;
-    if (days < 30) return `${Math.floor(days / 7)} week${Math.floor(days / 7) > 1 ? 's' : ''} ago`;
-    return `${Math.floor(days / 30)} month${Math.floor(days / 30) > 1 ? 's' : ''} ago`;
-  } catch { return ''; }
+function placeLine(biz: any): string {
+  const category = biz.category?.name;
+  const city = biz.city;
+  return [category, city && `in ${city}`].filter(Boolean).join(' ');
 }
 
-function BusinessDetailPageContent() {
-  const params = useParams();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { user } = useAuth();
-  const businessId = (params?.id as string) || '';
-  // QR-scan deep link: gates the offers section behind sign-in, then scrolls to it.
-  const fromQr = searchParams.get('src') === 'qr';
-
-  const [biz, setBiz] = useState<any>(null);
-  const [offers, setOffers] = useState<any[]>([]);
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [menuPhotos, setMenuPhotos] = useState<any[]>([]);
-  const [menuViewing, setMenuViewing] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [isSaved, setIsSaved] = useState(false);
-
-  useEffect(() => {
-    if (!businessId) return;
-    setIsSaved(getFavIds().includes(businessId));
-    const handler = () => setIsSaved(getFavIds().includes(businessId));
-    window.addEventListener('favoritesUpdated', handler);
-    return () => window.removeEventListener('favoritesUpdated', handler);
-  }, [businessId]);
-
-  useEffect(() => {
-    if (!businessId) return;
-    setLoading(true);
-    Promise.allSettled([
-      apiService.get<any>(`/v1/businesses/${businessId}`),
-      apiService.get<any>(`/v1/offers/business/${businessId}`),
-      apiService.get<any>(`/v1/reviews/business/${businessId}`),
-      apiService.get<any>(`/v1/media/menu/business/${businessId}`),
-    ]).then(([bizRes, offersRes, reviewsRes, menuRes]) => {
-      if (menuRes.status === 'fulfilled' && menuRes.value.data && !menuRes.value.error) {
-        setMenuPhotos(Array.isArray(menuRes.value.data) ? menuRes.value.data : []);
-      }
-      if (bizRes.status === 'fulfilled' && bizRes.value.data && !bizRes.value.error) {
-        const bizData = bizRes.value.data;
-        setBiz(bizData);
-        // Track impression — fire-and-forget, never blocks render
-        if (bizData?.id) {
-          apiService.post('/v1/analytics/track', {
-            event: 'BUSINESS_VIEW',
-            businessId: bizData.id,
-            tenantId: bizData.tenantId,
-          }).catch(() => {});
-          if (fromQr) {
-            apiService.post('/v1/analytics/track', {
-              event: 'QR_SCAN',
-              businessId: bizData.id,
-              tenantId: bizData.tenantId,
-            }).catch(() => {});
-          }
-        }
-      }
-      if (offersRes.status === 'fulfilled' && offersRes.value.data && !offersRes.value.error) {
-        const list = Array.isArray(offersRes.value.data) ? offersRes.value.data : offersRes.value.data?.data ?? [];
-        setOffers(list.filter((o: any) => o.isActive !== false).slice(0, 5));
-      }
-      if (reviewsRes.status === 'fulfilled' && reviewsRes.value.data && !reviewsRes.value.error) {
-        const list = Array.isArray(reviewsRes.value.data) ? reviewsRes.value.data : reviewsRes.value.data?.data ?? [];
-        setReviews(list.slice(0, 6));
-      }
-    }).finally(() => setLoading(false));
-  }, [businessId]);
-
-  // QR scans land signed-in users straight on the offers section.
-  useEffect(() => {
-    if (fromQr && user && !loading) {
-      document.getElementById('offers-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [fromQr, user, loading]);
-
-  // ── Vouchers (spend-gated) — needs a logged-in user for spend + unlock state
-  const [vouchers, setVouchers] = useState<any[]>([]);
-  const [voucherSpend, setVoucherSpend] = useState(0);
-  const [unlockingId, setUnlockingId] = useState<string | null>(null);
-
-  const loadVouchers = async () => {
-    if (!businessId || !user) return;
-    const res = await apiService.get<any>(`/v1/vouchers/available/${businessId}`);
-    if (res.data && !res.error) {
-      setVouchers(res.data.vouchers ?? []);
-      setVoucherSpend(res.data.spend ?? 0);
-    }
+/**
+ * Only what the profile actually renders. The public API returns the whole
+ * business row; none of the rest belongs in the page's HTML / RSC payload.
+ */
+function pickPublic(biz: any) {
+  const branches = Array.isArray(biz.branches)
+    ? biz.branches.map((b: any) => ({
+        id: b.id,
+        name: b.name,
+        address: b.address,
+        city: b.city,
+        state: b.state,
+        latitude: b.latitude,
+        longitude: b.longitude,
+        phone: b.phone,
+        operatingHours: b.operatingHours,
+      }))
+    : [];
+  return {
+    id: biz.id,
+    tenantId: biz.tenantId,
+    slug: biz.slug,
+    name: biz.name,
+    description: biz.description,
+    status: biz.status,
+    categoryId: biz.categoryId,
+    category: biz.category ? { id: biz.category.id, name: biz.category.name, slug: biz.category.slug } : null,
+    subcategory: biz.subcategory,
+    address: biz.address,
+    city: biz.city,
+    state: biz.state,
+    district: biz.district,
+    latitude: biz.latitude,
+    longitude: biz.longitude,
+    googleMapsUrl: biz.googleMapsUrl,
+    phone: biz.phone,
+    website: biz.website,
+    instagram: biz.instagram,
+    whatsapp: biz.whatsapp,
+    socialLinks: biz.socialLinks,
+    tags: biz.tags,
+    halalStatus: biz.halalStatus,
+    hotelStarRating: biz.hotelStarRating,
+    hotelAmenities: biz.hotelAmenities,
+    amenityDetails: biz.amenityDetails,
+    logo: biz.logo,
+    coverImage: biz.coverImage,
+    operatingHours: biz.operatingHours,
+    averageRating: biz.averageRating,
+    totalReviews: biz.totalReviews,
+    isVerified: biz.isVerified,
+    brandId: biz.brandId,
+    brand: biz.brand,
+    branches,
+    _count: biz._count,
   };
-  useEffect(() => { loadVouchers(); /* eslint-disable-next-line */ }, [businessId, user]);
+}
 
-  const unlockVoucher = async (id: string) => {
-    setUnlockingId(id);
-    const res = await apiService.post<any>(`/v1/vouchers/${id}/unlock`, {});
-    setUnlockingId(null);
-    if (!res.error && res.data?.code) {
-      setVouchers((list) =>
-        list.map((v) => (v.id === id ? { ...v, unlocked: true, code: res.data.code, status: res.data.status } : v)),
-      );
-    }
-  };
-
-  const handleToggleFavorite = () => {
-    if (!biz) return;
-    try {
-      const existing: any[] = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
-      const idx = existing.findIndex((b: any) => b.id === businessId);
-      let updated: any[];
-      if (idx >= 0) {
-        updated = existing.filter((b: any) => b.id !== businessId);
-      } else {
-        updated = [{
-          id: businessId,
-          name: biz.name,
-          category: biz.category?.name || '',
-          rating: String(biz.averageRating || 0),
-          reviews: biz._count?.reviews || 0,
-          savedAt: new Date().toLocaleDateString(),
-          isVerified: biz.isVerified,
-        }, ...existing];
-      }
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(updated));
-      setIsSaved(!isSaved);
-      window.dispatchEvent(new Event('favoritesUpdated'));
-    } catch (_) {}
-  };
-
-  // ── Offer claim state
-  const [claimingOffer, setClaimingOffer] = useState<any>(null);
-  const [claimedCode, setClaimedCode] = useState<string | null>(null);
-
-  // ── Bill submission state
-  const [billModalOpen, setBillModalOpen] = useState(false);
-  const [billSubmitted, setBillSubmitted] = useState(false);
-  const [billNumber, setBillNumber] = useState('');
-  const [billDate, setBillDate] = useState('');
-  const [billAmount, setBillAmount] = useState('');
-  const [billReview, setBillReview] = useState('');
-  const [billRating, setBillRating] = useState(0);
-  const [billRatingHover, setBillRatingHover] = useState(0);
-  const [billImageName, setBillImageName] = useState('');
-  const [billFile, setBillFile] = useState<File | null>(null);
-  const [billSubmitting, setBillSubmitting] = useState(false);
-
-  // Only logged-in users may claim. Guests are redirected to registration.
-  const handleClaimClick = (offer: any) => {
-    if (!user) {
-      router.push(`/register?redirect=/business/${businessId}`);
-      return;
-    }
-    setClaimingOffer(offer);
-  };
-
-  const [claiming, setClaiming] = useState(false);
-  const handleConfirmClaim = async () => {
-    if (!claimingOffer) return;
-    if (!user) {
-      setClaimingOffer(null);
-      router.push(`/register?redirect=/business/${businessId}`);
-      return;
-    }
-    setClaiming(true);
-    // Server-side redemption (JWT-guarded) — records the claim + returns a code.
-    const res = await apiService.post<any>(`/v1/offers/${claimingOffer.id}/redeem`, {});
-    setClaiming(false);
-    if (res.status === 401) {
-      setClaimingOffer(null);
-      router.push(`/register?redirect=/business/${businessId}`);
-      return;
-    }
-    const code = res.data?.code || `CLAIM-${Math.floor(1000 + Math.random() * 9000)}`;
-    setClaimedCode(code);
-    setClaimingOffer(null);
-  };
-
-  const handleBillSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!billNumber || !billDate || !billAmount || billRating === 0 || !billFile) return;
-    setBillSubmitting(true);
-    try {
-      // 1. Optimize image client-side if it's an image
-      let fileToUpload = billFile;
-      try {
-        fileToUpload = await optimizeImage(billFile, { quality: 0.8, outputType: 'jpeg' });
-      } catch (err) {
-        console.error('Image optimization failed:', err);
-      }
-
-      // 2. Request signed upload URL
-      const signedRes = await apiService.post<{ uploadUrl: string; fileKey: string }>(
-        '/v1/storage/upload-url',
-        {
-          entityId: businessId,
-          filename: fileToUpload.name,
-          mimeType: fileToUpload.type,
-          category: 'bill',
-        },
-      );
-
-      if (!signedRes.data || signedRes.error) {
-        throw new Error(signedRes.error || 'Failed to get upload URL');
-      }
-
-      const { uploadUrl, fileKey } = signedRes.data;
-
-      // 3. Direct upload to Supabase storage
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': fileToUpload.type },
-        body: fileToUpload,
-      });
-
-      if (!uploadResponse.ok) {
-        const detail = await uploadResponse.text().catch(() => '');
-        throw new Error(
-          `Failed to upload file to storage (${uploadResponse.status}). ${detail.slice(0, 180) || uploadResponse.statusText}`,
-        );
-      }
-
-      // 4. Send JSON-serialized reference to backend
-      const billImageRef = JSON.stringify({ bucket: 'bill-uploads', path: fileKey });
-
-      await apiService.post('/v1/bills/upload', {
-        businessId,
-        amount: parseFloat(billAmount),
-        billDate,
-        billNumber: billNumber.trim().slice(0, 60),
-        billImage: billImageRef,
-        description: billReview || undefined,
-      });
-
-      // Post the star rating as a review so it reflects on the business.
-      // (The bill form collects a rating but it was never being submitted.)
-      if (billRating > 0) {
-        const reviewRes = await apiService.post('/v1/reviews', {
-          businessId,
-          rating: billRating,
-          comment: billReview?.trim() || 'Rated via bill submission.',
-        });
-        if (!reviewRes.error) {
-          // Refresh rating + review list so the new rating reflects immediately
-          try {
-            const refreshed = await apiService.get<any>(`/v1/businesses/${businessId}`);
-            if (refreshed.data && !refreshed.error) setBiz(refreshed.data);
-            const rev = await apiService.get<any>(`/v1/reviews/business/${businessId}`);
-            const list = Array.isArray(rev.data) ? rev.data : rev.data?.data ?? [];
-            if (!rev.error) setReviews(list.slice(0, 6));
-          } catch {
-            /* non-fatal — values refresh on next page load */
-          }
-        }
-      }
-
-      setBillSubmitted(true);
-      setBillModalOpen(false);
-    } catch (err: any) {
-      console.error('Bill submission failed:', err);
-      alert(err.message || 'Bill submission failed. Please try again.');
-    } finally {
-      setBillSubmitting(false);
-    }
-  };
-
-  const resetBillForm = () => {
-    setBillNumber('');
-    setBillDate('');
-    setBillAmount('');
-    setBillReview('');
-    setBillRating(0);
-    setBillRatingHover(0);
-    setBillImageName('');
-    setBillFile(null);
-  };
-
-  const openBillModal = () => {
-    resetBillForm();
-    setBillModalOpen(true);
-  };
-
-  const avgRating = biz?.averageRating ?? biz?.rating ?? 0;
-  const reviewCount = biz?._count?.reviews ?? reviews.length ?? 0;
-  const branch = biz?.branches?.[0];
-  const address = branch
-    ? [branch.address, branch.city, branch.state].filter(Boolean).join(', ')
-    : biz?.address || '';
-
-  if (loading) {
-    return (
-      <PublicLayout>
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </PublicLayout>
-    );
-  }
-
+export async function generateMetadata({ params }: { params: Promise<RouteParams> }): Promise<Metadata> {
+  const { id } = await params;
+  const biz = await getBusiness(id);
   if (!biz) {
-    return (
-      <PublicLayout>
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-          <p className="text-lg font-semibold text-foreground mb-2">Business not found</p>
-          <p className="text-sm text-muted-foreground">This listing may have been removed or the ID is invalid.</p>
-        </div>
-      </PublicLayout>
-    );
+    // API unreachable or unknown id: generic title, no robots directive (don't de-index on a blip).
+    return { title: 'Business', alternates: { canonical: `/business/${id}` } };
+  }
+
+  const place = placeLine(biz);
+  const title = place ? `${biz.name} — ${place}` : biz.name;
+  const description = biz.description
+    ? trimDescription(String(biz.description))
+    : `${biz.name}${place ? ` — ${place}` : ''}. See offers, reviews and opening hours on Whtzup.city.`;
+  const url = `/business/${id}`;
+  const indexable = biz.status === 'APPROVED';
+
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    robots: indexable ? undefined : { index: false, follow: false },
+    openGraph: {
+      type: 'website',
+      siteName: 'Whtzup.city',
+      title,
+      description,
+      url,
+    },
+    twitter: { card: 'summary_large_image', title, description },
+  };
+}
+
+function buildJsonLd(biz: any, id: string) {
+  const categoryText = `${biz.category?.name || ''} ${biz.category?.slug || ''}`.toLowerCase();
+  const type = /hotel|resort|lodg|homestay|stay\b/.test(categoryText)
+    ? 'Hotel'
+    : /restaurant|food|cafe|café|bakery|dining|kitchen|caterer|sweets|biryani|tea|juice/.test(categoryText)
+      ? 'Restaurant'
+      : 'LocalBusiness';
+
+  const images = [biz.coverImage, biz.logo].filter(isHttp);
+  const lat = Number(biz.latitude);
+  const lng = Number(biz.longitude);
+  const hasGeo = Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
+
+  const sameAs = [
+    biz.website,
+    biz.socialLinks?.facebook,
+    biz.socialLinks?.instagram,
+    biz.socialLinks?.twitter,
+    biz.socialLinks?.x,
+    biz.socialLinks?.linkedin,
+    biz.socialLinks?.youtube,
+  ].filter(isHttp);
+
+  // operatingHours.weekly: { mon: { closed, shifts: [{ open, close }] }, ... }
+  const opening: any[] = [];
+  const weekly = biz.operatingHours?.weekly;
+  if (weekly && typeof weekly === 'object') {
+    for (const [key, label] of DAYS) {
+      const day = weekly[key];
+      if (!day || day.closed || !Array.isArray(day.shifts)) continue;
+      for (const s of day.shifts) {
+        if (typeof s?.open !== 'string' || typeof s?.close !== 'string') continue;
+        opening.push({
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: label,
+          opens: s.open,
+          closes: s.close === '24:00' ? '23:59' : s.close,
+        });
+      }
+    }
+  }
+
+  const reviewCount = Number(biz.totalReviews ?? biz._count?.reviews) || 0;
+  const rating = Number(biz.averageRating) || 0;
+
+  const data: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': type,
+    name: biz.name,
+    url: `${SITE_URL}/business/${id}`,
+  };
+  if (biz.description) data.description = trimDescription(String(biz.description), 300);
+  if (images.length) data.image = images;
+  if (biz.phone) data.telephone = biz.phone;
+  if (biz.address || biz.city) {
+    data.address = {
+      '@type': 'PostalAddress',
+      streetAddress: biz.address || undefined,
+      addressLocality: biz.city || undefined,
+      addressRegion: biz.state || undefined,
+      postalCode: biz.zipCode || undefined,
+      addressCountry: 'IN',
+    };
+  }
+  if (hasGeo) data.geo = { '@type': 'GeoCoordinates', latitude: lat, longitude: lng };
+  if (opening.length) data.openingHoursSpecification = opening;
+  if (sameAs.length) data.sameAs = sameAs;
+  if (reviewCount > 0 && rating > 0) {
+    data.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: Number(rating.toFixed(1)),
+      bestRating: 5,
+      worstRating: 1,
+      ratingCount: reviewCount,
+      reviewCount,
+    };
+  }
+  return data;
+}
+
+export default async function BusinessPage({ params }: { params: Promise<RouteParams> }) {
+  const { id } = await params;
+  const biz = await getBusiness(id);
+
+  let jsonLd: string | null = null;
+  if (biz) {
+    try {
+      // "<" escaped so a business name can never close the script tag.
+      jsonLd = JSON.stringify(buildJsonLd(biz, id)).replace(/</g, '\\u003c');
+    } catch {
+      jsonLd = null;
+    }
   }
 
   return (
-    <PublicLayout>
-      <div>
-        <button
-          onClick={() => router.back()}
-          className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground cursor-pointer"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
-
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="md:col-span-2">
-            {/* ── Business Info Card */}
-            <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-                <div className="flex items-start gap-4 min-w-0">
-                  {/* Business Logo */}
-                  {biz.logo && (
-                    <div className="h-16 w-16 rounded-xl overflow-hidden border border-white/10 bg-white/5 shrink-0">
-                      <img src={biz.logo} alt={`${biz.name} logo`} className="h-full w-full object-contain" />
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">{biz.name}</h1>
-                      {biz.isVerified && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          Verified Merchant
-                        </span>
-                      )}
-                      {biz.halalStatus && (
-                        <span
-                          className={cn(
-                            'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border',
-                            biz.halalStatus === 'HALAL'
-                              ? 'bg-green-500/10 border-green-500/20 text-green-400'
-                              : 'bg-amber-500/10 border-amber-500/20 text-amber-400',
-                          )}
-                        >
-                          {biz.halalStatus === 'HALAL' ? 'Halal' : 'Non-Halal'}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-muted-foreground mb-4">
-                      {biz.category?.name || ''}
-                      {biz.subcategory ? ` • ${biz.subcategory}` : ''}
-                    </p>
-                    {biz.brand && <BrandPublicChip brand={biz.brand} />}
-                  </div>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => { if (navigator?.share) { navigator.share({ title: biz.name, url: window.location.href }); } }}
-                    className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5"
-                  >
-                    <Share2 className="h-5 w-5" />
-                  </Button>
-                  <Button
-                    onClick={handleToggleFavorite}
-                    variant="outline"
-                    size="icon"
-                    className={`rounded-xl cursor-pointer ${isSaved ? 'border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20' : 'border-white/10 text-slate-300 hover:bg-white/5'}`}
-                    title={isSaved ? 'Remove from favorites' : 'Save to favorites'}
-                  >
-                    <Heart className={`h-5 w-5 ${isSaved ? 'fill-rose-500 text-rose-500' : ''}`} />
-                  </Button>
-                </div>
-              </div>
-              {avgRating > 0 && (
-                <div className="flex items-center gap-6 mb-6">
-                  <div className="flex items-center gap-2">
-                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                    <span className="font-bold text-lg">{Number(avgRating).toFixed(1)}</span>
-                    <span className="text-muted-foreground">({reviewCount} reviews)</span>
-                  </div>
-                </div>
-              )}
-              <div className="space-y-3">
-                {address && (
-                  <div className="flex items-center gap-3 text-foreground text-sm">
-                    <MapPin className="h-5 w-5 text-violet-400 flex-shrink-0" />
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-violet-400 hover:underline break-words min-w-0"
-                    >
-                      {address}
-                    </a>
-                  </div>
-                )}
-                {(biz.phone || branch?.phone) && (
-                  <div className="flex items-center gap-3 text-foreground text-sm">
-                    <Phone className="h-5 w-5 text-cyan-400 flex-shrink-0" />
-                    <span className="break-words min-w-0">{biz.phone || branch?.phone}</span>
-                  </div>
-                )}
-                {hasOperatingHours(biz.operatingHours) ? (
-                  <OpeningHoursCard hours={biz.operatingHours} className="bg-background/40" />
-                ) : branch?.operatingHours && (
-                  <div className="flex items-center gap-3 text-foreground text-sm">
-                    <Clock className="h-5 w-5 text-amber-400 flex-shrink-0" />
-                    <span className="break-all min-w-0">{typeof branch.operatingHours === 'string' ? branch.operatingHours : JSON.stringify(branch.operatingHours)}</span>
-                  </div>
-                )}
-                {biz.instagram && (
-                  <div className="flex items-center gap-3 text-foreground text-sm">
-                    <Instagram className="h-5 w-5 text-pink-400 flex-shrink-0" />
-                    <a href={`https://instagram.com/${biz.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="text-pink-400 hover:underline break-all min-w-0">
-                      {biz.instagram.startsWith('@') ? biz.instagram : `@${biz.instagram}`}
-                    </a>
-                  </div>
-                )}
-                {biz.socialLinks?.instagram && !biz.instagram && (
-                  <div className="flex items-center gap-3 text-foreground text-sm">
-                    <Instagram className="h-5 w-5 text-pink-400 flex-shrink-0" />
-                    <a href={`https://instagram.com/${biz.socialLinks.instagram.replace('@', '')}`} target="_blank" rel="noreferrer" className="text-pink-400 hover:underline break-all min-w-0">
-                      {biz.socialLinks.instagram}
-                    </a>
-                  </div>
-                )}
-                {biz.socialLinks?.facebook && (
-                  <div className="flex items-center gap-3 text-foreground text-sm">
-                    <Facebook className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                    <a href={biz.socialLinks.facebook.startsWith('http') ? biz.socialLinks.facebook : `https://facebook.com/${biz.socialLinks.facebook}`} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline break-all min-w-0">
-                      {biz.socialLinks.facebook}
-                    </a>
-                  </div>
-                )}
-                {(biz.socialLinks?.twitter || biz.socialLinks?.x) && (
-                  <div className="flex items-center gap-3 text-foreground text-sm">
-                    <Twitter className="h-5 w-5 text-sky-400 flex-shrink-0" />
-                    <a href={(biz.socialLinks.twitter || biz.socialLinks.x)!.startsWith('http') ? (biz.socialLinks.twitter || biz.socialLinks.x)! : `https://x.com/${(biz.socialLinks.twitter || biz.socialLinks.x)!.replace('@','')}`} target="_blank" rel="noreferrer" className="text-sky-400 hover:underline break-all min-w-0">
-                      {biz.socialLinks.twitter || biz.socialLinks.x}
-                    </a>
-                  </div>
-                )}
-                {biz.socialLinks?.linkedin && (
-                  <div className="flex items-center gap-3 text-foreground text-sm">
-                    <Linkedin className="h-5 w-5 text-sky-500 flex-shrink-0" />
-                    <a href={biz.socialLinks.linkedin.startsWith('http') ? biz.socialLinks.linkedin : `https://linkedin.com/company/${biz.socialLinks.linkedin}`} target="_blank" rel="noreferrer" className="text-sky-500 hover:underline break-all min-w-0">
-                      {biz.socialLinks.linkedin}
-                    </a>
-                  </div>
-                )}
-                {biz.socialLinks?.youtube && (
-                  <div className="flex items-center gap-3 text-foreground text-sm">
-                    <Youtube className="h-5 w-5 text-red-400 flex-shrink-0" />
-                    <a href={biz.socialLinks.youtube.startsWith('http') ? biz.socialLinks.youtube : `https://${biz.socialLinks.youtube}`} target="_blank" rel="noreferrer" className="text-red-400 hover:underline break-all min-w-0">
-                      {biz.socialLinks.youtube}
-                    </a>
-                  </div>
-                )}
-                {biz.website && (
-                  <div className="flex items-center gap-3 text-foreground text-sm">
-                    <Globe className="h-5 w-5 text-emerald-400 flex-shrink-0" />
-                    <a href={biz.website.startsWith('http') ? biz.website : `https://${biz.website}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline break-all min-w-0">
-                      {biz.website}
-                    </a>
-                  </div>
-                )}
-                {!biz.website && biz.socialLinks?.website && (
-                  <div className="flex items-center gap-3 text-foreground text-sm">
-                    <Globe className="h-5 w-5 text-emerald-400 flex-shrink-0" />
-                    <a href={biz.socialLinks.website.startsWith('http') ? biz.socialLinks.website : `https://${biz.socialLinks.website}`} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline break-all min-w-0">
-                      {biz.socialLinks.website}
-                    </a>
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* ── About */}
-            {biz.description && (
-              <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
-                <h2 className="text-2xl font-bold text-foreground mb-4">About</h2>
-                <p className="text-muted-foreground mb-4 text-sm leading-relaxed">{biz.description}</p>
-                <div className="flex gap-3 flex-wrap">
-                  {[biz.category?.name, biz.subcategory].filter(Boolean).map((tag) => (
-                    <span key={tag} className="px-3 py-1 bg-white/5 border border-white/5 rounded-full text-sm text-slate-300">{tag}</span>
-                  ))}
-                </div>
-              </Card>
-            )}
-
-            {/* ── Food menu photos (food businesses that have uploaded any) */}
-            {menuPhotos.length > 0 && (
-              <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
-                <h2 className="text-2xl font-bold text-foreground mb-4">Menu</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {menuPhotos.map((p: any, i: number) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setMenuViewing(p)}
-                      className="ui-fade-up group relative aspect-square overflow-hidden rounded-xl border border-white/10 bg-white/5 cursor-pointer"
-                      style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-                      aria-label={p.title ? `View menu photo: ${p.title}` : 'View menu photo'}
-                    >
-                      <img
-                        src={p.publicUrl}
-                        alt={p.title || `${biz.name} menu`}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none"
-                      />
-                      {p.title && (
-                        <span className="absolute inset-x-0 bottom-0 truncate bg-black/55 px-2 py-1 text-[11px] font-medium text-white">
-                          {p.title}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </Card>
-            )}
-
-            {/* ── Hotel classification & amenities (Hotel category only) */}
-            {(biz.hotelStarRating || Object.values(biz.hotelAmenities || {}).some((a: any) => a?.selected)) && (
-              <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
-                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                  <h2 className="text-2xl font-bold text-foreground">Hotel</h2>
-                  {biz.hotelStarRating && (
-                    <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-semibold">
-                      {biz.hotelStarRating}★ classification
-                    </span>
-                  )}
-                </div>
-                {(() => {
-                  const selected = HOTEL_AMENITIES.filter(
-                    (a) => (biz.hotelAmenities || {})[a.key]?.selected,
-                  );
-                  if (!selected.length) return null;
-                  const details = biz.amenityDetails || {};
-                  return (
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      {selected.map((a) => {
-                        const items = Array.isArray(details[a.key]) ? details[a.key] : [];
-                        const labels = labelsFor(a.key);
-                        return (
-                          <div key={a.key} className="p-3 rounded-xl bg-white/5 border border-white/5">
-                            <div className="text-sm font-semibold text-foreground">{a.label}</div>
-                            {a.subOptions && (
-                              <div className="text-[11px] text-muted-foreground mt-0.5">
-                                {a.subOptions.join(' · ')}
-                              </div>
-                            )}
-                            {items.length > 0 && (
-                              <div className="mt-2.5 space-y-2 border-t border-white/5 pt-2.5">
-                                {items.map((item: any) => (
-                                  <div key={item.id}>
-                                    <div className="text-xs font-semibold text-foreground break-words">{item.title}</div>
-                                    <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mt-0.5 text-[11px] text-muted-foreground">
-                                      {item.capacity && <span>{labels.capacity}: {item.capacity}</span>}
-                                      {item.price && <span>{labels.price}: {item.price}</span>}
-                                    </div>
-                                    {Array.isArray(item.features) && item.features.length > 0 && (
-                                      <div className="flex flex-wrap gap-1 mt-1">
-                                        {item.features.map((f: string, i: number) => (
-                                          <span key={i} className="px-1.5 py-0.5 rounded-full text-[10px] bg-white/5 text-slate-300 break-words">{f}</span>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })()}
-              </Card>
-            )}
-
-            {/* ── Submit Bill Section */}
-            <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    <Receipt className="h-5 w-5 text-primary" />
-                    Submit Your Bill
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Shopped here? Upload your receipt and share your experience to earn verified purchase status.
-                  </p>
-                </div>
-              </div>
-
-              {billSubmitted ? (
-                <div className="ui-pop flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 mt-3 flex-wrap">
-                  <div className="h-9 w-9 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-                    <Check className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-emerald-400">Bill Submitted Successfully!</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Your receipt is under review. You'll be notified once verified.
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => { setBillSubmitted(false); openBillModal(); }}
-                    className="ml-auto rounded-xl border-white/10 text-slate-300 hover:bg-white/5 text-xs shrink-0 cursor-pointer"
-                  >
-                    Submit Another
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  onClick={openBillModal}
-                  className="mt-3 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold gap-2 cursor-pointer"
-                >
-                  <Upload className="h-4 w-4" />
-                  Upload Receipt
-                </Button>
-              )}
-            </Card>
-
-            {/* ── Lucky wheel discount */}
-            <LuckyWheel businessId={businessId} enabled={!!user} />
-
-            {/* ── Vouchers (spend-gated) */}
-            {user && vouchers.length > 0 && (
-              <div className="mb-8 rounded-2xl border border-border bg-card p-6">
-                <div className="mb-1 flex items-center gap-2">
-                  <Ticket className="h-5 w-5 text-primary" />
-                  <h2 className="text-2xl font-bold text-foreground">Vouchers</h2>
-                </div>
-                <p className="mb-4 text-sm text-muted-foreground">
-                  Your verified spend here:{' '}
-                  <span className="font-semibold text-foreground">₹{voucherSpend.toLocaleString('en-IN')}</span>.
-                  Cross a threshold to unlock the code, then show it in-store.
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {vouchers.map((v: any, i: number) => (
-                    <div key={v.id} className="ui-fade-up rounded-xl border border-border bg-secondary/50 p-4" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <h3 className="font-semibold text-foreground truncate">{v.title}</h3>
-                          <p className="text-xs text-muted-foreground">
-                            Unlocks at ₹{v.thresholdAmount.toLocaleString('en-IN')} spend
-                          </p>
-                        </div>
-                        <span className="shrink-0 rounded-lg bg-primary/10 px-2 py-1 text-sm font-bold text-primary">
-                          {v.rewardType === 'PERCENT'
-                            ? `${v.rewardValue}% off`
-                            : v.rewardType === 'AMOUNT'
-                              ? `₹${Number(v.rewardValue || 0).toLocaleString('en-IN')} off`
-                              : v.rewardLabel || 'Reward'}
-                        </span>
-                      </div>
-
-                      {/* Progress */}
-                      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-primary transition-all"
-                          style={{ width: `${Math.round((v.progress ?? 0) * 100)}%` }}
-                        />
-                      </div>
-
-                      {v.unlocked ? (
-                        <div className="mt-3 flex items-center justify-between rounded-lg border border-success/25 bg-success/12 px-3 py-2">
-                          <span className="font-mono text-sm font-bold tracking-wider text-success">{v.code}</span>
-                          <span className="text-[10px] font-semibold uppercase text-success">
-                            {v.status === 'REDEEMED' ? 'Redeemed' : 'Show in-store'}
-                          </span>
-                        </div>
-                      ) : v.qualified ? (
-                        <Button
-                          onClick={() => unlockVoucher(v.id)}
-                          disabled={unlockingId === v.id}
-                          size="sm"
-                          className="mt-3 w-full gap-1.5"
-                        >
-                          {unlockingId === v.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />}
-                          Unlock code
-                        </Button>
-                      ) : (
-                        <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Lock className="h-3.5 w-3.5" />
-                          Spend ₹{v.remainingToUnlock.toLocaleString('en-IN')} more to unlock
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── Reviews */}
-            <Card className="p-6 rounded-2xl mb-8 border-white/5 bg-card/40 backdrop-blur-xl">
-              <h2 className="text-2xl font-bold text-foreground mb-4">Reviews</h2>
-              {reviews.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No reviews yet. Be the first to share your experience!</p>
-              ) : (
-                <div className="space-y-4">
-                  {reviews.map((review: any, i: number) => (
-                    <div key={review.id || i} className="ui-fade-up pb-4 border-b border-white/5 last:border-0" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <p className="font-semibold text-foreground">
-                              {review.user?.name || review.customerName || 'Anonymous'}
-                            </p>
-                            {review.isVerifiedPurchase && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-success/15 text-success">
-                                <CheckCircle2 className="h-3 w-3" /> Verified Purchase
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex gap-0.5">
-                              {[...Array(5)].map((_, j) => (
-                                <Star
-                                  key={j}
-                                  className={`h-4 w-4 ${j < (review.rating || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`}
-                                />
-                              ))}
-                            </div>
-                            <span className="text-sm text-muted-foreground">
-                              {review.createdAt ? timeAgo(review.createdAt) : ''}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      {review.comment && (
-                        <p className="text-muted-foreground text-sm">{review.comment}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </div>
-
-          {/* ── Sidebar */}
-          <div>
-            <Card id="offers-section" className="p-6 rounded-2xl mb-6 md:sticky md:top-8 border-white/5 bg-card/40 backdrop-blur-xl">
-              <h3 className="font-bold text-foreground mb-4">Active Offers</h3>
-              {fromQr && !user ? (
-                <div className="text-center py-6">
-                  <Lock className="h-8 w-8 mx-auto text-muted-foreground mb-3 opacity-60" />
-                  <p className="text-sm text-muted-foreground mb-4">Sign in to view {biz.name}&apos;s current offers.</p>
-                  <Button
-                    onClick={() =>
-                      router.push(`/login?redirect=${encodeURIComponent(`/business/${businessId}?src=qr#offers-section`)}`)
-                    }
-                    className="w-full rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
-                  >
-                    Sign in
-                  </Button>
-                </div>
-              ) : offers.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-4">No active offers right now.</p>
-              ) : (
-                <div className="space-y-3">
-                  {offers.map((o: any, i: number) => {
-                    const discount = o.discountPercent
-                      ? `${o.discountPercent}% Off`
-                      : o.discountAmount
-                      ? `₹${o.discountAmount} Off`
-                      : o.title || 'Special Offer';
-                    const expiry = o.expiresAt
-                      ? `Expires ${new Date(o.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
-                      : o.validUntil
-                      ? `Valid until ${new Date(o.validUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
-                      : '';
-                    return (
-                      <div key={o.id || i} className="ui-fade-up p-3 bg-white/5 rounded-xl border border-white/5" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
-                        <p className="font-semibold text-foreground mb-1">{discount}</p>
-                        {(o.fulfilment === 'DINE_IN' || o.fulfilment === 'TAKEAWAY') && (
-                          <span className="mb-1.5 inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                            {o.fulfilment === 'DINE_IN'
-                              ? <UtensilsCrossed className="h-3 w-3" />
-                              : <ShoppingBag className="h-3 w-3" />}
-                            {o.fulfilment === 'DINE_IN' ? 'Dine-in only' : 'Takeaway only'}
-                          </span>
-                        )}
-                        {o.description && <p className="text-xs text-muted-foreground mb-1">{o.description}</p>}
-                        {expiry && <p className="text-xs text-muted-foreground mb-2">{expiry}</p>}
-                        <Button
-                          variant="outline"
-                          onClick={() => handleClaimClick(o)}
-                          className="w-full rounded-xl border-white/10 text-slate-300 hover:bg-white/5 cursor-pointer"
-                          size="sm"
-                        >
-                          Claim Offer
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </Card>
-            {biz.website && (
-              <Card className="p-6 rounded-2xl border-white/5 bg-card/40 backdrop-blur-xl">
-                <a href={biz.website.startsWith('http') ? biz.website : `https://${biz.website}`} target="_blank" rel="noreferrer">
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-xl border-border text-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                  >
-                    Visit Website
-                  </Button>
-                </a>
-              </Card>
-            )}
-          </div>
-        </div>
-
-        {biz.brandId && (
-          <div className="mt-8">
-            <OtherOutlets brandId={biz.brandId} currentBusinessId={biz.id || businessId} />
-          </div>
-        )}
-      </div>
-
-      {/* ── MENU PHOTO LIGHTBOX */}
-      {menuViewing && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          onClick={() => setMenuViewing(null)}
-        >
-          <button
-            onClick={() => setMenuViewing(null)}
-            aria-label="Close"
-            className="absolute top-4 right-4 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 cursor-pointer"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <img
-            src={menuViewing.publicUrl}
-            alt={menuViewing.title || `${biz.name} menu`}
-            className="ui-pop max-h-[85vh] max-w-full rounded-xl object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
-
-      {/* ── BILL SUBMISSION MODAL */}
-      {billModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="ui-pop w-full max-w-lg p-6 rounded-2xl border-border bg-card shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setBillModalOpen(false)}
-              aria-label="Close"
-              className="absolute top-3 right-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-5">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                <Receipt className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">Submit Your Bill</h3>
-                <p className="text-xs text-muted-foreground">{biz.name}</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleBillSubmit} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground block mb-2 flex items-center gap-1.5">
-                  <Hash className="h-3.5 w-3.5 text-muted-foreground" />
-                  Bill / Invoice Number <span className="text-rose-400">*</span>
-                </label>
-                <Input
-                  placeholder="e.g. INV-2026-1042"
-                  value={billNumber}
-                  onChange={(e) => setBillNumber(e.target.value)}
-                  required
-                  className="rounded-xl border-input bg-background focus-visible:ring-primary text-foreground"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground block mb-2 flex items-center gap-1.5">
-                  <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-                  Bill Date <span className="text-rose-400">*</span>
-                </label>
-                <Input
-                  type="date"
-                  value={billDate}
-                  onChange={(e) => setBillDate(e.target.value)}
-                  required
-                  max={new Date().toISOString().split('T')[0]}
-                  className="rounded-xl border-input bg-background focus-visible:ring-primary text-foreground"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground block mb-2 flex items-center gap-1.5">
-                  <IndianRupee className="h-3.5 w-3.5 text-muted-foreground" />
-                  Amount Paid <span className="text-rose-400">*</span>
-                </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="1"
-                  placeholder="e.g. 2450.00"
-                  value={billAmount}
-                  onChange={(e) => setBillAmount(e.target.value)}
-                  required
-                  className="rounded-xl border-input bg-background focus-visible:ring-primary text-foreground"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground block mb-2">
-                  Receipt Image
-                </label>
-                <label
-                  htmlFor="bill-image-input"
-                  className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl p-5 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                >
-                  {billImageName ? (
-                    <div className="flex items-center gap-2 text-sm text-emerald-400">
-                      <Check className="h-4 w-4" />
-                      <span className="truncate max-w-[200px]">{billImageName}</span>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload className="h-6 w-6 text-muted-foreground mb-2" />
-                      <p className="text-xs text-muted-foreground">Click to upload receipt image (JPG, PNG, PDF)</p>
-                    </>
-                  )}
-                  <input
-                    id="bill-image-input"
-                    type="file"
-                    accept="image/*,.pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) {
-                        setBillFile(f);
-                        setBillImageName(f.name);
-                      }
-                    }}
-                  />
-                </label>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground block mb-2">
-                  Your Rating <span className="text-rose-400">*</span>
-                </label>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setBillRating(star)}
-                      onMouseEnter={() => setBillRatingHover(star)}
-                      onMouseLeave={() => setBillRatingHover(0)}
-                      className="cursor-pointer p-1.5 transition-transform hover:scale-110"
-                    >
-                      <Star
-                        className={cn(
-                          'h-7 w-7 transition-colors',
-                          (billRatingHover || billRating) >= star
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-muted-foreground/30',
-                        )}
-                      />
-                    </button>
-                  ))}
-                  {billRating > 0 && (
-                    <span className="ml-2 text-sm text-muted-foreground self-center">
-                      {['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][billRating]}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground block mb-2">
-                  Your Review <span className="text-xs text-muted-foreground font-normal">(optional)</span>
-                </label>
-                <Textarea
-                  placeholder={`Share your experience at ${biz.name}...`}
-                  value={billReview}
-                  onChange={(e) => setBillReview(e.target.value)}
-                  rows={3}
-                  className="rounded-xl border-input bg-background focus-visible:ring-primary text-foreground resize-none text-sm"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setBillModalOpen(false)}
-                  className="rounded-xl border-border hover:bg-muted text-foreground cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!billNumber || !billDate || !billAmount || billRating === 0 || billSubmitting}
-                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
-                >
-                  {billSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  Submit Bill
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
-
-      {/* ── CLAIM CONFIRMATION MODAL */}
-      {claimingOffer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setClaimingOffer(null)}
-              aria-label="Close"
-              className="absolute top-3 right-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
-              <Ticket className="h-6 w-6" />
-            </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">Claim Promotional Offer</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Are you sure you want to claim the{' '}
-              <span className="font-semibold text-foreground">
-                {claimingOffer.discountPercent ? `${claimingOffer.discountPercent}% Off` : claimingOffer.title || 'this offer'}
-              </span>?
-              This will generate a unique redemption code valid at {biz.name}.
-            </p>
-            <div className="flex justify-center gap-3">
-              <Button
-                onClick={() => setClaimingOffer(null)}
-                variant="outline"
-                className="rounded-xl border-border hover:bg-muted text-foreground px-4 cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleConfirmClaim}
-                disabled={claiming}
-                className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold px-4 cursor-pointer disabled:opacity-60"
-              >
-                {claiming ? 'Claiming…' : 'Confirm Claim'}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* ── CLAIM SUCCESS MODAL */}
-      {claimedCode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="ui-pop w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl relative text-center max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setClaimedCode(null)}
-              aria-label="Close"
-              className="absolute top-3 right-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <div className="mx-auto w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-4 animate-bounce">
-              <Check className="h-6 w-6" />
-            </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">Offer Claimed!</h3>
-            <p className="text-xs text-muted-foreground mb-4">
-              Present this code at the business counter to redeem your discount.
-            </p>
-            <div className="bg-muted/50 p-4 rounded-xl border border-border mb-6">
-              <p className="text-[10px] text-muted-foreground uppercase font-semibold mb-1">
-                Redemption Code
-              </p>
-              <p className="text-2xl font-mono font-extrabold text-emerald-400 tracking-wider">
-                {claimedCode}
-              </p>
-            </div>
-            <Button
-              onClick={() => setClaimedCode(null)}
-              className="w-full rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
-            >
-              Done
-            </Button>
-          </Card>
-        </div>
-      )}
-    </PublicLayout>
-  );
-}
-
-export default function BusinessDetailPage() {
-  return (
-    <Suspense
-      fallback={
-        <PublicLayout>
-          <div className="flex items-center justify-center min-h-[50vh]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        </PublicLayout>
-      }
-    >
-      <BusinessDetailPageContent />
-    </Suspense>
+    <>
+      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />}
+      <BusinessClient businessId={id} initialBusiness={biz ? pickPublic(biz) : null} />
+    </>
   );
 }

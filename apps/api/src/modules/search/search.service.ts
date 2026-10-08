@@ -110,6 +110,95 @@ export class SearchService implements OnApplicationBootstrap {
   }
 
   /**
+   * Adds the "live offers" summary the public cards show: how many offers are
+   * running right now and which fulfilment modes (DINE_IN / TAKEAWAY / BOTH)
+   * they cover. Purely additive and never throws — on any failure the rows are
+   * returned untouched.
+   */
+  async attachOfferSummary<T extends Record<string, any>>(rows: T[]): Promise<T[]> {
+    const ids = rows.map((r) => r?.id).filter(Boolean);
+    if (!ids.length) return rows;
+    try {
+      const now = new Date();
+      // tenant-scope-ok: public business search across all listings
+      const offers = await this.db.offer.findMany({
+        where: {
+          businessId: { in: ids },
+          status: 'ACTIVE',
+          deletedAt: null,
+          startDate: { lte: now },
+          endDate: { gte: now },
+        },
+        select: { businessId: true, fulfilment: true },
+      });
+      const byBiz = new Map<string, { count: number; modes: Set<string> }>();
+      for (const o of offers as any[]) {
+        const s = byBiz.get(o.businessId) ?? { count: 0, modes: new Set<string>() };
+        s.count += 1;
+        s.modes.add(String(o.fulfilment));
+        byBiz.set(o.businessId, s);
+      }
+      return rows.map((r) => {
+        const s = byBiz.get(r.id);
+        return { ...r, activeOfferCount: s?.count ?? 0, offerFulfilments: s ? Array.from(s.modes) : [] };
+      });
+    } catch (err) {
+      this.logger.warn('attachOfferSummary failed, returning rows without it');
+      return rows;
+    }
+  }
+
+  /**
+   * Typesense documents only carry searchable text. Fill in what the public
+   * cards need (logo, verified, opening hours, halal, brand/outlet, address,
+   * coordinates, live-offer summary) from Postgres. Document fields win on
+   * overlap; failures fall back to the bare documents.
+   */
+  private async hydrateDocs(docs: any[]): Promise<any[]> {
+    const ids = docs.map((d) => d?.id).filter(Boolean);
+    if (!ids.length) return docs;
+    try {
+      // tenant-scope-ok: public business search across all listings
+      const rows = await this.db.business.findMany({
+        where: { id: { in: ids }, deletedAt: null },
+        select: {
+          id: true,
+          logo: true,
+          isVerified: true,
+          halalStatus: true,
+          operatingHours: true,
+          outletLabel: true,
+          brandId: true,
+          address: true,
+          state: true,
+          latitude: true,
+          longitude: true,
+          website: true,
+          socialLinks: true,
+          category: { select: { id: true, name: true, slug: true } },
+          brand: { select: { id: true, name: true, slug: true } },
+        },
+      });
+      const byId = new Map<string, any>((rows as any[]).map((r): [string, any] => [r.id, r]));
+      const merged = docs.map((d) => {
+        const r = byId.get(d.id);
+        if (!r) return d;
+        const { id: _id, latitude, longitude, ...rest } = r;
+        return {
+          ...rest,
+          ...d,
+          latitude: latitude != null ? Number(latitude) : null,
+          longitude: longitude != null ? Number(longitude) : null,
+        };
+      });
+      return await this.attachOfferSummary(merged);
+    } catch (err) {
+      this.logger.warn('hydrateDocs failed, returning bare Typesense documents');
+      return docs;
+    }
+  }
+
+  /**
    * Main Search Endpoint (Typesense First, Postgres Fallback)
    */
   async searchBusinesses(
@@ -162,7 +251,7 @@ export class SearchService implements OnApplicationBootstrap {
       const typesenseResults = await this.typesenseService.search('businesses', searchParams);
       if (typesenseResults && typesenseResults.hits && typesenseResults.hits.length > 0) {
         const response = {
-          data: typesenseResults.hits.map((hit: any) => hit.document),
+          data: await this.hydrateDocs(typesenseResults.hits.map((hit: any) => hit.document)),
           meta: {
             total: typesenseResults.found,
             page: typesenseResults.page,
@@ -206,6 +295,10 @@ export class SearchService implements OnApplicationBootstrap {
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { averageRating: 'desc' },
+        include: {
+          category: { select: { id: true, name: true, slug: true } },
+          brand: { select: { id: true, name: true, slug: true } },
+        },
       }),
       // tenant-scope-ok: public business search across all listings
       this.db.business.count({ where }),
@@ -219,7 +312,7 @@ export class SearchService implements OnApplicationBootstrap {
     });
 
     const response = {
-      data: strippedData,
+      data: await this.attachOfferSummary(strippedData),
       meta: { total, page, limit },
       source: 'postgres',
     };

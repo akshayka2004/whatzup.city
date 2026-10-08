@@ -313,7 +313,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
         )}
 
         {/* Content */}
-        <main className="flex-1 overflow-auto relative">
+        <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto relative focus:outline-none">
           {/* ── Trial expired: full-screen non-dismissible modal ─────────── */}
           {showTrialModal && (
             <div className="fixed inset-0 z-[200] bg-background/95 backdrop-blur-xl flex items-center justify-center p-4">

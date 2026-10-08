@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { BrandLogo } from '@/components/common/brand-logo';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   CheckCircle,
@@ -100,7 +101,7 @@ export function AdminSidebar() {
       {/* Brand */}
       <div className="px-5 py-5">
         <Link href="/admin" className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="Whtzup.city" className="h-9 w-auto object-contain" />
+          <BrandLogo alt="Whtzup.city" className="h-9 w-auto object-contain" />
           <span className="flex flex-col leading-tight">
             <span className="text-sm font-semibold tracking-tight text-foreground">Admin Panel</span>
             <span className="text-[11px] text-muted-foreground">Master Admin</span>

@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { MapPin, Store } from 'lucide-react';
-import { apiService } from '@/lib/services/api-service';
+import { useCachedGet } from '@/lib/use-cached-get';
+import { ResponsiveImage } from '@/components/common/responsive-image';
 
 interface PublicOutlet {
   id: string;
@@ -26,22 +27,24 @@ export function BrandPublicChip({ brand }: { brand?: { name: string } | null }) 
   );
 }
 
+/**
+ * Sibling outlets of the same brand (excluding the current one). Shared by the
+ * list below and by the profile's tab bar, so both read from one cached request.
+ */
+export function useOtherOutlets(brandId?: string | null, currentBusinessId?: string) {
+  const { data, loading } = useCachedGet<any>(brandId ? `/v1/brands/${brandId}/outlets/public` : null, {
+    ttlMs: 120_000,
+  });
+  const outlets = useMemo<PublicOutlet[]>(() => {
+    const list: PublicOutlet[] = Array.isArray(data) ? data : data?.data ?? [];
+    return list.filter((o) => o.id !== currentBusinessId);
+  }, [data, currentBusinessId]);
+  return { outlets, loading };
+}
+
 /** Sibling outlets of the same brand. Renders nothing when there are none or the lookup fails. */
 export function OtherOutlets({ brandId, currentBusinessId }: { brandId?: string | null; currentBusinessId: string }) {
-  const [outlets, setOutlets] = useState<PublicOutlet[]>([]);
-
-  useEffect(() => {
-    if (!brandId) return;
-    let alive = true;
-    apiService.get<any>(`/v1/brands/${brandId}/outlets/public`).then((res) => {
-      if (!alive || res.error) return;
-      const list: PublicOutlet[] = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
-      setOutlets(list.filter((o) => o.id !== currentBusinessId));
-    });
-    return () => {
-      alive = false;
-    };
-  }, [brandId, currentBusinessId]);
+  const { outlets } = useOtherOutlets(brandId, currentBusinessId);
 
   if (!brandId || outlets.length === 0) return null;
 
@@ -56,7 +59,14 @@ export function OtherOutlets({ brandId, currentBusinessId }: { brandId?: string 
             className="ui-press flex min-h-16 w-64 shrink-0 items-center gap-3 rounded-2xl border border-border bg-card p-3 hover:border-primary/40 sm:w-auto"
           >
             {o.logo ? (
-              <img src={o.logo} alt="" className="h-11 w-11 shrink-0 rounded-xl object-cover" />
+              <ResponsiveImage
+                src={o.logo}
+                alt=""
+                ratio="1"
+                className="h-11 w-11 shrink-0 rounded-xl"
+                sizes="44px"
+                fallback={<Store className="h-5 w-5" />}
+              />
             ) : (
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <Store className="h-5 w-5" />

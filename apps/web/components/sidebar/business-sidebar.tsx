@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { BrandLogo } from '@/components/common/brand-logo';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -192,7 +193,7 @@ export function BusinessSidebar() {
       {/* Brand + workspace */}
       <div className="px-5 py-5">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="Whtzup.city" className="h-9 w-auto object-contain" />
+          <BrandLogo alt="Whtzup.city" className="h-9 w-auto object-contain" />
           <span className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground">
             {businessName}
           </span>

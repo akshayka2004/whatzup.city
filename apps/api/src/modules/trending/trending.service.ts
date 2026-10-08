@@ -45,7 +45,7 @@ export class TrendingService {
       // Fallback: use raw DB ordering
       // tenant-scope-ok: public trending listings across all businesses
       const fallback = await this.db.business.findMany({
-        where: { deletedAt: null },
+        where: { status: 'APPROVED', deletedAt: null },
         orderBy: [{ totalReviews: 'desc' }, { averageRating: 'desc' }],
         take: 10,
         select: {
@@ -57,6 +57,8 @@ export class TrendingService {
           averageRating: true,
           totalReviews: true,
           isVerified: true,
+          operatingHours: true,
+          category: { select: { name: true, slug: true } },
         },
       });
       await this.redis.set(`trending:businesses:${tenantId}`, fallback, 1800);
@@ -68,7 +70,7 @@ export class TrendingService {
       .map((e) => e.businessId as string);
 
     const businesses = await this.db.business.findMany({
-      where: { id: { in: businessIds }, deletedAt: null },
+      where: { id: { in: businessIds }, status: 'APPROVED', deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -78,6 +80,8 @@ export class TrendingService {
         averageRating: true,
         totalReviews: true,
         isVerified: true,
+        operatingHours: true,
+        category: { select: { name: true, slug: true } },
       },
     });
 

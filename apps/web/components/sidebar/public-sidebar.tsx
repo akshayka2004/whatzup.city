@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useI18n } from '@/lib/i18n/provider';
+import { BrandLogo } from '@/components/common/brand-logo';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -53,6 +55,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
 const PROMO_DISMISSED_KEY = 'sidebar_promo_dismissed';
 
 export function PublicSidebar() {
+  const { tl } = useI18n();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -106,7 +109,7 @@ export function PublicSidebar() {
             active ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground',
           )}
         />
-        <span>{item.label}</span>
+        <span>{tl(item.label)}</span>
       </Link>
     );
   };
@@ -115,7 +118,7 @@ export function PublicSidebar() {
     <aside className="flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       {/* Brand */}
       <Link href="/" className="flex items-center gap-2.5 px-5 py-5">
-        <img src="/logo.png" alt="Whtzup.city" className="h-9 w-auto object-contain" />
+        <BrandLogo alt="Whtzup.city" className="h-9 w-auto object-contain" />
         <span className="text-lg font-semibold tracking-tight text-foreground">whtzup.city</span>
       </Link>
 

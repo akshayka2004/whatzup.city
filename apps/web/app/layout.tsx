@@ -1,12 +1,20 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, Noto_Sans_Malayalam } from 'next/font/google';
 import './globals.css';
+import './foundation.css';
 import { ThemeProviderClient } from '@/components/theme-provider-client';
 import { AuthProvider } from '@/hooks/use-auth';
 import { CommandPalette } from '@/components/common/command-palette';
+import { ConfirmProvider } from '@/components/common/confirm-dialog';
+import { I18nProvider } from '@/lib/i18n/provider';
+import { SITE_URL } from '@/lib/server-api';
 
 const _geist = Geist({ subsets: ['latin'] });
-const _geistMono = Geist_Mono({ subsets: ['latin'] });
+// Mono is only used for the odd code/ID snippet, so don't preload it on every page.
+const _geistMono = Geist_Mono({ subsets: ['latin'], preload: false });
+// Malayalam glyphs. Geist has none, so the browser only downloads this (unicode-range subset)
+// when Malayalam text is actually on screen; English-only visitors never fetch it.
+const malayalam = Noto_Sans_Malayalam({ subsets: ['malayalam'], display: 'swap', preload: false, variable: '--font-ml' });
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -16,8 +24,18 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Whtzup.city',
+  metadataBase: new URL(SITE_URL),
+  title: { default: 'Whtzup.city', template: '%s · Whtzup.city' },
   description: 'Discover local businesses, services, and civic updates in your city',
+  applicationName: 'Whtzup.city',
+  openGraph: {
+    type: 'website',
+    siteName: 'Whtzup.city',
+    title: "Whtzup.city — Kerala's trusted local directory",
+    description: 'Discover verified businesses, offers, events and civic updates across Kerala.',
+    images: [{ url: '/logo.png' }],
+  },
+  twitter: { card: 'summary' },
   icons: {
     icon: [
       {
@@ -40,12 +58,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={malayalam.variable}>
       <body className="font-sans antialiased bg-background text-foreground">
         <AuthProvider>
           <ThemeProviderClient>
-            <CommandPalette />
-            {children}
+            <I18nProvider>
+              <ConfirmProvider>
+                <a href="#main-content" className="ui-skip-link">Skip to content</a>
+                <CommandPalette />
+                {children}
+              </ConfirmProvider>
+            </I18nProvider>
           </ThemeProviderClient>
         </AuthProvider>
       </body>

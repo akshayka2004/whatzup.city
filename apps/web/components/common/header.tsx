@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { BrandLogo } from '@/components/common/brand-logo';
 import { useRouter } from 'next/navigation';
 import {
   Moon,
@@ -25,6 +26,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/use-auth';
 import { OutletSwitcher } from '@/components/business/outlet-switcher';
+import { LanguageSwitcher } from '@/components/common/language-switcher';
 import { apiService } from '@/lib/services/api-service';
 import Link from 'next/link';
 
@@ -118,7 +120,7 @@ export function Header() {
       {/* Mobile Logo Fallback */}
       <div className="flex items-center gap-2 md:hidden">
         <Link href="/">
-          <img src="/logo.png" alt="Whtzup.city Logo" className="h-8 w-auto object-contain cursor-pointer" />
+          <BrandLogo alt="Whtzup.city Logo" className="h-8 w-auto object-contain cursor-pointer" />
         </Link>
       </div>
 
@@ -167,6 +169,8 @@ export function Header() {
             {roleLabels[user.role]}
           </div>
         )}
+
+        <LanguageSwitcher />
 
         {/* Theme toggle — mounted guard prevents hydration mismatch */}
         <Button
