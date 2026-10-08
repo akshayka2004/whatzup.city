@@ -6,6 +6,7 @@ import { ThemeProviderClient } from '@/components/theme-provider-client';
 import { AuthProvider } from '@/hooks/use-auth';
 import { CommandPalette } from '@/components/common/command-palette';
 import { ConfirmProvider } from '@/components/common/confirm-dialog';
+import { Toaster } from '@/components/ui/sonner';
 import { I18nProvider } from '@/lib/i18n/provider';
 import { SITE_URL } from '@/lib/server-api';
 
@@ -20,7 +21,10 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1.0,
   maximumScale: 5.0,
-  themeColor: '#09090b',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F7F5F2' },
+    { media: '(prefers-color-scheme: dark)', color: '#1d1c22' },
+  ],
 };
 
 export const metadata: Metadata = {
@@ -67,6 +71,7 @@ export default function RootLayout({
                 <a href="#main-content" className="ui-skip-link">Skip to content</a>
                 <CommandPalette />
                 {children}
+                <Toaster position="top-center" richColors closeButton />
               </ConfirmProvider>
             </I18nProvider>
           </ThemeProviderClient>

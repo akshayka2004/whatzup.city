@@ -28,7 +28,7 @@ export function EmptyState({
 }) {
   const renderAction = (a: Action, primary: boolean) => {
     const cls = cn(
-      'ui-press inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold transition-colors',
+      'ui-press inline-flex min-h-11 items-center justify-center rounded-control px-5 text-sm font-semibold transition-colors',
       primary
         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
         : 'border border-border bg-card text-foreground hover:bg-secondary',
@@ -47,15 +47,14 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'ui-pop flex flex-col items-center justify-center text-center rounded-3xl border border-dashed border-border bg-card/60',
+        'ui-fade-up flex flex-col items-center justify-center text-center rounded-card border border-dashed border-border-strong/70 bg-card/60',
         compact ? 'px-5 py-8' : 'px-6 py-14',
         className,
       )}
     >
       {Icon && (
-        <div className="relative mb-4">
-          <span className="ui-glow absolute inset-0 rounded-2xl bg-primary/20 blur-xl" aria-hidden />
-          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className="mb-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground">
             <Icon className="h-7 w-7" />
           </div>
         </div>

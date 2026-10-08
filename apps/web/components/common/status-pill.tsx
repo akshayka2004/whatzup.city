@@ -3,12 +3,12 @@ import { cn } from '@/lib/utils';
 export type PillTone = 'success' | 'warning' | 'danger' | 'info' | 'primary' | 'neutral';
 
 const TONE: Record<PillTone, string> = {
-  success: 'bg-success/15 text-success-foreground dark:text-success border-success/30',
-  warning: 'bg-warning/15 text-warning-foreground dark:text-warning border-warning/30',
-  danger: 'bg-destructive/10 text-destructive border-destructive/25',
-  info: 'bg-info/10 text-info border-info/25',
-  primary: 'bg-primary/10 text-primary border-primary/25',
-  neutral: 'bg-muted text-muted-foreground border-border',
+  success: 'bg-success-soft text-success-soft-foreground border-success/25',
+  warning: 'bg-warning-soft text-warning-soft-foreground border-warning/30',
+  danger: 'bg-danger-soft text-danger-soft-foreground border-destructive/20',
+  info: 'bg-info-soft text-info-soft-foreground border-info/20',
+  primary: 'bg-brand-soft text-brand-soft-foreground border-primary/20',
+  neutral: 'bg-surface-sunken text-muted-foreground border-border',
 };
 
 const DOT: Record<PillTone, string> = {

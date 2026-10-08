@@ -4,16 +4,10 @@ import { ThemeProvider } from 'next-themes';
 import { ReactNode } from 'react';
 
 export function ThemeProviderClient({ children }: { children: ReactNode }) {
-  // Light-first (City Experience Platform: warm neutral bg, white surfaces).
-  // The header toggle still switches to dark and the choice persists;
-  // `enableSystem` is off so the OS can't silently override the brand default.
+  // Light stays the default for first visits (brand: warm neutral + terracotta).
+  // Users can pick light, dark or "system" from the account menu; the choice persists.
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="light"
-      enableSystem={false}
-      disableTransitionOnChange
-    >
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
       {children}
     </ThemeProvider>
   );
