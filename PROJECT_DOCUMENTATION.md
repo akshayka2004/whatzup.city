@@ -175,7 +175,18 @@ App Router. Route groups + segments under `apps/web/app/`:
 - `civic`, `government`, `register`, `login`, `profile`, `notifications`,
   `report`, `support`, `terms`, `privacy-policy`.
 - Services in `apps/web/lib/services/*` wrap API calls (`apiService`,
-  `analyticsService`, `onboardingService`, etc.).
+  `analyticsService`, `analyticsV2`, `onboardingService`, etc.).
+- **Shell & navigation:** every area layout (`PublicLayout`, `BusinessLayout`,
+  `StaffLayout`, `AdminLayout`, `SuperAdminLayout`) renders through
+  `components/layouts/app-shell.tsx`. Menus for every role live in
+  `lib/nav/config.ts` and feed the desktop sidebar, mobile tabs and "More" sheet —
+  add new pages there. The `(admin)`/`(business)`/`(super-admin)` route groups are
+  empty pass-throughs.
+- **Design system:** see `DESIGN.md`. Shared building blocks in
+  `components/system/*` and `components/analytics/*`; `/design` is the dev-only
+  style guide; `pnpm lint:design` reports styling that bypasses the tokens.
+- **Client tracking:** `lib/analytics/track.ts` (`track(event, { businessId, source, metadata })`)
+  adds the anonymous visitor id (localStorage) and a 30-minute session id.
 - Deployed with Next **standalone** output — see the
   [static-asset gotcha](#101-nextjs-standalone-static-assets-must-be-copied).
 
@@ -486,6 +497,13 @@ doesn't help — Turbopack's dev chunk hashes are derived from the **file path**
 not its content, so renaming the file is the reliable way to force a genuinely
 new, never-cached URL.
 
+### 10.7b Turbopack dev server serving stale CSS
+
+After large `globals.css` edits the dev server can keep serving the previous CSS
+chunk (same hash, old content) even though Tailwind compiles the new file fine.
+Stop the dev server, delete `apps/web/.next/dev` (dev-only cache, regenerated), start
+again.
+
 ### 10.8 Tailwind `line-clamp-N` doesn't stop horizontal overflow
 
 `line-clamp-N` only sets `-webkit-line-clamp` + `overflow: hidden` +
@@ -663,6 +681,26 @@ tenant.
 `MASTER_ADMIN` it counts **platform-wide** (no tenant filter) and includes
 `totalTenants` + `activeOffers`; for a tenant admin it stays tenant-scoped.
 Cached in Redis under `analytics:overview:{platform|tenantId}` for 5 min.
+`revenueThisMonth` / `revenueLastMonth` / `growthRate` come from verified payments
+in the transaction ledger (ex-GST, IST months).
+
+**Analytics v2** (what the dashboards use):
+
+- `GET /v1/analytics/v2/business/:businessId/report?days=|from=&to=&granularity=`
+  — owner, active team member, brand owner or platform admin only. KPIs vs the
+  previous equal period, IST series, funnel, sources, devices, weekday×hour heatmap,
+  offer conversion.
+- `GET /v1/analytics/v2/platform/report` — `SUPER_ADMIN`/`MASTER_ADMIN`, **all tenants**.
+  Visitors, signups, revenue (new vs renewal, GST, plan mix), GMV, onboarding funnel,
+  top businesses/categories, search terms with zero-result counts, live queue counts.
+- Computed from source rows on read (cached 2–3 min); no rollup tables. Dates are IST
+  via `apps/api/src/common/utils/ist.ts`. A visitor = visitor id → session → daily
+  hashed IP; rows flagged `metadata.isBot` are excluded.
+- Ingest: `POST /v1/analytics/track` and `/track/batch`. Event names must be in
+  `modules/analytics/event-taxonomy.ts` (legacy aliases like `BUSINESS_VIEW` /
+  `PHONE_CLICK` are kept and counted with their canonical group). Tenant, device,
+  bot flag and a daily-salted IP hash (`ANALYTICS_IP_SALT`, falls back to
+  `JWT_SECRET`) are set server-side; raw IPs are not stored.
 
 ### 12.7 First-time onboarding tour
 

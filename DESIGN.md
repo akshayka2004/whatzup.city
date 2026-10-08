@@ -1,106 +1,110 @@
 # DESIGN.md — Whtzup.city
 
-Visual system of record. Pages consume tokens; pages do not invent color.
-Source of truth in code: `apps/web/app/globals.css`.
+Visual system of record (design system v3, "soft modern"). Pages consume tokens and
+shared components; pages do not invent colour, size or chrome.
 
-## Theme
+- Tokens: `apps/web/app/globals.css` (+ motion/elevation helpers in `foundation.css`)
+- Living style guide: `/design` (dev / preview only — `NEXT_PUBLIC_SHOW_DESIGN=1` to expose)
+- Guard: `pnpm lint:design` (`scripts/check-design.js`, add `--strict` once at zero)
 
-**Light-first** (the "City Experience Platform" direction): warm neutral canvas,
-white surfaces, muted terracotta accent. `ThemeProviderClient` sets
-`defaultTheme="light"`, `enableSystem={false}`; the header toggle switches to a
-warm-charcoal dark variant and the choice persists.
+## Direction
 
-Why light warm-neutral: the product is a civic front-door — citizens, businesses,
-and government should feel it's calm, trustworthy, and "official but human"
-(Apple / Stripe / Airbnb / gov-digital-services register), not a dark admin tool.
-The neutral is warm (not cool-grey, not stark white) so it reads considered.
+Warm, calm, trustworthy (Airbnb / Linear / Stripe register): warm-neutral canvas,
+white cards, one terracotta accent reserved for the primary action, active nav and
+focus. Soft rounded shapes, generous whitespace, quiet motion. Never playful.
 
-Color strategy: **restrained** — warm neutrals carry the surface; the terracotta
-accent stays reserved for primary action, active nav, and focus. Green = trust /
-verified. Blue = information only. Accent never overpowers content.
+Light is the default; users can choose Light, Dark or Match device from the account
+menu (`ThemeProviderClient`: `defaultTheme="light"`, `enableSystem`).
 
-## Palette (light — the default)
+## Colour tokens
 
-| Role | Hex | OKLCH | Use |
-|---|---|---|---|
-| Background | `#F7F5F2` | `oklch(0.971 0.005 78)` | App canvas |
-| Surface | `#FFFFFF` | `oklch(1 0 0)` | Cards, popovers |
-| Sidebar | `#FBFAF8` | `oklch(0.985 0.003 85)` | Sidebar |
-| Border | `#EAE5DE` | `oklch(0.924 0.011 77)` | Hairlines |
-| Primary (terracotta) | `#B86F50` | `oklch(0.615 0.103 43)` | Primary action, active, focus |
-| Primary hover | `#A56045` | `oklch(0.561 0.099 42)` | Hover |
-| Ink | `#20242F` | `oklch(0.261 0.022 269)` | Headings, body |
-| Muted ink | `#667085` | `oklch(0.544 0.035 265)` | Secondary text, labels |
-| Verified / success | `#35C48B` | `oklch(0.732 0.146 162)` | Verified, success |
-| Warning | `#E6A03C` | `oklch(0.757 0.139 72)` | Warning |
-| Danger | `#E75A5A` | `oklch(0.651 0.176 23)` | Destructive, error |
+Use the semantic utilities, never raw Tailwind palette classes or hex.
 
-**Contrast contract (verified):** ink/bg 14.2:1 · muted/bg 4.6:1 · muted/surface
-5.0:1 · ink/verified 7.0:1 — all pass AA. White-on-terracotta ≈ 3.9:1 → valid for
-**bold/large button labels only** (never small body text on terracotta). Do not
-darken `--muted-foreground` further; it only just clears 4.5:1.
+| Token (utility) | Use |
+|---|---|
+| `bg-background` / `bg-card` / `bg-surface-sunken` | Canvas / surfaces / insets |
+| `text-foreground` / `text-muted-foreground` / `text-subtle-foreground` | Ink ramp |
+| `border-border` / `border-border-strong` | Hairlines / emphasised edges |
+| `bg-primary` (+ `text-primary-foreground`) | Primary action only |
+| `bg-brand-soft` + `text-brand-soft-foreground` | Brand tints, selected tiles, icon chips |
+| `bg-{success,warning,danger,info}-soft` + `text-…-soft-foreground` | Status (always with icon or label) |
+| `bg-success` / `bg-warning` / `bg-destructive` / `bg-info` | Solid status (rare) |
+| `text-delta-up` / `text-delta-down` | KPI deltas (good / bad direction) |
+| `--chart-1 … --chart-8`, `--chart-grid`, `--chart-axis` | Data-viz only |
 
-Dark mode: same terracotta + status hues on a warm-charcoal neutral, all text
-pairs ≥4.5:1 — kept coherent for the toggle, but light is the designed default.
+Charts: categorical palette validated for colour-blind separation in light and dark
+(adjacent CVD ΔE ≥ 8, normal-vision ΔE ≥ 15). Assign in fixed order, never cycle; fold
+a 9th series into "Other". Single-series charts use `--primary`. Slots 3–5 are < 3:1
+on white, so every chart ships tooltips and a table/CSV view.
 
-Status (never hue-only — icon or label always): success `#35C48B` ·
-warning `#E6A03C` · danger `#E75A5A` · info reserved blue `oklch(0.560 0.110 235)`.
+Contrast: ink/bg 14.2:1 · muted/bg 4.6:1 (do not lighten) · white-on-terracotta ≈ 3.9:1
+→ bold/large labels only.
+
+## Shape & elevation
+
+| Utility | Size | Use |
+|---|---|---|
+| `rounded-xs` | 6 | table chips, kbd |
+| `rounded-sm` | 10 | small controls |
+| `rounded-md` | 12 | menus, tooltips |
+| `rounded-control` (`lg`) | 14 | buttons, inputs |
+| `rounded-xl` | 16 | nav rows, list tiles |
+| `rounded-card` (`2xl`) | 20 | cards, sections |
+| `rounded-sheet` (`3xl`) | 28 | dialogs, bottom sheets, hero |
+| `rounded-full` | — | pills, avatars, chips |
+
+Nested radius = outer − padding. Elevation is border-first: `shadow-e1` (cards),
+`shadow-e2` (popovers, selected tiles), `shadow-e3` (modals). Glass/blur only on
+sticky chrome and overlays.
 
 ## Typography
 
-- Family: **Geist** (`next/font`, exposed as `font-sans`); `Geist_Mono` for
-  numeric/code. One family across weights — no second sans paired against it.
-- Scale: page title `text-2xl`→`text-3xl` bold; section `text-base` bold;
-  body `text-sm`; meta `text-xs`. Display only on `/login` (up to ~64px).
-- `text-wrap: balance` on headings; `text-wrap: pretty` on prose. Body measure
-  capped ~65–75ch.
-- Letter-spacing: `tracking-tight` on headings ≥`text-2xl`; never below -0.04em.
-
-## Radius & elevation
-
-- `--radius: 1rem` (16px). Buttons/inputs `rounded-xl` (16), cards `rounded-2xl`
-  (`--radius-card` 20), hero/large sections `rounded-3xl` (`--radius-hero` 32),
-  pills `rounded-full`. 8-point spacing system.
-- Elevation is border-first: hairline `--border` + a soft shadow only where
-  something genuinely floats (modal, popover, sticky bar). No glow borders.
-- Glass/backdrop-blur is reserved for true overlays (modals, gates). Not decoration.
+Geist (UI) · Geist Mono (codes) · Noto Sans Malayalam (loaded on demand).
+Type utilities: `text-display`, `text-title`, `text-heading`, `text-body`, `text-label`,
+`text-caption` (12px minimum anywhere), `text-overline`, `text-metric` (tabular).
+`cn()` knows these are font sizes, so they merge correctly.
 
 ## Layout
 
-- App shell: sidebar (desktop) + header; mobile uses `MobileNav` bottom bar.
-  Content container `container mx-auto px-4`, bottom padding `pb-28` on mobile so
-  the fixed nav never covers actions.
-- Responsive grids: `repeat(auto-fit, minmax(280px, 1fr))` over breakpoint soup.
-- Z-index scale (semantic, no 9999): dropdown 10 · sticky 20 · nav 30 ·
-  backdrop 40 · modal 50 · toast 60 · tooltip 70.
+- One `AppShell` for every area (`components/layouts/app-shell.tsx`): collapsible
+  sidebar (icon rail, persisted) · header · scrolling main (max 1280, 1600 for admin)
+  · mobile bottom bar. Auth-loading shows `AppShellSkeleton`, never a spinner.
+- Navigation for every role comes from `lib/nav/config.ts` — sidebar, mobile tabs and
+  the "More" sheet all read it. Add pages there, nowhere else.
+- Z-index scale: dropdown 10 · sticky 20 · nav 30 · backdrop 40 · modal 50 · toast 60 · tooltip 70.
 
-## Components
+## Components (use these first)
 
-shadcn/ui primitives in `apps/web/components/ui` are the base layer. Rules:
+| Need | Component |
+|---|---|
+| Page title, breadcrumbs, actions, tabs slot | `components/system/page-header.tsx` |
+| Titled block / settings group / panel | `components/system/section-card.tsx` |
+| Modal (dialog on desktop, bottom sheet on phones) | `components/system/modal.tsx` |
+| Legacy overlay drop-in (focus trap, Escape) | `components/system/modal-surface.tsx` |
+| Table with sort, sticky header, mobile cards, paging, CSV | `components/system/data-table.tsx` |
+| Search + filters + actions row | `components/system/toolbar.tsx` |
+| Quick filters / segment chips | `components/system/filter-chip.tsx` |
+| Wizard progress | `components/system/stepper.tsx` |
+| Status | `components/common/status-pill.tsx` (`statusTone()` map) |
+| Empty / skeleton | `components/common/empty-state.tsx`, `common/skeletons.tsx` |
+| Feedback | `toast` from `components/ui/sonner`, `useConfirm()` — never `alert/confirm` |
+| Concept icons | `lib/icons.ts` (one lucide icon per product concept) |
+| Analytics | `components/analytics/*` (KpiCard, RangePicker, TimeSeriesChart, BarList, Funnel, Heatmap) |
+| Business listing card | `components/business-card.tsx` (one card everywhere) |
+| Auth screens | `components/auth/auth-shell.tsx` (`AuthShell`, `AuthField`, `FormAlert`) |
 
-- **Buttons**: one primary per view. Primary = bronze; secondary = surface-raised
-  + hairline; ghost for tertiary. Min height 44px on touch surfaces.
-- **Cards**: containers, not decoration. Never nest cards.
-- **Inputs**: 44–54px tall, hairline border, bronze focus ring
-  (`0 0 0 3px rgba(138,106,99,.25)`), real `<label>`, placeholder ≥4.5:1.
-- **Tables** (admin): sticky header, aligned numerics (tabular figures),
-  row hover, zebra never — hierarchy comes from alignment and weight.
-- **Status**: `Badge` with icon + label. Shared status map, not per-page strings.
-- **Empty states**: `components/common/empty-state.tsx` — icon, one line of what's
-  missing, one action. Every list/queue must use it rather than rendering nothing.
+Buttons: `primary` (one per view) · `tonal` · `secondary` · `outline` · `ghost` · `danger`
+· `destructive` · `link`; sizes `sm 36 / default 40 / lg 48 / xl 56`; `shape="pill"`;
+`loading` keeps width and sets `aria-busy`.
 
 ## Motion
 
-- Durations 150–250ms; ease-out (quart/expo). No bounce, no elastic.
-- Reveals enhance already-visible content — never gate visibility behind a
-  transition (it ships blank in headless renderers).
-- Auth-page animation utilities live in `globals.css` as `.lp-*`.
-  **Do not use inline `<style>` in client components** — React 19 flags
-  element-with-children style tags; put CSS in `globals.css`.
-- Every animation needs a `@media (prefers-reduced-motion: reduce)` fallback.
+120–320 ms, `ease-out-quint`; press = slight scale (primary buttons also tighten their
+radius). Reveal already-visible content only. Everything respects
+`prefers-reduced-motion`. No decorative drifting blobs.
 
 ## Known debt
 
-- Some pages still hardcode old hexes (`#37353E`, `#44444E`, `#715A5A`,
-  `#D3DAD9`) instead of tokens — migrate to tokens on touch.
-- `/reset-password` page does not exist yet (API endpoint does).
+- 13 legacy overlays remain (already have dialog roles or are full-screen states).
+- Register wizard is restyled on tokens but still one long component; split into
+  `register/(wizard)/[step]` with RHF+zod when the signup flow can be tested end-to-end.

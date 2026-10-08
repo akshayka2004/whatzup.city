@@ -38,25 +38,37 @@ Build broken into phases. ✅ done · 🟡 in progress · ⬜ planned.
 - ✅ **Login redesign:** premium split-layout `/login` (city hero, bronze palette).
 - ✅ **Forgot-password:** `/forgot-password` page + tenant-optional DTO.
 
-## UI/UX overhaul (in progress)
+## UI/UX overhaul — design system v3 (October 2026)
 
-- ✅ **UX-1 — Design system:** `PRODUCT.md` + `DESIGN.md`; global token realignment
-  to bronze identity; AA contrast fix (`--muted-foreground`); status + z-index
-  tokens; Button/Input polish (touch targets, cursor, motion). *(commit 7e5f587)*
-- 🟡 **UX-2 — Navigation & shells:** header, business/admin/super-admin/public
-  sidebars, mobile nav — spacing, active states, hierarchy, hit areas.
-- ⬜ **UX-3 — Public pages:** home, category, nearby, business detail, offers,
-  events, government — hierarchy, cards, imagery, empty states.
-- ⬜ **UX-4 — Business dashboard:** dashboard, offers, events, moderation, bills,
-  settings, team, subscriptions — action-first layout, tables, forms.
-- ⬜ **UX-5 — Admin/super-admin:** queues, tables (density/alignment), analytics,
-  detail panels.
-- ⬜ **UX-6 — States & polish:** empty/error/loading states everywhere, form
-  validation, toasts, motion pass, responsive audit, a11y audit.
+- ✅ **UX-1 — Design system v3:** soft-modern tokens (shape scale, soft status surfaces,
+  elevation, type utilities, CVD-validated chart palette), restyled primitives, new
+  `components/system/*`, `/design` style guide, `pnpm lint:design` guard (933 → 13).
+- ✅ **UX-2 — Navigation & shells:** single nav config for every role, one AppShell,
+  collapsible sidebar, avatar account menu (theme + language), light/dark gates.
+- ✅ **UX-3 — Public pages:** BusinessCard v2, search-first hero, category bar,
+  favorites fix, no fake claim codes, search/card/save/share/website tracking.
+- ✅ **Auth:** light AuthShell, `/reset-password`.
+- 🟡 **UX-4 — Business dashboard:** ✅ Today overview, analytics, sectioned settings,
+  accessible modals everywhere · ⬜ bill-queue split view + shortcuts, promotions
+  drawer with live preview, review replies, real support tickets.
+- 🟡 **UX-5 — Admin/super-admin:** ✅ platform overview on analytics v2, live system
+  health, real bill-escalation queue, fabricated screens removed · ⬜ merge admin /
+  super-admin duplicates, DataTable on all lists.
+- 🟡 **UX-6 — States & polish:** ✅ toasts/confirm dialog, 12px minimum text,
+  semantic colours app-wide, dark-mode logo · ⬜ dashboard `loading.tsx`, full a11y
+  audit, Malayalam for page bodies.
+
+## Analytics v2 (October 2026)
+
+- ✅ IST day/week/month buckets, visitor dedupe, bot filtering, period comparison,
+  funnel, sources, devices, heatmap, offer conversion, platform revenue/onboarding.
+- ✅ Event allowlist, server-derived tenant/device/bot, hashed IPs, batch ingest.
+- ✅ Ownership checks on business analytics/customers/dashboard; trials stats role guard.
+- ✅ Claims idempotent + atomic; verified purchases counted on verification.
+- ⬜ Daily rollup tables + nightly job (only needed once event volume grows).
 
 ## Remaining / backlog
 
-- ⬜ **`/reset-password` page** (API endpoint exists).
 - ⬜ **DB perf indexes** migration apply on VPS (composite + partial indexes staged).
 - ⬜ **Social sign-in** (currently UI placeholder only).
 - ⬜ **Opera** cross-browser confirmation (suspected ad-blocker/cache).
