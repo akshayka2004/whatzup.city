@@ -84,7 +84,22 @@ function CategoryContent() {
     [sig],
   );
 
+  // With any quick filter on, use the search API, which applies them server-side (exact counts).
+  const filtering = filters.open || filters.rating4 || filters.halal || !!filters.fulfilment;
   const key = useMemo(() => {
+    if (filtering) {
+      const p = new URLSearchParams();
+      if (match?.id) p.set('categoryId', match.id);
+      const text = filters.sub || (!match?.id && rawType !== 'all' ? rawType : '');
+      if (text) p.set('q', text);
+      if (filters.city) p.set('city', filters.city);
+      if (filters.rating4) p.set('minRating', '4');
+      if (filters.open) p.set('open', '1');
+      if (filters.halal) p.set('halal', '1');
+      if (filters.fulfilment) p.set('fulfilment', filters.fulfilment);
+      p.set('limit', String(Math.min(limit, 60)));
+      return `/v1/search/discover?${p.toString()}`;
+    }
     const params = new URLSearchParams();
     if (match?.id) params.set('categoryId', match.id);
     else if (rawType && rawType !== 'all') params.set('search', rawType);
@@ -93,7 +108,8 @@ function CategoryContent() {
     if (filters.city) params.set('city', filters.city);
     params.set('limit', String(limit));
     return `/v1/businesses?${params.toString()}`;
-  }, [match?.id, rawType, filters.sub, filters.city, limit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [match?.id, rawType, filters.sub, filters.city, limit, filtering, filters.open, filters.rating4, filters.halal, filters.fulfilment]);
 
   const res = useCachedGet<any>(key, { enabled: catsReady && cityReady });
   const list = useMemo(() => toList(res.data), [res.data]);
@@ -145,7 +161,7 @@ function CategoryContent() {
   /* ── Hero + chips ── */
   const heroName: string = match?.name || categoryTitle;
   const Icon = categoryIconFor(match?.slug || match?.name || rawType);
-  const clientOnly = filters.open || filters.rating4 || filters.halal || !!filters.fulfilment;
+  const clientOnly = false;
   const shown = clientOnly ? results.length : total ?? results.length;
   const countText = loading
     ? ''

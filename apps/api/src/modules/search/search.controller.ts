@@ -22,15 +22,27 @@ export class SearchController {
     @Query('minRating') minRating?: number,
     @Query('page') page?: number,
     @Query('tenantId') tenantId?: string,
+    @Query('open') open?: string,
+    @Query('halal') halal?: string,
+    @Query('fulfilment') fulfilment?: string,
+    @Query('limit') limit?: string,
   ) {
+    const ful = (fulfilment || '').toUpperCase().replace('-', '_');
     // Public discovery: search APPROVED businesses across ALL tenants (each
     // business registers its own tenant), not just the caller's tenant.
     return this.searchService.searchBusinesses(
       tenantId || 'default',
       q || '*',
-      { categoryId, city, minRating },
+      {
+        categoryId,
+        city,
+        minRating,
+        openNow: open === '1' || open === 'true',
+        halal: halal === '1' || halal === 'true',
+        fulfilment: ful === 'DINE_IN' || ful === 'TAKEAWAY' ? ful : undefined,
+      },
       page,
-      20,
+      Math.min(Math.max(Number(limit) || 20, 1), 60),
       true, // isPublic — cross-tenant, APPROVED only
     );
   }

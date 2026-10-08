@@ -92,8 +92,11 @@ function SearchContent() {
     if (state.q) p.set('q', state.q);
     if (state.city) p.set('city', state.city);
     if (state.rating4) p.set('minRating', '4');
+    if (state.open) p.set('open', '1');
+    if (state.halal) p.set('halal', '1');
+    if (state.fulfilment) p.set('fulfilment', state.fulfilment);
     return p.toString();
-  }, [state.q, state.city, state.rating4]);
+  }, [state.q, state.city, state.rating4, state.open, state.halal, state.fulfilment]);
   const key = `/v1/search/discover?${baseQuery}`;
   const first = useCachedGet<any>(key);
 
@@ -165,20 +168,8 @@ function SearchContent() {
     [items, state.open, state.rating4, state.halal, state.fulfilment],
   );
   const results = useMemo(() => sortItems(filtered, state.sort), [filtered, state.sort]);
-  // Rating also goes to the API as minRating, so the API's total already reflects it; these three don't.
-  const clientOnly = state.open || state.halal || !!state.fulfilment;
-
-  // Open-now trims a 20-row page hard, so quietly pull a few more pages (max 3) until the list isn't bare.
-  const autoPages = useRef(0);
-  useEffect(() => {
-    autoPages.current = 0;
-  }, [key, state.open]);
-  useEffect(() => {
-    if (!state.open || !hasMore || extra.loading || first.loading) return;
-    if (results.length >= 6 || autoPages.current >= 3) return;
-    autoPages.current += 1;
-    void loadMore();
-  }, [state.open, hasMore, extra.loading, first.loading, results.length, loadMore]);
+  // Every filter is applied by the API now, so its total is exact.
+  const clientOnly = false;
 
   const showChips: FilterShow = {
     open: true,

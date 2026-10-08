@@ -1,3 +1,4 @@
+import { getOpenStatus } from '@saas/types';
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -204,12 +205,24 @@ export class SearchService implements OnApplicationBootstrap {
   async searchBusinesses(
     tenantId: string,
     query: string,
-    filters?: { categoryId?: string; city?: string; minRating?: number },
+    filters?: {
+      categoryId?: string;
+      city?: string;
+      minRating?: number;
+      openNow?: boolean;
+      halal?: boolean;
+      fulfilment?: 'DINE_IN' | 'TAKEAWAY';
+    },
     page = 1,
     limit = 20,
     isPublic = false,
   ): Promise<any> {
-    const cacheKey = `search:${tenantId}:${query}:${JSON.stringify(filters)}:${page}:${isPublic}`;
+    // Open-now depends on each listing's hours evaluated *now*, and halal/fulfilment live outside the
+    // search index, so these are applied server-side over the whole candidate set (exact totals).
+    const needsPostFilter = !!(filters?.openNow || filters?.halal || filters?.fulfilment);
+    // Open-now changes minute to minute, so it gets a short cache bucket.
+    const minuteBucket = filters?.openNow ? Math.floor(Date.now() / 300_000) : 0;
+    const cacheKey = `search:${tenantId}:${query}:${JSON.stringify(filters)}:${page}:${isPublic}:${minuteBucket}`;
     const cached = await this.redis.get<any>(cacheKey);
     if (cached) return cached;
 
@@ -220,6 +233,7 @@ export class SearchService implements OnApplicationBootstrap {
         : query;
 
     try {
+      if (needsPostFilter) throw new Error('post-filter path');
       const searchParams: any = {
         q: expandedQuery,
         // Ranking priority: name → categoryName → subcategoryName → tags → offerTitles → branchNames → description
@@ -262,8 +276,8 @@ export class SearchService implements OnApplicationBootstrap {
         await this.redis.set(cacheKey, response, 300); // 5 min TTL
         return response;
       }
-    } catch (error) {
-      this.logger.warn('Typesense search failed, falling back to PostgreSQL');
+    } catch (error: any) {
+      if (!needsPostFilter) this.logger.warn('Typesense search failed, falling back to PostgreSQL');
     }
 
     // Postgres Fallback
@@ -287,6 +301,45 @@ export class SearchService implements OnApplicationBootstrap {
     if (filters?.categoryId) where.categoryId = filters.categoryId;
     if (filters?.city) where.city = { contains: filters.city, mode: 'insensitive' };
     if (filters?.minRating) where.averageRating = { gte: filters.minRating };
+    if (filters?.halal) where.halalStatus = 'HALAL';
+
+    if (needsPostFilter) {
+      const candidates = await this.db.business.findMany({
+        where,
+        take: 1000,
+        orderBy: { averageRating: 'desc' },
+        include: {
+          category: { select: { id: true, name: true, slug: true } },
+          brand: { select: { id: true, name: true, slug: true } },
+        },
+      });
+      const now = new Date();
+      let pool: any[] = filters?.openNow
+        ? candidates.filter((b: any) => getOpenStatus(b.operatingHours as any, now)?.isOpen === true)
+        : candidates;
+      pool = pool.map((b: any) => {
+        const copy = { ...b };
+        delete copy.ownerName;
+        delete copy.ownerId;
+        return copy;
+      });
+      if (filters?.fulfilment) {
+        const withOffers = await this.attachOfferSummary(pool);
+        pool = withOffers.filter((b: any) =>
+          Array.isArray(b.offerFulfilments) && (b.offerFulfilments.includes(filters.fulfilment) || b.offerFulfilments.includes('BOTH')),
+        );
+        const response = { data: pool.slice((page - 1) * limit, page * limit), meta: { total: pool.length, page, limit }, source: 'postgres-filtered' };
+        await this.redis.set(cacheKey, response, 120);
+        return response;
+      }
+      const response = {
+        data: await this.attachOfferSummary(pool.slice((page - 1) * limit, page * limit)),
+        meta: { total: pool.length, page, limit },
+        source: 'postgres-filtered',
+      };
+      await this.redis.set(cacheKey, response, 120);
+      return response;
+    }
 
     const [data, total] = await Promise.all([
       // tenant-scope-ok: public business search across all listings
