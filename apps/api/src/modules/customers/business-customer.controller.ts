@@ -1,4 +1,5 @@
-import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Param, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -38,6 +39,24 @@ export class BusinessCustomerController {
       page: page ? parseInt(page) : 1,
       limit: limit ? parseInt(limit) : 20,
     });
+  }
+
+  @Get('businesses/:businessId/customers/export')
+  @ApiOperation({ summary: 'Download the filtered customer list as CSV (max 10,000 rows)' })
+  async exportCustomers(
+    @Param('businessId') businessId: string,
+    @CurrentUser() user: { id: string; role?: string },
+    @Res() res: Response,
+    @Query('filter') filter?: string,
+    @Query('search') search?: string,
+  ) {
+    await assertBusinessAccess(this.db, businessId, user);
+    const csv = await this.svc.exportCsv(businessId, filter, search);
+    const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="customers-${(filter || 'all').replace(/[^a-z_]/gi, '')}-${day}.csv"`);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).send(csv);
   }
 
   @Get('businesses/:businessId/customers/stats')
