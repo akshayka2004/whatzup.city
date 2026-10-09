@@ -133,6 +133,7 @@ export function OnboardingTour({ steps, storageKey, startDelayMs = 600 }: Onboar
   }
 
   return (
+    // design-lint-ignore: spotlight tour needs a raw full-screen layer around the highlighted element
     <div className="fixed inset-0" style={{ zIndex: 300 }} role="dialog" aria-modal="true" aria-label="Platform guide">
       {/* Spotlight cutout — dark everywhere except a lit box around the target */}
       <div

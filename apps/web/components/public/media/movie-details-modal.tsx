@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useEffect, useRef } from 'react';
 import { Calendar, Clapperboard, Clock, PlayCircle, Ticket, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,13 +17,6 @@ export function MovieDetailsModal({ movie, onClose }: { movie: Movie; onClose: (
     closeBtn.current?.focus();
   }, []);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
 
   const langs = Array.isArray(movie.languages) ? movie.languages : [];
   const genres = Array.isArray(movie.genres) ? movie.genres : [];
@@ -30,17 +24,7 @@ export function MovieDetailsModal({ movie, onClose }: { movie: Movie; onClose: (
   const duration = fmtDuration(movie.durationMinutes);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={movie.name}
-        className="ui-fade-up relative flex max-h-[88dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl border border-border bg-card shadow-2xl sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ModalSurface onClose={onClose} label={movie.name} hideClose className="flex max-h-[88dvh] flex-col overflow-hidden p-0 sm:max-w-lg">
         <button
           ref={closeBtn}
           type="button"
@@ -139,7 +123,6 @@ export function MovieDetailsModal({ movie, onClose }: { movie: Movie; onClose: (
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </ModalSurface>
   );
 }

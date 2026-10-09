@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Package, UtensilsCrossed, X } from 'lucide-react';
 import { ResponsiveImage } from '@/components/common/responsive-image';
@@ -144,12 +145,11 @@ export function MenuSection({
 
       {/* ── MENU PHOTO LIGHTBOX */}
       {viewingPhoto && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Menu photo"
-          onClick={() => setViewing(null)}
+        <ModalSurface
+          onClose={() => setViewing(null)}
+          label="Menu photo"
+          hideClose
+          className="flex max-h-[95dvh] items-center justify-center border-0 bg-transparent p-0 shadow-none sm:max-w-5xl"
         >
           <button
             type="button"
@@ -191,9 +191,8 @@ export function MenuSection({
             src={viewingPhoto.publicUrl}
             alt={viewingPhoto.title || `${biz.name} menu`}
             className="ui-pop max-h-[85vh] max-w-full rounded-xl object-contain"
-            onClick={(e) => e.stopPropagation()}
           />
-        </div>
+        </ModalSurface>
       )}
     </section>
   );

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, type ComponentType, type ReactNode } from 'react';
-import { Star, X } from 'lucide-react';
+import { type ComponentType, type ReactNode } from 'react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /** White card used by every profile section. */
@@ -64,37 +65,17 @@ export function ModalShell({
   className?: string;
   children: ReactNode;
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label={label}
-    >
-      <div
-        className={cn(
-          'ui-pop relative max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-border bg-card p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[90vh] sm:rounded-2xl sm:p-6',
-          className,
-        )}
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        aria-describedby={undefined}
+        // A stray backdrop tap must not throw away a half-filled bill form.
+        onInteractOutside={(e) => e.preventDefault()}
+        className={cn('block max-h-[90dvh] overflow-y-auto sm:max-w-lg', className)}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute right-2 top-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        <DialogTitle className="sr-only">{label}</DialogTitle>
         {children}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

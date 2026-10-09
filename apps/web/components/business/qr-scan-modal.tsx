@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import QrScanner from 'qr-scanner';
-import { X, Camera, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import { Modal } from '@/components/system/modal';
 
 interface QrScanModalProps {
   open: boolean;
@@ -17,49 +18,41 @@ export function QrScanModal({ open, onClose, onScan }: QrScanModalProps) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!open || !videoRef.current) return;
-    setError('');
-    const scanner = new QrScanner(
+    if (!open) return;
+    let scanner: QrScanner | null = null;
+    let cancelled = false;
+    // The dialog portal mounts in the same commit; wait a frame so the <video> is attached.
+    const raf = requestAnimationFrame(() => {
+      if (cancelled || !videoRef.current) return;
+      setError('');
+      scanner = new QrScanner(
       videoRef.current,
-      (result) => {
-        scanner.stop();
-        onScanRef.current(result.data);
-      },
-      { highlightScanRegion: true, highlightCodeOutline: true, preferredCamera: 'environment' },
-    );
-    scanner.start().catch(() => setError('Camera access denied. Enable it in your browser settings and retry.'));
+        (result) => {
+          scanner?.stop();
+          onScanRef.current(result.data);
+        },
+        { highlightScanRegion: true, highlightCodeOutline: true, preferredCamera: 'environment' },
+      );
+      scanner.start().catch(() => setError('Camera access denied. Enable it in your browser settings and retry.'));
+    });
     return () => {
-      scanner.stop();
-      scanner.destroy();
+      cancelled = true;
+      cancelAnimationFrame(raf);
+      scanner?.stop();
+      scanner?.destroy();
     };
   }, [open]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-2xl">
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-3 right-3 p-2 text-muted-foreground hover:text-foreground cursor-pointer"
-        >
-          <X className="h-5 w-5" />
-        </button>
-        <div className="mb-4 flex items-center gap-2">
-          <Camera className="h-5 w-5 text-primary" />
-          <h3 className="text-base font-bold text-foreground">Scan business QR</h3>
+    <Modal open={open} onOpenChange={(o) => !o && onClose()} title="Scan business QR" description="Point your camera at a business’s QR code." size="sm">
+      {error ? (
+        <div className="flex flex-col items-center gap-2 py-8 text-center" role="alert">
+          <AlertCircle className="size-8 text-destructive" aria-hidden />
+          <p className="text-sm text-muted-foreground">{error}</p>
         </div>
-        {error ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-center">
-            <AlertCircle className="h-8 w-8 text-destructive" />
-            <p className="text-sm text-muted-foreground">{error}</p>
-          </div>
-        ) : (
-          <video ref={videoRef} className="w-full rounded-xl border border-border aspect-square object-cover" muted playsInline />
-        )}
-        <p className="mt-3 text-xs text-muted-foreground text-center">Point your camera at a business&apos;s QR code.</p>
-      </div>
-    </div>
+      ) : (
+        <video ref={videoRef} className="aspect-square w-full rounded-control border border-border object-cover" muted playsInline />
+      )}
+    </Modal>
   );
 }

@@ -66,6 +66,8 @@ for (const file of files) {
   if (src.includes('design-lint-disable-file')) continue;
   const lines = src.split('\n');
   lines.forEach((line, i) => {
+    // `design-lint-ignore` on the line (or the one above) exempts deliberate full-screen layers.
+    if (line.includes('design-lint-ignore') || (i > 0 && lines[i - 1].includes('design-lint-ignore'))) return;
     for (const rule of RULES) {
       rule.re.lastIndex = 0;
       const m = line.match(rule.re);

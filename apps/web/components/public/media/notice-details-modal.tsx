@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useEffect, useRef } from 'react';
 import { Bell, Download, FileText, Image as ImageIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,26 +25,9 @@ export function NoticeDetailsModal({
     closeBtn.current?.focus();
   }, []);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={onClose}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={notice.title}
-        className="ui-fade-up relative flex max-h-[88dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl border border-border bg-card shadow-2xl sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ModalSurface onClose={onClose} label={notice.title} hideClose className="flex max-h-[88dvh] flex-col overflow-hidden p-0 sm:max-w-lg">
         <button
           ref={closeBtn}
           type="button"
@@ -130,7 +114,6 @@ export function NoticeDetailsModal({
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+    </ModalSurface>
   );
 }

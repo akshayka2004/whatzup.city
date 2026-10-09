@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalSurface } from '@/components/system/modal-surface';
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -15,14 +16,14 @@ import { timeAgo } from './profile-utils';
 
 function DialogLoading() {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4" aria-busy="true">
-      <div className="w-full space-y-4 rounded-t-3xl border border-border bg-card p-6 sm:max-w-lg sm:rounded-2xl">
+    <ModalSurface onClose={() => {}} label="Loading" hideClose className="space-y-4 sm:max-w-lg">
+      <div aria-busy="true" className="space-y-4">
         <Skel className="h-6 w-40" />
         <Skel className="h-11 w-full rounded-xl" />
         <Skel className="h-11 w-full rounded-xl" />
         <Skel className="h-11 w-full rounded-xl" />
       </div>
-    </div>
+    </ModalSurface>
   );
 }
 

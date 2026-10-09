@@ -40,6 +40,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Design guard (tokens, no hand-built overlays)
+        run: pnpm lint:design:strict
+
       - name: Run unit tests
         run: pnpm test
 

@@ -36,6 +36,7 @@ export function StatusScreen({
       aria-labelledby="status-screen-title"
       className={cn(
         'flex w-full items-center justify-center p-4',
+        // design-lint-ignore: blocking gate (trial expired / suspended), not a dismissible dialog
         overlay ? 'fixed inset-0 z-[var(--z-modal)] bg-background/90 backdrop-blur-md' : 'h-dvh bg-background',
       )}
     >

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { UtensilsCrossed, X } from 'lucide-react';
+import { UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Modal } from '@/components/system/modal';
 import { apiService } from '@/lib/services/api-service';
 import { useOwnerBusiness } from '@/hooks/use-owner-business';
 
@@ -48,25 +48,16 @@ export function MenuPhotoPrompt({ enabled }: { enabled: boolean }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 print:hidden">
-      <Card className="relative w-full max-w-sm p-6 rounded-2xl border-border bg-card shadow-2xl text-center">
-        <button
-          onClick={dismiss}
-          aria-label="Close"
-          className="absolute top-3 right-3 p-2 text-muted-foreground hover:text-foreground cursor-pointer"
-        >
-          <X className="h-5 w-5" />
-        </button>
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <UtensilsCrossed className="h-6 w-6" />
-        </div>
-        <h3 className="mb-2 text-lg font-bold text-foreground">Show customers your menu</h3>
-        <p className="mb-6 text-sm text-muted-foreground">
-          Add photos of your food menu so people can see what you serve before they visit. They appear on your public
-          profile.
-        </p>
-        <div className="flex justify-center gap-3">
-          <Button onClick={dismiss} variant="outline" className="rounded-xl border-border text-foreground cursor-pointer">
+    <Modal
+      open
+      onOpenChange={(o) => !o && dismiss()}
+      title="Show customers your menu"
+      description="Add photos of your food menu so people see what you serve before they visit. They appear on your public profile."
+      size="sm"
+      className="print:hidden"
+      footer={
+        <>
+          <Button variant="outline" onClick={dismiss}>
             Maybe later
           </Button>
           <Button
@@ -74,12 +65,11 @@ export function MenuPhotoPrompt({ enabled }: { enabled: boolean }) {
               dismiss();
               router.push('/dashboard/menu');
             }}
-            className="rounded-xl bg-gradient-to-r from-primary to-accent font-semibold text-primary-foreground cursor-pointer"
           >
-            Add menu photos
+            <UtensilsCrossed /> Add menu photos
           </Button>
-        </div>
-      </Card>
-    </div>
+        </>
+      }
+    />
   );
 }
