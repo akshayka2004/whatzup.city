@@ -109,6 +109,21 @@ export class MenuPhotosService {
     return this.toPublic(row);
   }
 
+  /** Saves the owner's drag order. `ids` must be exactly the business's current menu photos. */
+  async reorder(tenantId: string, ctx: UserCtx, businessId: string, ids: string[]) {
+    await this.media.validateBusinessAccess(tenantId, businessId, ctx.userId, ctx.role);
+    const rows = await this.db.media.findMany({
+      where: { businessId, type: MENU_TYPE, deletedAt: null },
+      select: { id: true },
+    });
+    const current = new Set(rows.map((r) => r.id));
+    if (ids.length !== current.size || new Set(ids).size !== ids.length || ids.some((id) => !current.has(id))) {
+      throw new BadRequestException('Your menu changed while you were sorting. Refresh and try again.');
+    }
+    await this.db.$transaction(ids.map((id, i) => this.db.media.update({ where: { id }, data: { sortOrder: i } })));
+    return this.listPublic(businessId);
+  }
+
   /** Public: the customer-facing menu for a business. */
   async listPublic(businessId: string) {
     const business = await this.db.business.findFirst({

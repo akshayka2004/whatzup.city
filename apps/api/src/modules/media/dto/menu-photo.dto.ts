@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsUUID, IsInt, Min, IsOptional, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsUUID, IsInt, Min, IsOptional, MaxLength, IsArray, ArrayMaxSize } from 'class-validator';
 
 export class MenuUploadUrlDto {
   @IsUUID(undefined, { message: 'businessId must be a valid business ID' })
@@ -50,4 +50,11 @@ export class CreateMenuPhotoDto {
   @IsString()
   @MaxLength(80, { message: 'The photo label is too long (80 characters max).' })
   label?: string;
+}
+
+export class ReorderMenuPhotosDto {
+  @IsArray()
+  @ArrayMaxSize(50)
+  @IsUUID(undefined, { each: true, message: 'Each photo ID must be valid' })
+  ids!: string[];
 }

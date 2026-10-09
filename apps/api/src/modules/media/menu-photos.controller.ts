@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Param,
   Body,
   UseGuards,
@@ -13,7 +14,7 @@ import { MenuPhotosService } from './menu-photos.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { MenuUploadUrlDto, CreateMenuPhotoDto } from './dto/menu-photo.dto';
+import { MenuUploadUrlDto, CreateMenuPhotoDto, ReorderMenuPhotosDto } from './dto/menu-photo.dto';
 
 const businessIdPipe = new ParseUUIDPipe({
   exceptionFactory: () => new BadRequestException('That business ID is not valid.'),
@@ -48,6 +49,20 @@ export class MenuPhotosController {
     @Body() dto: CreateMenuPhotoDto,
   ) {
     return this.menuPhotos.createRecord(tenantId, { userId, role }, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('business/:businessId/order')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Save the display order of a business’s menu photos' })
+  async reorder(
+    @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: string,
+    @Param('businessId', businessIdPipe) businessId: string,
+    @Body() dto: ReorderMenuPhotosDto,
+  ) {
+    return this.menuPhotos.reorder(tenantId, { userId, role }, businessId, dto.ids);
   }
 
   @Public()

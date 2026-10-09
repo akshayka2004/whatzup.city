@@ -117,9 +117,21 @@ export function DataTable<T>({
             : sorted.map((row) => (
                 <li key={rowKey(row)}>
                   {onRowClick ? (
-                    <button type="button" onClick={() => onRowClick(row)} className="block w-full p-4 text-left active:bg-secondary">
+                    // A div, not <button>: cards may hold their own switches/menus, and buttons can't nest.
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => onRowClick(row)}
+                      onKeyDown={(e) => {
+                        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault();
+                          onRowClick(row);
+                        }
+                      }}
+                      className="block w-full cursor-pointer p-4 text-left outline-none focus-visible:bg-secondary active:bg-secondary"
+                    >
                       {mobileCard(row)}
-                    </button>
+                    </div>
                   ) : (
                     <div className="p-4">{mobileCard(row)}</div>
                   )}

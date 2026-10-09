@@ -1,444 +1,353 @@
 'use client';
 
-import { ModalSurface } from '@/components/system/modal-surface';
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Box, LayoutGrid, MoreHorizontal, Pencil, Plus, Rows3, Trash2 } from 'lucide-react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
-import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/system/page-header';
+import { DataTable, type Column } from '@/components/system/data-table';
+import { FilterChip, ChipRow } from '@/components/system/filter-chip';
+import { SearchInput } from '@/components/system/toolbar';
+import { Modal } from '@/components/system/modal';
+import { EmptyState } from '@/components/common/empty-state';
+import { StatusPill } from '@/components/common/status-pill';
+import { useConfirm } from '@/components/common/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Edit, Trash2, Eye, X, AlertTriangle, Box, Tag, Loader2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { toast } from '@/components/ui/sonner';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
+import { cn } from '@/lib/utils';
 
 interface Product {
   id: string;
   name: string;
   description: string;
-  price: string;
+  price: number;
   isAvailable: boolean;
 }
 
-// ── Tag input lives OUTSIDE parent — stable component identity, no remount bug ──
-function TagInput({ tags, onChange }: { tags: string[]; onChange: (t: string[]) => void }) {
-  const [inputVal, setInputVal] = useState('');
-  const ref = useRef<HTMLInputElement>(null);
+type Layout = 'table' | 'grid';
+const LAYOUT_KEY = 'products:layout';
+const label = 'mb-1.5 block text-sm font-medium';
+const inr = (n: number) => (n > 0 ? `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : '—');
 
-  const add = (val: string) => {
-    const t = val.trim().toLowerCase().replace(/\s+/g, '-');
-    if (t && !tags.includes(t) && tags.length < 10) onChange([...tags, t]);
-    setInputVal('');
-  };
-
-  const handleKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(inputVal); }
-    else if (e.key === 'Backspace' && !inputVal && tags.length > 0) onChange(tags.slice(0, -1));
-  };
-
-  return (
-    <div
-      className="min-h-[42px] flex flex-wrap gap-1.5 items-center border border-border bg-secondary/40 rounded-xl px-3 py-2 cursor-text focus-within:border-primary transition-colors"
-      onClick={() => ref.current?.focus()}
-    >
-      {tags.map((tag) => (
-        <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-medium">
-          <Tag className="h-2.5 w-2.5" />{tag}
-          <button type="button" onClick={(e) => { e.stopPropagation(); onChange(tags.filter((t) => t !== tag)); }} className="ml-0.5 text-primary/60 hover:text-primary cursor-pointer">
-            <X className="h-3 w-3" />
-          </button>
-        </span>
-      ))}
-      <input
-        ref={ref}
-        value={inputVal}
-        onChange={(e) => setInputVal(e.target.value)}
-        onKeyDown={handleKey}
-        onBlur={() => { if (inputVal.trim()) add(inputVal); }}
-        placeholder={tags.length === 0 ? 'e.g. premium, wireless...' : ''}
-        className="flex-1 min-w-[120px] bg-transparent text-foreground text-sm outline-none placeholder:text-muted-foreground"
-      />
-    </div>
-  );
-}
+const toProduct = (p: any): Product => ({
+  id: p.id,
+  name: p.name || '',
+  description: p.description || '',
+  price: Number(p.price) || 0,
+  isAvailable: p.isAvailable !== false,
+});
 
 export default function ProductsPage() {
   const { user } = useAuth();
+  const confirm = useConfirm();
+  const businessId = user?.businessId || user?.entity?.id;
+  const tenantId = (user as { tenantId?: string } | null)?.tenantId;
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [layout, setLayout] = useState<Layout>('table');
+  const [search, setSearch] = useState('');
+  const [avail, setAvail] = useState<'all' | 'on' | 'off'>('all');
 
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
-  const [viewingProduct, setViewingProduct] = useState<Product | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
-
-  // Form state — shared between add/edit modals
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [isAvailable, setIsAvailable] = useState(true);
-
-  const businessId = user?.businessId || user?.entity?.id;
-  const tenantId = user?.tenantId;
+  const [editor, setEditor] = useState<{ id?: string } | null>(null);
+  const [form, setForm] = useState({ name: '', description: '', price: '', isAvailable: true });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!businessId) { setLoading(false); return; }
+    try {
+      const v = localStorage.getItem(LAYOUT_KEY);
+      if (v === 'grid' || v === 'table') setLayout(v);
+    } catch {}
+  }, []);
+  const changeLayout = (v: Layout) => {
+    setLayout(v);
+    try {
+      localStorage.setItem(LAYOUT_KEY, v);
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (!businessId) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const params = tenantId ? `?tenantId=${tenantId}` : '';
-    apiService
-      .get<any>(`/v1/products/business/${businessId}${params}`)
-      .then((res) => {
-        if (res.data && !res.error) {
-          // Handle both raw array and PaginatedResult { data: [...], meta: {...} }
-          const raw = res.data;
-          const list: any[] = Array.isArray(raw) ? raw : raw?.data ?? raw?.items ?? [];
-          setProducts(
-            list.map((p: any) => ({
-              id: p.id,
-              name: p.name || '',
-              description: p.description || '',
-              price: p.price != null ? String(p.price) : '0',
-              isAvailable: p.isAvailable !== false,
-            })),
-          );
-        }
-      })
-      .finally(() => setLoading(false));
+    let alive = true;
+    (async () => {
+      // The endpoint pages at 20; owners need the whole catalog here.
+      const tenant = tenantId ? `tenantId=${tenantId}&` : '';
+      const all: any[] = [];
+      for (let page = 1; page <= 25; page++) {
+        const res = await apiService.get<any>(`/v1/products/business/${businessId}?${tenant}page=${page}`);
+        if (res.error || !res.data) break;
+        const raw = res.data;
+        const list: any[] = Array.isArray(raw) ? raw : raw?.data ?? raw?.items ?? [];
+        all.push(...list);
+        const total = Number(raw?.meta?.total ?? 0);
+        if (Array.isArray(raw) || list.length === 0 || all.length >= total) break;
+      }
+      if (alive) {
+        setProducts(all.map(toProduct));
+        setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
   }, [businessId, tenantId]);
 
-  const resetForm = () => { setName(''); setDescription(''); setPrice(''); setIsAvailable(true); setFormError(null); };
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return products.filter(
+      (p) =>
+        (avail === 'all' || (avail === 'on') === p.isAvailable) &&
+        (!q || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)),
+    );
+  }, [products, search, avail]);
 
-  const handleOpenAdd = () => { resetForm(); setIsAddOpen(true); };
+  const counts = useMemo(() => ({ on: products.filter((p) => p.isAvailable).length, off: products.filter((p) => !p.isAvailable).length }), [products]);
 
-  const handleOpenEdit = (p: Product) => {
-    setFormError(null);
-    setEditingProduct(p);
-    setName(p.name);
-    setDescription(p.description);
-    setPrice(p.price.replace('$', ''));
-    setIsAvailable(p.isAvailable);
+  const openAdd = () => {
+    setForm({ name: '', description: '', price: '', isAvailable: true });
+    setEditor({});
+  };
+  const openEdit = (p: Product) => {
+    setForm({ name: p.name, description: p.description, price: p.price ? String(p.price) : '', isAvailable: p.isAvailable });
+    setEditor({ id: p.id });
   };
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    if (!businessId) { setFormError('No business found for your account. Please refresh and try again.'); return; }
-    setFormError(null);
-    setSubmitting(true);
-    try {
-      const res = await apiService.post<any>('/v1/products', {
-        businessId,
-        name: name.trim(),
-        description: description.trim(),
-        price: parseFloat(price) || 0,
-        isAvailable,
-      });
-      if (res.error) {
-        setFormError(res.error);
-      } else if (res.data) {
-        const p = res.data;
-        setProducts((prev) => [{
-          id: p.id,
-          name: p.name || name,
-          description: p.description || description,
-          price: p.price != null ? String(p.price) : price,
-          isAvailable: p.isAvailable !== false,
-        }, ...prev]);
-        setIsAddOpen(false);
-        resetForm();
-      }
-    } catch (err: any) {
-      setFormError(err?.message || 'Unexpected error. Please try again.');
+  const save = async () => {
+    if (!editor) return;
+    if (!form.name.trim()) return toast.error('Give the product a name.');
+    if (!businessId) return toast.error('No business found for your account. Refresh and try again.');
+    const price = form.price ? Number(form.price) : 0;
+    if (!(price >= 0)) return toast.error('Enter a valid price.');
+    const body = { name: form.name.trim(), description: form.description.trim(), price, isAvailable: form.isAvailable };
+    setSaving(true);
+    const res = editor.id ? await apiService.patch<any>(`/v1/products/${editor.id}`, body) : await apiService.post<any>('/v1/products', { ...body, businessId });
+    setSaving(false);
+    if (res.error) return toast.error(res.error);
+    const saved = toProduct({ ...body, ...(res.data ?? {}), id: res.data?.id ?? editor.id });
+    setProducts((list) => (editor.id ? list.map((p) => (p.id === editor.id ? saved : p)) : [saved, ...list]));
+    toast.success(editor.id ? 'Product updated' : 'Product added');
+    setEditor(null);
+  };
+
+  const toggle = async (p: Product) => {
+    const next = !p.isAvailable;
+    setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, isAvailable: next } : x)));
+    const res = await apiService.patch(`/v1/products/${p.id}`, { isAvailable: next });
+    if (res.error) {
+      setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, isAvailable: p.isAvailable } : x)));
+      toast.error(res.error);
     }
-    setSubmitting(false);
   };
 
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !editingProduct) return;
-    setFormError(null);
-    setSubmitting(true);
-    try {
-      const res = await apiService.patch<any>(`/v1/products/${editingProduct.id}`, {
-        name: name.trim(),
-        description: description.trim(),
-        price: parseFloat(price) || 0,
-        isAvailable,
-      });
-      if (res.error) {
-        setFormError(res.error);
-      } else {
-        const updated = res.data;
-        setProducts((prev) =>
-          prev.map((p) =>
-            p.id === editingProduct.id
-              ? {
-                  ...p,
-                  name: updated?.name || name,
-                  description: updated?.description || description,
-                  price: updated?.price != null ? String(updated.price) : price,
-                  isAvailable: updated?.isAvailable !== false,
-                }
-              : p,
-          ),
-        );
-        setEditingProduct(null);
-      }
-    } catch (err: any) {
-      setFormError(err?.message || 'Unexpected error. Please try again.');
-    }
-    setSubmitting(false);
+  const remove = async (p: Product) => {
+    if (!(await confirm({ title: `Delete “${p.name}”?`, description: 'It disappears from your public menu right away.', confirmLabel: 'Delete', tone: 'danger' }))) return;
+    const res = await apiService.delete(`/v1/products/${p.id}`);
+    if (res.error) return toast.error(res.error);
+    setProducts((list) => list.filter((x) => x.id !== p.id));
+    toast.success('Product deleted');
   };
 
-  const handleDelete = async () => {
-    if (!deletingProduct) return;
-    setSubmitting(true);
-    try {
-      await apiService.delete(`/v1/products/${deletingProduct.id}`);
-      setProducts((prev) => prev.filter((p) => p.id !== deletingProduct.id));
-    } catch (_) {}
-    setSubmitting(false);
-    setDeletingProduct(null);
-  };
+  const RowMenu = ({ p }: { p: Product }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${p.name}`} onClick={(e) => e.stopPropagation()}>
+          <MoreHorizontal />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onSelect={() => openEdit(p)}>
+          <Pencil /> Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" onSelect={() => remove(p)}>
+          <Trash2 /> Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const AvailSwitch = ({ p }: { p: Product }) => (
+    <span onClick={(e) => e.stopPropagation()} className="inline-flex">
+      <Switch checked={p.isAvailable} onCheckedChange={() => toggle(p)} aria-label={`${p.name} available`} />
+    </span>
+  );
+
+  const columns: Column<Product>[] = [
+    {
+      key: 'name',
+      header: 'Product',
+      sortable: true,
+      value: (p) => p.name,
+      cell: (p) => (
+        <div className="min-w-0">
+          <p className="truncate font-medium">{p.name}</p>
+          {p.description && <p className="line-clamp-1 text-caption text-muted-foreground">{p.description}</p>}
+        </div>
+      ),
+    },
+    { key: 'price', header: 'Price', align: 'right', sortable: true, value: (p) => p.price, cell: (p) => <span className="tabular-nums">{inr(p.price)}</span> },
+    { key: 'avail', header: 'Available', align: 'center', cell: (p) => <AvailSwitch p={p} /> },
+    { key: 'actions', header: <span className="sr-only">Actions</span>, align: 'right', cell: (p) => <RowMenu p={p} /> },
+  ];
 
   return (
     <BusinessLayout>
-      <div>
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Products</h1>
-            <p className="text-muted-foreground">Manage your product catalog</p>
-          </div>
-          <Button
-            onClick={handleOpenAdd}
-            className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground cursor-pointer shrink-0"
-          >
-            <Plus className="h-4 w-4" /> Add Product
+      <PageHeader
+        title="Products"
+        description="Items and prices shown on your public profile. Switch one off when it’s sold out."
+        actions={
+          <Button onClick={openAdd}>
+            <Plus /> Add product
           </Button>
-        </div>
+        }
+      />
 
-        {/* List */}
-        {loading ? (
-          <div className="flex items-center justify-center h-40">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : products.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary/20 text-center">
-            <Box className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
-            <p className="text-foreground font-semibold mb-1">No products yet</p>
-            <p className="text-sm text-muted-foreground">Add your first product to build your catalog.</p>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {products.map((product, i) => (
-              <Card
-                key={product.id}
-                className="p-6 rounded-2xl transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.99] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden ui-fade-up"
-                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <ChipRow label="Availability">
+          <FilterChip selected={avail === 'all'} count={products.length || undefined} onClick={() => setAvail('all')}>
+            All
+          </FilterChip>
+          <FilterChip selected={avail === 'on'} count={counts.on || undefined} onClick={() => setAvail('on')}>
+            Available
+          </FilterChip>
+          <FilterChip selected={avail === 'off'} count={counts.off || undefined} onClick={() => setAvail('off')}>
+            Sold out
+          </FilterChip>
+        </ChipRow>
+        <div className="flex items-center gap-2">
+          <SearchInput value={search} onChange={setSearch} placeholder="Search products" />
+          <div role="radiogroup" aria-label="Layout" className="inline-flex shrink-0 rounded-full border border-border bg-card p-0.5">
+            {(
+              [
+                ['table', 'Table', Rows3],
+                ['grid', 'Grid', LayoutGrid],
+              ] as const
+            ).map(([k, l, Icon]) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={layout === k}
+                aria-label={l}
+                onClick={() => changeLayout(k)}
+                className={cn('flex size-10 items-center justify-center rounded-full transition-colors', layout === k ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground')}
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-1 flex-wrap">
-                      <h3 className="font-semibold text-foreground text-lg">{product.name}</h3>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${
-                        product.isAvailable
-                          ? 'bg-success/10 text-success border-success/20'
-                          : 'bg-secondary/40 text-muted-foreground border-border'
-                      }`}>
-                        {product.isAvailable ? 'Available' : 'Unavailable'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-6 text-sm mt-2">
-                      <div>
-                        <p className="text-muted-foreground text-xs">Price</p>
-                        <p className="font-semibold text-foreground">
-                          {parseFloat(product.price) > 0 ? `₹${parseFloat(product.price).toLocaleString("en-IN", { maximumFractionDigits: 2 })}` : '—'}
-                        </p>
-                      </div>
-                    </div>
-                    {product.description && (
-                      <p className="text-xs text-muted-foreground mt-2 line-clamp-1 break-words">{product.description}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2 shrink-0 ml-4">
-                    <Button onClick={() => setViewingProduct(product)} size="icon" variant="outline" className="rounded-xl border-border hover:bg-muted text-foreground h-10 w-10 cursor-pointer">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button onClick={() => handleOpenEdit(product)} size="icon" variant="outline" className="rounded-xl border-border hover:bg-muted text-foreground h-10 w-10 cursor-pointer">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button onClick={() => setDeletingProduct(product)} size="icon" variant="outline" className="rounded-xl border-destructive/20 hover:bg-destructive/10 text-destructive hover:text-destructive h-10 w-10 cursor-pointer">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+                <Icon className="size-4" />
+              </button>
             ))}
           </div>
-        )}
-
-        {/* ── ADD MODAL ── */}
-        {isAddOpen && (
-          <ModalSurface onClose={() => setIsAddOpen(false)} label="Add Product" className="sm:max-w-md">
-              <h3 className="text-xl font-bold text-foreground mb-4">Add Product</h3>
-              <form onSubmit={handleAdd} className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">Product Name *</label>
-                  <Input
-                    placeholder="e.g. Premium Speakers"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">Description</label>
-                  <Input
-                    placeholder="Short product description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">Price (₹) *</label>
-                  <Input
-                    placeholder="e.g. 99.99"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                  />
-                </div>
-                <div className="flex items-center gap-2 pt-1">
-                  <input type="checkbox" id="add-available" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="rounded bg-background border-input h-4 w-4" />
-                  <label htmlFor="add-available" className="text-sm text-muted-foreground">Available immediately</label>
-                </div>
-                {formError && (
-                  <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2">
-                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                    <span>{formError}</span>
-                  </div>
-                )}
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)} className="rounded-xl border-border hover:bg-muted text-foreground cursor-pointer">Cancel</Button>
-                  <Button type="submit" disabled={submitting} className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer flex items-center gap-1.5">
-                    {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    Add Product
-                  </Button>
-                </div>
-              </form>
-          </ModalSurface>
-        )}
-
-        {/* ── EDIT MODAL ── */}
-        {editingProduct && (
-          <ModalSurface onClose={() => setEditingProduct(null)} label="Edit Product" className="sm:max-w-md">
-              <h3 className="text-xl font-bold text-foreground mb-4">Edit Product</h3>
-              <form onSubmit={handleEdit} className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">Product Name *</label>
-                  <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">Description</label>
-                  <Input
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">Price (₹) *</label>
-                  <Input
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                  />
-                </div>
-                <div className="flex items-center gap-2 pt-1">
-                  <input type="checkbox" id="edit-available" checked={isAvailable} onChange={(e) => setIsAvailable(e.target.checked)} className="rounded bg-background border-input h-4 w-4" />
-                  <label htmlFor="edit-available" className="text-sm text-muted-foreground">Available</label>
-                </div>
-                {formError && (
-                  <div className="flex items-start gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2">
-                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                    <span>{formError}</span>
-                  </div>
-                )}
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setEditingProduct(null)} className="rounded-xl border-border hover:bg-muted text-foreground cursor-pointer">Cancel</Button>
-                  <Button type="submit" disabled={submitting} className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer flex items-center gap-1.5">
-                    {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    Save Changes
-                  </Button>
-                </div>
-              </form>
-          </ModalSurface>
-        )}
-
-        {/* ── DELETE MODAL ── */}
-        {deletingProduct && (
-          <ModalSurface onClose={() => setDeletingProduct(null)} label="Delete Product" className="sm:max-w-sm text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Delete Product</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                Delete <span className="font-semibold text-foreground">"{deletingProduct.name}"</span>? This is permanent.
-              </p>
-              <div className="flex justify-center gap-3">
-                <Button onClick={() => setDeletingProduct(null)} variant="outline" className="rounded-xl border-border hover:bg-muted text-foreground px-4 cursor-pointer">Cancel</Button>
-                <Button onClick={handleDelete} disabled={submitting} className="rounded-xl bg-destructive hover:bg-destructive text-white px-4 cursor-pointer flex items-center gap-1.5">
-                  {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  Delete
-                </Button>
-              </div>
-          </ModalSurface>
-        )}
-
-        {/* ── VIEW MODAL ── */}
-        {viewingProduct && (
-          <ModalSurface onClose={() => setViewingProduct(null)} label="Product details" className="sm:max-w-md">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-primary/10 text-primary rounded-xl">
-                  <Box className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-foreground">{viewingProduct.name}</h3>
-                  <span className={`inline-block px-2 py-0.5 mt-1 rounded-full text-xs font-semibold border ${
-                    viewingProduct.isAvailable
-                      ? 'bg-success/10 text-success border-success/20'
-                      : 'bg-secondary/40 text-muted-foreground border-border'
-                  }`}>
-                    {viewingProduct.isAvailable ? 'Available' : 'Unavailable'}
-                  </span>
-                </div>
-              </div>
-              <div className="bg-secondary/50 p-4 rounded-xl border border-border mb-4">
-                <p className="text-xs text-muted-foreground mb-1">Price</p>
-                <p className="text-2xl font-extrabold text-foreground">
-                  {parseFloat(viewingProduct.price) > 0 ? `₹${parseFloat(viewingProduct.price).toLocaleString("en-IN", { maximumFractionDigits: 2 })}` : '—'}
-                </p>
-              </div>
-              {viewingProduct.description && (
-                <p className="text-sm text-muted-foreground mb-5">{viewingProduct.description}</p>
-              )}
-              <div className="flex justify-end">
-                <Button onClick={() => setViewingProduct(null)} className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">Close</Button>
-              </div>
-          </ModalSurface>
-        )}
+        </div>
       </div>
+
+      {layout === 'table' || loading ? (
+        <DataTable
+          caption="Products"
+          columns={columns}
+          rows={visible}
+          rowKey={(p) => p.id}
+          loading={loading}
+          onRowClick={openEdit}
+          pageSize={25}
+          empty={{
+            icon: Box,
+            title: products.length ? 'No matching products' : 'No products yet',
+            description: products.length ? 'Try another search or filter.' : 'Add your first product to build your catalog.',
+            action: products.length ? undefined : { label: 'Add product', onClick: openAdd },
+          }}
+          mobileCard={(p) => (
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate font-medium">{p.name}</p>
+                <p className="text-caption tabular-nums text-muted-foreground">{inr(p.price)}</p>
+              </div>
+              <AvailSwitch p={p} />
+            </div>
+          )}
+        />
+      ) : visible.length === 0 ? (
+        <EmptyState icon={Box} title={products.length ? 'No matching products' : 'No products yet'} action={products.length ? undefined : { label: 'Add product', onClick: openAdd }} />
+      ) : (
+        <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+          {visible.map((p) => (
+            <li key={p.id}>
+              <article className={cn('flex h-full flex-col rounded-card border border-border bg-card p-4 shadow-e1', !p.isAvailable && 'opacity-70')}>
+                <div className="flex items-start justify-between gap-2">
+                  <button type="button" onClick={() => openEdit(p)} className="min-w-0 text-left font-semibold leading-snug hover:underline">
+                    <span className="line-clamp-2 break-words">{p.name}</span>
+                  </button>
+                  <RowMenu p={p} />
+                </div>
+                {p.description && <p className="mt-1 line-clamp-2 text-caption text-muted-foreground">{p.description}</p>}
+                <div className="mt-auto flex items-center justify-between gap-2 pt-4">
+                  <span className="text-heading font-semibold tabular-nums">{inr(p.price)}</span>
+                  {p.isAvailable ? <AvailSwitch p={p} /> : <StatusPill tone="neutral" label="Sold out" />}
+                </div>
+                {!p.isAvailable && (
+                  <Button size="sm" variant="ghost" className="mt-2 self-start" onClick={() => toggle(p)}>
+                    Mark available
+                  </Button>
+                )}
+              </article>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <Modal
+        open={!!editor}
+        onOpenChange={(o) => !o && setEditor(null)}
+        title={editor?.id ? 'Edit product' : 'Add product'}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditor(null)}>
+              Cancel
+            </Button>
+            <Button loading={saving} onClick={save}>
+              {editor?.id ? 'Save changes' : 'Add product'}
+            </Button>
+          </>
+        }
+      >
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            save();
+          }}
+        >
+          <div>
+            <label htmlFor="p-name" className={label}>
+              Name
+            </label>
+            <Input id="p-name" value={form.name} maxLength={255} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Chicken biryani" />
+          </div>
+          <div>
+            <label htmlFor="p-price" className={label}>
+              Price (₹) <span className="font-normal text-muted-foreground">(optional)</span>
+            </label>
+            <Input id="p-price" type="number" inputMode="decimal" min={0} step="0.01" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} placeholder="220" />
+          </div>
+          <div>
+            <label htmlFor="p-desc" className={label}>
+              Description <span className="font-normal text-muted-foreground">(optional)</span>
+            </label>
+            <Textarea id="p-desc" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Served with raita and pickle" className="h-20 resize-none" />
+          </div>
+          <label className="flex items-center justify-between gap-3 rounded-control border border-border p-3">
+            <span className="text-sm font-medium">Available now</span>
+            <Switch checked={form.isAvailable} onCheckedChange={(v) => setForm((f) => ({ ...f, isAvailable: v }))} />
+          </label>
+          <button type="submit" hidden />
+        </form>
+      </Modal>
     </BusinessLayout>
   );
 }
