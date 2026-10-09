@@ -7,6 +7,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AnalyticsV2Service, type Granularity } from './analytics-v2.service';
 import { AnalyticsRollupService } from './analytics-rollup.service';
+import { WeeklyDigestService } from './weekly-digest.service';
 
 type RangeParams = { from?: string; to?: string; days?: string; granularity?: Granularity; city?: string; categoryId?: string };
 
@@ -25,7 +26,14 @@ export class AnalyticsV2Controller {
   constructor(
     private readonly v2: AnalyticsV2Service,
     private readonly rollups: AnalyticsRollupService,
+    private readonly digest: WeeklyDigestService,
   ) {}
+
+  @Get('business/:businessId/digest')
+  @ApiOperation({ summary: "Preview last week's owner digest for a business (nothing is sent)" })
+  digestPreview(@Param('businessId', new ParseUUIDPipe()) businessId: string, @CurrentUser() user: { id: string; role?: string }) {
+    return this.digest.preview(businessId, user);
+  }
 
   @Get('business/:businessId/report')
   @ApiOperation({ summary: 'Business report: KPIs vs previous period, IST series, funnel, sources, heatmap, offers' })
