@@ -23,7 +23,9 @@ export class AuditController {
     @Query('userId') userId?: string,
     @Query('action') action?: string,
     @Query('resource') resource?: string,
+    @Query('q') q?: string,
+    @Query('category') category?: string,
   ): Promise<any> {
-    return this.auditService.findAll(tenantId, page, 50, { userId, action, resource }, actorRole);
+    return this.auditService.findAll(tenantId, page, 50, { userId, action, resource, q, category }, actorRole);
   }
 }

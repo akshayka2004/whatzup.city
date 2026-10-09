@@ -3,10 +3,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { DataTable, type Column } from '@/components/system/data-table';
+import { FilterChip, ChipRow } from '@/components/system/filter-chip';
+import { SearchInput } from '@/components/system/toolbar';
+import { PageHeader } from '@/components/system/page-header';
+import { StatusPill } from '@/components/common/status-pill';
 import { Button } from '@/components/ui/button';
-import { Store, Search, RefreshCw, Loader2, ChevronLeft, ChevronRight, Activity, Clock } from 'lucide-react';
+import { Store, RefreshCw, Loader2, Activity, Clock } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
 import { BrandStatusPill, eventMeta, parseList, seriesLabel, timeAgo, fullDate } from './_shared';
@@ -41,16 +46,8 @@ const STATUS_CHIPS = [
 
 const LIMIT = 20;
 
-function PendingBadge({ count }: { count: number }) {
-  if (!count) return null;
-  return (
-    <span className="inline-flex items-center rounded-full border border-warning/25 bg-warning/10 px-2 py-0.5 text-xs font-bold text-warning">
-      {count} pending
-    </span>
-  );
-}
-
 export default function SuperAdminBrandsPage() {
+  const router = useRouter();
   const [rows, setRows] = useState<BrandRow[]>([]);
   const [meta, setMeta] = useState<any>({ total: 0, totalPages: 1, page: 1 });
   const [page, setPage] = useState(1);
@@ -91,26 +88,73 @@ export default function SuperAdminBrandsPage() {
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
   const refresh = () => { fetchRows(); fetchEvents(); };
-  const totalPages = meta?.totalPages || 1;
-  const curPage = meta?.page || page;
+
+  const columns: Column<BrandRow>[] = [
+    {
+      key: 'name',
+      header: 'Brand',
+      cell: (b) => (
+        <div className="min-w-0">
+          <p className="truncate font-medium">{b.name}</p>
+          <p className="text-caption text-muted-foreground">Since {new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'owner',
+      header: 'Owner',
+      cell: (b) => (
+        <div className="min-w-0">
+          <p className="truncate">{b.owner?.name || '—'}</p>
+          <p className="truncate text-caption text-muted-foreground">{b.owner?.email || b.owner?.phone || ''}</p>
+        </div>
+      ),
+      hideOnMobile: true,
+    },
+    {
+      key: 'outlets',
+      header: 'Outlets',
+      value: (b) => b.outletCount,
+      cell: (b) => (
+        <span className="inline-flex items-center gap-2">
+          <span className="font-semibold tabular-nums">{b.outletCount}</span>
+          {b.pendingOutlets > 0 && <StatusPill tone="warning" label={`${b.pendingOutlets} pending`} />}
+        </span>
+      ),
+    },
+    { key: 'series', header: 'Bill series', cell: (b) => <span className="whitespace-nowrap text-caption">{seriesLabel(b.billSeriesMode, b.billSeriesPrefix)}</span>, hideOnMobile: true },
+    { key: 'status', header: 'Status', cell: (b) => <BrandStatusPill status={b.status} /> },
+    {
+      key: 'last',
+      header: 'Last activity',
+      cell: (b) =>
+        b.lastEvent ? (
+          <div className="max-w-[16rem]">
+            <p className="line-clamp-1 text-caption">{b.lastEvent.summary}</p>
+            <p className="text-caption text-muted-foreground" title={fullDate(b.lastEvent.createdAt)}>
+              {timeAgo(b.lastEvent.createdAt)}
+            </p>
+          </div>
+        ) : (
+          '—'
+        ),
+      hideOnMobile: true,
+    },
+  ];
 
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
-              <Store className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Brand accounts</h1>
-              <p className="text-muted-foreground text-sm mt-1">Brands with multiple outlets, and everything happening across them.</p>
-            </div>
-          </div>
-          <Button onClick={refresh} variant="outline" size="sm" className="ui-press h-10 rounded-xl border-border text-muted-foreground hover:text-foreground gap-2">
-            <RefreshCw className={cn('h-3.5 w-3.5', (loading || eventsLoading) && 'animate-spin')} /> Refresh
-          </Button>
-        </div>
+        <PageHeader
+          className="mb-0"
+          title="Brand accounts"
+          description="Brands with multiple outlets, and everything happening across them."
+          actions={
+            <Button variant="outline" onClick={refresh} disabled={loading || eventsLoading}>
+              <RefreshCw className={cn((loading || eventsLoading) && 'animate-spin')} /> Refresh
+            </Button>
+          }
+        />
 
         {/* Latest activity */}
         <Card className="rounded-2xl border-border bg-card overflow-hidden">
@@ -149,141 +193,50 @@ export default function SuperAdminBrandsPage() {
           )}
         </Card>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="relative flex-1 sm:max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search brand, owner, email…"
-              className="pl-9 h-10 rounded-xl border-border bg-card text-sm text-foreground"
-            />
-          </div>
-          <div className="ui-scroll-x flex gap-1.5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <ChipRow label="Status">
             {STATUS_CHIPS.map((c) => (
-              <button
-                key={c.value}
-                onClick={() => setStatus(c.value)}
-                className={cn(
-                  'ui-press h-10 shrink-0 rounded-xl px-4 text-xs font-medium transition-colors cursor-pointer',
-                  status === c.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'border border-border bg-secondary text-muted-foreground hover:text-foreground',
-                )}
-              >
+              <FilterChip key={c.value || 'all'} selected={status === c.value} onClick={() => setStatus(c.value)}>
                 {c.label}
-              </button>
+              </FilterChip>
             ))}
-          </div>
+          </ChipRow>
+          <SearchInput value={search} onChange={setSearch} placeholder="Search brand, owner or email" />
         </div>
 
-        {/* List */}
-        {loading ? (
-          <Card className="rounded-2xl border-border bg-card">
-            <div className="flex items-center justify-center py-16 text-muted-foreground text-sm gap-2"><Loader2 className="h-5 w-5 animate-spin" /> Loading…</div>
-          </Card>
-        ) : rows.length === 0 ? (
-          <Card className="rounded-2xl border-border bg-card">
-            <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground"><Store className="h-8 w-8 opacity-30" /><p className="text-sm">No brand accounts found</p></div>
-          </Card>
-        ) : (
-          <>
-            {/* Mobile cards */}
-            <div className="grid gap-3 md:hidden">
-              {rows.map((b, i) => (
-                <Link key={b.id} href={`/super-admin/brands/${b.id}`} className="ui-fade-up ui-press block" style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}>
-                  <Card className="rounded-2xl border-border bg-card p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-foreground truncate">{b.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{b.owner?.name || '—'}{b.owner?.email ? ` · ${b.owner.email}` : ''}</p>
-                      </div>
-                      <BrandStatusPill status={b.status} />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 font-semibold text-foreground">
-                        <Store className="h-3 w-3 text-primary" />{b.outletCount} outlet{b.outletCount === 1 ? '' : 's'}
-                      </span>
-                      <PendingBadge count={b.pendingOutlets} />
-                      <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">{seriesLabel(b.billSeriesMode, b.billSeriesPrefix)}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 border-t border-border pt-2.5 text-xs text-muted-foreground">
-                      <span className="line-clamp-1 min-w-0">{b.lastEvent ? b.lastEvent.summary : 'No activity yet'}</span>
-                      {b.lastEvent && <span className="shrink-0 inline-flex items-center gap-1"><Clock className="h-3 w-3" />{timeAgo(b.lastEvent.createdAt)}</span>}
-                    </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-
-            {/* Desktop table */}
-            <Card className="hidden md:block rounded-2xl border-border bg-card overflow-hidden">
-              <div className="ui-scroll-x">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-secondary/40">
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Brand</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Owner</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Outlets</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Bill series</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Last activity</th>
-                      <th className="px-5 py-3" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((b, i) => (
-                      <tr key={b.id} className="ui-fade-up border-b border-border last:border-0 hover:bg-secondary/20 transition-colors" style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}>
-                        <td className="px-5 py-3">
-                          <Link href={`/super-admin/brands/${b.id}`} className="font-semibold text-foreground hover:text-primary transition-colors">{b.name}</Link>
-                          <p className="text-xs text-muted-foreground">Since {new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                        </td>
-                        <td className="px-5 py-3">
-                          <p className="text-xs font-medium text-foreground">{b.owner?.name || '—'}</p>
-                          <p className="text-xs text-muted-foreground">{b.owner?.email || b.owner?.phone || ''}</p>
-                        </td>
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-foreground">{b.outletCount}</span>
-                            <PendingBadge count={b.pendingOutlets} />
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 text-xs text-muted-foreground whitespace-nowrap">{seriesLabel(b.billSeriesMode, b.billSeriesPrefix)}</td>
-                        <td className="px-5 py-3"><BrandStatusPill status={b.status} /></td>
-                        <td className="px-5 py-3 max-w-[260px]">
-                          {b.lastEvent ? (
-                            <>
-                              <p className="text-xs text-foreground line-clamp-1">{b.lastEvent.summary}</p>
-                              <p className="text-xs text-muted-foreground" title={fullDate(b.lastEvent.createdAt)}>{timeAgo(b.lastEvent.createdAt)}</p>
-                            </>
-                          ) : <span className="text-xs text-muted-foreground">—</span>}
-                        </td>
-                        <td className="px-5 py-3 text-right">
-                          <Link href={`/super-admin/brands/${b.id}`}>
-                            <Button variant="outline" size="sm" className="ui-press h-9 rounded-xl border-border text-foreground hover:bg-secondary gap-1 cursor-pointer">
-                              View <ChevronRight className="h-3.5 w-3.5" />
-                            </Button>
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        <DataTable
+          caption="Brand accounts"
+          columns={columns}
+          rows={rows}
+          rowKey={(b) => b.id}
+          loading={loading}
+          onRowClick={(b) => router.push(`/super-admin/brands/${b.id}`)}
+          page={meta?.page || page}
+          pageSize={LIMIT}
+          total={Number(meta?.total ?? rows.length)}
+          onPageChange={setPage}
+          empty={{ icon: Store, title: 'No brand accounts found' }}
+          mobileCard={(b) => (
+            <div className="space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{b.name}</p>
+                  <p className="truncate text-caption text-muted-foreground">{b.owner?.name || '—'}</p>
+                </div>
+                <BrandStatusPill status={b.status} />
               </div>
-            </Card>
-          </>
-        )}
-
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">Page {curPage} of {totalPages} · {meta?.total ?? rows.length} total</p>
-            <div className="flex gap-2">
-              <Button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={curPage <= 1} variant="outline" size="sm" aria-label="Previous page" className="h-10 w-10 rounded-xl border-border text-muted-foreground"><ChevronLeft className="h-4 w-4" /></Button>
-              <Button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={curPage >= totalPages} variant="outline" size="sm" aria-label="Next page" className="h-10 w-10 rounded-xl border-border text-muted-foreground"><ChevronRight className="h-4 w-4" /></Button>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <StatusPill tone="neutral" label={`${b.outletCount} outlet${b.outletCount === 1 ? '' : 's'}`} />
+                {b.pendingOutlets > 0 && <StatusPill tone="warning" label={`${b.pendingOutlets} pending`} />}
+                {b.lastEvent && (
+                  <span className="inline-flex items-center gap-1 text-caption text-muted-foreground">
+                    <Clock className="size-3" aria-hidden /> {timeAgo(b.lastEvent.createdAt)}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        />
       </div>
     </SuperAdminLayout>
   );

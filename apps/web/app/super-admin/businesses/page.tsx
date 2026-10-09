@@ -1,18 +1,36 @@
 'use client';
 
-import { ModalSurface } from '@/components/system/modal-surface';
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { BadgeCheck, Building2, MoreHorizontal, Pencil, QrCode, RefreshCw, Star, Store, Trash2, X } from 'lucide-react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { PageHeader } from '@/components/system/page-header';
+import { DataTable, type Column } from '@/components/system/data-table';
+import { FilterChip, ChipRow } from '@/components/system/filter-chip';
+import { SearchInput } from '@/components/system/toolbar';
+import { Modal } from '@/components/system/modal';
+import { StatusPill, statusTone, humanizeStatus } from '@/components/common/status-pill';
+import { useConfirm } from '@/components/common/confirm-dialog';
+import { BusinessQrCard } from '@/components/business/qr-card';
 import { Button } from '@/components/ui/button';
-import { Building2, Search, RefreshCw, Pencil, X, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Tag, CalendarDays, ArrowUpDown, Wallet, Star, Trash2, AlertTriangle, QrCode, Store } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { toast } from '@/components/ui/sonner';
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES } from '@/lib/constants';
-import { BusinessQrCard } from '@/components/business/qr-card';
 
 const STATUS_OPTIONS = ['DRAFT', 'PENDING_VERIFICATION', 'APPROVED', 'REJECTED', 'SUSPENDED'];
+const SORTS = [
+  { value: 'createdAt:desc', label: 'Newest first' },
+  { value: 'name:asc', label: 'Name A–Z' },
+  { value: 'city:asc', label: 'City' },
+  { value: 'rating:desc', label: 'Top rated' },
+];
+const PAGE_SIZE = 25;
+const ANY = '__any';
 
 interface Biz {
   id: string;
@@ -32,7 +50,7 @@ interface Biz {
   isVerified?: boolean;
   halalStatus?: string | null;
   logo?: string | null;
-  coverImage?: string | null;
+  averageRating?: number | string | null;
   _count?: { offers?: number; events?: number };
   totalBillAmount?: number;
   brand?: { id: string; name: string } | null;
@@ -40,16 +58,36 @@ interface Biz {
   isBrandHq?: boolean;
 }
 
+const label = 'mb-1.5 block text-sm font-medium';
+
+function FilterSelect({ value, onChange, placeholder, options, className }: { value: string; onChange: (v: string) => void; placeholder: string; options: { value: string; label: string }[]; className?: string }) {
+  return (
+    <Select value={value || ANY} onValueChange={(v) => onChange(v === ANY ? '' : v)}>
+      <SelectTrigger className={className ?? 'h-11 w-full rounded-full sm:w-44'} aria-label={placeholder}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={ANY}>{placeholder}</SelectItem>
+        {options.map((o) => (
+          <SelectItem key={o.value} value={o.value}>
+            {o.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export default function SuperAdminBusinessesPage() {
+  const confirm = useConfirm();
   const [rows, setRows] = useState<Biz[]>([]);
-  const [meta, setMeta] = useState<any>({ total: 0, totalPages: 1, page: 1 });
+  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
 
-  // Filters + sort
   const [catFilter, setCatFilter] = useState('');
   const [cityFilter, setCityFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -58,29 +96,19 @@ export default function SuperAdminBusinessesPage() {
   const [brandId, setBrandId] = useState('');
   const [brandName, setBrandName] = useState('');
   const [urlReady, setUrlReady] = useState(false);
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-
-  const toggleSort = (col: string) => {
-    if (sortBy === col) setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-    else { setSortBy(col); setSortOrder(col === 'name' || col === 'city' ? 'asc' : 'desc'); }
-    setPage(1);
-  };
+  const [sort, setSort] = useState(SORTS[0].value);
 
   const [editing, setEditing] = useState<Biz | null>(null);
   const [form, setForm] = useState<Biz | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saveErr, setSaveErr] = useState('');
-  const [confirmDelete, setConfirmDelete] = useState<Biz | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteErr, setDeleteErr] = useState('');
   const [qrBiz, setQrBiz] = useState<Biz | null>(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(search), 350);
+    const t = setTimeout(() => setDebounced(search.trim()), 350);
     return () => clearTimeout(t);
   }, [search]);
-  // Seed search from header ?q= (role-aware global search lands here).
+
+  // Seed from ?q= (global search) and ?brandId= (brand detail "view outlets").
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const q = sp.get('q');
@@ -89,17 +117,21 @@ export default function SuperAdminBusinessesPage() {
     if (b) setBrandId(b);
     setUrlReady(true);
   }, []);
-  useEffect(() => { setPage(1); }, [debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter, brandId]);
+  useEffect(() => setPage(1), [debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter, brandId, sort]);
 
-  // Resolve the brand's name for the "Showing outlets of" chip
   useEffect(() => {
-    if (!brandId) { setBrandName(''); return; }
+    if (!brandId) {
+      setBrandName('');
+      return;
+    }
     let cancelled = false;
     apiService.get<any>(`/v1/admin/brands/${brandId}`).then((res) => {
       const d = res.data?.data ?? res.data;
       if (!cancelled) setBrandName(d?.brand?.name || '');
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [brandId]);
 
   const clearBrandFilter = () => {
@@ -110,11 +142,14 @@ export default function SuperAdminBusinessesPage() {
     window.history.replaceState(null, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
   };
 
-  // Flat category list for the edit dropdown
   useEffect(() => {
     apiService.get<any>('/v1/categories').then((res) => {
       const flat: { id: string; name: string }[] = [];
-      const walk = (list: any[]) => list?.forEach((c) => { flat.push({ id: c.id, name: c.name }); if (c.children) walk(c.children); });
+      const walk = (list: any[]) =>
+        list?.forEach((c) => {
+          flat.push({ id: c.id, name: c.name });
+          if (c.children) walk(c.children);
+        });
       if (Array.isArray(res.data)) walk(res.data);
       setCategories(flat);
     });
@@ -123,7 +158,8 @@ export default function SuperAdminBusinessesPage() {
   const fetchRows = useCallback(async () => {
     if (!urlReady) return;
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), limit: '25', sortBy, sortOrder });
+    const [sortBy, sortOrder] = sort.split(':');
+    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), sortBy, sortOrder });
     if (debounced) params.set('search', debounced);
     if (catFilter) params.set('categoryId', catFilter);
     if (cityFilter) params.set('city', cityFilter);
@@ -134,326 +170,363 @@ export default function SuperAdminBusinessesPage() {
     const res = await apiService.get<any>(`/v1/businesses/admin/all?${params}`);
     if (res.data && !res.error) {
       setRows(res.data.data || []);
-      setMeta(res.data.meta || { total: 0, totalPages: 1, page: 1 });
+      setTotal(Number(res.data.meta?.total ?? 0));
     } else {
       setRows([]);
+      setTotal(0);
+      if (res.error) toast.error(res.error);
     }
     setLoading(false);
-  }, [urlReady, page, debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter, brandId, sortBy, sortOrder]);
+  }, [urlReady, page, debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter, brandId, sort]);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => {
+    fetchRows();
+  }, [fetchRows]);
 
   const openEdit = (b: Biz) => {
-    setSaveErr('');
     setEditing(b);
     setForm({ ...b, categoryId: b.categoryId || b.category?.id });
   };
+  const set = (k: keyof Biz, v: any) => setForm((f) => (f ? { ...f, [k]: v } : f));
 
   const save = async () => {
     if (!form || !editing) return;
     setSaving(true);
-    setSaveErr('');
-    const payload: any = {
-      name: form.name, ownerName: form.ownerName, description: form.description,
-      categoryId: form.categoryId, phone: form.phone, email: form.email, website: form.website,
-      address: form.address, city: form.city, zipCode: form.zipCode,
-      status: form.status, isVerified: form.isVerified, halalStatus: form.halalStatus || null,
+    const res = await apiService.patch<any>(`/v1/businesses/admin/${editing.id}`, {
+      name: form.name,
+      ownerName: form.ownerName,
+      description: form.description,
+      categoryId: form.categoryId,
+      phone: form.phone,
+      email: form.email,
+      website: form.website,
+      address: form.address,
+      city: form.city,
+      zipCode: form.zipCode,
+      status: form.status,
+      isVerified: form.isVerified,
+      halalStatus: form.halalStatus || null,
       logo: form.logo || null,
-    };
-    const res = await apiService.patch<any>(`/v1/businesses/admin/${editing.id}`, payload);
+    });
     setSaving(false);
-    if (res.error) { setSaveErr(res.error); return; }
+    if (res.error) return toast.error(res.error);
+    toast.success('Business updated');
     setEditing(null);
     setForm(null);
     fetchRows();
   };
 
-  const set = (k: keyof Biz, v: any) => setForm((f) => (f ? { ...f, [k]: v } : f));
-
-  const handleDelete = async () => {
-    if (!confirmDelete) return;
-    setDeleting(true);
-    setDeleteErr('');
-    const res = await apiService.delete<any>(`/v1/businesses/admin/${confirmDelete.id}`);
-    setDeleting(false);
-    if (res.error) { setDeleteErr(res.error); return; }
-    setRows((prev) => prev.filter((b) => b.id !== confirmDelete.id));
-    setConfirmDelete(null);
+  const remove = async (b: Biz) => {
+    const ok = await confirm({
+      title: `Delete ${b.name}?`,
+      description: 'It disappears from search and discovery. This is a soft delete and can be recovered from the database.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
+    if (!ok) return;
+    const res = await apiService.delete<any>(`/v1/businesses/admin/${b.id}`);
+    if (res.error) return toast.error(res.error);
+    setRows((prev) => prev.filter((x) => x.id !== b.id));
+    setTotal((t) => Math.max(0, t - 1));
+    toast.success(`${b.name} deleted`);
   };
 
-  const SortTh = ({ label, col }: { label: string; col: string }) => (
-    <th className="px-5 py-3 text-left">
-      <button
-        onClick={() => toggleSort(col)}
-        className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground cursor-pointer"
-      >
-        {label}
-        <ArrowUpDown className={`h-3 w-3 ${sortBy === col ? 'text-primary' : 'opacity-40'}`} />
-      </button>
-    </th>
+  const RowMenu = ({ b }: { b: Biz }) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${b.name}`} onClick={(e) => e.stopPropagation()}>
+          <MoreHorizontal />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onSelect={() => openEdit(b)}>
+          <Pencil /> Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => setQrBiz(b)}>
+          <QrCode /> QR code
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={`/business/${b.id}`} target="_blank">
+            <Building2 /> Public page
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onSelect={() => remove(b)}>
+          <Trash2 /> Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
+
+  const columns: Column<Biz>[] = [
+    {
+      key: 'name',
+      header: 'Business',
+      cell: (b) => (
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 font-medium">
+            <span className="truncate">{b.name}</span>
+            {b.isVerified && <BadgeCheck className="size-4 shrink-0 text-success" aria-label="Verified" />}
+          </p>
+          <p className="truncate text-caption text-muted-foreground">{b.email || b.phone || '—'}</p>
+          {b.brand && (
+            <Link
+              href={`/super-admin/brands/${b.brand.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-1 inline-flex max-w-[15rem] items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-caption font-semibold text-brand-soft-foreground hover:underline"
+            >
+              <Store className="size-3 shrink-0" aria-hidden />
+              <span className="truncate">
+                {b.brand.name}
+                {b.outletLabel ? ` · ${b.outletLabel}` : ''}
+                {b.isBrandHq ? ' · HQ' : ''}
+              </span>
+            </Link>
+          )}
+        </div>
+      ),
+    },
+    { key: 'category', header: 'Category', cell: (b) => b.category?.name || '—', hideOnMobile: true },
+    { key: 'city', header: 'City', cell: (b) => b.city || '—', hideOnMobile: true },
+    {
+      key: 'rating',
+      header: 'Rating',
+      align: 'right',
+      value: (b) => Number(b.averageRating) || 0,
+      cell: (b) =>
+        Number(b.averageRating) > 0 ? (
+          <span className="inline-flex items-center gap-1">
+            <Star className="size-3.5 fill-current text-warning" aria-hidden />
+            {Number(b.averageRating).toFixed(1)}
+          </span>
+        ) : (
+          '—'
+        ),
+      hideOnMobile: true,
+    },
+    { key: 'live', header: 'Offers · events', align: 'right', cell: (b) => `${b._count?.offers ?? 0} · ${b._count?.events ?? 0}`, hideOnMobile: true },
+    { key: 'billed', header: 'Verified spend', align: 'right', value: (b) => Number(b.totalBillAmount || 0), cell: (b) => `₹${Number(b.totalBillAmount || 0).toLocaleString('en-IN')}`, hideOnMobile: true },
+    { key: 'status', header: 'Status', cell: (b) => <StatusPill tone={statusTone(b.status)} label={humanizeStatus(b.status || '—')} /> },
+    { key: 'actions', header: <span className="sr-only">Actions</span>, align: 'right', cell: (b) => <RowMenu b={b} /> },
+  ];
+
+  const filtersActive = !!(catFilter || cityFilter || verifiedFilter || halalFilter);
 
   return (
     <SuperAdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
-              <Building2 className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">Businesses</h1>
-              <p className="text-muted-foreground text-sm mt-1">Edit any business profile across the platform.</p>
-            </div>
-          </div>
-          <Button onClick={fetchRows} variant="outline" size="sm" className="rounded-xl border-border text-muted-foreground hover:text-foreground gap-2">
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh
+      <PageHeader
+        title="Businesses"
+        description="Every listing on the platform. Select a row to edit."
+        actions={
+          <Button variant="outline" onClick={fetchRows} disabled={loading}>
+            <RefreshCw className={loading ? 'animate-spin' : undefined} /> Refresh
+          </Button>
+        }
+      />
+
+      {brandId && (
+        <div className="mb-4 inline-flex max-w-full items-center gap-2 rounded-full bg-brand-soft py-1 pl-3 pr-1 text-sm text-brand-soft-foreground">
+          <Store className="size-4 shrink-0" aria-hidden />
+          <span className="truncate">
+            Outlets of{' '}
+            <Link href={`/super-admin/brands/${brandId}`} className="font-semibold hover:underline">
+              {brandName || 'this brand'}
+            </Link>
+          </span>
+          <Button variant="ghost" size="icon-sm" onClick={clearBrandFilter} aria-label="Clear brand filter" className="rounded-full">
+            <X />
           </Button>
         </div>
+      )}
 
-        {brandId && (
-          <div className="ui-pop inline-flex max-w-full items-center gap-2 rounded-full border border-primary/25 bg-primary/10 py-1 pl-3 pr-1 text-xs text-primary">
-            <Store className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">
-              Showing outlets of{' '}
-              <Link href={`/super-admin/brands/${brandId}`} className="font-semibold underline-offset-2 hover:underline">{brandName || 'this brand'}</Link>
-            </span>
-            <button
-              onClick={clearBrandFilter}
-              aria-label="Clear brand filter"
-              className="ui-press flex h-8 w-8 shrink-0 items-center justify-center rounded-full hover:bg-primary/15 cursor-pointer"
+      <ChipRow label="Status" className="mb-3">
+        {['', ...STATUS_OPTIONS].map((s) => (
+          <FilterChip key={s || 'all'} selected={statusFilter === s} onClick={() => setStatusFilter(s)}>
+            {s ? humanizeStatus(s) : 'All'}
+          </FilterChip>
+        ))}
+      </ChipRow>
+
+      <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search name, email, phone, city" />
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <FilterSelect value={catFilter} onChange={setCatFilter} placeholder="All categories" options={categories.map((c) => ({ value: c.id, label: c.name }))} />
+          <FilterSelect value={cityFilter} onChange={setCityFilter} placeholder="All cities" options={KERALA_CITIES.map((c) => ({ value: c, label: c }))} />
+          <FilterSelect
+            value={verifiedFilter}
+            onChange={setVerifiedFilter}
+            placeholder="Any verification"
+            options={[
+              { value: 'true', label: 'Verified' },
+              { value: 'false', label: 'Unverified' },
+            ]}
+          />
+          <FilterSelect
+            value={halalFilter}
+            onChange={setHalalFilter}
+            placeholder="Any halal"
+            options={[
+              { value: 'HALAL', label: 'Halal' },
+              { value: 'NON_HALAL', label: 'Non-halal' },
+            ]}
+          />
+          <Select value={sort} onValueChange={setSort}>
+            <SelectTrigger className="h-11 w-full rounded-full sm:w-40" aria-label="Sort">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORTS.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filtersActive && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setCatFilter('');
+                setCityFilter('');
+                setVerifiedFilter('');
+                setHalalFilter('');
+              }}
             >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative flex-1 min-w-[220px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, email, phone, city…" className="pl-9 h-9 rounded-xl border-border bg-card text-sm text-foreground" />
-          </div>
-          <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className={selCls}>
-            <option value="">All categories</option>
-            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-          <select value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} className={selCls}>
-            <option value="">All cities</option>
-            {KERALA_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={selCls}>
-            <option value="">Any status</option>
-            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select value={verifiedFilter} onChange={(e) => setVerifiedFilter(e.target.value)} className={selCls}>
-            <option value="">Any verification</option>
-            <option value="true">Verified</option>
-            <option value="false">Unverified</option>
-          </select>
-          <select value={halalFilter} onChange={(e) => setHalalFilter(e.target.value)} className={selCls}>
-            <option value="">Any halal</option>
-            <option value="HALAL">Halal</option>
-            <option value="NON_HALAL">Non-Halal</option>
-          </select>
-        </div>
-
-        <Card className="rounded-2xl border-border bg-card overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center py-16 text-muted-foreground text-sm gap-2"><Loader2 className="h-5 w-5 animate-spin" /> Loading…</div>
-          ) : rows.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground"><Building2 className="h-8 w-8 opacity-30" /><p className="text-sm">No businesses found</p></div>
-          ) : (
-            <div className="ui-scroll-x">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-secondary/40">
-                    <SortTh label="Business" col="name" />
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Category</th>
-                    <SortTh label="City" col="city" />
-                    <SortTh label="Rating" col="rating" />
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Published</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Total Received</th>
-                    <SortTh label="Status" col="status" />
-                    <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">Edit</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((b, i) => (
-                    <tr key={b.id} className="ui-fade-up border-b border-border last:border-0 hover:bg-secondary/20 transition-colors" style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}>
-                      <td className="px-5 py-3">
-                        <p className="font-semibold text-foreground flex items-center gap-1.5">{b.name}{b.isVerified && <CheckCircle2 className="h-3.5 w-3.5 text-success" />}</p>
-                        {b.email && <p className="text-xs text-muted-foreground">{b.email}</p>}
-                        {b.brand && (
-                          <Link
-                            href={`/super-admin/brands/${b.brand.id}`}
-                            className="mt-1 inline-flex max-w-[220px] items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary hover:bg-primary/15 transition-colors"
-                          >
-                            <Store className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{b.brand.name}{b.outletLabel ? ` · ${b.outletLabel}` : ''}</span>
-                            {b.isBrandHq && <span className="rounded bg-primary px-1 text-xs text-primary-foreground">HQ</span>}
-                          </Link>
-                        )}
-                      </td>
-                      <td className="px-5 py-3 text-muted-foreground text-xs">{b.category?.name || '—'}</td>
-                      <td className="px-5 py-3 text-muted-foreground text-xs">{b.city || '—'}</td>
-                      <td className="px-5 py-3 text-xs">
-                        <span className="inline-flex items-center gap-1 text-warning"><Star className="h-3 w-3 fill-warning" />{(b as any).averageRating != null ? Number((b as any).averageRating).toFixed(1) : '—'}</span>
-                      </td>
-                      <td className="px-5 py-3 text-xs">
-                        <span className="inline-flex items-center gap-1 mr-2 text-success"><Tag className="h-3 w-3" />{b._count?.offers ?? 0}</span>
-                        <span className="inline-flex items-center gap-1 text-info"><CalendarDays className="h-3 w-3" />{b._count?.events ?? 0}</span>
-                      </td>
-                      <td className="px-5 py-3 text-xs font-semibold text-foreground">
-                        <span className="inline-flex items-center gap-1"><Wallet className="h-3 w-3 text-primary" />₹{Number(b.totalBillAmount || 0).toLocaleString('en-IN')}</span>
-                      </td>
-                      <td className="px-5 py-3"><span className="px-2 py-0.5 rounded-full text-xs font-bold bg-muted text-foreground">{b.status}</span></td>
-                      <td className="px-5 py-3 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button onClick={() => openEdit(b)} variant="outline" size="sm" className="rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer">
-                            <Pencil className="h-3.5 w-3.5" /> Edit
-                          </Button>
-                          <Button onClick={() => setQrBiz(b)} variant="outline" size="sm" className="rounded-xl border-border text-foreground hover:bg-secondary gap-1.5 cursor-pointer">
-                            <QrCode className="h-3.5 w-3.5" /> QR
-                          </Button>
-                          <Button
-                            onClick={() => { setDeleteErr(''); setConfirmDelete(b); }}
-                            variant="outline"
-                            size="sm"
-                            className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 gap-1.5 cursor-pointer"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" /> Delete
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+              Clear filters
+            </Button>
           )}
-        </Card>
-
-        {meta.totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">Page {meta.page} of {meta.totalPages} · {meta.total} total</p>
-            <div className="flex gap-2">
-              <Button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={!meta.hasPrev} variant="outline" size="sm" className="rounded-xl border-border text-muted-foreground"><ChevronLeft className="h-4 w-4" /></Button>
-              <Button onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))} disabled={!meta.hasNext} variant="outline" size="sm" className="rounded-xl border-border text-muted-foreground"><ChevronRight className="h-4 w-4" /></Button>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
-      {/* Edit modal */}
-      {editing && form && (
-        <ModalSurface onClose={() => setEditing(null)} label="Edit Business" className="sm:max-w-2xl">
-            <h3 className="text-lg font-bold text-foreground mb-4">Edit Business</h3>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <Field label="Business Name"><input className={inp} value={form.name || ''} onChange={(e) => set('name', e.target.value)} /></Field>
-              <Field label="Owner Name"><input className={inp} value={form.ownerName || ''} onChange={(e) => set('ownerName', e.target.value)} /></Field>
-              <Field label="Phone"><input className={inp} value={form.phone || ''} onChange={(e) => set('phone', e.target.value)} /></Field>
-              <Field label="Email"><input className={inp} value={form.email || ''} onChange={(e) => set('email', e.target.value)} /></Field>
-              <Field label="Website"><input className={inp} value={form.website || ''} onChange={(e) => set('website', e.target.value)} /></Field>
-              <Field label="Category">
-                <select className={inp} value={form.categoryId || ''} onChange={(e) => set('categoryId', e.target.value)}>
-                  <option value="">—</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </Field>
-              <Field label="City">
-                <select className={inp} value={form.city || ''} onChange={(e) => set('city', e.target.value)}>
-                  <option value="">—</option>
-                  {KERALA_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </Field>
-              <Field label="Postal Code"><input className={inp} value={form.zipCode || ''} onChange={(e) => set('zipCode', e.target.value)} /></Field>
-              <Field label="Status">
-                <select className={inp} value={form.status || ''} onChange={(e) => set('status', e.target.value)}>
-                  {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </Field>
-              <Field label="Halal Status (food)">
-                <select className={inp} value={form.halalStatus || ''} onChange={(e) => set('halalStatus', e.target.value)}>
-                  <option value="">—</option>
-                  <option value="HALAL">Halal</option>
-                  <option value="NON_HALAL">Non-Halal</option>
-                </select>
-              </Field>
-              <Field label="Logo URL"><input className={inp} value={form.logo || ''} onChange={(e) => set('logo', e.target.value)} /></Field>
+      <DataTable
+        caption="Businesses"
+        columns={columns}
+        rows={rows}
+        rowKey={(b) => b.id}
+        loading={loading}
+        onRowClick={openEdit}
+        page={page}
+        pageSize={PAGE_SIZE}
+        total={total}
+        onPageChange={setPage}
+        empty={{ icon: Building2, title: 'No businesses match', description: 'Try clearing a filter or the search.' }}
+        mobileCard={(b) => (
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate font-medium">{b.name}</p>
+              <p className="truncate text-caption text-muted-foreground">{[b.category?.name, b.city].filter(Boolean).join(' · ') || '—'}</p>
             </div>
-            <Field label="Address"><input className={inp} value={form.address || ''} onChange={(e) => set('address', e.target.value)} /></Field>
-            <Field label="Description">
-              <textarea className={`${inp} min-h-20`} value={form.description || ''} onChange={(e) => set('description', e.target.value)} />
-            </Field>
-
-            <label className="flex items-center gap-2 mt-3 cursor-pointer">
-              <input type="checkbox" checked={!!form.isVerified} onChange={(e) => set('isVerified', e.target.checked)} className="accent-success" />
-              <span className="text-sm text-foreground">Verified merchant</span>
-            </label>
-
-            {saveErr && <p className="text-xs text-destructive mt-3">{saveErr}</p>}
-
-            <div className="flex justify-end gap-2 mt-5">
-              <Button onClick={() => setEditing(null)} variant="outline" className="rounded-xl border-border text-muted-foreground hover:bg-secondary">Cancel</Button>
-              <Button onClick={save} disabled={saving} className="rounded-xl bg-primary text-primary-foreground font-semibold gap-1.5">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Save
-              </Button>
+            <div className="flex shrink-0 items-center gap-1">
+              <StatusPill tone={statusTone(b.status)} label={humanizeStatus(b.status || '—')} />
+              <RowMenu b={b} />
             </div>
-        </ModalSurface>
-      )}
+          </div>
+        )}
+      />
 
-      {/* Delete confirm modal */}
-      {confirmDelete && (
-        <ModalSurface onClose={() => setConfirmDelete(null)} label="Delete business" className="sm:max-w-md">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
+      <Modal
+        open={!!editing && !!form}
+        onOpenChange={(o) => !o && setEditing(null)}
+        title="Edit business"
+        description={editing?.name}
+        size="xl"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button loading={saving} onClick={save}>
+              Save
+            </Button>
+          </>
+        }
+      >
+        {form && (
+          <form
+            className="grid gap-4 md:grid-cols-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              save();
+            }}
+          >
+            {(
+              [
+                ['name', 'Business name'],
+                ['ownerName', 'Owner name'],
+                ['phone', 'Phone'],
+                ['email', 'Email'],
+                ['website', 'Website'],
+                ['zipCode', 'Postal code'],
+                ['logo', 'Logo URL'],
+              ] as const
+            ).map(([k, l]) => (
+              <div key={k}>
+                <label htmlFor={`b-${k}`} className={label}>
+                  {l}
+                </label>
+                <Input id={`b-${k}`} value={(form[k] as string) || ''} onChange={(e) => set(k, e.target.value)} />
               </div>
-              <h3 className="text-lg font-bold text-foreground">Delete business</h3>
+            ))}
+            <div>
+              <span className={label}>Category</span>
+              <FilterSelect className="w-full" value={form.categoryId || ''} onChange={(v) => set('categoryId', v)} placeholder="—" options={categories.map((c) => ({ value: c.id, label: c.name }))} />
             </div>
-            <p className="text-sm text-muted-foreground">
-              This removes <strong className="text-foreground">{confirmDelete.name}</strong> from public search and discovery.
-              It's a soft delete (recoverable from the database if needed), not a permanent erase.
-            </p>
-            {deleteErr && <p className="text-xs text-destructive mt-3">{deleteErr}</p>}
-            <div className="flex justify-end gap-2 mt-5">
-              <Button onClick={() => setConfirmDelete(null)} variant="outline" className="rounded-xl border-border text-muted-foreground hover:bg-secondary cursor-pointer">Cancel</Button>
-              <Button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="rounded-xl bg-destructive text-white font-semibold gap-1.5 hover:bg-destructive/90 cursor-pointer"
-              >
-                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Delete
-              </Button>
+            <div>
+              <span className={label}>City</span>
+              <FilterSelect className="w-full" value={form.city || ''} onChange={(v) => set('city', v)} placeholder="—" options={KERALA_CITIES.map((c) => ({ value: c, label: c }))} />
             </div>
-        </ModalSurface>
-      )}
-      {/* QR preview / download modal */}
-      {qrBiz && (
-        <ModalSurface onClose={() => setQrBiz(null)} label="Business QR code" className="sm:max-w-md">
-            <h3 className="text-lg font-bold text-foreground mb-1">{qrBiz.name}&apos;s QR code</h3>
-            <p className="text-xs text-muted-foreground mb-4">Preview, print or download it for the business if they need a replacement.</p>
-            <BusinessQrCard
-              businessId={qrBiz.id}
-              businessName={qrBiz.name}
-              category={qrBiz.category?.name}
-              city={qrBiz.city}
-            />
-        </ModalSurface>
-      )}
+            <div>
+              <span className={label}>Status</span>
+              <Select value={form.status || 'DRAFT'} onValueChange={(v) => set('status', v)}>
+                <SelectTrigger className="w-full" aria-label="Status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {humanizeStatus(s)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <span className={label}>Halal status (food)</span>
+              <FilterSelect
+                className="w-full"
+                value={form.halalStatus || ''}
+                onChange={(v) => set('halalStatus', v)}
+                placeholder="—"
+                options={[
+                  { value: 'HALAL', label: 'Halal' },
+                  { value: 'NON_HALAL', label: 'Non-halal' },
+                ]}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label htmlFor="b-address" className={label}>
+                Address
+              </label>
+              <Input id="b-address" value={form.address || ''} onChange={(e) => set('address', e.target.value)} />
+            </div>
+            <div className="md:col-span-2">
+              <label htmlFor="b-desc" className={label}>
+                Description
+              </label>
+              <Textarea id="b-desc" value={form.description || ''} onChange={(e) => set('description', e.target.value)} className="min-h-24" />
+            </div>
+            <label className="flex items-center justify-between gap-3 rounded-control border border-border p-3 md:col-span-2">
+              <span className="text-sm font-medium">Verified merchant</span>
+              <Switch checked={!!form.isVerified} onCheckedChange={(v) => set('isVerified', v)} />
+            </label>
+            <button type="submit" hidden />
+          </form>
+        )}
+      </Modal>
+
+      <Modal open={!!qrBiz} onOpenChange={(o) => !o && setQrBiz(null)} title={qrBiz ? `${qrBiz.name} — QR code` : 'QR code'} description="Preview, print or download a replacement for the business.">
+        {qrBiz && <BusinessQrCard businessId={qrBiz.id} businessName={qrBiz.name} category={qrBiz.category?.name} city={qrBiz.city} />}
+      </Modal>
     </SuperAdminLayout>
-  );
-}
-
-const inp = 'w-full h-10 px-3 rounded-xl border border-input bg-background text-foreground text-sm focus:ring-1 focus:outline-none';
-const selCls = 'h-9 px-3 rounded-xl border border-border bg-card text-sm text-foreground cursor-pointer';
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1 mt-2">
-      <label className="text-xs font-medium text-muted-foreground">{label}</label>
-      {children}
-    </div>
   );
 }

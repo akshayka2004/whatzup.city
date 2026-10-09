@@ -246,8 +246,10 @@ export function DataTable<T>({
 /** Download rows as CSV using the same column definitions (headers must be strings to appear). */
 export function downloadCsv<T>(filename: string, columns: Column<T>[], rows: T[]) {
   const esc = (v: unknown) => {
-    const s = v instanceof Date ? v.toISOString() : v == null ? '' : String(v);
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    let s = v instanceof Date ? v.toISOString() : v == null ? '' : String(v);
+    // Text starting with = + - @ would run as a formula in Excel/Sheets.
+    if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+    return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const cols = columns.filter((c) => typeof c.header === 'string');
   const lines = [cols.map((c) => esc(c.header)).join(','), ...rows.map((r) => cols.map((c) => esc(read(r, c))).join(','))];

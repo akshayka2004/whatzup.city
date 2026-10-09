@@ -1,31 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Bell, Building2, Download, History, Receipt, RefreshCw, Settings, ShieldAlert, Tag, UserCheck } from 'lucide-react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
-import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/system/page-header';
+import { DataTable, downloadCsv, type Column } from '@/components/system/data-table';
+import { FilterChip, ChipRow } from '@/components/system/filter-chip';
+import { SearchInput } from '@/components/system/toolbar';
+import { Modal } from '@/components/system/modal';
+import { StatusPill, humanizeStatus, type PillTone } from '@/components/common/status-pill';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  ArrowUpRight,
-  Search,
-  Filter,
-  Download,
-  Receipt,
-  CheckCircle2,
-  XCircle,
-  Tag,
-  Building2,
-  ShieldAlert,
-  UserCheck,
-  Settings,
-  Bell,
-  RefreshCw,
-  Loader2,
-} from 'lucide-react';
+import { toast } from '@/components/ui/sonner';
 import { apiService } from '@/lib/services/api-service';
-import { cn } from '@/lib/utils';
 
-// ── Derive category from action string ───────────────────────────────────────
+type EventCategory = 'BILL' | 'OFFER' | 'BUSINESS' | 'USER' | 'MODERATION' | 'SYSTEM' | 'NOTICE';
+
+// Same keyword groups the API filters by (AUDIT_CATEGORY_TERMS in audit.service.ts).
 function deriveCategory(action = ''): EventCategory {
   const a = action.toUpperCase();
   if (a.includes('BILL') || a.includes('INVOICE')) return 'BILL';
@@ -37,306 +27,174 @@ function deriveCategory(action = ''): EventCategory {
   return 'SYSTEM';
 }
 
-// ── Event type definitions ────────────────────────────────────────────────────
-type EventCategory =
-  | 'BILL'
-  | 'OFFER'
-  | 'BUSINESS'
-  | 'USER'
-  | 'MODERATION'
-  | 'SYSTEM'
-  | 'NOTICE';
-
-const CATEGORY_CONFIG: Record<
-  EventCategory,
-  { label: string; color: string; bg: string; border: string; icon: React.ElementType }
-> = {
-  BILL: { label: 'Bill', color: 'text-info', bg: 'bg-info/10', border: 'border-info/20', icon: Receipt },
-  OFFER: { label: 'Offer', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', icon: Tag },
-  BUSINESS: { label: 'Business', color: 'text-success', bg: 'bg-success/10', border: 'border-success/20', icon: Building2 },
-  USER: { label: 'User', color: 'text-info', bg: 'bg-info/10', border: 'border-info/20', icon: UserCheck },
-  MODERATION: { label: 'Moderation', color: 'text-destructive', bg: 'bg-destructive/10', border: 'border-destructive/20', icon: ShieldAlert },
-  SYSTEM: { label: 'System', color: 'text-muted-foreground', bg: 'bg-secondary', border: 'border-border', icon: Settings },
-  NOTICE: { label: 'Notice', color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/20', icon: Bell },
+const CATEGORY: Record<EventCategory, { label: string; tone: PillTone; icon: React.ComponentType<{ className?: string }> }> = {
+  BILL: { label: 'Bill', tone: 'info', icon: Receipt },
+  OFFER: { label: 'Offer', tone: 'primary', icon: Tag },
+  BUSINESS: { label: 'Business', tone: 'success', icon: Building2 },
+  USER: { label: 'User', tone: 'info', icon: UserCheck },
+  MODERATION: { label: 'Moderation', tone: 'danger', icon: ShieldAlert },
+  SYSTEM: { label: 'System', tone: 'neutral', icon: Settings },
+  NOTICE: { label: 'Notice', tone: 'warning', icon: Bell },
 };
 
-interface AuditLogEntry {
-  id: number;
+interface Entry {
+  id: string;
   action: string;
+  resource: string;
   category: EventCategory;
   user: string;
-  details: string;
-  date: string;
-  metadata?: Record<string, string>;
+  createdAt: string;
+  ip?: string | null;
+  metadata?: unknown;
+  oldData?: unknown;
+  newData?: unknown;
 }
 
-
-const FILTER_OPTIONS: { label: string; value: EventCategory | 'ALL' }[] = [
-  { label: 'All Events', value: 'ALL' },
-  { label: 'Bills', value: 'BILL' },
-  { label: 'Offers', value: 'OFFER' },
-  { label: 'Businesses', value: 'BUSINESS' },
-  { label: 'Users', value: 'USER' },
-  { label: 'Moderation', value: 'MODERATION' },
-  { label: 'Notices', value: 'NOTICE' },
-  { label: 'System', value: 'SYSTEM' },
-];
-
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 50; // API page size
+const fmt = (d: string) => new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
 
 export default function AdminAuditPage() {
-  const [allLogs, setAllLogs] = useState<AuditLogEntry[]>([]);
+  const [rows, setRows] = useState<Entry[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filterCategory, setFilterCategory] = useState<EventCategory | 'ALL'>('ALL');
-  const [page, setPage] = useState(1);
+  const [debounced, setDebounced] = useState('');
+  const [category, setCategory] = useState<EventCategory | ''>('');
+  const [open, setOpen] = useState<Entry | null>(null);
 
   useEffect(() => {
+    const t = setTimeout(() => setDebounced(search.trim()), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+  useEffect(() => setPage(1), [debounced, category]);
+
+  const load = useCallback(async () => {
     setLoading(true);
-    apiService
-      .get<any>('/v1/audit-logs?page=1')
-      .then((res) => {
-        if (res.data && !res.error) {
-          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.logs ?? [];
-          setAllLogs(
-            list.map((l: any, i: number) => ({
-              id: l.id ?? i,
-              action: l.action || l.eventType || 'UNKNOWN',
-              category: (l.category || l.eventCategory || deriveCategory(l.action || l.eventType)) as EventCategory,
-              user: l.performedBy || l.user?.name || l.user?.email || l.userId || 'System',
-              details: l.description || l.details || l.message || '',
-              date: l.createdAt
-                ? new Date(l.createdAt).toLocaleString('en-IN')
-                : l.date || '—',
-              metadata: l.metadata || {},
-            })),
-          );
-        }
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    const p = new URLSearchParams({ page: String(page) });
+    if (debounced) p.set('q', debounced);
+    if (category) p.set('category', category);
+    const res = await apiService.get<any>(`/v1/audit-logs?${p}`);
+    if (res.error) toast.error(res.error);
+    const list: any[] = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+    setRows(
+      list.map((l) => ({
+        id: String(l.id),
+        action: l.action || 'UNKNOWN',
+        resource: l.resource || '',
+        category: deriveCategory(l.action),
+        user: l.user?.name || l.user?.email || (l.userId ? 'User' : 'System'),
+        createdAt: l.createdAt,
+        ip: l.ipAddress,
+        metadata: l.metadata,
+        oldData: l.oldData,
+        newData: l.newData,
+      })),
+    );
+    setTotal(Number(res.data?.meta?.total ?? list.length));
+    setLoading(false);
+  }, [page, debounced, category]);
 
-  const filtered = allLogs.filter((log) => {
-    const matchCat = filterCategory === 'ALL' || log.category === filterCategory;
-    const matchSearch =
-      !search ||
-      log.action.toLowerCase().includes(search.toLowerCase()) ||
-      log.user.toLowerCase().includes(search.toLowerCase()) ||
-      log.details.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
-  });
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const columns: Column<Entry>[] = [
+    { key: 'createdAt', header: 'When', value: (e) => e.createdAt, cell: (e) => <span className="whitespace-nowrap">{fmt(e.createdAt)}</span> },
+    { key: 'user', header: 'Who', value: (e) => e.user, cell: (e) => e.user },
+    { key: 'category', header: 'Type', value: (e) => CATEGORY[e.category].label, cell: (e) => <StatusPill tone={CATEGORY[e.category].tone} label={CATEGORY[e.category].label} /> },
+    { key: 'action', header: 'Action', value: (e) => e.action, cell: (e) => <span className="font-medium">{humanizeStatus(e.action)}</span> },
+    { key: 'resource', header: 'Resource', value: (e) => e.resource, cell: (e) => <span className="text-muted-foreground">{e.resource || '—'}</span>, hideOnMobile: true },
+  ];
 
-  const handleExport = () => {
-    const csv = [
-      'Timestamp,User,Category,Action,Details',
-      ...filtered.map(
-        (l) => `"${l.date}","${l.user}","${l.category}","${l.action}","${l.details}"`,
-      ),
-    ].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const resetFilters = () => {
-    setSearch('');
-    setFilterCategory('ALL');
-    setPage(1);
-  };
+  const json = (v: unknown) => (v == null ? null : JSON.stringify(v, null, 2));
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Platform Audit Trail</h1>
-            <p className="text-muted-foreground">
-              Chronological log of all platform events — bills, offers, businesses, users, and system actions
-            </p>
-          </div>
-          <Button
-            onClick={handleExport}
-            variant="outline"
-            className="rounded-xl border-border text-foreground hover:bg-secondary gap-2 cursor-pointer shrink-0"
-          >
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
-        </div>
+      <PageHeader
+        title="Audit log"
+        description="Who changed what, newest first. Select a row for the full record."
+        actions={
+          <>
+            <Button variant="outline" onClick={load} disabled={loading}>
+              <RefreshCw className={loading ? 'animate-spin' : undefined} /> Refresh
+            </Button>
+            <Button variant="outline" disabled={!rows.length} onClick={() => downloadCsv(`audit-page-${page}`, columns, rows)}>
+              <Download /> CSV
+            </Button>
+          </>
+        }
+      />
 
-        {loading && (
-          <div className="flex items-center justify-center h-20">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <ChipRow label="Type">
+          <FilterChip selected={!category} onClick={() => setCategory('')}>
+            All
+          </FilterChip>
+          {(Object.keys(CATEGORY) as EventCategory[]).map((c) => (
+            <FilterChip key={c} icon={CATEGORY[c].icon} selected={category === c} onClick={() => setCategory(c)}>
+              {CATEGORY[c].label}
+            </FilterChip>
+          ))}
+        </ChipRow>
+        <SearchInput value={search} onChange={setSearch} placeholder="Search action, resource or person" />
+      </div>
+
+      <DataTable
+        caption="Audit log"
+        columns={columns}
+        rows={rows}
+        rowKey={(e) => e.id}
+        loading={loading}
+        onRowClick={setOpen}
+        page={page}
+        pageSize={PAGE_SIZE}
+        total={total}
+        onPageChange={setPage}
+        empty={{ icon: History, title: 'No matching events' }}
+        mobileCard={(e) => (
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate font-medium">{humanizeStatus(e.action)}</p>
+              <p className="truncate text-caption text-muted-foreground">
+                {e.user} · {fmt(e.createdAt)}
+              </p>
+            </div>
+            <StatusPill tone={CATEGORY[e.category].tone} label={CATEGORY[e.category].label} />
           </div>
         )}
+      />
 
-        {/* Stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[
-            { label: 'Total Events', value: allLogs.length, color: 'text-foreground' },
-            { label: 'Bill Events', value: allLogs.filter((l) => l.category === 'BILL').length, color: 'text-info' },
-            { label: 'Moderation', value: allLogs.filter((l) => l.category === 'MODERATION').length, color: 'text-destructive' },
-            { label: 'Business Events', value: allLogs.filter((l) => l.category === 'BUSINESS').length, color: 'text-success' },
-          ].map((stat, i) => (
-            <Card
-              key={stat.label}
-              className="ui-fade-up p-4 rounded-2xl border-border bg-card/40 backdrop-blur-xl"
-              style={{ animationDelay: `${i * 0.05}s` }}
-            >
-              <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
-              <p className={cn('text-2xl font-bold', stat.color)}>{stat.value}</p>
-            </Card>
-          ))}
-        </div>
-
-        {/* Filter bar */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Search actions, users, details..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="pl-8 h-9 rounded-xl border-border bg-card/40 text-sm"
-            />
-          </div>
-
-          {/* Category pills */}
-          <div className="flex flex-wrap gap-1.5">
-            {FILTER_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => { setFilterCategory(opt.value); setPage(1); }}
-                className={cn(
-                  'px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer',
-                  filterCategory === opt.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary text-muted-foreground hover:text-foreground hover:bg-secondary border border-border',
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
-            {(search || filterCategory !== 'ALL') && (
-              <button
-                onClick={resetFilters}
-                className="px-3 py-1.5 rounded-xl text-xs font-medium text-destructive bg-destructive/10 border border-destructive/20 hover:bg-destructive/15 transition-all cursor-pointer flex items-center gap-1"
-              >
-                <RefreshCw className="h-3 w-3" /> Reset
-              </button>
+      <Modal open={!!open} onOpenChange={(o) => !o && setOpen(null)} title={open ? humanizeStatus(open.action) : 'Event'} description={open ? `${open.user} · ${fmt(open.createdAt)}` : undefined} size="lg">
+        {open && (
+          <div className="space-y-4 text-sm">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
+              <dt className="text-muted-foreground">Resource</dt>
+              <dd className="break-all">{open.resource || '—'}</dd>
+              {open.ip && (
+                <>
+                  <dt className="text-muted-foreground">IP</dt>
+                  <dd className="font-mono">{open.ip}</dd>
+                </>
+              )}
+            </dl>
+            {(
+              [
+                ['Before', open.oldData],
+                ['After', open.newData],
+                ['Details', open.metadata],
+              ] as const
+            ).map(([l, v]) =>
+              json(v) ? (
+                <div key={l}>
+                  <p className="mb-1 text-overline text-muted-foreground">{l}</p>
+                  <pre className="max-h-60 overflow-auto rounded-control bg-surface-sunken p-3 font-mono text-caption">{json(v)}</pre>
+                </div>
+              ) : null,
             )}
           </div>
-        </div>
-
-        {/* Results count */}
-        <p className="text-xs text-muted-foreground">
-          Showing {paginated.length} of {filtered.length} events
-        </p>
-
-        {/* Table */}
-        <Card className="p-0 rounded-2xl border-border bg-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-muted-foreground bg-secondary">
-                  <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Timestamp</th>
-                  <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider">User / Operator</th>
-                  <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Category</th>
-                  <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Action</th>
-                  <th className="px-5 py-3 font-semibold text-xs uppercase tracking-wider">Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginated.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-5 py-12 text-center text-muted-foreground text-sm">
-                      No events found matching your filters.
-                    </td>
-                  </tr>
-                ) : (
-                  paginated.map((log, i) => {
-                    const cfg = CATEGORY_CONFIG[log.category];
-                    const IconComp = cfg.icon;
-                    return (
-                      <tr
-                        key={log.id}
-                        className="ui-fade-up border-b border-border last:border-0 hover:bg-foreground/[0.04] transition-colors"
-                        style={{ animationDelay: `${Math.min(i, 8) * 0.04}s` }}
-                      >
-                        <td className="px-5 py-3.5 text-muted-foreground font-mono text-xs whitespace-nowrap">
-                          {log.date}
-                        </td>
-                        <td className="px-5 py-3.5 font-medium text-foreground text-xs max-w-[160px]">
-                          <span className="truncate block">{log.user}</span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span
-                            className={cn(
-                              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border',
-                              cfg.bg,
-                              cfg.color,
-                              cfg.border,
-                            )}
-                          >
-                            <IconComp className="h-3 w-3" />
-                            {cfg.label}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className="px-2 py-0.5 rounded bg-secondary border border-border text-xs font-mono font-bold text-foreground whitespace-nowrap">
-                            {log.action}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3.5 text-foreground text-xs max-w-[300px]">
-                          <span className="line-clamp-2">{log.details}</span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">
-              Page {page} of {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="rounded-xl border-border text-foreground hover:bg-secondary text-xs disabled:opacity-40 cursor-pointer"
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="rounded-xl border-border text-foreground hover:bg-secondary text-xs disabled:opacity-40 cursor-pointer"
-              >
-                Next
-              </Button>
-            </div>
-          </div>
         )}
-      </div>
+      </Modal>
     </AdminLayout>
   );
 }
