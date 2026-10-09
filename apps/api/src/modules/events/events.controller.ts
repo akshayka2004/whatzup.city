@@ -1,5 +1,13 @@
 import {
-  Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { EventsService } from './events.service';
@@ -53,7 +61,11 @@ export class EventsController {
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Patch('admin/:id')
   @ApiBearerAuth()
-  async adminUpdate(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: EventDto) {
+  async adminUpdate(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: EventDto,
+  ) {
     return this.eventsService.adminUpdate(id, userId, dto);
   }
 
@@ -68,7 +80,10 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @Get('mine/:businessId')
   @ApiBearerAuth()
-  async findMine(@CurrentUser('tenantId') tenantId: string, @Param('businessId') businessId: string) {
+  async findMine(
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('businessId') businessId: string,
+  ) {
     return this.eventsService.findMine(tenantId, businessId);
   }
 

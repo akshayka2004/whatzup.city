@@ -82,7 +82,9 @@ export class StorageService implements OnApplicationBootstrap {
         if (createErr) {
           this.logger.warn(`Failed to create bucket "${bucket.name}": ${createErr.message}`);
         } else {
-          this.logger.log(`Created missing storage bucket "${bucket.name}" (public=${bucket.public}).`);
+          this.logger.log(
+            `Created missing storage bucket "${bucket.name}" (public=${bucket.public}).`,
+          );
         }
       }
     } catch (err: any) {
@@ -114,7 +116,10 @@ export class StorageService implements OnApplicationBootstrap {
       // Widen an existing bucket's allowed MIME / size in case it was created
       // too narrowly (bill-uploads was rejecting image/webp with a 415).
       if (cfg) {
-        const { error: upErr } = await this.supabaseClient.storage.updateBucket(bucket, opts as any);
+        const { error: upErr } = await this.supabaseClient.storage.updateBucket(
+          bucket,
+          opts as any,
+        );
         if (upErr) this.logger.warn(`ensureBucket update("${bucket}") failed: ${upErr.message}`);
       }
     } catch (err: any) {
@@ -128,7 +133,7 @@ export class StorageService implements OnApplicationBootstrap {
     if (!this.supabaseClient) {
       throw new ServiceUnavailableException(
         'File storage is not configured. ' +
-        'Contact the platform administrator to set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
+          'Contact the platform administrator to set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
       );
     }
   }
@@ -143,12 +148,10 @@ export class StorageService implements OnApplicationBootstrap {
     category: string,
     filename: string,
   ): string {
-    const sanitizedFilename = filename
-      .replace(/[^a-zA-Z0-9.-]/g, '_')
-      .toLowerCase();
+    const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
     const uniqueId = Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 7);
     const ext = filename.split('.').pop()?.toLowerCase();
-    
+
     // Group files by entity ID if provided, else category subfolder
     const folder = entityId ? `${category}/${entityId}` : category;
     return `${tenantId}/${folder}/${uniqueId}.${ext}`;
@@ -164,9 +167,8 @@ export class StorageService implements OnApplicationBootstrap {
     this.ensureClient();
     await this.ensureBucket(bucket);
     try {
-      const { data, error } = await this.supabaseClient!.storage
-        .from(bucket)
-        .createSignedUploadUrl(fileKey);
+      const { data, error } =
+        await this.supabaseClient!.storage.from(bucket).createSignedUploadUrl(fileKey);
 
       if (error || !data) {
         throw new Error(error?.message || 'Failed to create signed upload URL');
@@ -174,7 +176,9 @@ export class StorageService implements OnApplicationBootstrap {
 
       return { uploadUrl: data.signedUrl, fileKey };
     } catch (err: any) {
-      this.logger.error(`Error creating signed upload URL in bucket ${bucket} for path ${fileKey}: ${err.message}`);
+      this.logger.error(
+        `Error creating signed upload URL in bucket ${bucket} for path ${fileKey}: ${err.message}`,
+      );
       throw new InternalServerErrorException(`Storage service error: ${err.message}`);
     }
   }
@@ -200,9 +204,10 @@ export class StorageService implements OnApplicationBootstrap {
     }
 
     try {
-      const { data, error } = await this.supabaseClient!.storage
-        .from(bucket)
-        .createSignedUrl(fileKey, expiresInSeconds);
+      const { data, error } = await this.supabaseClient!.storage.from(bucket).createSignedUrl(
+        fileKey,
+        expiresInSeconds,
+      );
 
       if (error || !data) {
         throw new Error(error?.message || 'Failed to create signed download URL');
@@ -239,9 +244,10 @@ export class StorageService implements OnApplicationBootstrap {
     mimeType: string,
   ): Promise<string> {
     this.ensureClient();
-    const { error } = await this.supabaseClient!.storage
-      .from(bucket)
-      .upload(fileKey, file, { contentType: mimeType, upsert: true });
+    const { error } = await this.supabaseClient!.storage.from(bucket).upload(fileKey, file, {
+      contentType: mimeType,
+      upsert: true,
+    });
 
     if (error) {
       this.logger.error(`Error uploading public file: ${error.message}`);
@@ -261,9 +267,10 @@ export class StorageService implements OnApplicationBootstrap {
     mimeType: string,
   ): Promise<{ bucket: string; path: string }> {
     this.ensureClient();
-    const { error } = await this.supabaseClient!.storage
-      .from(bucket)
-      .upload(fileKey, file, { contentType: mimeType, upsert: true });
+    const { error } = await this.supabaseClient!.storage.from(bucket).upload(fileKey, file, {
+      contentType: mimeType,
+      upsert: true,
+    });
 
     if (error) {
       this.logger.error(`Error uploading private file: ${error.message}`);
@@ -278,12 +285,12 @@ export class StorageService implements OnApplicationBootstrap {
    */
   async deleteFile(bucket: string, fileKey: string): Promise<void> {
     this.ensureClient();
-    const { error } = await this.supabaseClient!.storage
-      .from(bucket)
-      .remove([fileKey]);
+    const { error } = await this.supabaseClient!.storage.from(bucket).remove([fileKey]);
 
     if (error) {
-      this.logger.error(`Failed to delete file key ${fileKey} from bucket ${bucket}: ${error.message}`);
+      this.logger.error(
+        `Failed to delete file key ${fileKey} from bucket ${bucket}: ${error.message}`,
+      );
       throw new InternalServerErrorException(`Delete failed: ${error.message}`);
     }
   }
@@ -295,7 +302,8 @@ export class StorageService implements OnApplicationBootstrap {
     if (fileSize > maxSize) {
       throw new BadRequestException(
         `File size (${(fileSize / (1024 * 1024)).toFixed(1)}MB) exceeds maximum limit of ${(
-          maxSize / (1024 * 1024)
+          maxSize /
+          (1024 * 1024)
         ).toFixed(1)}MB`,
       );
     }
@@ -306,7 +314,9 @@ export class StorageService implements OnApplicationBootstrap {
    */
   validateMimeType(mimeType: string, allowedTypes: string[]): void {
     if (!allowedTypes.includes(mimeType.toLowerCase())) {
-      throw new BadRequestException(`MIME type ${mimeType} is not permitted for this file category.`);
+      throw new BadRequestException(
+        `MIME type ${mimeType} is not permitted for this file category.`,
+      );
     }
   }
 
@@ -322,17 +332,15 @@ export class StorageService implements OnApplicationBootstrap {
    * Returns true when the object is acceptable (or when storage is
    * unavailable, so verification can't block a working upload path).
    */
-  async verifyStoredFile(
-    bucket: string,
-    path: string,
-    allowedTypes: string[],
-  ): Promise<boolean> {
+  async verifyStoredFile(bucket: string, path: string, allowedTypes: string[]): Promise<boolean> {
     if (!this.supabaseClient) return true;
 
     try {
       const { data, error } = await this.supabaseClient.storage.from(bucket).download(path);
       if (error || !data) {
-        this.logger.warn(`Could not download ${bucket}/${path} for verification: ${error?.message}`);
+        this.logger.warn(
+          `Could not download ${bucket}/${path} for verification: ${error?.message}`,
+        );
         return true; // don't fail the flow on a transient storage error
       }
 
@@ -357,7 +365,9 @@ export class StorageService implements OnApplicationBootstrap {
       return true;
     } catch (err) {
       if (err instanceof BadRequestException) throw err;
-      this.logger.warn(`File verification skipped for ${bucket}/${path}: ${(err as Error).message}`);
+      this.logger.warn(
+        `File verification skipped for ${bucket}/${path}: ${(err as Error).message}`,
+      );
       return true;
     }
   }

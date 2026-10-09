@@ -10,7 +10,10 @@ import { assertBusinessAccess, type AccessUser } from '../../common/utils/busine
 /** Daily-rotating salted hash: lets us dedupe a visitor within a day without storing the IP. */
 function hashIp(ip: string): string {
   const salt = process.env.ANALYTICS_IP_SALT || process.env.JWT_SECRET || 'whtzup';
-  return createHash('sha256').update(`${salt}:${istDateKey(new Date())}:${ip}`).digest('hex').slice(0, 40);
+  return createHash('sha256')
+    .update(`${salt}:${istDateKey(new Date())}:${ip}`)
+    .digest('hex')
+    .slice(0, 40);
 }
 
 @Injectable()
@@ -100,13 +103,21 @@ export class AnalyticsService {
     const prevStart = istDayStart(`${prevKey.slice(0, 7)}-01`);
     const sum = async (gte: Date, lt: Date) => {
       const r = await this.db.transaction.aggregate({
-        where: { type: 'PAYMENT_VERIFIED', createdAt: { gte, lt }, ...(tenantId ? { tenantId } : {}) },
+        where: {
+          type: 'PAYMENT_VERIFIED',
+          createdAt: { gte, lt },
+          ...(tenantId ? { tenantId } : {}),
+        },
         _sum: { amountBase: true },
       });
       return Number(r._sum.amountBase ?? 0);
     };
     const [current, previous] = await Promise.all([sum(thisStart, now), sum(prevStart, thisStart)]);
-    return { revenueThisMonth: current, revenueLastMonth: previous, growthRate: pctChange(current, previous) };
+    return {
+      revenueThisMonth: current,
+      revenueLastMonth: previous,
+      growthRate: pctChange(current, previous),
+    };
   }
 
   /**
@@ -173,22 +184,26 @@ export class AnalyticsService {
       isPlatform ? this.db.tenant.count() : Promise.resolve(1),
       // Aggregate spend from summary table (fast indexed scan)
       dbAny.userSpendingSummary
-        ? dbAny.userSpendingSummary.aggregate({
-            where: tScope,
-            _sum: { totalSpend: true },
-          }).catch(() => ({ _sum: { totalSpend: 0 } }))
+        ? dbAny.userSpendingSummary
+            .aggregate({
+              where: tScope,
+              _sum: { totalSpend: true },
+            })
+            .catch(() => ({ _sum: { totalSpend: 0 } }))
         : Promise.resolve({ _sum: { totalSpend: 0 } }),
       // Aggregate CRM totals from business summary table
       dbAny.businessAnalyticsSummary
-        ? dbAny.businessAnalyticsSummary.aggregate({
-            where: tScope,
-            _sum: { offerClaims: true, offerRedemptions: true, verifiedBillCount: true },
-          }).catch(() => ({ _sum: { offerClaims: 0, offerRedemptions: 0, verifiedBillCount: 0 } }))
+        ? dbAny.businessAnalyticsSummary
+            .aggregate({
+              where: tScope,
+              _sum: { offerClaims: true, offerRedemptions: true, verifiedBillCount: true },
+            })
+            .catch(() => ({ _sum: { offerClaims: 0, offerRedemptions: 0, verifiedBillCount: 0 } }))
         : Promise.resolve({ _sum: { offerClaims: 0, offerRedemptions: 0, verifiedBillCount: 0 } }),
     ]);
 
-    const totalClaims      = Number(businessSummaryAgg._sum?.offerClaims      ?? 0);
-    const totalRedemptions = Number(businessSummaryAgg._sum?.offerRedemptions  ?? 0);
+    const totalClaims = Number(businessSummaryAgg._sum?.offerClaims ?? 0);
+    const totalRedemptions = Number(businessSummaryAgg._sum?.offerRedemptions ?? 0);
     const totalPlatformSpend = Number(spendAgg._sum?.totalSpend ?? 0);
 
     const overview = {
@@ -198,7 +213,14 @@ export class AnalyticsService {
       pendingApprovals,
       totalReviews,
       totalOffers,
-      activeOffers: await this.db.offer.count({ where: { ...tScope, deletedAt: null, status: 'ACTIVE' as any, endDate: { gte: new Date() } } }),
+      activeOffers: await this.db.offer.count({
+        where: {
+          ...tScope,
+          deletedAt: null,
+          status: 'ACTIVE' as any,
+          endDate: { gte: new Date() },
+        },
+      }),
       totalTenants,
       totalOfferCustomers: Number((offerCustomerIds as any)[0]?.count ?? 0),
       totalRedemptions,
@@ -349,16 +371,21 @@ export class AnalyticsService {
           AND o.business_id = ${actualId}::uuid
       `,
       // CRM stats from BusinessCustomer table
-      db.businessCustomer.aggregate({
-        where: { businessId: actualId, deletedAt: null },
-        _count: { _all: true },
-        _sum: { offersClaimedCount: true, offersRedeemedCount: true },
-      }).catch(() => ({ _count: { _all: 0 }, _sum: { offersClaimedCount: 0, offersRedeemedCount: 0 } })),
+      db.businessCustomer
+        .aggregate({
+          where: { businessId: actualId, deletedAt: null },
+          _count: { _all: true },
+          _sum: { offersClaimedCount: true, offersRedeemedCount: true },
+        })
+        .catch(() => ({
+          _count: { _all: 0 },
+          _sum: { offersClaimedCount: 0, offersRedeemedCount: 0 },
+        })),
     ]);
 
-    const activeOffers      = offerStats.filter((o) => o.status === 'ACTIVE').length;
-    const totalOffers       = offerStats.length;
-    const totalRedemptions  = offerStats.reduce((s, o) => s + o.currentRedemptions, 0);
+    const activeOffers = offerStats.filter((o) => o.status === 'ACTIVE').length;
+    const totalOffers = offerStats.length;
+    const totalRedemptions = offerStats.reduce((s, o) => s + o.currentRedemptions, 0);
 
     const offerPerformance = [...offerStats]
       .sort((a, b) => b.currentRedemptions - a.currentRedemptions)
@@ -391,21 +418,22 @@ export class AnalyticsService {
       count: ratingDistribution.find((r) => r.rating === stars)?._count ?? 0,
     }));
 
-    const crmCustomers   = (crmStats as any)._count?._all ?? 0;
-    const crmClaims      = (crmStats as any)._sum?.offersClaimedCount  ?? 0;
+    const crmCustomers = (crmStats as any)._count?._all ?? 0;
+    const crmClaims = (crmStats as any)._sum?.offersClaimedCount ?? 0;
     const crmRedemptions = (crmStats as any)._sum?.offersRedeemedCount ?? 0;
     const redemptionRate = crmClaims > 0 ? Math.round((crmRedemptions / crmClaims) * 100) : 0;
 
     // Overlay with pre-aggregated summary if available (more accurate, already maintained)
-    const summaryRow = await this.summaryService.getBusinessSummaryFromTable(actualId).catch(() => null);
+    const summaryRow = await this.summaryService
+      .getBusinessSummaryFromTable(actualId)
+      .catch(() => null);
 
-    const finalCustomerCount = summaryRow?.customerCount
-      ?? Math.max(Number((customerIds as any)[0]?.count ?? 0), crmCustomers);
-    const finalClaims        = summaryRow?.offerClaims       ?? crmClaims;
-    const finalRedemptions   = summaryRow?.offerRedemptions  ?? crmRedemptions;
-    const finalConvRate      = summaryRow
-      ? Math.round(summaryRow.conversionRate * 100)
-      : redemptionRate;
+    const finalCustomerCount =
+      summaryRow?.customerCount ??
+      Math.max(Number((customerIds as any)[0]?.count ?? 0), crmCustomers);
+    const finalClaims = summaryRow?.offerClaims ?? crmClaims;
+    const finalRedemptions = summaryRow?.offerRedemptions ?? crmRedemptions;
+    const finalConvRate = summaryRow ? Math.round(summaryRow.conversionRate * 100) : redemptionRate;
 
     const result = {
       kpis: {
@@ -416,10 +444,10 @@ export class AnalyticsService {
         totalReviews: business.totalReviews,
         teamCount,
         impressions,
-        customerCount:       finalCustomerCount,
-        totalClaims:         finalClaims,
+        customerCount: finalCustomerCount,
+        totalClaims: finalClaims,
         totalCrmRedemptions: finalRedemptions,
-        redemptionRate:      finalConvRate,
+        redemptionRate: finalConvRate,
       },
       offerPerformance,
       redemptionTrend,
@@ -588,7 +616,11 @@ export class AnalyticsService {
     const businessStatusStats = businessStatus.map((b) => ({ status: b.status, count: b._count }));
 
     // 7. Support issue metrics
-    const supportIssueStats = reports.map((r) => ({ type: r.type, status: r.status, count: r._count }));
+    const supportIssueStats = reports.map((r) => ({
+      type: r.type,
+      status: r.status,
+      count: r._count,
+    }));
 
     // 8. Issue escalation trends
     const escalatedBillCount = escalatedBills;

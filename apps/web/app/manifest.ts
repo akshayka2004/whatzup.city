@@ -5,7 +5,8 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Whtzup.city',
     short_name: 'Whtzup',
-    description: "Kerala's trusted local directory: verified businesses, offers, events and civic updates.",
+    description:
+      "Kerala's trusted local directory: verified businesses, offers, events and civic updates.",
     start_url: '/',
     scope: '/',
     display: 'standalone',

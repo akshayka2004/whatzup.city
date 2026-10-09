@@ -12,7 +12,12 @@ export const DAY_MS = 24 * 60 * 60 * 1000;
 
 const dayFmt = new Intl.DateTimeFormat('en-IN', { day: 'numeric', timeZone: IST_TZ });
 const monFmt = new Intl.DateTimeFormat('en-IN', { month: 'short', timeZone: IST_TZ });
-const fullFmt = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: IST_TZ });
+const fullFmt = new Intl.DateTimeFormat('en-IN', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: IST_TZ,
+});
 
 export function parseDate(d?: string | null): Date | null {
   if (!d) return null;

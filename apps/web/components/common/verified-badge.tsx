@@ -5,7 +5,13 @@ import { cn } from '@/lib/utils';
  * Trust marker for verified businesses. Green = trust (per brand palette).
  * Always pairs the color with an icon + label — never hue alone.
  */
-export function VerifiedBadge({ className, label = 'Verified' }: { className?: string; label?: string }) {
+export function VerifiedBadge({
+  className,
+  label = 'Verified',
+}: {
+  className?: string;
+  label?: string;
+}) {
   return (
     <span
       className={cn(

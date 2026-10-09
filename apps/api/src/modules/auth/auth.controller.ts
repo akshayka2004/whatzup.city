@@ -73,10 +73,7 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 3600000 } })
   @Post('signup')
   @ApiOperation({ summary: 'Register a new user account' })
-  async signup(
-    @Body() dto: SignupDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async signup(@Body() dto: SignupDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.signup(dto);
     // Set auth cookies so the user is immediately authenticated
     if (result.accessToken) {
@@ -225,10 +222,7 @@ export class AuthController {
   @Public()
   @Post('civic/signup')
   @ApiOperation({ summary: 'Register NGO / Community / News Forum account' })
-  async civicSignup(
-    @Body() dto: CivicSignupDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async civicSignup(@Body() dto: CivicSignupDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.civicSignup(dto);
     this.setCookies(res, result.accessToken, result.refreshToken);
     return result;
@@ -261,7 +255,9 @@ export class AuthController {
   @Put('active-business')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Switch the outlet (business) the signed-in owner/staff member is operating' })
+  @ApiOperation({
+    summary: 'Switch the outlet (business) the signed-in owner/staff member is operating',
+  })
   async setActiveBusiness(@CurrentUser('id') userId: string, @Body() dto: SetActiveBusinessDto) {
     return this.authService.setActiveBusiness(userId, dto.businessId);
   }

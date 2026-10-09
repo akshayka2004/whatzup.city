@@ -11,7 +11,11 @@ const MIN_IMPRESSIVE = 25;
 const TRUST: Array<{ icon: LucideIcon; title: string; note: string }> = [
   { icon: Receipt, title: 'Invoice-verified reviews', note: 'Every review is backed by a bill' },
   { icon: BadgeCheck, title: 'Verified merchants', note: 'Checked before they go live' },
-  { icon: HeartHandshake, title: 'Free for customers', note: 'Browse, claim and review at no cost' },
+  {
+    icon: HeartHandshake,
+    title: 'Free for customers',
+    note: 'Browse, claim and review at no cost',
+  },
 ];
 
 const GRID: Record<number, string> = {

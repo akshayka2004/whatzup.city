@@ -6,7 +6,17 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getOpenStatus, hasOperatingHours } from '@saas/types';
-import { BadgeCheck, Globe, Heart, Instagram, MapPin, Navigation, Star, Store, TicketPercent } from 'lucide-react';
+import {
+  BadgeCheck,
+  Globe,
+  Heart,
+  Instagram,
+  MapPin,
+  Navigation,
+  Star,
+  Store,
+  TicketPercent,
+} from 'lucide-react';
 import { ReportButton } from './report-button';
 import { VerifiedBadge } from './common/verified-badge';
 import { ResponsiveImage } from './common/responsive-image';
@@ -51,7 +61,9 @@ export function BusinessCard({
 }) {
   const { t } = useI18n();
   const pathname = usePathname();
-  const isFood = /food|restaurant|cafe|bakery|hotel/i.test(business.category?.slug || business.category?.name || '');
+  const isFood = /food|restaurant|cafe|bakery|hotel/i.test(
+    business.category?.slug || business.category?.name || '',
+  );
   const rating = business.avgRating ?? business.averageRating;
   const ratingNum = rating != null && rating !== '' ? Number(rating) : null;
   const reviews = Number(business.reviewCount ?? business.totalReviews ?? 0) || 0;
@@ -98,7 +110,9 @@ export function BusinessCard({
         : brandName || outlet
       : business.city || '';
 
-  const address = showLinks ? [business.address, business.city, business.state].filter(Boolean).join(', ') : '';
+  const address = showLinks
+    ? [business.address, business.city, business.state].filter(Boolean).join(', ')
+    : '';
   const instagram: string | undefined = showLinks ? business.socialLinks?.instagram : undefined;
   const website: string | undefined = showLinks ? business.website : undefined;
   const impressionRef = useImpression<HTMLElement>(business.id);
@@ -137,8 +151,17 @@ export function BusinessCard({
           <span className="flex min-w-0 flex-wrap gap-1.5">
             {status && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-card/92 px-2.5 py-1 text-caption font-semibold shadow-e1 backdrop-blur-sm">
-                <span aria-hidden className={status.isOpen ? 'ui-live-dot' : 'size-2 rounded-full bg-muted-foreground/60'} />
-                <span className={status.isOpen ? 'text-success-soft-foreground' : 'text-muted-foreground'}>
+                <span
+                  aria-hidden
+                  className={
+                    status.isOpen ? 'ui-live-dot' : 'size-2 rounded-full bg-muted-foreground/60'
+                  }
+                />
+                <span
+                  className={
+                    status.isOpen ? 'text-success-soft-foreground' : 'text-muted-foreground'
+                  }
+                >
                   {status.isOpen ? t('card.open') : t('card.closed')}
                 </span>
               </span>
@@ -180,13 +203,19 @@ export function BusinessCard({
 
         {context && (
           <p className="flex min-w-0 items-center gap-1 text-label font-normal text-muted-foreground">
-            {brandName || outlet ? <Store className="size-3.5 shrink-0" aria-hidden /> : <MapPin className="size-3.5 shrink-0" aria-hidden />}
+            {brandName || outlet ? (
+              <Store className="size-3.5 shrink-0" aria-hidden />
+            ) : (
+              <MapPin className="size-3.5 shrink-0" aria-hidden />
+            )}
             <span className="truncate">{context}</span>
           </p>
         )}
 
         {showLinks && business.description && (
-          <p className="line-clamp-2 break-words text-label font-normal text-muted-foreground">{business.description}</p>
+          <p className="line-clamp-2 break-words text-label font-normal text-muted-foreground">
+            {business.description}
+          </p>
         )}
 
         <div className="mt-auto flex items-center justify-between gap-2 pt-1.5">
@@ -194,11 +223,15 @@ export function BusinessCard({
             {ratingNum != null && Number.isFinite(ratingNum) && reviews > 0 ? (
               <>
                 <Star className="size-4 fill-warning text-warning" aria-hidden />
-                <span className="font-semibold tabular-nums text-foreground">{ratingNum.toFixed(1)}</span>
+                <span className="font-semibold tabular-nums text-foreground">
+                  {ratingNum.toFixed(1)}
+                </span>
                 <span className="text-caption text-muted-foreground">({reviews})</span>
               </>
             ) : (
-              <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-caption font-medium text-muted-foreground">New</span>
+              <span className="rounded-full bg-surface-sunken px-2 py-0.5 text-caption font-medium text-muted-foreground">
+                New
+              </span>
             )}
             {(brandName || outlet) && business.city && (
               <span className="ml-2 inline-flex min-w-0 items-center gap-0.5 text-caption text-muted-foreground">
@@ -240,7 +273,9 @@ export function BusinessCard({
                 href={website.startsWith('http') ? website : `https://${website}`}
                 target="_blank"
                 rel="noreferrer"
-                onClick={() => track('WEBSITE_CLICK', { businessId: business.id, source: 'search' })}
+                onClick={() =>
+                  track('WEBSITE_CLICK', { businessId: business.id, source: 'search' })
+                }
                 className="inline-flex min-h-6 min-w-0 items-center gap-1 text-primary hover:underline"
               >
                 <Globe className="size-3 shrink-0" aria-hidden />
@@ -255,12 +290,19 @@ export function BusinessCard({
       <button
         type="button"
         onClick={onBookmark}
-        aria-label={saved ? `Remove ${business.name} from favorites` : `Save ${business.name} to favorites`}
+        aria-label={
+          saved ? `Remove ${business.name} from favorites` : `Save ${business.name} to favorites`
+        }
         aria-pressed={saved}
         className="absolute right-1.5 top-1.5 z-[1] flex size-11 items-center justify-center"
       >
         <span className="flex size-9 items-center justify-center rounded-full bg-card/92 shadow-e1 backdrop-blur-sm transition-transform duration-150 hover:scale-110 active:scale-90 motion-reduce:transition-none">
-          <Heart className={cn('size-[18px] transition-colors', saved ? 'fill-primary text-primary' : 'text-foreground')} />
+          <Heart
+            className={cn(
+              'size-[18px] transition-colors',
+              saved ? 'fill-primary text-primary' : 'text-foreground',
+            )}
+          />
         </span>
       </button>
     </article>

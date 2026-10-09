@@ -8,7 +8,9 @@ import { cn } from '@/lib/utils';
 /** White card used by every profile section. */
 export function SectionCard({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div className={cn('rounded-2xl border border-border bg-card p-4 sm:p-6', className)}>{children}</div>
+    <div className={cn('rounded-2xl border border-border bg-card p-4 sm:p-6', className)}>
+      {children}
+    </div>
   );
 }
 
@@ -42,7 +44,10 @@ export function Stars({ value, className }: { value: number; className?: string 
       {[0, 1, 2, 3, 4].map((i) => (
         <Star
           key={i}
-          className={cn('h-4 w-4', i < filled ? 'fill-warning text-warning' : 'text-muted-foreground/30')}
+          className={cn(
+            'h-4 w-4',
+            i < filled ? 'fill-warning text-warning' : 'text-muted-foreground/30',
+          )}
         />
       ))}
     </span>

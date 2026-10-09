@@ -65,7 +65,11 @@ export class BillsService {
     if (billNumber) {
       const series = await this.brandScope.resolveBillSeries(businessId);
       const scope = series.mode === 'SHARED' ? series.outletIds : [businessId];
-      const dupes = await this.fraudService.findDuplicateBills({ billId: bill.id, billNumber, businessIds: scope });
+      const dupes = await this.fraudService.findDuplicateBills({
+        billId: bill.id,
+        billNumber,
+        businessIds: scope,
+      });
       if (dupes.length) {
         const first = dupes[0];
         const where = first.business?.outletLabel || first.business?.name || 'this business';
@@ -105,7 +109,11 @@ export class BillsService {
     let signedUrl = '';
     try {
       const parsed = JSON.parse(dbUrl);
-      signedUrl = await this.storageService.createSignedDownloadUrl(parsed.bucket, parsed.path, 900); // 15 minutes
+      signedUrl = await this.storageService.createSignedDownloadUrl(
+        parsed.bucket,
+        parsed.path,
+        900,
+      ); // 15 minutes
     } catch (err: any) {
       this.logger.error(`Failed to generate signed download URL for OCR worker: ${err.message}`);
       signedUrl = data.billImage; // Fallback

@@ -72,7 +72,8 @@ export default function ConfigurationPage() {
           </SectionCard>
           <SectionCard icon={Settings2} title="Changing these">
             <p className="text-body text-muted-foreground">
-              Update the environment variable on the server, then rebuild and restart the web and API apps.
+              Update the environment variable on the server, then rebuild and restart the web and
+              API apps.
             </p>
           </SectionCard>
         </div>

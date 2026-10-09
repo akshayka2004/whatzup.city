@@ -83,7 +83,11 @@ export function ReviewsSection({
   return (
     <section id="reviews" aria-label="Reviews" className="mb-6 scroll-mt-16 lg:col-start-1">
       <SectionCard>
-        <SectionHeading icon={Star} title="Reviews" hint={reviewCount > 0 ? `${reviewCount} total` : undefined} />
+        <SectionHeading
+          icon={Star}
+          title="Reviews"
+          hint={reviewCount > 0 ? `${reviewCount} total` : undefined}
+        />
 
         {/* ── Rating summary + histogram */}
         {avgRating > 0 && (
@@ -112,14 +116,21 @@ export function ReviewsSection({
                       <span className="w-3 text-right font-semibold text-foreground">{star}</span>
                       <Star className="h-3 w-3 shrink-0 fill-warning text-warning" />
                       <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                        <div className="h-full rounded-full bg-warning" style={{ width: `${pct}%` }} />
+                        <div
+                          className="h-full rounded-full bg-warning"
+                          style={{ width: `${pct}%` }}
+                        />
                       </div>
-                      <span className="w-6 text-right tabular-nums text-muted-foreground">{count}</span>
+                      <span className="w-6 text-right tabular-nums text-muted-foreground">
+                        {count}
+                      </span>
                     </div>
                   );
                 })}
                 {loaded < reviewCount && (
-                  <p className="pt-1 text-xs text-muted-foreground">Based on the latest {loaded} reviews</p>
+                  <p className="pt-1 text-xs text-muted-foreground">
+                    Based on the latest {loaded} reviews
+                  </p>
                 )}
               </div>
             )}
@@ -135,7 +146,8 @@ export function ReviewsSection({
             <div className="min-w-0">
               <h3 className="text-base font-bold text-foreground sm:text-lg">Submit Your Bill</h3>
               <p className="mt-0.5 text-sm text-muted-foreground">
-                Shopped here? Upload your receipt and share your experience to earn verified purchase status.
+                Shopped here? Upload your receipt and share your experience to earn verified
+                purchase status.
               </p>
             </div>
           </div>
@@ -200,7 +212,9 @@ export function ReviewsSection({
                     key={review.id || i}
                     className={
                       'ui-fade-up ui-cv-auto flex gap-3' +
-                      (verified ? ' rounded-r-xl border-l-2 border-success/60 bg-success/5 py-2 pl-3 pr-2' : '')
+                      (verified
+                        ? ' rounded-r-xl border-l-2 border-success/60 bg-success/5 py-2 pl-3 pr-2'
+                        : '')
                     }
                     style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                   >
@@ -211,7 +225,11 @@ export function ReviewsSection({
                         ratio="1"
                         className="h-10 w-10 shrink-0 rounded-full"
                         sizes="40px"
-                        fallback={<span className="text-sm font-bold text-primary">{name.charAt(0).toUpperCase()}</span>}
+                        fallback={
+                          <span className="text-sm font-bold text-primary">
+                            {name.charAt(0).toUpperCase()}
+                          </span>
+                        }
                       />
                     ) : (
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-bold text-brand-soft-foreground">
@@ -234,12 +252,18 @@ export function ReviewsSection({
                         </span>
                       </div>
                       {review.comment && (
-                        <p className="mt-1.5 break-words text-sm text-muted-foreground">{review.comment}</p>
+                        <p className="mt-1.5 break-words text-sm text-muted-foreground">
+                          {review.comment}
+                        </p>
                       )}
                       {review.ownerReply && (
                         <div className="mt-3 rounded-xl border-l-2 border-primary bg-brand-soft/60 px-3.5 py-2.5">
-                          <p className="text-caption font-semibold text-brand-soft-foreground">Reply from the business</p>
-                          <p className="mt-0.5 whitespace-pre-line break-words text-sm text-foreground">{review.ownerReply}</p>
+                          <p className="text-caption font-semibold text-brand-soft-foreground">
+                            Reply from the business
+                          </p>
+                          <p className="mt-0.5 whitespace-pre-line break-words text-sm text-foreground">
+                            {review.ownerReply}
+                          </p>
                         </div>
                       )}
                     </div>

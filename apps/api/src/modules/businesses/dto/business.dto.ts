@@ -1,6 +1,16 @@
 import {
-  IsOptional, IsString, IsNumber, IsInt, IsBoolean, IsObject, IsArray, IsEmail,
-  Min, Max, MaxLength, ArrayMaxSize,
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsInt,
+  IsBoolean,
+  IsObject,
+  IsArray,
+  IsEmail,
+  Min,
+  Max,
+  MaxLength,
+  ArrayMaxSize,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOperatingHours } from '../../../common/utils/operating-hours.validator';
@@ -14,153 +24,211 @@ import { IsOperatingHours } from '../../../common/utils/operating-hours.validato
  */
 export class BusinessDto {
   @ApiProperty({ required: false, maxLength: 255 })
-  @IsOptional() @IsString() @MaxLength(255)
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   name?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   description?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   categoryId?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   address?: string;
 
   @ApiProperty({ required: false, maxLength: 100 })
-  @IsOptional() @IsString() @MaxLength(100)
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   city?: string;
 
   @ApiProperty({ required: false, maxLength: 100 })
-  @IsOptional() @IsString() @MaxLength(100)
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   state?: string;
 
   @ApiProperty({ required: false, maxLength: 20 })
-  @IsOptional() @IsString() @MaxLength(20)
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
   zipCode?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsNumber()
+  @IsOptional()
+  @IsNumber()
   latitude?: number;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsNumber()
+  @IsOptional()
+  @IsNumber()
   longitude?: number;
 
   @ApiProperty({ required: false, maxLength: 50 })
-  @IsOptional() @IsString() @MaxLength(50)
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
   phone?: string;
 
   @ApiProperty({ required: false, maxLength: 255 })
-  @IsOptional() @IsEmail() @MaxLength(255)
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(255)
   email?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   website?: string;
 
   @ApiProperty({ required: false, maxLength: 255 })
-  @IsOptional() @IsString() @MaxLength(255)
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   ownerName?: string;
 
   @ApiProperty({ required: false, maxLength: 100 })
-  @IsOptional() @IsString() @MaxLength(100)
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   district?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   googleMapsUrl?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   socialLinks?: Record<string, string>;
 
   @ApiProperty({ required: false, type: [String] })
-  @IsOptional() @IsArray() @ArrayMaxSize(50)
-  @IsString({ each: true }) @MaxLength(50, { each: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(50)
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
   tags?: string[];
 
   @ApiProperty({ required: false, type: [String] })
-  @IsOptional() @IsArray() @ArrayMaxSize(20)
-  @IsString({ each: true }) @MaxLength(100, { each: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(100, { each: true })
   subcategoryIds?: string[];
 
   @ApiProperty({ required: false, maxLength: 20 })
-  @IsOptional() @IsString() @MaxLength(20)
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
   halalStatus?: string;
 
   @ApiProperty({ required: false, maxLength: 255 })
-  @IsOptional() @IsString() @MaxLength(255)
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   brandName?: string;
 
   @ApiProperty({ required: false, maxLength: 255 })
-  @IsOptional() @IsString() @MaxLength(255)
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   companyName?: string;
 
   @ApiProperty({ required: false, maxLength: 50 })
-  @IsOptional() @IsString() @MaxLength(50)
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
   companyType?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   compliance?: Record<string, any>;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   ownerContact?: Record<string, any>;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   billingContact?: Record<string, any>;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   supportContact?: Record<string, any>;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   branchHead?: Record<string, any>;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   categoryAttributes?: Record<string, any>;
 
   @ApiProperty({ required: false, maxLength: 30 })
-  @IsOptional() @IsString() @MaxLength(30)
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
   billSeriesPrefix?: string;
 
   @ApiProperty({ required: false, minimum: 1, maximum: 5, description: 'Hotel category only' })
-  @IsOptional() @IsInt() @Min(1) @Max(5)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
   hotelStarRating?: number;
 
   @ApiProperty({ required: false, description: 'Hotel category only' })
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   hotelAmenities?: Record<string, any>;
 
   @ApiProperty({ required: false, description: 'Hotel category only' })
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   amenityDetails?: Record<string, any>;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsObject() @IsOperatingHours()
+  @IsOptional()
+  @IsObject()
+  @IsOperatingHours()
   operatingHours?: Record<string, any>;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   logo?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   coverImage?: string;
 
   // ── admin/adminUpdate only ──────────────────────────────────
   @ApiProperty({ required: false, maxLength: 50, description: 'Admin only' })
-  @IsOptional() @IsString() @MaxLength(50)
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
   status?: string;
 
   @ApiProperty({ required: false, description: 'Admin only' })
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   isVerified?: boolean;
 }

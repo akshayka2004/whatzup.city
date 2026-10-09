@@ -8,9 +8,21 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Plus, Edit, Trash2, MapPin, Phone, X, AlertTriangle,
-  BarChart3, User, Clock, Navigation, CheckCircle2, Loader2,
-  Mail, KeyRound,
+  Plus,
+  Edit,
+  Trash2,
+  MapPin,
+  Phone,
+  X,
+  AlertTriangle,
+  BarChart3,
+  User,
+  Clock,
+  Navigation,
+  CheckCircle2,
+  Loader2,
+  Mail,
+  KeyRound,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
@@ -29,10 +41,16 @@ interface Branch {
 }
 
 const EMPTY_FORM: Omit<Branch, 'id' | 'status'> & { adminEmail: string; adminPassword: string } = {
-  name: '', address: '', phone: '',
-  managerName: '', managerPhone: '', managerEmail: '',
-  hours: '', geoCoords: '',
-  adminEmail: '', adminPassword: '',
+  name: '',
+  address: '',
+  phone: '',
+  managerName: '',
+  managerPhone: '',
+  managerEmail: '',
+  hours: '',
+  geoCoords: '',
+  adminEmail: '',
+  adminPassword: '',
 };
 
 type BranchForm = typeof EMPTY_FORM;
@@ -84,7 +102,9 @@ function BranchFormFields({
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-xs font-medium text-foreground block mb-1.5">Operating Hours</label>
+          <label className="text-xs font-medium text-foreground block mb-1.5">
+            Operating Hours
+          </label>
           <Input
             value={form.hours}
             onChange={(e) => setField('hours', e.target.value)}
@@ -93,7 +113,9 @@ function BranchFormFields({
           />
         </div>
         <div>
-          <label className="text-xs font-medium text-foreground block mb-1.5">Geo Coordinates</label>
+          <label className="text-xs font-medium text-foreground block mb-1.5">
+            Geo Coordinates
+          </label>
           <Input
             value={form.geoCoords}
             onChange={(e) => setField('geoCoords', e.target.value)}
@@ -103,7 +125,9 @@ function BranchFormFields({
         </div>
       </div>
       <div className="pt-2 border-t border-border">
-        <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Branch Manager</p>
+        <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
+          Branch Manager
+        </p>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-medium text-foreground block mb-1.5">Manager Name</label>
@@ -115,7 +139,9 @@ function BranchFormFields({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-foreground block mb-1.5">Manager Phone</label>
+            <label className="text-xs font-medium text-foreground block mb-1.5">
+              Manager Phone
+            </label>
             <Input
               value={form.managerPhone}
               onChange={(e) => setField('managerPhone', e.target.value)}
@@ -124,7 +150,9 @@ function BranchFormFields({
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-foreground block mb-1.5">Manager Email</label>
+            <label className="text-xs font-medium text-foreground block mb-1.5">
+              Manager Email
+            </label>
             <Input
               type="email"
               value={form.managerEmail}
@@ -138,9 +166,12 @@ function BranchFormFields({
       {/* Branch Admin Login Credentials — only shown when creating */}
       {!isEdit && (
         <div className="pt-2 border-t border-border">
-          <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Branch Admin Account</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
+            Branch Admin Account
+          </p>
           <p className="text-xs text-muted-foreground/60 mb-3">
-            Optional — creates a staff login account for this branch admin so they can access the dashboard immediately.
+            Optional — creates a staff login account for this branch admin so they can access the
+            dashboard immediately.
           </p>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
@@ -204,15 +235,14 @@ export default function BranchesPage() {
 
   const businessId = user?.businessId || user?.entity?.id;
 
-  const setField = (key: BranchFormKey, val: string) =>
-    setForm((f) => ({ ...f, [key]: val }));
+  const setField = (key: BranchFormKey, val: string) => setForm((f) => ({ ...f, [key]: val }));
 
   const fetchBranches = async () => {
     if (!businessId) return;
     setLoading(true);
     const res = await apiService.get<any>(`/v1/businesses/${businessId}/branches`);
     if (res.data && !res.error) {
-      const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
       setBranches(list.map(mapBranchFromApi));
     }
     setLoading(false);
@@ -318,15 +348,13 @@ export default function BranchesPage() {
     if (!branch) return;
     const newActive = branch.status !== 'Active';
     // Optimistic
-    setBranches(branches.map((b) =>
-      b.id === id ? { ...b, status: newActive ? 'Active' : 'Inactive' } : b,
-    ));
+    setBranches(
+      branches.map((b) => (b.id === id ? { ...b, status: newActive ? 'Active' : 'Inactive' } : b)),
+    );
     const res = await apiService.patch<any>(`/v1/branches/${id}`, { isActive: newActive });
     if (res.error) {
       // Revert
-      setBranches(branches.map((b) =>
-        b.id === id ? { ...b, status: branch.status } : b,
-      ));
+      setBranches(branches.map((b) => (b.id === id ? { ...b, status: branch.status } : b)));
     }
   };
 
@@ -336,7 +364,9 @@ export default function BranchesPage() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Branches</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Manage all your business locations.</p>
+            <p className="text-muted-foreground text-sm mt-0.5">
+              Manage all your business locations.
+            </p>
           </div>
           <Button
             onClick={handleOpenAdd}
@@ -355,7 +385,9 @@ export default function BranchesPage() {
           <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
             <MapPin className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No branches yet</p>
-            <p className="text-sm text-muted-foreground">Add your first branch location to get started.</p>
+            <p className="text-sm text-muted-foreground">
+              Add your first branch location to get started.
+            </p>
           </Card>
         ) : null}
 
@@ -380,7 +412,9 @@ export default function BranchesPage() {
                           : 'bg-secondary text-muted-foreground border border-border'
                       }`}
                     >
-                      {branch.status === 'Active' && <CheckCircle2 className="h-3 w-3 inline mr-0.5" />}
+                      {branch.status === 'Active' && (
+                        <CheckCircle2 className="h-3 w-3 inline mr-0.5" />
+                      )}
                       {branch.status}
                     </button>
                   </div>
@@ -457,68 +491,126 @@ export default function BranchesPage() {
 
         {/* Add modal */}
         {isAddOpen && (
-          <ModalSurface onClose={() => setIsAddOpen(false)} label="Add Branch Location" className="sm:max-w-xl" hideClose>
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-foreground">Add Branch Location</h3>
-                <button onClick={() => setIsAddOpen(false)} className="p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer">
-                  <X className="h-5 w-5" />
-                </button>
+          <ModalSurface
+            onClose={() => setIsAddOpen(false)}
+            label="Add Branch Location"
+            className="sm:max-w-xl"
+            hideClose
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-foreground">Add Branch Location</h3>
+              <button
+                onClick={() => setIsAddOpen(false)}
+                className="p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {error && (
+              <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">
+                {error}
+              </p>
+            )}
+            <form onSubmit={handleAdd} className="space-y-4">
+              <BranchFormFields form={form} setField={setField} isEdit={false} />
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddOpen(false)}
+                  className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add Branch'}
+                </Button>
               </div>
-              {error && (
-                <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">{error}</p>
-              )}
-              <form onSubmit={handleAdd} className="space-y-4">
-                <BranchFormFields form={form} setField={setField} isEdit={false} />
-                <div className="flex gap-3 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)} className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer">Cancel</Button>
-                  <Button type="submit" disabled={saving} className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add Branch'}
-                  </Button>
-                </div>
-              </form>
+            </form>
           </ModalSurface>
         )}
 
         {/* Edit modal */}
         {editingBranch && (
-          <ModalSurface onClose={() => setEditingBranch(null)} label="Edit Branch" className="sm:max-w-xl" hideClose>
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-foreground">Edit Branch</h3>
-                <button onClick={() => setEditingBranch(null)} className="p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer">
-                  <X className="h-5 w-5" />
-                </button>
+          <ModalSurface
+            onClose={() => setEditingBranch(null)}
+            label="Edit Branch"
+            className="sm:max-w-xl"
+            hideClose
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-foreground">Edit Branch</h3>
+              <button
+                onClick={() => setEditingBranch(null)}
+                className="p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {error && (
+              <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">
+                {error}
+              </p>
+            )}
+            <form onSubmit={handleEdit} className="space-y-4">
+              <BranchFormFields form={form} setField={setField} isEdit={true} />
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingBranch(null)}
+                  className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
+                </Button>
               </div>
-              {error && (
-                <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">{error}</p>
-              )}
-              <form onSubmit={handleEdit} className="space-y-4">
-                <BranchFormFields form={form} setField={setField} isEdit={true} />
-                <div className="flex gap-3 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setEditingBranch(null)} className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer">Cancel</Button>
-                  <Button type="submit" disabled={saving} className="flex-1 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer">
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
-                  </Button>
-                </div>
-              </form>
+            </form>
           </ModalSurface>
         )}
 
         {/* Delete confirm */}
         {deletingBranch && (
-          <ModalSurface onClose={() => setDeletingBranch(null)} label="Delete Branch?" className="sm:max-w-sm text-center" hideClose>
-              <div className="mx-auto w-12 h-12 rounded-full bg-danger-soft flex items-center justify-center text-danger-soft-foreground mb-4">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <h3 className="text-base font-bold text-foreground mb-2">Delete Branch?</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                Permanently delete <span className="font-bold text-foreground">&quot;{deletingBranch.name}&quot;</span>?
-              </p>
-              <div className="flex gap-3">
-                <Button onClick={() => setDeletingBranch(null)} variant="outline" className="flex-1 rounded-xl border-border text-foreground cursor-pointer hover:bg-secondary">Cancel</Button>
-                <Button onClick={handleDelete} disabled={saving} className="flex-1 rounded-xl bg-destructive hover:bg-destructive text-white cursor-pointer">
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
-                </Button>
-              </div>
+          <ModalSurface
+            onClose={() => setDeletingBranch(null)}
+            label="Delete Branch?"
+            className="sm:max-w-sm text-center"
+            hideClose
+          >
+            <div className="mx-auto w-12 h-12 rounded-full bg-danger-soft flex items-center justify-center text-danger-soft-foreground mb-4">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <h3 className="text-base font-bold text-foreground mb-2">Delete Branch?</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Permanently delete{' '}
+              <span className="font-bold text-foreground">&quot;{deletingBranch.name}&quot;</span>?
+            </p>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setDeletingBranch(null)}
+                variant="outline"
+                className="flex-1 rounded-xl border-border text-foreground cursor-pointer hover:bg-secondary"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDelete}
+                disabled={saving}
+                className="flex-1 rounded-xl bg-destructive hover:bg-destructive text-white cursor-pointer"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
+              </Button>
+            </div>
           </ModalSurface>
         )}
       </div>

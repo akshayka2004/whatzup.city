@@ -1,5 +1,12 @@
 import {
-  IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, ValidateIf,
+  IsEmail,
+  IsIn,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  ValidateIf,
 } from 'class-validator';
 
 export class ConvertBrandDto {
@@ -17,7 +24,9 @@ export class ConvertBrandDto {
   @MaxLength(100, { message: 'The outlet label is too long (100 characters max).' })
   outletLabel?: string;
 
-  @IsIn(['SHARED', 'PER_OUTLET'], { message: 'Choose whether every outlet uses the same bill series.' })
+  @IsIn(['SHARED', 'PER_OUTLET'], {
+    message: 'Choose whether every outlet uses the same bill series.',
+  })
   billSeriesMode!: 'SHARED' | 'PER_OUTLET';
 
   @ValidateIf((o) => o.billSeriesMode === 'SHARED')

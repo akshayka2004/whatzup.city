@@ -47,7 +47,10 @@ export function RedeemPanel({
   };
 
   return (
-    <section className={cn('rounded-card border border-border bg-card p-4 shadow-e1 sm:p-5', className)} aria-labelledby={`${id}-title`}>
+    <section
+      className={cn('rounded-card border border-border bg-card p-4 shadow-e1 sm:p-5', className)}
+      aria-labelledby={`${id}-title`}
+    >
       <div className="flex items-center gap-2">
         <span className="flex size-8 items-center justify-center rounded-full bg-brand-soft text-brand-soft-foreground">
           <ScanLine className="size-4" aria-hidden />
@@ -81,7 +84,13 @@ export function RedeemPanel({
         </Button>
       </form>
       {last && (
-        <p className={cn('mt-2 text-caption font-medium', last.ok ? 'text-success' : 'text-destructive')} role="status">
+        <p
+          className={cn(
+            'mt-2 text-caption font-medium',
+            last.ok ? 'text-success' : 'text-destructive',
+          )}
+          role="status"
+        >
           {last.text}
         </p>
       )}

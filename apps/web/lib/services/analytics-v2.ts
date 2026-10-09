@@ -2,7 +2,13 @@ import { apiService } from '@/lib/services/api-service';
 
 export type Metric = { value: number; previous: number; change: number | null };
 export type Granularity = 'day' | 'week' | 'month';
-export type ReportRange = { from: string; to: string; days: number; granularity: Granularity; timezone: string };
+export type ReportRange = {
+  from: string;
+  to: string;
+  days: number;
+  granularity: Granularity;
+  timezone: string;
+};
 export type Series<P> = { granularity: Granularity; visitorsAreDailyUnique: boolean; points: P[] };
 
 export type BusinessReport = {
@@ -32,7 +38,14 @@ export type BusinessReport = {
   avgRatingInPeriod: number | null;
   funnel: { stage: string; value: number }[];
   actionsBreakdown: { key: string; label: string; value: number }[];
-  series: Series<{ date: string; views: number; visitors: number; actions: number; claims: number; spend: number }>;
+  series: Series<{
+    date: string;
+    views: number;
+    visitors: number;
+    actions: number;
+    claims: number;
+    spend: number;
+  }>;
   sources: { key: string; visitors: number }[];
   devices: { key: string; visitors: number }[];
   heatmap: { dow: number; hour: number; views: number }[];
@@ -79,7 +92,13 @@ export type PlatformReport = {
     renewalsDue30d: number;
   };
   onboardingFunnel: { stage: string; value: number }[];
-  series: Series<{ date: string; visitors: number; newUsers: number; newBusinesses: number; revenue: number }>;
+  series: Series<{
+    date: string;
+    visitors: number;
+    newUsers: number;
+    newBusinesses: number;
+    revenue: number;
+  }>;
   topBusinesses: { id: string; name: string; city: string; visitors: number }[];
   topCategories: { name: string; visitors: number }[];
   cities: { city: string; businesses: number }[];
@@ -101,5 +120,6 @@ const qs = (p: RangeParams) => {
 export const analyticsV2 = {
   business: (businessId: string, p: RangeParams) =>
     apiService.get<BusinessReport>(`/v1/analytics/v2/business/${businessId}/report?${qs(p)}`),
-  platform: (p: RangeParams & PlatformScope) => apiService.get<PlatformReport>(`/v1/analytics/v2/platform/report?${qs(p)}`),
+  platform: (p: RangeParams & PlatformScope) =>
+    apiService.get<PlatformReport>(`/v1/analytics/v2/platform/report?${qs(p)}`),
 };

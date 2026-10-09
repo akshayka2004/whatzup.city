@@ -61,7 +61,7 @@ export function mapApiNotice(n: any): Notice {
 
 /** Same list-shape handling the page has always used for GET /v1/announcements. */
 export function noticesFromBody(body: any): Notice[] {
-  const list = Array.isArray(body) ? body : body?.data ?? body?.items ?? [];
+  const list = Array.isArray(body) ? body : (body?.data ?? body?.items ?? []);
   return Array.isArray(list) ? list.map(mapApiNotice) : [];
 }
 
@@ -71,18 +71,25 @@ export type Severity = 'danger' | 'warning' | 'info' | 'success' | 'neutral';
 export function severityFor(type: string): Severity {
   const t = (type || '').toLowerCase();
   if (/(health|emergency|alert|urgent|disaster|flood|danger|warning)/.test(t)) return 'danger';
-  if (/(infra|road|water|power|electric|traffic|maintenance|construction|outage)/.test(t)) return 'warning';
+  if (/(infra|road|water|power|electric|traffic|maintenance|construction|outage)/.test(t))
+    return 'warning';
   if (/(event|festival|celebrat|campaign)/.test(t)) return 'success';
   if (/(legal|policy|rule|regulation|circular|tender)/.test(t)) return 'neutral';
   return 'info';
 }
 
 export const SEVERITY_STYLE: Record<Severity, { rail: string; tile: string }> = {
-  danger: { rail: 'bg-destructive', tile: 'bg-destructive/10 text-destructive border-destructive/20' },
+  danger: {
+    rail: 'bg-destructive',
+    tile: 'bg-destructive/10 text-destructive border-destructive/20',
+  },
   warning: { rail: 'bg-warning', tile: 'bg-warning/12 text-warning border-warning/25' },
   info: { rail: 'bg-info', tile: 'bg-info/10 text-info border-info/20' },
   success: { rail: 'bg-success', tile: 'bg-success/12 text-success border-success/25' },
-  neutral: { rail: 'bg-muted-foreground/40', tile: 'bg-secondary text-muted-foreground border-border' },
+  neutral: {
+    rail: 'bg-muted-foreground/40',
+    tile: 'bg-secondary text-muted-foreground border-border',
+  },
 };
 
 const NEW_WINDOW_MS = 48 * 60 * 60 * 1000;

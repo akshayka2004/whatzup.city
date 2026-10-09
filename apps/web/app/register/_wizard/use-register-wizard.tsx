@@ -15,19 +15,39 @@ import { KERALA_CITIES } from '@/lib/constants';
 import { LegalFooter } from '@/components/common/legal-footer';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
 import { authService } from '@/lib/services/auth-service';
-import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/business/registration-details';
 import {
-  STAR_OPTIONS, HOTEL_AMENITIES, computeHotelCharge, type HotelAmenities,
+  RegistrationDetailsForm,
+  type RegistrationDetails,
+} from '@/components/business/registration-details';
+import {
+  STAR_OPTIONS,
+  HOTEL_AMENITIES,
+  computeHotelCharge,
+  type HotelAmenities,
 } from '@/lib/hotel-pricing';
-import { AmenityDetailsEditor, type AmenityItem } from '@/components/business/amenity-details-editor';
+import {
+  AmenityDetailsEditor,
+  type AmenityItem,
+} from '@/components/business/amenity-details-editor';
 import { HOME_CHEF_PLANS, HOME_CHEF_DURATION_DAYS, getHomeChefPlan } from '@/lib/home-chef-pricing';
 import { useLaunchOffer } from '@/hooks/use-launch-offer';
 import { invalidateActiveBusinessCache } from '@/hooks/use-active-business';
-import { BillSeriesQuestion, type BillSeriesMode } from '@/components/business/brand-conversion-prompt';
+import {
+  BillSeriesQuestion,
+  type BillSeriesMode,
+} from '@/components/business/brand-conversion-prompt';
 import { LaunchOfferBanner } from '@/components/business/launch-offer-banner';
 import {
-  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, HOTEL_DURATION_DAYS, getPlan, formatINR, withTax, TAX_PERCENT,
-  PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
+  SUBSCRIPTION_PLANS,
+  PLAN_DURATION_DAYS,
+  HOTEL_DURATION_DAYS,
+  getPlan,
+  formatINR,
+  withTax,
+  TAX_PERCENT,
+  PAYMENT_QR_SRC,
+  PAYMENT_UPI_ID,
+  PAYMENT_PAYEE_NAME,
 } from '@/lib/subscription-plans';
 import {
   User as UserIcon,
@@ -85,7 +105,12 @@ export function useRegisterWizard() {
   const [billSeriesMode, setBillSeriesMode] = useState<BillSeriesMode | null>(null);
   const [sharedPrefix, setSharedPrefix] = useState('');
   // Set once the business being registered belongs to a brand (fresh brand signup, or resuming / adding an outlet).
-  const [brandCtx, setBrandCtx] = useState<{ id?: string; name: string; mode: BillSeriesMode; prefix: string } | null>(null);
+  const [brandCtx, setBrandCtx] = useState<{
+    id?: string;
+    name: string;
+    mode: BillSeriesMode;
+    prefix: string;
+  } | null>(null);
   // /register?outlet=<id>: a signed-in brand owner finishing an outlet they just added.
   const [outletMode, setOutletMode] = useState(false);
   const [outletError, setOutletError] = useState('');
@@ -153,7 +178,9 @@ export function useRegisterWizard() {
         const outletParam = new URLSearchParams(window.location.search).get('outlet');
         if (outletParam) {
           setOutletMode(true);
-          const sw = await apiService.put<any>('/v1/auth/active-business', { businessId: outletParam });
+          const sw = await apiService.put<any>('/v1/auth/active-business', {
+            businessId: outletParam,
+          });
           if (cancelled) return;
           if (sw.error) {
             setOutletError(sw.error);
@@ -169,7 +196,8 @@ export function useRegisterWizard() {
         if (Array.isArray(list) && list.length > 0) draft = list[0];
 
         if (outletParam && draft?.id !== outletParam) {
-          if (!cancelled) setOutletError('Could not open this outlet. Please try again from your outlets page.');
+          if (!cancelled)
+            setOutletError('Could not open this outlet. Please try again from your outlets page.');
           return;
         }
 
@@ -193,7 +221,10 @@ export function useRegisterWizard() {
         setDescription(draft.description || '');
         if (draft.category?.slug) setCategorySlug(draft.category.slug);
         if (draft.address) setAddress(draft.address);
-        if (draft.city) { setCity(draft.city); setDistrict(draft.district || draft.city); }
+        if (draft.city) {
+          setCity(draft.city);
+          setDistrict(draft.district || draft.city);
+        }
         if (Array.isArray(draft.tags)) setTags(draft.tags);
         const draftBrand = draft.brand || null;
         const sharedSeries = draftBrand?.billSeriesMode === 'SHARED';
@@ -208,7 +239,8 @@ export function useRegisterWizard() {
           supportContact: draft.supportContact || {},
           branchHead: draft.branchHead || {},
           categoryAttributes: draft.categoryAttributes || {},
-          billSeriesPrefix: (sharedSeries ? draftBrand.billSeriesPrefix : draft.billSeriesPrefix) || '',
+          billSeriesPrefix:
+            (sharedSeries ? draftBrand.billSeriesPrefix : draft.billSeriesPrefix) || '',
           operatingHours: draft.operatingHours ?? undefined,
         });
         if (draft.brandId || draftBrand) {
@@ -227,7 +259,7 @@ export function useRegisterWizard() {
             apiService.get<any>('/v1/brands/mine'),
           ]);
           if (cancelled) return;
-          const d = bd.error ? null : bd.data?.data ?? bd.data;
+          const d = bd.error ? null : (bd.data?.data ?? bd.data);
           if (d?.billingName) {
             setBillingName(d.billingName || '');
             setBillingHasGst(typeof d.hasGst === 'boolean' ? d.hasGst : null);
@@ -268,7 +300,9 @@ export function useRegisterWizard() {
         if (!cancelled) setResuming(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Businesses register and pay in one flow, so they get an extra step.
@@ -311,7 +345,8 @@ export function useRegisterWizard() {
   const hasLowercase = /[a-z]/.test(password);
   const hasDigit = /[0-9]/.test(password);
   const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
-  const isPasswordValid = hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecialChar;
+  const isPasswordValid =
+    hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecialChar;
 
   // Phone Validation Helper (exactly 10 digits)
   const isPhoneValid = /^\d{10}$/.test(phone);
@@ -371,8 +406,13 @@ export function useRegisterWizard() {
         }
 
         const res = await apiService.post<any>('/v1/auth/business/signup', {
-          ownerName: name, email, phone, password,
-          businessName: companyName, categorySlug, profileType: 'OWNER',
+          ownerName: name,
+          email,
+          phone,
+          password,
+          businessName: companyName,
+          categorySlug,
+          profileType: 'OWNER',
           ...(accountType === 'BRAND'
             ? {
                 accountType: 'BRAND',
@@ -396,11 +436,16 @@ export function useRegisterWizard() {
         setBusinessId(res.data.businessId || '');
         setTenantId(res.data.user?.tenantId || '');
         if (accountType === 'BRAND' && billSeriesMode) {
-          setBrandCtx({ name: brandNameInput.trim(), mode: billSeriesMode, prefix: sharedPrefix.trim() });
+          setBrandCtx({
+            name: brandNameInput.trim(),
+            mode: billSeriesMode,
+            prefix: sharedPrefix.trim(),
+          });
           setRegDetails((prev) => ({
             ...prev,
             brandName: brandNameInput.trim(),
-            billSeriesPrefix: billSeriesMode === 'SHARED' ? sharedPrefix.trim() : prev.billSeriesPrefix,
+            billSeriesPrefix:
+              billSeriesMode === 'SHARED' ? sharedPrefix.trim() : prev.billSeriesPrefix,
           }));
         }
 
@@ -412,7 +457,9 @@ export function useRegisterWizard() {
           return;
         }
 
-        setSuccess('Business account created! Complete your profile below to submit for verification.');
+        setSuccess(
+          'Business account created! Complete your profile below to submit for verification.',
+        );
         setCurrentStep(3);
       } else if (role === 'NGO_COMMUNITY') {
         // Civic signup — NGO / Community / News Forum
@@ -448,11 +495,13 @@ export function useRegisterWizard() {
 
         setSuccess('Organisation registered! Redirecting to your dashboard...');
         setTimeout(() => router.push('/civic/dashboard'), 1500);
-
       } else {
         // Customer / Government signup — tenantId auto-resolved by API
         const res = await apiService.post<any>('/v1/auth/signup', {
-          email, password, name, phone,
+          email,
+          password,
+          name,
+          phone,
           role: role === 'GOVERNMENT' ? 'GOVERNMENT_ADMIN' : 'USER',
           ...(referralCode.trim() ? { referralCode: referralCode.trim() } : {}),
           acceptedTerms,
@@ -490,7 +539,10 @@ export function useRegisterWizard() {
   };
 
   // Helper file uploader using R2 media client APIs
-  const uploadFileToServer = async (file: File, isGovt = false): Promise<{ fileUrl: string; fileKey: string }> => {
+  const uploadFileToServer = async (
+    file: File,
+    isGovt = false,
+  ): Promise<{ fileUrl: string; fileKey: string }> => {
     setUploadProgress(15);
     // 1. Fetch pre-signed url
     let presign;
@@ -579,7 +631,11 @@ export function useRegisterWizard() {
             )
           : isHomeChef
             ? await onboardingService.assignHomeChefSubscription(businessId, homeChefTier)
-            : await onboardingService.assignSubscription(businessId, selectedPlan, PLAN_DURATION_DAYS);
+            : await onboardingService.assignSubscription(
+                businessId,
+                selectedPlan,
+                PLAN_DURATION_DAYS,
+              );
         if (assignRes.error) throw new Error(assignRes.error);
         subscriptionId = (assignRes.data as any)?.id;
       }
@@ -606,7 +662,13 @@ export function useRegisterWizard() {
       const launchPrice = launchOffer.status?.price ?? 2500;
       // Amount charged is GST-inclusive; the server recomputes and splits it.
       const amount = withTax(
-        claimLaunch ? launchPrice : isHotel ? charge.total : isHomeChef ? homeChefPlan?.price || 0 : plan?.offerPrice || 0,
+        claimLaunch
+          ? launchPrice
+          : isHotel
+            ? charge.total
+            : isHomeChef
+              ? homeChefPlan?.price || 0
+              : plan?.offerPrice || 0,
       ).total;
 
       // Invoice details first — if this fails the payment isn't recorded, so the
@@ -661,7 +723,13 @@ export function useRegisterWizard() {
 
       const submittedPaymentId = (payRes.data as any)?.id;
       setSuccess('Payment submitted for verification! Redirecting to your invoice...');
-      setTimeout(() => router.push(submittedPaymentId ? `/dashboard/invoice/${submittedPaymentId}` : '/dashboard'), 2000);
+      setTimeout(
+        () =>
+          router.push(
+            submittedPaymentId ? `/dashboard/invoice/${submittedPaymentId}` : '/dashboard',
+          ),
+        2000,
+      );
     } catch (err: any) {
       setError(err.message || 'Could not complete registration.');
     } finally {
@@ -691,12 +759,13 @@ export function useRegisterWizard() {
         try {
           await onboardingService.updateStep(businessId, 2, {
             businessDescription:
-              description.trim() ||
-              `Kerala based company ${companyName} operating in ${district}.`,
+              description.trim() || `Kerala based company ${companyName} operating in ${district}.`,
             subcategorySlugs: subcategorySlug ? [subcategorySlug] : [],
             tags,
           });
-        } catch (e) { console.warn('Step 2 update failed:', e); }
+        } catch (e) {
+          console.warn('Step 2 update failed:', e);
+        }
 
         try {
           await onboardingService.updateStep(businessId, 3, {
@@ -719,7 +788,9 @@ export function useRegisterWizard() {
             billSeriesPrefix: brandCtx?.mode === 'SHARED' ? undefined : regDetails.billSeriesPrefix,
             operatingHours: regDetails.operatingHours,
           });
-        } catch (e) { console.warn('Step 3 update failed:', e); }
+        } catch (e) {
+          console.warn('Step 3 update failed:', e);
+        }
 
         // Registration certificate — stored in verification-documents so it
         // reaches the admin review panel. Surface failures.
@@ -748,13 +819,14 @@ export function useRegisterWizard() {
               mimeType: logoFile.type,
               fileSize: logoFile.size,
             });
-          } catch (e) { console.warn('Logo upload failed (continuing):', e); }
+          } catch (e) {
+            console.warn('Logo upload failed (continuing):', e);
+          }
         }
 
         setLoading(false);
         setCurrentStep(4);
         return;
-
       } else if (role === 'GOVERNMENT') {
         // 1. Promote role post sign-in to create government profile entity
         const roleSelectRes = await authService.selectRole({
@@ -779,14 +851,18 @@ export function useRegisterWizard() {
             officialEmail: email,
             departmentType: deptType,
           });
-        } catch (e) { console.warn('Govt step 1 failed:', e); }
+        } catch (e) {
+          console.warn('Govt step 1 failed:', e);
+        }
 
         // 3. Update step 2 (Administrative coverage) — best-effort
         try {
           await universalOnboardingService.updateStep(entityId, 2, {
             district: district,
           });
-        } catch (e) { console.warn('Govt step 2 failed:', e); }
+        } catch (e) {
+          console.warn('Govt step 2 failed:', e);
+        }
 
         // 4. Upload Department ID Proof — best-effort
         try {
@@ -797,7 +873,9 @@ export function useRegisterWizard() {
             filename: govtIdFile!.name,
             mimeType: govtIdFile!.type,
           });
-        } catch (e) { console.warn('Govt ID upload failed (continuing):', e); }
+        } catch (e) {
+          console.warn('Govt ID upload failed (continuing):', e);
+        }
 
         // 5. Submit application — CRITICAL
         const submitRes = await universalOnboardingService.submitForVerification(entityId);

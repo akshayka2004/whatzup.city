@@ -1,4 +1,16 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsArray, IsBoolean, IsIn, IsNotEmpty, ValidateIf, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsOptional,
+  IsEnum,
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsNotEmpty,
+  ValidateIf,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BusinessProfileType } from '@prisma/client';
 
@@ -36,7 +48,12 @@ export class BusinessSignupDto {
   @IsArray()
   subcategorySlugs?: string[];
 
-  @ApiProperty({ example: 'HALAL', enum: ['HALAL', 'NON_HALAL'], required: false, description: 'Food businesses only' })
+  @ApiProperty({
+    example: 'HALAL',
+    enum: ['HALAL', 'NON_HALAL'],
+    required: false,
+    description: 'Food businesses only',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(20, { message: 'The halal status is too long (20 characters max).' })
@@ -47,30 +64,51 @@ export class BusinessSignupDto {
   @IsEnum(BusinessProfileType)
   profileType?: BusinessProfileType;
 
-  @ApiProperty({ enum: ['SINGLE', 'BRAND'], default: 'SINGLE', required: false, description: 'BRAND = several outlets under one brand account' })
+  @ApiProperty({
+    enum: ['SINGLE', 'BRAND'],
+    default: 'SINGLE',
+    required: false,
+    description: 'BRAND = several outlets under one brand account',
+  })
   @IsOptional()
   @IsIn(['SINGLE', 'BRAND'])
   accountType?: 'SINGLE' | 'BRAND';
 
-  @ApiProperty({ example: 'Paragon', required: false, description: 'Required when accountType is BRAND' })
+  @ApiProperty({
+    example: 'Paragon',
+    required: false,
+    description: 'Required when accountType is BRAND',
+  })
   @ValidateIf((o) => o.accountType === 'BRAND')
   @IsString()
   @IsNotEmpty({ message: 'Enter the brand name.' })
   @MaxLength(255, { message: 'The brand name is too long (255 characters max).' })
   brandName?: string;
 
-  @ApiProperty({ example: 'Kozhikode - Mavoor Road', required: false, description: 'Brand accounts: label for this first outlet' })
+  @ApiProperty({
+    example: 'Kozhikode - Mavoor Road',
+    required: false,
+    description: 'Brand accounts: label for this first outlet',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(100, { message: 'The outlet label is too long (100 characters max).' })
   outletLabel?: string;
 
-  @ApiProperty({ enum: ['SHARED', 'PER_OUTLET'], required: false, description: 'Brand accounts: is the bill series the same for every outlet?' })
+  @ApiProperty({
+    enum: ['SHARED', 'PER_OUTLET'],
+    required: false,
+    description: 'Brand accounts: is the bill series the same for every outlet?',
+  })
   @IsOptional()
   @IsIn(['SHARED', 'PER_OUTLET'])
   billSeriesMode?: 'SHARED' | 'PER_OUTLET';
 
-  @ApiProperty({ example: 'PRG/', required: false, description: 'Brand-wide bill series prefix when billSeriesMode is SHARED' })
+  @ApiProperty({
+    example: 'PRG/',
+    required: false,
+    description: 'Brand-wide bill series prefix when billSeriesMode is SHARED',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(30, { message: 'The bill series prefix is too long (30 characters max).' })

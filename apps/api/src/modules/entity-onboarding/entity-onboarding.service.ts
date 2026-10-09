@@ -72,7 +72,9 @@ export class EntityOnboardingService {
     const entity = await this.getEntityAndVerifyOwner(userId, tenantId, entityId);
 
     if (entity.status === 'APPROVED' || entity.status === 'PENDING_VERIFICATION') {
-      throw new BadRequestException(`Cannot update onboarding details when status is ${entity.status}`);
+      throw new BadRequestException(
+        `Cannot update onboarding details when status is ${entity.status}`,
+      );
     }
 
     const type = entity.type;
@@ -81,7 +83,8 @@ export class EntityOnboardingService {
 
     // Populate entity fields if present
     if (dto.metadata?.name || dto.organizationName || dto.ngoName || dto.departmentName) {
-      entityUpdate.name = dto.organizationName || dto.ngoName || dto.departmentName || dto.metadata?.name;
+      entityUpdate.name =
+        dto.organizationName || dto.ngoName || dto.departmentName || dto.metadata?.name;
     }
     if (dto.officialEmail) {
       entityUpdate.email = dto.officialEmail;
@@ -108,7 +111,8 @@ export class EntityOnboardingService {
       } else if (type === 'PROFESSIONAL') {
         const professionalData: any = {};
         if (dto.category !== undefined) professionalData.category = dto.category;
-        if (dto.experienceYears !== undefined) professionalData.experienceYears = dto.experienceYears;
+        if (dto.experienceYears !== undefined)
+          professionalData.experienceYears = dto.experienceYears;
         if (dto.certifications !== undefined) professionalData.certifications = dto.certifications;
         if (dto.serviceAreas !== undefined) professionalData.serviceAreas = dto.serviceAreas;
         if (dto.pricingMin !== undefined) professionalData.pricingMin = dto.pricingMin;
@@ -121,13 +125,18 @@ export class EntityOnboardingService {
         });
       } else if (type === 'EVENT_ORGANIZER') {
         const eventOrganizerData: any = {};
-        if (dto.organizationName !== undefined) eventOrganizerData.organizationName = dto.organizationName;
-        if (dto.eventCategories !== undefined) eventOrganizerData.eventCategories = dto.eventCategories;
-        if (dto.venuePartnerships !== undefined) eventOrganizerData.venuePartnerships = dto.venuePartnerships;
-        if (dto.ticketingSupport !== undefined) eventOrganizerData.ticketingSupport = dto.ticketingSupport;
+        if (dto.organizationName !== undefined)
+          eventOrganizerData.organizationName = dto.organizationName;
+        if (dto.eventCategories !== undefined)
+          eventOrganizerData.eventCategories = dto.eventCategories;
+        if (dto.venuePartnerships !== undefined)
+          eventOrganizerData.venuePartnerships = dto.venuePartnerships;
+        if (dto.ticketingSupport !== undefined)
+          eventOrganizerData.ticketingSupport = dto.ticketingSupport;
         if (dto.website !== undefined) eventOrganizerData.website = dto.website;
         if (dto.socialLinks !== undefined) eventOrganizerData.socialLinks = dto.socialLinks;
-        if (dto.previousEvents !== undefined) eventOrganizerData.previousEvents = dto.previousEvents;
+        if (dto.previousEvents !== undefined)
+          eventOrganizerData.previousEvents = dto.previousEvents;
 
         await tx.eventOrganizerProfile.update({
           where: { entityId },
@@ -136,9 +145,11 @@ export class EntityOnboardingService {
       } else if (type === 'ORGANIZATION') {
         const organizationData: any = {};
         if (dto.ngoName !== undefined) organizationData.ngoName = dto.ngoName;
-        if (dto.registrationNumber !== undefined) organizationData.registrationNumber = dto.registrationNumber;
+        if (dto.registrationNumber !== undefined)
+          organizationData.registrationNumber = dto.registrationNumber;
         if (dto.causeCategory !== undefined) organizationData.causeCategory = dto.causeCategory;
-        if (dto.operationalAreas !== undefined) organizationData.operationalAreas = dto.operationalAreas;
+        if (dto.operationalAreas !== undefined)
+          organizationData.operationalAreas = dto.operationalAreas;
         if (dto.website !== undefined) organizationData.website = dto.website;
         if (dto.socialLinks !== undefined) organizationData.socialLinks = dto.socialLinks;
 
@@ -175,7 +186,7 @@ export class EntityOnboardingService {
       if (progress) {
         const steps = Array.isArray(progress.stepsCompleted)
           ? (progress.stepsCompleted as string[])
-          : JSON.parse(progress.stepsCompleted as string || '[]');
+          : JSON.parse((progress.stepsCompleted as string) || '[]');
 
         const stepName = `STEP_${step}`;
         if (!steps.includes(stepName)) {
@@ -272,7 +283,9 @@ export class EntityOnboardingService {
         },
       });
       if (existingDocument) {
-        throw new BadRequestException('This document number has already been uploaded for this entity');
+        throw new BadRequestException(
+          'This document number has already been uploaded for this entity',
+        );
       }
     }
 
@@ -376,7 +389,9 @@ export class EntityOnboardingService {
     });
 
     if (documentCount === 0) {
-      throw new BadRequestException('At least one verification document must be uploaded to complete onboarding');
+      throw new BadRequestException(
+        'At least one verification document must be uploaded to complete onboarding',
+      );
     }
 
     await this.db.$transaction(async (tx) => {

@@ -9,7 +9,10 @@ import { HomeHero, MobileNotice } from '@/components/public/home/hero';
 import { TrustStats, type HomeStat } from '@/components/public/home/trust-stats';
 import { CategoryRow } from '@/components/public/home/category-row';
 import {
-  NowShowing, TrendingBusinesses, TrendingOffers, UpcomingEvents,
+  NowShowing,
+  TrendingBusinesses,
+  TrendingOffers,
+  UpcomingEvents,
 } from '@/components/public/home/strips';
 import { SpinPromo } from '@/components/public/home/spin-promo';
 import { HomeCta } from '@/components/public/home/home-cta';

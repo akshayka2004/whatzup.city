@@ -54,7 +54,10 @@ export interface OffersClientProps {
   initialPlatformOffers?: unknown | null;
 }
 
-export default function OffersClient({ initialOffers = null, initialPlatformOffers = null }: OffersClientProps) {
+export default function OffersClient({
+  initialOffers = null,
+  initialPlatformOffers = null,
+}: OffersClientProps) {
   const router = useRouter();
   const { user } = useAuth();
 
@@ -63,7 +66,9 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
   const seeded = initialOffers != null && initialPlatformOffers != null;
   const seedPending = useRef(seeded);
 
-  const [offers, setOffers] = useState<Offer[]>(() => (seeded ? buildOffers(initialOffers, initialPlatformOffers, true) : []));
+  const [offers, setOffers] = useState<Offer[]>(() =>
+    seeded ? buildOffers(initialOffers, initialPlatformOffers, true) : [],
+  );
   const [loading, setLoading] = useState(!seeded);
   const [viewingOffer, setViewingOffer] = useState<Offer | null>(null);
   // Filters live in the URL so a filtered view can be shared or survives a reload.
@@ -135,9 +140,13 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
       .then(([offersRes, platformRes]) => {
         if (cancelled) return;
         const offersBody =
-          offersRes.status === 'fulfilled' && offersRes.value.data && !offersRes.value.error ? offersRes.value.data : null;
+          offersRes.status === 'fulfilled' && offersRes.value.data && !offersRes.value.error
+            ? offersRes.value.data
+            : null;
         const platformBody =
-          platformRes.status === 'fulfilled' && platformRes.value.data && !platformRes.value.error ? platformRes.value.data : null;
+          platformRes.status === 'fulfilled' && platformRes.value.data && !platformRes.value.error
+            ? platformRes.value.data
+            : null;
         setOffers(buildOffers(offersBody, platformBody));
       })
       .finally(() => {
@@ -173,7 +182,9 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
     setViewingOffer(offer);
     // Fire-and-forget click tracking — deduped server-side per visitor/day.
     const actorKey = user?.id || getVisitorId();
-    const endpoint = offer.isPlatform ? `/v1/platform-offers/${offer.id}/click` : `/v1/offers/${offer.id}/click`;
+    const endpoint = offer.isPlatform
+      ? `/v1/platform-offers/${offer.id}/click`
+      : `/v1/offers/${offer.id}/click`;
     apiService.post<any>(endpoint, { actorKey }).catch(() => {});
   };
 
@@ -226,48 +237,55 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
           description="Live deals from businesses near you."
           className="mb-4 sm:mb-5"
           actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {claimedIds.length > 0 && (
-              <div
-                // key restarts the pop each time the count changes
-                key={claimedIds.length}
-                className="ui-pop flex items-center gap-1.5 rounded-full border border-success/25 bg-success-soft px-3 py-2 text-xs font-semibold text-success-soft-foreground"
+            <div className="flex flex-wrap items-center gap-2">
+              {claimedIds.length > 0 && (
+                <div
+                  // key restarts the pop each time the count changes
+                  key={claimedIds.length}
+                  className="ui-pop flex items-center gap-1.5 rounded-full border border-success/25 bg-success-soft px-3 py-2 text-xs font-semibold text-success-soft-foreground"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {claimedIds.length} claimed
+                </div>
+              )}
+              <Button
+                onClick={() => {
+                  setScanError('');
+                  setScanMounted(true);
+                  setScanOpen(true);
+                }}
+                variant="outline"
+                size="sm"
+                className="ui-press h-11 cursor-pointer gap-1.5 rounded-xl"
               >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                {claimedIds.length} claimed
-              </div>
-            )}
-            <Button
-              onClick={() => {
-                setScanError('');
-                setScanMounted(true);
-                setScanOpen(true);
-              }}
-              variant="outline"
-              size="sm"
-              className="ui-press h-11 cursor-pointer gap-1.5 rounded-xl"
-            >
-              <QrCode className="h-4 w-4" /> Scan QR
-            </Button>
-          </div>
+                <QrCode className="h-4 w-4" /> Scan QR
+              </Button>
+            </div>
           }
         />
-        {scanError && (
-          <p className="-mt-2 mb-4 text-xs text-destructive">{scanError}</p>
-        )}
-
+        {scanError && <p className="-mt-2 mb-4 text-xs text-destructive">{scanError}</p>}
 
         <div className="mb-3">
           <OfferFilterChips value={chip} onChange={setChip} />
         </div>
 
         <div className="mb-5 sm:hidden">
-          <Button variant="outline" className="w-full justify-between" onClick={() => setFiltersOpen(true)}>
+          <Button
+            variant="outline"
+            className="w-full justify-between"
+            onClick={() => setFiltersOpen(true)}
+          >
             <span className="flex items-center gap-2">
               <SlidersHorizontal /> Filters & sort
             </span>
             <span className="truncate text-caption text-muted-foreground">
-              {[city || 'All cities', typeFilter !== 'all' ? typeFilter : null, SORT_OPTIONS.find((o) => o.value === sort)?.label].filter(Boolean).join(' · ')}
+              {[
+                city || 'All cities',
+                typeFilter !== 'all' ? typeFilter : null,
+                SORT_OPTIONS.find((o) => o.value === sort)?.label,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </span>
           </Button>
         </div>
@@ -283,9 +301,28 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
         >
           <div className="grid gap-4 pb-2">
             {[
-              ['City', city || 'all', handleCityChange, [['all', 'All cities'], ...KERALA_CITIES.map((c) => [c, c])]],
-              ...(categories.length ? [['Category', typeFilter, setTypeFilter, [['all', 'All categories'], ...categories.map((c) => [c, c])]]] : []),
-              ['Sort by', sort, (v: string) => setSort(v as OfferSort), SORT_OPTIONS.map((o) => [o.value, o.label])],
+              [
+                'City',
+                city || 'all',
+                handleCityChange,
+                [['all', 'All cities'], ...KERALA_CITIES.map((c) => [c, c])],
+              ],
+              ...(categories.length
+                ? [
+                    [
+                      'Category',
+                      typeFilter,
+                      setTypeFilter,
+                      [['all', 'All categories'], ...categories.map((c) => [c, c])],
+                    ],
+                  ]
+                : []),
+              [
+                'Sort by',
+                sort,
+                (v: string) => setSort(v as OfferSort),
+                SORT_OPTIONS.map((o) => [o.value, o.label]),
+              ],
             ].map(([label, value, onChange, opts]: any) => (
               <div key={label} className="space-y-1.5">
                 <span className="text-label">{label}</span>
@@ -307,36 +344,51 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
         </Modal>
         <div className="mb-5 hidden gap-3 sm:flex sm:flex-wrap">
           <Select value={city || 'all'} onValueChange={handleCityChange}>
-            <SelectTrigger aria-label="City" className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
+            <SelectTrigger
+              aria-label="City"
+              className="w-full rounded-xl data-[size=default]:h-11 sm:w-52"
+            >
               <SelectValue placeholder="Filter by city" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Cities</SelectItem>
               {KERALA_CITIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {categories.length > 0 && (
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger aria-label="Category" className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
+              <SelectTrigger
+                aria-label="Category"
+                className="w-full rounded-xl data-[size=default]:h-11 sm:w-52"
+              >
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           )}
           <Select value={sort} onValueChange={(v) => setSort(v as OfferSort)}>
-            <SelectTrigger aria-label="Sort offers" className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
+            <SelectTrigger
+              aria-label="Sort offers"
+              className="w-full rounded-xl data-[size=default]:h-11 sm:w-52"
+            >
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
               {SORT_OPTIONS.map((s) => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -348,7 +400,11 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
           <EmptyState
             icon={Tag}
             title="No offers available"
-            description={filtersActive ? 'No offers match these filters yet.' : 'Check back later for exclusive deals.'}
+            description={
+              filtersActive
+                ? 'No offers match these filters yet.'
+                : 'Check back later for exclusive deals.'
+            }
             action={filtersActive ? { label: 'Show all offers', onClick: resetFilters } : undefined}
           />
         ) : (
@@ -372,138 +428,169 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
         )}
 
         {viewingOffer && (
-          <ModalSurface onClose={() => setViewingOffer(null)} label="Offer details" className="sm:max-w-md" hideClose>
-              <button
-                onClick={() => setViewingOffer(null)}
-                aria-label="Close"
-                className="absolute top-3 right-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-brand-soft text-brand-soft-foreground rounded-xl">
-                  <Tag className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-foreground">{viewingOffer.title}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {[viewingOffer.business, viewingOffer.businessType].filter(Boolean).join(' • ')}
-                  </p>
-                </div>
+          <ModalSurface
+            onClose={() => setViewingOffer(null)}
+            label="Offer details"
+            className="sm:max-w-md"
+            hideClose
+          >
+            <button
+              onClick={() => setViewingOffer(null)}
+              aria-label="Close"
+              className="absolute top-3 right-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-brand-soft text-brand-soft-foreground rounded-xl">
+                <Tag className="h-6 w-6" />
               </div>
-              {/* Platform offers have a price and no expiry; business offers
+              <div>
+                <h3 className="text-xl font-bold text-foreground">{viewingOffer.title}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {[viewingOffer.business, viewingOffer.businessType].filter(Boolean).join(' • ')}
+                </p>
+              </div>
+            </div>
+            {/* Platform offers have a price and no expiry; business offers
                   have a discount and a countdown. */}
-              {viewingOffer.isPlatform ? (
-                <div className="mb-6 space-y-3">
-                  {(() => {
-                    const rates = rateLines(viewingOffer.category || '', viewingOffer.subType, viewingOffer.details);
-                    if (rates.length) {
-                      return (
-                        <div className="bg-secondary p-4 rounded-xl border border-border space-y-1.5">
-                          <p className="text-xs text-muted-foreground mb-1">Rates</p>
-                          {rates.map((r, i) => (
-                            <div key={i} className="grid grid-cols-3 gap-2 text-sm">
-                              <span className="text-muted-foreground">{r.label}</span>
-                              <span className="col-span-2 text-foreground font-semibold">{r.rate}</span>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    }
-                    if (!viewingOffer.discountLabel) return null;
-                    return (
-                      <div className="bg-secondary p-4 rounded-xl text-center border border-border">
-                        <p className="text-xs text-muted-foreground mb-1">Price</p>
-                        <p className="text-2xl font-extrabold text-primary">{viewingOffer.discountLabel}</p>
-                      </div>
-                    );
-                  })()}
-                  {(() => {
-                    const d = viewingOffer.details || {};
-                    const rows: { label: string; value: string }[] = [];
-                    if (d.providerType) rows.push({ label: 'Type', value: d.providerType });
-                    if (d.availableTiming) rows.push({ label: 'Available', value: d.availableTiming });
-                    if (d.hasPreBooking && d.preBookingPackage) {
-                      rows.push({ label: 'Package', value: d.preBookingPackage });
-                    }
-                    if (d.hasPreBooking && d.sadhyaTiming) {
-                      rows.push({ label: 'Sadhya timing', value: d.sadhyaTiming });
-                    }
-                    const delivery = deliverySummary(d);
-                    if (delivery.length) rows.push({ label: 'Options', value: delivery.join(' · ') });
-                    if (d.propertyTypes?.length) rows.push({ label: 'Property', value: d.propertyTypes.join(', ') });
-                    if (d.views?.length) rows.push({ label: 'View', value: d.views.join(', ') });
-                    if (d.venueTypes?.length) rows.push({ label: 'Venue', value: d.venueTypes.join(', ') });
-                    if (d.minTeamCount) rows.push({ label: 'Min team', value: d.minTeamCount });
-                    if (d.time) rows.push({ label: 'Time', value: d.time });
-                    if (d.minPax || d.maxPax) {
-                      rows.push({ label: 'Pax', value: [d.minPax, d.maxPax].filter(Boolean).join(' – ') });
-                    }
-                    if (d.acStatus) rows.push({ label: 'AC', value: d.acStatus });
-                    if (d.amenities) rows.push({ label: 'Amenities', value: d.amenities });
-                    if (d.brandOrCategory) rows.push({ label: 'Brand', value: d.brandOrCategory });
-                    if (viewingOffer.phone) rows.push({ label: 'Phone', value: viewingOffer.phone });
-                    if (!rows.length) return null;
+            {viewingOffer.isPlatform ? (
+              <div className="mb-6 space-y-3">
+                {(() => {
+                  const rates = rateLines(
+                    viewingOffer.category || '',
+                    viewingOffer.subType,
+                    viewingOffer.details,
+                  );
+                  if (rates.length) {
                     return (
                       <div className="bg-secondary p-4 rounded-xl border border-border space-y-1.5">
-                        {rows.map((r) => (
-                          <div key={r.label} className="grid grid-cols-3 gap-2 text-sm">
+                        <p className="text-xs text-muted-foreground mb-1">Rates</p>
+                        {rates.map((r, i) => (
+                          <div key={i} className="grid grid-cols-3 gap-2 text-sm">
                             <span className="text-muted-foreground">{r.label}</span>
-                            <span className="col-span-2 text-foreground">{r.value}</span>
+                            <span className="col-span-2 text-foreground font-semibold">
+                              {r.rate}
+                            </span>
                           </div>
                         ))}
                       </div>
                     );
-                  })()}
+                  }
+                  if (!viewingOffer.discountLabel) return null;
+                  return (
+                    <div className="bg-secondary p-4 rounded-xl text-center border border-border">
+                      <p className="text-xs text-muted-foreground mb-1">Price</p>
+                      <p className="text-2xl font-extrabold text-primary">
+                        {viewingOffer.discountLabel}
+                      </p>
+                    </div>
+                  );
+                })()}
+                {(() => {
+                  const d = viewingOffer.details || {};
+                  const rows: { label: string; value: string }[] = [];
+                  if (d.providerType) rows.push({ label: 'Type', value: d.providerType });
+                  if (d.availableTiming)
+                    rows.push({ label: 'Available', value: d.availableTiming });
+                  if (d.hasPreBooking && d.preBookingPackage) {
+                    rows.push({ label: 'Package', value: d.preBookingPackage });
+                  }
+                  if (d.hasPreBooking && d.sadhyaTiming) {
+                    rows.push({ label: 'Sadhya timing', value: d.sadhyaTiming });
+                  }
+                  const delivery = deliverySummary(d);
+                  if (delivery.length) rows.push({ label: 'Options', value: delivery.join(' · ') });
+                  if (d.propertyTypes?.length)
+                    rows.push({ label: 'Property', value: d.propertyTypes.join(', ') });
+                  if (d.views?.length) rows.push({ label: 'View', value: d.views.join(', ') });
+                  if (d.venueTypes?.length)
+                    rows.push({ label: 'Venue', value: d.venueTypes.join(', ') });
+                  if (d.minTeamCount) rows.push({ label: 'Min team', value: d.minTeamCount });
+                  if (d.time) rows.push({ label: 'Time', value: d.time });
+                  if (d.minPax || d.maxPax) {
+                    rows.push({
+                      label: 'Pax',
+                      value: [d.minPax, d.maxPax].filter(Boolean).join(' – '),
+                    });
+                  }
+                  if (d.acStatus) rows.push({ label: 'AC', value: d.acStatus });
+                  if (d.amenities) rows.push({ label: 'Amenities', value: d.amenities });
+                  if (d.brandOrCategory) rows.push({ label: 'Brand', value: d.brandOrCategory });
+                  if (viewingOffer.phone) rows.push({ label: 'Phone', value: viewingOffer.phone });
+                  if (!rows.length) return null;
+                  return (
+                    <div className="bg-secondary p-4 rounded-xl border border-border space-y-1.5">
+                      {rows.map((r) => (
+                        <div key={r.label} className="grid grid-cols-3 gap-2 text-sm">
+                          <span className="text-muted-foreground">{r.label}</span>
+                          <span className="col-span-2 text-foreground">{r.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-secondary p-4 rounded-xl text-center border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Discount</p>
+                  <p className="text-3xl font-extrabold text-primary">
+                    {viewingOffer.discountLabel}
+                  </p>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-secondary p-4 rounded-xl text-center border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Discount</p>
-                    <p className="text-3xl font-extrabold text-primary">{viewingOffer.discountLabel}</p>
-                  </div>
-                  <div className="bg-secondary p-4 rounded-xl text-center border border-border">
-                    <p className="text-xs text-muted-foreground mb-1">Expires in</p>
-                    <p className="text-3xl font-extrabold text-foreground tabular-nums">
-                      {viewingOffer.expiresIn != null ? `${viewingOffer.expiresIn}d` : '—'}
-                    </p>
-                  </div>
+                <div className="bg-secondary p-4 rounded-xl text-center border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Expires in</p>
+                  <p className="text-3xl font-extrabold text-foreground tabular-nums">
+                    {viewingOffer.expiresIn != null ? `${viewingOffer.expiresIn}d` : '—'}
+                  </p>
                 </div>
-              )}
-              {viewingOffer.terms && (
-                <div className="bg-secondary p-4 rounded-xl border border-border mb-6">
-                  <p className="text-xs text-muted-foreground font-semibold mb-1">Terms & conditions</p>
-                  <p className="text-sm text-foreground">{viewingOffer.terms}</p>
-                </div>
-              )}
-              {viewingOffer.isPlatform ? (
-                // Nothing to redeem — the customer deals with the vendor directly.
-                <div className="flex gap-3">
-                  <Button onClick={() => setViewingOffer(null)} variant="outline" className="h-11 flex-1">
-                    Close
-                  </Button>
-                  {viewingOffer.phone && (
-                    <a href={`tel:${viewingOffer.phone}`} className="flex-1">
-                      <Button className="h-11 w-full gap-1.5">
-                        <Phone className="h-4 w-4" /> Call vendor
-                      </Button>
-                    </a>
-                  )}
-                </div>
-              ) : isClaimed(viewingOffer.id) ? (
-                <div className="w-full flex items-center justify-center gap-2 rounded-xl bg-success-soft border border-success/25 text-success-soft-foreground font-semibold py-3">
-                  <CheckCircle2 className="h-5 w-5" /> Already claimed
-                </div>
-              ) : (
-                <div className="flex gap-3">
-                  <Button onClick={() => setViewingOffer(null)} variant="outline" className="h-11 flex-1">
-                    Close
-                  </Button>
-                  <Button onClick={() => handleClaim(viewingOffer)} className="h-11 flex-1 gap-1.5">
-                    <Sparkles className="h-4 w-4" /> Claim offer
-                  </Button>
-                </div>
-              )}
+              </div>
+            )}
+            {viewingOffer.terms && (
+              <div className="bg-secondary p-4 rounded-xl border border-border mb-6">
+                <p className="text-xs text-muted-foreground font-semibold mb-1">
+                  Terms & conditions
+                </p>
+                <p className="text-sm text-foreground">{viewingOffer.terms}</p>
+              </div>
+            )}
+            {viewingOffer.isPlatform ? (
+              // Nothing to redeem — the customer deals with the vendor directly.
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setViewingOffer(null)}
+                  variant="outline"
+                  className="h-11 flex-1"
+                >
+                  Close
+                </Button>
+                {viewingOffer.phone && (
+                  <a href={`tel:${viewingOffer.phone}`} className="flex-1">
+                    <Button className="h-11 w-full gap-1.5">
+                      <Phone className="h-4 w-4" /> Call vendor
+                    </Button>
+                  </a>
+                )}
+              </div>
+            ) : isClaimed(viewingOffer.id) ? (
+              <div className="w-full flex items-center justify-center gap-2 rounded-xl bg-success-soft border border-success/25 text-success-soft-foreground font-semibold py-3">
+                <CheckCircle2 className="h-5 w-5" /> Already claimed
+              </div>
+            ) : (
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setViewingOffer(null)}
+                  variant="outline"
+                  className="h-11 flex-1"
+                >
+                  Close
+                </Button>
+                <Button onClick={() => handleClaim(viewingOffer)} className="h-11 flex-1 gap-1.5">
+                  <Sparkles className="h-4 w-4" /> Claim offer
+                </Button>
+              </div>
+            )}
           </ModalSurface>
         )}
 

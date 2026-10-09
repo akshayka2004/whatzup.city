@@ -5,7 +5,11 @@ import { Navigation, MapPin } from 'lucide-react';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Button } from '@/components/ui/button';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { GridSkeleton } from '@/components/common/skeletons';
 import { EmptyState } from '@/components/common/empty-state';
@@ -17,7 +21,13 @@ import { LocationExplainer, type GeoState } from '@/components/public/search/loc
 import { ResultsView, ViewToggle, type ResultsMode } from '@/components/public/search/results-view';
 import { distanceTo } from '@/components/public/search/geo';
 import {
-  applyClientFilters, sortItems, toList, totalOf, DEFAULT_FILTERS, type Filters, type SortKey,
+  applyClientFilters,
+  sortItems,
+  toList,
+  totalOf,
+  DEFAULT_FILTERS,
+  type Filters,
+  type SortKey,
 } from '@/components/public/search/filters';
 
 const RADII = [2, 5, 10, 25] as const;
@@ -55,7 +65,10 @@ function NearbyContent() {
     window.history.replaceState(window.history.state, '', u);
   };
 
-  const onFilters = useCallback((patch: Partial<Filters>) => setFilters((f) => ({ ...f, ...patch })), []);
+  const onFilters = useCallback(
+    (patch: Partial<Filters>) => setFilters((f) => ({ ...f, ...patch })),
+    [],
+  );
 
   /* ── Geolocation: ask only after the explainer, never on page load ── */
   const requestLocation = useCallback(() => {
@@ -117,7 +130,9 @@ function NearbyContent() {
   const active = mode === 'near' ? near : byCity;
   const list = useMemo(() => toList(active.data), [active.data]);
   const loading =
-    (mode === 'city' && !cityReady) || (active.data == null && !active.error) || (active.loading && list.length === 0);
+    (mode === 'city' && !cityReady) ||
+    (active.data == null && !active.error) ||
+    (active.loading && list.length === 0);
   const refreshing = active.loading && list.length > 0;
   const failed = !!active.error && list.length === 0 && !active.loading;
 
@@ -133,7 +148,10 @@ function NearbyContent() {
   }, [list, coords]);
 
   const inRange = useMemo(
-    () => (mode === 'near' ? list.filter((b) => (distances.get(b.id) ?? Infinity) <= radius + 0.05) : list),
+    () =>
+      mode === 'near'
+        ? list.filter((b) => (distances.get(b.id) ?? Infinity) <= radius + 0.05)
+        : list,
     [mode, list, distances, radius],
   );
 
@@ -156,7 +174,10 @@ function NearbyContent() {
 
   const show: FilterShow = { open: true, rating: true, sorts };
   const hasMoreCity =
-    mode === 'city' && list.length >= limit && limit < MAX_LIMIT && (totalOf(active.data) == null || list.length < (totalOf(active.data) as number));
+    mode === 'city' &&
+    list.length >= limit &&
+    limit < MAX_LIMIT &&
+    (totalOf(active.data) == null || list.length < (totalOf(active.data) as number));
 
   const onCityChange = (v: string) => {
     const next = v === 'all' ? '' : v;
@@ -187,12 +208,19 @@ function NearbyContent() {
               </button>
             )}
             <Select value={city || 'all'} onValueChange={onCityChange}>
-              <SelectTrigger aria-label="Choose city" className="w-full rounded-xl border-border data-[size=default]:h-11 sm:w-52">
+              <SelectTrigger
+                aria-label="Choose city"
+                className="w-full rounded-xl border-border data-[size=default]:h-11 sm:w-52"
+              >
                 <SelectValue placeholder="Choose city" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Cities</SelectItem>
-                {KERALA_CITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {KERALA_CITIES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -200,7 +228,11 @@ function NearbyContent() {
       </div>
 
       {mode === 'city' && !dismissed && !coords && (
-        <LocationExplainer state={geo} onAllow={requestLocation} onDismiss={() => setDismissed(true)} />
+        <LocationExplainer
+          state={geo}
+          onAllow={requestLocation}
+          onDismiss={() => setDismissed(true)}
+        />
       )}
 
       {mode === 'near' && (
@@ -229,9 +261,15 @@ function NearbyContent() {
             </div>
           </div>
           {geo === 'denied' || geo === 'error' ? (
-            <p className="text-xs text-destructive">We couldn’t refresh your location, so the list below uses your last position.</p>
+            <p className="text-xs text-destructive">
+              We couldn’t refresh your location, so the list below uses your last position.
+            </p>
           ) : null}
-          <div role="radiogroup" aria-label="Search radius" className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:px-0">
+          <div
+            role="radiogroup"
+            aria-label="Search radius"
+            className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:px-0"
+          >
             {RADII.map((r) => (
               <button
                 key={r}
@@ -257,7 +295,13 @@ function NearbyContent() {
           resultCount={results.length}
         />
       </div>
-      <ActiveFilters className="mt-3" filters={view} onChange={onFilters} show={show} defaultSort={defaultSort} />
+      <ActiveFilters
+        className="mt-3"
+        filters={view}
+        onChange={onFilters}
+        show={show}
+        defaultSort={defaultSort}
+      />
 
       <div className="mb-3 mt-3 flex min-h-10 items-center justify-between gap-3">
         <p aria-live="polite" className="text-sm text-muted-foreground">
@@ -283,7 +327,9 @@ function NearbyContent() {
         mode === 'near' ? (
           <EmptyState
             icon={MapPin}
-            title={inRange.length > 0 ? 'No matches with these filters' : `Nothing within ${radius} km`}
+            title={
+              inRange.length > 0 ? 'No matches with these filters' : `Nothing within ${radius} km`
+            }
             description={
               inRange.length > 0
                 ? 'Try removing a filter to see more businesses.'
@@ -293,11 +339,16 @@ function NearbyContent() {
               inRange.length > 0
                 ? { label: 'Clear filters', onClick: () => setFilters({ ...DEFAULT_FILTERS }) }
                 : nextRadius
-                  ? { label: `Search within ${nextRadius} km`, onClick: () => setRadius(nextRadius) }
+                  ? {
+                      label: `Search within ${nextRadius} km`,
+                      onClick: () => setRadius(nextRadius),
+                    }
                   : { label: 'Browse by city', onClick: () => setMode('city') }
             }
             secondary={
-              inRange.length === 0 && nextRadius ? { label: 'Browse by city', onClick: () => setMode('city') } : undefined
+              inRange.length === 0 && nextRadius
+                ? { label: 'Browse by city', onClick: () => setMode('city') }
+                : undefined
             }
           />
         ) : (
@@ -315,8 +366,16 @@ function NearbyContent() {
           />
         )
       ) : (
-        <div aria-busy={refreshing} className={refreshing ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
-          <ResultsView mode={resultsMode} items={results} distances={coords ? distances : undefined} center={mode === 'near' ? coords : null} />
+        <div
+          aria-busy={refreshing}
+          className={refreshing ? 'opacity-60 transition-opacity' : 'transition-opacity'}
+        >
+          <ResultsView
+            mode={resultsMode}
+            items={results}
+            distances={coords ? distances : undefined}
+            center={mode === 'near' ? coords : null}
+          />
           {hasMoreCity && (
             <div className="mt-6 flex justify-center">
               <Button

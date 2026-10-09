@@ -33,9 +33,7 @@ export class CryptoService {
       );
       return null;
     }
-    const buf = /^[0-9a-f]{64}$/i.test(raw)
-      ? Buffer.from(raw, 'hex')
-      : Buffer.from(raw, 'base64');
+    const buf = /^[0-9a-f]{64}$/i.test(raw) ? Buffer.from(raw, 'hex') : Buffer.from(raw, 'base64');
     if (buf.length !== 32) {
       throw new InternalServerErrorException(
         'ENCRYPTION_KEY must decode to exactly 32 bytes (64 hex chars, or base64 of 32 bytes).',

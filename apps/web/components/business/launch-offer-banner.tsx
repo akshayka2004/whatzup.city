@@ -14,7 +14,14 @@ interface LaunchOfferBannerProps {
 }
 
 /** "First N businesses per category get the launch price" — with the live count once a category is known. */
-export function LaunchOfferBanner({ slotsPerCategory, price, durationDays, bonusDays, categoryName, slotsLeft }: LaunchOfferBannerProps) {
+export function LaunchOfferBanner({
+  slotsPerCategory,
+  price,
+  durationDays,
+  bonusDays,
+  categoryName,
+  slotsLeft,
+}: LaunchOfferBannerProps) {
   const soldOut = categoryName !== null && slotsLeft <= 0;
   const perk = `${Math.round((durationDays - bonusDays) / 30)} months + ${Math.round(bonusDays / 30)} months free, with unlimited offers.`;
   return (
@@ -26,14 +33,17 @@ export function LaunchOfferBanner({ slotsPerCategory, price, durationDays, bonus
           : 'border-success/25 bg-success-soft text-foreground'
       }`}
     >
-      <Gift className={`mt-0.5 h-5 w-5 shrink-0 ${soldOut ? 'text-muted-foreground' : 'text-success-soft-foreground'}`} />
+      <Gift
+        className={`mt-0.5 h-5 w-5 shrink-0 ${soldOut ? 'text-muted-foreground' : 'text-success-soft-foreground'}`}
+      />
       <div className="min-w-0">
         {categoryName === null ? (
           <>
             <p className="font-semibold">Launch offer</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              The first {slotsPerCategory} businesses in every category get our launch plan for just ₹{price.toLocaleString('en-IN')}
-              : {perk} Pick your category to see how many slots are left.
+              The first {slotsPerCategory} businesses in every category get our launch plan for just
+              ₹{price.toLocaleString('en-IN')}: {perk} Pick your category to see how many slots are
+              left.
             </p>
           </>
         ) : soldOut ? (

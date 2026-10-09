@@ -29,7 +29,13 @@ export type IstRange = { from: string; to: string; start: Date; end: Date; days:
  * Inclusive IST date keys → half-open UTC range. `to` defaults to today (IST),
  * `from` to `to - (days-1)`. Caps the span so one request can't scan years of events.
  */
-export function istRange(opts: { from?: string; to?: string; days?: number; now?: Date; maxDays?: number }): IstRange {
+export function istRange(opts: {
+  from?: string;
+  to?: string;
+  days?: number;
+  now?: Date;
+  maxDays?: number;
+}): IstRange {
   const maxDays = opts.maxDays ?? 400;
   const today = istDateKey(opts.now ?? new Date());
   const to = opts.to && /^\d{4}-\d{2}-\d{2}$/.test(opts.to) ? opts.to : today;

@@ -9,7 +9,10 @@ import { EmptyState } from '@/components/common/empty-state';
 export default function CampaignsPage() {
   return (
     <BusinessLayout>
-      <PageHeader title="Campaigns" description="Broadcast promotions and alerts to your customers." />
+      <PageHeader
+        title="Campaigns"
+        description="Broadcast promotions and alerts to your customers."
+      />
       <EmptyState
         icon={Megaphone}
         title="Campaigns are on the way"

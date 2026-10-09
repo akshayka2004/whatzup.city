@@ -38,14 +38,18 @@ export class MenuPhotosService {
 
   private assertFile(filename: string, mimeType: string, size: number) {
     if (!MENU_MIME_TYPES.includes(mimeType.toLowerCase())) {
-      throw new BadRequestException(`Menu photos must be JPG, PNG or WebP images (received ${mimeType}).`);
+      throw new BadRequestException(
+        `Menu photos must be JPG, PNG or WebP images (received ${mimeType}).`,
+      );
     }
     this.media.validateFileExtension(filename, mimeType);
     this.storage.validateFileSize(size, MAX_BYTES);
   }
 
   private async assertUnderLimit(businessId: string) {
-    const count = await this.db.media.count({ where: { businessId, type: MENU_TYPE, deletedAt: null } });
+    const count = await this.db.media.count({
+      where: { businessId, type: MENU_TYPE, deletedAt: null },
+    });
     if (count >= MAX_MENU_PHOTOS) {
       throw new BadRequestException(
         `You can add up to ${MAX_MENU_PHOTOS} menu photos. Delete one to add another.`,
@@ -84,7 +88,9 @@ export class MenuPhotosService {
     // caller could register someone else's file (or any path) as their menu.
     const prefix = `${tenantId}/menu/${dto.businessId}/`;
     if (!dto.fileKey.startsWith(prefix) || dto.fileKey.includes('..')) {
-      throw new BadRequestException('That file was not uploaded for this business. Please upload it again.');
+      throw new BadRequestException(
+        'That file was not uploaded for this business. Please upload it again.',
+      );
     }
 
     const count = await this.assertUnderLimit(dto.businessId);
@@ -117,10 +123,18 @@ export class MenuPhotosService {
       select: { id: true },
     });
     const current = new Set(rows.map((r) => r.id));
-    if (ids.length !== current.size || new Set(ids).size !== ids.length || ids.some((id) => !current.has(id))) {
-      throw new BadRequestException('Your menu changed while you were sorting. Refresh and try again.');
+    if (
+      ids.length !== current.size ||
+      new Set(ids).size !== ids.length ||
+      ids.some((id) => !current.has(id))
+    ) {
+      throw new BadRequestException(
+        'Your menu changed while you were sorting. Refresh and try again.',
+      );
     }
-    await this.db.$transaction(ids.map((id, i) => this.db.media.update({ where: { id }, data: { sortOrder: i } })));
+    await this.db.$transaction(
+      ids.map((id, i) => this.db.media.update({ where: { id }, data: { sortOrder: i } })),
+    );
     return this.listPublic(businessId);
   }
 
@@ -139,7 +153,13 @@ export class MenuPhotosService {
     return rows.map((r) => this.toPublic(r));
   }
 
-  private toPublic(row: { id: string; url: string; title: string | null; filename: string; createdAt: Date }) {
+  private toPublic(row: {
+    id: string;
+    url: string;
+    title: string | null;
+    filename: string;
+    createdAt: Date;
+  }) {
     let publicUrl = '';
     try {
       const ref = JSON.parse(row.url);
@@ -147,6 +167,12 @@ export class MenuPhotosService {
     } catch {
       publicUrl = row.url;
     }
-    return { id: row.id, title: row.title, filename: row.filename, publicUrl, createdAt: row.createdAt };
+    return {
+      id: row.id,
+      title: row.title,
+      filename: row.filename,
+      publicUrl,
+      createdAt: row.createdAt,
+    };
   }
 }

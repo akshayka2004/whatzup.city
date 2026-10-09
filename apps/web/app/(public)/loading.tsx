@@ -1,6 +1,10 @@
 import { PublicLayout } from '@/components/layouts/public-layout';
 import {
-  GridSkeleton, HeroSkeleton, PageHeaderSkeleton, Skel, SkeletonRegion,
+  GridSkeleton,
+  HeroSkeleton,
+  PageHeaderSkeleton,
+  Skel,
+  SkeletonRegion,
 } from '@/components/common/skeletons';
 
 /** Mirrors the landing page: hero, category row, then a content strip. */
@@ -14,7 +18,10 @@ export default function Loading() {
           <PageHeaderSkeleton />
           <div className="flex gap-3 overflow-hidden md:grid md:grid-cols-5">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skel key={i} className="h-[104px] w-[92px] shrink-0 rounded-2xl md:h-[68px] md:w-auto" />
+              <Skel
+                key={i}
+                className="h-[104px] w-[92px] shrink-0 rounded-2xl md:h-[68px] md:w-auto"
+              />
             ))}
           </div>
         </SkeletonRegion>

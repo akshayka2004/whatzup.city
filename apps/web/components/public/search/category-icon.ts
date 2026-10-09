@@ -1,6 +1,20 @@
 import {
-  Utensils, ShoppingBag, Sparkles, Stethoscope, GraduationCap, Laptop, Building2, Dumbbell,
-  Scissors, Hotel, Car, Wrench, Store, Plane, Briefcase, type LucideIcon,
+  Utensils,
+  ShoppingBag,
+  Sparkles,
+  Stethoscope,
+  GraduationCap,
+  Laptop,
+  Building2,
+  Dumbbell,
+  Scissors,
+  Hotel,
+  Car,
+  Wrench,
+  Store,
+  Plane,
+  Briefcase,
+  type LucideIcon,
 } from 'lucide-react';
 
 /**

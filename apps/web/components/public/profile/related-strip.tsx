@@ -29,7 +29,9 @@ export function RelatedStrip({
   }, []);
 
   const { data, loading } = useCachedGet<any>(
-    categoryId && ready ? `/v1/businesses?categoryId=${encodeURIComponent(categoryId)}&limit=6` : null,
+    categoryId && ready
+      ? `/v1/businesses?categoryId=${encodeURIComponent(categoryId)}&limit=6`
+      : null,
     { ttlMs: 120_000 },
   );
 

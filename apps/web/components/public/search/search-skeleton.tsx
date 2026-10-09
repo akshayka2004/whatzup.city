@@ -2,9 +2,15 @@ import { GridSkeleton, Skel, PageHeaderSkeleton } from '@/components/common/skel
 
 /** Layout-matched placeholder for Search / Category: header, search bar, chip row, card grid. */
 /** `bare` drops the page padding, for use inside a layout that already pads (the Suspense fallback). */
-export function SearchPageSkeleton({ hero = false, bare = false }: { hero?: boolean; bare?: boolean }) {
+export function SearchPageSkeleton({
+  hero = false,
+  bare = false,
+}: {
+  hero?: boolean;
+  bare?: boolean;
+}) {
   return (
-    <div className={bare ? "space-y-5" : "mx-auto w-full max-w-6xl space-y-5 px-4 py-6 sm:px-6"}>
+    <div className={bare ? 'space-y-5' : 'mx-auto w-full max-w-6xl space-y-5 px-4 py-6 sm:px-6'}>
       {hero ? (
         <div className="rounded-3xl border border-border bg-card p-5 sm:p-7">
           <div className="flex items-center gap-4">

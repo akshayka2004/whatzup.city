@@ -58,14 +58,22 @@ export class DashboardService {
       // Cover banners and legacy branches are retired, so they no longer count against owners.
       const totalFields = 7;
 
-      if (business.name) score += 1; else missing.push('name');
-      if (business.description) score += 1; else missing.push('description');
-      if (business.logo) score += 1; else missing.push('logo');
-      if (business.address) score += 1; else missing.push('address');
-      if (business.phone || business.email) score += 1; else missing.push('contact_info');
-      if (business.operatingHours) score += 1; else missing.push('operating_hours');
-      if (business._count.offers > 0) score += 1; else missing.push('first_offer');
-      if (business._count.media > 0) score += 1; else missing.push('media');
+      if (business.name) score += 1;
+      else missing.push('name');
+      if (business.description) score += 1;
+      else missing.push('description');
+      if (business.logo) score += 1;
+      else missing.push('logo');
+      if (business.address) score += 1;
+      else missing.push('address');
+      if (business.phone || business.email) score += 1;
+      else missing.push('contact_info');
+      if (business.operatingHours) score += 1;
+      else missing.push('operating_hours');
+      if (business._count.offers > 0) score += 1;
+      else missing.push('first_offer');
+      if (business._count.media > 0) score += 1;
+      else missing.push('media');
 
       return { score: Math.round((score / totalFields) * 100), missing };
     });

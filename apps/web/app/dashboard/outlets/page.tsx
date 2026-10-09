@@ -53,7 +53,7 @@ interface BrandEventRow {
 
 const unwrap = <T,>(data: any, key?: string): T | null => {
   if (data == null) return null;
-  const body = key ? data[key] ?? data.data?.[key] : data;
+  const body = key ? (data[key] ?? data.data?.[key]) : data;
   return (body ?? null) as T | null;
 };
 
@@ -67,13 +67,20 @@ const formatDate = (iso?: string | null, withTime = false) => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   return withTime
-    ? d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+    ? d.toLocaleString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
     : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 /** A new outlet has no plan until its owner finishes /register?outlet=…; a rejected one is resubmitted there too. */
 const needsSetup = (o: BrandOutlet) =>
-  o.status === 'DRAFT' || o.status === 'REJECTED' || (o.status === 'PENDING_VERIFICATION' && !o.subscription);
+  o.status === 'DRAFT' ||
+  o.status === 'REJECTED' ||
+  (o.status === 'PENDING_VERIFICATION' && !o.subscription);
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -110,17 +117,23 @@ function AddOutletDialog({
     if (!open || categories.length) return;
     apiService.get<any>('/v1/categories').then((res) => {
       if (res.error) return;
-      const list: any[] = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.items ?? [];
-      setCategories(list.filter((c) => c?.slug && c?.name).map((c) => ({ slug: c.slug, name: c.name })));
+      const list: any[] = Array.isArray(res.data)
+        ? res.data
+        : (res.data?.data ?? res.data?.items ?? []);
+      setCategories(
+        list.filter((c) => c?.slug && c?.name).map((c) => ({ slug: c.slug, name: c.name })),
+      );
     });
   }, [open, categories.length]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!label.trim()) return setError('Enter the outlet name or area, e.g. Kozhikode - Mavoor Road.');
+    if (!label.trim())
+      return setError('Enter the outlet name or area, e.g. Kozhikode - Mavoor Road.');
     if (!/^\d{10}$/.test(phone)) return setError('Phone number must contain exactly 10 digits.');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return setError('Enter a valid email for this outlet.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      return setError('Enter a valid email for this outlet.');
 
     setSaving(true);
     const res = await apiService.post<any>(`/v1/brands/${brandId}/outlets`, {
@@ -148,7 +161,8 @@ function AddOutletDialog({
         <DialogHeader>
           <DialogTitle>Add an outlet</DialogTitle>
           <DialogDescription>
-            Each outlet has its own listing, offers, QR and plan. New outlets are reviewed by our team before they go live.
+            Each outlet has its own listing, offers, QR and plan. New outlets are reviewed by our
+            team before they go live.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
@@ -244,7 +258,10 @@ function AddOutletDialog({
           </div>
 
           {error && (
-            <p role="alert" className="rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2 text-xs text-danger-soft-foreground">
+            <p
+              role="alert"
+              className="rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2 text-xs text-danger-soft-foreground"
+            >
               {error}
             </p>
           )}
@@ -259,7 +276,11 @@ function AddOutletDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={saving} className="h-11 rounded-xl font-semibold cursor-pointer">
+            <Button
+              type="submit"
+              disabled={saving}
+              className="h-11 rounded-xl font-semibold cursor-pointer"
+            >
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" /> Adding...
@@ -279,8 +300,16 @@ function AddOutletDialog({
 
 function OutletsContent() {
   const router = useRouter();
-  const { brand, outlets, activeBusiness, activeBusinessId, isBrand, loading, switchOutlet, refresh } =
-    useActiveBusiness();
+  const {
+    brand,
+    outlets,
+    activeBusiness,
+    activeBusinessId,
+    isBrand,
+    loading,
+    switchOutlet,
+    refresh,
+  } = useActiveBusiness();
 
   const [summary, setSummary] = useState<Record<string, OutletSummary>>({});
   const [summaryLoading, setSummaryLoading] = useState(true);
@@ -307,8 +336,14 @@ function OutletsContent() {
       apiService.get<any>(`/v1/brands/${brandId}/events?limit=15`),
     ]).then(([sumRes, evRes]) => {
       if (!alive) return;
-      setSummary(sumRes.error ? {} : unwrap<Record<string, OutletSummary>>(sumRes.data, 'outlets') ?? {});
-      const evList = evRes.error ? [] : Array.isArray(evRes.data) ? evRes.data : evRes.data?.data ?? [];
+      setSummary(
+        sumRes.error ? {} : (unwrap<Record<string, OutletSummary>>(sumRes.data, 'outlets') ?? {}),
+      );
+      const evList = evRes.error
+        ? []
+        : Array.isArray(evRes.data)
+          ? evRes.data
+          : (evRes.data?.data ?? []);
       setEvents(evList);
       setSummaryLoading(false);
     });
@@ -399,14 +434,16 @@ function OutletsContent() {
               <Store className="h-5 w-5" />
             </div>
             <p className="text-sm text-muted-foreground">
-              Create a brand account to manage all your outlets from one login. Each outlet keeps its own address,
-              hours, offers, QR and plan, and they share one invoice profile.
+              Create a brand account to manage all your outlets from one login. Each outlet keeps
+              its own address, hours, offers, QR and plan, and they share one invoice profile.
             </p>
           </div>
           {activeBusiness ? (
             <BrandConvertForm businessId={activeBusiness.id} businessName={activeBusiness.name} />
           ) : (
-            <p className="text-sm text-muted-foreground">Register your business first, then come back here.</p>
+            <p className="text-sm text-muted-foreground">
+              Register your business first, then come back here.
+            </p>
           )}
         </Card>
       </div>
@@ -427,7 +464,9 @@ function OutletsContent() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between ui-fade-up">
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">{brand.name}</h1>
+          <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">
+            {brand.name}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {outlets.length} outlet{outlets.length === 1 ? '' : 's'} · {seriesText}
           </p>
@@ -448,7 +487,10 @@ function OutletsContent() {
         </div>
       )}
       {pageError && (
-        <p role="alert" className="rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2 text-sm text-danger-soft-foreground">
+        <p
+          role="alert"
+          className="rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2 text-sm text-danger-soft-foreground"
+        >
           {pageError}
         </p>
       )}
@@ -458,12 +500,22 @@ function OutletsContent() {
           const s = summary[o.id];
           const isActive = o.id === activeBusinessId;
           const stat = (n?: number, money = false) =>
-            summaryLoading || n === undefined ? '–' : money ? `₹${n.toLocaleString('en-IN')}` : n.toLocaleString('en-IN');
+            summaryLoading || n === undefined
+              ? '–'
+              : money
+                ? `₹${n.toLocaleString('en-IN')}`
+                : n.toLocaleString('en-IN');
           return (
             <Card key={o.id} className="rounded-2xl border-border bg-card p-4 space-y-4 ui-fade-up">
               <div className="flex items-start gap-3">
                 {o.logo ? (
-                  <ResponsiveImage src={o.logo} alt="" ratio="1" sizes="48px" className="h-12 w-12 shrink-0 rounded-xl" />
+                  <ResponsiveImage
+                    src={o.logo}
+                    alt=""
+                    ratio="1"
+                    sizes="48px"
+                    className="h-12 w-12 shrink-0 rounded-xl"
+                  />
                 ) : (
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-soft-foreground">
                     <Store className="h-5 w-5" />
@@ -471,10 +523,14 @@ function OutletsContent() {
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <h2 className="truncate text-base font-semibold text-foreground">{outletDisplayName(o)}</h2>
+                    <h2 className="truncate text-base font-semibold text-foreground">
+                      {outletDisplayName(o)}
+                    </h2>
                     <OutletStatusPill status={o.status} />
                     {o.isBrandHq && (
-                      <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-soft-foreground">HQ</span>
+                      <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-soft-foreground">
+                        HQ
+                      </span>
                     )}
                     {isActive && (
                       <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
@@ -482,7 +538,9 @@ function OutletsContent() {
                       </span>
                     )}
                   </div>
-                  {o.outletLabel && <p className="truncate text-xs text-muted-foreground">{o.name}</p>}
+                  {o.outletLabel && (
+                    <p className="truncate text-xs text-muted-foreground">{o.name}</p>
+                  )}
                   {o.city && (
                     <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                       <MapPin className="h-3 w-3" /> {o.city}
@@ -494,7 +552,9 @@ function OutletsContent() {
               <p className="text-sm text-muted-foreground">
                 {o.subscription ? (
                   <>
-                    <span className="font-medium text-foreground">{sentence(o.subscription.packageName)}</span>
+                    <span className="font-medium text-foreground">
+                      {sentence(o.subscription.packageName)}
+                    </span>
                     {' · '}
                     {sentence(o.subscription.status)}
                     {o.subscription.endDate ? ` · ends ${formatDate(o.subscription.endDate)}` : ''}
@@ -513,7 +573,11 @@ function OutletsContent() {
 
               <div className="flex flex-wrap items-center gap-2">
                 {needsSetup(o) && (
-                  <Button asChild variant="outline" className="h-11 flex-1 rounded-xl cursor-pointer ui-press">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-11 flex-1 rounded-xl cursor-pointer ui-press"
+                  >
                     <Link href={`/register?outlet=${encodeURIComponent(o.id)}`}>
                       {o.status === 'REJECTED' ? 'Fix and resubmit' : 'Continue setup'}
                     </Link>
@@ -568,23 +632,34 @@ function OutletsContent() {
                 <div className="min-w-0">
                   <p className="text-sm text-foreground">{ev.summary}</p>
                   {outletName(ev.businessId) && (
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{outletName(ev.businessId)}</p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {outletName(ev.businessId)}
+                    </p>
                   )}
                 </div>
-                <span className="shrink-0 text-xs text-muted-foreground">{formatDate(ev.createdAt, true)}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {formatDate(ev.createdAt, true)}
+                </span>
               </div>
             ))
           )}
         </Card>
       </section>
 
-      <AddOutletDialog open={addOpen} onOpenChange={setAddOpen} brandId={brand.id} brandName={brand.name} />
+      <AddOutletDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        brandId={brand.id}
+        brandName={brand.name}
+      />
 
       <Dialog open={!!editing} onOpenChange={(o) => !busy && !o && setEditing(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Edit outlet label</DialogTitle>
-            <DialogDescription>Shown in the outlet switcher and on the outlet&apos;s listing name.</DialogDescription>
+            <DialogDescription>
+              Shown in the outlet switcher and on the outlet&apos;s listing name.
+            </DialogDescription>
           </DialogHeader>
           <Input
             value={editLabel}
@@ -593,9 +668,18 @@ function OutletsContent() {
             placeholder="Kozhikode - Mavoor Road"
             className="h-11 rounded-xl bg-background"
           />
-          {dialogError && <p role="alert" className="text-xs text-destructive">{dialogError}</p>}
+          {dialogError && (
+            <p role="alert" className="text-xs text-destructive">
+              {dialogError}
+            </p>
+          )}
           <DialogFooter>
-            <Button variant="outline" disabled={busy} onClick={() => setEditing(null)} className="h-11 rounded-xl cursor-pointer">
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setEditing(null)}
+              className="h-11 rounded-xl cursor-pointer"
+            >
               Cancel
             </Button>
             <Button onClick={saveLabel} disabled={busy} className="h-11 rounded-xl cursor-pointer">
@@ -610,13 +694,24 @@ function OutletsContent() {
           <DialogHeader>
             <DialogTitle>Remove this outlet?</DialogTitle>
             <DialogDescription>
-              {removing ? `${outletDisplayName(removing)} will be removed from ${brand.name}. ` : ''}
+              {removing
+                ? `${outletDisplayName(removing)} will be removed from ${brand.name}. `
+                : ''}
               Your other outlets are not affected. If you remove it by mistake, contact support.
             </DialogDescription>
           </DialogHeader>
-          {dialogError && <p role="alert" className="text-xs text-destructive">{dialogError}</p>}
+          {dialogError && (
+            <p role="alert" className="text-xs text-destructive">
+              {dialogError}
+            </p>
+          )}
           <DialogFooter>
-            <Button variant="outline" disabled={busy} onClick={() => setRemoving(null)} className="h-11 rounded-xl cursor-pointer">
+            <Button
+              variant="outline"
+              disabled={busy}
+              onClick={() => setRemoving(null)}
+              className="h-11 rounded-xl cursor-pointer"
+            >
               Keep outlet
             </Button>
             <Button

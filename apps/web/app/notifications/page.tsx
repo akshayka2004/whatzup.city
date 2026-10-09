@@ -73,7 +73,7 @@ export default function NotificationsPage() {
     setLoading(true);
     const res = await apiService.get<any>('/v1/notifications');
     if (res.data && !res.error) {
-      const raw = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.items ?? [];
+      const raw = Array.isArray(res.data) ? res.data : (res.data?.data ?? res.data?.items ?? []);
       setNotifications(
         raw.map((n: ApiNotification) => ({
           id: n.id,
@@ -106,9 +106,7 @@ export default function NotificationsPage() {
 
   const handleToggleRead = async (id: string) => {
     await apiService.patch(`/v1/notifications/${id}/read`);
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)),
-    );
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)));
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -161,7 +159,9 @@ export default function NotificationsPage() {
                 >
                   <div className="flex items-start gap-4">
                     <div className="rounded-xl bg-muted/40 p-3 flex-shrink-0 border border-border">
-                      <Icon className={`h-6 w-6 ${iconColors[notification.type] || iconColors.default}`} />
+                      <Icon
+                        className={`h-6 w-6 ${iconColors[notification.type] || iconColors.default}`}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">

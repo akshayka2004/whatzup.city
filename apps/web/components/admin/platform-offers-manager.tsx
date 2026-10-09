@@ -22,21 +22,34 @@ import { Input } from '@/components/ui/input';
 import { apiService } from '@/lib/services/api-service';
 import { onboardingService } from '@/lib/services/onboarding-service';
 import {
-  PLATFORM_OFFER_CATEGORIES, STAYCATION_SUBTYPES,
-  SADYA_PROVIDER_TYPES, SADYA_DELIVERY_OPTIONS,
-  STAYCATION_PROPERTY_TYPES, STAYCATION_VIEWS, AC_OPTIONS,
-  DAYOUT_VENUE_TYPES, categoryLabel, subTypeLabel, rateLines,
-  type PlatformOfferCategory, type PlatformOfferDetails, type RateLine,
+  PLATFORM_OFFER_CATEGORIES,
+  STAYCATION_SUBTYPES,
+  SADYA_PROVIDER_TYPES,
+  SADYA_DELIVERY_OPTIONS,
+  STAYCATION_PROPERTY_TYPES,
+  STAYCATION_VIEWS,
+  AC_OPTIONS,
+  DAYOUT_VENUE_TYPES,
+  categoryLabel,
+  subTypeLabel,
+  rateLines,
+  type PlatformOfferCategory,
+  type PlatformOfferDetails,
+  type RateLine,
 } from '@/lib/platform-offers';
 import { cn } from '@/lib/utils';
-import {
-  Tag, Plus, Loader2, UploadCloud, Eye, EyeOff, Trash2, X, ImageIcon,
-} from 'lucide-react';
+import { Tag, Plus, Loader2, UploadCloud, Eye, EyeOff, Trash2, X, ImageIcon } from 'lucide-react';
 
 /** Freeform repeatable {label, rate} rows — used for Payasam types. */
 function RateLineEditor({
-  lines, onChange, labelPlaceholder,
-}: { lines: RateLine[]; onChange: (lines: RateLine[]) => void; labelPlaceholder: string }) {
+  lines,
+  onChange,
+  labelPlaceholder,
+}: {
+  lines: RateLine[];
+  onChange: (lines: RateLine[]) => void;
+  labelPlaceholder: string;
+}) {
   const update = (i: number, patch: Partial<RateLine>) =>
     onChange(lines.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
   const remove = (i: number) => onChange(lines.filter((_, idx) => idx !== i));
@@ -79,8 +92,14 @@ function RateLineEditor({
 
 /** Rate input per currently-selected chip — keeps rows in sync with the selection. */
 function PerSelectionRates({
-  selected, lines, onChange,
-}: { selected: string[]; lines: RateLine[]; onChange: (lines: RateLine[]) => void }) {
+  selected,
+  lines,
+  onChange,
+}: {
+  selected: string[];
+  lines: RateLine[];
+  onChange: (lines: RateLine[]) => void;
+}) {
   if (!selected.length) return null;
   const rateFor = (label: string) => lines.find((l) => l.label === label)?.rate || '';
   const setRate = (label: string, rate: string) => {
@@ -122,8 +141,14 @@ type Row = {
 
 /** Multi-select chip group — used for the several "pick any" fields. */
 function ChipGroup({
-  options, selected, onToggle,
-}: { options: readonly string[]; selected: string[]; onToggle: (v: string) => void }) {
+  options,
+  selected,
+  onToggle,
+}: {
+  options: readonly string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+}) {
   return (
     <div className="flex flex-wrap gap-2">
       {options.map((o) => {
@@ -149,8 +174,14 @@ function ChipGroup({
 }
 
 function Field({
-  label, children, hint,
-}: { label: string; children: React.ReactNode; hint?: string }) {
+  label,
+  children,
+  hint,
+}: {
+  label: string;
+  children: React.ReactNode;
+  hint?: string;
+}) {
   return (
     <label className="block space-y-1.5">
       <span className="text-xs font-medium text-muted-foreground">{label}</span>
@@ -185,21 +216,34 @@ export function PlatformOffersManager() {
   const load = async () => {
     setLoading(true);
     const res = await apiService.get<any>('/v1/platform-offers/admin');
-    const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+    const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
     setRows(list);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const resetForm = () => {
     setEditingId(null);
-    setCategory(''); setSubType('');
-    setTitle(''); setLocation(''); setPrice(''); setPhone(''); setDescription('');
-    setDetails({}); setPoster(null); setExistingImage(null); setError('');
+    setCategory('');
+    setSubType('');
+    setTitle('');
+    setLocation('');
+    setPrice('');
+    setPhone('');
+    setDescription('');
+    setDetails({});
+    setPoster(null);
+    setExistingImage(null);
+    setError('');
   };
 
-  const openCreate = () => { resetForm(); setOpen(true); };
+  const openCreate = () => {
+    resetForm();
+    setOpen(true);
+  };
 
   const openEdit = (r: Row) => {
     setEditingId(r.id);
@@ -217,8 +261,7 @@ export function PlatformOffersManager() {
     setOpen(true);
   };
 
-  const setD = (patch: Partial<PlatformOfferDetails>) =>
-    setDetails((d) => ({ ...d, ...patch }));
+  const setD = (patch: Partial<PlatformOfferDetails>) => setDetails((d) => ({ ...d, ...patch }));
 
   const toggleIn = (key: keyof PlatformOfferDetails, value: string) => {
     const cur = (details[key] as string[] | undefined) || [];
@@ -227,9 +270,7 @@ export function PlatformOffersManager() {
 
   const isStaycation = category === 'STAYCATION';
   const isSadyaLike = category === 'SADYA' || category === 'PAYASAM';
-  const canSave =
-    !!category && !!title.trim() && !!location.trim() &&
-    (!isStaycation || !!subType);
+  const canSave = !!category && !!title.trim() && !!location.trim() && (!isStaycation || !!subType);
 
   const save = async (publish: boolean) => {
     if (!canSave) return;
@@ -242,7 +283,10 @@ export function PlatformOffersManager() {
         // hands out a signed URL for display.
         const signed = await onboardingService.getSignedUrl(
           // No business to scope by — the API falls back to the admin's own id.
-          '', poster.name, poster.type, 'payment',
+          '',
+          poster.name,
+          poster.type,
+          'payment',
         );
         if (!signed.data || signed.error) {
           throw new Error(signed.error || 'Could not get an upload URL for the poster.');
@@ -286,7 +330,10 @@ export function PlatformOffersManager() {
     const next = r.status === 'PUBLISHED' ? 'UNPUBLISHED' : 'PUBLISHED';
     const res = await apiService.patch<any>(`/v1/platform-offers/${r.id}/status`, { status: next });
     setBusyId(null);
-    if (res.error) { setMsg(res.error); return; }
+    if (res.error) {
+      setMsg(res.error);
+      return;
+    }
     setRows((cur) => cur.map((x) => (x.id === r.id ? { ...x, status: next as any } : x)));
   };
 
@@ -294,7 +341,10 @@ export function PlatformOffersManager() {
     setBusyId(r.id);
     const res = await apiService.delete<any>(`/v1/platform-offers/${r.id}`);
     setBusyId(null);
-    if (res.error) { setMsg(res.error); return; }
+    if (res.error) {
+      setMsg(res.error);
+      return;
+    }
     setRows((cur) => cur.filter((x) => x.id !== r.id));
     setMsg('Offer deleted.');
   };
@@ -337,7 +387,13 @@ export function PlatformOffersManager() {
               <Card key={r.id} className="p-4">
                 <div className="flex gap-4">
                   {r.imageSignedUrl ? (
-                    <ResponsiveImage src={r.imageSignedUrl} alt="" ratio="1" sizes="80px" className="h-20 w-20 shrink-0 rounded-xl border border-border" />
+                    <ResponsiveImage
+                      src={r.imageSignedUrl}
+                      alt=""
+                      ratio="1"
+                      sizes="80px"
+                      className="h-20 w-20 shrink-0 rounded-xl border border-border"
+                    />
                   ) : (
                     <div className="h-20 w-20 shrink-0 rounded-xl border border-dashed border-border flex items-center justify-center">
                       <ImageIcon className="h-5 w-5 text-muted-foreground" />
@@ -394,9 +450,13 @@ export function PlatformOffersManager() {
                         {busyId === r.id ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
                         ) : r.status === 'PUBLISHED' ? (
-                          <><EyeOff className="h-3 w-3" /> Unpublish</>
+                          <>
+                            <EyeOff className="h-3 w-3" /> Unpublish
+                          </>
                         ) : (
-                          <><Eye className="h-3 w-3" /> Publish</>
+                          <>
+                            <Eye className="h-3 w-3" /> Publish
+                          </>
                         )}
                       </Button>
                       <Button
@@ -417,536 +477,596 @@ export function PlatformOffersManager() {
 
       {/* ── Composer ─────────────────────────────────────────────── */}
       {open && (
-        <ModalSurface onClose={() => { setOpen(false); resetForm(); }} label="Platform offer" className="sm:max-w-2xl" hideClose>
-            <div className="flex items-start justify-between gap-4 p-5 border-b border-border">
-              <div>
-                <h2 className="text-lg font-bold text-foreground">
-                  {editingId ? 'Edit platform offer' : 'New platform offer'}
-                </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Fields change with the category you pick.
-                </p>
+        <ModalSurface
+          onClose={() => {
+            setOpen(false);
+            resetForm();
+          }}
+          label="Platform offer"
+          className="sm:max-w-2xl"
+          hideClose
+        >
+          <div className="flex items-start justify-between gap-4 p-5 border-b border-border">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">
+                {editingId ? 'Edit platform offer' : 'New platform offer'}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Fields change with the category you pick.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                resetForm();
+              }}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="p-5 space-y-5">
+            {/* Category */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Category</p>
+              <div className="grid sm:grid-cols-2 gap-2">
+                {PLATFORM_OFFER_CATEGORIES.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => {
+                      setCategory(c.value);
+                      setSubType('');
+                      setDetails({}); // field sets differ per category
+                    }}
+                    className={cn(
+                      'p-3 rounded-xl border text-left transition cursor-pointer',
+                      category === c.value
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-border',
+                    )}
+                  >
+                    <div className="text-sm font-semibold text-foreground">{c.label}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{c.blurb}</div>
+                  </button>
+                ))}
               </div>
-              <button
-                type="button"
-                onClick={() => { setOpen(false); resetForm(); }}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
             </div>
 
-            <div className="p-5 space-y-5">
-              {/* Category */}
+            {/* Staycation sub-type */}
+            {isStaycation && (
               <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Category</p>
+                <p className="text-xs font-medium text-muted-foreground mb-2">Staycation type</p>
                 <div className="grid sm:grid-cols-2 gap-2">
-                  {PLATFORM_OFFER_CATEGORIES.map((c) => (
+                  {STAYCATION_SUBTYPES.map((s) => (
                     <button
-                      key={c.value}
+                      key={s.value}
                       type="button"
                       onClick={() => {
-                        setCategory(c.value);
-                        setSubType('');
-                        setDetails({}); // field sets differ per category
+                        setSubType(s.value);
+                        setDetails({});
                       }}
                       className={cn(
                         'p-3 rounded-xl border text-left transition cursor-pointer',
-                        category === c.value
+                        subType === s.value
                           ? 'border-primary bg-primary/10'
                           : 'border-border hover:border-border',
                       )}
                     >
-                      <div className="text-sm font-semibold text-foreground">{c.label}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">{c.blurb}</div>
+                      <div className="text-sm font-semibold text-foreground">{s.label}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{s.blurb}</div>
                     </button>
                   ))}
                 </div>
               </div>
+            )}
 
-              {/* Staycation sub-type */}
-              {isStaycation && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Staycation type</p>
-                  <div className="grid sm:grid-cols-2 gap-2">
-                    {STAYCATION_SUBTYPES.map((s) => (
-                      <button
-                        key={s.value}
-                        type="button"
-                        onClick={() => { setSubType(s.value); setDetails({}); }}
-                        className={cn(
-                          'p-3 rounded-xl border text-left transition cursor-pointer',
-                          subType === s.value
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border hover:border-border',
-                        )}
-                      >
-                        <div className="text-sm font-semibold text-foreground">{s.label}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{s.blurb}</div>
-                      </button>
-                    ))}
-                  </div>
+            {category && (!isStaycation || subType) && (
+              <>
+                {/* Common core */}
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Field label="Name of business / property *">
+                    <Input
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      className="h-11 rounded-xl"
+                    />
+                  </Field>
+                  <Field label="Location *">
+                    <Input
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      className="h-11 rounded-xl"
+                    />
+                  </Field>
+                  {!isSadyaLike && !isStaycation && (
+                    <Field label="Price" hint="Free text — e.g. ₹850 per head, or ₹5,000 onwards">
+                      <Input
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        className="h-11 rounded-xl"
+                      />
+                    </Field>
+                  )}
+                  <Field label="Phone">
+                    <Input
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="h-11 rounded-xl"
+                    />
+                  </Field>
                 </div>
-              )}
 
-              {category && (!isStaycation || subType) && (
-                <>
-                  {/* Common core */}
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    <Field label="Name of business / property *">
-                      <Input value={title} onChange={(e) => setTitle(e.target.value)} className="h-11 rounded-xl" />
-                    </Field>
-                    <Field label="Location *">
-                      <Input value={location} onChange={(e) => setLocation(e.target.value)} className="h-11 rounded-xl" />
-                    </Field>
-                    {!isSadyaLike && !isStaycation && (
-                      <Field label="Price" hint="Free text — e.g. ₹850 per head, or ₹5,000 onwards">
-                        <Input value={price} onChange={(e) => setPrice(e.target.value)} className="h-11 rounded-xl" />
+                {/* ── Sadya / Payasam ───────────────────────────── */}
+                {isSadyaLike && (
+                  <div className="space-y-4 rounded-xl border border-border p-4">
+                    {category === 'PAYASAM' && (
+                      <Field label="Payasam types and rates" hint="e.g. Palada Payasam — ₹80/head">
+                        <RateLineEditor
+                          lines={details.payasamTypes || []}
+                          onChange={(lines) => setD({ payasamTypes: lines })}
+                          labelPlaceholder="Payasam type"
+                        />
                       </Field>
                     )}
-                    <Field label="Phone">
-                      <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="h-11 rounded-xl" />
+                    <Field label="Provider type">
+                      <div className="flex flex-wrap gap-2">
+                        {SADYA_PROVIDER_TYPES.map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setD({ providerType: t })}
+                            className={cn(
+                              'rounded-full border px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors',
+                              details.providerType === t
+                                ? 'border-primary bg-brand-soft text-brand-soft-foreground'
+                                : 'border-border text-muted-foreground hover:text-foreground',
+                            )}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
                     </Field>
-                  </div>
 
-                  {/* ── Sadya / Payasam ───────────────────────────── */}
-                  {isSadyaLike && (
-                    <div className="space-y-4 rounded-xl border border-border p-4">
-                      {category === 'PAYASAM' && (
-                        <Field label="Payasam types and rates" hint="e.g. Palada Payasam — ₹80/head">
-                          <RateLineEditor
-                            lines={details.payasamTypes || []}
-                            onChange={(lines) => setD({ payasamTypes: lines })}
-                            labelPlaceholder="Payasam type"
-                          />
-                        </Field>
+                    <Field label="Available timing">
+                      <Input
+                        value={details.availableTiming || ''}
+                        onChange={(e) => setD({ availableTiming: e.target.value })}
+                        placeholder="e.g. 11:30 AM – 3:00 PM"
+                        className="h-11 rounded-xl"
+                      />
+                    </Field>
+
+                    {/* Pre-booking and delivery can both apply to one offer */}
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!details.hasPreBooking}
+                          onChange={(e) => setD({ hasPreBooking: e.target.checked })}
+                          className="h-4 w-4 cursor-pointer"
+                        />
+                        <span className="text-sm font-medium text-foreground">
+                          Pre-booking available
+                        </span>
+                      </label>
+                      {details.hasPreBooking && (
+                        <div className="grid sm:grid-cols-3 gap-3 pl-6">
+                          <Field label="Pricing / package">
+                            <Input
+                              value={details.preBookingPackage || ''}
+                              onChange={(e) => setD({ preBookingPackage: e.target.value })}
+                              className="h-11 rounded-xl"
+                            />
+                          </Field>
+                          <Field label="Sadhya available timing">
+                            <Input
+                              value={details.sadhyaTiming || ''}
+                              onChange={(e) => setD({ sadhyaTiming: e.target.value })}
+                              className="h-11 rounded-xl"
+                            />
+                          </Field>
+                          <Field label="Pre-booking rate">
+                            <Input
+                              value={details.preBookingRate || ''}
+                              onChange={(e) => setD({ preBookingRate: e.target.value })}
+                              className="h-11 rounded-xl"
+                            />
+                          </Field>
+                        </div>
                       )}
-                      <Field label="Provider type">
-                        <div className="flex flex-wrap gap-2">
-                          {SADYA_PROVIDER_TYPES.map((t) => (
+
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!details.hasDelivery}
+                          onChange={(e) => setD({ hasDelivery: e.target.checked })}
+                          className="h-4 w-4 cursor-pointer"
+                        />
+                        <span className="text-sm font-medium text-foreground">
+                          Delivery / serving options
+                        </span>
+                      </label>
+                      {details.hasDelivery && (
+                        <div className="pl-6 space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            Shown to customers for information only — orders are not taken on the
+                            platform.
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {SADYA_DELIVERY_OPTIONS.map((o) => {
+                              const on = (details.deliveryOptions || []).includes(o.key);
+                              return (
+                                <button
+                                  key={o.key}
+                                  type="button"
+                                  onClick={() => toggleIn('deliveryOptions', o.key)}
+                                  className={cn(
+                                    'rounded-full border px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors',
+                                    on
+                                      ? 'border-primary bg-brand-soft text-brand-soft-foreground'
+                                      : 'border-border text-muted-foreground hover:text-foreground',
+                                  )}
+                                >
+                                  {o.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {(details.deliveryOptions || []).includes('freeDelivery') && (
+                            <Field label="Free delivery within (km)">
+                              <Input
+                                value={details.freeDeliveryKm || ''}
+                                onChange={(e) =>
+                                  setD({ freeDeliveryKm: e.target.value.replace(/\D/g, '') })
+                                }
+                                inputMode="numeric"
+                                className="h-11 rounded-xl max-w-[160px]"
+                              />
+                            </Field>
+                          )}
+                          <Field label="Delivery rate">
+                            <Input
+                              value={details.deliveryRate || ''}
+                              onChange={(e) => setD({ deliveryRate: e.target.value })}
+                              className="h-11 rounded-xl max-w-[200px]"
+                            />
+                          </Field>
+                        </div>
+                      )}
+
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!details.hasDineIn}
+                          onChange={(e) => setD({ hasDineIn: e.target.checked })}
+                          className="h-4 w-4 cursor-pointer"
+                        />
+                        <span className="text-sm font-medium text-foreground">
+                          Dine-in available
+                        </span>
+                      </label>
+                      {details.hasDineIn && (
+                        <div className="pl-6">
+                          <Field label="Dine-in rate">
+                            <Input
+                              value={details.dineInRate || ''}
+                              onChange={(e) => setD({ dineInRate: e.target.value })}
+                              className="h-11 rounded-xl max-w-[200px]"
+                            />
+                          </Field>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Staycation: property ──────────────────────── */}
+                {isStaycation && subType === 'PROPERTY' && (
+                  <div className="space-y-4 rounded-xl border border-border p-4">
+                    <Field label="Property type">
+                      <ChipGroup
+                        options={STAYCATION_PROPERTY_TYPES}
+                        selected={details.propertyTypes || []}
+                        onToggle={(v) => toggleIn('propertyTypes', v)}
+                      />
+                    </Field>
+                    {!!(details.propertyTypes || []).length && (
+                      <Field label="Rate per property type">
+                        <PerSelectionRates
+                          selected={details.propertyTypes || []}
+                          lines={details.propertyTypeRates || []}
+                          onChange={(lines) => setD({ propertyTypeRates: lines })}
+                        />
+                      </Field>
+                    )}
+                    <Field label="View / frontage">
+                      <ChipGroup
+                        options={STAYCATION_VIEWS}
+                        selected={details.views || []}
+                        onToggle={(v) => toggleIn('views', v)}
+                      />
+                    </Field>
+                    <Field label="Amenities">
+                      <textarea
+                        value={details.amenities || ''}
+                        onChange={(e) => setD({ amenities: e.target.value })}
+                        rows={2}
+                        placeholder="Pool, Wi-Fi, breakfast included…"
+                        className="w-full p-3 border border-input bg-background text-foreground rounded-xl text-sm focus:ring-1 focus:outline-none"
+                      />
+                    </Field>
+                    <div className="grid sm:grid-cols-3 gap-3">
+                      <Field label="Min pax">
+                        <Input
+                          value={details.minPax || ''}
+                          onChange={(e) => setD({ minPax: e.target.value.replace(/\D/g, '') })}
+                          inputMode="numeric"
+                          className="h-11 rounded-xl"
+                        />
+                      </Field>
+                      <Field label="Max pax">
+                        <Input
+                          value={details.maxPax || ''}
+                          onChange={(e) => setD({ maxPax: e.target.value.replace(/\D/g, '') })}
+                          inputMode="numeric"
+                          className="h-11 rounded-xl"
+                        />
+                      </Field>
+                      <Field label="AC / Non-AC">
+                        <div className="inline-flex rounded-xl border border-border bg-secondary/40 p-1">
+                          {AC_OPTIONS.map((a) => (
                             <button
-                              key={t}
+                              key={a}
                               type="button"
-                              onClick={() => setD({ providerType: t })}
+                              onClick={() => setD({ acStatus: a })}
                               className={cn(
-                                'rounded-full border px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors',
-                                details.providerType === t
-                                  ? 'border-primary bg-brand-soft text-brand-soft-foreground'
-                                  : 'border-border text-muted-foreground hover:text-foreground',
+                                'rounded-lg px-3 py-1.5 text-xs font-medium cursor-pointer transition-all',
+                                details.acStatus === a
+                                  ? 'bg-primary text-primary-foreground shadow-sm'
+                                  : 'text-muted-foreground hover:text-foreground',
                               )}
                             >
-                              {t}
+                              {a}
                             </button>
                           ))}
                         </div>
                       </Field>
+                    </div>
 
-                      <Field label="Available timing">
+                    {(details.acStatus === 'AC' || details.acStatus === 'Both') && (
+                      <Field label="AC rate">
                         <Input
-                          value={details.availableTiming || ''}
-                          onChange={(e) => setD({ availableTiming: e.target.value })}
-                          placeholder="e.g. 11:30 AM – 3:00 PM"
-                          className="h-11 rounded-xl"
+                          value={details.acRate || ''}
+                          onChange={(e) => setD({ acRate: e.target.value })}
+                          className="h-11 rounded-xl max-w-[200px]"
                         />
                       </Field>
-
-                      {/* Pre-booking and delivery can both apply to one offer */}
-                      <div className="space-y-3">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={!!details.hasPreBooking}
-                            onChange={(e) => setD({ hasPreBooking: e.target.checked })}
-                            className="h-4 w-4 cursor-pointer"
-                          />
-                          <span className="text-sm font-medium text-foreground">Pre-booking available</span>
-                        </label>
-                        {details.hasPreBooking && (
-                          <div className="grid sm:grid-cols-3 gap-3 pl-6">
-                            <Field label="Pricing / package">
-                              <Input
-                                value={details.preBookingPackage || ''}
-                                onChange={(e) => setD({ preBookingPackage: e.target.value })}
-                                className="h-11 rounded-xl"
-                              />
-                            </Field>
-                            <Field label="Sadhya available timing">
-                              <Input
-                                value={details.sadhyaTiming || ''}
-                                onChange={(e) => setD({ sadhyaTiming: e.target.value })}
-                                className="h-11 rounded-xl"
-                              />
-                            </Field>
-                            <Field label="Pre-booking rate">
-                              <Input
-                                value={details.preBookingRate || ''}
-                                onChange={(e) => setD({ preBookingRate: e.target.value })}
-                                className="h-11 rounded-xl"
-                              />
-                            </Field>
-                          </div>
-                        )}
-
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={!!details.hasDelivery}
-                            onChange={(e) => setD({ hasDelivery: e.target.checked })}
-                            className="h-4 w-4 cursor-pointer"
-                          />
-                          <span className="text-sm font-medium text-foreground">Delivery / serving options</span>
-                        </label>
-                        {details.hasDelivery && (
-                          <div className="pl-6 space-y-2">
-                            <p className="text-xs text-muted-foreground">
-                              Shown to customers for information only — orders are not taken on the platform.
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {SADYA_DELIVERY_OPTIONS.map((o) => {
-                                const on = (details.deliveryOptions || []).includes(o.key);
-                                return (
-                                  <button
-                                    key={o.key}
-                                    type="button"
-                                    onClick={() => toggleIn('deliveryOptions', o.key)}
-                                    className={cn(
-                                      'rounded-full border px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors',
-                                      on
-                                        ? 'border-primary bg-brand-soft text-brand-soft-foreground'
-                                        : 'border-border text-muted-foreground hover:text-foreground',
-                                    )}
-                                  >
-                                    {o.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            {(details.deliveryOptions || []).includes('freeDelivery') && (
-                              <Field label="Free delivery within (km)">
-                                <Input
-                                  value={details.freeDeliveryKm || ''}
-                                  onChange={(e) => setD({ freeDeliveryKm: e.target.value.replace(/\D/g, '') })}
-                                  inputMode="numeric"
-                                  className="h-11 rounded-xl max-w-[160px]"
-                                />
-                              </Field>
-                            )}
-                            <Field label="Delivery rate">
-                              <Input
-                                value={details.deliveryRate || ''}
-                                onChange={(e) => setD({ deliveryRate: e.target.value })}
-                                className="h-11 rounded-xl max-w-[200px]"
-                              />
-                            </Field>
-                          </div>
-                        )}
-
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={!!details.hasDineIn}
-                            onChange={(e) => setD({ hasDineIn: e.target.checked })}
-                            className="h-4 w-4 cursor-pointer"
-                          />
-                          <span className="text-sm font-medium text-foreground">Dine-in available</span>
-                        </label>
-                        {details.hasDineIn && (
-                          <div className="pl-6">
-                            <Field label="Dine-in rate">
-                              <Input
-                                value={details.dineInRate || ''}
-                                onChange={(e) => setD({ dineInRate: e.target.value })}
-                                className="h-11 rounded-xl max-w-[200px]"
-                              />
-                            </Field>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── Staycation: property ──────────────────────── */}
-                  {isStaycation && subType === 'PROPERTY' && (
-                    <div className="space-y-4 rounded-xl border border-border p-4">
-                      <Field label="Property type">
-                        <ChipGroup
-                          options={STAYCATION_PROPERTY_TYPES}
-                          selected={details.propertyTypes || []}
-                          onToggle={(v) => toggleIn('propertyTypes', v)}
-                        />
-                      </Field>
-                      {!!(details.propertyTypes || []).length && (
-                        <Field label="Rate per property type">
-                          <PerSelectionRates
-                            selected={details.propertyTypes || []}
-                            lines={details.propertyTypeRates || []}
-                            onChange={(lines) => setD({ propertyTypeRates: lines })}
-                          />
-                        </Field>
-                      )}
-                      <Field label="View / frontage">
-                        <ChipGroup
-                          options={STAYCATION_VIEWS}
-                          selected={details.views || []}
-                          onToggle={(v) => toggleIn('views', v)}
-                        />
-                      </Field>
-                      <Field label="Amenities">
-                        <textarea
-                          value={details.amenities || ''}
-                          onChange={(e) => setD({ amenities: e.target.value })}
-                          rows={2}
-                          placeholder="Pool, Wi-Fi, breakfast included…"
-                          className="w-full p-3 border border-input bg-background text-foreground rounded-xl text-sm focus:ring-1 focus:outline-none"
-                        />
-                      </Field>
-                      <div className="grid sm:grid-cols-3 gap-3">
-                        <Field label="Min pax">
-                          <Input
-                            value={details.minPax || ''}
-                            onChange={(e) => setD({ minPax: e.target.value.replace(/\D/g, '') })}
-                            inputMode="numeric"
-                            className="h-11 rounded-xl"
-                          />
-                        </Field>
-                        <Field label="Max pax">
-                          <Input
-                            value={details.maxPax || ''}
-                            onChange={(e) => setD({ maxPax: e.target.value.replace(/\D/g, '') })}
-                            inputMode="numeric"
-                            className="h-11 rounded-xl"
-                          />
-                        </Field>
-                        <Field label="AC / Non-AC">
-                          <div className="inline-flex rounded-xl border border-border bg-secondary/40 p-1">
-                            {AC_OPTIONS.map((a) => (
-                              <button
-                                key={a}
-                                type="button"
-                                onClick={() => setD({ acStatus: a })}
-                                className={cn(
-                                  'rounded-lg px-3 py-1.5 text-xs font-medium cursor-pointer transition-all',
-                                  details.acStatus === a
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground',
-                                )}
-                              >
-                                {a}
-                              </button>
-                            ))}
-                          </div>
-                        </Field>
-                      </div>
-
-                      {(details.acStatus === 'AC' || details.acStatus === 'Both') && (
-                        <Field label="AC rate">
-                          <Input
-                            value={details.acRate || ''}
-                            onChange={(e) => setD({ acRate: e.target.value })}
-                            className="h-11 rounded-xl max-w-[200px]"
-                          />
-                        </Field>
-                      )}
-                      {(details.acStatus === 'Non-AC' || details.acStatus === 'Both') && (
-                        <Field label="Non-AC rate">
-                          <Input
-                            value={details.nonAcRate || ''}
-                            onChange={(e) => setD({ nonAcRate: e.target.value })}
-                            className="h-11 rounded-xl max-w-[200px]"
-                          />
-                        </Field>
-                      )}
-
-                      <Field label="Rate by group size" hint="Optional — add a rate per pax slab, e.g. 2-4 pax">
-                        <div className="space-y-2">
-                          {(details.paxSlabRates || []).map((slab, i) => (
-                            <div key={i} className="flex gap-2">
-                              <Input
-                                value={slab.minPax}
-                                onChange={(e) => {
-                                  const rows = [...(details.paxSlabRates || [])];
-                                  rows[i] = { ...rows[i], minPax: e.target.value.replace(/\D/g, '') };
-                                  setD({ paxSlabRates: rows });
-                                }}
-                                placeholder="Min pax"
-                                inputMode="numeric"
-                                className="h-10 rounded-lg w-24"
-                              />
-                              <Input
-                                value={slab.maxPax}
-                                onChange={(e) => {
-                                  const rows = [...(details.paxSlabRates || [])];
-                                  rows[i] = { ...rows[i], maxPax: e.target.value.replace(/\D/g, '') };
-                                  setD({ paxSlabRates: rows });
-                                }}
-                                placeholder="Max pax"
-                                inputMode="numeric"
-                                className="h-10 rounded-lg w-24"
-                              />
-                              <Input
-                                value={slab.rate}
-                                onChange={(e) => {
-                                  const rows = [...(details.paxSlabRates || [])];
-                                  rows[i] = { ...rows[i], rate: e.target.value };
-                                  setD({ paxSlabRates: rows });
-                                }}
-                                placeholder="Rate"
-                                className="h-10 rounded-lg flex-1"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setD({
-                                  paxSlabRates: (details.paxSlabRates || []).filter((_, idx) => idx !== i),
-                                })}
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive active:scale-95 cursor-pointer"
-                                aria-label="Remove"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ))}
-                          <button
-                            type="button"
-                            onClick={() => setD({
-                              paxSlabRates: [...(details.paxSlabRates || []), { minPax: '', maxPax: '', rate: '' }],
-                            })}
-                            className="text-xs font-medium text-primary hover:underline cursor-pointer"
-                          >
-                            + Add slab
-                          </button>
-                        </div>
-                      </Field>
-                    </div>
-                  )}
-
-                  {/* ── Staycation: day-out ───────────────────────── */}
-                  {isStaycation && subType === 'DAYOUT' && (
-                    <div className="space-y-4 rounded-xl border border-border p-4">
-                      <Field label="Venue type">
-                        <ChipGroup
-                          options={DAYOUT_VENUE_TYPES}
-                          selected={details.venueTypes || []}
-                          onToggle={(v) => toggleIn('venueTypes', v)}
-                        />
-                      </Field>
-                      {!!(details.venueTypes || []).length && (
-                        <Field label="Rate per venue type">
-                          <PerSelectionRates
-                            selected={details.venueTypes || []}
-                            lines={details.venueTypeRates || []}
-                            onChange={(lines) => setD({ venueTypeRates: lines })}
-                          />
-                        </Field>
-                      )}
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        <Field label="Minimum team count">
-                          <Input
-                            value={details.minTeamCount || ''}
-                            onChange={(e) => setD({ minTeamCount: e.target.value.replace(/\D/g, '') })}
-                            inputMode="numeric"
-                            className="h-11 rounded-xl"
-                          />
-                        </Field>
-                        <Field label="Time">
-                          <Input
-                            value={details.time || ''}
-                            onChange={(e) => setD({ time: e.target.value })}
-                            placeholder="e.g. 9:00 AM – 6:00 PM"
-                            className="h-11 rounded-xl"
-                          />
-                        </Field>
-                      </div>
-                      <Field label="Amenities">
-                        <textarea
-                          value={details.amenities || ''}
-                          onChange={(e) => setD({ amenities: e.target.value })}
-                          rows={2}
-                          className="w-full p-3 border border-input bg-background text-foreground rounded-xl text-sm focus:ring-1 focus:outline-none"
-                        />
-                      </Field>
-                    </div>
-                  )}
-
-                  {/* ── Clothing / Electronics ────────────────────── */}
-                  {(category === 'CLOTHING' || category === 'ELECTRONICS') && (
-                    <div className="space-y-4 rounded-xl border border-border p-4">
-                      <Field
-                        label="Brand / category"
-                        hint="Awaiting a detailed field list — using the generic template for now."
-                      >
-                        <Input
-                          value={details.brandOrCategory || ''}
-                          onChange={(e) => setD({ brandOrCategory: e.target.value })}
-                          className="h-11 rounded-xl"
-                        />
-                      </Field>
-                    </div>
-                  )}
-
-                  {/* Description + poster */}
-                  <Field label="Description">
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      rows={3}
-                      placeholder="What the customer gets…"
-                      className="w-full p-3 border border-input bg-background text-foreground rounded-xl text-sm focus:ring-1 focus:outline-none"
-                    />
-                  </Field>
-
-                  <Field label="Poster / image" hint="Optional. JPG, PNG, WEBP or PDF.">
-                    <label className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-dashed border-input cursor-pointer hover:bg-muted/40 transition">
-                      <UploadCloud className="h-5 w-5 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">
-                        {poster ? poster.name : existingImage ? 'Replace current image' : 'Click to upload'}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        className="hidden"
-                        onChange={(e) => setPoster(e.target.files?.[0] || null)}
-                      />
-                    </label>
-                    {existingImage && !poster && (
-                      // eslint-disable-next-line @next/next/no-img-element -- short-lived signed preview in the editor
-                      <img
-                        src={existingImage}
-                        alt=""
-                        className="mt-2 h-24 w-24 rounded-xl object-cover border border-border"
-                      />
                     )}
-                  </Field>
+                    {(details.acStatus === 'Non-AC' || details.acStatus === 'Both') && (
+                      <Field label="Non-AC rate">
+                        <Input
+                          value={details.nonAcRate || ''}
+                          onChange={(e) => setD({ nonAcRate: e.target.value })}
+                          className="h-11 rounded-xl max-w-[200px]"
+                        />
+                      </Field>
+                    )}
 
-                  {error && <p className="text-xs text-destructive">{error}</p>}
-                </>
-              )}
-            </div>
+                    <Field
+                      label="Rate by group size"
+                      hint="Optional — add a rate per pax slab, e.g. 2-4 pax"
+                    >
+                      <div className="space-y-2">
+                        {(details.paxSlabRates || []).map((slab, i) => (
+                          <div key={i} className="flex gap-2">
+                            <Input
+                              value={slab.minPax}
+                              onChange={(e) => {
+                                const rows = [...(details.paxSlabRates || [])];
+                                rows[i] = { ...rows[i], minPax: e.target.value.replace(/\D/g, '') };
+                                setD({ paxSlabRates: rows });
+                              }}
+                              placeholder="Min pax"
+                              inputMode="numeric"
+                              className="h-10 rounded-lg w-24"
+                            />
+                            <Input
+                              value={slab.maxPax}
+                              onChange={(e) => {
+                                const rows = [...(details.paxSlabRates || [])];
+                                rows[i] = { ...rows[i], maxPax: e.target.value.replace(/\D/g, '') };
+                                setD({ paxSlabRates: rows });
+                              }}
+                              placeholder="Max pax"
+                              inputMode="numeric"
+                              className="h-10 rounded-lg w-24"
+                            />
+                            <Input
+                              value={slab.rate}
+                              onChange={(e) => {
+                                const rows = [...(details.paxSlabRates || [])];
+                                rows[i] = { ...rows[i], rate: e.target.value };
+                                setD({ paxSlabRates: rows });
+                              }}
+                              placeholder="Rate"
+                              className="h-10 rounded-lg flex-1"
+                            />
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setD({
+                                  paxSlabRates: (details.paxSlabRates || []).filter(
+                                    (_, idx) => idx !== i,
+                                  ),
+                                })
+                              }
+                              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive active:scale-95 cursor-pointer"
+                              aria-label="Remove"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setD({
+                              paxSlabRates: [
+                                ...(details.paxSlabRates || []),
+                                { minPax: '', maxPax: '', rate: '' },
+                              ],
+                            })
+                          }
+                          className="text-xs font-medium text-primary hover:underline cursor-pointer"
+                        >
+                          + Add slab
+                        </button>
+                      </div>
+                    </Field>
+                  </div>
+                )}
 
-            <div className="flex flex-wrap justify-between gap-3 p-5 border-t border-border">
+                {/* ── Staycation: day-out ───────────────────────── */}
+                {isStaycation && subType === 'DAYOUT' && (
+                  <div className="space-y-4 rounded-xl border border-border p-4">
+                    <Field label="Venue type">
+                      <ChipGroup
+                        options={DAYOUT_VENUE_TYPES}
+                        selected={details.venueTypes || []}
+                        onToggle={(v) => toggleIn('venueTypes', v)}
+                      />
+                    </Field>
+                    {!!(details.venueTypes || []).length && (
+                      <Field label="Rate per venue type">
+                        <PerSelectionRates
+                          selected={details.venueTypes || []}
+                          lines={details.venueTypeRates || []}
+                          onChange={(lines) => setD({ venueTypeRates: lines })}
+                        />
+                      </Field>
+                    )}
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <Field label="Minimum team count">
+                        <Input
+                          value={details.minTeamCount || ''}
+                          onChange={(e) =>
+                            setD({ minTeamCount: e.target.value.replace(/\D/g, '') })
+                          }
+                          inputMode="numeric"
+                          className="h-11 rounded-xl"
+                        />
+                      </Field>
+                      <Field label="Time">
+                        <Input
+                          value={details.time || ''}
+                          onChange={(e) => setD({ time: e.target.value })}
+                          placeholder="e.g. 9:00 AM – 6:00 PM"
+                          className="h-11 rounded-xl"
+                        />
+                      </Field>
+                    </div>
+                    <Field label="Amenities">
+                      <textarea
+                        value={details.amenities || ''}
+                        onChange={(e) => setD({ amenities: e.target.value })}
+                        rows={2}
+                        className="w-full p-3 border border-input bg-background text-foreground rounded-xl text-sm focus:ring-1 focus:outline-none"
+                      />
+                    </Field>
+                  </div>
+                )}
+
+                {/* ── Clothing / Electronics ────────────────────── */}
+                {(category === 'CLOTHING' || category === 'ELECTRONICS') && (
+                  <div className="space-y-4 rounded-xl border border-border p-4">
+                    <Field
+                      label="Brand / category"
+                      hint="Awaiting a detailed field list — using the generic template for now."
+                    >
+                      <Input
+                        value={details.brandOrCategory || ''}
+                        onChange={(e) => setD({ brandOrCategory: e.target.value })}
+                        className="h-11 rounded-xl"
+                      />
+                    </Field>
+                  </div>
+                )}
+
+                {/* Description + poster */}
+                <Field label="Description">
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                    placeholder="What the customer gets…"
+                    className="w-full p-3 border border-input bg-background text-foreground rounded-xl text-sm focus:ring-1 focus:outline-none"
+                  />
+                </Field>
+
+                <Field label="Poster / image" hint="Optional. JPG, PNG, WEBP or PDF.">
+                  <label className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-dashed border-input cursor-pointer hover:bg-muted/40 transition">
+                    <UploadCloud className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      {poster
+                        ? poster.name
+                        : existingImage
+                          ? 'Replace current image'
+                          : 'Click to upload'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      onChange={(e) => setPoster(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                  {existingImage && !poster && (
+                    // eslint-disable-next-line @next/next/no-img-element -- short-lived signed preview in the editor
+                    <img
+                      src={existingImage}
+                      alt=""
+                      className="mt-2 h-24 w-24 rounded-xl object-cover border border-border"
+                    />
+                  )}
+                </Field>
+
+                {error && <p className="text-xs text-destructive">{error}</p>}
+              </>
+            )}
+          </div>
+
+          <div className="flex flex-wrap justify-between gap-3 p-5 border-t border-border">
+            <Button
+              onClick={() => {
+                setOpen(false);
+                resetForm();
+              }}
+              className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <div className="flex flex-wrap gap-2">
               <Button
-                onClick={() => { setOpen(false); resetForm(); }}
-                className="h-11 px-5 bg-background border border-input text-muted-foreground rounded-xl cursor-pointer"
+                onClick={() => save(false)}
+                disabled={!canSave || saving}
+                className="h-11 px-5 bg-muted text-foreground rounded-xl cursor-pointer"
               >
-                Cancel
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save as draft'}
               </Button>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  onClick={() => save(false)}
-                  disabled={!canSave || saving}
-                  className="h-11 px-5 bg-muted text-foreground rounded-xl cursor-pointer"
-                >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save as draft'}
-                </Button>
-                <Button
-                  onClick={() => save(true)}
-                  disabled={!canSave || saving}
-                  className="h-11 px-5 rounded-xl font-semibold cursor-pointer"
-                >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
-                </Button>
-              </div>
+              <Button
+                onClick={() => save(true)}
+                disabled={!canSave || saving}
+                className="h-11 px-5 rounded-xl font-semibold cursor-pointer"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Publish'}
+              </Button>
             </div>
+          </div>
         </ModalSurface>
       )}
     </>

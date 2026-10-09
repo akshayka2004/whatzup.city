@@ -8,7 +8,10 @@ import { cn } from '@/lib/utils';
 import type { MapPoint } from './points';
 
 /** OpenFreeMap vector tiles (OpenStreetMap data, no key). Attribution comes from the style. */
-const STYLE = { light: 'https://tiles.openfreemap.org/styles/liberty', dark: 'https://tiles.openfreemap.org/styles/dark' };
+const STYLE = {
+  light: 'https://tiles.openfreemap.org/styles/liberty',
+  dark: 'https://tiles.openfreemap.org/styles/dark',
+};
 const KERALA: [number, number] = [76.27, 10.0];
 
 function pinEl(p: MapPoint) {
@@ -123,7 +126,10 @@ export function BusinessMap({
         e.stopPropagation();
         onSelectRef.current?.(p.id);
       });
-      markers.current.set(p.id, new ml.Marker({ element: el, anchor: 'bottom' }).setLngLat([p.lng, p.lat]).addTo(m));
+      markers.current.set(
+        p.id,
+        new ml.Marker({ element: el, anchor: 'bottom' }).setLngLat([p.lng, p.lat]).addTo(m),
+      );
     }
     if (points.length === 1) m.easeTo({ center: [points[0].lng, points[0].lat], zoom: 14 });
     else if (points.length > 1) {
@@ -160,14 +166,22 @@ export function BusinessMap({
     });
     if (activeId && map.current) {
       const mk = markers.current.get(activeId);
-      if (mk && !map.current.getBounds().contains(mk.getLngLat())) map.current.panTo(mk.getLngLat());
+      if (mk && !map.current.getBounds().contains(mk.getLngLat()))
+        map.current.panTo(mk.getLngLat());
     }
   }, [activeId, idsKey]);
 
   return (
-    <div className={cn('relative overflow-hidden rounded-card border border-border bg-surface-sunken', className)}>
+    <div
+      className={cn(
+        'relative overflow-hidden rounded-card border border-border bg-surface-sunken',
+        className,
+      )}
+    >
       <div ref={box} className="h-full w-full" />
-      {!ready && !failed && <div className="ui-skeleton absolute inset-0 rounded-none" aria-hidden />}
+      {!ready && !failed && (
+        <div className="ui-skeleton absolute inset-0 rounded-none" aria-hidden />
+      )}
       {failed && (
         <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-muted-foreground">
           The map couldn’t load. The list still has every result.

@@ -6,7 +6,16 @@ import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload, FileText, CheckCircle2, AlertCircle, X, Loader2, AlertTriangle, User } from 'lucide-react';
+import {
+  Upload,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  Loader2,
+  AlertTriangle,
+  User,
+} from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -15,7 +24,8 @@ function mapVerification(v: any) {
   return {
     id: v.id,
     billId: v.billId || bill.id || v.id,
-    invoiceRef: bill.id?.substring(0, 8).toUpperCase() || v.id?.substring(0, 8).toUpperCase() || '—',
+    invoiceRef:
+      bill.id?.substring(0, 8).toUpperCase() || v.id?.substring(0, 8).toUpperCase() || '—',
     billNumber: bill.billNumber || v.billNumber || '—',
     amount: parseFloat(bill.amount ?? v.amount ?? '0'),
     customerName: bill.user?.name || v.user?.name || 'Customer',
@@ -35,9 +45,11 @@ export default function BillsPage() {
     if (!businessId) return;
     setLoading(true);
     try {
-      const res = await apiService.get<any>(`/v1/businesses/${businessId}/bill-verifications?status=ALL`);
+      const res = await apiService.get<any>(
+        `/v1/businesses/${businessId}/bill-verifications?status=ALL`,
+      );
       if (res.data && !res.error) {
-        const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.items ?? [];
+        const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? res.data?.items ?? []);
         setBills(list.map(mapVerification));
       }
     } catch (_) {}
@@ -113,7 +125,9 @@ export default function BillsPage() {
       });
 
       if (createRes.error) {
-        throw new Error(createRes.error || "Couldn't record this bill. Check the details and try again.");
+        throw new Error(
+          createRes.error || "Couldn't record this bill. Check the details and try again.",
+        );
       }
 
       setIsUploadOpen(false);
@@ -138,7 +152,10 @@ export default function BillsPage() {
             </p>
           </div>
           <Button
-            onClick={() => { setIsUploadOpen(true); setUploadError(''); }}
+            onClick={() => {
+              setIsUploadOpen(true);
+              setUploadError('');
+            }}
             className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground cursor-pointer"
           >
             <Upload className="h-4 w-4" />
@@ -154,13 +171,19 @@ export default function BillsPage() {
           <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
             <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No bills yet</p>
-            <p className="text-sm text-muted-foreground">Customer receipts submitted to this business will appear here.</p>
+            <p className="text-sm text-muted-foreground">
+              Customer receipts submitted to this business will appear here.
+            </p>
           </Card>
         ) : (
           <div className="space-y-4">
             {bills.map((bill, i) => {
               const uploadedDate = bill.createdAt
-                ? new Date(bill.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                ? new Date(bill.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
                 : '—';
               return (
                 <Card
@@ -170,16 +193,23 @@ export default function BillsPage() {
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center ${
-                        bill.status === 'APPROVED' ? 'bg-success-soft text-success-soft-foreground'
-                          : bill.status === 'REJECTED' ? 'bg-danger-soft text-danger-soft-foreground'
-                          : 'bg-warning-soft text-warning-soft-foreground'
-                      }`}>
+                      <div
+                        className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center ${
+                          bill.status === 'APPROVED'
+                            ? 'bg-success-soft text-success-soft-foreground'
+                            : bill.status === 'REJECTED'
+                              ? 'bg-danger-soft text-danger-soft-foreground'
+                              : 'bg-warning-soft text-warning-soft-foreground'
+                        }`}
+                      >
                         <FileText className="h-5 w-5" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground text-base break-all">
-                          Bill #{bill.billNumber && bill.billNumber !== '—' ? bill.billNumber : bill.invoiceRef}
+                          Bill #
+                          {bill.billNumber && bill.billNumber !== '—'
+                            ? bill.billNumber
+                            : bill.invoiceRef}
                         </h3>
                         <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
                           <User className="h-3 w-3" />
@@ -225,111 +255,134 @@ export default function BillsPage() {
 
         {/* ── UPLOAD BILL MODAL ──────────────────────────── */}
         {isUploadOpen && (
-          <ModalSurface onClose={() => { setIsUploadOpen(false); resetForm(); }} label="Submit Bill Receipt" className="sm:max-w-md" hideClose>
-              <button
-                onClick={() => { setIsUploadOpen(false); resetForm(); }}
-                className="absolute top-4 right-4 p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-              <h3 className="text-xl font-bold text-foreground mb-4">Submit Bill Receipt</h3>
-              <form onSubmit={handleUpload} className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-2">
-                    Bill Date <span className="text-destructive">*</span>
-                  </label>
-                  <Input
-                    type="date"
-                    value={billDate}
-                    onChange={(e) => setBillDate(e.target.value)}
-                    required
-                    className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
-                  />
+          <ModalSurface
+            onClose={() => {
+              setIsUploadOpen(false);
+              resetForm();
+            }}
+            label="Submit Bill Receipt"
+            className="sm:max-w-md"
+            hideClose
+          >
+            <button
+              onClick={() => {
+                setIsUploadOpen(false);
+                resetForm();
+              }}
+              className="absolute top-4 right-4 p-2 -m-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-xl font-bold text-foreground mb-4">Submit Bill Receipt</h3>
+            <form onSubmit={handleUpload} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-foreground block mb-2">
+                  Bill Date <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  type="date"
+                  value={billDate}
+                  onChange={(e) => setBillDate(e.target.value)}
+                  required
+                  className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground block mb-2">
+                  Amount (₹) <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="e.g. 1250.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  required
+                  className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground block mb-2">
+                  Description <span className="text-muted-foreground text-xs">(optional)</span>
+                </label>
+                <Input
+                  placeholder="e.g. Grocery purchase"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground block mb-2">
+                  Receipt Image <span className="text-destructive">*</span>
+                </label>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                >
+                  {selectedFile ? (
+                    <div className="flex items-center justify-center gap-2 text-success">
+                      <CheckCircle2 className="h-5 w-5" />
+                      <span className="text-sm font-medium truncate max-w-xs">
+                        {selectedFile.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({(selectedFile.size / 1024).toFixed(0)} KB)
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-xs text-muted-foreground">Click to upload receipt image</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        JPG, PNG, WebP, PDF — max 10MB
+                      </p>
+                    </>
+                  )}
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-2">
-                    Amount (₹) <span className="text-destructive">*</span>
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="e.g. 1250.00"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    required
-                    className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-2">
-                    Description <span className="text-muted-foreground text-xs">(optional)</span>
-                  </label>
-                  <Input
-                    placeholder="e.g. Grocery purchase"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-2">
-                    Receipt Image <span className="text-destructive">*</span>
-                  </label>
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                  >
-                    {selectedFile ? (
-                      <div className="flex items-center justify-center gap-2 text-success">
-                        <CheckCircle2 className="h-5 w-5" />
-                        <span className="text-sm font-medium truncate max-w-xs">{selectedFile.name}</span>
-                        <span className="text-xs text-muted-foreground">({(selectedFile.size / 1024).toFixed(0)} KB)</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
-                        <p className="text-xs text-muted-foreground">Click to upload receipt image</p>
-                        <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP, PDF — max 10MB</p>
-                      </>
-                    )}
-                  </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    className="hidden"
-                    onChange={(e) => { setSelectedFile(e.target.files?.[0] || null); setUploadError(''); }}
-                  />
-                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    setSelectedFile(e.target.files?.[0] || null);
+                    setUploadError('');
+                  }}
+                />
+              </div>
 
-                {uploadError && (
-                  <div className="flex items-start gap-2 p-3 rounded-xl bg-danger-soft border border-destructive/20 text-danger-soft-foreground text-sm">
-                    <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                    {uploadError}
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => { setIsUploadOpen(false); resetForm(); }}
-                    className="rounded-xl border-border hover:bg-secondary text-foreground cursor-pointer"
-                    disabled={uploading}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer gap-2"
-                    disabled={!selectedFile || !amount || !billDate || uploading}
-                  >
-                    {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {uploading ? 'Submitting…' : 'Submit Bill'}
-                  </Button>
+              {uploadError && (
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-danger-soft border border-destructive/20 text-danger-soft-foreground text-sm">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  {uploadError}
                 </div>
-              </form>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsUploadOpen(false);
+                    resetForm();
+                  }}
+                  className="rounded-xl border-border hover:bg-secondary text-foreground cursor-pointer"
+                  disabled={uploading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer gap-2"
+                  disabled={!selectedFile || !amount || !billDate || uploading}
+                >
+                  {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {uploading ? 'Submitting…' : 'Submit Bill'}
+                </Button>
+              </div>
+            </form>
           </ModalSurface>
         )}
       </div>

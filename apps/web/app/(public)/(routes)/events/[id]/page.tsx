@@ -18,7 +18,11 @@ const trim = (t: string, max = 155) => {
   return c.length <= max ? c : `${c.slice(0, max - 1).replace(/\s+\S*$/, '')}…`;
 };
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
   const { id } = await params;
   const ev = await getEvent(id);
   if (!ev) return { title: 'Event', robots: { index: false } };
@@ -29,8 +33,18 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title: ev.title,
     description,
     alternates: { canonical: url },
-    openGraph: { type: 'website', title: ev.title, description, url, images: ev.posterImage ? [{ url: ev.posterImage }] : undefined },
-    twitter: { card: ev.posterImage ? 'summary_large_image' : 'summary', title: ev.title, description },
+    openGraph: {
+      type: 'website',
+      title: ev.title,
+      description,
+      url,
+      images: ev.posterImage ? [{ url: ev.posterImage }] : undefined,
+    },
+    twitter: {
+      card: ev.posterImage ? 'summary_large_image' : 'summary',
+      title: ev.title,
+      description,
+    },
   };
 }
 
@@ -49,17 +63,40 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
     eventStatus: 'https://schema.org/EventScheduled',
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     image: ev.posterImage ? [ev.posterImage] : undefined,
-    location: ev.venue || ev.city ? { '@type': 'Place', name: ev.venue || ev.city, address: { '@type': 'PostalAddress', addressLocality: ev.city, addressRegion: 'Kerala', addressCountry: 'IN' } } : undefined,
-    organizer: ev.business?.name || ev.hostLabel ? { '@type': 'Organization', name: ev.business?.name || ev.hostLabel } : undefined,
+    location:
+      ev.venue || ev.city
+        ? {
+            '@type': 'Place',
+            name: ev.venue || ev.city,
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: ev.city,
+              addressRegion: 'Kerala',
+              addressCountry: 'IN',
+            },
+          }
+        : undefined,
+    organizer:
+      ev.business?.name || ev.hostLabel
+        ? { '@type': 'Organization', name: ev.business?.name || ev.hostLabel }
+        : undefined,
     offers:
       ev.ticketType === 'PAID'
-        ? { '@type': 'Offer', priceCurrency: 'INR', price: Number(ev.ticketPrice || 0), url: ev.ticketUrl || ev.registrationUrl || undefined }
+        ? {
+            '@type': 'Offer',
+            priceCurrency: 'INR',
+            price: Number(ev.ticketPrice || 0),
+            url: ev.ticketUrl || ev.registrationUrl || undefined,
+          }
         : { '@type': 'Offer', priceCurrency: 'INR', price: 0 },
   };
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+      />
       <EventDetailClient ev={ev} />
     </>
   );

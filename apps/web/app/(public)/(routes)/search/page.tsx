@@ -19,8 +19,15 @@ import { SearchPageSkeleton } from '@/components/public/search/search-skeleton';
 import { useRecentSearches } from '@/components/public/search/use-recent-searches';
 import { useUrlState } from '@/components/public/search/use-url-state';
 import {
-  applyClientFilters, detectCapabilities, parseFilters, sortItems, toList, totalOf, writeFilters,
-  DEFAULT_FILTERS, type Filters,
+  applyClientFilters,
+  detectCapabilities,
+  parseFilters,
+  sortItems,
+  toList,
+  totalOf,
+  writeFilters,
+  DEFAULT_FILTERS,
+  type Filters,
 } from '@/components/public/search/filters';
 
 interface PlatformOfferResult {
@@ -57,7 +64,11 @@ function matchesPlatformOffer(o: any, term: string): boolean {
    is left alone. The landing page links to /search?open=1. */
 type SearchState = Filters & { q: string; view: ResultsMode };
 const URL_KEYS: (keyof Filters)[] = ['open', 'rating4', 'halal', 'fulfilment', 'sort', 'city'];
-const parseSearch = (sp: URLSearchParams): SearchState => ({ ...parseFilters(sp), q: sp.get('q') || '', view: sp.get('view') === 'map' ? 'map' : 'list' });
+const parseSearch = (sp: URLSearchParams): SearchState => ({
+  ...parseFilters(sp),
+  q: sp.get('q') || '',
+  view: sp.get('view') === 'map' ? 'map' : 'list',
+});
 const applySearch = (sp: URLSearchParams, v: SearchState) => {
   if (v.q.trim()) sp.set('q', v.q.trim());
   else sp.delete('q');
@@ -68,14 +79,27 @@ const applySearch = (sp: URLSearchParams, v: SearchState) => {
 
 const PAGE_SIZE = 20; // the discover endpoint's fixed page size
 const SORTS = ['relevant', 'rating', 'reviews', 'newest'] as const;
-const EMPTY_SUGGESTIONS = { businesses: [] as any[], categories: [] as string[], subcategories: [] as string[] };
+const EMPTY_SUGGESTIONS = {
+  businesses: [] as any[],
+  categories: [] as string[],
+  subcategories: [] as string[],
+};
 const FALLBACK_IDEAS = ['Restaurants', 'Salon', 'Hotels', 'Gifts'];
 const EMPTY_MORE = { key: '', items: [] as any[], page: 1, done: false, loading: false };
 
 function SearchContent() {
   const { t } = useI18n();
-  const { value: state, update, externalVersion } = useUrlState<SearchState>({ parse: parseSearch, apply: applySearch });
-  const { recents, add: addRecent, remove: removeRecent, clear: clearRecents } = useRecentSearches();
+  const {
+    value: state,
+    update,
+    externalVersion,
+  } = useUrlState<SearchState>({ parse: parseSearch, apply: applySearch });
+  const {
+    recents,
+    add: addRecent,
+    remove: removeRecent,
+    clear: clearRecents,
+  } = useRecentSearches();
 
   // The input is the raw text; `state.q` trails it by 300ms so we don't fire a request per keystroke.
   const [searchTerm, setSearchTerm] = useState(state.q);
@@ -104,8 +128,18 @@ function SearchContent() {
   const key = `/v1/search/discover?${baseQuery}`;
   const first = useCachedGet<any>(key);
 
-  const [more, setMore] = useState<{ key: string; items: any[]; page: number; done: boolean; loading: boolean }>({
-    key: '', items: [], page: 1, done: false, loading: false,
+  const [more, setMore] = useState<{
+    key: string;
+    items: any[];
+    page: number;
+    done: boolean;
+    loading: boolean;
+  }>({
+    key: '',
+    items: [],
+    page: 1,
+    done: false,
+    loading: false,
   });
   const extra = useMemo(() => (more.key === key ? more : EMPTY_MORE), [more, key]);
 
@@ -120,17 +154,24 @@ function SearchContent() {
     });
   }, [page1, extra.items]);
   const hasMore =
-    !extra.done && all.length > 0 && (total != null ? all.length < total : page1.length >= PAGE_SIZE);
+    !extra.done &&
+    all.length > 0 &&
+    (total != null ? all.length < total : page1.length >= PAGE_SIZE);
 
   // One SEARCH event per distinct query once results land (feeds "what people search for").
   const trackedQuery = useRef<string | null>(null);
   useEffect(() => {
     const q = state.q?.trim();
-    if (!q || first.loading || first.data === undefined || trackedQuery.current === baseQuery) return;
+    if (!q || first.loading || first.data === undefined || trackedQuery.current === baseQuery)
+      return;
     trackedQuery.current = baseQuery;
     track('SEARCH', {
       source: 'search',
-      metadata: { query: q.slice(0, 80), resultCount: total ?? page1.length, city: state.city || undefined },
+      metadata: {
+        query: q.slice(0, 80),
+        resultCount: total ?? page1.length,
+        city: state.city || undefined,
+      },
     });
   }, [state.q, state.city, baseQuery, first.loading, first.data, total, page1.length]);
 
@@ -141,7 +182,8 @@ function SearchContent() {
     const res = await apiService.get<any>(`${key}${baseQuery ? '&' : ''}page=${nextPage}`);
     const list = res.error ? [] : toList(res.data);
     setMore((prev) => {
-      const base = prev.key === key ? prev : { key, items: [], page: 1, done: false, loading: false };
+      const base =
+        prev.key === key ? prev : { key, items: [], page: 1, done: false, loading: false };
       return {
         key,
         items: [...base.items, ...list],
@@ -156,13 +198,17 @@ function SearchContent() {
          doesn't send the field, hydrate it from /v1/businesses (full rows). ── */
   const needsHours = state.open && all.length > 0 && all.some((b) => !('operatingHours' in b));
   const hoursSrc = useCachedGet<any>(
-    needsHours ? `/v1/businesses?limit=100${state.city ? `&city=${encodeURIComponent(state.city)}` : ''}` : null,
+    needsHours
+      ? `/v1/businesses?limit=100${state.city ? `&city=${encodeURIComponent(state.city)}` : ''}`
+      : null,
   );
   const items = useMemo(() => {
     if (!needsHours) return all;
     const hours = new Map<string, unknown>();
     for (const b of toList(hoursSrc.data)) if (b?.id) hours.set(b.id, b.operatingHours ?? null);
-    return all.map((b) => ('operatingHours' in b || !hours.has(b.id) ? b : { ...b, operatingHours: hours.get(b.id) }));
+    return all.map((b) =>
+      'operatingHours' in b || !hours.has(b.id) ? b : { ...b, operatingHours: hours.get(b.id) },
+    );
   }, [all, needsHours, hoursSrc.data]);
 
   const caps = useMemo(() => detectCapabilities(items), [items]);
@@ -275,13 +321,17 @@ function SearchContent() {
 
   const hasSuggestions =
     showSuggestions &&
-    (suggestions.businesses.length > 0 || suggestions.categories.length > 0 || suggestions.subcategories.length > 0);
+    (suggestions.businesses.length > 0 ||
+      suggestions.categories.length > 0 ||
+      suggestions.subcategories.length > 0);
   const showRecents = focused && searchTerm.length === 0 && recents.length > 0;
 
   // Combobox keyboard support: ↑/↓ move through the suggestions, Enter opens one, Esc closes.
   const [activeSugg, setActiveSugg] = useState(-1);
   const subs = suggestions.subcategories.filter(Boolean);
-  const suggCount = hasSuggestions ? suggestions.businesses.length + suggestions.categories.length + subs.length : 0;
+  const suggCount = hasSuggestions
+    ? suggestions.businesses.length + suggestions.categories.length + subs.length
+    : 0;
   useEffect(() => setActiveSugg(-1), [suggestions, showSuggestions]);
   const optId = (i: number) => `search-sugg-${i}`;
   const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -292,7 +342,10 @@ function SearchContent() {
     if (!suggCount) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
-      const next = e.key === 'ArrowDown' ? (activeSugg + 1) % suggCount : (activeSugg - 1 + suggCount) % suggCount;
+      const next =
+        e.key === 'ArrowDown'
+          ? (activeSugg + 1) % suggCount
+          : (activeSugg - 1 + suggCount) % suggCount;
       setActiveSugg(next);
       document.getElementById(optId(next))?.scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'Enter' && activeSugg >= 0) {
@@ -313,13 +366,18 @@ function SearchContent() {
     return names.length ? names : FALLBACK_IDEAS;
   }, [cats.data]);
 
-  const setFilters = useCallback((patch: Partial<Filters>) => update(patch as Partial<SearchState>), [update]);
+  const setFilters = useCallback(
+    (patch: Partial<Filters>) => update(patch as Partial<SearchState>),
+    [update],
+  );
   const clearAllFilters = () => update({ ...DEFAULT_FILTERS });
 
   const countLabel = (() => {
     const n = !clientOnly && total != null ? total : results.length;
     const plus = clientOnly && hasMore ? '+' : '';
-    const count = plus ? t('search.resultsPlus', { n }) : t(n === 1 ? 'search.result' : 'search.results', { n });
+    const count = plus
+      ? t('search.resultsPlus', { n })
+      : t(n === 1 ? 'search.result' : 'search.results', { n });
     return state.q ? t('search.for', { count, q: state.q }) : count;
   })();
 
@@ -374,7 +432,9 @@ function SearchContent() {
             {showRecents && (
               <div className="ui-pop absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
                 <div className="flex items-center justify-between px-4 pb-1 pt-3">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t('search.recent')}</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    {t('search.recent')}
+                  </p>
                   <button
                     type="button"
                     onClick={clearRecents}
@@ -417,7 +477,9 @@ function SearchContent() {
               >
                 {suggestions.businesses.length > 0 && (
                   <div>
-                    <p className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t('search.businesses')}</p>
+                    <p className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                      {t('search.businesses')}
+                    </p>
                     {suggestions.businesses.map((b, i) => (
                       <Link
                         key={b.id}
@@ -434,7 +496,11 @@ function SearchContent() {
                         <Building2 className="h-4 w-4 shrink-0 text-primary" />
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-foreground">{b.name}</p>
-                          {b.categoryName && <p className="truncate text-xs text-muted-foreground">{b.categoryName}</p>}
+                          {b.categoryName && (
+                            <p className="truncate text-xs text-muted-foreground">
+                              {b.categoryName}
+                            </p>
+                          )}
                         </div>
                       </Link>
                     ))}
@@ -442,44 +508,48 @@ function SearchContent() {
                 )}
                 {suggestions.categories.length > 0 && (
                   <div>
-                    <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t('search.categories')}</p>
+                    <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                      {t('search.categories')}
+                    </p>
                     {suggestions.categories.map((cat, j) => {
                       const i = suggestions.businesses.length + j;
                       return (
-                      <button
-                        type="button"
-                        key={cat}
-                        id={optId(i)}
-                        role="option"
-                        aria-selected={activeSugg === i}
-                        onClick={() => commit(cat)}
-                        className={`flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/40 ${activeSugg === i ? 'bg-muted/60' : ''}`}
-                      >
-                        <Tag className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <span className="text-sm text-foreground">{cat}</span>
-                      </button>
+                        <button
+                          type="button"
+                          key={cat}
+                          id={optId(i)}
+                          role="option"
+                          aria-selected={activeSugg === i}
+                          onClick={() => commit(cat)}
+                          className={`flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/40 ${activeSugg === i ? 'bg-muted/60' : ''}`}
+                        >
+                          <Tag className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="text-sm text-foreground">{cat}</span>
+                        </button>
                       );
                     })}
                   </div>
                 )}
                 {suggestions.subcategories.filter(Boolean).length > 0 && (
                   <div>
-                    <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t('search.subcategories')}</p>
+                    <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                      {t('search.subcategories')}
+                    </p>
                     {subs.map((sub, j) => {
                       const i = suggestions.businesses.length + suggestions.categories.length + j;
                       return (
-                      <button
-                        type="button"
-                        key={sub}
-                        id={optId(i)}
-                        role="option"
-                        aria-selected={activeSugg === i}
-                        onClick={() => commit(sub)}
-                        className={`flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/40 ${activeSugg === i ? 'bg-muted/60' : ''}`}
-                      >
-                        <Tag className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <span className="text-sm text-foreground">{sub}</span>
-                      </button>
+                        <button
+                          type="button"
+                          key={sub}
+                          id={optId(i)}
+                          role="option"
+                          aria-selected={activeSugg === i}
+                          onClick={() => commit(sub)}
+                          className={`flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/40 ${activeSugg === i ? 'bg-muted/60' : ''}`}
+                        >
+                          <Tag className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="text-sm text-foreground">{sub}</span>
+                        </button>
                       );
                     })}
                   </div>
@@ -490,7 +560,13 @@ function SearchContent() {
           </div>
         </form>
 
-        <FilterBar className="mt-2" filters={state} onChange={setFilters} show={showChips} resultCount={results.length} />
+        <FilterBar
+          className="mt-2"
+          filters={state}
+          onChange={setFilters}
+          show={showChips}
+          resultCount={results.length}
+        />
       </div>
 
       <ActiveFilters className="mt-3" filters={state} onChange={setFilters} show={showChips} />
@@ -504,7 +580,9 @@ function SearchContent() {
 
       {platformResults.length > 0 && (
         <div className="mb-6 space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Platform Offers</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Platform Offers
+          </p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {platformResults.map((o, i) => (
               <Link
@@ -515,9 +593,13 @@ function SearchContent() {
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-foreground">{o.title}</p>
-                  <p className="truncate text-xs text-muted-foreground">{o.category} · {o.location}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {o.category} · {o.location}
+                  </p>
                 </div>
-                {o.price && <span className="shrink-0 text-sm font-bold text-primary">{o.price}</span>}
+                {o.price && (
+                  <span className="shrink-0 text-sm font-bold text-primary">{o.price}</span>
+                )}
               </Link>
             ))}
           </div>
@@ -545,7 +627,9 @@ function SearchContent() {
                 : t('search.removeFilterHint')
             }
             action={{ label: t('search.clearFilters'), onClick: clearAllFilters }}
-            secondary={hasMore ? { label: 'Load more results', onClick: () => void loadMore() } : undefined}
+            secondary={
+              hasMore ? { label: 'Load more results', onClick: () => void loadMore() } : undefined
+            }
           />
         ) : platformResults.length === 0 ? (
           <div>
@@ -553,10 +637,16 @@ function SearchContent() {
               icon={Search}
               title={t('search.noResults')}
               description={t('search.noResultsHint')}
-              action={state.city ? { label: t('search.allCitiesCta'), onClick: () => update({ city: '' }) } : undefined}
+              action={
+                state.city
+                  ? { label: t('search.allCitiesCta'), onClick: () => update({ city: '' }) }
+                  : undefined
+              }
             />
             <div className="mt-5 text-center">
-              <p className="mb-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t('search.popular')}</p>
+              <p className="mb-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                {t('search.popular')}
+              </p>
               <div className="flex flex-wrap justify-center gap-2">
                 {ideas.map((idea) => (
                   <button
@@ -573,8 +663,17 @@ function SearchContent() {
           </div>
         ) : null
       ) : (
-        <div aria-busy={refreshing} className={refreshing ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
-          <ResultsView mode={state.view} items={results} showLinks onLinkClick={rememberSearch} mapClassName="lg:top-48 lg:h-[calc(100dvh-13rem)]" />
+        <div
+          aria-busy={refreshing}
+          className={refreshing ? 'opacity-60 transition-opacity' : 'transition-opacity'}
+        >
+          <ResultsView
+            mode={state.view}
+            items={results}
+            showLinks
+            onLinkClick={rememberSearch}
+            mapClassName="lg:top-48 lg:h-[calc(100dvh-13rem)]"
+          />
           {hasMore && (
             <div className="mt-6 flex justify-center">
               <Button

@@ -21,28 +21,19 @@ export class CivicController {
 
   @Patch('profile')
   @ApiOperation({ summary: 'Update civic profile details, logo, banner, social links' })
-  async updateProfile(
-    @CurrentUser('id') userId: string,
-    @Body() dto: UpdateCivicProfileDto,
-  ) {
+  async updateProfile(@CurrentUser('id') userId: string, @Body() dto: UpdateCivicProfileDto) {
     return this.civicService.updateProfile(userId, dto);
   }
 
   @Post('change-password')
   @ApiOperation({ summary: 'Change the civic account password' })
-  async changePassword(
-    @CurrentUser('id') userId: string,
-    @Body() dto: ChangePasswordDto,
-  ) {
+  async changePassword(@CurrentUser('id') userId: string, @Body() dto: ChangePasswordDto) {
     return this.civicService.changePassword(userId, dto);
   }
 
   @Get('referrals')
   @ApiOperation({ summary: 'Get referral count + list (civic accounts only)' })
-  async getReferrals(
-    @CurrentUser('id') userId: string,
-    @CurrentUser('role') role: string,
-  ) {
+  async getReferrals(@CurrentUser('id') userId: string, @CurrentUser('role') role: string) {
     return this.civicService.getReferrals(userId, role);
   }
 }

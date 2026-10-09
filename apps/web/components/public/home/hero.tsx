@@ -6,7 +6,11 @@ import Link from 'next/link';
 import { CheckCircle2, MapPin, Search, Star, Store, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { ResponsiveImage } from '@/components/common/responsive-image';
 import { Skel, SkeletonRegion } from '@/components/common/skeletons';
@@ -32,24 +36,40 @@ export type HeroProps = {
 };
 
 export function HomeHero({
-  city, onCityChange, searchQuery, onSearchQueryChange, onSearch,
-  featuredBusiness, featuredOffer, announcement, panelLoading,
+  city,
+  onCityChange,
+  searchQuery,
+  onSearchQueryChange,
+  onSearch,
+  featuredBusiness,
+  featuredOffer,
+  announcement,
+  panelLoading,
 }: HeroProps) {
   const { t } = useI18n();
   const identity = getCityIdentity(city);
   const bizAvg = Number(featuredBusiness?.averageRating ?? featuredBusiness?.avgRating ?? 0);
   const bizReviews = Number(featuredBusiness?.totalReviews ?? featuredBusiness?.reviewCount ?? 0);
-  const offerHref = featuredOffer?.business?.id ? `/business/${featuredOffer.business.id}#offers-section` : null;
+  const offerHref = featuredOffer?.business?.id
+    ? `/business/${featuredOffer.business.id}#offers-section`
+    : null;
 
   const offerCard = featuredOffer && (
-    <div className="ui-fade-up rounded-xl border border-border bg-card p-4 shadow-md" style={{ animationDelay: '0.05s' }}>
+    <div
+      className="ui-fade-up rounded-xl border border-border bg-card p-4 shadow-md"
+      style={{ animationDelay: '0.05s' }}
+    >
       <div className="flex items-center gap-3">
         <div className="rounded-lg border border-primary/20 bg-primary/15 p-2">
           <Tag className="h-4 w-4 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs text-muted-foreground">{featuredOffer.business?.name || 'Featured offer'}</p>
-          <p className="truncate text-sm font-bold text-foreground">{featuredOffer.title || featuredOffer.name}</p>
+          <p className="truncate text-xs text-muted-foreground">
+            {featuredOffer.business?.name || 'Featured offer'}
+          </p>
+          <p className="truncate text-sm font-bold text-foreground">
+            {featuredOffer.title || featuredOffer.name}
+          </p>
         </div>
         {featuredOffer.code ? (
           <span className="rounded-lg border border-primary/20 bg-brand-soft px-2 py-1 font-mono text-xs font-extrabold text-brand-soft-foreground">
@@ -116,14 +136,19 @@ export function HomeHero({
 
           <div className="flex flex-wrap items-center gap-2">
             <Select value={city || 'all'} onValueChange={onCityChange}>
-              <SelectTrigger aria-label="Your city" className="h-10 w-auto min-w-36 gap-1.5 rounded-full border-border-strong/60 bg-card text-sm">
+              <SelectTrigger
+                aria-label="Your city"
+                className="h-10 w-auto min-w-36 gap-1.5 rounded-full border-border-strong/60 bg-card text-sm"
+              >
                 <MapPin className="size-4 text-primary" aria-hidden />
                 <SelectValue placeholder={t('home.allCities')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t('home.allCities')}</SelectItem>
                 {KERALA_CITIES.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -143,9 +168,11 @@ export function HomeHero({
 
         {/* Right panel — live data (desktop) */}
         <div className="relative hidden items-center justify-center overflow-hidden border-l border-border bg-secondary/60 p-8 lg:col-span-5 lg:flex">
-          
           {panelLoading ? (
-            <SkeletonRegion label="Loading featured content" className="relative w-full max-w-xs space-y-4">
+            <SkeletonRegion
+              label="Loading featured content"
+              className="relative w-full max-w-xs space-y-4"
+            >
               <Skel className="h-[104px] w-full rounded-xl" />
               <Skel className="h-[72px] w-full rounded-xl" />
               <Skel className="h-[56px] w-full rounded-xl" />
@@ -167,16 +194,26 @@ export function HomeHero({
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="mb-0.5 flex items-center gap-1.5">
-                          <h4 className="truncate text-sm font-bold text-foreground">{featuredBusiness.name}</h4>
-                          {featuredBusiness.isVerified && <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                          <h4 className="truncate text-sm font-bold text-foreground">
+                            {featuredBusiness.name}
+                          </h4>
+                          {featuredBusiness.isVerified && (
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                          )}
                         </div>
                         <p className="truncate text-xs text-muted-foreground">
-                          {featuredBusiness.category?.name || featuredBusiness.description || 'Verified business'}
+                          {featuredBusiness.category?.name ||
+                            featuredBusiness.description ||
+                            'Verified business'}
                         </p>
                         <div className="mt-2 flex items-center gap-1">
                           <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-                          <span className="text-xs font-bold text-foreground">{bizAvg > 0 ? bizAvg.toFixed(1) : '—'}</span>
-                          <span className="text-xs text-muted-foreground">({bizReviews} reviews)</span>
+                          <span className="text-xs font-bold text-foreground">
+                            {bizAvg > 0 ? bizAvg.toFixed(1) : '—'}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            ({bizReviews} reviews)
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -184,18 +221,32 @@ export function HomeHero({
                 </Link>
               )}
 
-              {offerCard && (offerHref ? <Link href={offerHref} className="block">{offerCard}</Link> : offerCard)}
+              {offerCard &&
+                (offerHref ? (
+                  <Link href={offerHref} className="block">
+                    {offerCard}
+                  </Link>
+                ) : (
+                  offerCard
+                ))}
 
               {announcement && (
-                <div className="ui-fade-up rounded-xl border border-border bg-card p-3 shadow-md" style={{ animationDelay: '0.1s' }}>
+                <div
+                  className="ui-fade-up rounded-xl border border-border bg-card p-3 shadow-md"
+                  style={{ animationDelay: '0.1s' }}
+                >
                   <div className="flex items-center gap-3">
                     <div className="relative flex h-2.5 w-2.5 shrink-0">
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-60" />
                       <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold uppercase tracking-wider text-primary">Civic Notice</p>
-                      <p className="truncate text-xs font-semibold text-foreground">{announcement.title}</p>
+                      <p className="text-xs font-bold uppercase tracking-wider text-primary">
+                        Civic Notice
+                      </p>
+                      <p className="truncate text-xs font-semibold text-foreground">
+                        {announcement.title}
+                      </p>
                     </div>
                   </div>
                 </div>

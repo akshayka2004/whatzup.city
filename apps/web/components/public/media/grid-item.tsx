@@ -10,7 +10,13 @@ import type { ReactNode } from 'react';
  * pointer-events are handed back to the card so the invisible padding never
  * steals taps from neighbours.
  */
-export function GridItem({ children, intrinsicHeight = 480 }: { children: ReactNode; intrinsicHeight?: number }) {
+export function GridItem({
+  children,
+  intrinsicHeight = 480,
+}: {
+  children: ReactNode;
+  intrinsicHeight?: number;
+}) {
   return (
     <div
       className="ui-cv-auto pointer-events-none -mx-3 -mt-3 -mb-6 px-3 pb-6 pt-3"

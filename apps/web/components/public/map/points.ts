@@ -1,4 +1,10 @@
-export type MapPoint = { id: string; lat: number; lng: number; label: string; rating?: number | null };
+export type MapPoint = {
+  id: string;
+  lat: number;
+  lng: number;
+  label: string;
+  rating?: number | null;
+};
 
 /** Results with usable coordinates, as map pins. Kept apart so callers skip the MapLibre bundle. */
 export function pointsFrom(items: any[]): MapPoint[] {

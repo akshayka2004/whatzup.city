@@ -5,10 +5,25 @@ import { AuditService } from '../audit/audit.service';
 
 export const TICKET_TYPES = ['FREE', 'PAID'];
 export const EVENT_CATEGORIES = [
-  'ENTERTAINMENT', 'MEETUP', 'WORKSHOP', 'CONCERT', 'SPORTS', 'FESTIVAL',
-  'EXHIBITION', 'CONFERENCE', 'NETWORKING', 'FOOD_AND_DRINK', 'ARTS_AND_CULTURE',
-  'COMMUNITY', 'CHARITY', 'RELIGIOUS', 'EDUCATION', 'KIDS_AND_FAMILY',
-  'HEALTH_AND_WELLNESS', 'TECH', 'OTHER',
+  'ENTERTAINMENT',
+  'MEETUP',
+  'WORKSHOP',
+  'CONCERT',
+  'SPORTS',
+  'FESTIVAL',
+  'EXHIBITION',
+  'CONFERENCE',
+  'NETWORKING',
+  'FOOD_AND_DRINK',
+  'ARTS_AND_CULTURE',
+  'COMMUNITY',
+  'CHARITY',
+  'RELIGIOUS',
+  'EDUCATION',
+  'KIDS_AND_FAMILY',
+  'HEALTH_AND_WELLNESS',
+  'TECH',
+  'OTHER',
 ];
 
 @Injectable()
@@ -21,7 +36,11 @@ export class EventsService {
 
   private async resolveBusinessId(tenantId: string, businessOrEntityId: string): Promise<string> {
     const biz = await this.db.business.findFirst({
-      where: { tenantId, OR: [{ id: businessOrEntityId }, { entityId: businessOrEntityId }], deletedAt: null },
+      where: {
+        tenantId,
+        OR: [{ id: businessOrEntityId }, { entityId: businessOrEntityId }],
+        deletedAt: null,
+      },
       select: { id: true },
     });
     if (!biz) throw new BadRequestException('Business not found for event');
@@ -87,7 +106,13 @@ export class EventsService {
     };
     this.extraFields(dto, data);
     const event = await this.db.event.create({ data });
-    await this.audit.log({ tenantId, userId, action: 'CREATE_EVENT', resource: 'EVENT', resourceId: event.id });
+    await this.audit.log({
+      tenantId,
+      userId,
+      action: 'CREATE_EVENT',
+      resource: 'EVENT',
+      resourceId: event.id,
+    });
     return event;
   }
 
@@ -134,7 +159,10 @@ export class EventsService {
     const t = type === 'TICKET' ? 'TICKET' : 'REGISTER';
     await this.db.event.update({
       where: { id },
-      data: t === 'TICKET' ? { ticketClicks: { increment: 1 } } : { registrationClicks: { increment: 1 } },
+      data:
+        t === 'TICKET'
+          ? { ticketClicks: { increment: 1 } }
+          : { registrationClicks: { increment: 1 } },
     });
     await this.db.eventClick.create({
       data: { tenantId: e.tenantId, eventId: id, userId: userId || null, type: t },
@@ -155,14 +183,30 @@ export class EventsService {
     const e = await this.db.event.findFirst({ where: { id, businessId: bizId, deletedAt: null } });
     if (!e) throw new NotFoundException('Event not found');
     const payload: any = {};
-    for (const k of ['title', 'description', 'posterImage', 'venue', 'city', 'targetCities', 'registrationUrl', 'ticketUrl', 'status']) {
+    for (const k of [
+      'title',
+      'description',
+      'posterImage',
+      'venue',
+      'city',
+      'targetCities',
+      'registrationUrl',
+      'ticketUrl',
+      'status',
+    ]) {
       if (dto[k] !== undefined) payload[k] = dto[k];
     }
     this.extraFields(dto, payload);
     if (dto.startDate) payload.startDate = new Date(dto.startDate);
     if (dto.endDate) payload.endDate = new Date(dto.endDate);
     const updated = await this.db.event.update({ where: { id }, data: payload });
-    await this.audit.log({ tenantId, userId, action: 'UPDATE_EVENT', resource: 'EVENT', resourceId: id });
+    await this.audit.log({
+      tenantId,
+      userId,
+      action: 'UPDATE_EVENT',
+      resource: 'EVENT',
+      resourceId: id,
+    });
     return updated;
   }
 
@@ -171,7 +215,13 @@ export class EventsService {
     const e = await this.db.event.findFirst({ where: { id, businessId: bizId, deletedAt: null } });
     if (!e) throw new NotFoundException('Event not found');
     await this.db.event.update({ where: { id }, data: { deletedAt: new Date() } });
-    await this.audit.log({ tenantId, userId, action: 'DELETE_EVENT', resource: 'EVENT', resourceId: id });
+    await this.audit.log({
+      tenantId,
+      userId,
+      action: 'DELETE_EVENT',
+      resource: 'EVENT',
+      resourceId: id,
+    });
     return { success: true };
   }
 
@@ -193,7 +243,8 @@ export class EventsService {
       bizId = biz.id;
       tenantId = biz.tenantId;
     } else {
-      if (!dto.hostLabel) throw new BadRequestException('hostLabel is required when no business is set');
+      if (!dto.hostLabel)
+        throw new BadRequestException('hostLabel is required when no business is set');
       tenantId = await this.tenantResolver.resolveTenantId(dto.tenantId);
     }
     const data: any = {
@@ -214,7 +265,13 @@ export class EventsService {
     };
     this.extraFields(dto, data);
     const event = await this.db.event.create({ data });
-    await this.audit.log({ tenantId, userId, action: 'ADMIN_CREATE_EVENT', resource: 'EVENT', resourceId: event.id });
+    await this.audit.log({
+      tenantId,
+      userId,
+      action: 'ADMIN_CREATE_EVENT',
+      resource: 'EVENT',
+      resourceId: event.id,
+    });
     return event;
   }
 
@@ -222,7 +279,17 @@ export class EventsService {
     const e = await this.db.event.findFirst({ where: { id, deletedAt: null } });
     if (!e) throw new NotFoundException('Event not found');
     const payload: any = {};
-    for (const k of ['title', 'description', 'posterImage', 'venue', 'city', 'targetCities', 'registrationUrl', 'ticketUrl', 'status']) {
+    for (const k of [
+      'title',
+      'description',
+      'posterImage',
+      'venue',
+      'city',
+      'targetCities',
+      'registrationUrl',
+      'ticketUrl',
+      'status',
+    ]) {
       if (dto[k] !== undefined) payload[k] = dto[k];
     }
     if (dto.hostLabel !== undefined) payload.hostLabel = dto.hostLabel || null;
@@ -230,7 +297,13 @@ export class EventsService {
     if (dto.startDate) payload.startDate = new Date(dto.startDate);
     if (dto.endDate) payload.endDate = new Date(dto.endDate);
     const updated = await this.db.event.update({ where: { id }, data: payload });
-    await this.audit.log({ tenantId: e.tenantId, userId, action: 'ADMIN_UPDATE_EVENT', resource: 'EVENT', resourceId: id });
+    await this.audit.log({
+      tenantId: e.tenantId,
+      userId,
+      action: 'ADMIN_UPDATE_EVENT',
+      resource: 'EVENT',
+      resourceId: id,
+    });
     return updated;
   }
 
@@ -238,7 +311,13 @@ export class EventsService {
     const e = await this.db.event.findFirst({ where: { id, deletedAt: null } });
     if (!e) throw new NotFoundException('Event not found');
     await this.db.event.update({ where: { id }, data: { deletedAt: new Date() } });
-    await this.audit.log({ tenantId: e.tenantId, userId, action: 'ADMIN_DELETE_EVENT', resource: 'EVENT', resourceId: id });
+    await this.audit.log({
+      tenantId: e.tenantId,
+      userId,
+      action: 'ADMIN_DELETE_EVENT',
+      resource: 'EVENT',
+      resourceId: id,
+    });
     return { success: true };
   }
 
@@ -252,7 +331,10 @@ export class EventsService {
         skip: (pageVal - 1) * limitVal,
         take: limitVal,
         orderBy: { createdAt: 'desc' },
-        include: { business: { select: { id: true, name: true } }, _count: { select: { clicks: true } } },
+        include: {
+          business: { select: { id: true, name: true } },
+          _count: { select: { clicks: true } },
+        },
       }),
       this.db.event.count({ where: { deletedAt: null } }),
     ]);
@@ -270,7 +352,9 @@ export class EventsService {
         skip: (pageVal - 1) * limitVal,
         take: limitVal,
         orderBy: { createdAt: 'desc' },
-        include: { event: { select: { id: true, title: true, business: { select: { name: true } } } } },
+        include: {
+          event: { select: { id: true, title: true, business: { select: { name: true } } } },
+        },
       }),
       this.db.eventClick.count({ where }),
     ]);

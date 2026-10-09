@@ -6,9 +6,19 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
-  Users, Building2, UserCheck,
-  Search, ChevronLeft, ChevronRight,
-  Mail, Phone, Globe, Calendar, Tag, RefreshCw, FileText,
+  Users,
+  Building2,
+  UserCheck,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Mail,
+  Phone,
+  Globe,
+  Calendar,
+  Tag,
+  RefreshCw,
+  FileText,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
@@ -31,9 +41,7 @@ function InitialsAvatar({ name, type }: { name: string; type: 'business' | 'indi
     <div
       className={cn(
         'h-9 w-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0',
-        type === 'business'
-          ? 'bg-info/20 text-info'
-          : 'bg-primary/20 text-primary',
+        type === 'business' ? 'bg-info/20 text-info' : 'bg-primary/20 text-primary',
       )}
     >
       {initials}
@@ -139,12 +147,26 @@ export default function AdminRegistrationsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: 'Total Submissions', value: stats.total, icon: Users, color: 'text-primary' },
-            { label: 'Business Interests', value: stats.businesses, icon: Building2, color: 'text-info' },
-            { label: 'Individual Interests', value: stats.individuals, icon: UserCheck, color: 'text-primary' },
+            {
+              label: 'Business Interests',
+              value: stats.businesses,
+              icon: Building2,
+              color: 'text-info',
+            },
+            {
+              label: 'Individual Interests',
+              value: stats.individuals,
+              icon: UserCheck,
+              color: 'text-primary',
+            },
           ].map((stat, i) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card/60 ui-fade-up" style={{ animationDelay: `${i * 0.05}s` }}>
+              <Card
+                key={stat.label}
+                className="p-4 rounded-2xl border-border bg-card/60 ui-fade-up"
+                style={{ animationDelay: `${i * 0.05}s` }}
+              >
                 <div className="flex items-center gap-3">
                   <Icon className={`h-5 w-5 ${stat.color}`} />
                   <div>
@@ -209,10 +231,22 @@ export default function AdminRegistrationsPage() {
             <div className="divide-y divide-border">
               {tab === 'businesses'
                 ? data.map((item, i) => (
-                    <BusinessRow key={item.id} item={item} index={i} expanded={expanded} setExpanded={setExpanded} />
+                    <BusinessRow
+                      key={item.id}
+                      item={item}
+                      index={i}
+                      expanded={expanded}
+                      setExpanded={setExpanded}
+                    />
                   ))
                 : data.map((item, i) => (
-                    <IndividualRow key={item.id} item={item} index={i} expanded={expanded} setExpanded={setExpanded} />
+                    <IndividualRow
+                      key={item.id}
+                      item={item}
+                      index={i}
+                      expanded={expanded}
+                      setExpanded={setExpanded}
+                    />
                   ))}
             </div>
           )}
@@ -273,7 +307,9 @@ function BusinessRow({
           <InitialsAvatar name={item.businessName || '?'} type="business" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-sm text-foreground truncate">{item.businessName}</span>
+              <span className="font-semibold text-sm text-foreground truncate">
+                {item.businessName}
+              </span>
               {item.category && (
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-info-soft text-info-soft-foreground">
                   {item.category}
@@ -282,9 +318,15 @@ function BusinessRow({
             </div>
             <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground flex-wrap">
               <span>{item.contactName}</span>
-              <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{item.email}</span>
+              <span className="flex items-center gap-1">
+                <Mail className="h-3 w-3" />
+                {item.email}
+              </span>
               {item.phone && (
-                <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{item.phone}</span>
+                <span className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  {item.phone}
+                </span>
               )}
             </div>
           </div>
@@ -292,7 +334,9 @@ function BusinessRow({
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               {new Date(item.createdAt).toLocaleDateString('en-IN', {
-                day: 'numeric', month: 'short', year: 'numeric',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
               })}
             </span>
           </div>
@@ -302,13 +346,17 @@ function BusinessRow({
         <div className="bg-secondary border-t border-border px-5 py-5 ui-pop">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
             <div className="space-y-3">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Business Info</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Business Info
+              </p>
               <DetailRow icon={Building2} label="Business Name" value={item.businessName} />
               <DetailRow icon={Tag} label="Category" value={item.category || '—'} />
               {item.website && <DetailRow icon={Globe} label="Website" value={item.website} />}
             </div>
             <div className="space-y-3">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Contact Details</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Contact Details
+              </p>
               <DetailRow icon={UserCheck} label="Contact Name" value={item.contactName} />
               <DetailRow icon={Mail} label="Email" value={item.email} />
               {item.phone && <DetailRow icon={Phone} label="Phone" value={item.phone} />}
@@ -320,7 +368,9 @@ function BusinessRow({
             </div>
             {item.notes && (
               <div className="space-y-3">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Notes</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  Notes
+                </p>
                 <div className="flex items-start gap-2">
                   <FileText className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
                   <p className="text-sm text-foreground whitespace-pre-wrap">{item.notes}</p>
@@ -357,9 +407,15 @@ function IndividualRow({
           <div className="flex-1 min-w-0">
             <span className="font-semibold text-sm text-foreground">{item.name}</span>
             <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground flex-wrap">
-              <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{item.email}</span>
+              <span className="flex items-center gap-1">
+                <Mail className="h-3 w-3" />
+                {item.email}
+              </span>
               {item.phone && (
-                <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{item.phone}</span>
+                <span className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  {item.phone}
+                </span>
               )}
               {item.interests && (
                 <span className="truncate max-w-[200px] italic opacity-70">{item.interests}</span>
@@ -370,7 +426,9 @@ function IndividualRow({
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               {new Date(item.createdAt).toLocaleDateString('en-IN', {
-                day: 'numeric', month: 'short', year: 'numeric',
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
               })}
             </span>
           </div>
@@ -380,7 +438,9 @@ function IndividualRow({
         <div className="bg-secondary border-t border-border px-5 py-5 ui-pop">
           <div className="grid sm:grid-cols-2 gap-6 text-sm">
             <div className="space-y-3">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Personal Details</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Personal Details
+              </p>
               <DetailRow icon={UserCheck} label="Name" value={item.name} />
               <DetailRow icon={Mail} label="Email" value={item.email} />
               {item.phone && <DetailRow icon={Phone} label="Phone" value={item.phone} />}
@@ -392,7 +452,9 @@ function IndividualRow({
             </div>
             {item.interests && (
               <div className="space-y-3">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Interests</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  Interests
+                </p>
                 <div className="flex items-start gap-2">
                   <FileText className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
                   <p className="text-sm text-foreground whitespace-pre-wrap">{item.interests}</p>

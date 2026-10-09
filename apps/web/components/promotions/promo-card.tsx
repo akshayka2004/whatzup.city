@@ -4,11 +4,22 @@ import { Fragment, type ComponentType, type ReactNode } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { StatusPill, type PillTone } from '@/components/common/status-pill';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 export type PromoStat = { label: string; value: number | string; hint?: string };
-export type PromoMenuItem = { label: string; onClick: () => void; icon?: ComponentType<{ className?: string }>; danger?: boolean };
+export type PromoMenuItem = {
+  label: string;
+  onClick: () => void;
+  icon?: ComponentType<{ className?: string }>;
+  danger?: boolean;
+};
 
 /**
  * One card for every promotion type (offers, vouchers, discount wheels): a ticket-style
@@ -53,17 +64,29 @@ export function PromoCard({
       {/* Ticket stub */}
       <div className="relative flex w-24 shrink-0 flex-col items-center justify-center gap-1 border-r border-dashed border-border bg-brand-soft px-2 py-4 text-center text-brand-soft-foreground sm:w-28">
         <Icon className="size-4 opacity-70" aria-hidden />
-        <span className="text-heading font-bold leading-tight tabular-nums break-words">{value}</span>
+        <span className="text-heading font-bold leading-tight tabular-nums break-words">
+          {value}
+        </span>
         {valueCaption && <span className="text-caption opacity-80">{valueCaption}</span>}
-        <span className="absolute -right-2 -top-2 size-4 rounded-full border border-border bg-background" aria-hidden />
-        <span className="absolute -bottom-2 -right-2 size-4 rounded-full border border-border bg-background" aria-hidden />
+        <span
+          className="absolute -right-2 -top-2 size-4 rounded-full border border-border bg-background"
+          aria-hidden
+        />
+        <span
+          className="absolute -bottom-2 -right-2 size-4 rounded-full border border-border bg-background"
+          aria-hidden
+        />
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             {onOpen ? (
-              <button type="button" onClick={onOpen} className="text-left font-semibold leading-snug hover:underline">
+              <button
+                type="button"
+                onClick={onOpen}
+                className="text-left font-semibold leading-snug hover:underline"
+              >
                 <span className="line-clamp-2 break-words">{title}</span>
               </button>
             ) : (
@@ -84,7 +107,10 @@ export function PromoCard({
                   {menu.map((m, i) => (
                     <Fragment key={m.label}>
                       {m.danger && i > 0 && <DropdownMenuSeparator />}
-                      <DropdownMenuItem onSelect={m.onClick} variant={m.danger ? 'destructive' : 'default'}>
+                      <DropdownMenuItem
+                        onSelect={m.onClick}
+                        variant={m.danger ? 'destructive' : 'default'}
+                      >
                         {m.icon && <m.icon className="size-4" />}
                         {m.label}
                       </DropdownMenuItem>
@@ -110,7 +136,9 @@ export function PromoCard({
               {stats.map((s) => (
                 <div key={s.label} title={s.hint}>
                   <dt className="text-caption text-muted-foreground">{s.label}</dt>
-                  <dd className="text-sm font-semibold tabular-nums">{typeof s.value === 'number' ? s.value.toLocaleString('en-IN') : s.value}</dd>
+                  <dd className="text-sm font-semibold tabular-nums">
+                    {typeof s.value === 'number' ? s.value.toLocaleString('en-IN') : s.value}
+                  </dd>
                 </div>
               ))}
             </dl>

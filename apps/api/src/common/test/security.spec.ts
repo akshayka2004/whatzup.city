@@ -7,13 +7,15 @@ import { ForbiddenException, BadRequestException } from '@nestjs/common';
 describe('Security and Hardening Tests', () => {
   describe('Input Sanitization & XSS Prevention', () => {
     it('stripHtml should strip all HTML tags completely', () => {
-      const malicious = '<script>alert("XSS")</script><b>Hello</b> <img src="x" onerror="alert(1)">World';
+      const malicious =
+        '<script>alert("XSS")</script><b>Hello</b> <img src="x" onerror="alert(1)">World';
       const clean = stripHtml(malicious);
       expect(clean).toBe('alert("XSS")Hello World');
     });
 
     it('sanitizeHtml should remove dangerous tags and scripts but allow safe text', () => {
-      const malicious = '<script>alert("XSS")</script><iframe src="dangerous"></iframe><b>Hello</b> <a href="javascript:alert(1)">Click</a>';
+      const malicious =
+        '<script>alert("XSS")</script><iframe src="dangerous"></iframe><b>Hello</b> <a href="javascript:alert(1)">Click</a>';
       const clean = sanitizeHtml(malicious);
       expect(clean).not.toContain('<script>');
       expect(clean).not.toContain('<iframe>');
@@ -49,7 +51,9 @@ describe('Security and Hardening Tests', () => {
     });
 
     it('should block AWS metadata IP address', () => {
-      expect(() => processor['validateImageUrl']('http://169.254.169.254/latest/meta-data')).toThrow();
+      expect(() =>
+        processor['validateImageUrl']('http://169.254.169.254/latest/meta-data'),
+      ).toThrow();
     });
 
     it('should block RFC 1918 private network IPs in production', () => {
@@ -170,13 +174,11 @@ describe('Security and Hardening Tests', () => {
     });
 
     it('should validate extension matching to prevent MIME spoofing', () => {
-      expect(() =>
-        mediaService.validateFileExtension('photo.jpg', 'image/jpeg'),
-      ).not.toThrow();
+      expect(() => mediaService.validateFileExtension('photo.jpg', 'image/jpeg')).not.toThrow();
 
-      expect(() =>
-        mediaService.validateFileExtension('photo.exe', 'image/jpeg'),
-      ).toThrow(BadRequestException);
+      expect(() => mediaService.validateFileExtension('photo.exe', 'image/jpeg')).toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -191,7 +193,7 @@ describe('Security and Hardening Tests', () => {
       const password = 'mySecurePassword123!';
       const hash = await passwordService.hash(password);
       expect(hash).toContain('$argon2id$');
-      
+
       const isValid = await passwordService.compare(password, hash);
       expect(isValid).toBe(true);
 
@@ -202,7 +204,7 @@ describe('Security and Hardening Tests', () => {
     it('should successfully verify legacy Bcrypt hashes (used in seed data)', async () => {
       // Bcrypt hash for "password123"
       const bcryptHash = '$2b$10$ZER0YeR.ODmqRlyHYgwXwexdnWI3crzzz49iU5MVxWg9ngGQZgZCW';
-      
+
       const isValid = await passwordService.compare('password123', bcryptHash);
       expect(isValid).toBe(true);
 

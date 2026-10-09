@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -67,7 +58,11 @@ export class VouchersController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a voucher (owner)' })
-  update(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: UpdateVoucherDto) {
+  update(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateVoucherDto,
+  ) {
     return this.vouchers.update(userId, id, dto);
   }
 

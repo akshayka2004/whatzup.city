@@ -13,11 +13,33 @@ interface ActiveDiscount {
   itemName: string;
   description?: string | null;
   wheelPercentages: number[];
-  mySpin: { discountPercent: number; code: string; status: string; itemName: string; expiresAt?: string | null } | null;
+  mySpin: {
+    discountPercent: number;
+    code: string;
+    status: string;
+    itemName: string;
+    expiresAt?: string | null;
+  } | null;
 }
 
-const SEGMENT_COLORS = ['#f43f5e', '#f59e0b', '#10b981', '#06b6d4', '#6366f1', '#ec4899', '#84cc16'];
-const CONFETTI_COLORS = ['#f43f5e', '#f59e0b', '#10b981', '#06b6d4', '#6366f1', '#ec4899', '#facc15'];
+const SEGMENT_COLORS = [
+  '#f43f5e',
+  '#f59e0b',
+  '#10b981',
+  '#06b6d4',
+  '#6366f1',
+  '#ec4899',
+  '#84cc16',
+];
+const CONFETTI_COLORS = [
+  '#f43f5e',
+  '#f59e0b',
+  '#10b981',
+  '#06b6d4',
+  '#6366f1',
+  '#ec4899',
+  '#facc15',
+];
 const SPIN_DURATION_MS = 4200;
 
 function makeConfetti(count = 28) {
@@ -42,7 +64,12 @@ export function LuckyWheel({ businessId, enabled }: LuckyWheelProps) {
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
-  const [result, setResult] = useState<{ discountPercent: number; code: string; status: string; expiresAt?: string | null } | null>(null);
+  const [result, setResult] = useState<{
+    discountPercent: number;
+    code: string;
+    status: string;
+    expiresAt?: string | null;
+  } | null>(null);
   const [error, setError] = useState('');
   const [confetti, setConfetti] = useState<ReturnType<typeof makeConfetti>>([]);
 
@@ -54,7 +81,9 @@ export function LuckyWheel({ businessId, enabled }: LuckyWheelProps) {
       if (!res.error && res.data) setDiscount(res.data);
       setLoading(false);
     });
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [enabled, businessId]);
 
   const segments = discount?.wheelPercentages || [];
@@ -141,8 +170,11 @@ export function LuckyWheel({ businessId, enabled }: LuckyWheelProps) {
       ) : (
         <div className="flex flex-col items-center gap-5">
           <p className="text-sm text-muted-foreground text-center max-w-xs">
-            Spin for a discount on <span className="font-semibold text-foreground">{discount.itemName}</span>.
-            {discount.description && <span className="block mt-1 text-xs">{discount.description}</span>}
+            Spin for a discount on{' '}
+            <span className="font-semibold text-foreground">{discount.itemName}</span>.
+            {discount.description && (
+              <span className="block mt-1 text-xs">{discount.description}</span>
+            )}
           </p>
 
           <div className="relative" style={{ width: 264, height: 264 }}>
@@ -153,18 +185,19 @@ export function LuckyWheel({ businessId, enabled }: LuckyWheelProps) {
             />
 
             {/* Ambient sparkles around the rim */}
-            {!spinning && [0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="disc-sparkle h-1.5 w-1.5 rounded-full bg-primary"
-                style={{
-                  left: `${18 + i * 32}%`,
-                  top: i % 2 === 0 ? '-2px' : 'auto',
-                  bottom: i % 2 !== 0 ? '-2px' : 'auto',
-                  animationDelay: `${i * 0.5}s`,
-                }}
-              />
-            ))}
+            {!spinning &&
+              [0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="disc-sparkle h-1.5 w-1.5 rounded-full bg-primary"
+                  style={{
+                    left: `${18 + i * 32}%`,
+                    top: i % 2 === 0 ? '-2px' : 'auto',
+                    bottom: i % 2 !== 0 ? '-2px' : 'auto',
+                    animationDelay: `${i * 0.5}s`,
+                  }}
+                />
+              ))}
 
             {/* Pointer */}
             <div
@@ -177,11 +210,16 @@ export function LuckyWheel({ businessId, enabled }: LuckyWheelProps) {
               style={{
                 background: wheelBackground,
                 transform: `rotate(${rotation}deg)`,
-                transition: spinning ? `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.17,0.67,0.12,0.99)` : 'transform .3s ease-out',
+                transition: spinning
+                  ? `transform ${SPIN_DURATION_MS}ms cubic-bezier(0.17,0.67,0.12,0.99)`
+                  : 'transform .3s ease-out',
               }}
             >
               {/* Segment dividers */}
-              <div className="absolute inset-0 rounded-full" style={{ background: dividerOverlay }} />
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{ background: dividerOverlay }}
+              />
 
               {segments.map((pct, i) => {
                 const angle = i * segmentDeg + segmentDeg / 2;
@@ -208,7 +246,8 @@ export function LuckyWheel({ businessId, enabled }: LuckyWheelProps) {
 
           {error && (
             <div className="flex items-start gap-2 p-3 rounded-xl bg-danger-soft border border-destructive/20 text-danger-soft-foreground text-sm">
-              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" /> <span className="break-words min-w-0">{error}</span>
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />{' '}
+              <span className="break-words min-w-0">{error}</span>
             </div>
           )}
 
@@ -219,7 +258,11 @@ export function LuckyWheel({ businessId, enabled }: LuckyWheelProps) {
           >
             <span className="disc-shimmer pointer-events-none absolute inset-0" />
             <span className="relative flex items-center gap-1.5">
-              {spinning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              {spinning ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
               {spinning ? 'Spinning…' : 'Spin the wheel'}
             </span>
           </Button>

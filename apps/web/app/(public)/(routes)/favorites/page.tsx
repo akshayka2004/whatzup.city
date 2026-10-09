@@ -107,7 +107,9 @@ export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<SavedBusiness[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [leaving, setLeaving] = useState<Array<string | number>>([]);
-  const [undo, setUndo] = useState<{ fav: SavedBusiness; index: number; token: number } | null>(null);
+  const [undo, setUndo] = useState<{ fav: SavedBusiness; index: number; token: number } | null>(
+    null,
+  );
   const undoTimer = useRef<number | null>(null);
 
   const reload = () => setFavorites(getSavedBusinesses());
@@ -133,7 +135,10 @@ export default function FavoritesPage() {
   // entry is dropped and `favoritesUpdated` fires. Undo simply puts it back.
   const handleRemove = (fav: SavedBusiness) => {
     if (leaving.includes(fav.id)) return;
-    const index = Math.max(0, favorites.findIndex((b) => b.id === fav.id));
+    const index = Math.max(
+      0,
+      favorites.findIndex((b) => b.id === fav.id),
+    );
     setLeaving((l) => [...l, fav.id]);
     window.setTimeout(() => {
       const updated = getSavedBusinesses().filter((b) => b.id !== fav.id);
@@ -199,7 +204,9 @@ export default function FavoritesPage() {
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="mb-1 flex flex-wrap items-center gap-1.5">
-                        <h3 className="truncate text-lg font-semibold text-foreground">{fav.name}</h3>
+                        <h3 className="truncate text-lg font-semibold text-foreground">
+                          {fav.name}
+                        </h3>
                         {fav.isVerified && (
                           <span className="inline-flex items-center gap-0.5 rounded-full border border-success/25 bg-success-soft px-1.5 py-0.5 text-xs font-semibold text-success-soft-foreground">
                             <CheckCircle2 className="h-3 w-3" />
@@ -218,7 +225,9 @@ export default function FavoritesPage() {
                     <div className="mb-4 flex items-center gap-1 text-sm">
                       <Star className="h-4 w-4 fill-warning text-warning" />
                       <span className="font-medium">{fav.rating}</span>
-                      {fav.reviews > 0 && <span className="text-muted-foreground">({fav.reviews})</span>}
+                      {fav.reviews > 0 && (
+                        <span className="text-muted-foreground">({fav.reviews})</span>
+                      )}
                     </div>
                   ) : (
                     <div className="mb-4" />

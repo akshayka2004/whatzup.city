@@ -67,8 +67,14 @@ function loadSnapshot(userId: string): Promise<Snapshot | null> {
         if (cached === request) cached = null;
         return null;
       }
-      const raw = brandRes.error ? null : brandRes.data?.brand ? brandRes.data : brandRes.data?.data;
-      const brandMine: BrandMine | null = raw?.brand ? { brand: raw.brand, outlets: raw.outlets ?? [] } : null;
+      const raw = brandRes.error
+        ? null
+        : brandRes.data?.brand
+          ? brandRes.data
+          : brandRes.data?.data;
+      const brandMine: BrandMine | null = raw?.brand
+        ? { brand: raw.brand, outlets: raw.outlets ?? [] }
+        : null;
       return { brandMine, owned: owned.list, activeBusinessId: owned.activeBusinessId };
     });
     cached = request;
@@ -120,7 +126,8 @@ export function useActiveBusiness(enabled = true) {
   );
 
   const activeBusinessId = snapshot?.activeBusinessId ?? snapshot?.owned[0]?.id ?? null;
-  const activeBusiness = snapshot?.owned.find((b) => b.id === activeBusinessId) ?? snapshot?.owned[0] ?? null;
+  const activeBusiness =
+    snapshot?.owned.find((b) => b.id === activeBusinessId) ?? snapshot?.owned[0] ?? null;
 
   return {
     brand: snapshot?.brandMine?.brand ?? null,

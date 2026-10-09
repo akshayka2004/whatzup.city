@@ -105,7 +105,9 @@ export function CommandPalette() {
     debounce.current = setTimeout(async () => {
       try {
         const res = await apiService.get<any>(`/v1/search/suggestions?q=${encodeURIComponent(q)}`);
-        const raw = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.suggestions ?? [];
+        const raw = Array.isArray(res.data)
+          ? res.data
+          : (res.data?.data ?? res.data?.suggestions ?? []);
         setSuggestions(
           raw
             .map((s: any) =>
@@ -206,7 +208,11 @@ export function CommandPalette() {
                 <span>{r}</span>
               </CommandItem>
             ))}
-            <CommandItem value="clear-recents" onSelect={clearRecents} className="text-muted-foreground">
+            <CommandItem
+              value="clear-recents"
+              onSelect={clearRecents}
+              className="text-muted-foreground"
+            >
               <span className="pl-7 text-xs">Clear recent searches</span>
             </CommandItem>
           </CommandGroup>
@@ -228,7 +234,11 @@ export function CommandPalette() {
           {CATEGORIES.map((c) => {
             const Icon = c.icon;
             return (
-              <CommandItem key={c.label} value={`cat ${c.label}`} onSelect={() => runSearch(c.label)}>
+              <CommandItem
+                key={c.label}
+                value={`cat ${c.label}`}
+                onSelect={() => runSearch(c.label)}
+              >
                 <Icon />
                 <span>{c.label}</span>
               </CommandItem>

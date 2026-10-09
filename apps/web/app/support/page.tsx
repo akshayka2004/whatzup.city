@@ -7,9 +7,19 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  LifeBuoy, Plus, MessageSquare, Clock, CheckCircle2,
-  AlertCircle, X, ChevronRight, Search, ArrowLeft,
-  Tag, Send, Paperclip,
+  LifeBuoy,
+  Plus,
+  MessageSquare,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  X,
+  ChevronRight,
+  Search,
+  ArrowLeft,
+  Tag,
+  Send,
+  Paperclip,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -46,10 +56,26 @@ const CATEGORIES: { id: TicketCategory; label: string }[] = [
 ];
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; color: string; icon: any }> = {
-  open: { label: 'Open', color: 'bg-warning-soft text-warning-soft-foreground border-warning/30', icon: Clock },
-  in_progress: { label: 'In Progress', color: 'bg-info-soft text-info-soft-foreground border-info/25', icon: MessageSquare },
-  resolved: { label: 'Resolved', color: 'bg-success-soft text-success-soft-foreground border-success/25', icon: CheckCircle2 },
-  closed: { label: 'Closed', color: 'bg-surface-sunken text-muted-foreground border-border', icon: X },
+  open: {
+    label: 'Open',
+    color: 'bg-warning-soft text-warning-soft-foreground border-warning/30',
+    icon: Clock,
+  },
+  in_progress: {
+    label: 'In Progress',
+    color: 'bg-info-soft text-info-soft-foreground border-info/25',
+    icon: MessageSquare,
+  },
+  resolved: {
+    label: 'Resolved',
+    color: 'bg-success-soft text-success-soft-foreground border-success/25',
+    icon: CheckCircle2,
+  },
+  closed: {
+    label: 'Closed',
+    color: 'bg-surface-sunken text-muted-foreground border-border',
+    icon: X,
+  },
 };
 
 const INITIAL_TICKETS: Ticket[] = [
@@ -61,8 +87,18 @@ const INITIAL_TICKETS: Ticket[] = [
     createdAt: '19 May 2026',
     updatedAt: '21 May 2026',
     messages: [
-      { id: '1', from: 'user', text: "I tried to redeem the 10% off offer at Bella Restaurant but it kept showing 'already claimed'. I haven't claimed it before.", timestamp: '19 May 2026, 2:30 PM' },
-      { id: '2', from: 'support', text: "Thanks for reaching out! We're looking into this. Could you share your account email and the offer ID?", timestamp: '20 May 2026, 10:00 AM' },
+      {
+        id: '1',
+        from: 'user',
+        text: "I tried to redeem the 10% off offer at Bella Restaurant but it kept showing 'already claimed'. I haven't claimed it before.",
+        timestamp: '19 May 2026, 2:30 PM',
+      },
+      {
+        id: '2',
+        from: 'support',
+        text: "Thanks for reaching out! We're looking into this. Could you share your account email and the offer ID?",
+        timestamp: '20 May 2026, 10:00 AM',
+      },
     ],
   },
   {
@@ -73,7 +109,12 @@ const INITIAL_TICKETS: Ticket[] = [
     createdAt: '22 May 2026',
     updatedAt: '22 May 2026',
     messages: [
-      { id: '1', from: 'user', text: "I uploaded a bill for Health Plus Clinic but it was rejected. The bill is genuine and within 7 days.", timestamp: '22 May 2026, 9:00 AM' },
+      {
+        id: '1',
+        from: 'user',
+        text: 'I uploaded a bill for Health Plus Clinic but it was rejected. The bill is genuine and within 7 days.',
+        timestamp: '22 May 2026, 9:00 AM',
+      },
     ],
   },
 ];
@@ -83,7 +124,9 @@ function loadTickets(): Ticket[] {
   try {
     const s = localStorage.getItem(STORAGE_KEY);
     return s ? JSON.parse(s) : INITIAL_TICKETS;
-  } catch { return INITIAL_TICKETS; }
+  } catch {
+    return INITIAL_TICKETS;
+  }
 }
 
 function saveTickets(t: Ticket[]) {
@@ -106,7 +149,9 @@ export default function SupportPage() {
   const [newCategory, setNewCategory] = useState<TicketCategory>('general');
   const [newDesc, setNewDesc] = useState('');
 
-  useEffect(() => { setTickets(loadTickets()); }, []);
+  useEffect(() => {
+    setTickets(loadTickets());
+  }, []);
 
   const filtered = tickets.filter((t) => {
     if (filter !== 'all' && t.status !== filter) return false;
@@ -117,7 +162,11 @@ export default function SupportPage() {
   const handleCreateTicket = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newDesc.trim()) return;
-    const now = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const now = new Date().toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
     const ticket: Ticket = {
       id: `TKT-${String(Date.now()).slice(-4)}`,
       title: newTitle.trim(),
@@ -125,20 +174,33 @@ export default function SupportPage() {
       status: 'open',
       createdAt: now,
       updatedAt: now,
-      messages: [{ id: '1', from: 'user', text: newDesc.trim(), timestamp: `${now}, ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` }],
+      messages: [
+        {
+          id: '1',
+          from: 'user',
+          text: newDesc.trim(),
+          timestamp: `${now}, ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`,
+        },
+      ],
     };
     const updated = [ticket, ...tickets];
     setTickets(updated);
     saveTickets(updated);
     setShowNew(false);
-    setNewTitle(''); setNewCategory('general'); setNewDesc('');
+    setNewTitle('');
+    setNewCategory('general');
+    setNewDesc('');
     setSelected(ticket);
   };
 
   const handleReply = (e: React.FormEvent) => {
     e.preventDefault();
     if (!replyText.trim() || !selected) return;
-    const now = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const now = new Date().toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
     const msg: TicketMessage = {
       id: Date.now().toString(),
       from: 'user',
@@ -146,9 +208,7 @@ export default function SupportPage() {
       timestamp: `${now}, ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`,
     };
     const updated = tickets.map((t) =>
-      t.id === selected.id
-        ? { ...t, messages: [...t.messages, msg], updatedAt: now }
-        : t
+      t.id === selected.id ? { ...t, messages: [...t.messages, msg], updatedAt: now } : t,
     );
     setTickets(updated);
     saveTickets(updated);
@@ -164,7 +224,11 @@ export default function SupportPage() {
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/">
-              <Button variant="ghost" size="sm" className="rounded-xl text-muted-foreground hover:text-foreground cursor-pointer">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-xl text-muted-foreground hover:text-foreground cursor-pointer"
+              >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
@@ -174,7 +238,10 @@ export default function SupportPage() {
             </div>
           </div>
           <Button
-            onClick={() => { setShowNew(true); setSelected(null); }}
+            onClick={() => {
+              setShowNew(true);
+              setSelected(null);
+            }}
             size="sm"
             className="rounded-xl gap-1.5 bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
           >
@@ -206,7 +273,9 @@ export default function SupportPage() {
               >
                 <option value="all">All</option>
                 {Object.entries(STATUS_CONFIG).map(([id, cfg]) => (
-                  <option key={id} value={id}>{cfg.label}</option>
+                  <option key={id} value={id}>
+                    {cfg.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -225,7 +294,10 @@ export default function SupportPage() {
               return (
                 <Card
                   key={ticket.id}
-                  onClick={() => { setSelected(ticket); setShowNew(false); }}
+                  onClick={() => {
+                    setSelected(ticket);
+                    setShowNew(false);
+                  }}
                   className={cn(
                     'p-4 rounded-2xl border cursor-pointer transition-all duration-200 ease-out hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 ui-fade-up',
                     active ? 'border-primary/40 bg-primary/5' : 'border-border bg-card/60',
@@ -233,8 +305,15 @@ export default function SupportPage() {
                   style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2 break-words">{ticket.title}</p>
-                    <span className={cn('text-xs font-bold px-1.5 py-0.5 rounded-full border shrink-0', cfg.color)}>
+                    <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2 break-words">
+                      {ticket.title}
+                    </p>
+                    <span
+                      className={cn(
+                        'text-xs font-bold px-1.5 py-0.5 rounded-full border shrink-0',
+                        cfg.color,
+                      )}
+                    >
                       {cfg.label}
                     </span>
                   </div>
@@ -262,7 +341,9 @@ export default function SupportPage() {
                 </h2>
                 <form onSubmit={handleCreateTicket} className="space-y-4">
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Issue Title</label>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                      Issue Title
+                    </label>
                     <Input
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
@@ -272,19 +353,25 @@ export default function SupportPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Category</label>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                      Category
+                    </label>
                     <select
                       value={newCategory}
                       onChange={(e) => setNewCategory(e.target.value as TicketCategory)}
                       className="w-full h-9 rounded-xl border border-border bg-card text-sm text-foreground px-3 cursor-pointer"
                     >
                       {CATEGORIES.map((c) => (
-                        <option key={c.id} value={c.id}>{c.label}</option>
+                        <option key={c.id} value={c.id}>
+                          {c.label}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Description</label>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                      Description
+                    </label>
                     <textarea
                       value={newDesc}
                       onChange={(e) => setNewDesc(e.target.value)}
@@ -321,10 +408,17 @@ export default function SupportPage() {
                 <div className="p-5 border-b border-border">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">{selected.id} · {selected.category}</p>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        {selected.id} · {selected.category}
+                      </p>
                       <h2 className="text-base font-bold text-foreground">{selected.title}</h2>
                     </div>
-                    <span className={cn('text-xs font-bold px-2 py-0.5 rounded-full border shrink-0', STATUS_CONFIG[selected.status].color)}>
+                    <span
+                      className={cn(
+                        'text-xs font-bold px-2 py-0.5 rounded-full border shrink-0',
+                        STATUS_CONFIG[selected.status].color,
+                      )}
+                    >
                       {STATUS_CONFIG[selected.status].label}
                     </span>
                   </div>
@@ -333,13 +427,18 @@ export default function SupportPage() {
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-5 space-y-4">
                   {selected.messages.map((msg) => (
-                    <div key={msg.id} className={cn('flex', msg.from === 'user' ? 'justify-end' : 'justify-start')}>
-                      <div className={cn(
-                        'max-w-[80%] rounded-2xl px-4 py-3',
-                        msg.from === 'user'
-                          ? 'bg-primary/20 text-foreground rounded-tr-sm'
-                          : 'bg-muted/40 text-foreground rounded-tl-sm',
-                      )}>
+                    <div
+                      key={msg.id}
+                      className={cn('flex', msg.from === 'user' ? 'justify-end' : 'justify-start')}
+                    >
+                      <div
+                        className={cn(
+                          'max-w-[80%] rounded-2xl px-4 py-3',
+                          msg.from === 'user'
+                            ? 'bg-primary/20 text-foreground rounded-tr-sm'
+                            : 'bg-muted/40 text-foreground rounded-tl-sm',
+                        )}
+                      >
                         <p className="text-xs font-semibold mb-1 text-muted-foreground">
                           {msg.from === 'user' ? 'You' : 'Support Team'}
                         </p>
@@ -376,8 +475,12 @@ export default function SupportPage() {
             {!selected && !showNew && (
               <Card className="p-12 rounded-2xl border-border bg-card/40 text-center">
                 <LifeBuoy className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-base font-semibold text-foreground mb-1">Select a ticket to view</p>
-                <p className="text-sm text-muted-foreground">Or open a new ticket for help with your issue.</p>
+                <p className="text-base font-semibold text-foreground mb-1">
+                  Select a ticket to view
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Or open a new ticket for help with your issue.
+                </p>
               </Card>
             )}
           </div>

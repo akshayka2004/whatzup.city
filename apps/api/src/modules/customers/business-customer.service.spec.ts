@@ -5,16 +5,40 @@ const ago = (d: number) => new Date(Date.now() - d * day);
 
 describe('segmentOf', () => {
   it('marks recent first contact as new', () => {
-    expect(segmentOf({ firstInteractionDate: ago(3), lastInteractionDate: ago(1), totalVerifiedPurchases: 5 })).toBe('new');
+    expect(
+      segmentOf({
+        firstInteractionDate: ago(3),
+        lastInteractionDate: ago(1),
+        totalVerifiedPurchases: 5,
+      }),
+    ).toBe('new');
   });
   it('marks repeat customers seen recently as returning', () => {
-    expect(segmentOf({ firstInteractionDate: ago(120), lastInteractionDate: ago(10), offersRedeemedCount: 2 })).toBe('returning');
+    expect(
+      segmentOf({
+        firstInteractionDate: ago(120),
+        lastInteractionDate: ago(10),
+        offersRedeemedCount: 2,
+      }),
+    ).toBe('returning');
   });
   it('marks a single older visit as one-time', () => {
-    expect(segmentOf({ firstInteractionDate: ago(45), lastInteractionDate: ago(40), offersClaimedCount: 1 })).toBe('one-time');
+    expect(
+      segmentOf({
+        firstInteractionDate: ago(45),
+        lastInteractionDate: ago(40),
+        offersClaimedCount: 1,
+      }),
+    ).toBe('one-time');
   });
   it('lapsed wins once they have been away 60+ days', () => {
-    expect(segmentOf({ firstInteractionDate: ago(200), lastInteractionDate: ago(61), totalVerifiedPurchases: 9 })).toBe('lapsed');
+    expect(
+      segmentOf({
+        firstInteractionDate: ago(200),
+        lastInteractionDate: ago(61),
+        totalVerifiedPurchases: 9,
+      }),
+    ).toBe('lapsed');
   });
 });
 

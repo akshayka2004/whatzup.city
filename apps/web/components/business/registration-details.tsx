@@ -2,7 +2,11 @@
 
 import { Input } from '@/components/ui/input';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { COMPANY_TYPES, CONTACT_PREFERENCES } from '@/lib/constants';
 import { getCategoryAttributes } from '@/lib/category-attributes';
@@ -19,7 +23,13 @@ export type RegistrationDetails = {
   billSeriesPrefix?: string;
   compliance?: {
     pan?: { has?: boolean; number?: string; nameAsPerPan?: string };
-    gst?: { has?: boolean; gstin?: string; legalName?: string; tradeName?: string; regType?: string };
+    gst?: {
+      has?: boolean;
+      gstin?: string;
+      legalName?: string;
+      tradeName?: string;
+      regType?: string;
+    };
   };
   ownerContact?: { email?: string; phone?: string; preference?: string[] };
   billingContact?: Contact;
@@ -32,7 +42,17 @@ type Contact = { fullName?: string; designation?: string; email?: string; phone?
 const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 const GSTIN_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z]Z[0-9A-Z]$/;
 
-function Section({ title, hint, children, id }: { title: string; hint?: string; children: React.ReactNode; id?: string }) {
+function Section({
+  title,
+  hint,
+  children,
+  id,
+}: {
+  title: string;
+  hint?: string;
+  children: React.ReactNode;
+  id?: string;
+}) {
   return (
     <div id={id} className="scroll-mt-24 rounded-2xl border border-border bg-card p-5">
       <h3 className="text-sm font-bold text-foreground">{title}</h3>
@@ -42,11 +62,20 @@ function Section({ title, hint, children, id }: { title: string; hint?: string; 
   );
 }
 
-function Field({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
+function Field({
+  label,
+  children,
+  required,
+}: {
+  label: string;
+  children: React.ReactNode;
+  required?: boolean;
+}) {
   return (
     <label className="block space-y-1.5">
       <span className="text-xs font-medium text-muted-foreground">
-        {label}{required && <span className="text-destructive"> *</span>}
+        {label}
+        {required && <span className="text-destructive"> *</span>}
       </span>
       {children}
     </label>
@@ -56,14 +85,19 @@ function Field({ label, children, required }: { label: string; children: React.R
 function YesNo({ value, onChange }: { value?: boolean; onChange: (v: boolean) => void }) {
   return (
     <div className="inline-flex rounded-xl border border-border p-0.5">
-      {[{ l: 'Yes', v: true }, { l: 'No', v: false }].map((o) => (
+      {[
+        { l: 'Yes', v: true },
+        { l: 'No', v: false },
+      ].map((o) => (
         <button
           key={o.l}
           type="button"
           onClick={() => onChange(o.v)}
           className={cn(
             'rounded-lg px-4 py-1.5 text-sm font-medium transition-colors',
-            value === o.v ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+            value === o.v
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:text-foreground',
           )}
         >
           {o.l}
@@ -74,8 +108,14 @@ function YesNo({ value, onChange }: { value?: boolean; onChange: (v: boolean) =>
 }
 
 function ContactBlock({
-  value, onChange, required,
-}: { value?: Contact; onChange: (c: Contact) => void; required?: boolean }) {
+  value,
+  onChange,
+  required,
+}: {
+  value?: Contact;
+  onChange: (c: Contact) => void;
+  required?: boolean;
+}) {
   const v = value || {};
   const set = (k: keyof Contact, val: string) => onChange({ ...v, [k]: val });
   return (
@@ -152,20 +192,30 @@ export function RegistrationDetailsForm({
             )}
           </Field>
           <Field label="Company name (legal)">
-            <Input value={v.companyName || ''} onChange={(e) => merge({ companyName: e.target.value })} />
+            <Input
+              value={v.companyName || ''}
+              onChange={(e) => merge({ companyName: e.target.value })}
+            />
           </Field>
           <Field label="Company type">
-            <Select value={v.companyType || ''} onValueChange={(val) => merge({ companyType: val })}>
-              <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+            <Select
+              value={v.companyType || ''}
+              onValueChange={(val) => merge({ companyType: val })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
               <SelectContent>
-                {COMPANY_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                {COMPANY_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </Field>
           {!hideBillSeries && (
-            <Field
-              label="Bill series prefix"
-            >
+            <Field label="Bill series prefix">
               <Input
                 value={v.billSeriesPrefix || ''}
                 onChange={(e) => merge({ billSeriesPrefix: e.target.value })}
@@ -190,7 +240,10 @@ export function RegistrationDetailsForm({
         title="Opening hours & closed timings"
         hint="Add a shift for split timings (e.g. 9 AM–1 PM and 4–9 PM). Shown on your public profile."
       >
-        <OperatingHoursEditor value={v.operatingHours} onChange={(operatingHours) => merge({ operatingHours })} />
+        <OperatingHoursEditor
+          value={v.operatingHours}
+          onChange={(operatingHours) => merge({ operatingHours })}
+        />
       </Section>
 
       {/* PAN */}
@@ -208,10 +261,17 @@ export function RegistrationDetailsForm({
                 maxLength={10}
                 className={cn(!panValid && 'border-destructive')}
               />
-              {!panValid && <span className="text-xs text-destructive">Format: 5 letters, 4 digits, 1 letter</span>}
+              {!panValid && (
+                <span className="text-xs text-destructive">
+                  Format: 5 letters, 4 digits, 1 letter
+                </span>
+              )}
             </Field>
             <Field label="Name as per PAN">
-              <Input value={pan.nameAsPerPan || ''} onChange={(e) => setPan({ nameAsPerPan: e.target.value })} />
+              <Input
+                value={pan.nameAsPerPan || ''}
+                onChange={(e) => setPan({ nameAsPerPan: e.target.value })}
+              />
             </Field>
           </div>
         )}
@@ -232,11 +292,15 @@ export function RegistrationDetailsForm({
                 maxLength={15}
                 className={cn(!gstValid && 'border-destructive')}
               />
-              {!gstValid && <span className="text-xs text-destructive">Enter a valid 15-character GSTIN</span>}
+              {!gstValid && (
+                <span className="text-xs text-destructive">Enter a valid 15-character GSTIN</span>
+              )}
             </Field>
             <Field label="Registration type">
               <Select value={gst.regType || ''} onValueChange={(val) => setGst({ regType: val })}>
-                <SelectTrigger><SelectValue placeholder="Regular / Composition" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Regular / Composition" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Regular">Regular</SelectItem>
                   <SelectItem value="Composition">Composition</SelectItem>
@@ -244,10 +308,16 @@ export function RegistrationDetailsForm({
               </Select>
             </Field>
             <Field label="Legal name (as per PAN)">
-              <Input value={gst.legalName || ''} onChange={(e) => setGst({ legalName: e.target.value })} />
+              <Input
+                value={gst.legalName || ''}
+                onChange={(e) => setGst({ legalName: e.target.value })}
+              />
             </Field>
             <Field label="Trade name">
-              <Input value={gst.tradeName || ''} onChange={(e) => setGst({ tradeName: e.target.value })} />
+              <Input
+                value={gst.tradeName || ''}
+                onChange={(e) => setGst({ tradeName: e.target.value })}
+              />
             </Field>
           </div>
         )}
@@ -257,10 +327,17 @@ export function RegistrationDetailsForm({
       <Section title="Owner contact">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Owner email">
-            <Input type="email" value={owner.email || ''} onChange={(e) => merge({ ownerContact: { ...owner, email: e.target.value } })} />
+            <Input
+              type="email"
+              value={owner.email || ''}
+              onChange={(e) => merge({ ownerContact: { ...owner, email: e.target.value } })}
+            />
           </Field>
           <Field label="Owner phone">
-            <Input value={owner.phone || ''} onChange={(e) => merge({ ownerContact: { ...owner, phone: e.target.value } })} />
+            <Input
+              value={owner.phone || ''}
+              onChange={(e) => merge({ ownerContact: { ...owner, phone: e.target.value } })}
+            />
           </Field>
         </div>
         <Field label="Preferred contact (choose any or all)">
@@ -286,7 +363,11 @@ export function RegistrationDetailsForm({
 
       {/* Contacts */}
       <Section title="Billing contact" hint="Required — used for invoices and billing.">
-        <ContactBlock value={v.billingContact} onChange={(c) => merge({ billingContact: c })} required />
+        <ContactBlock
+          value={v.billingContact}
+          onChange={(c) => merge({ billingContact: c })}
+          required
+        />
       </Section>
       <Section title="Support contact" hint="Optional — day-to-day point of contact.">
         <ContactBlock value={v.supportContact} onChange={(c) => merge({ supportContact: c })} />
@@ -304,10 +385,19 @@ export function RegistrationDetailsForm({
                 {a.type === 'boolean' ? (
                   <YesNo value={attrVals[a.key]} onChange={(val) => setAttr(a.key, val)} />
                 ) : a.type === 'single' ? (
-                  <Select value={attrVals[a.key] || ''} onValueChange={(val) => setAttr(a.key, val)}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <Select
+                    value={attrVals[a.key] || ''}
+                    onValueChange={(val) => setAttr(a.key, val)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
                     <SelectContent>
-                      {a.options!.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                      {a.options!.map((o) => (
+                        <SelectItem key={o} value={o}>
+                          {o}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 ) : (
@@ -319,10 +409,14 @@ export function RegistrationDetailsForm({
                         <button
                           key={o}
                           type="button"
-                          onClick={() => setAttr(a.key, on ? arr.filter((x) => x !== o) : [...arr, o])}
+                          onClick={() =>
+                            setAttr(a.key, on ? arr.filter((x) => x !== o) : [...arr, o])
+                          }
                           className={cn(
                             'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                            on ? 'border-primary bg-brand-soft text-brand-soft-foreground' : 'border-border text-muted-foreground hover:text-foreground',
+                            on
+                              ? 'border-primary bg-brand-soft text-brand-soft-foreground'
+                              : 'border-border text-muted-foreground hover:text-foreground',
                           )}
                         >
                           {o}

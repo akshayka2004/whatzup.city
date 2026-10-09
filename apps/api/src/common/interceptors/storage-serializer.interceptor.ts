@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable, from } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { StorageService } from '../storage/storage.service';
@@ -13,9 +8,7 @@ export class StorageSerializerInterceptor implements NestInterceptor {
   constructor(private readonly storageService: StorageService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    return next.handle().pipe(
-      switchMap((data) => from(this.serializeAsync(data))),
-    );
+    return next.handle().pipe(switchMap((data) => from(this.serializeAsync(data))));
   }
 
   private async serializeAsync(data: any): Promise<any> {
@@ -38,10 +31,7 @@ export class StorageSerializerInterceptor implements NestInterceptor {
       if (isPublic) {
         return this.storageService.generatePublicUrl(ref.bucket, ref.path);
       } else {
-        return await this.storageService.createSignedDownloadUrl(
-          ref.bucket,
-          ref.path,
-        );
+        return await this.storageService.createSignedDownloadUrl(ref.bucket, ref.path);
       }
     }
 
@@ -82,11 +72,7 @@ export class StorageSerializerInterceptor implements NestInterceptor {
     if (typeof val === 'string' && val.trim().startsWith('{')) {
       try {
         const parsed = JSON.parse(val);
-        if (
-          parsed &&
-          typeof parsed.bucket === 'string' &&
-          typeof parsed.path === 'string'
-        ) {
+        if (parsed && typeof parsed.bucket === 'string' && typeof parsed.path === 'string') {
           return { bucket: parsed.bucket, path: parsed.path };
         }
       } catch {

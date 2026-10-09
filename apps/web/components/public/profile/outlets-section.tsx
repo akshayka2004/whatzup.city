@@ -15,7 +15,11 @@ export function OutletsSection({ biz, businessId }: { biz: any; businessId: stri
   const branches: any[] = hasBranchList(biz) ? biz.branches : [];
 
   return (
-    <section id="outlets" aria-label="Outlets" className="mb-6 scroll-mt-16 space-y-6 lg:col-start-1">
+    <section
+      id="outlets"
+      aria-label="Outlets"
+      className="mb-6 scroll-mt-16 space-y-6 lg:col-start-1"
+    >
       {branches.length > 0 && (
         <SectionCard>
           <SectionHeading icon={Building2} title="Branches" hint={`${branches.length} locations`} />
@@ -67,7 +71,9 @@ export function OutletsSection({ biz, businessId }: { biz: any; businessId: stri
         </SectionCard>
       )}
 
-      {biz.brandId && <OtherOutlets brandId={biz.brandId} currentBusinessId={biz.id || businessId} />}
+      {biz.brandId && (
+        <OtherOutlets brandId={biz.brandId} currentBusinessId={biz.id || businessId} />
+      )}
     </section>
   );
 }

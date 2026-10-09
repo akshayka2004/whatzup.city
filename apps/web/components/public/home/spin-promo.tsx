@@ -9,10 +9,16 @@ export function SpinPromo() {
         href="/spin-it"
         className="ui-hairline ui-lift ui-press group relative flex items-center gap-4 overflow-hidden rounded-3xl p-5 sm:gap-6 sm:p-7"
       >
-        <div aria-hidden className="ui-drift-slow pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-primary/15 blur-3xl" />
+        <div
+          aria-hidden
+          className="ui-drift-slow pointer-events-none absolute -right-10 -top-16 h-48 w-48 rounded-full bg-primary/15 blur-3xl"
+        />
 
         <div className="relative shrink-0">
-          <span aria-hidden className="ui-glow absolute inset-0 rounded-2xl bg-primary/30 blur-lg" />
+          <span
+            aria-hidden
+            className="ui-glow absolute inset-0 rounded-2xl bg-primary/30 blur-lg"
+          />
           <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground sm:h-16 sm:w-16">
             <Sparkles className="h-7 w-7 sm:h-8 sm:w-8" />
           </span>

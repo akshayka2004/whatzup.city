@@ -54,7 +54,13 @@ export class AuditService {
     tenantId: string,
     page = 1,
     limit = 50,
-    filters?: { userId?: string; action?: string; resource?: string; q?: string; category?: string },
+    filters?: {
+      userId?: string;
+      action?: string;
+      resource?: string;
+      q?: string;
+      category?: string;
+    },
     actorRole?: string,
   ): Promise<any> {
     page = Math.max(1, Number(page) || 1);

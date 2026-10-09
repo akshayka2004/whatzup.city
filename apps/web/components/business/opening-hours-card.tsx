@@ -5,16 +5,30 @@
 import { useEffect, useState } from 'react';
 import { CalendarOff, ChevronDown, Clock } from 'lucide-react';
 import {
-  DAY_KEYS, DAY_LABELS, formatTime12, getOpenStatus, hasOperatingHours, istParts,
+  DAY_KEYS,
+  DAY_LABELS,
+  formatTime12,
+  getOpenStatus,
+  hasOperatingHours,
+  istParts,
   validateOperatingHours,
 } from '@saas/types';
 import { cn } from '@/lib/utils';
 
 const fmtDate = (d: string) =>
-  new Date(`${d}T00:00:00Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  new Date(`${d}T00:00:00Z`).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  });
 
 const fmtShifts = (shifts: { open: string; close: string }[]) =>
-  shifts.map((s) => `${formatTime12(s.open)} – ${s.close === '24:00' ? 'Midnight' : formatTime12(s.close)}`).join(' / ');
+  shifts
+    .map(
+      (s) =>
+        `${formatTime12(s.open)} – ${s.close === '24:00' ? 'Midnight' : formatTime12(s.close)}`,
+    )
+    .join(' / ');
 
 export function OpeningHoursCard({
   hours,
@@ -77,7 +91,8 @@ export function OpeningHoursCard({
 
       {closureNow && (
         <p className="mt-2 text-xs text-muted-foreground">
-          Temporarily closed{closureNow.reason ? `: ${closureNow.reason}` : ''} (until {fmtDate(closureNow.to)})
+          Temporarily closed{closureNow.reason ? `: ${closureNow.reason}` : ''} (until{' '}
+          {fmtDate(closureNow.to)})
         </p>
       )}
 
@@ -95,32 +110,43 @@ export function OpeningHoursCard({
           className="mt-1 flex min-h-11 w-full cursor-pointer items-center justify-between rounded-lg text-sm font-semibold text-primary"
         >
           {expanded ? 'Hide weekly hours' : 'See weekly hours'}
-          <ChevronDown className={cn('h-4 w-4 transition-transform motion-reduce:transition-none', expanded && 'rotate-180')} />
+          <ChevronDown
+            className={cn(
+              'h-4 w-4 transition-transform motion-reduce:transition-none',
+              expanded && 'rotate-180',
+            )}
+          />
         </button>
       )}
 
       {showWeek && (
-      <ul className={cn('divide-y divide-border text-sm', collapsible ? 'ui-fade-up mt-1' : 'mt-3')}>
-        {DAY_KEYS.map((day) => {
-          const sched = h.weekly[day];
-          const isToday = parts?.day === day;
-          const closed = sched.closed || sched.shifts.length === 0;
-          return (
-            <li
-              key={day}
-              className={cn(
-                'flex items-start justify-between gap-3 py-2',
-                isToday && '-mx-2 rounded-lg bg-primary/5 px-2 font-semibold',
-              )}
-            >
-              <span className={cn('shrink-0', isToday ? 'text-primary' : 'text-foreground')}>{DAY_LABELS[day]}</span>
-              <span className={cn('text-right', closed ? 'text-muted-foreground' : 'text-foreground')}>
-                {closed ? 'Closed' : fmtShifts(sched.shifts)}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
+        <ul
+          className={cn('divide-y divide-border text-sm', collapsible ? 'ui-fade-up mt-1' : 'mt-3')}
+        >
+          {DAY_KEYS.map((day) => {
+            const sched = h.weekly[day];
+            const isToday = parts?.day === day;
+            const closed = sched.closed || sched.shifts.length === 0;
+            return (
+              <li
+                key={day}
+                className={cn(
+                  'flex items-start justify-between gap-3 py-2',
+                  isToday && '-mx-2 rounded-lg bg-primary/5 px-2 font-semibold',
+                )}
+              >
+                <span className={cn('shrink-0', isToday ? 'text-primary' : 'text-foreground')}>
+                  {DAY_LABELS[day]}
+                </span>
+                <span
+                  className={cn('text-right', closed ? 'text-muted-foreground' : 'text-foreground')}
+                >
+                  {closed ? 'Closed' : fmtShifts(sched.shifts)}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       {upcoming.length > 0 && (

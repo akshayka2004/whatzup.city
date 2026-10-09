@@ -81,7 +81,7 @@ export class BusinessesService {
     const pageVal = page || 1;
     const skipVal = (pageVal - 1) * limitVal;
 
-    const where = isPublic 
+    const where = isPublic
       ? { ...criteria, status: 'APPROVED', deletedAt: null } // public listings never show unreviewed businesses
       : { ...criteria, tenantId, deletedAt: null };
 
@@ -109,7 +109,9 @@ export class BusinessesService {
         return copy;
       });
       // Additive: live-offer count + fulfilment modes for the public cards.
-      result.data = await this.searchService.attachOfferSummary(result.data as Record<string, any>[]);
+      result.data = await this.searchService.attachOfferSummary(
+        result.data as Record<string, any>[],
+      );
     }
 
     return result;
@@ -117,7 +119,7 @@ export class BusinessesService {
 
   async findById(tenantId: string, id: string, isPublic = false) {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
-    
+
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
     if (!isUuid) {
       return this.findBySlug(tenantId, id, isPublic);
@@ -205,20 +207,47 @@ export class BusinessesService {
     // Whitelist owner-editable fields. Never let an owner self-approve
     // (status / isVerified) or reassign ownership / tenant via this route.
     const ALLOWED = [
-      'name', 'description', 'categoryId', 'ownerName', 'phone', 'email', 'website',
-      'address', 'city', 'state', 'zipCode', 'district', 'googleMapsUrl', 'socialLinks',
-      'tags', 'logo', 'halalStatus', 'operatingHours',
+      'name',
+      'description',
+      'categoryId',
+      'ownerName',
+      'phone',
+      'email',
+      'website',
+      'address',
+      'city',
+      'state',
+      'zipCode',
+      'district',
+      'googleMapsUrl',
+      'socialLinks',
+      'tags',
+      'logo',
+      'halalStatus',
+      'operatingHours',
       // Registration / KYC details
-      'brandName', 'companyName', 'companyType', 'compliance', 'ownerContact',
-      'billingContact', 'supportContact', 'branchHead', 'categoryAttributes',
-      'subcategoryIds', 'billSeriesPrefix',
+      'brandName',
+      'companyName',
+      'companyType',
+      'compliance',
+      'ownerContact',
+      'billingContact',
+      'supportContact',
+      'branchHead',
+      'categoryAttributes',
+      'subcategoryIds',
+      'billSeriesPrefix',
       // Hotel category pricing
-      'hotelStarRating', 'hotelAmenities', 'amenityDetails',
+      'hotelStarRating',
+      'hotelAmenities',
+      'amenityDetails',
     ];
     const payload: any = {};
     for (const k of ALLOWED) if (data[k] !== undefined) payload[k] = data[k];
-    if (payload.operatingHours !== undefined) payload.operatingHours = operatingHoursForDb(payload.operatingHours);
-    if (payload.billSeriesPrefix !== undefined) payload.billSeriesPrefix = String(payload.billSeriesPrefix).trim() || null;
+    if (payload.operatingHours !== undefined)
+      payload.operatingHours = operatingHoursForDb(payload.operatingHours);
+    if (payload.billSeriesPrefix !== undefined)
+      payload.billSeriesPrefix = String(payload.billSeriesPrefix).trim() || null;
 
     const updated = await this.businessRepo.update(tenantId, id, payload);
 
@@ -277,7 +306,17 @@ export class BusinessesService {
   ) {
     const pageVal = Math.max(1, Number(page) || 1);
     const limitVal = Math.min(Number(limit) || 25, 100);
-    const { search, categoryId, city, status, isVerified, halalStatus, brandId, sortBy, sortOrder } = opts;
+    const {
+      search,
+      categoryId,
+      city,
+      status,
+      isVerified,
+      halalStatus,
+      brandId,
+      sortBy,
+      sortOrder,
+    } = opts;
 
     const where: any = { deletedAt: null };
     if (search) {
@@ -335,7 +374,9 @@ export class BusinessesService {
         _sum: { amount: true },
       });
       const byId = new Map(sums.map((s: any) => [s.businessId, Number(s._sum.amount || 0)]));
-      (data as any[]).forEach((b) => { b.totalBillAmount = byId.get(b.id) || 0; });
+      (data as any[]).forEach((b) => {
+        b.totalBillAmount = byId.get(b.id) || 0;
+      });
     }
 
     return {
@@ -357,15 +398,35 @@ export class BusinessesService {
     if (!business) throw new NotFoundException('Business not found');
 
     const ALLOWED = [
-      'name', 'description', 'categoryId', 'ownerName', 'phone', 'email', 'website',
-      'address', 'city', 'state', 'zipCode', 'district', 'googleMapsUrl', 'socialLinks',
-      'tags', 'logo', 'coverImage', 'status', 'isVerified', 'halalStatus',
-      'operatingHours', 'billSeriesPrefix',
+      'name',
+      'description',
+      'categoryId',
+      'ownerName',
+      'phone',
+      'email',
+      'website',
+      'address',
+      'city',
+      'state',
+      'zipCode',
+      'district',
+      'googleMapsUrl',
+      'socialLinks',
+      'tags',
+      'logo',
+      'coverImage',
+      'status',
+      'isVerified',
+      'halalStatus',
+      'operatingHours',
+      'billSeriesPrefix',
     ];
     const payload: any = {};
     for (const k of ALLOWED) if (data[k] !== undefined) payload[k] = data[k];
-    if (payload.operatingHours !== undefined) payload.operatingHours = operatingHoursForDb(payload.operatingHours);
-    if (payload.billSeriesPrefix !== undefined) payload.billSeriesPrefix = String(payload.billSeriesPrefix).trim() || null;
+    if (payload.operatingHours !== undefined)
+      payload.operatingHours = operatingHoursForDb(payload.operatingHours);
+    if (payload.billSeriesPrefix !== undefined)
+      payload.billSeriesPrefix = String(payload.billSeriesPrefix).trim() || null;
 
     const updated = await this.businessRepo.model.update({ where: { id }, data: payload });
     await this.redis.del(`business:${id}`);
@@ -382,7 +443,9 @@ export class BusinessesService {
 
     try {
       await this.searchService.indexBusiness(id, business.tenantId);
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
 
     return updated;
   }
@@ -408,7 +471,9 @@ export class BusinessesService {
 
     try {
       await this.searchService.removeFromIndex(id, business.tenantId);
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
 
     return removed;
   }
@@ -427,7 +492,16 @@ export class BusinessesService {
         {
           include: {
             category: { select: { id: true, name: true, slug: true } },
-            brand: { select: { id: true, name: true, slug: true, billSeriesMode: true, billSeriesPrefix: true, status: true } },
+            brand: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                billSeriesMode: true,
+                billSeriesPrefix: true,
+                status: true,
+              },
+            },
           },
         },
       ),
@@ -541,7 +615,11 @@ export class BusinessesService {
 
     const [rows, total] = await Promise.all([
       (this.db as any).businessTag.findMany({
-        where: { tenantId, tag: { contains: normalized }, business: { status: 'APPROVED', deletedAt: null } },
+        where: {
+          tenantId,
+          tag: { contains: normalized },
+          business: { status: 'APPROVED', deletedAt: null },
+        },
         include: {
           business: {
             include: { category: { select: { id: true, name: true, slug: true } } },
@@ -551,7 +629,11 @@ export class BusinessesService {
         take: limit,
       }),
       (this.db as any).businessTag.count({
-        where: { tenantId, tag: { contains: normalized }, business: { status: 'APPROVED', deletedAt: null } },
+        where: {
+          tenantId,
+          tag: { contains: normalized },
+          business: { status: 'APPROVED', deletedAt: null },
+        },
       }),
     ]);
 

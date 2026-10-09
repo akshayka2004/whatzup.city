@@ -19,7 +19,11 @@ export const PRESETS: Preset[] = [
   { id: '7d', label: 'Last 7 days', params: () => ({ days: 7 }) },
   { id: '30d', label: 'Last 30 days', params: () => ({ days: 30 }) },
   { id: '90d', label: 'Last 90 days', params: () => ({ days: 90 }) },
-  { id: 'mtd', label: 'Month to date', params: () => ({ from: `${todayIst().slice(0, 7)}-01`, to: todayIst() }) },
+  {
+    id: 'mtd',
+    label: 'Month to date',
+    params: () => ({ from: `${todayIst().slice(0, 7)}-01`, to: todayIst() }),
+  },
   {
     id: 'lm',
     label: 'Last month',
@@ -29,7 +33,11 @@ export const PRESETS: Preset[] = [
       return { from: `${lastPrev.slice(0, 7)}-01`, to: lastPrev };
     },
   },
-  { id: 'ytd', label: 'Year to date', params: () => ({ from: `${todayIst().slice(0, 4)}-01-01`, to: todayIst() }) },
+  {
+    id: 'ytd',
+    label: 'Year to date',
+    params: () => ({ from: `${todayIst().slice(0, 4)}-01-01`, to: todayIst() }),
+  },
   { id: '12m', label: 'Last 12 months', params: () => ({ days: 365, granularity: 'month' }) },
 ];
 
@@ -46,11 +54,15 @@ export function useReportRange() {
 
   const params = useMemo<RangeParams>(() => {
     if (presetId === 'custom') return { from, to };
-    return (PRESETS.find((p) => p.id === presetId) ?? PRESETS.find((p) => p.id === DEFAULT)!).params();
+    return (
+      PRESETS.find((p) => p.id === presetId) ?? PRESETS.find((p) => p.id === DEFAULT)!
+    ).params();
   }, [presetId, from, to]);
 
   const label =
-    presetId === 'custom' && from && to ? formatRange(from, to) : (PRESETS.find((p) => p.id === presetId)?.label ?? 'Last 30 days');
+    presetId === 'custom' && from && to
+      ? formatRange(from, to)
+      : (PRESETS.find((p) => p.id === presetId)?.label ?? 'Last 30 days');
 
   const setPreset = useCallback(
     (id: string) => {
@@ -78,7 +90,13 @@ export function useReportRange() {
   return { params, presetId, label, setPreset, setCustom };
 }
 
-export function RangePicker({ range, className }: { range: ReturnType<typeof useReportRange>; className?: string }) {
+export function RangePicker({
+  range,
+  className,
+}: {
+  range: ReturnType<typeof useReportRange>;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [f, setF] = useState(range.params.from ?? addDays(todayIst(), -29));
   const [t, setT] = useState(range.params.to ?? todayIst());
@@ -87,7 +105,11 @@ export function RangePicker({ range, className }: { range: ReturnType<typeof use
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className={cn('justify-between gap-2', className)} aria-label={`Date range: ${range.label}`}>
+        <Button
+          variant="outline"
+          className={cn('justify-between gap-2', className)}
+          aria-label={`Date range: ${range.label}`}
+        >
           <CalendarRange className="text-muted-foreground" />
           <span className="truncate">{range.label}</span>
           <ChevronDown className="text-muted-foreground" />

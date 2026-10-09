@@ -36,7 +36,8 @@ export function sniffFileType(buf: Buffer): SniffResult {
   }
 
   // PDF — "%PDF-"
-  if (startsWith(buf, [0x25, 0x50, 0x44, 0x46, 0x2d])) return { mime: 'application/pdf', ext: 'pdf' };
+  if (startsWith(buf, [0x25, 0x50, 0x44, 0x46, 0x2d]))
+    return { mime: 'application/pdf', ext: 'pdf' };
 
   return { mime: null, ext: null };
 }
@@ -65,12 +66,12 @@ export function looksLikeSvgOrHtml(buf: Buffer): boolean {
  */
 export function sanitizeFilename(name: string): string {
   const base = (name || 'file')
-    .replace(/[\\/]/g, '_')        // path separators
-    .replace(/\.{2,}/g, '.')        // traversal sequences
+    .replace(/[\\/]/g, '_') // path separators
+    .replace(/\.{2,}/g, '.') // traversal sequences
     // eslint-disable-next-line no-control-regex
     .replace(new RegExp('[\\u0000-\\u001f\\u007f]', 'g'), '') // control chars, incl. null byte
-    .replace(/[^A-Za-z0-9._-]/g, '_')      // anything else non-portable
-    .replace(/^\.+/, '')                    // leading dots (hidden files)
+    .replace(/[^A-Za-z0-9._-]/g, '_') // anything else non-portable
+    .replace(/^\.+/, '') // leading dots (hidden files)
     .slice(0, 120);
   return base || 'file';
 }

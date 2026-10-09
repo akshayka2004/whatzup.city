@@ -72,18 +72,36 @@ export function writeFilters(sp: URLSearchParams, f: Filters, keys: (keyof Filte
   };
   for (const k of keys) {
     switch (k) {
-      case 'open': set('open', f.open ? '1' : null); break;
-      case 'rating4': set('rating', f.rating4 ? '4' : null); break;
-      case 'halal': set('halal', f.halal ? '1' : null); break;
-      case 'fulfilment': set('fulfilment', f.fulfilment ? f.fulfilment.toLowerCase() : null); break;
-      case 'sort': set('sort', f.sort !== 'relevant' ? f.sort : null); break;
-      case 'city': set('city', f.city || null); break;
-      case 'sub': set('sub', f.sub || null); break;
+      case 'open':
+        set('open', f.open ? '1' : null);
+        break;
+      case 'rating4':
+        set('rating', f.rating4 ? '4' : null);
+        break;
+      case 'halal':
+        set('halal', f.halal ? '1' : null);
+        break;
+      case 'fulfilment':
+        set('fulfilment', f.fulfilment ? f.fulfilment.toLowerCase() : null);
+        break;
+      case 'sort':
+        set('sort', f.sort !== 'relevant' ? f.sort : null);
+        break;
+      case 'city':
+        set('city', f.city || null);
+        break;
+      case 'sub':
+        set('sub', f.sub || null);
+        break;
     }
   }
 }
 
-export function countActive(f: Filters, keys: (keyof Filters)[], defaultSort: SortKey = 'relevant'): number {
+export function countActive(
+  f: Filters,
+  keys: (keyof Filters)[],
+  defaultSort: SortKey = 'relevant',
+): number {
   let n = 0;
   for (const k of keys) {
     if (k === 'sort') {

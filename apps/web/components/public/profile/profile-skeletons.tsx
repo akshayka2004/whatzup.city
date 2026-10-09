@@ -79,7 +79,10 @@ export function RelatedSkeleton() {
   return (
     <SkeletonRegion label="Loading related businesses" className="ui-scroll-x flex gap-3">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="w-56 shrink-0 space-y-2 rounded-2xl border border-border bg-card p-3">
+        <div
+          key={i}
+          className="w-56 shrink-0 space-y-2 rounded-2xl border border-border bg-card p-3"
+        >
           <Skel className="aspect-[16/10] w-full rounded-xl" />
           <Skel className="h-4 w-3/4" />
           <Skel className="h-3.5 w-1/2" />

@@ -28,7 +28,9 @@ const NoticeDetailsModal = dynamic(
 export function GovernmentClient({ initialNotices = null }: { initialNotices?: unknown | null }) {
   // The server renders the default (all cities) list; it stays valid until the viewer picks a city.
   const seeded = useRef(initialNotices != null);
-  const [notices, setNotices] = useState<Notice[]>(() => (initialNotices != null ? noticesFromBody(initialNotices) : []));
+  const [notices, setNotices] = useState<Notice[]>(() =>
+    initialNotices != null ? noticesFromBody(initialNotices) : [],
+  );
   const [loading, setLoading] = useState(initialNotices == null);
   const [viewingNotice, setViewingNotice] = useState<Notice | null>(null);
   const [city, setCity] = useState('');
@@ -72,7 +74,9 @@ export function GovernmentClient({ initialNotices = null }: { initialNotices?: u
       window.open(att.url, '_blank');
       return;
     }
-    const blob = new Blob([`Document: ${att.name}\nNo source URL configured.`], { type: 'text/plain' });
+    const blob = new Blob([`Document: ${att.name}\nNo source URL configured.`], {
+      type: 'text/plain',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -86,7 +90,9 @@ export function GovernmentClient({ initialNotices = null }: { initialNotices?: u
   return (
     <PublicLayout>
       <div>
-        <h1 className="mb-1 text-2xl font-bold tracking-tight sm:text-3xl">Government Announcements</h1>
+        <h1 className="mb-1 text-2xl font-bold tracking-tight sm:text-3xl">
+          Government Announcements
+        </h1>
         <p className="mb-5 text-muted-foreground">
           Stay informed with official notices and civic updates.
         </p>
@@ -99,7 +105,9 @@ export function GovernmentClient({ initialNotices = null }: { initialNotices?: u
             <SelectContent>
               <SelectItem value="all">All Cities</SelectItem>
               {KERALA_CITIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -112,7 +120,11 @@ export function GovernmentClient({ initialNotices = null }: { initialNotices?: u
             icon={Bell}
             title="No announcements"
             description="Check back later for official updates."
-            action={city ? { label: 'Show all cities', onClick: () => handleCityChange('all') } : undefined}
+            action={
+              city
+                ? { label: 'Show all cities', onClick: () => handleCityChange('all') }
+                : undefined
+            }
           />
         ) : (
           <div className="space-y-3 sm:space-y-4">

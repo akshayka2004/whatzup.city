@@ -7,7 +7,10 @@ import {
   OperatingHours,
 } from '@saas/types';
 
-function hoursWith(patch: Partial<OperatingHours['weekly']>, closures: OperatingHours['closures'] = []): OperatingHours {
+function hoursWith(
+  patch: Partial<OperatingHours['weekly']>,
+  closures: OperatingHours['closures'] = [],
+): OperatingHours {
   const base = defaultOperatingHours();
   return { ...base, weekly: { ...base.weekly, ...patch }, closures };
 }
@@ -23,7 +26,15 @@ describe('validateOperatingHours', () => {
 
   it('accepts two shifts on a day and sorts them', () => {
     const r = validateOperatingHours(
-      hoursWith({ mon: { closed: false, shifts: [{ open: '16:00', close: '21:00' }, { open: '09:00', close: '13:00' }] } }),
+      hoursWith({
+        mon: {
+          closed: false,
+          shifts: [
+            { open: '16:00', close: '21:00' },
+            { open: '09:00', close: '13:00' },
+          ],
+        },
+      }),
     );
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.value.weekly.mon.shifts.map((s) => s.open)).toEqual(['09:00', '16:00']);
@@ -31,36 +42,77 @@ describe('validateOperatingHours', () => {
 
   it('rejects overlapping shifts', () => {
     const r = validateOperatingHours(
-      hoursWith({ mon: { closed: false, shifts: [{ open: '09:00', close: '14:00' }, { open: '13:00', close: '18:00' }] } }),
+      hoursWith({
+        mon: {
+          closed: false,
+          shifts: [
+            { open: '09:00', close: '14:00' },
+            { open: '13:00', close: '18:00' },
+          ],
+        },
+      }),
     );
     expect(r.ok).toBe(false);
   });
 
   it('rejects a shift that closes before it opens and bad time formats', () => {
-    expect(validateOperatingHours(hoursWith({ mon: { closed: false, shifts: [{ open: '18:00', close: '09:00' }] } })).ok).toBe(false);
-    expect(validateOperatingHours(hoursWith({ mon: { closed: false, shifts: [{ open: '9:00', close: '17:00' }] } })).ok).toBe(false);
+    expect(
+      validateOperatingHours(
+        hoursWith({ mon: { closed: false, shifts: [{ open: '18:00', close: '09:00' }] } }),
+      ).ok,
+    ).toBe(false);
+    expect(
+      validateOperatingHours(
+        hoursWith({ mon: { closed: false, shifts: [{ open: '9:00', close: '17:00' }] } }),
+      ).ok,
+    ).toBe(false);
   });
 
   it('allows 24:00 as a closing time', () => {
-    expect(validateOperatingHours(hoursWith({ fri: { closed: false, shifts: [{ open: '18:00', close: '24:00' }] } })).ok).toBe(true);
+    expect(
+      validateOperatingHours(
+        hoursWith({ fri: { closed: false, shifts: [{ open: '18:00', close: '24:00' }] } }),
+      ).ok,
+    ).toBe(true);
   });
 
   it('requires a shift on an open day, but not on a closed day', () => {
-    expect(validateOperatingHours(hoursWith({ mon: { closed: false, shifts: [] } })).ok).toBe(false);
+    expect(validateOperatingHours(hoursWith({ mon: { closed: false, shifts: [] } })).ok).toBe(
+      false,
+    );
     expect(validateOperatingHours(hoursWith({ mon: { closed: true, shifts: [] } })).ok).toBe(true);
   });
 
   it('limits shifts per day and closures', () => {
     const five = Array.from({ length: 5 }, (_, i) => ({ open: `0${i}:00`, close: `0${i}:30` }));
-    expect(validateOperatingHours(hoursWith({ mon: { closed: false, shifts: five } })).ok).toBe(false);
-    const many = Array.from({ length: 21 }, (_, i) => ({ id: `c${i}`, from: '2026-11-01', to: '2026-11-01', reason: '' }));
+    expect(validateOperatingHours(hoursWith({ mon: { closed: false, shifts: five } })).ok).toBe(
+      false,
+    );
+    const many = Array.from({ length: 21 }, (_, i) => ({
+      id: `c${i}`,
+      from: '2026-11-01',
+      to: '2026-11-01',
+      reason: '',
+    }));
     expect(validateOperatingHours(hoursWith({}, many)).ok).toBe(false);
   });
 
   it('validates closure dates', () => {
-    expect(validateOperatingHours(hoursWith({}, [{ id: 'a', from: '2026-11-03', to: '2026-11-01', reason: 'x' }])).ok).toBe(false);
-    expect(validateOperatingHours(hoursWith({}, [{ id: 'a', from: '2026-02-30', to: '2026-02-30', reason: 'x' }])).ok).toBe(false);
-    expect(validateOperatingHours(hoursWith({}, [{ id: 'a', from: '2026-11-01', to: '2026-11-03', reason: 'Diwali' }])).ok).toBe(true);
+    expect(
+      validateOperatingHours(
+        hoursWith({}, [{ id: 'a', from: '2026-11-03', to: '2026-11-01', reason: 'x' }]),
+      ).ok,
+    ).toBe(false);
+    expect(
+      validateOperatingHours(
+        hoursWith({}, [{ id: 'a', from: '2026-02-30', to: '2026-02-30', reason: 'x' }]),
+      ).ok,
+    ).toBe(false);
+    expect(
+      validateOperatingHours(
+        hoursWith({}, [{ id: 'a', from: '2026-11-01', to: '2026-11-03', reason: 'Diwali' }]),
+      ).ok,
+    ).toBe(true);
   });
 
   it('rejects non-objects and drops unknown keys', () => {
@@ -73,7 +125,15 @@ describe('validateOperatingHours', () => {
 });
 
 describe('getOpenStatus', () => {
-  const split = hoursWith({ mon: { closed: false, shifts: [{ open: '09:00', close: '13:00' }, { open: '16:00', close: '21:00' }] } });
+  const split = hoursWith({
+    mon: {
+      closed: false,
+      shifts: [
+        { open: '09:00', close: '13:00' },
+        { open: '16:00', close: '21:00' },
+      ],
+    },
+  });
 
   it('is open inside a shift and names when it closes', () => {
     const s = getOpenStatus(split, mondayIst('10:30'));
@@ -88,7 +148,13 @@ describe('getOpenStatus', () => {
   });
 
   it('looks ahead to the next open day', () => {
-    const s = getOpenStatus(hoursWith({ mon: { closed: false, shifts: [{ open: '09:00', close: '13:00' }] }, tue: { closed: false, shifts: [{ open: '08:00', close: '12:00' }] } }), mondayIst('20:00'));
+    const s = getOpenStatus(
+      hoursWith({
+        mon: { closed: false, shifts: [{ open: '09:00', close: '13:00' }] },
+        tue: { closed: false, shifts: [{ open: '08:00', close: '12:00' }] },
+      }),
+      mondayIst('20:00'),
+    );
     expect(s?.isOpen).toBe(false);
     expect(s?.label).toBe('Closed · opens tomorrow 8:00 AM');
   });
@@ -99,7 +165,9 @@ describe('getOpenStatus', () => {
   });
 
   it('a special closure overrides an open day and is skipped when looking ahead', () => {
-    const closed = hoursWith({}, [{ id: 'c', from: '2026-10-05', to: '2026-10-06', reason: 'Renovation' }]);
+    const closed = hoursWith({}, [
+      { id: 'c', from: '2026-10-05', to: '2026-10-06', reason: 'Renovation' },
+    ]);
     const s = getOpenStatus(closed, mondayIst('11:00'));
     expect(s?.isOpen).toBe(false);
     expect(s?.closure?.reason).toBe('Renovation');
@@ -112,7 +180,10 @@ describe('getOpenStatus', () => {
   });
 
   it('uses IST, not the server clock: 20:00 UTC on Sunday is already Monday 01:30 IST', () => {
-    const s = getOpenStatus(hoursWith({ mon: { closed: false, shifts: [{ open: '00:00', close: '24:00' }] } }), new Date('2026-10-04T20:00:00Z'));
+    const s = getOpenStatus(
+      hoursWith({ mon: { closed: false, shifts: [{ open: '00:00', close: '24:00' }] } }),
+      new Date('2026-10-04T20:00:00Z'),
+    );
     expect(s?.isOpen).toBe(true);
   });
 });

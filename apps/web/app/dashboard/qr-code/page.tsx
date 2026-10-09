@@ -13,7 +13,7 @@ export default function QrCodePage() {
 
   useEffect(() => {
     apiService.get<any>('/v1/businesses/owner/mine').then((res) => {
-      const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
       if (!res.error && list.length) setBiz(list[0]);
       setLoading(false);
     });
@@ -27,7 +27,8 @@ export default function QrCodePage() {
             <QrCode className="h-6 w-6 text-primary" /> Your QR code
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Print this and display it at your counter. Customers scan it, sign in, and land straight on your offers.
+            Print this and display it at your counter. Customers scan it, sign in, and land straight
+            on your offers.
           </p>
         </div>
 

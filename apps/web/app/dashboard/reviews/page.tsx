@@ -30,7 +30,11 @@ function Stars({ value, size = 'size-4' }: { value: number; size?: string }) {
   return (
     <span className="inline-flex items-center gap-0.5" aria-label={`${value} out of 5 stars`}>
       {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} className={cn(size, i <= value ? 'fill-warning text-warning' : 'text-border-strong')} aria-hidden />
+        <Star
+          key={i}
+          className={cn(size, i <= value ? 'fill-warning text-warning' : 'text-border-strong')}
+          aria-hidden
+        />
       ))}
     </span>
   );
@@ -60,7 +64,13 @@ export default function ReviewsPage() {
       toast.error(res.error);
       return;
     }
-    setReviews((list) => (list ?? []).map((r) => (r.id === id ? { ...r, reply: res.data?.ownerReply ?? null, replyAt: res.data?.ownerReplyAt ?? null } : r)));
+    setReviews((list) =>
+      (list ?? []).map((r) =>
+        r.id === id
+          ? { ...r, reply: res.data?.ownerReply ?? null, replyAt: res.data?.ownerReplyAt ?? null }
+          : r,
+      ),
+    );
     setEditing(null);
     setDraft('');
     toast.success(text.trim() ? 'Reply published' : 'Reply removed');
@@ -69,7 +79,11 @@ export default function ReviewsPage() {
   useEffect(() => {
     if (!activeBusinessId) return;
     apiService.get<any>(`/v1/reviews/business/${activeBusinessId}?page=1`).then((res) => {
-      const list = res.error ? [] : Array.isArray(res.data) ? res.data : (res.data?.data ?? res.data?.reviews ?? []);
+      const list = res.error
+        ? []
+        : Array.isArray(res.data)
+          ? res.data
+          : (res.data?.data ?? res.data?.reviews ?? []);
       setReviews(
         list.map((r: any) => ({
           id: r.id,
@@ -87,7 +101,10 @@ export default function ReviewsPage() {
 
   const stats = useMemo(() => {
     const list = reviews ?? [];
-    const dist = [5, 4, 3, 2, 1].map((s) => ({ star: s, count: list.filter((r) => r.rating === s).length }));
+    const dist = [5, 4, 3, 2, 1].map((s) => ({
+      star: s,
+      count: list.filter((r) => r.rating === s).length,
+    }));
     const avg = list.length ? list.reduce((a, r) => a + r.rating, 0) / list.length : 0;
     return { dist, avg, total: list.length, verified: list.filter((r) => r.verified).length };
   }, [reviews]);
@@ -121,7 +138,10 @@ export default function ReviewsPage() {
 
   return (
     <BusinessLayout>
-      <PageHeader title="Reviews" description="What customers say about you. Reply publicly to thank them or address concerns." />
+      <PageHeader
+        title="Reviews"
+        description="What customers say about you. Reply publicly to thank them or address concerns."
+      />
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         <SectionCard title="Rating" className="h-fit">
@@ -130,7 +150,9 @@ export default function ReviewsPage() {
           ) : (
             <>
               <div className="flex items-end gap-3">
-                <span className="text-metric text-[2.5rem]">{stats.total ? stats.avg.toFixed(1) : '—'}</span>
+                <span className="text-metric text-[2.5rem]">
+                  {stats.total ? stats.avg.toFixed(1) : '—'}
+                </span>
                 <div className="pb-1.5">
                   <Stars value={Math.round(stats.avg)} />
                   <p className="text-caption text-muted-foreground">
@@ -149,7 +171,9 @@ export default function ReviewsPage() {
                         style={{ width: stats.total ? `${(d.count / stats.total) * 100}%` : 0 }}
                       />
                     </span>
-                    <span className="w-6 text-right tabular-nums text-muted-foreground">{d.count}</span>
+                    <span className="w-6 text-right tabular-nums text-muted-foreground">
+                      {d.count}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -159,7 +183,11 @@ export default function ReviewsPage() {
 
         <div className="space-y-4">
           <ChipRow label="Filter by rating">
-            <FilterChip selected={filter === 'all'} onClick={() => setFilter('all')} count={stats.total}>
+            <FilterChip
+              selected={filter === 'all'}
+              onClick={() => setFilter('all')}
+              count={stats.total}
+            >
               All
             </FilterChip>
             {[5, 4, 3, 2, 1].map((s) => (
@@ -179,14 +207,23 @@ export default function ReviewsPage() {
             <EmptyState
               icon={MessageSquareText}
               title={stats.total ? 'No reviews with this rating' : 'No reviews yet'}
-              description={stats.total ? 'Try another filter.' : 'Share your storefront QR so customers can upload a bill and leave a verified review.'}
-              action={stats.total ? undefined : { label: 'Get your QR code', href: '/dashboard/qr-code' }}
+              description={
+                stats.total
+                  ? 'Try another filter.'
+                  : 'Share your storefront QR so customers can upload a bill and leave a verified review.'
+              }
+              action={
+                stats.total ? undefined : { label: 'Get your QR code', href: '/dashboard/qr-code' }
+              }
               compact
             />
           ) : (
             <ul className="space-y-3">
               {shown.map((r) => (
-                <li key={r.id} className="rounded-card border border-border/70 bg-card p-5 shadow-e1">
+                <li
+                  key={r.id}
+                  className="rounded-card border border-border/70 bg-card p-5 shadow-e1"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-soft font-semibold text-brand-soft-foreground">
@@ -203,7 +240,12 @@ export default function ReviewsPage() {
                         </p>
                         <p className="flex items-center gap-2 text-caption text-muted-foreground">
                           <Stars value={r.rating} size="size-3.5" />
-                          {r.createdAt && new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {r.createdAt &&
+                            new Date(r.createdAt).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
                         </p>
                       </div>
                     </div>
@@ -217,7 +259,9 @@ export default function ReviewsPage() {
                       <Flag /> {reported.has(r.id) ? 'Reported' : 'Report'}
                     </Button>
                   </div>
-                  {r.text && <p className="mt-3 whitespace-pre-line text-body text-foreground">{r.text}</p>}
+                  {r.text && (
+                    <p className="mt-3 whitespace-pre-line text-body text-foreground">{r.text}</p>
+                  )}
 
                   {editing === r.id ? (
                     <div className="mt-4 space-y-2 rounded-xl bg-surface-sunken p-3">
@@ -232,17 +276,29 @@ export default function ReviewsPage() {
                         placeholder="Thank them, answer their point, or explain what you've changed."
                       />
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-caption text-muted-foreground">{draft.length}/1000 · shown on your public page</span>
+                        <span className="text-caption text-muted-foreground">
+                          {draft.length}/1000 · shown on your public page
+                        </span>
                         <div className="flex gap-2">
                           {r.reply && (
-                            <Button variant="ghost" size="sm" onClick={() => saveReply(r.id, '')} disabled={savingReply}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => saveReply(r.id, '')}
+                              disabled={savingReply}
+                            >
                               Remove
                             </Button>
                           )}
                           <Button variant="outline" size="sm" onClick={() => setEditing(null)}>
                             Cancel
                           </Button>
-                          <Button size="sm" loading={savingReply} disabled={!draft.trim()} onClick={() => saveReply(r.id, draft)}>
+                          <Button
+                            size="sm"
+                            loading={savingReply}
+                            disabled={!draft.trim()}
+                            onClick={() => saveReply(r.id, draft)}
+                          >
                             Publish reply
                           </Button>
                         </div>
@@ -251,7 +307,10 @@ export default function ReviewsPage() {
                   ) : r.reply ? (
                     <div className="mt-4 rounded-xl border-l-2 border-primary bg-brand-soft/60 px-4 py-3">
                       <p className="flex items-center justify-between gap-2 text-caption font-semibold text-brand-soft-foreground">
-                        Your reply{r.replyAt ? ` · ${new Date(r.replyAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : ''}
+                        Your reply
+                        {r.replyAt
+                          ? ` · ${new Date(r.replyAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+                          : ''}
                         <button
                           type="button"
                           className="font-medium text-primary hover:underline"

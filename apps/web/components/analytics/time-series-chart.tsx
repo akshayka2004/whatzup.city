@@ -1,7 +1,15 @@
 'use client';
 
 import { useId, useMemo } from 'react';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { formatDateKey, formatValue, todayIst, type ValueFormat } from './format';
 
 type Point = { date: string; value: number };
@@ -89,7 +97,8 @@ export function TimeSeriesChart({
                     {p.isPartial ? ' · so far' : ''}
                   </p>
                   <p className="mt-0.5 font-semibold tabular-nums text-foreground">
-                    {formatValue(p.value, format)} <span className="font-normal text-muted-foreground">{label.toLowerCase()}</span>
+                    {formatValue(p.value, format)}{' '}
+                    <span className="font-normal text-muted-foreground">{label.toLowerCase()}</span>
                   </p>
                 </div>
               );

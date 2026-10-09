@@ -6,7 +6,9 @@ import { AuditService } from '../audit/audit.service';
 import { mapWithConcurrency } from '../../common/utils/concurrency';
 import { recordOfferClick } from '../../common/utils/offer-click.util';
 import {
-  CreatePlatformOfferDto, UpdatePlatformOfferDto, PlatformOfferStatusEnum,
+  CreatePlatformOfferDto,
+  UpdatePlatformOfferDto,
+  PlatformOfferStatusEnum,
 } from './dto/platform-offer.dto';
 
 /**
@@ -37,7 +39,7 @@ export class PlatformOffersService {
       data: {
         tenantId: resolvedTenant,
         category: dto.category,
-        subType: dto.category === 'STAYCATION' ? dto.subType ?? null : null,
+        subType: dto.category === 'STAYCATION' ? (dto.subType ?? null) : null,
         title: dto.title,
         location: dto.location,
         price: dto.price || null,
@@ -78,7 +80,7 @@ export class PlatformOffersService {
       data: {
         ...(dto.category !== undefined ? { category: dto.category } : {}),
         // subType only ever applies to Staycation; clear it if the category moved.
-        subType: category === 'STAYCATION' ? dto.subType ?? existing.subType : null,
+        subType: category === 'STAYCATION' ? (dto.subType ?? existing.subType) : null,
         ...(dto.title !== undefined ? { title: dto.title } : {}),
         ...(dto.location !== undefined ? { location: dto.location } : {}),
         ...(dto.price !== undefined ? { price: dto.price || null } : {}),
@@ -118,9 +120,10 @@ export class PlatformOffersService {
     await this.audit.log({
       tenantId: existing.tenantId,
       userId,
-      action: status === PlatformOfferStatusEnum.PUBLISHED
-        ? 'PLATFORM_OFFER_PUBLISHED'
-        : 'PLATFORM_OFFER_UNPUBLISHED',
+      action:
+        status === PlatformOfferStatusEnum.PUBLISHED
+          ? 'PLATFORM_OFFER_PUBLISHED'
+          : 'PLATFORM_OFFER_UNPUBLISHED',
       resource: 'PLATFORM_OFFER',
       resourceId: id,
       metadata: { title: existing.title },
@@ -188,7 +191,12 @@ export class PlatformOffersService {
   /** Records a deduped detail-view click for the super-admin click count. */
   async trackClick(tenantId: string, id: string, actorKey: string) {
     const resolvedTenant = await this.tenantResolver.resolveTenantId(tenantId);
-    await recordOfferClick(this.db, { tenantId: resolvedTenant, offerKind: 'PLATFORM', offerId: id, actorKey });
+    await recordOfferClick(this.db, {
+      tenantId: resolvedTenant,
+      offerKind: 'PLATFORM',
+      offerId: id,
+      actorKey,
+    });
   }
 
   async findOne(id: string) {
@@ -217,7 +225,10 @@ export class PlatformOffersService {
     try {
       const parsed = JSON.parse(imageUrl);
       await this.storage.verifyStoredFile(parsed.bucket, parsed.path, [
-        'image/jpeg', 'image/png', 'image/webp', 'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'application/pdf',
       ]);
     } catch (err: any) {
       // A BadRequestException from verifyStoredFile must surface to the admin.

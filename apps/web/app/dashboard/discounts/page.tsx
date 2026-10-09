@@ -11,7 +11,13 @@ import { PromoCard, PromoGrid, PromoGridSkeleton } from '@/components/promotions
 import { RedeemPanel } from '@/components/promotions/redeem-panel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
@@ -60,7 +66,7 @@ export default function DiscountsPage() {
   useEffect(() => {
     if (!businessId) return;
     apiService.get<any>(`/v1/products/business/${businessId}`).then((res) => {
-      const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
       if (!res.error) setProducts(list.map((p: any) => ({ id: p.id, name: p.name })));
     });
   }, [businessId]);
@@ -79,7 +85,8 @@ export default function DiscountsPage() {
     if (!businessId) return;
     if (!itemName.trim()) return toast.error('Enter the item this discount applies to.');
     const max = Number(maxDiscountPercent);
-    if (!maxDiscountPercent || max < 1 || max > 90) return toast.error('Enter a maximum discount between 1% and 90%.');
+    if (!maxDiscountPercent || max < 1 || max > 90)
+      return toast.error('Enter a maximum discount between 1% and 90%.');
     setSaving(true);
     const res = await apiService.post('/v1/discounts', {
       businessId,
@@ -96,7 +103,11 @@ export default function DiscountsPage() {
   };
 
   const retire = async (d: Discount) => {
-    const ok = await confirm({ title: `Retire the ${d.itemName} wheel?`, description: 'Tickets already won stay valid. You can then publish a new wheel.', confirmLabel: 'Retire' });
+    const ok = await confirm({
+      title: `Retire the ${d.itemName} wheel?`,
+      description: 'Tickets already won stay valid. You can then publish a new wheel.',
+      confirmLabel: 'Retire',
+    });
     if (!ok) return;
     const res = await apiService.patch(`/v1/discounts/${d.id}/deactivate`, {});
     if (res.error) return toast.error(res.error);
@@ -133,7 +144,12 @@ export default function DiscountsPage() {
       {loading ? (
         <PromoGridSkeleton count={2} />
       ) : discounts.length === 0 ? (
-        <EmptyState icon={Disc3} title="No wheel yet" description="Publish one so customers can spin for a discount on your profile." action={{ label: 'New wheel', onClick: openForm }} />
+        <EmptyState
+          icon={Disc3}
+          title="No wheel yet"
+          description="Publish one so customers can spin for a discount on your profile."
+          action={{ label: 'New wheel', onClick: openForm }}
+        />
       ) : (
         <PromoGrid>
           {discounts.map((d) => (
@@ -144,13 +160,22 @@ export default function DiscountsPage() {
               valueCaption="max off"
               title={d.itemName}
               subtitle={d.description || undefined}
-              status={d.isActive ? { tone: 'success', label: 'Live', live: true } : { tone: 'neutral', label: 'Retired' }}
+              status={
+                d.isActive
+                  ? { tone: 'success', label: 'Live', live: true }
+                  : { tone: 'neutral', label: 'Retired' }
+              }
               chips={[{ label: `Wheel ${d.wheelPercentages.join(' · ')}%` }]}
               muted={!d.isActive}
               stats={[
                 { label: 'Spins', value: d.spunCount },
                 { label: 'Redeemed', value: d.redeemedCount },
-                { label: 'Redeem rate', value: d.spunCount ? `${Math.round((d.redeemedCount / d.spunCount) * 100)}%` : '—' },
+                {
+                  label: 'Redeem rate',
+                  value: d.spunCount
+                    ? `${Math.round((d.redeemedCount / d.spunCount) * 100)}%`
+                    : '—',
+                },
               ]}
               primary={
                 d.isActive ? (
@@ -191,12 +216,19 @@ export default function DiscountsPage() {
             <label htmlFor="d-item" className={label}>
               Item
             </label>
-            <Input id="d-item" value={itemName} maxLength={255} onChange={(e) => setItemName(e.target.value)} placeholder="Chicken biryani" />
+            <Input
+              id="d-item"
+              value={itemName}
+              maxLength={255}
+              onChange={(e) => setItemName(e.target.value)}
+              placeholder="Chicken biryani"
+            />
           </div>
           {products.length > 0 && (
             <div>
               <label htmlFor="d-product" className={label}>
-                Link a listed product <span className="font-normal text-muted-foreground">(optional)</span>
+                Link a listed product{' '}
+                <span className="font-normal text-muted-foreground">(optional)</span>
               </label>
               <Select
                 value={productId || 'none'}
@@ -224,7 +256,16 @@ export default function DiscountsPage() {
             <label htmlFor="d-max" className={label}>
               Maximum discount (%)
             </label>
-            <Input id="d-max" type="number" inputMode="numeric" min={1} max={90} value={maxDiscountPercent} onChange={(e) => setMaxDiscountPercent(e.target.value)} placeholder="10" />
+            <Input
+              id="d-max"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={90}
+              value={maxDiscountPercent}
+              onChange={(e) => setMaxDiscountPercent(e.target.value)}
+              placeholder="10"
+            />
             <p className="mt-1.5 text-caption text-muted-foreground">
               {Number(maxDiscountPercent) >= 1
                 ? `One segment is always ${Number(maxDiscountPercent)}%; the other six land randomly between 1% and ${Number(maxDiscountPercent)}%.`
@@ -233,9 +274,16 @@ export default function DiscountsPage() {
           </div>
           <div className="sm:col-span-2">
             <label htmlFor="d-terms" className={label}>
-              Terms shown before spinning <span className="font-normal text-muted-foreground">(optional)</span>
+              Terms shown before spinning{' '}
+              <span className="font-normal text-muted-foreground">(optional)</span>
             </label>
-            <Input id="d-terms" value={description} maxLength={1000} onChange={(e) => setDescription(e.target.value)} placeholder="Dine-in only, not valid with other offers" />
+            <Input
+              id="d-terms"
+              value={description}
+              maxLength={1000}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Dine-in only, not valid with other offers"
+            />
           </div>
           <button type="submit" hidden />
         </form>

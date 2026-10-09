@@ -19,9 +19,19 @@ const PARKING = ['Street', 'Valet', 'Roadside', 'Parking Lot', 'None'];
 
 const RESTAURANT: CategoryAttribute[] = [
   { key: 'ac', label: 'Air conditioning', type: 'single', options: ['AC', 'Non-AC', 'Partial'] },
-  { key: 'vegType', label: 'Veg preference', type: 'single', options: ['Pure Veg', 'Veg & Non-Veg', 'Non-Veg'] },
+  {
+    key: 'vegType',
+    label: 'Veg preference',
+    type: 'single',
+    options: ['Pure Veg', 'Veg & Non-Veg', 'Non-Veg'],
+  },
   { key: 'parking', label: 'Parking', type: 'multi', options: PARKING },
-  { key: 'service', label: 'Service options', type: 'multi', options: ['Dine-in', 'Takeaway', 'Delivery', 'Outdoor seating'] },
+  {
+    key: 'service',
+    label: 'Service options',
+    type: 'multi',
+    options: ['Dine-in', 'Takeaway', 'Delivery', 'Outdoor seating'],
+  },
 ];
 
 const RETAIL: CategoryAttribute[] = [
@@ -72,10 +82,19 @@ const DEFAULT: CategoryAttribute[] = [
 
 // Map many category slugs onto a shared attribute set.
 const BY_SLUG: Record<string, CategoryAttribute[]> = {
-  restaurants: RESTAURANT, food: RESTAURANT, buffet: RESTAURANT, staycation: RESTAURANT,
-  retail: RETAIL, shopping: RETAIL, retail_gifts: RETAIL, local_shop: RETAIL, fashion: RETAIL,
+  restaurants: RESTAURANT,
+  food: RESTAURANT,
+  buffet: RESTAURANT,
+  staycation: RESTAURANT,
+  retail: RETAIL,
+  shopping: RETAIL,
+  retail_gifts: RETAIL,
+  local_shop: RETAIL,
+  fashion: RETAIL,
   healthcare: HEALTHCARE,
-  services: SERVICES, business_services: SERVICES, personal_care: SERVICES,
+  services: SERVICES,
+  business_services: SERVICES,
+  personal_care: SERVICES,
   fitness_wellness: FITNESS,
   education: EDUCATION,
   automotive_services: AUTOMOTIVE,

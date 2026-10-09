@@ -60,7 +60,9 @@ export function EmptyState({
         </div>
       )}
       <h3 className="text-base font-semibold text-foreground sm:text-lg">{title}</h3>
-      {description && <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">{description}</p>}
+      {description && (
+        <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">{description}</p>
+      )}
       {(action || secondary) && (
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
           {action && renderAction(action, true)}

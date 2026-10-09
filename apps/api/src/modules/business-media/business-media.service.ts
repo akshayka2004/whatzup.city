@@ -26,7 +26,9 @@ export class BusinessMediaService {
 
     // Cover banners are retired. Existing ones are left untouched; new ones are refused.
     if (dto.mediaType === 'COVER_BANNER') {
-      throw new BadRequestException('Cover banners are no longer supported, so a new one cannot be added.');
+      throw new BadRequestException(
+        'Cover banners are no longer supported, so a new one cannot be added.',
+      );
     }
 
     const imageTypes = ['image/jpeg', 'image/png', 'image/webp'];

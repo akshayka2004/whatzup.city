@@ -23,13 +23,30 @@ const ROOT = path.join(__dirname, '..', 'apps', 'api', 'src');
 const STRICT = process.argv.includes('--strict');
 
 const GUARDED_MODELS = [
-  'business', 'payment', 'transaction', 'billingProfile', 'subscription',
-  'bill', 'verifiedPurchase', 'voucher', 'voucherClaim', 'offer',
-  'review', 'businessDocument', 'businessStaff',
+  'business',
+  'payment',
+  'transaction',
+  'billingProfile',
+  'subscription',
+  'bill',
+  'verifiedPurchase',
+  'voucher',
+  'voucherClaim',
+  'offer',
+  'review',
+  'businessDocument',
+  'businessStaff',
 ];
 const READ_OPS = ['findMany', 'findFirst', 'findFirstOrThrow', 'count', 'aggregate', 'groupBy'];
 const SCOPE_KEYS = [
-  'tenantId', 'businessId', 'userId', 'customerId', 'ownerId', 'id', 'entityId', 'slug',
+  'tenantId',
+  'businessId',
+  'userId',
+  'customerId',
+  'ownerId',
+  'id',
+  'entityId',
+  'slug',
 ];
 
 function walk(dir, out = []) {

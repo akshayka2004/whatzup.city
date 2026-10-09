@@ -77,7 +77,9 @@ export function useCachedGet<T = unknown>(
     return (store.get(key)?.data as T | undefined) ?? initialData;
   });
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(() => !!key && enabled && !(store.get(key)?.data ?? initialData));
+  const [loading, setLoading] = useState<boolean>(
+    () => !!key && enabled && !(store.get(key)?.data ?? initialData),
+  );
   const alive = useRef(true);
 
   const run = useCallback(

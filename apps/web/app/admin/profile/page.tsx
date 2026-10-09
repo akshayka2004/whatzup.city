@@ -9,9 +9,23 @@ import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
 import { useRouter } from 'next/navigation';
 import {
-  Edit2, Mail, Phone, MapPin, LogOut, Check, X,
-  CalendarDays, Camera, Loader2, AlertTriangle,
-  HeadphonesIcon, Shield, FileText, Copy, Users, ShieldAlert,
+  Edit2,
+  Mail,
+  Phone,
+  MapPin,
+  LogOut,
+  Check,
+  X,
+  CalendarDays,
+  Camera,
+  Loader2,
+  AlertTriangle,
+  HeadphonesIcon,
+  Shield,
+  FileText,
+  Copy,
+  Users,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface AdminProfile {
@@ -28,7 +42,14 @@ export default function AdminProfilePage() {
   const router = useRouter();
 
   const [profileLoading, setProfileLoading] = useState(true);
-  const [profile, setProfile] = useState<AdminProfile>({ firstName: '', lastName: '', phone: '', city: '', district: '', state: '' });
+  const [profile, setProfile] = useState<AdminProfile>({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    city: '',
+    district: '',
+    state: '',
+  });
   const [tempProfile, setTempProfile] = useState<AdminProfile>(profile);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -62,7 +83,9 @@ export default function AdminProfilePage() {
         firstName: parts[0] || '',
         lastName: parts.slice(1).join(' ') || '',
         phone: (user as any).phone || '',
-        city: '', district: '', state: '',
+        city: '',
+        district: '',
+        state: '',
       };
       if (!cancelled) {
         setProfile(fallback);
@@ -72,7 +95,9 @@ export default function AdminProfilePage() {
       if (!cancelled) setProfileLoading(false);
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const handleSave = async () => {
@@ -106,7 +131,10 @@ export default function AdminProfilePage() {
   })();
 
   const memberSince = user
-    ? new Date((user as any).createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    ? new Date((user as any).createdAt || Date.now()).toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
+      })
     : '';
 
   if (authLoading || profileLoading) {
@@ -124,7 +152,6 @@ export default function AdminProfilePage() {
   return (
     <AdminLayout>
       <div className="max-w-3xl mx-auto space-y-6">
-
         {/* Hero Profile Card */}
         <Card className="rounded-2xl border-border bg-card relative overflow-hidden ui-fade-up">
           <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-primary/10 via-transparent to-transparent pointer-events-none" />
@@ -158,20 +185,34 @@ export default function AdminProfilePage() {
                 {referralCode && (
                   <div className="mt-3 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Referral Code</span>
-                      <span className="font-mono text-sm font-bold text-primary tracking-widest">{referralCode}</span>
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Referral Code
+                      </span>
+                      <span className="font-mono text-sm font-bold text-primary tracking-widest">
+                        {referralCode}
+                      </span>
                       <button
-                        onClick={() => { navigator.clipboard.writeText(referralCode); setReferralCopied(true); setTimeout(() => setReferralCopied(false), 2000); }}
+                        onClick={() => {
+                          navigator.clipboard.writeText(referralCode);
+                          setReferralCopied(true);
+                          setTimeout(() => setReferralCopied(false), 2000);
+                        }}
                         className="text-primary hover:text-primary/70 cursor-pointer transition-colors p-1.5 -m-1.5 rounded-lg hover:bg-primary/10 ui-press"
                         title="Copy referral code"
                       >
-                        {referralCopied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+                        {referralCopied ? (
+                          <Check className="h-3.5 w-3.5 text-success" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
                       </button>
                     </div>
                     {referralCount !== null && (
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 border border-success/20">
                         <Users className="h-3.5 w-3.5 text-success" />
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Referrals</span>
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Referrals
+                        </span>
                         <span className="text-sm font-bold text-success">{referralCount}</span>
                       </div>
                     )}
@@ -182,7 +223,10 @@ export default function AdminProfilePage() {
               {/* Edit toggle */}
               {!isEditing ? (
                 <Button
-                  onClick={() => { setTempProfile({ ...profile }); setIsEditing(true); }}
+                  onClick={() => {
+                    setTempProfile({ ...profile });
+                    setIsEditing(true);
+                  }}
                   className="rounded-xl gap-2 font-medium bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 cursor-pointer"
                 >
                   <Edit2 className="h-4 w-4" /> Edit Profile
@@ -194,11 +238,19 @@ export default function AdminProfilePage() {
                     disabled={saving}
                     className="rounded-xl gap-2 bg-success hover:bg-success text-white cursor-pointer disabled:opacity-60"
                   >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
                     Save
                   </Button>
                   <Button
-                    onClick={() => { setTempProfile({ ...profile }); setIsEditing(false); setSaveErr(''); }}
+                    onClick={() => {
+                      setTempProfile({ ...profile });
+                      setIsEditing(false);
+                      setSaveErr('');
+                    }}
                     variant="outline"
                     className="rounded-xl gap-2 border-border hover:bg-secondary text-foreground cursor-pointer"
                   >
@@ -223,11 +275,16 @@ export default function AdminProfilePage() {
         )}
 
         {/* Personal Information */}
-        <Card className="p-6 rounded-2xl border-border bg-card ui-fade-up" style={{ animationDelay: '0.05s' }}>
+        <Card
+          className="p-6 rounded-2xl border-border bg-card ui-fade-up"
+          style={{ animationDelay: '0.05s' }}
+        >
           <h3 className="text-base font-bold text-foreground mb-5">Personal Information</h3>
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1.5">First Name</label>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                First Name
+              </label>
               <Input
                 value={isEditing ? tempProfile.firstName : profile.firstName}
                 onChange={(e) => setTempProfile({ ...tempProfile, firstName: e.target.value })}
@@ -236,7 +293,9 @@ export default function AdminProfilePage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1.5">Last Name</label>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                Last Name
+              </label>
               <Input
                 value={isEditing ? tempProfile.lastName : profile.lastName}
                 onChange={(e) => setTempProfile({ ...tempProfile, lastName: e.target.value })}
@@ -251,7 +310,7 @@ export default function AdminProfilePage() {
             <ContactRow
               icon={Phone}
               label="Phone Number"
-              value={isEditing ? (tempProfile.phone || '') : (profile.phone || '—')}
+              value={isEditing ? tempProfile.phone || '' : profile.phone || '—'}
               editable={isEditing}
               onChange={(v) => setTempProfile({ ...tempProfile, phone: v })}
             />
@@ -259,7 +318,10 @@ export default function AdminProfilePage() {
         </Card>
 
         {/* Account Settings */}
-        <Card className="p-6 rounded-2xl border-border bg-card ui-fade-up" style={{ animationDelay: '0.1s' }}>
+        <Card
+          className="p-6 rounded-2xl border-border bg-card ui-fade-up"
+          style={{ animationDelay: '0.1s' }}
+        >
           <h3 className="text-base font-bold text-foreground mb-4">Account Settings</h3>
           <div className="space-y-2">
             <Button
@@ -281,30 +343,44 @@ export default function AdminProfilePage() {
         </Card>
 
         {/* Support & Legal */}
-        <Card className="p-5 rounded-2xl border-border bg-card ui-fade-up" style={{ animationDelay: '0.15s' }}>
+        <Card
+          className="p-5 rounded-2xl border-border bg-card ui-fade-up"
+          style={{ animationDelay: '0.15s' }}
+        >
           <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <HeadphonesIcon className="h-4 w-4 text-primary" />
             Help & Support
           </h3>
           <div className="space-y-2 text-sm text-muted-foreground">
-            <a href="mailto:support@lifeartgroup.in" className="flex items-center gap-2 hover:text-primary transition-colors">
+            <a
+              href="mailto:support@lifeartgroup.in"
+              className="flex items-center gap-2 hover:text-primary transition-colors"
+            >
               <Mail className="h-4 w-4" />
               support@lifeartgroup.in
             </a>
             <div className="flex items-center gap-4 pt-1 text-xs">
-              <a href="/privacy-policy" className="flex items-center gap-1 hover:text-primary transition-colors">
+              <a
+                href="/privacy-policy"
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+              >
                 <Shield className="h-3.5 w-3.5" /> Privacy Policy
               </a>
-              <a href="/terms-of-service" className="flex items-center gap-1 hover:text-primary transition-colors">
+              <a
+                href="/terms-of-service"
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+              >
                 <FileText className="h-3.5 w-3.5" /> Terms of Service
               </a>
-              <a href="/report" className="flex items-center gap-1 hover:text-primary transition-colors">
+              <a
+                href="/report"
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+              >
                 <AlertTriangle className="h-3.5 w-3.5" /> Report Issue
               </a>
             </div>
           </div>
         </Card>
-
       </div>
     </AdminLayout>
   );

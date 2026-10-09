@@ -22,8 +22,14 @@ export function sanitizeHtml(html: string): string {
   sanitized = sanitized.replace(/on\w+\s*=\s*(['"][^'"]*['"]|[^\s>]+)/gi, '');
 
   // 3. Remove javascript: and data: URIs in src or href
-  sanitized = sanitized.replace(/href\s*=\s*(['"]\s*javascript:[^'"]*['"]|['"]\s*data:[^'"]*['"])/gi, 'href="#"');
-  sanitized = sanitized.replace(/src\s*=\s*(['"]\s*javascript:[^'"]*['"]|['"]\s*data:[^'"]*['"])/gi, 'src=""');
+  sanitized = sanitized.replace(
+    /href\s*=\s*(['"]\s*javascript:[^'"]*['"]|['"]\s*data:[^'"]*['"])/gi,
+    'href="#"',
+  );
+  sanitized = sanitized.replace(
+    /src\s*=\s*(['"]\s*javascript:[^'"]*['"]|['"]\s*data:[^'"]*['"])/gi,
+    'src=""',
+  );
 
   // 4. Remove dangerous tags completely
   const dangerousTags = [

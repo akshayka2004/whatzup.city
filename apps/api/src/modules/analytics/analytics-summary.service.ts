@@ -28,8 +28,8 @@ export class AnalyticsSummaryService {
   async refreshUserSpending(tenantId: string, userId: string): Promise<void> {
     try {
       const now = new Date();
-      const d30  = new Date(now.getTime() -  30 * 86400_000);
-      const d90  = new Date(now.getTime() -  90 * 86400_000);
+      const d30 = new Date(now.getTime() - 30 * 86400_000);
+      const d90 = new Date(now.getTime() - 90 * 86400_000);
       const d365 = new Date(now.getTime() - 365 * 86400_000);
 
       const [totalAgg, agg30, agg90, agg365, billCount, crmStats] = await Promise.all([
@@ -38,15 +38,33 @@ export class AnalyticsSummaryService {
           _sum: { amount: true },
         }),
         this.db.bill.aggregate({
-          where: { userId, tenantId, status: 'VERIFIED', deletedAt: null, verifiedAt: { gte: d30 } },
+          where: {
+            userId,
+            tenantId,
+            status: 'VERIFIED',
+            deletedAt: null,
+            verifiedAt: { gte: d30 },
+          },
           _sum: { amount: true },
         }),
         this.db.bill.aggregate({
-          where: { userId, tenantId, status: 'VERIFIED', deletedAt: null, verifiedAt: { gte: d90 } },
+          where: {
+            userId,
+            tenantId,
+            status: 'VERIFIED',
+            deletedAt: null,
+            verifiedAt: { gte: d90 },
+          },
           _sum: { amount: true },
         }),
         this.db.bill.aggregate({
-          where: { userId, tenantId, status: 'VERIFIED', deletedAt: null, verifiedAt: { gte: d365 } },
+          where: {
+            userId,
+            tenantId,
+            status: 'VERIFIED',
+            deletedAt: null,
+            verifiedAt: { gte: d365 },
+          },
           _sum: { amount: true },
         }),
         this.db.bill.count({ where: { userId, tenantId, status: 'VERIFIED', deletedAt: null } }),
@@ -58,11 +76,11 @@ export class AnalyticsSummaryService {
           .catch(() => ({ _sum: { offersClaimedCount: 0, offersRedeemedCount: 0 } })),
       ]);
 
-      const totalSpend       = Number(totalAgg._sum?.amount ?? 0);
-      const spendLast30Days  = Number(agg30._sum?.amount ?? 0);
-      const spendLast90Days  = Number(agg90._sum?.amount ?? 0);
+      const totalSpend = Number(totalAgg._sum?.amount ?? 0);
+      const spendLast30Days = Number(agg30._sum?.amount ?? 0);
+      const spendLast90Days = Number(agg90._sum?.amount ?? 0);
       const spendLast365Days = Number(agg365._sum?.amount ?? 0);
-      const offersClaimedCount  = crmStats._sum?.offersClaimedCount  ?? 0;
+      const offersClaimedCount = crmStats._sum?.offersClaimedCount ?? 0;
       const offersRedeemedCount = crmStats._sum?.offersRedeemedCount ?? 0;
 
       // Engagement score: weighted, capped at 100
@@ -72,17 +90,30 @@ export class AnalyticsSummaryService {
       );
 
       await (this.db as any).userSpendingSummary.upsert({
-        where:  { userId },
+        where: { userId },
         create: {
-          userId, tenantId, totalSpend, spendLast30Days, spendLast90Days,
-          spendLast365Days, verifiedBillCount: billCount,
-          offersClaimedCount, offersRedeemedCount, engagementScore,
+          userId,
+          tenantId,
+          totalSpend,
+          spendLast30Days,
+          spendLast90Days,
+          spendLast365Days,
+          verifiedBillCount: billCount,
+          offersClaimedCount,
+          offersRedeemedCount,
+          engagementScore,
           lastActivityAt: now,
         },
         update: {
-          totalSpend, spendLast30Days, spendLast90Days, spendLast365Days,
-          verifiedBillCount: billCount, offersClaimedCount, offersRedeemedCount,
-          engagementScore, lastActivityAt: now,
+          totalSpend,
+          spendLast30Days,
+          spendLast90Days,
+          spendLast365Days,
+          verifiedBillCount: billCount,
+          offersClaimedCount,
+          offersRedeemedCount,
+          engagementScore,
+          lastActivityAt: now,
         },
       });
 
@@ -127,23 +158,35 @@ export class AnalyticsSummaryService {
           .catch(() => 0),
       ]);
 
-      const customerCount    = crmStats._count?._all ?? 0;
-      const offerClaims      = crmStats._sum?.offersClaimedCount  ?? 0;
+      const customerCount = crmStats._count?._all ?? 0;
+      const offerClaims = crmStats._sum?.offersClaimedCount ?? 0;
       const offerRedemptions = crmStats._sum?.offersRedeemedCount ?? 0;
-      const conversionRate   = offerClaims > 0 ? offerRedemptions / offerClaims : 0;
+      const conversionRate = offerClaims > 0 ? offerRedemptions / offerClaims : 0;
       const verifiedBillCount = billAgg._count?._all ?? 0;
-      const estimatedSpend   = Number(billAgg._sum?.amount ?? 0);
+      const estimatedSpend = Number(billAgg._sum?.amount ?? 0);
 
       await db.businessAnalyticsSummary.upsert({
-        where:  { businessId },
+        where: { businessId },
         create: {
-          businessId, tenantId, customerCount, offerClaims,
-          offerRedemptions, conversionRate, verifiedBillCount, estimatedSpend,
-          branchCount, lastActivityAt: new Date(),
+          businessId,
+          tenantId,
+          customerCount,
+          offerClaims,
+          offerRedemptions,
+          conversionRate,
+          verifiedBillCount,
+          estimatedSpend,
+          branchCount,
+          lastActivityAt: new Date(),
         },
         update: {
-          customerCount, offerClaims, offerRedemptions, conversionRate,
-          verifiedBillCount, estimatedSpend, branchCount,
+          customerCount,
+          offerClaims,
+          offerRedemptions,
+          conversionRate,
+          verifiedBillCount,
+          estimatedSpend,
+          branchCount,
           lastActivityAt: new Date(),
         },
       });
@@ -188,23 +231,24 @@ export class AnalyticsSummaryService {
       ]);
 
       await db.branchAnalyticsSummary.upsert({
-        where:  { branchId },
+        where: { branchId },
         create: {
-          branchId, tenantId,
-          customerCount:    crmStats._count?._all ?? 0,
-          offerClaims:      crmStats._sum?.offersClaimedCount  ?? 0,
+          branchId,
+          tenantId,
+          customerCount: crmStats._count?._all ?? 0,
+          offerClaims: crmStats._sum?.offersClaimedCount ?? 0,
           offerRedemptions: crmStats._sum?.offersRedeemedCount ?? 0,
           verifiedBillCount: billAgg._count?._all ?? 0,
-          estimatedSpend:    Number(billAgg._sum?.amount ?? 0),
-          lastActivityAt:    new Date(),
+          estimatedSpend: Number(billAgg._sum?.amount ?? 0),
+          lastActivityAt: new Date(),
         },
         update: {
-          customerCount:    crmStats._count?._all ?? 0,
-          offerClaims:      crmStats._sum?.offersClaimedCount  ?? 0,
+          customerCount: crmStats._count?._all ?? 0,
+          offerClaims: crmStats._sum?.offersClaimedCount ?? 0,
           offerRedemptions: crmStats._sum?.offersRedeemedCount ?? 0,
           verifiedBillCount: billAgg._count?._all ?? 0,
-          estimatedSpend:    Number(billAgg._sum?.amount ?? 0),
-          lastActivityAt:    new Date(),
+          estimatedSpend: Number(billAgg._sum?.amount ?? 0),
+          lastActivityAt: new Date(),
         },
       });
     } catch (err: any) {
@@ -231,16 +275,23 @@ export class AnalyticsSummaryService {
       const conversionRate = total > 0 ? successful / total : 0;
 
       await (this.db as any).referralAnalyticsSummary.upsert({
-        where:  { entityId },
+        where: { entityId },
         create: {
-          entityId, entityType, referralCode,
-          totalReferrals: total, successfulReferrals: successful,
-          activeReferrals: successful, referralConversionRate: conversionRate,
+          entityId,
+          entityType,
+          referralCode,
+          totalReferrals: total,
+          successfulReferrals: successful,
+          activeReferrals: successful,
+          referralConversionRate: conversionRate,
           lastReferralAt: total > 0 ? new Date() : null,
         },
         update: {
-          referralCode, totalReferrals: total, successfulReferrals: successful,
-          activeReferrals: successful, referralConversionRate: conversionRate,
+          referralCode,
+          totalReferrals: total,
+          successfulReferrals: successful,
+          activeReferrals: successful,
+          referralConversionRate: conversionRate,
           lastReferralAt: total > 0 ? new Date() : null,
         },
       });
@@ -260,20 +311,25 @@ export class AnalyticsSummaryService {
     if (cached) return cached;
 
     const rows = await (this.db as any).userSpendingSummary.findMany({
-      where:   { tenantId },
+      where: { tenantId },
       orderBy: { totalSpend: 'desc' },
-      take:    limit,
+      take: limit,
       select: {
-        userId: true, totalSpend: true, spendLast30Days: true,
-        verifiedBillCount: true, offersRedeemedCount: true,
-        engagementScore: true, primarySpendCategory: true, lastActivityAt: true,
+        userId: true,
+        totalSpend: true,
+        spendLast30Days: true,
+        verifiedBillCount: true,
+        offersRedeemedCount: true,
+        engagementScore: true,
+        primarySpendCategory: true,
+        lastActivityAt: true,
       },
     });
 
     // Join with user name (small N — safe)
     const userIds: string[] = rows.map((r: any) => r.userId);
     const users = await this.db.user.findMany({
-      where:  { id: { in: userIds } },
+      where: { id: { in: userIds } },
       select: { id: true, name: true, email: true },
     });
     const userMap = new Map(users.map((u) => [u.id, u]));
@@ -294,9 +350,9 @@ export class AnalyticsSummaryService {
     if (cached) return cached;
 
     const result = await (this.db as any).referralAnalyticsSummary.findMany({
-      where:   entityType ? { entityType } : undefined,
+      where: entityType ? { entityType } : undefined,
       orderBy: { successfulReferrals: 'desc' },
-      take:    limit,
+      take: limit,
     });
 
     await this.redis.set(cacheKey, result, 300);

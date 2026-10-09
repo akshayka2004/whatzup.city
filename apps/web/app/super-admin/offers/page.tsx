@@ -6,7 +6,15 @@ import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  Tag, Trash2, RefreshCw, Loader2, Calendar, Building2, Percent, X, AlertTriangle,
+  Tag,
+  Trash2,
+  RefreshCw,
+  Loader2,
+  Calendar,
+  Building2,
+  Percent,
+  X,
+  AlertTriangle,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 
@@ -48,7 +56,9 @@ export default function SuperAdminOffersPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchOffers(); }, [fetchOffers]);
+  useEffect(() => {
+    fetchOffers();
+  }, [fetchOffers]);
 
   const handleDelete = async () => {
     if (!confirm) return;
@@ -64,7 +74,9 @@ export default function SuperAdminOffersPage() {
   };
 
   const fmtDate = (d?: string) =>
-    d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+    d
+      ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '—';
 
   const discountLabel = (o: OfferRow) => {
     if (o.discountPercent) return `${o.discountPercent}% off`;
@@ -79,7 +91,8 @@ export default function SuperAdminOffersPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Platform Offers</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              All currently-running offers across the platform. Delete any offer to remove it instantly.
+              All currently-running offers across the platform. Delete any offer to remove it
+              instantly.
             </p>
           </div>
           <Button
@@ -96,10 +109,14 @@ export default function SuperAdminOffersPage() {
         {/* KPI */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card className="ui-fade-up p-5 rounded-2xl border-border bg-card flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-brand-soft text-brand-soft-foreground"><Tag className="h-5 w-5" /></div>
+            <div className="p-3 rounded-xl bg-brand-soft text-brand-soft-foreground">
+              <Tag className="h-5 w-5" />
+            </div>
             <div>
               <p className="text-xs text-muted-foreground">Active Offers</p>
-              <p className="text-2xl font-extrabold text-foreground">{loading ? '…' : (meta.total ?? offers.length)}</p>
+              <p className="text-2xl font-extrabold text-foreground">
+                {loading ? '…' : (meta.total ?? offers.length)}
+              </p>
             </div>
           </Card>
         </div>
@@ -125,12 +142,24 @@ export default function SuperAdminOffersPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-secondary/40">
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Offer</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Business</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Discount</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Valid Till</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Clicks</th>
-                    <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">Action</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                      Offer
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                      Business
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                      Discount
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                      Valid Till
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                      Clicks
+                    </th>
+                    <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -151,7 +180,9 @@ export default function SuperAdminOffersPage() {
                         </span>
                         {(o.business?.tenant?.name || o.business?.city) && (
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {[o.business?.city, o.business?.tenant?.name].filter(Boolean).join(' · ')}
+                            {[o.business?.city, o.business?.tenant?.name]
+                              .filter(Boolean)
+                              .join(' · ')}
                           </p>
                         )}
                       </td>
@@ -189,37 +220,47 @@ export default function SuperAdminOffersPage() {
 
       {/* Delete confirm modal */}
       {confirm && (
-        <ModalSurface onClose={() => setConfirm(null)} label="Delete offer?" className="sm:max-w-md">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-xl bg-danger-soft text-danger-soft-foreground">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">Delete offer?</h3>
-                <p className="text-xs text-muted-foreground">This removes it from the platform immediately.</p>
-              </div>
+        <ModalSurface
+          onClose={() => setConfirm(null)}
+          label="Delete offer?"
+          className="sm:max-w-md"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 rounded-xl bg-danger-soft text-danger-soft-foreground">
+              <AlertTriangle className="h-6 w-6" />
             </div>
-            <div className="bg-secondary/50 border border-border rounded-xl p-3 mb-5">
-              <p className="text-sm font-semibold text-foreground">{confirm.title}</p>
-              <p className="text-xs text-muted-foreground">{confirm.business?.name}</p>
+            <div>
+              <h3 className="text-lg font-bold text-foreground">Delete offer?</h3>
+              <p className="text-xs text-muted-foreground">
+                This removes it from the platform immediately.
+              </p>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                onClick={() => setConfirm(null)}
-                variant="outline"
-                className="rounded-xl border-border text-muted-foreground hover:bg-secondary"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="rounded-xl bg-destructive hover:bg-destructive text-white font-semibold gap-1.5"
-              >
-                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                Delete
-              </Button>
-            </div>
+          </div>
+          <div className="bg-secondary/50 border border-border rounded-xl p-3 mb-5">
+            <p className="text-sm font-semibold text-foreground">{confirm.title}</p>
+            <p className="text-xs text-muted-foreground">{confirm.business?.name}</p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              onClick={() => setConfirm(null)}
+              variant="outline"
+              className="rounded-xl border-border text-muted-foreground hover:bg-secondary"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="rounded-xl bg-destructive hover:bg-destructive text-white font-semibold gap-1.5"
+            >
+              {deleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              Delete
+            </Button>
+          </div>
         </ModalSurface>
       )}
     </SuperAdminLayout>

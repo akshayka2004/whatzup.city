@@ -10,7 +10,16 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Clock, CreditCard, Download, Hotel, IndianRupee, ReceiptText, XCircle } from 'lucide-react';
+import {
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  Download,
+  Hotel,
+  IndianRupee,
+  ReceiptText,
+  XCircle,
+} from 'lucide-react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
 import { PageHeader } from '@/components/system/page-header';
 import { DataTable, downloadCsv, type Column } from '@/components/system/data-table';
@@ -21,7 +30,12 @@ import { KpiCard } from '@/components/analytics/kpi-card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiService } from '@/lib/services/api-service';
-import { SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, formatINR, planLabel } from '@/lib/subscription-plans';
+import {
+  SUBSCRIPTION_PLANS,
+  PLAN_DURATION_DAYS,
+  formatINR,
+  planLabel,
+} from '@/lib/subscription-plans';
 import { cn } from '@/lib/utils';
 
 type Row = {
@@ -33,8 +47,23 @@ type Row = {
   startDate: string;
   endDate: string;
   createdAt: string;
-  business?: { id: string; name: string; slug: string; city: string; status: string; category?: { name: string; slug: string } | null } | null;
-  latestPayment?: { id: string; amount: string | number; status: string; method: string; transactionRef?: string | null; createdAt: string; verifiedAt?: string | null } | null;
+  business?: {
+    id: string;
+    name: string;
+    slug: string;
+    city: string;
+    status: string;
+    category?: { name: string; slug: string } | null;
+  } | null;
+  latestPayment?: {
+    id: string;
+    amount: string | number;
+    status: string;
+    method: string;
+    transactionRef?: string | null;
+    createdAt: string;
+    verifiedAt?: string | null;
+  } | null;
 };
 
 type Txn = {
@@ -50,7 +79,15 @@ type Txn = {
   business?: { name?: string } | null;
 };
 
-const fmtDate = (v?: string | null) => (v ? new Date(v).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : '—');
+const fmtDate = (v?: string | null) =>
+  v
+    ? new Date(v).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'Asia/Kolkata',
+      })
+    : '—';
 const day = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 
 export default function AdminSubscriptionsPage() {
@@ -65,10 +102,13 @@ export default function AdminSubscriptionsPage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [res, txRes] = await Promise.all([apiService.get<any>('/v1/subscriptions/admin/all'), apiService.get<any>('/v1/payments/admin/transactions')]);
-      setTxns(Array.isArray(txRes.data) ? txRes.data : txRes.data?.data ?? []);
+      const [res, txRes] = await Promise.all([
+        apiService.get<any>('/v1/subscriptions/admin/all'),
+        apiService.get<any>('/v1/payments/admin/transactions'),
+      ]);
+      setTxns(Array.isArray(txRes.data) ? txRes.data : (txRes.data?.data ?? []));
       if (res.error) setError(res.error);
-      setRows(Array.isArray(res.data) ? res.data : res.data?.data ?? []);
+      setRows(Array.isArray(res.data) ? res.data : (res.data?.data ?? []));
       setLoading(false);
     })();
   }, []);
@@ -101,7 +141,9 @@ export default function AdminSubscriptionsPage() {
       cell: (r) => (
         <div className="min-w-0">
           <p className="truncate font-medium">{r.business?.name || '—'}</p>
-          <p className="truncate text-caption text-muted-foreground">{[r.business?.city, r.business?.category?.name].filter(Boolean).join(' · ')}</p>
+          <p className="truncate text-caption text-muted-foreground">
+            {[r.business?.city, r.business?.category?.name].filter(Boolean).join(' · ')}
+          </p>
         </div>
       ),
     },
@@ -111,13 +153,27 @@ export default function AdminSubscriptionsPage() {
       value: (r) => planLabel(r.packageName),
       cell: (r) => (
         <span className="inline-flex items-center gap-1">
-          {r.packageName?.startsWith('HOTEL_') && <Hotel className="size-3.5 text-muted-foreground" aria-hidden />}
+          {r.packageName?.startsWith('HOTEL_') && (
+            <Hotel className="size-3.5 text-muted-foreground" aria-hidden />
+          )}
           {planLabel(r.packageName)}
         </span>
       ),
     },
-    { key: 'amount', header: 'Amount', align: 'right', sortable: true, value: (r) => Number(r.pricing || 0), cell: (r) => formatINR(Number(r.pricing || 0)) },
-    { key: 'status', header: 'Status', value: (r) => r.status, cell: (r) => <StatusPill tone={statusTone(r.status)} label={humanizeStatus(r.status)} /> },
+    {
+      key: 'amount',
+      header: 'Amount',
+      align: 'right',
+      sortable: true,
+      value: (r) => Number(r.pricing || 0),
+      cell: (r) => formatINR(Number(r.pricing || 0)),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      value: (r) => r.status,
+      cell: (r) => <StatusPill tone={statusTone(r.status)} label={humanizeStatus(r.status)} />,
+    },
     {
       key: 'payment',
       header: 'Last payment',
@@ -141,44 +197,128 @@ export default function AdminSubscriptionsPage() {
         ),
       hideOnMobile: true,
     },
-    { key: 'endDate', header: 'Expires', sortable: true, value: (r) => r.endDate, cell: (r) => fmtDate(r.endDate) },
+    {
+      key: 'endDate',
+      header: 'Expires',
+      sortable: true,
+      value: (r) => r.endDate,
+      cell: (r) => fmtDate(r.endDate),
+    },
   ];
 
   const txColumns: Column<Txn>[] = [
-    { key: 'createdAt', header: 'Date', sortable: true, value: (t) => t.createdAt, cell: (t) => fmtDate(t.createdAt) },
-    { key: 'business', header: 'Business', value: (t) => t.business?.name ?? '', cell: (t) => t.business?.name || '—' },
+    {
+      key: 'createdAt',
+      header: 'Date',
+      sortable: true,
+      value: (t) => t.createdAt,
+      cell: (t) => fmtDate(t.createdAt),
+    },
+    {
+      key: 'business',
+      header: 'Business',
+      value: (t) => t.business?.name ?? '',
+      cell: (t) => t.business?.name || '—',
+    },
     {
       key: 'type',
       header: 'Event',
       value: (t) => `${t.type?.replace('PAYMENT_', '') ?? ''} ${t.cycle ?? ''}`.trim(),
       cell: (t) => (
         <span className="inline-flex items-center gap-1.5">
-          <StatusPill tone="neutral" label={humanizeStatus(t.type?.replace('PAYMENT_', '') || '—')} />
-          {t.cycle && <span className="text-caption text-muted-foreground">{t.cycle.toLowerCase()}</span>}
+          <StatusPill
+            tone="neutral"
+            label={humanizeStatus(t.type?.replace('PAYMENT_', '') || '—')}
+          />
+          {t.cycle && (
+            <span className="text-caption text-muted-foreground">{t.cycle.toLowerCase()}</span>
+          )}
         </span>
       ),
     },
-    { key: 'plan', header: 'Plan', value: (t) => planLabel(t.packageName || ''), cell: (t) => planLabel(t.packageName || ''), hideOnMobile: true },
-    { key: 'base', header: 'Base', align: 'right', value: (t) => Number(t.amountBase || 0), cell: (t) => formatINR(Number(t.amountBase || 0)), hideOnMobile: true },
-    { key: 'gst', header: 'GST', align: 'right', value: (t) => Number(t.amountTax || 0), cell: (t) => formatINR(Number(t.amountTax || 0)), hideOnMobile: true },
-    { key: 'total', header: 'Total', align: 'right', sortable: true, value: (t) => Number(t.amountTotal || 0), cell: (t) => <span className="font-semibold">{formatINR(Number(t.amountTotal || 0))}</span> },
-    { key: 'reference', header: 'Ref', value: (t) => t.reference ?? '', cell: (t) => <span className="text-caption text-muted-foreground">{t.reference || '—'}</span>, hideOnMobile: true },
+    {
+      key: 'plan',
+      header: 'Plan',
+      value: (t) => planLabel(t.packageName || ''),
+      cell: (t) => planLabel(t.packageName || ''),
+      hideOnMobile: true,
+    },
+    {
+      key: 'base',
+      header: 'Base',
+      align: 'right',
+      value: (t) => Number(t.amountBase || 0),
+      cell: (t) => formatINR(Number(t.amountBase || 0)),
+      hideOnMobile: true,
+    },
+    {
+      key: 'gst',
+      header: 'GST',
+      align: 'right',
+      value: (t) => Number(t.amountTax || 0),
+      cell: (t) => formatINR(Number(t.amountTax || 0)),
+      hideOnMobile: true,
+    },
+    {
+      key: 'total',
+      header: 'Total',
+      align: 'right',
+      sortable: true,
+      value: (t) => Number(t.amountTotal || 0),
+      cell: (t) => <span className="font-semibold">{formatINR(Number(t.amountTotal || 0))}</span>,
+    },
+    {
+      key: 'reference',
+      header: 'Ref',
+      value: (t) => t.reference ?? '',
+      cell: (t) => <span className="text-caption text-muted-foreground">{t.reference || '—'}</span>,
+      hideOnMobile: true,
+    },
   ];
 
   return (
     <AdminLayout>
-      <PageHeader title="Subscriptions" description={`Live from the database. Plans run for ${PLAN_DURATION_DAYS} days.`} />
+      <PageHeader
+        title="Subscriptions"
+        description={`Live from the database. Plans run for ${PLAN_DURATION_DAYS} days.`}
+      />
       {error && (
-        <p className="mb-4 rounded-control bg-danger-soft p-3 text-sm text-danger-soft-foreground" role="alert">
+        <p
+          className="mb-4 rounded-control bg-danger-soft p-3 text-sm text-danger-soft-foreground"
+          role="alert"
+        >
           {error}
         </p>
       )}
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label="Active revenue" icon={IndianRupee} format="inr" loading={loading} metric={{ value: revenue, previous: 0, change: null }} definition="Sum of plan prices on active subscriptions" />
-        <KpiCard label="Active" icon={CheckCircle2} loading={loading} metric={{ value: active.length, previous: 0, change: null }} />
-        <KpiCard label="Awaiting payment" icon={Clock} loading={loading} metric={{ value: pendingCount, previous: 0, change: null }} />
-        <KpiCard label="Renewing in 30 days" icon={CreditCard} loading={loading} metric={{ value: soon, previous: 0, change: null }} definition="Active plans that end within 30 days" />
+        <KpiCard
+          label="Active revenue"
+          icon={IndianRupee}
+          format="inr"
+          loading={loading}
+          metric={{ value: revenue, previous: 0, change: null }}
+          definition="Sum of plan prices on active subscriptions"
+        />
+        <KpiCard
+          label="Active"
+          icon={CheckCircle2}
+          loading={loading}
+          metric={{ value: active.length, previous: 0, change: null }}
+        />
+        <KpiCard
+          label="Awaiting payment"
+          icon={Clock}
+          loading={loading}
+          metric={{ value: pendingCount, previous: 0, change: null }}
+        />
+        <KpiCard
+          label="Renewing in 30 days"
+          icon={CreditCard}
+          loading={loading}
+          metric={{ value: soon, previous: 0, change: null }}
+          definition="Active plans that end within 30 days"
+        />
       </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -192,7 +332,9 @@ export default function AdminSubscriptionsPage() {
               aria-pressed={planFilter === p.code}
               className={cn(
                 'ui-press rounded-card border bg-card p-4 text-left shadow-e1 transition-colors',
-                planFilter === p.code ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:bg-secondary',
+                planFilter === p.code
+                  ? 'border-primary ring-2 ring-primary/20'
+                  : 'border-border hover:bg-secondary',
               )}
             >
               <div className="flex items-center justify-between">
@@ -200,8 +342,12 @@ export default function AdminSubscriptionsPage() {
                 {p.highlight && <StatusPill tone="success" label="Popular" />}
               </div>
               <p className="mt-1 flex items-baseline gap-1.5">
-                <span className="text-title font-semibold tabular-nums">{formatINR(p.offerPrice)}</span>
-                <span className="text-caption text-muted-foreground line-through">{formatINR(p.mrp)}</span>
+                <span className="text-title font-semibold tabular-nums">
+                  {formatINR(p.offerPrice)}
+                </span>
+                <span className="text-caption text-muted-foreground line-through">
+                  {formatINR(p.mrp)}
+                </span>
               </p>
               <p className="mt-1 text-caption text-muted-foreground">
                 {p.offers} offers · {p.vouchers} vouchers
@@ -233,14 +379,22 @@ export default function AdminSubscriptionsPage() {
                 ['PENDING_PAYMENT', 'Awaiting payment'],
                 ['EXPIRED', 'Expired'],
               ].map(([v, l]) => (
-                <FilterChip key={v} selected={statusFilter === v} onClick={() => setStatusFilter(v)}>
+                <FilterChip
+                  key={v}
+                  selected={statusFilter === v}
+                  onClick={() => setStatusFilter(v)}
+                >
                   {l}
                 </FilterChip>
               ))}
             </ChipRow>
             <div className="flex items-center gap-2">
               <SearchInput value={search} onChange={setSearch} placeholder="Search business" />
-              <Button variant="outline" disabled={!filtered.length} onClick={() => downloadCsv(`subscriptions-${day()}`, subColumns, filtered)}>
+              <Button
+                variant="outline"
+                disabled={!filtered.length}
+                onClick={() => downloadCsv(`subscriptions-${day()}`, subColumns, filtered)}
+              >
                 <Download /> CSV
               </Button>
             </div>
@@ -251,7 +405,11 @@ export default function AdminSubscriptionsPage() {
             rows={filtered}
             rowKey={(r) => r.id}
             loading={loading}
-            empty={{ icon: CreditCard, title: 'No subscriptions found', description: 'They appear as soon as a business picks a plan.' }}
+            empty={{
+              icon: CreditCard,
+              title: 'No subscriptions found',
+              description: 'They appear as soon as a business picks a plan.',
+            }}
             mobileCard={(r) => (
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
@@ -268,7 +426,11 @@ export default function AdminSubscriptionsPage() {
 
         <TabsContent value="transactions" className="mt-4">
           <div className="mb-4 flex justify-end">
-            <Button variant="outline" disabled={!txns.length} onClick={() => downloadCsv(`transactions-${day()}`, txColumns, txns)}>
+            <Button
+              variant="outline"
+              disabled={!txns.length}
+              onClick={() => downloadCsv(`transactions-${day()}`, txColumns, txns)}
+            >
               <Download /> CSV
             </Button>
           </div>
@@ -284,10 +446,13 @@ export default function AdminSubscriptionsPage() {
                 <div className="min-w-0">
                   <p className="truncate font-medium">{t.business?.name || '—'}</p>
                   <p className="truncate text-caption text-muted-foreground">
-                    {fmtDate(t.createdAt)} · {humanizeStatus(t.type?.replace('PAYMENT_', '') || '—')}
+                    {fmtDate(t.createdAt)} ·{' '}
+                    {humanizeStatus(t.type?.replace('PAYMENT_', '') || '—')}
                   </p>
                 </div>
-                <span className="font-semibold tabular-nums">{formatINR(Number(t.amountTotal || 0))}</span>
+                <span className="font-semibold tabular-nums">
+                  {formatINR(Number(t.amountTotal || 0))}
+                </span>
               </div>
             )}
           />

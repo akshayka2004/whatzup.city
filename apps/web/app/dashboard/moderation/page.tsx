@@ -37,13 +37,25 @@ import { useAuth } from '@/hooks/use-auth';
 
 // ── TYPES ─────────────────────────────────────────────────────────────
 
-type BillStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FLAGGED' | 'RE_UPLOAD_REQUESTED' | 'ESCALATED';
+type BillStatus =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'FLAGGED'
+  | 'RE_UPLOAD_REQUESTED'
+  | 'ESCALATED';
 type TabKey = 'PENDING' | 'APPROVED' | 'REJECTED' | 'FLAGGED' | 'RE_UPLOAD_REQUESTED';
 type Action = 'approve' | 'reject' | 'reupload' | 'flag' | 'override';
 
 type BrandInfo = {
   brand: { id: string; name: string; billSeriesMode?: string; billSeriesPrefix?: string | null };
-  outlets: { id: string; name: string; outletLabel?: string | null; status?: string; isBrandHq?: boolean }[];
+  outlets: {
+    id: string;
+    name: string;
+    outletLabel?: string | null;
+    status?: string;
+    isBrandHq?: boolean;
+  }[];
 };
 
 const UNDECIDED: BillStatus[] = ['PENDING', 'FLAGGED', 'ESCALATED', 'RE_UPLOAD_REQUESTED'];
@@ -58,20 +70,30 @@ function extractList(body: any): any[] {
 }
 
 // Never nags: "not matched" only shows when we know a series is actually configured.
-function getSeriesBadge(bill: any, brand: BrandInfo | null): { matched: boolean; label: string } | null {
+function getSeriesBadge(
+  bill: any,
+  brand: BrandInfo | null,
+): { matched: boolean; label: string } | null {
   if (bill.seriesMatched) {
-    return { matched: true, label: bill.seriesScope === 'SHARED' ? 'Brand series matched' : 'Series matched' };
+    return {
+      matched: true,
+      label: bill.seriesScope === 'SHARED' ? 'Brand series matched' : 'Series matched',
+    };
   }
-  if (bill.seriesScope === 'SHARED' && brand?.brand.billSeriesPrefix) return { matched: false, label: 'Series not matched' };
-  if (bill.seriesScope !== 'SHARED' && bill.seriesPrefix) return { matched: false, label: 'Series not matched' };
+  if (bill.seriesScope === 'SHARED' && brand?.brand.billSeriesPrefix)
+    return { matched: false, label: 'Series not matched' };
+  if (bill.seriesScope !== 'SHARED' && bill.seriesPrefix)
+    return { matched: false, label: 'Series not matched' };
   return null;
 }
 
 function mapApiBill(b: any) {
   // API returns BillVerification with nested `bill` containing Bill + User + Business
   const bill = b.bill || {};
-  const customerName = b.customer?.name || b.user?.name || bill.user?.name || b.customerName || 'Customer';
-  const customerEmail = b.customer?.email || b.user?.email || bill.user?.email || b.customerEmail || '';
+  const customerName =
+    b.customer?.name || b.user?.name || bill.user?.name || b.customerName || 'Customer';
+  const customerEmail =
+    b.customer?.email || b.user?.email || bill.user?.email || b.customerEmail || '';
   const businessName = b.business?.name || bill.business?.name || b.businessName || '';
   const amount = parseFloat(b.amount ?? bill.amount ?? '0');
   const billDate = b.billDate || bill.billDate || '';
@@ -89,13 +111,20 @@ function mapApiBill(b: any) {
     businessId: bill.business?.id || b.businessId || bill.businessId || '',
     amount,
     billDate,
-    billNumber: bill.billNumber || b.billNumber || b.ocrMetadata?.parsed?.invoiceNumber || b.id.substring(0, 8).toUpperCase(),
+    billNumber:
+      bill.billNumber ||
+      b.billNumber ||
+      b.ocrMetadata?.parsed?.invoiceNumber ||
+      b.id.substring(0, 8).toUpperCase(),
     seriesMatched: !!b.seriesMatched,
     seriesScope: (b.seriesScope || 'SINGLE') as string,
-    seriesPrefix: (b.seriesPrefix || bill.business?.billSeriesPrefix || b.billSeriesPrefix || '') as string,
+    seriesPrefix: (b.seriesPrefix ||
+      bill.business?.billSeriesPrefix ||
+      b.billSeriesPrefix ||
+      '') as string,
     rejectionReason: (b.rejectionReason || '') as string,
     status: (b.status || 'PENDING') as BillStatus,
-    ocrConfidence: b.ocrConfidence ?? (b.ocrMetadata?.confidence ?? 75),
+    ocrConfidence: b.ocrConfidence ?? b.ocrMetadata?.confidence ?? 75,
     fraudScore: isNaN(fraudScore) ? 0.1 : fraudScore,
     escalationLevel: b.escalationLevel || 'NONE',
     ocrData: b.ocrData || {
@@ -128,9 +157,32 @@ const STATUS_PILL: Record<BillStatus, { label: string; tone: PillTone }> = {
   ESCALATED: { label: 'Escalated', tone: 'danger' },
 };
 
-const ACTION_META: Record<Action, { title: string; icon: React.ComponentType<{ className?: string }>; tone: string; button: 'primary' | 'destructive' | 'outline'; placeholder?: string; templates?: string[]; needsReason?: boolean }> = {
-  approve: { title: 'Approve bill', icon: Check, tone: 'bg-success-soft text-success-soft-foreground', button: 'primary', placeholder: 'Note (optional)' },
-  override: { title: 'Owner override — approve', icon: Shield, tone: 'bg-success-soft text-success-soft-foreground', button: 'primary', placeholder: 'Override reason (optional)' },
+const ACTION_META: Record<
+  Action,
+  {
+    title: string;
+    icon: React.ComponentType<{ className?: string }>;
+    tone: string;
+    button: 'primary' | 'destructive' | 'outline';
+    placeholder?: string;
+    templates?: string[];
+    needsReason?: boolean;
+  }
+> = {
+  approve: {
+    title: 'Approve bill',
+    icon: Check,
+    tone: 'bg-success-soft text-success-soft-foreground',
+    button: 'primary',
+    placeholder: 'Note (optional)',
+  },
+  override: {
+    title: 'Owner override — approve',
+    icon: Shield,
+    tone: 'bg-success-soft text-success-soft-foreground',
+    button: 'primary',
+    placeholder: 'Override reason (optional)',
+  },
   reject: {
     title: 'Reject bill',
     icon: X,
@@ -138,7 +190,12 @@ const ACTION_META: Record<Action, { title: string; icon: React.ComponentType<{ c
     button: 'destructive',
     placeholder: 'Reason for rejection…',
     needsReason: true,
-    templates: ['Bill is from another business', "Amount doesn't match the bill", 'Duplicate submission', 'Bill is older than allowed'],
+    templates: [
+      'Bill is from another business',
+      "Amount doesn't match the bill",
+      'Duplicate submission',
+      'Bill is older than allowed',
+    ],
   },
   reupload: {
     title: 'Request re-upload',
@@ -147,9 +204,21 @@ const ACTION_META: Record<Action, { title: string; icon: React.ComponentType<{ c
     button: 'outline',
     placeholder: 'What needs to be corrected?',
     needsReason: true,
-    templates: ['Photo is blurry — please retake', 'Total amount is not visible', 'Bill number is cut off', 'Please upload the full bill'],
+    templates: [
+      'Photo is blurry — please retake',
+      'Total amount is not visible',
+      'Bill number is cut off',
+      'Please upload the full bill',
+    ],
   },
-  flag: { title: 'Flag for escalation', icon: Flag, tone: 'bg-warning-soft text-warning-soft-foreground', button: 'outline', placeholder: 'Escalation reason…', needsReason: true },
+  flag: {
+    title: 'Flag for escalation',
+    icon: Flag,
+    tone: 'bg-warning-soft text-warning-soft-foreground',
+    button: 'outline',
+    placeholder: 'Escalation reason…',
+    needsReason: true,
+  },
 };
 
 const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`;
@@ -161,7 +230,12 @@ function riskTone(score: number): PillTone {
 function RiskPill({ score }: { score: number }) {
   const pct = Math.round(score * 100);
   const tone = riskTone(score);
-  return <StatusPill tone={tone} label={`${pct}% ${tone === 'danger' ? 'high' : tone === 'warning' ? 'medium' : 'low'} risk`} />;
+  return (
+    <StatusPill
+      tone={tone}
+      label={`${pct}% ${tone === 'danger' ? 'high' : tone === 'warning' ? 'medium' : 'low'} risk`}
+    />
+  );
 }
 
 function useMinWidth(px: number) {
@@ -179,7 +253,11 @@ function useMinWidth(px: number) {
 const isTyping = (el: EventTarget | null) => {
   const t = el as HTMLElement | null;
   if (!t) return false;
-  return t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName) || !!t.closest('[role="dialog"]');
+  return (
+    t.isContentEditable ||
+    ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName) ||
+    !!t.closest('[role="dialog"]')
+  );
 };
 
 // ── BILL PREVIEW ──────────────────────────────────────────────────────
@@ -222,8 +300,15 @@ function BillPreview({
         <StatusPill tone="neutral" label={`Bill # ${bill.billNumber}`} />
         {bill.billDate && <StatusPill tone="neutral" label={bill.billDate} />}
         <StatusPill tone={brandInfo ? 'primary' : 'neutral'} label={bill.business || 'Business'} />
-        {seriesBadge && <StatusPill tone={seriesBadge.matched ? 'success' : 'neutral'} label={seriesBadge.label} />}
-        {bill.escalationLevel !== 'NONE' && <StatusPill tone="danger" label={`Escalated to ${bill.escalationLevel}`} />}
+        {seriesBadge && (
+          <StatusPill
+            tone={seriesBadge.matched ? 'success' : 'neutral'}
+            label={seriesBadge.label}
+          />
+        )}
+        {bill.escalationLevel !== 'NONE' && (
+          <StatusPill tone="danger" label={`Escalated to ${bill.escalationLevel}`} />
+        )}
       </div>
 
       {isDuplicate && (
@@ -240,10 +325,16 @@ function BillPreview({
         {bill.receiptUrl ? (
           <a href={bill.receiptUrl} target="_blank" rel="noreferrer" title="Open full size">
             {/* eslint-disable-next-line @next/next/no-img-element -- receipts come from arbitrary upload hosts */}
-            <img src={bill.receiptUrl} alt={`Receipt ${bill.billNumber}`} className="h-72 w-full object-contain" />
+            <img
+              src={bill.receiptUrl}
+              alt={`Receipt ${bill.billNumber}`}
+              className="h-72 w-full object-contain"
+            />
           </a>
         ) : (
-          <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">No receipt image</div>
+          <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+            No receipt image
+          </div>
         )}
       </div>
 
@@ -265,7 +356,16 @@ function BillPreview({
             </div>
             <div className="flex justify-between gap-2">
               <dt className="text-muted-foreground">Read confidence</dt>
-              <dd className={cn('font-semibold', bill.ocrConfidence >= 80 ? 'text-success' : bill.ocrConfidence >= 60 ? 'text-warning' : 'text-destructive')}>
+              <dd
+                className={cn(
+                  'font-semibold',
+                  bill.ocrConfidence >= 80
+                    ? 'text-success'
+                    : bill.ocrConfidence >= 60
+                      ? 'text-warning'
+                      : 'text-destructive',
+                )}
+              >
                 {bill.ocrConfidence}%
               </dd>
             </div>
@@ -286,27 +386,50 @@ function BillPreview({
             <RiskPill score={bill.fraudScore} />
             <div className="h-1.5 w-full rounded-full bg-secondary" role="presentation">
               <div
-                className={cn('h-1.5 rounded-full', bill.fraudScore >= 0.7 ? 'bg-destructive' : bill.fraudScore >= 0.4 ? 'bg-warning' : 'bg-success')}
+                className={cn(
+                  'h-1.5 rounded-full',
+                  bill.fraudScore >= 0.7
+                    ? 'bg-destructive'
+                    : bill.fraudScore >= 0.4
+                      ? 'bg-warning'
+                      : 'bg-success',
+                )}
                 style={{ width: `${Math.min(100, bill.fraudScore * 100)}%` }}
               />
             </div>
-            {bill.fraudScore >= 0.6 && <p className="text-caption text-destructive">High risk — check the photo carefully.</p>}
+            {bill.fraudScore >= 0.6 && (
+              <p className="text-caption text-destructive">
+                High risk — check the photo carefully.
+              </p>
+            )}
           </div>
         </div>
       </div>
 
-      {(showMove || (canVerify && (bill.status === 'PENDING' || bill.status === 'FLAGGED' || bill.status === 'ESCALATED'))) && (
+      {(showMove ||
+        (canVerify &&
+          (bill.status === 'PENDING' ||
+            bill.status === 'FLAGGED' ||
+            bill.status === 'ESCALATED'))) && (
         <div className="flex flex-wrap gap-2 border-t border-border pt-4">
           {canVerify && bill.status === 'PENDING' && (
             <>
-              <Button onClick={() => onAction('approve')} className="bg-success text-white hover:bg-success/90">
-                <Check /> Approve <kbd className="ml-1 hidden rounded bg-white/20 px-1 text-caption lg:inline">A</kbd>
+              <Button
+                onClick={() => onAction('approve')}
+                className="bg-success text-white hover:bg-success/90"
+              >
+                <Check /> Approve{' '}
+                <kbd className="ml-1 hidden rounded bg-white/20 px-1 text-caption lg:inline">A</kbd>
               </Button>
               <Button variant="danger" onClick={() => onAction('reject')}>
-                <X /> Reject <kbd className="ml-1 hidden rounded bg-black/5 px-1 text-caption lg:inline">R</kbd>
+                <X /> Reject{' '}
+                <kbd className="ml-1 hidden rounded bg-black/5 px-1 text-caption lg:inline">R</kbd>
               </Button>
               <Button variant="outline" onClick={() => onAction('reupload')}>
-                <RefreshCw /> Ask to re-upload <kbd className="ml-1 hidden rounded bg-secondary px-1 text-caption lg:inline">U</kbd>
+                <RefreshCw /> Ask to re-upload{' '}
+                <kbd className="ml-1 hidden rounded bg-secondary px-1 text-caption lg:inline">
+                  U
+                </kbd>
               </Button>
               <Button variant="ghost" onClick={() => onAction('flag')}>
                 <Flag /> Flag
@@ -443,8 +566,11 @@ export default function BillModerationPage() {
   const filteredBills = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return bills.filter((b) => {
-      const matchesTab = b.status === activeTab || (activeTab === 'FLAGGED' && (b.status === 'FLAGGED' || b.status === 'ESCALATED'));
-      const matchesSearch = !q || b.customer.name.toLowerCase().includes(q) || b.billNumber.toLowerCase().includes(q);
+      const matchesTab =
+        b.status === activeTab ||
+        (activeTab === 'FLAGGED' && (b.status === 'FLAGGED' || b.status === 'ESCALATED'));
+      const matchesSearch =
+        !q || b.customer.name.toLowerCase().includes(q) || b.billNumber.toLowerCase().includes(q);
       return matchesTab && matchesSearch;
     });
   }, [bills, activeTab, searchQuery]);
@@ -474,7 +600,8 @@ export default function BillModerationPage() {
     [isDesktop],
   );
 
-  const showMoveFor = (b: Bill | null) => !!b && isBrandView && brandInfo!.outlets.length > 1 && UNDECIDED.includes(b.status);
+  const showMoveFor = (b: Bill | null) =>
+    !!b && isBrandView && brandInfo!.outlets.length > 1 && UNDECIDED.includes(b.status);
 
   const openAction = (a: Action) => {
     if (!selectedBill || !canVerify) return;
@@ -487,7 +614,13 @@ export default function BillModerationPage() {
     const actingBusinessId = bill.businessId || businessId;
     if (!actingBusinessId) return 'No business selected';
     const base = `/v1/businesses/${actingBusinessId}/bill-verifications/${bill.id}`;
-    const path = { approve: 'approve', reject: 'reject', reupload: 'request-reupload', flag: 'flag', override: 'owner-override' }[action];
+    const path = {
+      approve: 'approve',
+      reject: 'reject',
+      reupload: 'request-reupload',
+      flag: 'flag',
+      override: 'owner-override',
+    }[action];
     const body = action === 'approve' || action === 'override' ? { notes: reason } : { reason };
     const res = await apiService.post(`${base}/${path}`, body);
     return res.error ? (typeof res.error === 'string' ? res.error : 'Something went wrong') : null;
@@ -521,7 +654,13 @@ export default function BillModerationPage() {
       toast.error(err);
       return;
     }
-    const done = { approve: 'Bill approved', override: 'Bill approved by override', reject: 'Bill rejected', reupload: 'Re-upload requested', flag: 'Bill flagged' }[actionModal];
+    const done = {
+      approve: 'Bill approved',
+      override: 'Bill approved by override',
+      reject: 'Bill rejected',
+      reupload: 'Re-upload requested',
+      flag: 'Bill flagged',
+    }[actionModal];
     toast.success(`${done} · ${selectedBill.customer.name}`);
     setActionModal(null);
     setActionReason('');
@@ -541,7 +680,8 @@ export default function BillModerationPage() {
     }
     setBulkBusy(false);
     if (ok.length) removeAndAdvance(ok);
-    if (failed) toast.error(`${ok.length} approved, ${failed} failed. Try the failed ones one by one.`);
+    if (failed)
+      toast.error(`${ok.length} approved, ${failed} failed. Try the failed ones one by one.`);
     else toast.success(`${ok.length} bill${ok.length === 1 ? '' : 's'} approved`);
   };
 
@@ -550,9 +690,14 @@ export default function BillModerationPage() {
     setMoveLoading(true);
     setMoveError('');
     try {
-      const res = await apiService.post<any>(`/v1/bill-verifications/${moveBill.id}/reassign-outlet`, { outletId: moveTarget });
+      const res = await apiService.post<any>(
+        `/v1/bill-verifications/${moveBill.id}/reassign-outlet`,
+        { outletId: moveTarget },
+      );
       if (res.error) {
-        setMoveError(typeof res.error === 'string' ? res.error : "Couldn't move this bill. Please try again.");
+        setMoveError(
+          typeof res.error === 'string' ? res.error : "Couldn't move this bill. Please try again.",
+        );
       } else {
         const target = brandInfo?.outlets.find((o) => o.id === moveTarget);
         toast.success(`Bill moved to ${target ? outletName(target) : 'the selected outlet'}`);
@@ -570,7 +715,8 @@ export default function BillModerationPage() {
   // ── Keyboard: J/K move, A approve, R reject, U re-upload, X tick ──
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target) || actionModal || moveBill) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e.target) || actionModal || moveBill)
+        return;
       const k = e.key.toLowerCase();
       const idx = filteredBills.findIndex((b) => b.id === selectedId);
       if (k === 'j' || k === 'arrowdown') {
@@ -630,11 +776,18 @@ export default function BillModerationPage() {
       <div className="mx-auto max-w-7xl">
         <PageHeader
           title="Bill queue"
-          description={isOwner ? 'Check customer bills before they earn rewards.' : 'Check customer bills before they earn rewards. Analytics stay with the owner.'}
-          meta={<StatusPill tone={isOwner ? 'primary' : 'warning'} label={getRoleLabel(userRole)} />}
+          description={
+            isOwner
+              ? 'Check customer bills before they earn rewards.'
+              : 'Check customer bills before they earn rewards. Analytics stay with the owner.'
+          }
+          meta={
+            <StatusPill tone={isOwner ? 'primary' : 'warning'} label={getRoleLabel(userRole)} />
+          }
           actions={
             <span className="hidden items-center gap-1.5 text-caption text-muted-foreground lg:inline-flex">
-              <Keyboard className="size-4" aria-hidden /> J/K move · A approve · R reject · U re-upload · X select
+              <Keyboard className="size-4" aria-hidden /> J/K move · A approve · R reject · U
+              re-upload · X select
             </span>
           }
         />
@@ -646,7 +799,11 @@ export default function BillModerationPage() {
                 key={t.key}
                 icon={t.icon}
                 selected={activeTab === t.key}
-                count={t.key === 'PENDING' || t.key === 'FLAGGED' ? counts[t.key] || undefined : undefined}
+                count={
+                  t.key === 'PENDING' || t.key === 'FLAGGED'
+                    ? counts[t.key] || undefined
+                    : undefined
+                }
                 onClick={() => {
                   setActiveTab(t.key);
                   setSelectedId(null);
@@ -656,13 +813,25 @@ export default function BillModerationPage() {
               </FilterChip>
             ))}
           </ChipRow>
-          <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search customer or bill #" />
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search customer or bill #"
+          />
         </div>
 
         {isBrandView && (
           <ChipRow label="Outlet" className="mb-4">
-            {[{ id: 'ALL', label: 'All outlets' }, ...brandInfo!.outlets.map((o) => ({ id: o.id, label: outletName(o) }))].map((chip) => (
-              <FilterChip key={chip.id} icon={chip.id === 'ALL' ? undefined : Building2} selected={outletFilter === chip.id} onClick={() => setOutletFilter(chip.id)}>
+            {[
+              { id: 'ALL', label: 'All outlets' },
+              ...brandInfo!.outlets.map((o) => ({ id: o.id, label: outletName(o) })),
+            ].map((chip) => (
+              <FilterChip
+                key={chip.id}
+                icon={chip.id === 'ALL' ? undefined : Building2}
+                selected={outletFilter === chip.id}
+                onClick={() => setOutletFilter(chip.id)}
+              >
                 {chip.label}
               </FilterChip>
             ))}
@@ -681,8 +850,20 @@ export default function BillModerationPage() {
         ) : filteredBills.length === 0 ? (
           <EmptyState
             icon={activeTab === 'PENDING' ? CheckCircle2 : ReceiptText}
-            title={searchQuery ? 'No matching bills' : activeTab === 'PENDING' ? 'Queue clear' : 'Nothing here'}
-            description={searchQuery ? 'Try a different name or bill number.' : activeTab === 'PENDING' ? 'New bills from customers show up here.' : 'No bills with this status.'}
+            title={
+              searchQuery
+                ? 'No matching bills'
+                : activeTab === 'PENDING'
+                  ? 'Queue clear'
+                  : 'Nothing here'
+            }
+            description={
+              searchQuery
+                ? 'Try a different name or bill number.'
+                : activeTab === 'PENDING'
+                  ? 'New bills from customers show up here.'
+                  : 'No bills with this status.'
+            }
           />
         ) : (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
@@ -693,13 +874,20 @@ export default function BillModerationPage() {
                   <label className="flex cursor-pointer items-center gap-2 text-sm">
                     <Checkbox
                       checked={allChecked ? true : checkedCount ? 'indeterminate' : false}
-                      onCheckedChange={(v) => setChecked(v ? new Set(pendingVisible.map((b) => b.id)) : new Set())}
+                      onCheckedChange={(v) =>
+                        setChecked(v ? new Set(pendingVisible.map((b) => b.id)) : new Set())
+                      }
                       aria-label="Select all pending bills"
                     />
                     {checkedCount ? `${checkedCount} selected` : 'Select all'}
                   </label>
                   {checkedCount > 0 && (
-                    <Button size="sm" loading={bulkBusy} onClick={bulkApprove} className="bg-success text-white hover:bg-success/90">
+                    <Button
+                      size="sm"
+                      loading={bulkBusy}
+                      onClick={bulkApprove}
+                      className="bg-success text-white hover:bg-success/90"
+                    >
                       <Check /> Approve {checkedCount}
                     </Button>
                   )}
@@ -737,7 +925,9 @@ export default function BillModerationPage() {
                         aria-current={active ? 'true' : undefined}
                         className={cn(
                           'ui-press flex min-w-0 flex-1 items-center gap-3 rounded-card border bg-card p-3 text-left shadow-e1 transition-colors',
-                          active ? 'border-primary ring-2 ring-primary/20' : 'border-border hover:bg-secondary',
+                          active
+                            ? 'border-primary ring-2 ring-primary/20'
+                            : 'border-border hover:bg-secondary',
                           bill.fraudScore >= 0.6 && 'border-l-4 border-l-destructive',
                         )}
                       >
@@ -746,8 +936,15 @@ export default function BillModerationPage() {
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-2">
-                            <span className="truncate text-sm font-semibold">{bill.customer.name}</span>
-                            {bill.escalationLevel !== 'NONE' && <ArrowUpRight className="size-4 shrink-0 text-destructive" aria-label="Escalated" />}
+                            <span className="truncate text-sm font-semibold">
+                              {bill.customer.name}
+                            </span>
+                            {bill.escalationLevel !== 'NONE' && (
+                              <ArrowUpRight
+                                className="size-4 shrink-0 text-destructive"
+                                aria-label="Escalated"
+                              />
+                            )}
                           </span>
                           <span className="block truncate text-caption text-muted-foreground">
                             {isBrandView ? `${bill.business} · ` : ''}#{bill.billNumber}
@@ -755,10 +952,15 @@ export default function BillModerationPage() {
                           </span>
                         </span>
                         <span className="flex shrink-0 flex-col items-end gap-1">
-                          <span className="text-sm font-semibold tabular-nums">{inr(bill.amount)}</span>
+                          <span className="text-sm font-semibold tabular-nums">
+                            {inr(bill.amount)}
+                          </span>
                           {bill.status === 'PENDING' ? (
                             bill.fraudScore >= 0.4 ? (
-                              <StatusPill tone={riskTone(bill.fraudScore)} label={`${Math.round(bill.fraudScore * 100)}% risk`} />
+                              <StatusPill
+                                tone={riskTone(bill.fraudScore)}
+                                label={`${Math.round(bill.fraudScore * 100)}% risk`}
+                              />
                             ) : (
                               <ShieldCheck className="size-4 text-success" aria-label="Low risk" />
                             )
@@ -774,7 +976,16 @@ export default function BillModerationPage() {
 
               {isBrandView && bills.length < brandPaging.total && (
                 <div className="mt-4 flex justify-center">
-                  <Button variant="outline" loading={loadingMore} onClick={() => fetchBills(activeTab !== 'PENDING' ? activeTab : undefined, brandPaging.page + 1)}>
+                  <Button
+                    variant="outline"
+                    loading={loadingMore}
+                    onClick={() =>
+                      fetchBills(
+                        activeTab !== 'PENDING' ? activeTab : undefined,
+                        brandPaging.page + 1,
+                      )
+                    }
+                  >
                     Load more
                   </Button>
                 </div>
@@ -784,7 +995,9 @@ export default function BillModerationPage() {
             {/* ── PREVIEW (desktop) ── */}
             <aside className="hidden lg:block" aria-label="Selected bill">
               <div className="sticky top-6 max-h-[calc(100dvh-3rem)] overflow-y-auto rounded-card border border-border bg-card p-5 shadow-e1">
-                {preview ?? <p className="text-sm text-muted-foreground">Select a bill to review it.</p>}
+                {preview ?? (
+                  <p className="text-sm text-muted-foreground">Select a bill to review it.</p>
+                )}
               </div>
             </aside>
           </div>
@@ -811,7 +1024,11 @@ export default function BillModerationPage() {
             }
           }}
           title="Move to another outlet"
-          description={moveBill ? `${moveBill.customer.name} · #${moveBill.billNumber} · currently at ${moveBill.business}` : undefined}
+          description={
+            moveBill
+              ? `${moveBill.customer.name} · #${moveBill.billNumber} · currently at ${moveBill.business}`
+              : undefined
+          }
           size="sm"
           footer={
             <>
@@ -836,7 +1053,9 @@ export default function BillModerationPage() {
                   onClick={() => setMoveTarget(o.id)}
                   className={cn(
                     'ui-press flex min-h-11 w-full items-center justify-between gap-2 rounded-control border px-3 py-2 text-left text-sm transition-colors',
-                    moveTarget === o.id ? 'border-primary bg-brand-soft' : 'border-border hover:bg-secondary',
+                    moveTarget === o.id
+                      ? 'border-primary bg-brand-soft'
+                      : 'border-border hover:bg-secondary',
                   )}
                 >
                   <span className="min-w-0 truncate">{outletName(o)}</span>
@@ -845,7 +1064,10 @@ export default function BillModerationPage() {
               ))}
           </div>
           {moveError && (
-            <p className="mt-3 flex items-start gap-2 rounded-control bg-danger-soft p-3 text-sm text-danger-soft-foreground" role="alert">
+            <p
+              className="mt-3 flex items-start gap-2 rounded-control bg-danger-soft p-3 text-sm text-danger-soft-foreground"
+              role="alert"
+            >
               <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
               {moveError}
             </p>
@@ -862,7 +1084,11 @@ export default function BillModerationPage() {
             }
           }}
           title={meta?.title ?? ''}
-          description={selectedBill ? `${selectedBill.customer.name} · #${selectedBill.billNumber} · ${inr(selectedBill.amount)}` : undefined}
+          description={
+            selectedBill
+              ? `${selectedBill.customer.name} · #${selectedBill.billNumber} · ${inr(selectedBill.amount)}`
+              : undefined
+          }
           size="sm"
           footer={
             <>
@@ -873,7 +1099,11 @@ export default function BillModerationPage() {
                 autoFocus={actionModal === 'approve'}
                 loading={actionLoading}
                 variant={meta?.button === 'destructive' ? 'destructive' : 'default'}
-                className={actionModal === 'approve' || actionModal === 'override' ? 'bg-success text-white hover:bg-success/90' : undefined}
+                className={
+                  actionModal === 'approve' || actionModal === 'override'
+                    ? 'bg-success text-white hover:bg-success/90'
+                    : undefined
+                }
                 onClick={handleAction}
               >
                 Confirm
@@ -892,7 +1122,11 @@ export default function BillModerationPage() {
               {meta.templates && (
                 <ChipRow label="Common reasons" wrap>
                   {meta.templates.map((t) => (
-                    <FilterChip key={t} selected={actionReason === t} onClick={() => setActionReason(t)}>
+                    <FilterChip
+                      key={t}
+                      selected={actionReason === t}
+                      onClick={() => setActionReason(t)}
+                    >
                       {t}
                     </FilterChip>
                   ))}
@@ -912,7 +1146,9 @@ export default function BillModerationPage() {
                 }}
                 className="h-20 resize-none"
               />
-              {actionModal === 'approve' && <p className="text-caption text-muted-foreground">Press Enter to approve.</p>}
+              {actionModal === 'approve' && (
+                <p className="text-caption text-muted-foreground">Press Enter to approve.</p>
+              )}
             </form>
           )}
         </Modal>

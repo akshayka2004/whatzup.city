@@ -14,19 +14,17 @@ import { OutletSwitcher } from '@/components/business/outlet-switcher';
 import { OnboardingTour } from '@/components/onboarding/platform-tour';
 import { BUSINESS_TOUR_STEPS, BUSINESS_MOBILE_TOUR_STEPS } from '@/lib/tour-steps';
 import { apiService } from '@/lib/services/api-service';
-import {
-  AlertTriangle,
-  FileClock,
-  XCircle,
-  ArrowRight,
-  Clock,
-  CreditCard,
-} from 'lucide-react';
+import { AlertTriangle, FileClock, XCircle, ArrowRight, Clock, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Paths allowed even when trial has expired
 // /dashboard/outlets stays reachable so a brand owner stuck on one outlet can switch to another.
-const TRIAL_ALLOWED_PATHS = ['/dashboard/profile', '/dashboard/support', '/dashboard/subscriptions', '/dashboard/outlets'];
+const TRIAL_ALLOWED_PATHS = [
+  '/dashboard/profile',
+  '/dashboard/support',
+  '/dashboard/subscriptions',
+  '/dashboard/outlets',
+];
 // The invoice for a just-submitted payment must stay reachable even though the
 // business itself is still PENDING_VERIFICATION at that point.
 const VERIFICATION_ALLOWED_PATHS = ['/dashboard/invoice', '/dashboard/outlets'];
@@ -46,9 +44,19 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   // accounts are all permitted past the gate; admin/super-admin too (they
   // bypass verification check below).
   const { user, loading: authLoading } = useRequireAuth([
-    'business', 'admin', 'super-admin', 'government', 'civic',
-    'influencer', 'professional', 'event-organizer', 'event_organizer',
-    'organization', 'organization_admin', 'business_moderator', 'business_staff',
+    'business',
+    'admin',
+    'super-admin',
+    'government',
+    'civic',
+    'influencer',
+    'professional',
+    'event-organizer',
+    'event_organizer',
+    'organization',
+    'organization_admin',
+    'business_moderator',
+    'business_staff',
   ]);
 
   const [verificationStatus, setVerificationStatus] = useState<string>('APPROVED');
@@ -90,9 +98,7 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
             // business.status is authoritative (submit sets PENDING_VERIFICATION
             // on the business, not on the progress row).
             const status =
-              (res.data as any).business?.status ||
-              res.data.onboardingProgress?.status ||
-              'DRAFT';
+              (res.data as any).business?.status || res.data.onboardingProgress?.status || 'DRAFT';
             setVerificationStatus(status);
             if (status === 'REJECTED') {
               const metadata = (res.data.onboardingProgress as any)?.metadata || {};
@@ -168,7 +174,6 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   const isTrialAllowedPath = TRIAL_ALLOWED_PATHS.some((p) => pathname.startsWith(p));
   const showTrialModal = trialExpired && !isTrialAllowedPath && verificationStatus === 'APPROVED';
 
-
   if (loading) return <AppShellSkeleton />;
 
   const activeEntityId = user?.entity?.id || user?.businessId || '';
@@ -243,7 +248,12 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
             <span className="hidden sm:inline">Choose a plan to keep uninterrupted access.</span>
           </span>
         </div>
-        <Button size="sm" variant="outline" className="shrink-0" onClick={() => router.push('/dashboard/subscriptions')}>
+        <Button
+          size="sm"
+          variant="outline"
+          className="shrink-0"
+          onClick={() => router.push('/dashboard/subscriptions')}
+        >
           View plans <ArrowRight />
         </Button>
       </div>
@@ -256,7 +266,10 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
       before={
         showTour &&
         (isMobile ? (
-          <OnboardingTour steps={BUSINESS_MOBILE_TOUR_STEPS} storageKey="onboarding_tour_business_mobile_v1" />
+          <OnboardingTour
+            steps={BUSINESS_MOBILE_TOUR_STEPS}
+            storageKey="onboarding_tour_business_mobile_v1"
+          />
         ) : (
           <OnboardingTour steps={BUSINESS_TOUR_STEPS} storageKey="onboarding_tour_business_v1" />
         ))
@@ -274,7 +287,11 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
           <div className="flex justify-center empty:hidden">
             <OutletSwitcher />
           </div>
-          <Button size="lg" className="w-full" onClick={() => router.push('/dashboard/subscriptions')}>
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={() => router.push('/dashboard/subscriptions')}
+          >
             Choose a plan
           </Button>
         </StatusScreen>

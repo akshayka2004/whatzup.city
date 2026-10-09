@@ -39,7 +39,12 @@ export class BillVerificationsController {
    * GET /api/businesses/:businessId/bill-verifications/pending
    * Business moderation queue — for BUSINESS_OWNER and BUSINESS_MODERATOR
    */
-  @Roles(UserRole.BUSINESS_OWNER, UserRole.BUSINESS_MODERATOR, UserRole.BUSINESS_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(
+    UserRole.BUSINESS_OWNER,
+    UserRole.BUSINESS_MODERATOR,
+    UserRole.BUSINESS_ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
   @Get('businesses/:businessId/bill-verifications')
   @ApiOperation({ summary: 'Get business bill verification queue' })
   async getBusinessQueue(
@@ -51,14 +56,26 @@ export class BillVerificationsController {
     @Query('page') page?: number,
   ) {
     await this.verificationsService.assertCanModerate(actorId, actorRole, businessId);
-    return this.verificationsService.getBusinessQueue(tenantId, businessId, status, page, undefined, actorRole);
+    return this.verificationsService.getBusinessQueue(
+      tenantId,
+      businessId,
+      status,
+      page,
+      undefined,
+      actorRole,
+    );
   }
 
   /**
    * POST /api/businesses/:businessId/bill-verifications/:id/approve
    * Approve a bill — BUSINESS_OWNER, BUSINESS_MODERATOR, SUPER_ADMIN
    */
-  @Roles(UserRole.BUSINESS_OWNER, UserRole.BUSINESS_MODERATOR, UserRole.BUSINESS_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(
+    UserRole.BUSINESS_OWNER,
+    UserRole.BUSINESS_MODERATOR,
+    UserRole.BUSINESS_ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
   @Post('businesses/:businessId/bill-verifications/:id/approve')
   @ApiOperation({ summary: 'Approve a customer bill (business moderator action)' })
   async approve(
@@ -76,7 +93,12 @@ export class BillVerificationsController {
    * POST /api/businesses/:businessId/bill-verifications/:id/reject
    * Reject a bill — BUSINESS_OWNER, BUSINESS_MODERATOR, SUPER_ADMIN
    */
-  @Roles(UserRole.BUSINESS_OWNER, UserRole.BUSINESS_MODERATOR, UserRole.BUSINESS_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(
+    UserRole.BUSINESS_OWNER,
+    UserRole.BUSINESS_MODERATOR,
+    UserRole.BUSINESS_ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
   @Post('businesses/:businessId/bill-verifications/:id/reject')
   @ApiOperation({ summary: 'Reject a customer bill (business moderator action)' })
   async reject(
@@ -95,7 +117,12 @@ export class BillVerificationsController {
    * POST /api/businesses/:businessId/bill-verifications/:id/flag
    * Flag for internal escalation — BUSINESS_OWNER, BUSINESS_MODERATOR
    */
-  @Roles(UserRole.BUSINESS_OWNER, UserRole.BUSINESS_MODERATOR, UserRole.BUSINESS_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(
+    UserRole.BUSINESS_OWNER,
+    UserRole.BUSINESS_MODERATOR,
+    UserRole.BUSINESS_ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
   @Post('businesses/:businessId/bill-verifications/:id/flag')
   @ApiOperation({ summary: 'Flag a bill for escalation or fraud review' })
   async flag(
@@ -114,7 +141,12 @@ export class BillVerificationsController {
    * POST /api/businesses/:businessId/bill-verifications/:id/request-reupload
    * Ask customer to re-upload — BUSINESS_OWNER, BUSINESS_MODERATOR
    */
-  @Roles(UserRole.BUSINESS_OWNER, UserRole.BUSINESS_MODERATOR, UserRole.BUSINESS_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(
+    UserRole.BUSINESS_OWNER,
+    UserRole.BUSINESS_MODERATOR,
+    UserRole.BUSINESS_ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
   @Post('businesses/:businessId/bill-verifications/:id/request-reupload')
   @ApiOperation({ summary: 'Request customer to re-upload bill' })
   async requestReUpload(
@@ -146,7 +178,14 @@ export class BillVerificationsController {
     @Body('reason') reason?: string,
   ) {
     await this.verificationsService.assertCanModerate(ownerId, actorRole, businessId);
-    return this.verificationsService.ownerOverride(tenantId, id, ownerId, businessId, decision, reason);
+    return this.verificationsService.ownerOverride(
+      tenantId,
+      id,
+      ownerId,
+      businessId,
+      decision,
+      reason,
+    );
   }
 
   // ── BRAND-WIDE ENDPOINTS ──────────────────────────────────────────
@@ -155,7 +194,12 @@ export class BillVerificationsController {
    * GET /api/brands/:brandId/bill-verifications?outletId=&status=&page=
    * All outlets of a brand in one queue — brand owner (or platform admin)
    */
-  @Roles(UserRole.BUSINESS_OWNER, UserRole.BUSINESS_ADMIN, UserRole.SUPER_ADMIN, UserRole.MASTER_ADMIN)
+  @Roles(
+    UserRole.BUSINESS_OWNER,
+    UserRole.BUSINESS_ADMIN,
+    UserRole.SUPER_ADMIN,
+    UserRole.MASTER_ADMIN,
+  )
   @Get('brands/:brandId/bill-verifications')
   @ApiOperation({ summary: "Brand-wide bill queue across all of the brand's outlets" })
   async getBrandQueue(
@@ -166,7 +210,11 @@ export class BillVerificationsController {
     @Query('status') status?: string,
     @Query('page') page?: number,
   ) {
-    return this.verificationsService.getBrandQueue(actorId, actorRole, brandId, { outletId, status, page });
+    return this.verificationsService.getBrandQueue(actorId, actorRole, brandId, {
+      outletId,
+      status,
+      page,
+    });
   }
 
   /**
@@ -190,7 +238,12 @@ export class BillVerificationsController {
   /**
    * POST /api/businesses/:businessId/bill-verifications/:id/calculate-fraud
    */
-  @Roles(UserRole.BUSINESS_OWNER, UserRole.BUSINESS_MODERATOR, UserRole.BUSINESS_ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(
+    UserRole.BUSINESS_OWNER,
+    UserRole.BUSINESS_MODERATOR,
+    UserRole.BUSINESS_ADMIN,
+    UserRole.SUPER_ADMIN,
+  )
   @Post('businesses/:businessId/bill-verifications/:id/calculate-fraud')
   @ApiOperation({ summary: 'Run fraud analysis on a verification' })
   async calculateFraud(
@@ -237,9 +290,23 @@ export class BillVerificationsController {
     @Body('reason') reason: string,
   ) {
     if (decision === 'REJECTED') {
-      return this.verificationsService.reject(tenantId, id, adminId, UserRole.SUPER_ADMIN, undefined, reason);
+      return this.verificationsService.reject(
+        tenantId,
+        id,
+        adminId,
+        UserRole.SUPER_ADMIN,
+        undefined,
+        reason,
+      );
     }
-    return this.verificationsService.approve(tenantId, id, adminId, UserRole.SUPER_ADMIN, undefined, reason);
+    return this.verificationsService.approve(
+      tenantId,
+      id,
+      adminId,
+      UserRole.SUPER_ADMIN,
+      undefined,
+      reason,
+    );
   }
 
   // ── LEGACY ENDPOINT (kept for backward compat, will be removed) ──

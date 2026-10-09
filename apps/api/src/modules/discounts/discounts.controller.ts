@@ -50,22 +50,31 @@ export class DiscountsController {
   // signed-in user, so the full /active endpoint (with the viewer's own ticket) stays authenticated.
   @Public()
   @Get('business/:businessId/preview')
-  @ApiOperation({ summary: "Public summary of a business's live discount wheel (no personal data)" })
+  @ApiOperation({
+    summary: "Public summary of a business's live discount wheel (no personal data)",
+  })
   async preview(@Param('businessId') businessId: string) {
     const d = await this.discounts.getActive(businessId);
     if (!d) return null;
-    const pcts = Array.isArray(d.wheelPercentages) ? (d.wheelPercentages as unknown[]).map(Number).filter(Number.isFinite) : [];
+    const pcts = Array.isArray(d.wheelPercentages)
+      ? (d.wheelPercentages as unknown[]).map(Number).filter(Number.isFinite)
+      : [];
     return { itemName: d.itemName, maxPercent: pcts.length ? Math.max(...pcts) : null };
   }
 
   @Get('business/:businessId/active')
-  @ApiOperation({ summary: "A business's active discount wheel, plus the viewer's own ticket if they already spun" })
+  @ApiOperation({
+    summary:
+      "A business's active discount wheel, plus the viewer's own ticket if they already spun",
+  })
   active(@CurrentUser('id') userId: string, @Param('businessId') businessId: string) {
     return this.discounts.getActive(businessId, userId);
   }
 
   @Get('active/all')
-  @ApiOperation({ summary: 'Every business with a live discount wheel (public "Spin it" discovery page)' })
+  @ApiOperation({
+    summary: 'Every business with a live discount wheel (public "Spin it" discovery page)',
+  })
   activeAll() {
     return this.discounts.listAllActive();
   }

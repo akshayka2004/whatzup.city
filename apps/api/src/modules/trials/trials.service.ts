@@ -63,10 +63,26 @@ export class TrialsService {
     // Day 15  → trial expires today   (offset 14 days)
     // Day 16  → subscription required (offset 15 days)
     const notifications = [
-      { dayOffset: 9,  title: 'Trial ends in 5 days',  body: 'Your 15-day free trial ends in 5 days. Select a subscription plan to keep full access.' },
-      { dayOffset: 12, title: 'Trial ends in 2 days',  body: 'Only 2 days left on your free trial. Choose a plan to avoid losing access.' },
-      { dayOffset: 14, title: 'Trial expires today',   body: 'Your free trial expires today. Select a subscription plan now to continue.' },
-      { dayOffset: 15, title: 'Subscription required', body: 'Your free trial has ended. Please subscribe to continue using the platform.' },
+      {
+        dayOffset: 9,
+        title: 'Trial ends in 5 days',
+        body: 'Your 15-day free trial ends in 5 days. Select a subscription plan to keep full access.',
+      },
+      {
+        dayOffset: 12,
+        title: 'Trial ends in 2 days',
+        body: 'Only 2 days left on your free trial. Choose a plan to avoid losing access.',
+      },
+      {
+        dayOffset: 14,
+        title: 'Trial expires today',
+        body: 'Your free trial expires today. Select a subscription plan now to continue.',
+      },
+      {
+        dayOffset: 15,
+        title: 'Subscription required',
+        body: 'Your free trial has ended. Please subscribe to continue using the platform.',
+      },
     ];
 
     for (const n of notifications) {
@@ -77,7 +93,9 @@ export class TrialsService {
       );
     }
 
-    this.logger.log(`Scheduled ${notifications.length} trial notifications for business ${businessId}`);
+    this.logger.log(
+      `Scheduled ${notifications.length} trial notifications for business ${businessId}`,
+    );
   }
 
   // ── Business: get own trial status ────────────────────────────────────
@@ -116,7 +134,10 @@ export class TrialsService {
     const now = new Date();
     const daysRemaining =
       business.trialStatus === 'ACTIVE' && business.trialEndDate
-        ? Math.max(0, Math.ceil((new Date(business.trialEndDate).getTime() - now.getTime()) / MS_PER_DAY))
+        ? Math.max(
+            0,
+            Math.ceil((new Date(business.trialEndDate).getTime() - now.getTime()) / MS_PER_DAY),
+          )
         : 0;
 
     return {

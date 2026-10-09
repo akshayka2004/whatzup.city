@@ -28,8 +28,10 @@
 
   /* Warm-ink shadows (same hue as --foreground) so surfaces never look grey-dirty. */
   --shadow-1: 0 1px 2px oklch(0.261 0.022 269 / 0.06), 0 1px 1px oklch(0.261 0.022 269 / 0.04);
-  --shadow-2: 0 6px 16px -4px oklch(0.261 0.022 269 / 0.09), 0 2px 4px oklch(0.261 0.022 269 / 0.05);
-  --shadow-3: 0 18px 36px -10px oklch(0.261 0.022 269 / 0.16), 0 6px 12px oklch(0.261 0.022 269 / 0.06);
+  --shadow-2:
+    0 6px 16px -4px oklch(0.261 0.022 269 / 0.09), 0 2px 4px oklch(0.261 0.022 269 / 0.05);
+  --shadow-3:
+    0 18px 36px -10px oklch(0.261 0.022 269 / 0.16), 0 6px 12px oklch(0.261 0.022 269 / 0.06);
   --shadow-glow: 0 12px 32px -10px oklch(0.615 0.103 43 / 0.4);
 }
 
@@ -40,15 +42,33 @@
   --shadow-glow: 0 12px 32px -10px oklch(0.66 0.108 44 / 0.45);
 }
 
-.ui-elev-1 { box-shadow: var(--shadow-1); }
-.ui-elev-2 { box-shadow: var(--shadow-2); }
-.ui-elev-3 { box-shadow: var(--shadow-3); }
+.ui-elev-1 {
+  box-shadow: var(--shadow-1);
+}
+.ui-elev-2 {
+  box-shadow: var(--shadow-2);
+}
+.ui-elev-3 {
+  box-shadow: var(--shadow-3);
+}
 
 /* ── Focus: one consistent, visible ring for keyboard users ─────────────
    Zero specificity (:where) inside the base layer so every component that
    deliberately styles its own focus (shadcn rings, outline-none) still wins. */
 @layer base {
-  :where(a, button, [role='button'], [role='tab'], [role='switch'], [role='menuitem'], summary, input, select, textarea, [tabindex]:not([tabindex='-1'])):focus-visible {
+  :where(
+    a,
+    button,
+    [role='button'],
+    [role='tab'],
+    [role='switch'],
+    [role='menuitem'],
+    summary,
+    input,
+    select,
+    textarea,
+    [tabindex]:not([tabindex='-1'])
+  ):focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
@@ -94,14 +114,26 @@
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--card) 75%, transparent), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklch, var(--card) 75%, transparent),
+    transparent
+  );
   animation: uiSkeletonSweep 1.5s ease-in-out infinite;
 }
 .dark .ui-skeleton::after {
-  background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--foreground) 9%, transparent), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklch, var(--foreground) 9%, transparent),
+    transparent
+  );
 }
 @keyframes uiSkeletonSweep {
-  to { transform: translateX(100%); }
+  to {
+    transform: translateX(100%);
+  }
 }
 
 /* ── Page enter (app/template.tsx) ───────────────────────────────────── */
@@ -109,8 +141,12 @@
    containing block for every position:fixed descendant (bottom nav, sticky
    headers, modals) while it animates, making them jump. */
 @keyframes uiPageEnter {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .ui-page-enter {
   animation: uiPageEnter 0.3s ease-out both;
@@ -118,31 +154,69 @@
 
 /* ── Stagger: children rise in one after another ─────────────────────── */
 @keyframes uiRise {
-  from { opacity: 0; transform: translateY(14px) scale(0.985); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .ui-stagger > * {
   animation: uiRise 0.5s var(--ease-out-quint) both;
   animation-delay: calc(var(--i, 0) * 55ms);
 }
-.ui-stagger > :nth-child(1) { --i: 0; }
-.ui-stagger > :nth-child(2) { --i: 1; }
-.ui-stagger > :nth-child(3) { --i: 2; }
-.ui-stagger > :nth-child(4) { --i: 3; }
-.ui-stagger > :nth-child(5) { --i: 4; }
-.ui-stagger > :nth-child(6) { --i: 5; }
-.ui-stagger > :nth-child(7) { --i: 6; }
-.ui-stagger > :nth-child(8) { --i: 7; }
-.ui-stagger > :nth-child(9) { --i: 8; }
-.ui-stagger > :nth-child(10) { --i: 9; }
-.ui-stagger > :nth-child(11) { --i: 10; }
-.ui-stagger > :nth-child(12) { --i: 11; }
-.ui-stagger > :nth-child(n + 13) { --i: 12; }
+.ui-stagger > :nth-child(1) {
+  --i: 0;
+}
+.ui-stagger > :nth-child(2) {
+  --i: 1;
+}
+.ui-stagger > :nth-child(3) {
+  --i: 2;
+}
+.ui-stagger > :nth-child(4) {
+  --i: 3;
+}
+.ui-stagger > :nth-child(5) {
+  --i: 4;
+}
+.ui-stagger > :nth-child(6) {
+  --i: 5;
+}
+.ui-stagger > :nth-child(7) {
+  --i: 6;
+}
+.ui-stagger > :nth-child(8) {
+  --i: 7;
+}
+.ui-stagger > :nth-child(9) {
+  --i: 8;
+}
+.ui-stagger > :nth-child(10) {
+  --i: 9;
+}
+.ui-stagger > :nth-child(11) {
+  --i: 10;
+}
+.ui-stagger > :nth-child(12) {
+  --i: 11;
+}
+.ui-stagger > :nth-child(n + 13) {
+  --i: 12;
+}
 
 /* ── Scroll-driven reveal (progressive enhancement, zero JS) ─────────── */
 @keyframes uiReveal {
-  from { opacity: 0; transform: translateY(22px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 @supports (animation-timeline: view()) {
   .ui-reveal {
@@ -154,7 +228,10 @@
 
 /* ── Hover lift: only on devices that can hover ──────────────────────── */
 .ui-lift {
-  transition: transform 0.28s var(--ease-out-quint), box-shadow 0.28s var(--ease-out-quint), border-color 0.2s ease;
+  transition:
+    transform 0.28s var(--ease-out-quint),
+    box-shadow 0.28s var(--ease-out-quint),
+    border-color 0.2s ease;
 }
 @media (hover: hover) and (pointer: fine) {
   .ui-lift:hover {
@@ -165,7 +242,9 @@
 
 /* ── Success check ───────────────────────────────────────────────────── */
 @keyframes uiCheckDraw {
-  to { stroke-dashoffset: 0; }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 .ui-check path,
 .ui-check polyline {
@@ -176,8 +255,14 @@
 
 /* ── Live dot (open now, live events…) ───────────────────────────────── */
 @keyframes uiLiveRing {
-  0% { transform: scale(1); opacity: 0.55; }
-  100% { transform: scale(2.6); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
 }
 .ui-live-dot {
   position: relative;
@@ -198,15 +283,26 @@
 
 /* ── Ambient drift for decorative hero blobs ─────────────────────────── */
 @keyframes uiDrift {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-  50% { transform: translate3d(14px, -18px, 0) scale(1.06); }
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(14px, -18px, 0) scale(1.06);
+  }
 }
-.ui-drift { animation: uiDrift 9s ease-in-out infinite; }
-.ui-drift-slow { animation: uiDrift 16s ease-in-out infinite reverse; }
+.ui-drift {
+  animation: uiDrift 9s ease-in-out infinite;
+}
+.ui-drift-slow {
+  animation: uiDrift 16s ease-in-out infinite reverse;
+}
 
 /* ── Marquee: a slow, pausable strip (duplicate the track content once) ─ */
 @keyframes uiMarquee {
-  to { transform: translateX(-50%); }
+  to {
+    transform: translateX(-50%);
+  }
 }
 .ui-marquee {
   overflow: hidden;
@@ -220,18 +316,26 @@
   animation: uiMarquee 38s linear infinite;
 }
 @media (hover: hover) {
-  .ui-marquee:hover .ui-marquee-track { animation-play-state: paused; }
+  .ui-marquee:hover .ui-marquee-track {
+    animation-play-state: paused;
+  }
 }
 
 /* ── Reading-progress bar (only where scroll timelines exist) ────────────
    The app scrolls inside <main>, not the window, so this is a sticky child of
    that scroller and tracks it via scroll(nearest). Place it as the first child
    of the scrolling content. */
-.ui-scroll-progress { display: none; }
+.ui-scroll-progress {
+  display: none;
+}
 @supports (animation-timeline: scroll()) {
   @keyframes uiScrollGrow {
-    from { transform: scaleX(0); }
-    to { transform: scaleX(1); }
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
   }
   .ui-scroll-progress {
     display: block;
@@ -241,7 +345,11 @@
     margin-bottom: -3px;
     z-index: var(--z-sticky);
     transform-origin: 0 50%;
-    background: linear-gradient(90deg, var(--primary), color-mix(in oklch, var(--primary) 60%, var(--warning)));
+    background: linear-gradient(
+      90deg,
+      var(--primary),
+      color-mix(in oklch, var(--primary) 60%, var(--warning))
+    );
     animation: uiScrollGrow linear both;
     animation-timeline: scroll(nearest);
   }
@@ -249,11 +357,20 @@
 
 /* ── One-shot text shine for a headline accent word ──────────────────── */
 @keyframes uiTextShine {
-  from { background-position: 120% 0; }
-  to { background-position: -20% 0; }
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -20% 0;
+  }
 }
 .ui-text-shine {
-  background-image: linear-gradient(100deg, var(--primary) 30%, color-mix(in oklch, var(--primary) 55%, white) 50%, var(--primary) 70%);
+  background-image: linear-gradient(
+    100deg,
+    var(--primary) 30%,
+    color-mix(in oklch, var(--primary) 55%, white) 50%,
+    var(--primary) 70%
+  );
   background-size: 250% 100%;
   background-position: 120% 0;
   -webkit-background-clip: text;
@@ -273,10 +390,16 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: radial-gradient(circle at var(--rx, 50%) var(--ry, 50%), color-mix(in oklch, var(--primary) 22%, transparent) 0, transparent 60%);
+  background: radial-gradient(
+    circle at var(--rx, 50%) var(--ry, 50%),
+    color-mix(in oklch, var(--primary) 22%, transparent) 0,
+    transparent 60%
+  );
   opacity: 0;
   transform: scale(0.6);
-  transition: opacity 0.35s ease, transform 0.45s var(--ease-out-quint);
+  transition:
+    opacity 0.35s ease,
+    transform 0.45s var(--ease-out-quint);
 }
 .ui-ripple:active::after {
   opacity: 1;
@@ -295,7 +418,13 @@
   border: 1px solid transparent;
   background:
     linear-gradient(var(--card), var(--card)) padding-box,
-    linear-gradient(135deg, color-mix(in oklch, var(--primary) 45%, transparent), var(--border) 45%, color-mix(in oklch, var(--primary) 20%, transparent)) border-box;
+    linear-gradient(
+        135deg,
+        color-mix(in oklch, var(--primary) 45%, transparent),
+        var(--border) 45%,
+        color-mix(in oklch, var(--primary) 20%, transparent)
+      )
+      border-box;
 }
 
 /* ── Reduced motion: everything above goes still ─────────────────────── */
@@ -349,7 +478,10 @@
   font-weight: 600;
   line-height: 1.25rem;
   box-shadow: var(--shadow-2);
-  transition: transform 150ms ease, background-color 150ms ease, color 150ms ease;
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
 }
 .map-pin:hover,
 .map-pin:focus-visible,

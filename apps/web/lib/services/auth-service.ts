@@ -5,12 +5,7 @@
 
 import { apiService } from './api-service';
 
-export type UserRole =
-  | 'user'
-  | 'business'
-  | 'admin'
-  | 'super-admin'
-  | 'government';
+export type UserRole = 'user' | 'business' | 'admin' | 'super-admin' | 'government';
 
 export interface User {
   id: string;
@@ -31,7 +26,8 @@ export interface User {
 }
 
 function mapRbacToRole(rbac: string): string {
-  if (['BUSINESS_ADMIN', 'BUSINESS_OWNER', 'BUSINESS_MODERATOR', 'BUSINESS_STAFF'].includes(rbac)) return 'business';
+  if (['BUSINESS_ADMIN', 'BUSINESS_OWNER', 'BUSINESS_MODERATOR', 'BUSINESS_STAFF'].includes(rbac))
+    return 'business';
   if (rbac === 'MASTER_ADMIN' || rbac === 'PORTAL_ADMIN') return 'admin';
   if (rbac === 'SUPER_ADMIN') return 'super-admin';
   if (rbac === 'GOVERNMENT_ADMIN') return 'government';
@@ -110,7 +106,9 @@ class AuthService {
     const response = await apiService.post<any>('/v1/auth/login', { email, password });
     if (response.error || !response.data) {
       if (response.status === 401 && /^invalid credentials$/i.test((response.error || '').trim())) {
-        throw new Error('The email or password is incorrect. Check them and try again, or use "Forgot password".');
+        throw new Error(
+          'The email or password is incorrect. Check them and try again, or use "Forgot password".',
+        );
       }
       throw new Error(response.error || "We couldn't sign you in. Please try again.");
     }
@@ -125,7 +123,10 @@ class AuthService {
       // response.data.businessId — set for staff/moderator accounts (no entity)
       // u.businessId — set on the user sub-object (mirrors the same)
       // entity fallback — for business owners with entity
-      businessId: response.data.businessId || u.businessId || (u.entity?.type === 'BUSINESS' ? u.entity.id : undefined),
+      businessId:
+        response.data.businessId ||
+        u.businessId ||
+        (u.entity?.type === 'BUSINESS' ? u.entity.id : undefined),
       entity: u.entity || null,
     };
     persistUser(apiUser);
@@ -153,7 +154,9 @@ class AuthService {
   async businessSignup(data: any): Promise<{ user: User; businessId: string } | null> {
     const response = await apiService.post<any>('/v1/auth/business/signup', data);
     if (response.error || !response.data) {
-      throw new Error(response.error || "We couldn't register your business account. Please try again.");
+      throw new Error(
+        response.error || "We couldn't register your business account. Please try again.",
+      );
     }
     const u = response.data.user;
     const apiUser: User = {

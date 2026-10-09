@@ -26,14 +26,18 @@ export function QrScanModal({ open, onClose, onScan }: QrScanModalProps) {
       if (cancelled || !videoRef.current) return;
       setError('');
       scanner = new QrScanner(
-      videoRef.current,
+        videoRef.current,
         (result) => {
           scanner?.stop();
           onScanRef.current(result.data);
         },
         { highlightScanRegion: true, highlightCodeOutline: true, preferredCamera: 'environment' },
       );
-      scanner.start().catch(() => setError('Camera access denied. Enable it in your browser settings and retry.'));
+      scanner
+        .start()
+        .catch(() =>
+          setError('Camera access denied. Enable it in your browser settings and retry.'),
+        );
     });
     return () => {
       cancelled = true;
@@ -44,14 +48,25 @@ export function QrScanModal({ open, onClose, onScan }: QrScanModalProps) {
   }, [open]);
 
   return (
-    <Modal open={open} onOpenChange={(o) => !o && onClose()} title="Scan business QR" description="Point your camera at a business’s QR code." size="sm">
+    <Modal
+      open={open}
+      onOpenChange={(o) => !o && onClose()}
+      title="Scan business QR"
+      description="Point your camera at a business’s QR code."
+      size="sm"
+    >
       {error ? (
         <div className="flex flex-col items-center gap-2 py-8 text-center" role="alert">
           <AlertCircle className="size-8 text-destructive" aria-hidden />
           <p className="text-sm text-muted-foreground">{error}</p>
         </div>
       ) : (
-        <video ref={videoRef} className="aspect-square w-full rounded-control border border-border object-cover" muted playsInline />
+        <video
+          ref={videoRef}
+          className="aspect-square w-full rounded-control border border-border object-cover"
+          muted
+          playsInline
+        />
       )}
     </Modal>
   );

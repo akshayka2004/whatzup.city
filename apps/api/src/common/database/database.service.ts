@@ -62,7 +62,6 @@ export class DatabaseService
 
     this.$on('warn' as never, (e: Prisma.LogEvent) => this.logger.warn(e.message));
     this.$on('error' as never, (e: Prisma.LogEvent) => this.logger.error(e.message));
-
   }
 
   async onModuleInit() {

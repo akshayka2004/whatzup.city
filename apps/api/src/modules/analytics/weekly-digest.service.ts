@@ -5,7 +5,13 @@ import { assertBusinessAccess, type AccessUser } from '../../common/utils/busine
 import { addDaysKey, DAY_MS, istDateKey, istDayStart } from '../../common/utils/ist';
 import { NotificationsService } from '../notifications/notifications.service';
 
-export type DigestNumbers = { views: number; actions: number; claims: number; verifiedBills: number; verifiedSpend: number };
+export type DigestNumbers = {
+  views: number;
+  actions: number;
+  claims: number;
+  verifiedBills: number;
+  verifiedSpend: number;
+};
 
 const ZERO: DigestNumbers = { views: 0, actions: 0, claims: 0, verifiedBills: 0, verifiedSpend: 0 };
 const fmt = (n: number) => Math.round(n).toLocaleString('en-IN');
@@ -23,8 +29,14 @@ export function digestText(name: string, cur: DigestNumbers, prev: DigestNumbers
     `${fmt(cur.views)} profile view${cur.views === 1 ? '' : 's'}${delta(cur.views, prev.views)}`,
     `${fmt(cur.actions)} call/direction/WhatsApp tap${cur.actions === 1 ? '' : 's'}${delta(cur.actions, prev.actions)}`,
   ];
-  if (cur.claims || prev.claims) parts.push(`${fmt(cur.claims)} offer claim${cur.claims === 1 ? '' : 's'}${delta(cur.claims, prev.claims)}`);
-  if (cur.verifiedBills || prev.verifiedBills) parts.push(`₹${fmt(cur.verifiedSpend)} verified spend across ${fmt(cur.verifiedBills)} bill${cur.verifiedBills === 1 ? '' : 's'}`);
+  if (cur.claims || prev.claims)
+    parts.push(
+      `${fmt(cur.claims)} offer claim${cur.claims === 1 ? '' : 's'}${delta(cur.claims, prev.claims)}`,
+    );
+  if (cur.verifiedBills || prev.verifiedBills)
+    parts.push(
+      `₹${fmt(cur.verifiedSpend)} verified spend across ${fmt(cur.verifiedBills)} bill${cur.verifiedBills === 1 ? '' : 's'}`,
+    );
   return { title: `${name}: your week on Whtzup.city`, body: `Last week: ${parts.join(', ')}.` };
 }
 
@@ -84,7 +96,10 @@ export class WeeklyDigestService implements OnApplicationBootstrap, OnModuleDest
   private async totals(fromKey: string, toKey: string, businessId?: string) {
     const rows = await this.db.dailyBusinessStat.groupBy({
       by: ['businessId'],
-      where: { date: { gte: new Date(`${fromKey}T00:00:00Z`), lt: new Date(`${toKey}T00:00:00Z`) }, ...(businessId ? { businessId } : {}) },
+      where: {
+        date: { gte: new Date(`${fromKey}T00:00:00Z`), lt: new Date(`${toKey}T00:00:00Z`) },
+        ...(businessId ? { businessId } : {}),
+      },
       _sum: { views: true, actions: true, claims: true, verifiedBills: true, verifiedSpend: true },
     });
     return new Map<string, DigestNumbers>(
@@ -118,7 +133,13 @@ export class WeeklyDigestService implements OnApplicationBootstrap, OnModuleDest
     ]);
     const c = cur.get(businessId) ?? ZERO;
     const p = prev.get(businessId) ?? ZERO;
-    return { from: w.from, to: addDaysKey(w.to, -1), current: c, previous: p, ...digestText(biz?.name ?? 'Your business', c, p) };
+    return {
+      from: w.from,
+      to: addDaysKey(w.to, -1),
+      current: c,
+      previous: p,
+      ...digestText(biz?.name ?? 'Your business', c, p),
+    };
   }
 
   /** Sends last week's digest once per week across all API instances. */
@@ -126,9 +147,12 @@ export class WeeklyDigestService implements OnApplicationBootstrap, OnModuleDest
     const w = this.window();
     const lock = `analytics:digest:${w.from}`;
     if ((await this.redis.incr(lock)) !== 1) return { skipped: true, week: w.from };
-    await this.redis.expire(lock, 8 * DAY_MS / 1000);
+    await this.redis.expire(lock, (8 * DAY_MS) / 1000);
 
-    const [cur, prev] = await Promise.all([this.totals(w.from, w.to), this.totals(w.prevFrom, w.from)]);
+    const [cur, prev] = await Promise.all([
+      this.totals(w.from, w.to),
+      this.totals(w.prevFrom, w.from),
+    ]);
     const ids = [...new Set([...cur.keys(), ...prev.keys()])];
     if (!ids.length) return { sent: 0, week: w.from };
 

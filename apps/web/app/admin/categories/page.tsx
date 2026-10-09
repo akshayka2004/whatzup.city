@@ -6,7 +6,16 @@ import { AdminLayout } from '@/components/layouts/admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Folder, Edit, Trash2, X, AlertTriangle, Loader2, CornerDownRight } from 'lucide-react';
+import {
+  Plus,
+  Folder,
+  Edit,
+  Trash2,
+  X,
+  AlertTriangle,
+  Loader2,
+  CornerDownRight,
+} from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 
 export default function AdminCategoriesPage() {
@@ -19,7 +28,7 @@ export default function AdminCategoriesPage() {
       .get<any[]>('/v1/categories?tenantId=default')
       .then((res) => {
         if (res.data && !res.error) {
-          const list = Array.isArray(res.data) ? res.data : (res.data as any)?.data ?? [];
+          const list = Array.isArray(res.data) ? res.data : ((res.data as any)?.data ?? []);
           // Flatten parent → children so every node is sortable/editable, but
           // keep the parent relationship for display + the parent picker.
           const flat: any[] = [];
@@ -49,7 +58,9 @@ export default function AdminCategoriesPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadCategories(); }, []);
+  useEffect(() => {
+    loadCategories();
+  }, []);
 
   const parentOptions = categories.filter((c) => !c.isChild);
 
@@ -78,9 +89,16 @@ export default function AdminCategoriesPage() {
     if (!name) return;
     const finalSlug =
       slug ||
-      name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
     const res = await apiService.post<any>('/v1/categories', {
-      name, slug: finalSlug, sortOrder, isActive: active, parentId: parentId || undefined,
+      name,
+      slug: finalSlug,
+      sortOrder,
+      isActive: active,
+      parentId: parentId || undefined,
     });
     if (res.data && !res.error) loadCategories();
     setIsAddOpen(false);
@@ -100,9 +118,15 @@ export default function AdminCategoriesPage() {
     if (!name || !editingCategory) return;
     const finalSlug =
       slug ||
-      name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
     const res = await apiService.patch<any>(`/v1/categories/${editingCategory.id}`, {
-      name, slug: finalSlug, isActive: active, sortOrder,
+      name,
+      slug: finalSlug,
+      isActive: active,
+      sortOrder,
       parentId: parentId || null,
     });
     if (res.data && !res.error) loadCategories();
@@ -159,7 +183,9 @@ export default function AdminCategoriesPage() {
           <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary/20 text-center">
             <Folder className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
             <p className="text-foreground font-semibold mb-1">No categories yet</p>
-            <p className="text-sm text-muted-foreground">Add your first category to organize listings.</p>
+            <p className="text-sm text-muted-foreground">
+              Add your first category to organize listings.
+            </p>
           </Card>
         ) : null}
 
@@ -179,12 +205,15 @@ export default function AdminCategoriesPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-foreground text-base flex items-center gap-1.5">
-                        {cat.isChild && <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {cat.isChild && (
+                          <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground" />
+                        )}
                         {cat.name}
                       </h3>
                       <p className="text-xs text-muted-foreground">
                         /{cat.slug}
-                        {cat.isChild && cat.parentName ? ` · under ${cat.parentName}` : ''} · order {cat.sortOrder}
+                        {cat.isChild && cat.parentName ? ` · under ${cat.parentName}` : ''} · order{' '}
+                        {cat.sortOrder}
                       </p>
                     </div>
                   </div>
@@ -233,186 +262,234 @@ export default function AdminCategoriesPage() {
 
         {/* ── ADD MODAL ────────────────────────────────────────────── */}
         {isAddOpen && (
-          <ModalSurface onClose={() => setIsAddOpen(false)} label="Add Directory Category" className="sm:max-w-md">
-              <h3 className="text-xl font-bold text-foreground mb-4">Add Directory Category</h3>
-              <form onSubmit={handleAdd} className="space-y-4">
+          <ModalSurface
+            onClose={() => setIsAddOpen(false)}
+            label="Add Directory Category"
+            className="sm:max-w-md"
+          >
+            <h3 className="text-xl font-bold text-foreground mb-4">Add Directory Category</h3>
+            <form onSubmit={handleAdd} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground block mb-2">
+                  Category Name
+                </label>
+                <Input
+                  placeholder="e.g. Food & Dining"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    // Auto-fill slug
+                    setSlug(
+                      e.target.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/(^-|-$)/g, ''),
+                    );
+                  }}
+                  required
+                  className="rounded-xl border-input bg-background focus:border-primary text-foreground"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground block mb-2">
+                  Slug URL Path
+                </label>
+                <Input
+                  placeholder="e.g. food-dining"
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  required
+                  className="rounded-xl border-input bg-background focus:border-primary text-foreground"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Category Name
+                    Sort Order
                   </label>
                   <Input
-                    placeholder="e.g. Food & Dining"
-                    value={name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      // Auto-fill slug
-                      setSlug(
-                        e.target.value
-                          .toLowerCase()
-                          .replace(/[^a-z0-9]+/g, '-')
-                          .replace(/(^-|-$)/g, ''),
-                      );
-                    }}
-                    required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
+                    type="number"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(Number(e.target.value) || 0)}
+                    className="rounded-xl border-input bg-background text-foreground"
                   />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Slug URL Path
+                    Parent Category
                   </label>
-                  <Input
-                    placeholder="e.g. food-dining"
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
-                    required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground block mb-2">Sort Order</label>
-                    <Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value) || 0)} className="rounded-xl border-input bg-background text-foreground" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground block mb-2">Parent Category</label>
-                    <select value={parentId} onChange={(e) => setParentId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-input bg-background text-foreground text-sm cursor-pointer">
-                      <option value="">None (top-level)</option>
-                      {parentOptions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 pt-2">
-                  <input
-                    type="checkbox"
-                    id="cat-active-chk"
-                    checked={active}
-                    onChange={(e) => setActive(e.target.checked)}
-                    className="rounded bg-background border-input text-primary focus:ring-primary h-4 w-4"
-                  />
-                  <label htmlFor="cat-active-chk" className="text-sm text-muted-foreground">
-                    Enable category status immediately
-                  </label>
-                </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsAddOpen(false)}
-                    className="rounded-xl border-border hover:bg-muted text-foreground"
+                  <select
+                    value={parentId}
+                    onChange={(e) => setParentId(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-input bg-background text-foreground text-sm cursor-pointer"
                   >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold"
-                  >
-                    Add Category
-                  </Button>
+                    <option value="">None (top-level)</option>
+                    {parentOptions.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </form>
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="cat-active-chk"
+                  checked={active}
+                  onChange={(e) => setActive(e.target.checked)}
+                  className="rounded bg-background border-input text-primary focus:ring-primary h-4 w-4"
+                />
+                <label htmlFor="cat-active-chk" className="text-sm text-muted-foreground">
+                  Enable category status immediately
+                </label>
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddOpen(false)}
+                  className="rounded-xl border-border hover:bg-muted text-foreground"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold"
+                >
+                  Add Category
+                </Button>
+              </div>
+            </form>
           </ModalSurface>
         )}
 
         {/* ── EDIT MODAL ───────────────────────────────────────────── */}
         {editingCategory && (
-          <ModalSurface onClose={() => setEditingCategory(null)} label="Edit Category Branch" className="sm:max-w-md">
-              <h3 className="text-xl font-bold text-foreground mb-4">Edit Category Branch</h3>
-              <form onSubmit={handleEdit} className="space-y-4">
+          <ModalSurface
+            onClose={() => setEditingCategory(null)}
+            label="Edit Category Branch"
+            className="sm:max-w-md"
+          >
+            <h3 className="text-xl font-bold text-foreground mb-4">Edit Category Branch</h3>
+            <form onSubmit={handleEdit} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground block mb-2">
+                  Category Name
+                </label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="rounded-xl border-input bg-background focus:border-primary text-foreground"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground block mb-2">
+                  Slug URL Path
+                </label>
+                <Input
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  required
+                  className="rounded-xl border-input bg-background focus:border-primary text-foreground"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Category Name
+                    Sort Order
                   </label>
                   <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
+                    type="number"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(Number(e.target.value) || 0)}
+                    className="rounded-xl border-input bg-background text-foreground"
                   />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Slug URL Path
+                    Parent Category
                   </label>
-                  <Input
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
-                    required
-                    className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground block mb-2">Sort Order</label>
-                    <Input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value) || 0)} className="rounded-xl border-input bg-background text-foreground" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground block mb-2">Parent Category</label>
-                    <select value={parentId} onChange={(e) => setParentId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-input bg-background text-foreground text-sm cursor-pointer">
-                      <option value="">None (top-level)</option>
-                      {parentOptions.filter((p) => p.id !== editingCategory?.id).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 pt-2">
-                  <input
-                    type="checkbox"
-                    id="edit-cat-active-chk"
-                    checked={active}
-                    onChange={(e) => setActive(e.target.checked)}
-                    className="rounded bg-background border-input text-primary focus:ring-primary h-4 w-4"
-                  />
-                  <label htmlFor="edit-cat-active-chk" className="text-sm text-muted-foreground">
-                    Category active status
-                  </label>
-                </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setEditingCategory(null)}
-                    className="rounded-xl border-border hover:bg-muted text-foreground"
+                  <select
+                    value={parentId}
+                    onChange={(e) => setParentId(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-input bg-background text-foreground text-sm cursor-pointer"
                   >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold"
-                  >
-                    Save Changes
-                  </Button>
+                    <option value="">None (top-level)</option>
+                    {parentOptions
+                      .filter((p) => p.id !== editingCategory?.id)
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                  </select>
                 </div>
-              </form>
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="edit-cat-active-chk"
+                  checked={active}
+                  onChange={(e) => setActive(e.target.checked)}
+                  className="rounded bg-background border-input text-primary focus:ring-primary h-4 w-4"
+                />
+                <label htmlFor="edit-cat-active-chk" className="text-sm text-muted-foreground">
+                  Category active status
+                </label>
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingCategory(null)}
+                  className="rounded-xl border-border hover:bg-muted text-foreground"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold"
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </form>
           </ModalSurface>
         )}
 
         {/* ── DELETE MODAL ─────────────────────────────────────────── */}
         {deletingCategory && (
-          <ModalSurface onClose={() => setDeletingCategory(null)} label="Delete Directory Category" className="sm:max-w-sm text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-danger-soft flex items-center justify-center text-danger-soft-foreground mb-4">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Delete Directory Category</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                Are you sure you want to delete{' '}
-                <span className="font-semibold text-foreground">"{deletingCategory.name}"</span>?
-                This will detach all mapped listings.
-              </p>
-              <div className="flex justify-center gap-3">
-                <Button
-                  onClick={() => setDeletingCategory(null)}
-                  variant="outline"
-                  className="rounded-xl border-border hover:bg-muted text-foreground px-4"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleDelete}
-                  className="rounded-xl bg-destructive hover:bg-destructive text-white px-4"
-                >
-                  Delete
-                </Button>
-              </div>
+          <ModalSurface
+            onClose={() => setDeletingCategory(null)}
+            label="Delete Directory Category"
+            className="sm:max-w-sm text-center"
+          >
+            <div className="mx-auto w-12 h-12 rounded-full bg-danger-soft flex items-center justify-center text-danger-soft-foreground mb-4">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground mb-2">Delete Directory Category</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Are you sure you want to delete{' '}
+              <span className="font-semibold text-foreground">"{deletingCategory.name}"</span>? This
+              will detach all mapped listings.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Button
+                onClick={() => setDeletingCategory(null)}
+                variant="outline"
+                className="rounded-xl border-border hover:bg-muted text-foreground px-4"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDelete}
+                className="rounded-xl bg-destructive hover:bg-destructive text-white px-4"
+              >
+                Delete
+              </Button>
+            </div>
           </ModalSurface>
         )}
       </div>

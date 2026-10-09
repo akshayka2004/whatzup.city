@@ -1,4 +1,14 @@
-import { IsString, IsNotEmpty, IsUUID, Matches, IsNumber, Min, IsOptional, IsArray, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsUUID,
+  Matches,
+  IsNumber,
+  Min,
+  IsOptional,
+  IsArray,
+  MaxLength,
+} from 'class-validator';
 
 export class GetUploadUrlDto {
   @IsUUID()
@@ -8,7 +18,8 @@ export class GetUploadUrlDto {
   @IsString()
   @IsNotEmpty()
   @Matches(/\.(jpg|jpeg|png|gif|webp|pdf|doc|docx|txt)$/i, {
-    message: 'Filename must have a valid extension (jpg, jpeg, png, gif, webp, pdf, doc, docx, txt)',
+    message:
+      'Filename must have a valid extension (jpg, jpeg, png, gif, webp, pdf, doc, docx, txt)',
   })
   filename!: string;
 

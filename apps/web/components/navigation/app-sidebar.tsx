@@ -13,7 +13,17 @@ import { isItemActive, type NavItem, type NavSpec } from '@/lib/nav/config';
 const COLLAPSE_KEY = 'sidebar_collapsed_v1';
 const PROMO_DISMISSED_KEY = 'sidebar_promo_dismissed';
 
-function NavRow({ item, active, collapsed, label }: { item: NavItem; active: boolean; collapsed: boolean; label: string }) {
+function NavRow({
+  item,
+  active,
+  collapsed,
+  label,
+}: {
+  item: NavItem;
+  active: boolean;
+  collapsed: boolean;
+  label: string;
+}) {
   const Icon = item.icon;
   return (
     <Link
@@ -92,13 +102,26 @@ export function AppSidebar({ spec }: { spec: NavSpec }) {
       aria-label="Main navigation"
     >
       {/* Workspace */}
-      <div className={cn('flex h-16 shrink-0 items-center gap-2.5', collapsed ? 'justify-center px-2' : 'px-5')}>
-        <Link href={spec.home} className="flex min-w-0 items-center gap-2.5" title={collapsed ? spec.title : undefined}>
+      <div
+        className={cn(
+          'flex h-16 shrink-0 items-center gap-2.5',
+          collapsed ? 'justify-center px-2' : 'px-5',
+        )}
+      >
+        <Link
+          href={spec.home}
+          className="flex min-w-0 items-center gap-2.5"
+          title={collapsed ? spec.title : undefined}
+        >
           <BrandLogo alt="Whtzup.city" className="h-8 w-auto shrink-0 object-contain" />
           {!collapsed && (
             <span className="flex min-w-0 flex-col leading-tight">
-              <span className="truncate text-sm font-semibold tracking-tight text-foreground">{spec.title}</span>
-              {spec.subtitle && <span className="truncate text-caption text-muted-foreground">{spec.subtitle}</span>}
+              <span className="truncate text-sm font-semibold tracking-tight text-foreground">
+                {spec.title}
+              </span>
+              {spec.subtitle && (
+                <span className="truncate text-caption text-muted-foreground">{spec.subtitle}</span>
+              )}
             </span>
           )}
         </Link>
@@ -111,7 +134,9 @@ export function AppSidebar({ spec }: { spec: NavSpec }) {
               (collapsed ? (
                 <div className="mx-auto mb-2 h-px w-6 bg-sidebar-border" aria-hidden />
               ) : (
-                <p className="px-3 pb-1.5 text-overline text-subtle-foreground">{tl(group.title)}</p>
+                <p className="px-3 pb-1.5 text-overline text-subtle-foreground">
+                  {tl(group.title)}
+                </p>
               ))}
             <div className="space-y-0.5">
               {group.items.map((item) => (
@@ -135,8 +160,12 @@ export function AppSidebar({ spec }: { spec: NavSpec }) {
               <span className="mb-2 flex size-9 items-center justify-center rounded-xl bg-card text-primary shadow-e1">
                 <Store className="size-[18px]" />
               </span>
-              <span className="block text-sm font-semibold leading-tight text-foreground">List your business</span>
-              <span className="mt-1 block text-caption text-muted-foreground">Reach customers across your city.</span>
+              <span className="block text-sm font-semibold leading-tight text-foreground">
+                List your business
+              </span>
+              <span className="mt-1 block text-caption text-muted-foreground">
+                Reach customers across your city.
+              </span>
               <span className="mt-2.5 inline-flex items-center gap-1 text-caption font-semibold text-brand-soft-foreground">
                 Get started <ArrowRight className="size-3.5" />
               </span>
@@ -155,7 +184,13 @@ export function AppSidebar({ spec }: { spec: NavSpec }) {
 
       <div className="space-y-0.5 border-t border-sidebar-border/80 px-3 py-3">
         {spec.footer.map((item) => (
-          <NavRow key={item.href} item={item} label={tl(item.label)} active={isItemActive(pathname, item)} collapsed={collapsed} />
+          <NavRow
+            key={item.href}
+            item={item}
+            label={tl(item.label)}
+            active={isItemActive(pathname, item)}
+            collapsed={collapsed}
+          />
         ))}
         {user && (
           <button
@@ -181,7 +216,11 @@ export function AppSidebar({ spec }: { spec: NavSpec }) {
             collapsed && 'justify-center px-0',
           )}
         >
-          {collapsed ? <PanelLeftOpen className="size-[18px]" /> : <PanelLeftClose className="size-[18px]" />}
+          {collapsed ? (
+            <PanelLeftOpen className="size-[18px]" />
+          ) : (
+            <PanelLeftClose className="size-[18px]" />
+          )}
           <span className={cn(collapsed && 'sr-only')}>Collapse</span>
         </button>
       </div>

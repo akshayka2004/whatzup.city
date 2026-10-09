@@ -60,11 +60,9 @@ class EnvironmentVariables {
 }
 
 export function validateEnv(config: Record<string, any>) {
-  const validatedConfig = plainToInstance(
-    EnvironmentVariables,
-    config,
-    { enableImplicitConversion: true },
-  );
+  const validatedConfig = plainToInstance(EnvironmentVariables, config, {
+    enableImplicitConversion: true,
+  });
   const errors = validateSync(validatedConfig, { skipMissingProperties: false });
 
   if (errors.length > 0) {
@@ -77,13 +75,13 @@ export function validateEnv(config: Record<string, any>) {
     if (!validatedConfig.SUPABASE_URL || !validatedConfig.SUPABASE_SERVICE_ROLE_KEY) {
       console.warn(
         '[CONFIG WARNING] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set. ' +
-        'File upload and storage features will be disabled.',
+          'File upload and storage features will be disabled.',
       );
     }
     if (
       validatedConfig.SUPABASE_URL &&
       (validatedConfig.SUPABASE_URL.includes('localhost') ||
-       validatedConfig.SUPABASE_URL.includes('127.0.0.1'))
+        validatedConfig.SUPABASE_URL.includes('127.0.0.1'))
     ) {
       throw new Error(
         'CRITICAL CONFIGURATION ERROR: SUPABASE_URL cannot point to localhost or loopback addresses in production mode.',

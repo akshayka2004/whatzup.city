@@ -117,11 +117,18 @@ export function listFrom(raw: any, keys: string[]): any[] {
  * Business offers + platform offers into one list (platform offers lead — they're
  * the featured, curated ones). Either body may be null (that request failed).
  */
-export function buildOffers(offersBody: unknown, platformBody: unknown, fromServer = false): Offer[] {
+export function buildOffers(
+  offersBody: unknown,
+  platformBody: unknown,
+  fromServer = false,
+): Offer[] {
   let mapped: Offer[] = [];
   if (offersBody) mapped = listFrom(offersBody, ['data', 'items']).map(mapApiOffer);
   if (platformBody) {
-    mapped = [...listFrom(platformBody, ['data']).map((o) => mapPlatformOffer(o, fromServer)), ...mapped];
+    mapped = [
+      ...listFrom(platformBody, ['data']).map((o) => mapPlatformOffer(o, fromServer)),
+      ...mapped,
+    ];
   }
   return mapped;
 }

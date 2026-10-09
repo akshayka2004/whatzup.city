@@ -21,11 +21,9 @@ import { billNumberMatchesSeries } from '../../common/utils/bill-number';
 // Business-level owner roles (string-literal comparison for forward compat)
 const OWNER_ROLES = ['BUSINESS_OWNER', 'BUSINESS_ADMIN', 'SUPER_ADMIN'] as const;
 
-
 // Fraud thresholds
 const FRAUD_ESCALATE_TO_OWNER_THRESHOLD = 0.6;
 const FRAUD_ESCALATE_TO_PLATFORM_THRESHOLD = 0.8;
-
 
 @Injectable()
 export class BillVerificationsService {
@@ -228,7 +226,8 @@ export class BillVerificationsService {
 
     const shared = brand.billSeriesMode === 'SHARED';
     const data = rows.map((v: any) => {
-      const user = v.bill?.user && !isPlatform ? { id: v.bill.user.id, name: v.bill.user.name } : v.bill?.user;
+      const user =
+        v.bill?.user && !isPlatform ? { id: v.bill.user.id, name: v.bill.user.name } : v.bill?.user;
       return {
         ...v,
         bill: v.bill ? { ...v.bill, user } : v.bill,
@@ -244,7 +243,12 @@ export class BillVerificationsService {
    * owner moves a bill that has not been decided yet to the right outlet before it is approved, so
    * the verified purchase, review eligibility and the moderator's queue all land on the right place.
    */
-  async reassignOutlet(actorId: string, actorRole: string, verificationId: string, outletId: string) {
+  async reassignOutlet(
+    actorId: string,
+    actorRole: string,
+    verificationId: string,
+    outletId: string,
+  ) {
     const verification = await this.verificationRepo.findByIdUnsafe(verificationId, { bill: true });
     if (!verification || !verification.bill) throw new NotFoundException('Verification not found');
     const fromId = verification.businessId ?? verification.bill.businessId;
@@ -253,8 +257,20 @@ export class BillVerificationsService {
     const isPlatform = actorRole === 'SUPER_ADMIN';
     // tenant-scope-ok: both outlets are looked up by id; brand match is checked below
     const [from, to] = await Promise.all([
-      this.db.business.findUnique({ where: { id: fromId }, select: { id: true, name: true, brandId: true, tenantId: true, brand: { select: { ownerId: true, name: true } } } }),
-      this.db.business.findUnique({ where: { id: outletId }, select: { id: true, name: true, brandId: true, status: true, deletedAt: true } }),
+      this.db.business.findUnique({
+        where: { id: fromId },
+        select: {
+          id: true,
+          name: true,
+          brandId: true,
+          tenantId: true,
+          brand: { select: { ownerId: true, name: true } },
+        },
+      }),
+      this.db.business.findUnique({
+        where: { id: outletId },
+        select: { id: true, name: true, brandId: true, status: true, deletedAt: true },
+      }),
     ]);
     if (!from || !to || to.deletedAt) throw new NotFoundException('Outlet not found');
     if (!from.brandId || from.brandId !== to.brandId) {
@@ -265,12 +281,17 @@ export class BillVerificationsService {
     }
     if (from.id === to.id) return verification;
     if (!['PENDING', 'FLAGGED', 'ESCALATED', 'RE_UPLOAD_REQUESTED'].includes(verification.status)) {
-      throw new BadRequestException('Only bills that have not been decided yet can be moved to another outlet.');
+      throw new BadRequestException(
+        'Only bills that have not been decided yet can be moved to another outlet.',
+      );
     }
 
     const updated = await this.db.$transaction(async (tx) => {
       await tx.bill.update({ where: { id: verification.billId }, data: { businessId: to.id } });
-      return tx.billVerification.update({ where: { id: verification.id }, data: { businessId: to.id } });
+      return tx.billVerification.update({
+        where: { id: verification.id },
+        data: { businessId: to.id },
+      });
     });
 
     await this.brands.recordEvent({
@@ -280,7 +301,12 @@ export class BillVerificationsService {
       actorId,
       type: 'BILL_REASSIGNED',
       summary: `A bill was moved from "${from.name}" to "${to.name}"`,
-      metadata: { billId: verification.billId, verificationId, fromBusinessId: from.id, toBusinessId: to.id },
+      metadata: {
+        billId: verification.billId,
+        verificationId,
+        fromBusinessId: from.id,
+        toBusinessId: to.id,
+      },
     });
     await this.auditService.log({
       tenantId: verification.tenantId,
@@ -331,15 +357,27 @@ export class BillVerificationsService {
         escalationLevel: 'PLATFORM',
         status: 'ESCALATED',
       });
-      this.logger.warn(`Bill ${verification.billId} auto-escalated to PLATFORM (fraud score: ${score})`);
+      this.logger.warn(
+        `Bill ${verification.billId} auto-escalated to PLATFORM (fraud score: ${score})`,
+      );
     } else if (score >= FRAUD_ESCALATE_TO_OWNER_THRESHOLD) {
       await this.verificationRepo.update(tid, verification.id, {
         escalationLevel: 'BUSINESS',
       });
-      this.logger.warn(`Bill ${verification.billId} escalated to BUSINESS_OWNER (fraud score: ${score})`);
+      this.logger.warn(
+        `Bill ${verification.billId} escalated to BUSINESS_OWNER (fraud score: ${score})`,
+      );
     }
 
-    return { fraudScore: score, escalationLevel: score >= FRAUD_ESCALATE_TO_PLATFORM_THRESHOLD ? 'PLATFORM' : score >= FRAUD_ESCALATE_TO_OWNER_THRESHOLD ? 'BUSINESS' : 'NONE' };
+    return {
+      fraudScore: score,
+      escalationLevel:
+        score >= FRAUD_ESCALATE_TO_PLATFORM_THRESHOLD
+          ? 'PLATFORM'
+          : score >= FRAUD_ESCALATE_TO_OWNER_THRESHOLD
+            ? 'BUSINESS'
+            : 'NONE',
+    };
   }
 
   // ── APPROVE ───────────────────────────────────────────────────────
@@ -361,7 +399,9 @@ export class BillVerificationsService {
 
     const allowedStatuses = ['PENDING', 'FLAGGED', 'RE_UPLOAD_REQUESTED', 'ESCALATED'];
     if (!allowedStatuses.includes(verification.status)) {
-      throw new BadRequestException(`Cannot approve a verification in status: ${verification.status}`);
+      throw new BadRequestException(
+        `Cannot approve a verification in status: ${verification.status}`,
+      );
     }
 
     const isOwnerAction = OWNER_ROLES.includes(actorRole as any);
@@ -394,18 +434,27 @@ export class BillVerificationsService {
       Number(verification.bill.amount),
       verification.bill.billDate,
     );
-    await this.awardPoints(tid, verification.bill.userId, verification.billId, Number(verification.bill.amount));
+    await this.awardPoints(
+      tid,
+      verification.bill.userId,
+      verification.billId,
+      Number(verification.bill.amount),
+    );
 
     // Notify customer
-    await this.notificationsService.send({
-      tenantId: tid,
-      userId: verification.bill.userId,
-      title: 'Bill Approved ✓',
-      body: `Your bill has been verified successfully.`,
-      type: 'IN_APP',
-      channel: 'BUSINESS',
-      metadata: { billId: verification.billId, verificationId },
-    }).catch(() => {/* non-blocking */});
+    await this.notificationsService
+      .send({
+        tenantId: tid,
+        userId: verification.bill.userId,
+        title: 'Bill Approved ✓',
+        body: `Your bill has been verified successfully.`,
+        type: 'IN_APP',
+        channel: 'BUSINESS',
+        metadata: { billId: verification.billId, verificationId },
+      })
+      .catch(() => {
+        /* non-blocking */
+      });
 
     await this.auditService.log({
       tenantId: tid,
@@ -418,7 +467,9 @@ export class BillVerificationsService {
 
     // Fire-and-forget summary refresh — bill is now verified so spend totals change
     void this.analyticsSummary.refreshUserSpending(tid, verification.bill.userId).catch(() => {});
-    void this.analyticsSummary.refreshBusinessSummary(tid, verification.bill.businessId).catch(() => {});
+    void this.analyticsSummary
+      .refreshBusinessSummary(tid, verification.bill.businessId)
+      .catch(() => {});
 
     return updated;
   }
@@ -456,15 +507,19 @@ export class BillVerificationsService {
     await this.billRepo.verifyBill(tid, verification.billId, 'REJECTED', actorId, reason);
 
     // Notify customer
-    await this.notificationsService.send({
-      tenantId: tid,
-      userId: verification.bill.userId,
-      title: 'Bill Rejected',
-      body: `Your bill submission was rejected. Reason: ${reason ?? 'Not provided'}`,
-      type: 'IN_APP',
-      channel: 'BUSINESS',
-      metadata: { billId: verification.billId, reason },
-    }).catch(() => {/* non-blocking */});
+    await this.notificationsService
+      .send({
+        tenantId: tid,
+        userId: verification.bill.userId,
+        title: 'Bill Rejected',
+        body: `Your bill submission was rejected. Reason: ${reason ?? 'Not provided'}`,
+        type: 'IN_APP',
+        channel: 'BUSINESS',
+        metadata: { billId: verification.billId, reason },
+      })
+      .catch(() => {
+        /* non-blocking */
+      });
 
     await this.auditService.log({
       tenantId: tid,
@@ -539,16 +594,19 @@ export class BillVerificationsService {
     // Bill.status has no RE_UPLOAD_REQUESTED; the re-upload state lives on the verification row.
     await this.billRepo.update(tid, verification.billId, { status: 'UPLOADED' });
 
-    await this.notificationsService.send({
-      tenantId: tid,
-      userId: verification.bill.userId,
-      title: 'Re-Upload Required',
-      body: `Please re-upload your bill. Reason: ${reason}`,
-      type: 'IN_APP',
-      channel: 'BUSINESS',
-      metadata: { billId: verification.billId, reason },
-    }).catch(() => {/* non-blocking */});
-
+    await this.notificationsService
+      .send({
+        tenantId: tid,
+        userId: verification.bill.userId,
+        title: 'Re-Upload Required',
+        body: `Please re-upload your bill. Reason: ${reason}`,
+        type: 'IN_APP',
+        channel: 'BUSINESS',
+        metadata: { billId: verification.billId, reason },
+      })
+      .catch(() => {
+        /* non-blocking */
+      });
 
     await this.auditService.log({
       tenantId: tid,
@@ -598,15 +656,24 @@ export class BillVerificationsService {
     );
 
     if (decision === 'APPROVED') {
-      await this.verifiedPurchasesService.createVerifiedPurchase(
+      await this.verifiedPurchasesService
+        .createVerifiedPurchase(
+          tid,
+          verification.bill.userId,
+          verification.bill.businessId,
+          verification.billId,
+          Number(verification.bill.amount),
+          verification.bill.billDate,
+        )
+        .catch(() => {
+          /* Already exists — no-op */
+        });
+      await this.awardPoints(
         tid,
         verification.bill.userId,
-        verification.bill.businessId,
         verification.billId,
         Number(verification.bill.amount),
-        verification.bill.billDate,
-      ).catch(() => {/* Already exists — no-op */});
-      await this.awardPoints(tid, verification.bill.userId, verification.billId, Number(verification.bill.amount));
+      );
     }
 
     await this.auditService.log({
@@ -657,7 +724,15 @@ export class BillVerificationsService {
       const visible =
         actorRole === 'SUPER_ADMIN'
           ? data
-          : data.map((v: any) => ({ ...v, bill: v.bill ? { ...v.bill, user: v.bill.user ? { id: v.bill.user.id, name: v.bill.user.name } : null } : null }));
+          : data.map((v: any) => ({
+              ...v,
+              bill: v.bill
+                ? {
+                    ...v.bill,
+                    user: v.bill.user ? { id: v.bill.user.id, name: v.bill.user.name } : null,
+                  }
+                : null,
+            }));
       return { data: visible, total, page: pagination.page, limit: pagination.limit };
     }
 

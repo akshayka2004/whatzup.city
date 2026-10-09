@@ -15,19 +15,39 @@ import { KERALA_CITIES } from '@/lib/constants';
 import { LegalFooter } from '@/components/common/legal-footer';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
 import { authService } from '@/lib/services/auth-service';
-import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/business/registration-details';
 import {
-  STAR_OPTIONS, HOTEL_AMENITIES, computeHotelCharge, type HotelAmenities,
+  RegistrationDetailsForm,
+  type RegistrationDetails,
+} from '@/components/business/registration-details';
+import {
+  STAR_OPTIONS,
+  HOTEL_AMENITIES,
+  computeHotelCharge,
+  type HotelAmenities,
 } from '@/lib/hotel-pricing';
-import { AmenityDetailsEditor, type AmenityItem } from '@/components/business/amenity-details-editor';
+import {
+  AmenityDetailsEditor,
+  type AmenityItem,
+} from '@/components/business/amenity-details-editor';
 import { HOME_CHEF_PLANS, HOME_CHEF_DURATION_DAYS, getHomeChefPlan } from '@/lib/home-chef-pricing';
 import { useLaunchOffer } from '@/hooks/use-launch-offer';
 import { invalidateActiveBusinessCache } from '@/hooks/use-active-business';
-import { BillSeriesQuestion, type BillSeriesMode } from '@/components/business/brand-conversion-prompt';
+import {
+  BillSeriesQuestion,
+  type BillSeriesMode,
+} from '@/components/business/brand-conversion-prompt';
 import { LaunchOfferBanner } from '@/components/business/launch-offer-banner';
 import {
-  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, HOTEL_DURATION_DAYS, getPlan, formatINR, withTax, TAX_PERCENT,
-  PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
+  SUBSCRIPTION_PLANS,
+  PLAN_DURATION_DAYS,
+  HOTEL_DURATION_DAYS,
+  getPlan,
+  formatINR,
+  withTax,
+  TAX_PERCENT,
+  PAYMENT_QR_SRC,
+  PAYMENT_UPI_ID,
+  PAYMENT_PAYEE_NAME,
 } from '@/lib/subscription-plans';
 import {
   User as UserIcon,
@@ -209,16 +229,12 @@ export const CATEGORIES = [
   {
     slug: 'personal_care',
     label: 'Personal Care',
-    subcategories: [
-      { slug: 'salons', label: 'Salons' },
-    ],
+    subcategories: [{ slug: 'salons', label: 'Salons' }],
   },
   {
     slug: 'retail_gifts',
     label: 'Retail & Gifts',
-    subcategories: [
-      { slug: 'gift_shops', label: 'Gift Shops' },
-    ],
+    subcategories: [{ slug: 'gift_shops', label: 'Gift Shops' }],
   },
   {
     slug: 'automotive_services',

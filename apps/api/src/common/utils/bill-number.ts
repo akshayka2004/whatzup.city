@@ -10,7 +10,10 @@ export function normalizeBillNumber(input?: string | null): string | null {
 }
 
 /** True when the (normalised) bill number starts with the (normalised) series prefix. */
-export function billNumberMatchesSeries(prefix?: string | null, billNumber?: string | null): boolean {
+export function billNumberMatchesSeries(
+  prefix?: string | null,
+  billNumber?: string | null,
+): boolean {
   const p = normalizeBillNumber(prefix);
   const n = normalizeBillNumber(billNumber);
   if (!p || !n) return false;

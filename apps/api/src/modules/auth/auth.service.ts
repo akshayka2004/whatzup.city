@@ -124,7 +124,9 @@ export class AuthService {
       if ((dto as any).referralCode) {
         const referrer = await this.db.user.findFirst({
           where: {
-            referralCode: String((dto as any).referralCode).trim().toUpperCase(),
+            referralCode: String((dto as any).referralCode)
+              .trim()
+              .toUpperCase(),
             deletedAt: null,
           },
           select: { id: true },
@@ -155,7 +157,9 @@ export class AuthService {
               referralCode: newReferralCode,
               ...(referrerId ? { referredBy: referrerId } : {}),
               ...(dto.acceptedTerms ? { acceptedTermsAt: new Date(), termsVersion: '1.0' } : {}),
-              ...(dto.acceptedPrivacyPolicy ? { acceptedPrivacyAt: new Date(), privacyPolicyVersion: '1.0' } : {}),
+              ...(dto.acceptedPrivacyPolicy
+                ? { acceptedPrivacyAt: new Date(), privacyPolicyVersion: '1.0' }
+                : {}),
               ...(isCustomer
                 ? {
                     customerProfile: {
@@ -233,10 +237,7 @@ export class AuthService {
       if (err?.status && err?.message) throw err;
 
       // Log unknown errors with full context so PM2 logs surface the cause
-      this.logger.error(
-        `Signup failed for ${dto.email}: ${err?.message || err}`,
-        err?.stack,
-      );
+      this.logger.error(`Signup failed for ${dto.email}: ${err?.message || err}`, err?.stack);
 
       // Convert known Prisma errors to actionable messages
       if (err?.code === 'P2002') {
@@ -296,7 +297,7 @@ export class AuthService {
     // ── Brute-force protection (Redis counters) ───────────────────────
     // IP bucket  : 10 attempts / 15 min
     // User bucket: 5  attempts / 10 min
-    const ipKey   = `login:ip:${ipAddress || 'unknown'}`;
+    const ipKey = `login:ip:${ipAddress || 'unknown'}`;
     const userKey = `login:user:${emailNormalized}`;
 
     const [ipCount, userCount] = await Promise.all([
@@ -304,7 +305,7 @@ export class AuthService {
       this.redisService.incr(userKey),
     ]);
     // Set TTL only on first increment (atomic create)
-    if (ipCount   === 1) await this.redisService.expire(ipKey,   900); // 15 min
+    if (ipCount === 1) await this.redisService.expire(ipKey, 900); // 15 min
     if (userCount === 1) await this.redisService.expire(userKey, 600); // 10 min
 
     if (ipCount > 10 || userCount > 5) {
@@ -369,15 +370,17 @@ export class AuthService {
         .catch(() => {});
 
       // Fire-and-forget audit log — don't add latency on the hot path
-      this.db.auditLog.create({
-        data: {
-          tenantId: user.tenantId,
-          userId: user.id,
-          action: 'LOGIN_FAILED',
-          resource: 'auth',
-          metadata: { ipAddress, userAgent, attempts, locked: !!lockedUntil },
-        },
-      }).catch(() => {});
+      this.db.auditLog
+        .create({
+          data: {
+            tenantId: user.tenantId,
+            userId: user.id,
+            action: 'LOGIN_FAILED',
+            resource: 'auth',
+            metadata: { ipAddress, userAgent, attempts, locked: !!lockedUntil },
+          },
+        })
+        .catch(() => {});
 
       // Same message whether the account exists or the password is wrong, so
       // login can't be used to enumerate registered emails.
@@ -395,10 +398,7 @@ export class AuthService {
     }
 
     // Clear rate-limit counters on success
-    await Promise.all([
-      this.redisService.del(ipKey),
-      this.redisService.del(userKey),
-    ]);
+    await Promise.all([this.redisService.del(ipKey), this.redisService.del(userKey)]);
 
     // Enforce email verification (must compare as string — get<boolean> does NOT coerce)
     const enforceVerification =
@@ -425,15 +425,17 @@ export class AuthService {
     ]);
 
     // Fire-and-forget success audit log
-    this.db.auditLog.create({
-      data: {
-        tenantId: user.tenantId,
-        userId: user.id,
-        action: 'LOGIN_SUCCESS',
-        resource: 'auth',
-        metadata: { ipAddress, userAgent },
-      },
-    }).catch(() => {});
+    this.db.auditLog
+      .create({
+        data: {
+          tenantId: user.tenantId,
+          userId: user.id,
+          action: 'LOGIN_SUCCESS',
+          resource: 'auth',
+          metadata: { ipAddress, userAgent },
+        },
+      })
+      .catch(() => {});
 
     // Return entity in response so frontend can skip a second /me roundtrip
     let activeEntity = user.entities?.[0] ?? null;
@@ -446,7 +448,8 @@ export class AuthService {
     if (preferred) {
       staffBusinessId = preferred.id;
       if (preferred.entityId) {
-        activeEntity = (await this.db.entity.findUnique({ where: { id: preferred.entityId } })) ?? activeEntity;
+        activeEntity =
+          (await this.db.entity.findUnique({ where: { id: preferred.entityId } })) ?? activeEntity;
       }
     } else if (!activeEntity) {
       // Prefer isActive staff records; fallback without filter for robustness
@@ -482,7 +485,12 @@ export class AuthService {
         ...tokens.user,
         businessId: staffBusinessId,
         entity: activeEntity
-          ? { id: activeEntity.id, type: activeEntity.type, status: activeEntity.status, name: activeEntity.name }
+          ? {
+              id: activeEntity.id,
+              type: activeEntity.type,
+              status: activeEntity.status,
+              name: activeEntity.name,
+            }
           : null,
       },
     };
@@ -784,7 +792,7 @@ export class AuthService {
     // `as any` on include + result: civicProfile is a newly-added relation —
     // Prisma client types on VPS regenerate after `prisma generate`. Cast is
     // safe because the SQL query runs correctly regardless of TS types.
-    const user = await this.db.user.findUnique({
+    const user = (await this.db.user.findUnique({
       where: { id: payload.sub },
       include: {
         entities: {
@@ -814,7 +822,7 @@ export class AuthService {
           },
         },
       } as any,
-    }) as any;
+    })) as any;
 
     if (!user || !user.isActive || user.deletedAt) {
       return null;
@@ -892,20 +900,23 @@ export class AuthService {
       role: user.role,
       permissions: Array.from(permissions),
       businessId: staffBusinessId,
-      entity: activeEntity ? {
-        id: activeEntity.id,
-        type: activeEntity.type,
-        status: activeEntity.status,
-        name: activeEntity.name,
-        profile: activeEntity.influencerProfile ||
-                 activeEntity.professionalProfile ||
-                 activeEntity.eventOrganizerProfile ||
-                 activeEntity.organizationProfile ||
-                 activeEntity.governmentProfile ||
-                 (activeEntity as any).civicProfile ||
-                 activeEntity.business ||
-                 null,
-      } : null,
+      entity: activeEntity
+        ? {
+            id: activeEntity.id,
+            type: activeEntity.type,
+            status: activeEntity.status,
+            name: activeEntity.name,
+            profile:
+              activeEntity.influencerProfile ||
+              activeEntity.professionalProfile ||
+              activeEntity.eventOrganizerProfile ||
+              activeEntity.organizationProfile ||
+              activeEntity.governmentProfile ||
+              (activeEntity as any).civicProfile ||
+              activeEntity.business ||
+              null,
+          }
+        : null,
     };
 
     // Cache for 5 minutes
@@ -1087,387 +1098,12 @@ export class AuthService {
       '-' +
       Math.random().toString(36).substring(2, 6);
 
-    const { user, business } = await this.db.$transaction(async (tx) => {
-      // 1. Create the Tenant
-      const tenant = await tx.tenant.create({
-        data: {
-          name: dto.businessName,
-          slug: tenantSlug,
-          settings: { theme: 'default', language: 'en' },
-        },
-      });
-
-      // 2. Clone permissions using createManyAndReturn for bulk insertion
-      const permissions = await tx.permission.findMany({
-        where: { tenantId: defaultTenant.id, deletedAt: null },
-      });
-      const newPermissions = await tx.permission.createManyAndReturn({
-        data: permissions.map((p) => ({
-          tenantId: tenant.id,
-          name: p.name,
-          description: p.description,
-          resource: p.resource,
-          action: p.action,
-        })),
-      });
-      const permMap = new Map<string, string>();
-      for (const newPerm of newPermissions) {
-        permMap.set(newPerm.name, newPerm.id);
-      }
-
-      // 3. Clone roles using createManyAndReturn
-      const roles = await tx.role.findMany({
-        where: { tenantId: defaultTenant.id, deletedAt: null },
-      });
-      const newRoles = await tx.role.createManyAndReturn({
-        data: roles.map((r) => ({
-          tenantId: tenant.id,
-          code: r.code,
-          name: r.name,
-          description: r.description,
-        })),
-      });
-      const roleMap = new Map<string, string>();
-      let businessAdminRoleId = '';
-      for (const newRole of newRoles) {
-        roleMap.set(newRole.code, newRole.id);
-        if (newRole.code === 'BUSINESS_ADMIN') {
-          businessAdminRoleId = newRole.id;
-        }
-      }
-
-      // Clone rolePermissions in bulk
-      const rolePerms = await tx.rolePermission.findMany({
-        where: {
-          tenantId: defaultTenant.id,
-          roleId: { in: roles.map((r) => r.id) },
-          deletedAt: null,
-        },
-        include: { permission: true, role: true },
-      });
-      const rolePermData = [];
-      for (const rp of rolePerms) {
-        if (rp.permission && rp.role) {
-          const newRoleId = roleMap.get(rp.role.code);
-          const newPermId = permMap.get(rp.permission.name);
-          if (newRoleId && newPermId) {
-            rolePermData.push({
-              tenantId: tenant.id,
-              roleId: newRoleId,
-              permissionId: newPermId,
-            });
-          }
-        }
-      }
-      if (rolePermData.length > 0) {
-        await tx.rolePermission.createMany({
-          data: rolePermData,
-        });
-      }
-
-      // 4. Clone categories using createManyAndReturn
-      const categories = await tx.category.findMany({
-        where: { tenantId: defaultTenant.id, deletedAt: null },
-      });
-      const newCategories = await tx.category.createManyAndReturn({
-        data: categories.map((cat) => ({
-          tenantId: tenant.id,
-          name: cat.name,
-          slug: cat.slug,
-          description: cat.description,
-          icon: cat.icon,
-          sortOrder: cat.sortOrder,
-          isActive: cat.isActive,
-        })),
-      });
-      let activeCategoryId = '';
-      for (const newCat of newCategories) {
-        if (newCat.slug === dto.categorySlug) {
-          activeCategoryId = newCat.id;
-        }
-      }
-
-      // 5. Create the User
-      const passwordHash = await this.passwordService.hash(dto.password);
-      const bizReferralCode = Math.random().toString(36).slice(2, 10).toUpperCase();
-
-      // Resolve the referrer from the supplied referral code so referredBy is
-      // stored. Referral codes are uppercase; the referrer usually lives in the
-      // default tenant (cross-tenant lookup — referredBy is a plain uuid).
-      let bizReferredBy: string | undefined;
-      if (dto.referralCode) {
-        const referrer = await tx.user.findFirst({
-          where: { referralCode: dto.referralCode.trim().toUpperCase(), deletedAt: null },
-          select: { id: true },
-        });
-        if (referrer) bizReferredBy = referrer.id;
-      }
-
-      const userRecord = await tx.user.create({
-        data: {
-          tenantId: tenant.id,
-          email: emailNormalized,
-          passwordHash,
-          name: dto.ownerName,
-          phone: dto.phone,
-          role: UserRoleEnum.BUSINESS_ADMIN,
-          emailVerified: true,
-          isActive: true,
-          referralCode: bizReferralCode,
-          ...(bizReferredBy ? { referredBy: bizReferredBy } : {}),
-          ...(dto.acceptedTerms ? { acceptedTermsAt: new Date(), termsVersion: '1.0' } : {}),
-          ...(dto.acceptedPrivacyPolicy ? { acceptedPrivacyAt: new Date(), privacyPolicyVersion: '1.0' } : {}),
-        },
-      });
-
-      // 6. Map user to BUSINESS_ADMIN role
-      if (businessAdminRoleId) {
-        await tx.userRole.create({
-          data: {
-            tenantId: tenant.id,
-            userId: userRecord.id,
-            roleId: businessAdminRoleId,
-          },
-        });
-      }
-
-      // 7. Resolve subcategories
-      const subcategories = dto.subcategorySlugs?.length
-        ? await tx.category.findMany({
-            where: {
-              tenantId: tenant.id,
-              slug: { in: dto.subcategorySlugs },
-              deletedAt: null,
-            },
-            select: { id: true, slug: true },
-          })
-        : [];
-
-      // 6b. Create the Entity — immediately PENDING_VERIFICATION so it
-      // lands in admin moderation queue (not verified until admin acts).
-      const entityRecord = await tx.entity.create({
-        data: {
-          tenantId: tenant.id,
-          userId: userRecord.id,
-          type: 'BUSINESS',
-          status: 'PENDING_VERIFICATION',
-          name: dto.businessName,
-          email: emailNormalized,
-          phone: dto.phone,
-        },
-      });
-
-      // 8. Create the Business
-      const businessSlug =
-        dto.businessName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-|-$/g, '') +
-        '-' +
-        Date.now().toString(36);
-
-      const businessRecord = await tx.business.create({
-        data: {
-          tenantId: tenant.id,
-          ownerId: userRecord.id,
-          categoryId: activeCategoryId || defaultCategory.id,
-          name: dto.businessName,
-          slug: businessSlug,
-          description: '',
-          address: '',
-          city: '',
-          state: '',
-          zipCode: '',
-          phone: dto.phone,
-          email: emailNormalized,
-          status: 'PENDING_VERIFICATION',
-          isVerified: false,
-          profileType: dto.profileType || 'OWNER',
-          subcategoryIds: subcategories.map((category) => category.id),
-          tags: [],
-          socialLinks: {},
-          // Halal flag applies to food businesses only.
-          ...(dto.categorySlug === 'food' && dto.halalStatus
-            ? { halalStatus: dto.halalStatus === 'HALAL' ? 'HALAL' : 'NON_HALAL' }
-            : {}),
-          entityId: entityRecord.id,
-        },
-      });
-
-      // 9. Create staff connection
-      const memberRole = dto.profileType === 'STAFF' ? 'STAFF' : 'OWNER';
-      await tx.businessStaff.create({
-        data: {
-          tenantId: tenant.id,
-          businessId: businessRecord.id,
-          userId: userRecord.id,
-          role: memberRole,
-        },
-      });
-
-      // 9b. Brand account: create the Brand and make this first business its HQ outlet. The brand
-      // lives in the owner's tenant so every later outlet shares one login, staff and tenant.
-      if (isBrand) {
-        const brandSlug =
-          brandName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') +
-          '-' +
-          Date.now().toString(36);
-        const brand = await tx.brand.create({
-          data: {
-            tenantId: tenant.id,
-            ownerId: userRecord.id,
-            name: brandName,
-            slug: brandSlug,
-            billSeriesMode: brandSeriesMode,
-            billSeriesPrefix: brandSeriesMode === 'SHARED' ? brandSeriesPrefix : null,
-          },
-        });
-        await tx.business.update({
-          where: { id: businessRecord.id },
-          data: {
-            brandId: brand.id,
-            isBrandHq: true,
-            brandName: brand.name,
-            outletLabel: dto.outletLabel?.trim() || null,
-          },
-        });
-        // Pin the dashboard to the head outlet: the "newest entity" default would otherwise jump to
-        // whichever outlet is added next.
-        await tx.user.update({ where: { id: userRecord.id }, data: { activeBusinessId: businessRecord.id } });
-        await tx.brandEvent.create({
-          data: {
-            tenantId: tenant.id,
-            brandId: brand.id,
-            businessId: businessRecord.id,
-            actorId: userRecord.id,
-            type: 'BRAND_CREATED',
-            summary: `Brand "${brand.name}" registered with its first outlet "${dto.businessName}"`,
-            metadata: { via: 'signup', billSeriesMode: brandSeriesMode },
-          },
-        });
-      }
-
-      // 10. Create onboarding progress
-      await tx.onboardingProgress.create({
-        data: {
-          tenantId: tenant.id,
-          entityType: 'BUSINESS',
-          entityId: entityRecord.id,
-          currentStep: 1,
-          status: 'PENDING_VERIFICATION',
-          stepsCompleted: ['START'],
-          metadata: {
-            categoryName: defaultCategory.name,
-            categorySlug: defaultCategory.slug,
-            subcategories,
-            profileType: dto.profileType || 'OWNER',
-          },
-        },
-      });
-
-      // 10b. Create VerificationRequest — admin moderation queue source.
-      // Every new business signup MUST appear in admin review tab.
-      await tx.verificationRequest.create({
-        data: {
-          tenantId: tenant.id,
-          entityId: entityRecord.id,
-          status: 'PENDING',
-        },
-      });
-
-      // 11. Create onboarding event
-      await tx.onboardingEvent.create({
-        data: {
-          tenantId: tenant.id,
-          entityType: 'BUSINESS',
-          entityId: entityRecord.id,
-          event: 'BUSINESS_ONBOARDING_STARTED',
-          metadata: { step: 1 },
-        },
-      });
-
-      // 12. Create audit log
-      await tx.auditLog.create({
-        data: {
-          tenantId: tenant.id,
-          userId: userRecord.id,
-          action: 'BUSINESS_ONBOARDING_START',
-          resource: 'BUSINESS',
-          resourceId: businessRecord.id,
-        },
-      });
-
-      return { user: userRecord, business: businessRecord };
-    }, { maxWait: 30000, timeout: 90000 });
-
-    const tokens = await this.generateTokens(user);
-
-    return {
-      ...tokens,
-      businessId: business.id,
-    };
-  }
-
-  async selectRole(userId: string, dto: SelectRoleDto) {
-    const user = await this.db.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const existingEntity = await this.db.entity.findFirst({
-      where: { userId: user.id },
-    });
-
-    if (existingEntity) {
-      throw new BadRequestException('Role has already been selected for this user.');
-    }
-
-    // Map EntityType to UserRoleEnum
-    let targetRoleEnum: UserRoleEnum = UserRoleEnum.USER;
-    if (dto.entityType === 'BUSINESS') targetRoleEnum = UserRoleEnum.BUSINESS_ADMIN;
-    else if (dto.entityType === 'INFLUENCER') targetRoleEnum = UserRoleEnum.INFLUENCER;
-    else if (dto.entityType === 'PROFESSIONAL') targetRoleEnum = UserRoleEnum.PROFESSIONAL;
-    else if (dto.entityType === 'EVENT_ORGANIZER') targetRoleEnum = UserRoleEnum.EVENT_ORGANIZER;
-    else if (dto.entityType === 'ORGANIZATION') targetRoleEnum = UserRoleEnum.ORGANIZATION_ADMIN;
-    else if (dto.entityType === 'GOVERNMENT') targetRoleEnum = UserRoleEnum.GOVERNMENT_ADMIN;
-
-    if (dto.entityType === 'BUSINESS') {
-      // Create Tenant & setup business (similar to businessSignup)
-      const defaultTenant = await this.db.tenant.findUnique({
-        where: { slug: 'default' },
-      });
-      if (!defaultTenant) {
-        throw new NotFoundException('Default tenant configuration not found');
-      }
-
-      const defaultCategory = await this.db.category.findFirst({
-        where: { tenantId: defaultTenant.id, deletedAt: null },
-      });
-      if (!defaultCategory) {
-        throw new NotFoundException('Default categories not found');
-      }
-
-      const businessName = dto.name || `${user.name}'s Business`;
-
-      // Block duplicate company name (case-insensitive)
-      await this.assertCompanyUnique({ name: businessName });
-
-      const tenantSlug =
-        businessName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)+/g, '') +
-        '-' +
-        Math.random().toString(36).substring(2, 6);
-
-      const result = await this.db.$transaction(async (tx) => {
+    const { user, business } = await this.db.$transaction(
+      async (tx) => {
         // 1. Create the Tenant
         const tenant = await tx.tenant.create({
           data: {
-            name: businessName,
+            name: dto.businessName,
             slug: tenantSlug,
             settings: { theme: 'default', language: 'en' },
           },
@@ -1558,17 +1194,43 @@ export class AuthService {
         });
         let activeCategoryId = '';
         for (const newCat of newCategories) {
-          if (newCat.slug === defaultCategory.slug) {
+          if (newCat.slug === dto.categorySlug) {
             activeCategoryId = newCat.id;
           }
         }
 
-        // 5. Update User tenant and role
-        const updatedUser = await tx.user.update({
-          where: { id: user.id },
+        // 5. Create the User
+        const passwordHash = await this.passwordService.hash(dto.password);
+        const bizReferralCode = Math.random().toString(36).slice(2, 10).toUpperCase();
+
+        // Resolve the referrer from the supplied referral code so referredBy is
+        // stored. Referral codes are uppercase; the referrer usually lives in the
+        // default tenant (cross-tenant lookup — referredBy is a plain uuid).
+        let bizReferredBy: string | undefined;
+        if (dto.referralCode) {
+          const referrer = await tx.user.findFirst({
+            where: { referralCode: dto.referralCode.trim().toUpperCase(), deletedAt: null },
+            select: { id: true },
+          });
+          if (referrer) bizReferredBy = referrer.id;
+        }
+
+        const userRecord = await tx.user.create({
           data: {
             tenantId: tenant.id,
+            email: emailNormalized,
+            passwordHash,
+            name: dto.ownerName,
+            phone: dto.phone,
             role: UserRoleEnum.BUSINESS_ADMIN,
+            emailVerified: true,
+            isActive: true,
+            referralCode: bizReferralCode,
+            ...(bizReferredBy ? { referredBy: bizReferredBy } : {}),
+            ...(dto.acceptedTerms ? { acceptedTermsAt: new Date(), termsVersion: '1.0' } : {}),
+            ...(dto.acceptedPrivacyPolicy
+              ? { acceptedPrivacyAt: new Date(), privacyPolicyVersion: '1.0' }
+              : {}),
           },
         });
 
@@ -1577,28 +1239,41 @@ export class AuthService {
           await tx.userRole.create({
             data: {
               tenantId: tenant.id,
-              userId: user.id,
+              userId: userRecord.id,
               roleId: businessAdminRoleId,
             },
           });
         }
 
-        // 7. Create Entity — PENDING_VERIFICATION for admin review queue
+        // 7. Resolve subcategories
+        const subcategories = dto.subcategorySlugs?.length
+          ? await tx.category.findMany({
+              where: {
+                tenantId: tenant.id,
+                slug: { in: dto.subcategorySlugs },
+                deletedAt: null,
+              },
+              select: { id: true, slug: true },
+            })
+          : [];
+
+        // 6b. Create the Entity — immediately PENDING_VERIFICATION so it
+        // lands in admin moderation queue (not verified until admin acts).
         const entityRecord = await tx.entity.create({
           data: {
             tenantId: tenant.id,
-            userId: user.id,
+            userId: userRecord.id,
             type: 'BUSINESS',
             status: 'PENDING_VERIFICATION',
-            name: businessName,
-            email: user.email,
-            phone: dto.phone || user.phone,
+            name: dto.businessName,
+            email: emailNormalized,
+            phone: dto.phone,
           },
         });
 
         // 8. Create the Business
         const businessSlug =
-          businessName
+          dto.businessName
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-|-$/g, '') +
@@ -1608,36 +1283,89 @@ export class AuthService {
         const businessRecord = await tx.business.create({
           data: {
             tenantId: tenant.id,
-            ownerId: user.id,
+            ownerId: userRecord.id,
             categoryId: activeCategoryId || defaultCategory.id,
-            name: businessName,
+            name: dto.businessName,
             slug: businessSlug,
             description: '',
             address: '',
             city: '',
             state: '',
             zipCode: '',
-            phone: dto.phone || user.phone || '',
-            email: user.email,
+            phone: dto.phone,
+            email: emailNormalized,
             status: 'PENDING_VERIFICATION',
             isVerified: false,
-            profileType: 'OWNER',
-            subcategoryIds: [],
+            profileType: dto.profileType || 'OWNER',
+            subcategoryIds: subcategories.map((category) => category.id),
             tags: [],
             socialLinks: {},
+            // Halal flag applies to food businesses only.
+            ...(dto.categorySlug === 'food' && dto.halalStatus
+              ? { halalStatus: dto.halalStatus === 'HALAL' ? 'HALAL' : 'NON_HALAL' }
+              : {}),
             entityId: entityRecord.id,
           },
         });
 
         // 9. Create staff connection
+        const memberRole = dto.profileType === 'STAFF' ? 'STAFF' : 'OWNER';
         await tx.businessStaff.create({
           data: {
             tenantId: tenant.id,
             businessId: businessRecord.id,
-            userId: user.id,
-            role: 'OWNER',
+            userId: userRecord.id,
+            role: memberRole,
           },
         });
+
+        // 9b. Brand account: create the Brand and make this first business its HQ outlet. The brand
+        // lives in the owner's tenant so every later outlet shares one login, staff and tenant.
+        if (isBrand) {
+          const brandSlug =
+            brandName
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-|-$/g, '') +
+            '-' +
+            Date.now().toString(36);
+          const brand = await tx.brand.create({
+            data: {
+              tenantId: tenant.id,
+              ownerId: userRecord.id,
+              name: brandName,
+              slug: brandSlug,
+              billSeriesMode: brandSeriesMode,
+              billSeriesPrefix: brandSeriesMode === 'SHARED' ? brandSeriesPrefix : null,
+            },
+          });
+          await tx.business.update({
+            where: { id: businessRecord.id },
+            data: {
+              brandId: brand.id,
+              isBrandHq: true,
+              brandName: brand.name,
+              outletLabel: dto.outletLabel?.trim() || null,
+            },
+          });
+          // Pin the dashboard to the head outlet: the "newest entity" default would otherwise jump to
+          // whichever outlet is added next.
+          await tx.user.update({
+            where: { id: userRecord.id },
+            data: { activeBusinessId: businessRecord.id },
+          });
+          await tx.brandEvent.create({
+            data: {
+              tenantId: tenant.id,
+              brandId: brand.id,
+              businessId: businessRecord.id,
+              actorId: userRecord.id,
+              type: 'BRAND_CREATED',
+              summary: `Brand "${brand.name}" registered with its first outlet "${dto.businessName}"`,
+              metadata: { via: 'signup', billSeriesMode: brandSeriesMode },
+            },
+          });
+        }
 
         // 10. Create onboarding progress
         await tx.onboardingProgress.create({
@@ -1651,12 +1379,14 @@ export class AuthService {
             metadata: {
               categoryName: defaultCategory.name,
               categorySlug: defaultCategory.slug,
-              profileType: 'OWNER',
+              subcategories,
+              profileType: dto.profileType || 'OWNER',
             },
           },
         });
 
         // 10b. Create VerificationRequest — admin moderation queue source.
+        // Every new business signup MUST appear in admin review tab.
         await tx.verificationRequest.create({
           data: {
             tenantId: tenant.id,
@@ -1680,15 +1410,310 @@ export class AuthService {
         await tx.auditLog.create({
           data: {
             tenantId: tenant.id,
-            userId: user.id,
+            userId: userRecord.id,
             action: 'BUSINESS_ONBOARDING_START',
             resource: 'BUSINESS',
             resourceId: businessRecord.id,
           },
         });
 
-        return { user: updatedUser, businessId: businessRecord.id };
-      }, { maxWait: 30000, timeout: 90000 });
+        return { user: userRecord, business: businessRecord };
+      },
+      { maxWait: 30000, timeout: 90000 },
+    );
+
+    const tokens = await this.generateTokens(user);
+
+    return {
+      ...tokens,
+      businessId: business.id,
+    };
+  }
+
+  async selectRole(userId: string, dto: SelectRoleDto) {
+    const user = await this.db.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const existingEntity = await this.db.entity.findFirst({
+      where: { userId: user.id },
+    });
+
+    if (existingEntity) {
+      throw new BadRequestException('Role has already been selected for this user.');
+    }
+
+    // Map EntityType to UserRoleEnum
+    let targetRoleEnum: UserRoleEnum = UserRoleEnum.USER;
+    if (dto.entityType === 'BUSINESS') targetRoleEnum = UserRoleEnum.BUSINESS_ADMIN;
+    else if (dto.entityType === 'INFLUENCER') targetRoleEnum = UserRoleEnum.INFLUENCER;
+    else if (dto.entityType === 'PROFESSIONAL') targetRoleEnum = UserRoleEnum.PROFESSIONAL;
+    else if (dto.entityType === 'EVENT_ORGANIZER') targetRoleEnum = UserRoleEnum.EVENT_ORGANIZER;
+    else if (dto.entityType === 'ORGANIZATION') targetRoleEnum = UserRoleEnum.ORGANIZATION_ADMIN;
+    else if (dto.entityType === 'GOVERNMENT') targetRoleEnum = UserRoleEnum.GOVERNMENT_ADMIN;
+
+    if (dto.entityType === 'BUSINESS') {
+      // Create Tenant & setup business (similar to businessSignup)
+      const defaultTenant = await this.db.tenant.findUnique({
+        where: { slug: 'default' },
+      });
+      if (!defaultTenant) {
+        throw new NotFoundException('Default tenant configuration not found');
+      }
+
+      const defaultCategory = await this.db.category.findFirst({
+        where: { tenantId: defaultTenant.id, deletedAt: null },
+      });
+      if (!defaultCategory) {
+        throw new NotFoundException('Default categories not found');
+      }
+
+      const businessName = dto.name || `${user.name}'s Business`;
+
+      // Block duplicate company name (case-insensitive)
+      await this.assertCompanyUnique({ name: businessName });
+
+      const tenantSlug =
+        businessName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)+/g, '') +
+        '-' +
+        Math.random().toString(36).substring(2, 6);
+
+      const result = await this.db.$transaction(
+        async (tx) => {
+          // 1. Create the Tenant
+          const tenant = await tx.tenant.create({
+            data: {
+              name: businessName,
+              slug: tenantSlug,
+              settings: { theme: 'default', language: 'en' },
+            },
+          });
+
+          // 2. Clone permissions using createManyAndReturn for bulk insertion
+          const permissions = await tx.permission.findMany({
+            where: { tenantId: defaultTenant.id, deletedAt: null },
+          });
+          const newPermissions = await tx.permission.createManyAndReturn({
+            data: permissions.map((p) => ({
+              tenantId: tenant.id,
+              name: p.name,
+              description: p.description,
+              resource: p.resource,
+              action: p.action,
+            })),
+          });
+          const permMap = new Map<string, string>();
+          for (const newPerm of newPermissions) {
+            permMap.set(newPerm.name, newPerm.id);
+          }
+
+          // 3. Clone roles using createManyAndReturn
+          const roles = await tx.role.findMany({
+            where: { tenantId: defaultTenant.id, deletedAt: null },
+          });
+          const newRoles = await tx.role.createManyAndReturn({
+            data: roles.map((r) => ({
+              tenantId: tenant.id,
+              code: r.code,
+              name: r.name,
+              description: r.description,
+            })),
+          });
+          const roleMap = new Map<string, string>();
+          let businessAdminRoleId = '';
+          for (const newRole of newRoles) {
+            roleMap.set(newRole.code, newRole.id);
+            if (newRole.code === 'BUSINESS_ADMIN') {
+              businessAdminRoleId = newRole.id;
+            }
+          }
+
+          // Clone rolePermissions in bulk
+          const rolePerms = await tx.rolePermission.findMany({
+            where: {
+              tenantId: defaultTenant.id,
+              roleId: { in: roles.map((r) => r.id) },
+              deletedAt: null,
+            },
+            include: { permission: true, role: true },
+          });
+          const rolePermData = [];
+          for (const rp of rolePerms) {
+            if (rp.permission && rp.role) {
+              const newRoleId = roleMap.get(rp.role.code);
+              const newPermId = permMap.get(rp.permission.name);
+              if (newRoleId && newPermId) {
+                rolePermData.push({
+                  tenantId: tenant.id,
+                  roleId: newRoleId,
+                  permissionId: newPermId,
+                });
+              }
+            }
+          }
+          if (rolePermData.length > 0) {
+            await tx.rolePermission.createMany({
+              data: rolePermData,
+            });
+          }
+
+          // 4. Clone categories using createManyAndReturn
+          const categories = await tx.category.findMany({
+            where: { tenantId: defaultTenant.id, deletedAt: null },
+          });
+          const newCategories = await tx.category.createManyAndReturn({
+            data: categories.map((cat) => ({
+              tenantId: tenant.id,
+              name: cat.name,
+              slug: cat.slug,
+              description: cat.description,
+              icon: cat.icon,
+              sortOrder: cat.sortOrder,
+              isActive: cat.isActive,
+            })),
+          });
+          let activeCategoryId = '';
+          for (const newCat of newCategories) {
+            if (newCat.slug === defaultCategory.slug) {
+              activeCategoryId = newCat.id;
+            }
+          }
+
+          // 5. Update User tenant and role
+          const updatedUser = await tx.user.update({
+            where: { id: user.id },
+            data: {
+              tenantId: tenant.id,
+              role: UserRoleEnum.BUSINESS_ADMIN,
+            },
+          });
+
+          // 6. Map user to BUSINESS_ADMIN role
+          if (businessAdminRoleId) {
+            await tx.userRole.create({
+              data: {
+                tenantId: tenant.id,
+                userId: user.id,
+                roleId: businessAdminRoleId,
+              },
+            });
+          }
+
+          // 7. Create Entity — PENDING_VERIFICATION for admin review queue
+          const entityRecord = await tx.entity.create({
+            data: {
+              tenantId: tenant.id,
+              userId: user.id,
+              type: 'BUSINESS',
+              status: 'PENDING_VERIFICATION',
+              name: businessName,
+              email: user.email,
+              phone: dto.phone || user.phone,
+            },
+          });
+
+          // 8. Create the Business
+          const businessSlug =
+            businessName
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-|-$/g, '') +
+            '-' +
+            Date.now().toString(36);
+
+          const businessRecord = await tx.business.create({
+            data: {
+              tenantId: tenant.id,
+              ownerId: user.id,
+              categoryId: activeCategoryId || defaultCategory.id,
+              name: businessName,
+              slug: businessSlug,
+              description: '',
+              address: '',
+              city: '',
+              state: '',
+              zipCode: '',
+              phone: dto.phone || user.phone || '',
+              email: user.email,
+              status: 'PENDING_VERIFICATION',
+              isVerified: false,
+              profileType: 'OWNER',
+              subcategoryIds: [],
+              tags: [],
+              socialLinks: {},
+              entityId: entityRecord.id,
+            },
+          });
+
+          // 9. Create staff connection
+          await tx.businessStaff.create({
+            data: {
+              tenantId: tenant.id,
+              businessId: businessRecord.id,
+              userId: user.id,
+              role: 'OWNER',
+            },
+          });
+
+          // 10. Create onboarding progress
+          await tx.onboardingProgress.create({
+            data: {
+              tenantId: tenant.id,
+              entityType: 'BUSINESS',
+              entityId: entityRecord.id,
+              currentStep: 1,
+              status: 'PENDING_VERIFICATION',
+              stepsCompleted: ['START'],
+              metadata: {
+                categoryName: defaultCategory.name,
+                categorySlug: defaultCategory.slug,
+                profileType: 'OWNER',
+              },
+            },
+          });
+
+          // 10b. Create VerificationRequest — admin moderation queue source.
+          await tx.verificationRequest.create({
+            data: {
+              tenantId: tenant.id,
+              entityId: entityRecord.id,
+              status: 'PENDING',
+            },
+          });
+
+          // 11. Create onboarding event
+          await tx.onboardingEvent.create({
+            data: {
+              tenantId: tenant.id,
+              entityType: 'BUSINESS',
+              entityId: entityRecord.id,
+              event: 'BUSINESS_ONBOARDING_STARTED',
+              metadata: { step: 1 },
+            },
+          });
+
+          // 12. Create audit log
+          await tx.auditLog.create({
+            data: {
+              tenantId: tenant.id,
+              userId: user.id,
+              action: 'BUSINESS_ONBOARDING_START',
+              resource: 'BUSINESS',
+              resourceId: businessRecord.id,
+            },
+          });
+
+          return { user: updatedUser, businessId: businessRecord.id };
+        },
+        { maxWait: 30000, timeout: 90000 },
+      );
 
       // Clear redis cache for this user
       await this.redisService.del(`user:${user.id}`);
@@ -1702,123 +1727,126 @@ export class AuthService {
     } else {
       // Create non-business Entity
       const entityName = dto.name || user.name;
-      const result = await this.db.$transaction(async (tx) => {
-        // Update user role
-        const updatedUser = await tx.user.update({
-          where: { id: user.id },
-          data: { role: targetRoleEnum },
-        });
+      const result = await this.db.$transaction(
+        async (tx) => {
+          // Update user role
+          const updatedUser = await tx.user.update({
+            where: { id: user.id },
+            data: { role: targetRoleEnum },
+          });
 
-        // Map to role
-        const dbRole = await tx.role.findFirst({
-          where: { tenantId: user.tenantId, code: targetRoleEnum.toString() },
-        });
-        if (dbRole) {
-          await tx.userRole.create({
+          // Map to role
+          const dbRole = await tx.role.findFirst({
+            where: { tenantId: user.tenantId, code: targetRoleEnum.toString() },
+          });
+          if (dbRole) {
+            await tx.userRole.create({
+              data: {
+                tenantId: user.tenantId,
+                userId: user.id,
+                roleId: dbRole.id,
+              },
+            });
+          }
+
+          // Create Entity — CUSTOMER auto-approved; all others
+          // PENDING_VERIFICATION until admin acts.
+          const entityRecord = await tx.entity.create({
             data: {
               tenantId: user.tenantId,
               userId: user.id,
-              roleId: dbRole.id,
+              type: dto.entityType,
+              status: dto.entityType === 'CUSTOMER' ? 'APPROVED' : 'PENDING_VERIFICATION',
+              name: entityName,
+              email: user.email,
+              phone: dto.phone || user.phone,
             },
           });
-        }
 
-        // Create Entity — CUSTOMER auto-approved; all others
-        // PENDING_VERIFICATION until admin acts.
-        const entityRecord = await tx.entity.create({
-          data: {
-            tenantId: user.tenantId,
-            userId: user.id,
-            type: dto.entityType,
-            status: dto.entityType === 'CUSTOMER' ? 'APPROVED' : 'PENDING_VERIFICATION',
-            name: entityName,
-            email: user.email,
-            phone: dto.phone || user.phone,
-          },
-        });
+          // Create specialized profiles
+          if (dto.entityType === 'INFLUENCER') {
+            await tx.influencerProfile.create({
+              data: {
+                entityId: entityRecord.id,
+                niche: 'General',
+                followersCount: 0,
+              },
+            });
+          } else if (dto.entityType === 'PROFESSIONAL') {
+            await tx.professionalProfile.create({
+              data: {
+                entityId: entityRecord.id,
+                category: 'General',
+                experienceYears: 0,
+              },
+            });
+          } else if (dto.entityType === 'EVENT_ORGANIZER') {
+            await tx.eventOrganizerProfile.create({
+              data: {
+                entityId: entityRecord.id,
+                organizationName: entityName,
+              },
+            });
+          } else if (dto.entityType === 'ORGANIZATION') {
+            await tx.organizationProfile.create({
+              data: {
+                entityId: entityRecord.id,
+                ngoName: entityName,
+                registrationNumber: 'PENDING',
+                causeCategory: 'General',
+              },
+            });
+          } else if (dto.entityType === 'GOVERNMENT') {
+            await tx.governmentProfile.create({
+              data: {
+                entityId: entityRecord.id,
+                departmentName: entityName,
+                officialEmail: user.email,
+                departmentType: 'Local',
+                district: 'Default',
+              },
+            });
+          }
 
-        // Create specialized profiles
-        if (dto.entityType === 'INFLUENCER') {
-          await tx.influencerProfile.create({
-            data: {
-              entityId: entityRecord.id,
-              niche: 'General',
-              followersCount: 0,
-            },
-          });
-        } else if (dto.entityType === 'PROFESSIONAL') {
-          await tx.professionalProfile.create({
-            data: {
-              entityId: entityRecord.id,
-              category: 'General',
-              experienceYears: 0,
-            },
-          });
-        } else if (dto.entityType === 'EVENT_ORGANIZER') {
-          await tx.eventOrganizerProfile.create({
-            data: {
-              entityId: entityRecord.id,
-              organizationName: entityName,
-            },
-          });
-        } else if (dto.entityType === 'ORGANIZATION') {
-          await tx.organizationProfile.create({
-            data: {
-              entityId: entityRecord.id,
-              ngoName: entityName,
-              registrationNumber: 'PENDING',
-              causeCategory: 'General',
-            },
-          });
-        } else if (dto.entityType === 'GOVERNMENT') {
-          await tx.governmentProfile.create({
-            data: {
-              entityId: entityRecord.id,
-              departmentName: entityName,
-              officialEmail: user.email,
-              departmentType: 'Local',
-              district: 'Default',
-            },
-          });
-        }
-
-        // Create onboarding progress
-        await tx.onboardingProgress.create({
-          data: {
-            tenantId: user.tenantId,
-            entityType: dto.entityType.toString(),
-            entityId: entityRecord.id,
-            currentStep: 1,
-            status: dto.entityType === 'CUSTOMER' ? 'ACTIVE' : 'PENDING_VERIFICATION',
-            stepsCompleted: ['START'],
-            metadata: {},
-          },
-        });
-
-        // VerificationRequest for non-CUSTOMER entities → admin queue
-        if (dto.entityType !== 'CUSTOMER') {
-          await tx.verificationRequest.create({
+          // Create onboarding progress
+          await tx.onboardingProgress.create({
             data: {
               tenantId: user.tenantId,
+              entityType: dto.entityType.toString(),
               entityId: entityRecord.id,
-              status: 'PENDING',
+              currentStep: 1,
+              status: dto.entityType === 'CUSTOMER' ? 'ACTIVE' : 'PENDING_VERIFICATION',
+              stepsCompleted: ['START'],
+              metadata: {},
             },
           });
-        }
 
-        // Create onboarding event
-        await tx.onboardingEvent.create({
-          data: {
-            tenantId: user.tenantId,
-            entityType: dto.entityType.toString(),
-            entityId: entityRecord.id,
-            event: 'ONBOARDING_STARTED',
-            metadata: { step: 1 },
-          },
-        });
+          // VerificationRequest for non-CUSTOMER entities → admin queue
+          if (dto.entityType !== 'CUSTOMER') {
+            await tx.verificationRequest.create({
+              data: {
+                tenantId: user.tenantId,
+                entityId: entityRecord.id,
+                status: 'PENDING',
+              },
+            });
+          }
 
-        return updatedUser;
-      }, { maxWait: 30000, timeout: 90000 });
+          // Create onboarding event
+          await tx.onboardingEvent.create({
+            data: {
+              tenantId: user.tenantId,
+              entityType: dto.entityType.toString(),
+              entityId: entityRecord.id,
+              event: 'ONBOARDING_STARTED',
+              metadata: { step: 1 },
+            },
+          });
+
+          return updatedUser;
+        },
+        { maxWait: 30000, timeout: 90000 },
+      );
 
       // Clear redis cache for this user
       await this.redisService.del(`user:${user.id}`);
@@ -1868,10 +1896,10 @@ export class AuthService {
     };
 
     const assignedRole = (roleMap[dto.organizationType] ?? 'NGO_ADMIN') as any;
-    const entityType   = (entityTypeMap[dto.organizationType] ?? 'NGO') as any;
+    const entityType = (entityTypeMap[dto.organizationType] ?? 'NGO') as any;
 
-    const passwordHash  = await this.passwordService.hash(dto.password);
-    const referralCode  = Math.random().toString(36).slice(2, 10).toUpperCase();
+    const passwordHash = await this.passwordService.hash(dto.password);
+    const referralCode = Math.random().toString(36).slice(2, 10).toUpperCase();
 
     // Resolve referrer if a code was supplied
     let referrerId: string | undefined;
@@ -1898,7 +1926,9 @@ export class AuthService {
             referralCode,
             ...(referrerId ? { referredBy: referrerId } : {}),
             ...(dto.acceptedTerms ? { acceptedTermsAt: new Date(), termsVersion: '1.0' } : {}),
-            ...(dto.acceptedPrivacyPolicy ? { acceptedPrivacyAt: new Date(), privacyPolicyVersion: '1.0' } : {}),
+            ...(dto.acceptedPrivacyPolicy
+              ? { acceptedPrivacyAt: new Date(), privacyPolicyVersion: '1.0' }
+              : {}),
           },
         });
 

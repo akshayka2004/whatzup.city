@@ -53,7 +53,10 @@ export function LocationExplainer({
     >
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-7">
         {/* Radar */}
-        <div className="relative mx-auto flex h-28 w-28 shrink-0 items-center justify-center sm:mx-0" aria-hidden>
+        <div
+          className="relative mx-auto flex h-28 w-28 shrink-0 items-center justify-center sm:mx-0"
+          aria-hidden
+        >
           <span className="absolute inset-0 rounded-full border border-primary/15" />
           <span className="absolute inset-3 rounded-full border border-primary/25" />
           <span className="absolute inset-6 rounded-full border border-primary/35" />

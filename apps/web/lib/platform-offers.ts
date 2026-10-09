@@ -15,14 +15,17 @@
 
 export const PLATFORM_OFFER_CATEGORIES = [
   { value: 'SADYA', label: 'Sadya', blurb: 'Onam sadya from hotels, home chefs and caterers' },
-  { value: 'PAYASAM', label: 'Payasam', blurb: 'Payasam varieties from hotels, home chefs and caterers' },
+  {
+    value: 'PAYASAM',
+    label: 'Payasam',
+    blurb: 'Payasam varieties from hotels, home chefs and caterers',
+  },
   { value: 'CLOTHING', label: 'Clothing', blurb: 'Apparel and fashion deals' },
   { value: 'ELECTRONICS', label: 'Electronics', blurb: 'Electronics and appliance deals' },
   { value: 'STAYCATION', label: 'Staycation', blurb: 'Stays and team day-out packages' },
 ] as const;
 
-export type PlatformOfferCategory =
-  (typeof PLATFORM_OFFER_CATEGORIES)[number]['value'];
+export type PlatformOfferCategory = (typeof PLATFORM_OFFER_CATEGORIES)[number]['value'];
 
 /** Staycation splits into two forms with different fields. */
 export const STAYCATION_SUBTYPES = [
@@ -182,7 +185,11 @@ export function deliverySummary(details?: PlatformOfferDetails): string[] {
  * per-option rates instead of one flat price, so the card/modal renders this
  * list wherever it's non-empty.
  */
-export function rateLines(category: string, subType: string | null | undefined, details?: PlatformOfferDetails): RateLine[] {
+export function rateLines(
+  category: string,
+  subType: string | null | undefined,
+  details?: PlatformOfferDetails,
+): RateLine[] {
   if (!details) return [];
   const lines: RateLine[] = [];
 

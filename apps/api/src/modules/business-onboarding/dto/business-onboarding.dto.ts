@@ -113,7 +113,11 @@ export class UpdateBusinessDetailsDto {
   socialLinks?: any;
 
   @ApiProperty({
-    example: { version: 1, weekly: { mon: { closed: false, shifts: [{ open: '09:00', close: '21:00' }] } }, closures: [] },
+    example: {
+      version: 1,
+      weekly: { mon: { closed: false, shifts: [{ open: '09:00', close: '21:00' }] } },
+      closures: [],
+    },
   })
   @IsOptional()
   @IsObject()
@@ -140,7 +144,8 @@ export class UpdateBusinessDetailsDto {
   @IsOptional() @IsObject() supportContact?: any;
   @IsOptional() @IsObject() branchHead?: any;
   @IsOptional() @IsObject() categoryAttributes?: any;
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   @MaxLength(30, { message: 'The bill series prefix is too long (30 characters max).' })
   billSeriesPrefix?: string;
 

@@ -91,7 +91,8 @@ export function BusinessNudges({ enabled }: { enabled: boolean }) {
 
   // Same eligibility test the menu prompt runs (it fetches again itself once chosen).
   useEffect(() => {
-    if (!bizId || !isFood || paywallClear !== true || readSession(dismissKey('menu', bizId))) return;
+    if (!bizId || !isFood || paywallClear !== true || readSession(dismissKey('menu', bizId)))
+      return;
     let alive = true;
     apiService.get<any[]>(`/v1/media/menu/business/${bizId}`).then((res) => {
       if (alive) setMenuEmpty(!res.error && Array.isArray(res.data) && res.data.length === 0);
@@ -145,7 +146,11 @@ export function BusinessNudges({ enabled }: { enabled: boolean }) {
             <p className="mt-0.5 text-xs text-muted-foreground">
               Customers see whether you are open right now. It takes a minute.
             </p>
-            <Button asChild size="sm" className="mt-2.5 h-10 rounded-xl px-4 cursor-pointer ui-press">
+            <Button
+              asChild
+              size="sm"
+              className="mt-2.5 h-10 rounded-xl px-4 cursor-pointer ui-press"
+            >
               <Link href="/dashboard/settings#hours" onClick={() => dismiss('hours')}>
                 Set opening hours
               </Link>
@@ -164,7 +169,8 @@ export function BusinessNudges({ enabled }: { enabled: boolean }) {
     );
   }
 
-  if (pathname.startsWith('/dashboard/settings') || pathname.startsWith('/dashboard/outlets')) return null;
+  if (pathname.startsWith('/dashboard/settings') || pathname.startsWith('/dashboard/outlets'))
+    return null;
   return (
     <BrandConversionPrompt
       businessId={biz.id}

@@ -6,7 +6,8 @@ export const publicPages = {
   en: {
     'home.hero.lead': 'Find what’s good in',
     'home.hero.trail': '',
-    'home.hero.subtitle': 'Verified businesses, live offers, events and civic updates — all in one place.',
+    'home.hero.subtitle':
+      'Verified businesses, live offers, events and civic updates — all in one place.',
     'home.hero.placeholder': 'Restaurants, doctors, shops…',
     'home.allCities': 'All cities',
     'home.trendingOffers': 'Trending Offers',
@@ -63,7 +64,8 @@ export const publicPages = {
   ml: {
     'home.hero.lead': '',
     'home.hero.trail': 'യിലെ മികച്ചവ കണ്ടെത്തൂ',
-    'home.hero.subtitle': 'പരിശോധിച്ച ബിസിനസുകൾ, തത്സമയ ഓഫറുകൾ, ഇവന്റുകൾ, പൊതു അറിയിപ്പുകൾ — എല്ലാം ഒരിടത്ത്.',
+    'home.hero.subtitle':
+      'പരിശോധിച്ച ബിസിനസുകൾ, തത്സമയ ഓഫറുകൾ, ഇവന്റുകൾ, പൊതു അറിയിപ്പുകൾ — എല്ലാം ഒരിടത്ത്.',
     'home.hero.placeholder': 'റസ്റ്റോറന്റുകൾ, ഡോക്ടർമാർ, കടകൾ…',
     'home.allCities': 'എല്ലാ നഗരങ്ങളും',
     'home.trendingOffers': 'ട്രെൻഡിംഗ് ഓഫറുകൾ',

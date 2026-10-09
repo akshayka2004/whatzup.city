@@ -131,8 +131,8 @@ import { TrialsModule } from './modules/trials/trials.module';
         defaultJobOptions: {
           attempts: 3,
           backoff: { type: 'exponential', delay: 1000 },
-          removeOnComplete: { count: 100 },  // keep last 100 completed
-          removeOnFail:     { count: 200 },  // keep last 200 failed for inspection
+          removeOnComplete: { count: 100 }, // keep last 100 completed
+          removeOnFail: { count: 200 }, // keep last 200 failed for inspection
         },
       }),
       inject: [ConfigService],

@@ -12,7 +12,11 @@ describe('digestText', () => {
   const zero = { views: 0, actions: 0, claims: 0, verifiedBills: 0, verifiedSpend: 0 };
 
   it('reports week-on-week change and pluralises', () => {
-    const { title, body } = digestText('1940', { views: 1200, actions: 1, claims: 3, verifiedBills: 2, verifiedSpend: 4500 }, { views: 1000, actions: 2, claims: 3, verifiedBills: 0, verifiedSpend: 0 });
+    const { title, body } = digestText(
+      '1940',
+      { views: 1200, actions: 1, claims: 3, verifiedBills: 2, verifiedSpend: 4500 },
+      { views: 1000, actions: 2, claims: 3, verifiedBills: 0, verifiedSpend: 0 },
+    );
     expect(title).toBe('1940: your week on Whtzup.city');
     expect(body).toContain('1,200 profile views (▲ 20%)');
     expect(body).toContain('1 call/direction/WhatsApp tap (▼ 50%)');

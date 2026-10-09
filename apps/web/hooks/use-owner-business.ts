@@ -49,16 +49,19 @@ export function invalidateOwnerBusinessCache() {
 export function loadOwnerBusinessList(userId: string): Promise<OwnerBusinessList | null> {
   if (!cached || cachedForUser !== userId) {
     cachedForUser = userId;
-    const request: Promise<OwnerBusinessList | null> = apiService.get<any>('/v1/businesses/owner/mine').then((res) => {
-      const body = res.data;
-      const list: OwnerBusiness[] = Array.isArray(body) ? body : body?.data ?? [];
-      if (res.error || !list.length) {
-        if (cached === request) cached = null; // let a later mount retry
-        return null;
-      }
-      const activeBusinessId: string = body?.activeBusinessId ?? body?.data?.activeBusinessId ?? list[0].id;
-      return { list, activeBusinessId };
-    });
+    const request: Promise<OwnerBusinessList | null> = apiService
+      .get<any>('/v1/businesses/owner/mine')
+      .then((res) => {
+        const body = res.data;
+        const list: OwnerBusiness[] = Array.isArray(body) ? body : (body?.data ?? []);
+        if (res.error || !list.length) {
+          if (cached === request) cached = null; // let a later mount retry
+          return null;
+        }
+        const activeBusinessId: string =
+          body?.activeBusinessId ?? body?.data?.activeBusinessId ?? list[0].id;
+        return { list, activeBusinessId };
+      });
     cached = request;
   }
   return cached;

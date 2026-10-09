@@ -17,13 +17,28 @@ import { ResultsGrid } from '@/components/public/search/results-grid';
 import { SearchPageSkeleton } from '@/components/public/search/search-skeleton';
 import { useUrlState } from '@/components/public/search/use-url-state';
 import {
-  applyClientFilters, detectCapabilities, parseFilters, sortItems, toList, totalOf, writeFilters,
-  DEFAULT_FILTERS, type Filters,
+  applyClientFilters,
+  detectCapabilities,
+  parseFilters,
+  sortItems,
+  toList,
+  totalOf,
+  writeFilters,
+  DEFAULT_FILTERS,
+  type Filters,
 } from '@/components/public/search/filters';
 
 const PAGE = 24;
 const MAX_LIMIT = 120;
-const URL_KEYS: (keyof Filters)[] = ['open', 'rating4', 'halal', 'fulfilment', 'sort', 'city', 'sub'];
+const URL_KEYS: (keyof Filters)[] = [
+  'open',
+  'rating4',
+  'halal',
+  'fulfilment',
+  'sort',
+  'city',
+  'sub',
+];
 const SORTS = ['relevant', 'rating', 'reviews', 'newest'] as const;
 const parseCat = (sp: URLSearchParams): Filters => parseFilters(sp);
 const applyCat = (sp: URLSearchParams, v: Filters) => writeFilters(sp, v, URL_KEYS);
@@ -109,12 +124,24 @@ function CategoryContent() {
     params.set('limit', String(limit));
     return `/v1/businesses?${params.toString()}`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [match?.id, rawType, filters.sub, filters.city, limit, filtering, filters.open, filters.rating4, filters.halal, filters.fulfilment]);
+  }, [
+    match?.id,
+    rawType,
+    filters.sub,
+    filters.city,
+    limit,
+    filtering,
+    filters.open,
+    filters.rating4,
+    filters.halal,
+    filters.fulfilment,
+  ]);
 
   const res = useCachedGet<any>(key, { enabled: catsReady && cityReady });
   const list = useMemo(() => toList(res.data), [res.data]);
   const total = totalOf(res.data);
-  const hasMore = list.length >= limit && limit < MAX_LIMIT && (total == null || list.length < total);
+  const hasMore =
+    list.length >= limit && limit < MAX_LIMIT && (total == null || list.length < total);
 
   const caps = useMemo(() => detectCapabilities(list), [list]);
   const filtered = useMemo(
@@ -130,13 +157,16 @@ function CategoryContent() {
     widened.current = 0;
   }, [rawType, filters.city, filters.sub, filters.open]);
   useEffect(() => {
-    if (!filters.open || !hasMore || res.loading || results.length >= 6 || widened.current >= 2) return;
+    if (!filters.open || !hasMore || res.loading || results.length >= 6 || widened.current >= 2)
+      return;
     widened.current += 1;
     widenWindow();
   }, [filters.open, hasMore, res.loading, results.length, widenWindow]);
 
   const loading =
-    !(catsReady && cityReady) || (res.data == null && !res.error) || (res.loading && list.length === 0);
+    !(catsReady && cityReady) ||
+    (res.data == null && !res.error) ||
+    (res.loading && list.length === 0);
   const refreshing = res.loading && list.length > 0;
   const failed = !!res.error && list.length === 0 && !res.loading;
 
@@ -162,7 +192,7 @@ function CategoryContent() {
   const heroName: string = match?.name || categoryTitle;
   const Icon = categoryIconFor(match?.slug || match?.name || rawType);
   const clientOnly = false;
-  const shown = clientOnly ? results.length : total ?? results.length;
+  const shown = clientOnly ? results.length : (total ?? results.length);
   const countText = loading
     ? ''
     : `${shown}${clientOnly && hasMore ? '+' : ''} ${shown === 1 && !(clientOnly && hasMore) ? 'business' : 'businesses'}${filters.city ? ` in ${filters.city}` : ''}`;
@@ -186,7 +216,9 @@ function CategoryContent() {
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-bold text-foreground sm:text-3xl">{heroName}</h1>
-            <p className="mt-0.5 text-sm text-muted-foreground">Browse verified businesses in this category</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Browse verified businesses in this category
+            </p>
           </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2" aria-live="polite">
@@ -207,7 +239,10 @@ function CategoryContent() {
 
       {/* Subcategories when this category has them, otherwise the top-level categories */}
       {subcategories.length > 0 ? (
-        <nav aria-label="Subcategories" className="-mx-4 mb-3 flex snap-x gap-2 overflow-x-auto px-4 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
+        <nav
+          aria-label="Subcategories"
+          className="-mx-4 mb-3 flex snap-x gap-2 overflow-x-auto px-4 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
+        >
           <button
             type="button"
             aria-pressed={!filters.sub}
@@ -230,8 +265,15 @@ function CategoryContent() {
         </nav>
       ) : (
         catList.length > 0 && (
-          <nav aria-label="Categories" className="-mx-4 mb-3 flex snap-x gap-2 overflow-x-auto px-4 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
-            <Link href={hrefFor('')} className={chip(rawType === 'all')} aria-current={rawType === 'all' ? 'page' : undefined}>
+          <nav
+            aria-label="Categories"
+            className="-mx-4 mb-3 flex snap-x gap-2 overflow-x-auto px-4 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
+          >
+            <Link
+              href={hrefFor('')}
+              className={chip(rawType === 'all')}
+              aria-current={rawType === 'all' ? 'page' : undefined}
+            >
               All
             </Link>
             {catList.map((c: any) => (
@@ -250,7 +292,12 @@ function CategoryContent() {
 
       {/* Sticky filters */}
       <div className="sticky top-0 z-30 -mx-4 border-b border-border/60 bg-background/95 px-4 py-2">
-        <FilterBar filters={filters} onChange={setFilters} show={show} resultCount={results.length} />
+        <FilterBar
+          filters={filters}
+          onChange={setFilters}
+          show={show}
+          resultCount={results.length}
+        />
       </div>
       <ActiveFilters className="mt-3" filters={filters} onChange={setFilters} show={show} />
 
@@ -277,10 +324,17 @@ function CategoryContent() {
                     ? { label: `All ${heroName}`, onClick: () => update({ sub: '' }) }
                     : undefined
             }
-            secondary={rawType !== 'all' ? { label: 'Browse all businesses', href: '/category' } : { label: 'Search instead', href: '/search' }}
+            secondary={
+              rawType !== 'all'
+                ? { label: 'Browse all businesses', href: '/category' }
+                : { label: 'Search instead', href: '/search' }
+            }
           />
         ) : (
-          <div aria-busy={refreshing} className={refreshing ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
+          <div
+            aria-busy={refreshing}
+            className={refreshing ? 'opacity-60 transition-opacity' : 'transition-opacity'}
+          >
             <ResultsGrid items={results} />
             {hasMore && (
               <div className="mt-6 flex justify-center">

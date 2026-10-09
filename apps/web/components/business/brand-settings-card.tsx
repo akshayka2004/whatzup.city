@@ -57,9 +57,9 @@ export function BrandSettingsCard() {
           <div className="min-w-0">
             <h3 className="text-base font-semibold text-foreground">Brand account</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Run more than one outlet? Group them under one brand. Every outlet keeps its own address, hours,
-              offers, QR code, plan and bills. You switch between them from one login and share a single invoice
-              profile.
+              Run more than one outlet? Group them under one brand. Every outlet keeps its own
+              address, hours, offers, QR code, plan and bills. You switch between them from one
+              login and share a single invoice profile.
             </p>
           </div>
         </div>
@@ -84,13 +84,16 @@ export function BrandSettingsCard() {
     );
   }
 
-  const seriesChanged = mode !== brand.billSeriesMode || (mode === 'SHARED' && prefix.trim() !== (brand.billSeriesPrefix ?? ''));
+  const seriesChanged =
+    mode !== brand.billSeriesMode ||
+    (mode === 'SHARED' && prefix.trim() !== (brand.billSeriesPrefix ?? ''));
   const dirty = name.trim() !== brand.name || seriesChanged;
 
   const validate = (): string => {
     if (!name.trim()) return 'Brand name is required.';
     if (!mode) return 'Choose whether the bill number series is shared.';
-    if (mode === 'SHARED' && !prefix.trim()) return 'Enter the shared bill series prefix, e.g. SC/2026/.';
+    if (mode === 'SHARED' && !prefix.trim())
+      return 'Enter the shared bill series prefix, e.g. SC/2026/.';
     return '';
   };
 
@@ -166,7 +169,10 @@ export function BrandSettingsCard() {
       </p>
 
       {error && (
-        <p role="alert" className="rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2 text-xs text-danger-soft-foreground">
+        <p
+          role="alert"
+          className="rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2 text-xs text-danger-soft-foreground"
+        >
           {error}
         </p>
       )}
@@ -204,12 +210,16 @@ export function BrandSettingsCard() {
           <DialogHeader>
             <DialogTitle>Change the bill series?</DialogTitle>
             <DialogDescription>
-              Bill checks at all {outlets.length} outlet{outlets.length === 1 ? '' : 's'} will follow the new
-              series.
+              Bill checks at all {outlets.length} outlet{outlets.length === 1 ? '' : 's'} will
+              follow the new series.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)} className="h-11 rounded-xl cursor-pointer">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              className="h-11 rounded-xl cursor-pointer"
+            >
               Cancel
             </Button>
             <Button onClick={save} className="h-11 rounded-xl cursor-pointer">

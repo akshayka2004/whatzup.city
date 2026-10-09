@@ -40,7 +40,12 @@ export class BrandScopeService {
       },
     });
     if (!business?.brandId || !business.brand) {
-      return { mode: 'SINGLE', prefix: business?.billSeriesPrefix ?? null, brandId: null, outletIds: [businessId] };
+      return {
+        mode: 'SINGLE',
+        prefix: business?.billSeriesPrefix ?? null,
+        brandId: null,
+        outletIds: [businessId],
+      };
     }
     const outletIds = await this.outletIds(business.brandId);
     const shared = business.brand.billSeriesMode === 'SHARED';

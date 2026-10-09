@@ -10,18 +10,18 @@ import { RedisService } from '../../common/redis/redis.service';
 import { CryptoService } from '../../common/crypto/crypto.service';
 import { AuditService } from '../audit/audit.service';
 import { SearchService } from '../search/search.service';
-import {
-  AddOutletDto,
-  ConvertBrandDto,
-  UpdateBrandDto,
-  UpdateOutletDto,
-} from './dto/brand.dto';
+import { AddOutletDto, ConvertBrandDto, UpdateBrandDto, UpdateOutletDto } from './dto/brand.dto';
 
 const SNOOZE_DAYS = 7;
 
 function slugify(name: string): string {
   return (
-    name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36)
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') +
+    '-' +
+    Date.now().toString(36)
   );
 }
 
@@ -68,7 +68,9 @@ export class BrandsService {
 
   private async ownedBrand(userId: string, brandId: string) {
     // tenant-scope-ok: ownership (ownerId) is the scope
-    const brand = await this.db.brand.findFirst({ where: { id: brandId, ownerId: userId, deletedAt: null } });
+    const brand = await this.db.brand.findFirst({
+      where: { id: brandId, ownerId: userId, deletedAt: null },
+    });
     if (!brand) throw new NotFoundException('Brand not found');
     return brand;
   }
@@ -103,14 +105,20 @@ export class BrandsService {
       select: { id: true, tenantId: true, name: true, status: true, brandId: true },
     });
     if (!business) throw new NotFoundException('Business not found');
-    if (business.brandId) throw new ConflictException('This business is already part of a brand account.');
+    if (business.brandId)
+      throw new ConflictException('This business is already part of a brand account.');
     if (['REJECTED', 'ARCHIVED'].includes(business.status)) {
       throw new BadRequestException('This business cannot be converted in its current state.');
     }
     // tenant-scope-ok: ownerId is the scope
-    const existing = await this.db.brand.findFirst({ where: { ownerId: userId, deletedAt: null }, select: { name: true } });
+    const existing = await this.db.brand.findFirst({
+      where: { ownerId: userId, deletedAt: null },
+      select: { name: true },
+    });
     if (existing) {
-      throw new ConflictException(`You already have a brand account (${existing.name}). Add new outlets from the Outlets page.`);
+      throw new ConflictException(
+        `You already have a brand account (${existing.name}). Add new outlets from the Outlets page.`,
+      );
     }
 
     const name = dto.brandName.trim();
@@ -179,7 +187,10 @@ export class BrandsService {
     if (business.brandId) return { ok: true };
     await this.db.business.update({
       where: { id: business.id },
-      data: { brandPromptStatus: response === 'DECLINE' ? 'DECLINED' : 'SNOOZED', brandPromptAt: new Date() },
+      data: {
+        brandPromptStatus: response === 'DECLINE' ? 'DECLINED' : 'SNOOZED',
+        brandPromptAt: new Date(),
+      },
     });
     this.audit.log({
       tenantId: business.tenantId,
@@ -230,7 +241,10 @@ export class BrandsService {
     const { businesses, ...rest } = brand;
     return {
       brand: rest,
-      outlets: businesses.map(({ subscriptions, ...o }) => ({ ...o, subscription: subscriptions[0] ?? null })),
+      outlets: businesses.map(({ subscriptions, ...o }) => ({
+        ...o,
+        subscription: subscriptions[0] ?? null,
+      })),
     };
   }
 
@@ -238,7 +252,9 @@ export class BrandsService {
   async summary(userId: string, brandId: string) {
     await this.ownedBrand(userId, brandId);
     // tenant-scope-ok: brand outlets are the scope
-    const ids = (await this.db.business.findMany({ where: { brandId, deletedAt: null }, select: { id: true } })).map((b) => b.id);
+    const ids = (
+      await this.db.business.findMany({ where: { brandId, deletedAt: null }, select: { id: true } })
+    ).map((b) => b.id);
     const [spend, pending, offers] = await Promise.all([
       this.db.verifiedPurchase.groupBy({
         by: ['businessId'],
@@ -257,8 +273,17 @@ export class BrandsService {
         _count: { _all: true },
       }),
     ]);
-    const byId: Record<string, { verifiedPurchases: number; verifiedSpend: number; pendingBills: number; activeOffers: number }> = {};
-    for (const id of ids) byId[id] = { verifiedPurchases: 0, verifiedSpend: 0, pendingBills: 0, activeOffers: 0 };
+    const byId: Record<
+      string,
+      {
+        verifiedPurchases: number;
+        verifiedSpend: number;
+        pendingBills: number;
+        activeOffers: number;
+      }
+    > = {};
+    for (const id of ids)
+      byId[id] = { verifiedPurchases: 0, verifiedSpend: 0, pendingBills: 0, activeOffers: 0 };
     for (const r of spend) {
       byId[r.businessId].verifiedPurchases = r._count._all;
       byId[r.businessId].verifiedSpend = Number(r._sum.amount ?? 0);
@@ -283,7 +308,15 @@ export class BrandsService {
     return this.db.business.findMany({
       where: { brandId, deletedAt: null, status: 'APPROVED' },
       orderBy: [{ isBrandHq: 'desc' }, { createdAt: 'asc' }],
-      select: { id: true, name: true, slug: true, outletLabel: true, city: true, district: true, logo: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        outletLabel: true,
+        city: true,
+        district: true,
+        logo: true,
+      },
     });
   }
 
@@ -325,7 +358,10 @@ export class BrandsService {
     }
 
     const nextMode = dto.billSeriesMode ?? brand.billSeriesMode;
-    const nextPrefixRaw = dto.billSeriesPrefix !== undefined ? dto.billSeriesPrefix.trim() : brand.billSeriesPrefix ?? '';
+    const nextPrefixRaw =
+      dto.billSeriesPrefix !== undefined
+        ? dto.billSeriesPrefix.trim()
+        : (brand.billSeriesPrefix ?? '');
     if (nextMode === 'SHARED' && !nextPrefixRaw) {
       throw new BadRequestException('Enter the bill series prefix your outlets share.');
     }
@@ -344,14 +380,21 @@ export class BrandsService {
     const updated = await this.db.$transaction(async (tx) => {
       const b = await tx.brand.update({ where: { id: brand.id }, data });
       // Going back to per-outlet series: keep each outlet matching what it was using (the shared prefix).
-      if (brand.billSeriesMode === 'SHARED' && nextMode === 'PER_OUTLET' && brand.billSeriesPrefix) {
+      if (
+        brand.billSeriesMode === 'SHARED' &&
+        nextMode === 'PER_OUTLET' &&
+        brand.billSeriesPrefix
+      ) {
         await tx.business.updateMany({
           where: { brandId: brand.id, deletedAt: null, billSeriesPrefix: null },
           data: { billSeriesPrefix: brand.billSeriesPrefix },
         });
       }
       if (data.name) {
-        await tx.business.updateMany({ where: { brandId: brand.id }, data: { brandName: data.name } });
+        await tx.business.updateMany({
+          where: { brandId: brand.id },
+          data: { brandName: data.name },
+        });
       }
       return b;
     });
@@ -377,7 +420,10 @@ export class BrandsService {
     });
     if (data.name) {
       // tenant-scope-ok: brand outlets are the scope
-      const outlets = await this.db.business.findMany({ where: { brandId: brand.id, deletedAt: null }, select: { id: true } });
+      const outlets = await this.db.business.findMany({
+        where: { brandId: brand.id, deletedAt: null },
+        select: { id: true },
+      });
       for (const o of outlets) await this.afterBusinessChange(o.id, brand.tenantId);
     }
     return updated;
@@ -393,7 +439,9 @@ export class BrandsService {
   async addOutlet(userId: string, brandId: string, dto: AddOutletDto) {
     const brand = await this.ownedBrand(userId, brandId);
     if (brand.status !== 'ACTIVE') {
-      throw new BadRequestException('This brand account is suspended, so new outlets cannot be added. Contact support.');
+      throw new BadRequestException(
+        'This brand account is suspended, so new outlets cannot be added. Contact support.',
+      );
     }
 
     const hq = await this.db.business.findFirst({
@@ -422,7 +470,10 @@ export class BrandsService {
       where: { name: { equals: name, mode: 'insensitive' }, deletedAt: null },
       select: { id: true },
     });
-    if (dupName) throw new ConflictException(`An outlet named "${name}" already exists. Use a different outlet name or area.`);
+    if (dupName)
+      throw new ConflictException(
+        `An outlet named "${name}" already exists. Use a different outlet name or area.`,
+      );
 
     // Contact details are unique per tenant, and the outlets share the brand's tenant, so each
     // outlet needs its own phone and email (they can't reuse the head outlet's).
@@ -538,7 +589,10 @@ export class BrandsService {
     });
     if (!outlet) throw new NotFoundException('Outlet not found');
     const label = dto.outletLabel.trim();
-    const updated = await this.db.business.update({ where: { id: outlet.id }, data: { outletLabel: label, updatedBy: userId } });
+    const updated = await this.db.business.update({
+      where: { id: outlet.id },
+      data: { outletLabel: label, updatedBy: userId },
+    });
     await this.recordEvent({
       tenantId: brand.tenantId,
       brandId,
@@ -563,9 +617,15 @@ export class BrandsService {
     if (outlet.isBrandHq) throw new BadRequestException('The head outlet cannot be removed.');
 
     await this.db.$transaction(async (tx) => {
-      await tx.business.update({ where: { id: outlet.id }, data: { deletedAt: new Date(), status: 'ARCHIVED', updatedBy: userId } });
+      await tx.business.update({
+        where: { id: outlet.id },
+        data: { deletedAt: new Date(), status: 'ARCHIVED', updatedBy: userId },
+      });
       // If it was the outlet the owner was operating, fall back to the default.
-      await tx.user.updateMany({ where: { id: userId, activeBusinessId: outlet.id }, data: { activeBusinessId: null } });
+      await tx.user.updateMany({
+        where: { id: userId, activeBusinessId: outlet.id },
+        data: { activeBusinessId: null },
+      });
     });
     await this.redis.del(`user:${userId}`);
     await this.recordEvent({
@@ -599,7 +659,8 @@ export class BrandsService {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.min(Math.max(Number(params.limit) || 25, 1), 100);
     const where: any = { deletedAt: null };
-    if (params.status && ['ACTIVE', 'SUSPENDED'].includes(params.status)) where.status = params.status;
+    if (params.status && ['ACTIVE', 'SUSPENDED'].includes(params.status))
+      where.status = params.status;
     if (params.q?.trim()) where.name = { contains: params.q.trim(), mode: 'insensitive' };
     const [rows, total] = await Promise.all([
       // tenant-scope-ok: platform-wide brands oversight (super-admin)
@@ -615,7 +676,11 @@ export class BrandsService {
             where: { deletedAt: null },
             select: { id: true, status: true },
           },
-          events: { orderBy: { createdAt: 'desc' }, take: 1, select: { type: true, summary: true, createdAt: true } },
+          events: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            select: { type: true, summary: true, createdAt: true },
+          },
         },
       }),
       // tenant-scope-ok: platform-wide brands oversight (super-admin)
@@ -624,7 +689,9 @@ export class BrandsService {
     const data = rows.map(({ businesses, events, _count, ...b }) => ({
       ...b,
       outletCount: businesses.length,
-      pendingOutlets: businesses.filter((x) => ['PENDING_VERIFICATION', 'UNDER_REVIEW', 'DRAFT'].includes(x.status)).length,
+      pendingOutlets: businesses.filter((x) =>
+        ['PENDING_VERIFICATION', 'UNDER_REVIEW', 'DRAFT'].includes(x.status),
+      ).length,
       lastEvent: events[0] ?? null,
     }));
     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
@@ -640,10 +707,23 @@ export class BrandsService {
           where: { deletedAt: null },
           orderBy: [{ isBrandHq: 'desc' }, { createdAt: 'asc' }],
           select: {
-            id: true, name: true, slug: true, outletLabel: true, isBrandHq: true, status: true, city: true,
-            billSeriesPrefix: true, launchOfferClaimedAt: true, createdAt: true,
+            id: true,
+            name: true,
+            slug: true,
+            outletLabel: true,
+            isBrandHq: true,
+            status: true,
+            city: true,
+            billSeriesPrefix: true,
+            launchOfferClaimedAt: true,
+            createdAt: true,
             category: { select: { name: true } },
-            subscriptions: { where: { deletedAt: null }, orderBy: { createdAt: 'desc' }, take: 1, select: { packageName: true, status: true, endDate: true } },
+            subscriptions: {
+              where: { deletedAt: null },
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              select: { packageName: true, status: true, endDate: true },
+            },
           },
         },
         events: { orderBy: { createdAt: 'desc' }, take: 100 },
@@ -651,7 +731,13 @@ export class BrandsService {
     });
     if (!brand) throw new NotFoundException('Brand not found');
     const { businesses, ...rest } = brand;
-    return { brand: rest, outlets: businesses.map(({ subscriptions, ...o }) => ({ ...o, subscription: subscriptions[0] ?? null })) };
+    return {
+      brand: rest,
+      outlets: businesses.map(({ subscriptions, ...o }) => ({
+        ...o,
+        subscription: subscriptions[0] ?? null,
+      })),
+    };
   }
 
   async adminEvents(params: { brandId?: string; type?: string; page?: number; limit?: number }) {
@@ -680,7 +766,10 @@ export class BrandsService {
     const brand = await this.db.brand.findFirst({ where: { id: brandId, deletedAt: null } });
     if (!brand) throw new NotFoundException('Brand not found');
     if (brand.status === status) return brand;
-    const updated = await this.db.brand.update({ where: { id: brandId }, data: { status, updatedBy: adminId } });
+    const updated = await this.db.brand.update({
+      where: { id: brandId },
+      data: { status, updatedBy: adminId },
+    });
     await this.recordEvent({
       tenantId: brand.tenantId,
       brandId,
@@ -698,4 +787,3 @@ export class BrandsService {
     return updated;
   }
 }
-

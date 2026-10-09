@@ -7,7 +7,6 @@ export function LegalFooter() {
     <footer className="mt-auto w-full border-t border-border bg-card">
       <div className="w-full px-6 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-
           {/* Brand */}
           <div className="flex items-center gap-2">
             <BrandLogo alt="Whtzup.city" className="h-7 w-auto object-contain" />
@@ -47,7 +46,6 @@ export function LegalFooter() {
           <p className="text-xs text-muted-foreground text-center sm:text-right">
             © {year} Lifeart Business Services Pvt. Ltd.
           </p>
-
         </div>
       </div>
     </footer>

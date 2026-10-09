@@ -67,7 +67,13 @@ export class TypesenseService implements OnModuleInit {
     try {
       await this.client.collections('businesses').retrieve();
       // Collection exists — add any missing optional fields (graceful migration)
-      const newOptionalFields = ['subcategoryName', 'tags', 'branchNames', 'offerTitles', 'productNames'];
+      const newOptionalFields = [
+        'subcategoryName',
+        'tags',
+        'branchNames',
+        'offerTitles',
+        'productNames',
+      ];
       try {
         await this.client.collections('businesses').update({
           fields: newOptionalFields.map((name) =>
@@ -112,7 +118,10 @@ export class TypesenseService implements OnModuleInit {
   async hasDocuments(collection: string): Promise<boolean> {
     if (!this.isEnabled) return false;
     try {
-      const res = await this.client.collections(collection).documents().search({ q: '*', per_page: 0 });
+      const res = await this.client
+        .collections(collection)
+        .documents()
+        .search({ q: '*', per_page: 0 });
       return res.found > 0;
     } catch {
       return false;

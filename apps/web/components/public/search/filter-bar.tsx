@@ -5,17 +5,24 @@ import { useI18n } from '@/lib/i18n/provider';
 import { useState } from 'react';
 import { BadgeCheck, Clock, SlidersHorizontal, Star, Tag, X } from 'lucide-react';
 import {
-  Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle,
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
 } from '@/components/ui/drawer';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { KERALA_CITIES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
-import {
-  SORT_LABELS, countActive, type Filters, type SortKey,
-} from './filters';
+import { SORT_LABELS, countActive, type Filters, type SortKey } from './filters';
 
 /** Which controls a page offers. Anything omitted is simply not rendered. */
 export interface FilterShow {
@@ -137,7 +144,9 @@ export function FilterBar({
             <button
               type="button"
               aria-pressed={filters.fulfilment === 'DINE_IN'}
-              onClick={() => onChange({ fulfilment: filters.fulfilment === 'DINE_IN' ? '' : 'DINE_IN' })}
+              onClick={() =>
+                onChange({ fulfilment: filters.fulfilment === 'DINE_IN' ? '' : 'DINE_IN' })
+              }
               className={chipClass(filters.fulfilment === 'DINE_IN')}
             >
               <Tag className="h-4 w-4" />
@@ -146,7 +155,9 @@ export function FilterBar({
             <button
               type="button"
               aria-pressed={filters.fulfilment === 'TAKEAWAY'}
-              onClick={() => onChange({ fulfilment: filters.fulfilment === 'TAKEAWAY' ? '' : 'TAKEAWAY' })}
+              onClick={() =>
+                onChange({ fulfilment: filters.fulfilment === 'TAKEAWAY' ? '' : 'TAKEAWAY' })
+              }
               className={chipClass(filters.fulfilment === 'TAKEAWAY')}
             >
               <Tag className="h-4 w-4" />
@@ -166,7 +177,9 @@ export function FilterBar({
             </SelectTrigger>
             <SelectContent>
               {show.sorts.map((s) => (
-                <SelectItem key={s} value={s}>{SORT_LABELS[s]}</SelectItem>
+                <SelectItem key={s} value={s}>
+                  {SORT_LABELS[s]}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -185,7 +198,9 @@ export function FilterBar({
             <SelectContent>
               <SelectItem value="all">All cities</SelectItem>
               {KERALA_CITIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -206,8 +221,16 @@ export function FilterBar({
 }
 
 function ToggleRow({
-  label, hint, checked, onCheckedChange,
-}: { label: string; hint?: string; checked: boolean; onCheckedChange: (v: boolean) => void }) {
+  label,
+  hint,
+  checked,
+  onCheckedChange,
+}: {
+  label: string;
+  hint?: string;
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+}) {
   return (
     <label className="flex min-h-12 cursor-pointer items-center justify-between gap-4 py-1.5">
       <span className="min-w-0">
@@ -238,7 +261,12 @@ function FilterSheet({
 }) {
   const active = countActive(filters, keysFor(show), defaultSort);
   const reset: Partial<Filters> = {
-    open: false, rating4: false, halal: false, fulfilment: '', sort: defaultSort, city: '',
+    open: false,
+    rating4: false,
+    halal: false,
+    fulfilment: '',
+    sort: defaultSort,
+    city: '',
   };
 
   return (
@@ -253,13 +281,26 @@ function FilterSheet({
           {(show.open || show.rating || show.halal || show.fulfilment) && (
             <section aria-label="Show only" className="divide-y divide-border">
               {show.open && (
-                <ToggleRow label="Open now" hint="Based on the hours the business has listed" checked={filters.open} onCheckedChange={(v) => onChange({ open: v })} />
+                <ToggleRow
+                  label="Open now"
+                  hint="Based on the hours the business has listed"
+                  checked={filters.open}
+                  onCheckedChange={(v) => onChange({ open: v })}
+                />
               )}
               {show.rating && (
-                <ToggleRow label="Rating 4+" checked={filters.rating4} onCheckedChange={(v) => onChange({ rating4: v })} />
+                <ToggleRow
+                  label="Rating 4+"
+                  checked={filters.rating4}
+                  onCheckedChange={(v) => onChange({ rating4: v })}
+                />
               )}
               {show.halal && (
-                <ToggleRow label="Halal" checked={filters.halal} onCheckedChange={(v) => onChange({ halal: v })} />
+                <ToggleRow
+                  label="Halal"
+                  checked={filters.halal}
+                  onCheckedChange={(v) => onChange({ halal: v })}
+                />
               )}
               {show.fulfilment && (
                 <>
@@ -282,7 +323,9 @@ function FilterSheet({
 
           {show.sorts.length > 1 && (
             <section aria-label="Sort by">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Sort by</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Sort by
+              </p>
               <div role="radiogroup" aria-label="Sort by" className="grid grid-cols-2 gap-2">
                 {show.sorts.map((s) => (
                   <button
@@ -291,7 +334,10 @@ function FilterSheet({
                     role="radio"
                     aria-checked={filters.sort === s}
                     onClick={() => onChange({ sort: s })}
-                    className={cn(chipClass(filters.sort === s), 'w-full justify-center rounded-xl')}
+                    className={cn(
+                      chipClass(filters.sort === s),
+                      'w-full justify-center rounded-xl',
+                    )}
                   >
                     {SORT_LABELS[s]}
                   </button>
@@ -302,7 +348,9 @@ function FilterSheet({
 
           {show.city && (
             <section aria-label="City">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">City</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                City
+              </p>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -342,7 +390,9 @@ function FilterSheet({
             onClick={() => onOpenChange(false)}
             className="ui-press inline-flex h-11 flex-[2] items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            {resultCount != null ? `Show ${resultCount} ${resultCount === 1 ? 'result' : 'results'}` : 'Show results'}
+            {resultCount != null
+              ? `Show ${resultCount} ${resultCount === 1 ? 'result' : 'results'}`
+              : 'Show results'}
           </button>
         </DrawerFooter>
       </DrawerContent>
@@ -368,9 +418,12 @@ export function ActiveFilters({
   className?: string;
 }) {
   const items: { key: string; label: string; onRemove: () => void }[] = [];
-  if (show.open && filters.open) items.push({ key: 'open', label: 'Open now', onRemove: () => onChange({ open: false }) });
-  if (show.rating && filters.rating4) items.push({ key: 'rating', label: 'Rating 4+', onRemove: () => onChange({ rating4: false }) });
-  if (show.halal && filters.halal) items.push({ key: 'halal', label: 'Halal', onRemove: () => onChange({ halal: false }) });
+  if (show.open && filters.open)
+    items.push({ key: 'open', label: 'Open now', onRemove: () => onChange({ open: false }) });
+  if (show.rating && filters.rating4)
+    items.push({ key: 'rating', label: 'Rating 4+', onRemove: () => onChange({ rating4: false }) });
+  if (show.halal && filters.halal)
+    items.push({ key: 'halal', label: 'Halal', onRemove: () => onChange({ halal: false }) });
   if (show.fulfilment && filters.fulfilment) {
     items.push({
       key: 'ful',
@@ -378,10 +431,16 @@ export function ActiveFilters({
       onRemove: () => onChange({ fulfilment: '' }),
     });
   }
-  if (show.city && filters.city) items.push({ key: 'city', label: filters.city, onRemove: () => onChange({ city: '' }) });
-  if (filters.sub) items.push({ key: 'sub', label: filters.sub, onRemove: () => onChange({ sub: '' }) });
+  if (show.city && filters.city)
+    items.push({ key: 'city', label: filters.city, onRemove: () => onChange({ city: '' }) });
+  if (filters.sub)
+    items.push({ key: 'sub', label: filters.sub, onRemove: () => onChange({ sub: '' }) });
   if (show.sorts.length > 1 && filters.sort !== defaultSort) {
-    items.push({ key: 'sort', label: `Sort: ${SORT_LABELS[filters.sort]}`, onRemove: () => onChange({ sort: defaultSort }) });
+    items.push({
+      key: 'sort',
+      label: `Sort: ${SORT_LABELS[filters.sort]}`,
+      onRemove: () => onChange({ sort: defaultSort }),
+    });
   }
   if (extra) items.push(...extra);
   if (items.length === 0) return null;
@@ -404,7 +463,15 @@ export function ActiveFilters({
         <button
           type="button"
           onClick={() => {
-            onChange({ open: false, rating4: false, halal: false, fulfilment: '', sort: defaultSort, city: '', sub: '' });
+            onChange({
+              open: false,
+              rating4: false,
+              halal: false,
+              fulfilment: '',
+              sort: defaultSort,
+              city: '',
+              sub: '',
+            });
             extra?.forEach((e) => e.onRemove());
           }}
           className="relative inline-flex h-9 cursor-pointer items-center px-2 text-xs font-semibold text-muted-foreground underline-offset-2 hover:text-foreground hover:underline after:absolute after:inset-x-0 after:-inset-y-1 after:content-['']"

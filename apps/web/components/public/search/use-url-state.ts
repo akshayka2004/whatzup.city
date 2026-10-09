@@ -65,11 +65,17 @@ export function useUrlState<T>({
     if (next === window.location.search.replace(/^\?/, '')) return;
     latest.current = next;
     pending.current.add(next);
-    window.history.replaceState(null, '', next ? `${window.location.pathname}?${next}` : window.location.pathname);
+    window.history.replaceState(
+      null,
+      '',
+      next ? `${window.location.pathname}?${next}` : window.location.pathname,
+    );
   }, [value]);
 
   const update = useCallback((patch: Partial<T> | ((prev: T) => T)) => {
-    setValue((prev) => (typeof patch === 'function' ? (patch as (p: T) => T)(prev) : { ...prev, ...patch }));
+    setValue((prev) =>
+      typeof patch === 'function' ? (patch as (p: T) => T)(prev) : { ...prev, ...patch },
+    );
   }, []);
 
   return { value, update, externalVersion };

@@ -49,4 +49,6 @@ export function unwrapOne<T = any>(body: unknown): T | null {
 }
 
 /** Public site origin for canonical URLs, sitemap and share cards. */
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://platform.whtzup.city').replace(/\/$/, '');
+export const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://platform.whtzup.city'
+).replace(/\/$/, '');

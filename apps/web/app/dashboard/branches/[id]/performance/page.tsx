@@ -7,8 +7,15 @@ import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  ArrowLeft, Users, Receipt, Tag, Star, TrendingUp,
-  Building2, BarChart3, Loader2,
+  ArrowLeft,
+  Users,
+  Receipt,
+  Tag,
+  Star,
+  TrendingUp,
+  Building2,
+  BarChart3,
+  Loader2,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 
@@ -32,7 +39,10 @@ const tooltipStyle = {
   fontSize: '11px',
 };
 
-interface EventCount { event: string; _count: number }
+interface EventCount {
+  event: string;
+  _count: number;
+}
 
 export default function BranchPerformancePage() {
   const params = useParams();
@@ -55,7 +65,7 @@ export default function BranchPerformancePage() {
         setEvents(
           evs.map((e: any) => ({
             event: e.event,
-            _count: typeof e._count === 'number' ? e._count : e._count?._all ?? 0,
+            _count: typeof e._count === 'number' ? e._count : (e._count?._all ?? 0),
           })),
         );
       }
@@ -72,10 +82,34 @@ export default function BranchPerformancePage() {
   const reviews = getCount('REVIEW_SUBMIT');
 
   const kpis = [
-    { label: 'Total Visits', value: visits.toLocaleString(), icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-    { label: 'Verified Purchases', value: purchases.toLocaleString(), icon: Receipt, color: 'text-success', bg: 'bg-success/10' },
-    { label: 'Offer Redemptions', value: claims.toLocaleString(), icon: Tag, color: 'text-warning', bg: 'bg-warning/10' },
-    { label: 'Reviews', value: reviews.toLocaleString(), icon: Star, color: 'text-warning', bg: 'bg-warning/10' },
+    {
+      label: 'Total Visits',
+      value: visits.toLocaleString(),
+      icon: Users,
+      color: 'text-primary',
+      bg: 'bg-primary/10',
+    },
+    {
+      label: 'Verified Purchases',
+      value: purchases.toLocaleString(),
+      icon: Receipt,
+      color: 'text-success',
+      bg: 'bg-success/10',
+    },
+    {
+      label: 'Offer Redemptions',
+      value: claims.toLocaleString(),
+      icon: Tag,
+      color: 'text-warning',
+      bg: 'bg-warning/10',
+    },
+    {
+      label: 'Reviews',
+      value: reviews.toLocaleString(),
+      icon: Star,
+      color: 'text-warning',
+      bg: 'bg-warning/10',
+    },
   ];
 
   const chartData = events
@@ -92,17 +126,27 @@ export default function BranchPerformancePage() {
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="flex items-start gap-3 min-w-0">
             <Link href="/dashboard/branches">
-              <Button variant="outline" size="sm" className="rounded-xl border-border text-foreground hover:bg-secondary mt-1 cursor-pointer">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl border-border text-foreground hover:bg-secondary mt-1 cursor-pointer"
+              >
                 <ArrowLeft className="h-3.5 w-3.5" />
               </Button>
             </Link>
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <Building2 className="h-4 w-4 text-primary" />
-                <span className="text-xs text-muted-foreground font-medium uppercase tracking-widest">Branch Performance</span>
+                <span className="text-xs text-muted-foreground font-medium uppercase tracking-widest">
+                  Branch Performance
+                </span>
               </div>
-              <h1 className="text-3xl font-extrabold text-foreground tracking-tight truncate">{branchName}</h1>
-              <p className="text-muted-foreground text-sm mt-0.5">Live analytics for this location.</p>
+              <h1 className="text-3xl font-extrabold text-foreground tracking-tight truncate">
+                {branchName}
+              </h1>
+              <p className="text-muted-foreground text-sm mt-0.5">
+                Live analytics for this location.
+              </p>
             </div>
           </div>
 
@@ -154,7 +198,9 @@ export default function BranchPerformancePage() {
               <div className="flex items-center justify-between mb-5">
                 <div>
                   <h3 className="text-base font-bold text-foreground">Event Activity</h3>
-                  <p className="text-xs text-muted-foreground">Aggregated event counts for selected window</p>
+                  <p className="text-xs text-muted-foreground">
+                    Aggregated event counts for selected window
+                  </p>
                 </div>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -166,11 +212,28 @@ export default function BranchPerformancePage() {
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="oklch(0.22 0 0)" />
-                      <XAxis dataKey="event" stroke="oklch(0.55 0 0)" fontSize={10} tickLine={false} />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="oklch(0.22 0 0)"
+                      />
+                      <XAxis
+                        dataKey="event"
+                        stroke="oklch(0.55 0 0)"
+                        fontSize={10}
+                        tickLine={false}
+                      />
                       <YAxis stroke="oklch(0.55 0 0)" fontSize={10} tickLine={false} />
-                      <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#fff', fontWeight: 'bold' }} />
-                      <Bar dataKey="count" fill="oklch(0.65 0.15 280)" radius={[3, 3, 0, 0]} maxBarSize={28} />
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        labelStyle={{ color: '#fff', fontWeight: 'bold' }}
+                      />
+                      <Bar
+                        dataKey="count"
+                        fill="oklch(0.65 0.15 280)"
+                        radius={[3, 3, 0, 0]}
+                        maxBarSize={28}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 )}

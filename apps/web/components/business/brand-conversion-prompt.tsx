@@ -32,13 +32,16 @@ export function BillSeriesQuestion({
   return (
     <div className="space-y-2">
       <p className="text-xs font-medium text-muted-foreground">
-        Is the bill number series the same across all your outlets? <span className="text-destructive">*</span>
+        Is the bill number series the same across all your outlets?{' '}
+        <span className="text-destructive">*</span>
       </p>
       <div className="inline-flex rounded-xl border border-border p-0.5" role="radiogroup">
-        {([
-          { l: 'Yes', v: 'SHARED' },
-          { l: 'No', v: 'PER_OUTLET' },
-        ] as const).map((o) => (
+        {(
+          [
+            { l: 'Yes', v: 'SHARED' },
+            { l: 'No', v: 'PER_OUTLET' },
+          ] as const
+        ).map((o) => (
           <button
             key={o.v}
             type="button"
@@ -47,7 +50,9 @@ export function BillSeriesQuestion({
             onClick={() => onModeChange(o.v)}
             className={cn(
               'h-10 min-w-20 rounded-lg px-5 text-sm font-medium transition-colors cursor-pointer',
-              mode === o.v ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+              mode === o.v
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground',
             )}
           >
             {o.l}
@@ -64,7 +69,9 @@ export function BillSeriesQuestion({
             aria-label="Bill series prefix"
             className="h-11 rounded-xl bg-background"
           />
-          <p className="text-xs text-muted-foreground">e.g. SC/2026/ — every outlet's bills start with this.</p>
+          <p className="text-xs text-muted-foreground">
+            e.g. SC/2026/ — every outlet's bills start with this.
+          </p>
         </div>
       )}
       {mode === 'PER_OUTLET' && (
@@ -104,8 +111,10 @@ export function BrandConvertForm({
     e.preventDefault();
     setError('');
     if (!brandName.trim()) return setError('Brand name is required.');
-    if (!mode) return setError('Tell us whether the bill number series is the same across outlets.');
-    if (mode === 'SHARED' && !prefix.trim()) return setError('Enter the shared bill series prefix, e.g. SC/2026/.');
+    if (!mode)
+      return setError('Tell us whether the bill number series is the same across outlets.');
+    if (mode === 'SHARED' && !prefix.trim())
+      return setError('Enter the shared bill series prefix, e.g. SC/2026/.');
 
     setSubmitting(true);
     const res = await apiService.post<any>('/v1/brands/convert', {
@@ -155,16 +164,28 @@ export function BrandConvertForm({
         <p className="text-xs text-muted-foreground">e.g. Kozhikode - Mavoor Road</p>
       </div>
 
-      <BillSeriesQuestion mode={mode} prefix={prefix} onModeChange={setMode} onPrefixChange={setPrefix} />
+      <BillSeriesQuestion
+        mode={mode}
+        prefix={prefix}
+        onModeChange={setMode}
+        onPrefixChange={setPrefix}
+      />
 
       {error && (
-        <p role="alert" className="rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2 text-xs text-danger-soft-foreground">
+        <p
+          role="alert"
+          className="rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2 text-xs text-danger-soft-foreground"
+        >
           {error}
         </p>
       )}
 
       <div className="flex flex-col gap-2 pt-1">
-        <Button type="submit" disabled={submitting} className="h-11 w-full rounded-xl font-semibold cursor-pointer">
+        <Button
+          type="submit"
+          disabled={submitting}
+          className="h-11 w-full rounded-xl font-semibold cursor-pointer"
+        >
           {submitting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" /> Creating...
@@ -219,10 +240,12 @@ export function BrandConversionPrompt({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{promptActions ? 'Do you run more than one outlet?' : 'Create a brand account'}</DialogTitle>
+          <DialogTitle>
+            {promptActions ? 'Do you run more than one outlet?' : 'Create a brand account'}
+          </DialogTitle>
           <DialogDescription>
-            Put all your outlets under one brand. Each outlet keeps its own address, hours, offers, QR and plan;
-            you switch between them from one login and share one invoice profile.
+            Put all your outlets under one brand. Each outlet keeps its own address, hours, offers,
+            QR and plan; you switch between them from one login and share one invoice profile.
           </DialogDescription>
         </DialogHeader>
         <BrandConvertForm
@@ -240,7 +263,11 @@ export function BrandConversionPrompt({
                       onClick={() => respond('SNOOZE')}
                       className="h-11 w-full rounded-xl cursor-pointer"
                     >
-                      {responding === 'SNOOZE' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Not now'}
+                      {responding === 'SNOOZE' ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Not now'
+                      )}
                     </Button>
                     <button
                       type="button"

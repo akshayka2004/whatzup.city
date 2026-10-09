@@ -12,10 +12,31 @@ import { apiService } from '@/lib/services/api-service';
 import { useRouter } from 'next/navigation';
 import { PROFESSIONS } from '@/lib/constants';
 import {
-  Edit2, Mail, Phone, MapPin, LogOut, Check, X,
-  Sparkles, Receipt, Heart, Tag, Building2, CalendarDays,
-  Camera, Loader2, Trash2, AlertTriangle, HeadphonesIcon, Shield, FileText, Copy, Users,
-  Gift, Lock, CheckCircle2,
+  Edit2,
+  Mail,
+  Phone,
+  MapPin,
+  LogOut,
+  Check,
+  X,
+  Sparkles,
+  Receipt,
+  Heart,
+  Tag,
+  Building2,
+  CalendarDays,
+  Camera,
+  Loader2,
+  Trash2,
+  AlertTriangle,
+  HeadphonesIcon,
+  Shield,
+  FileText,
+  Copy,
+  Users,
+  Gift,
+  Lock,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface PlatformVoucherTier {
@@ -73,7 +94,12 @@ export default function ProfilePage() {
 
   const [profileLoading, setProfileLoading] = useState(true);
   const [profile, setProfile] = useState<CustomerProfile>({
-    firstName: '', lastName: '', phone: '', city: '', district: '', state: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    city: '',
+    district: '',
+    state: '',
   });
   const [tempProfile, setTempProfile] = useState<CustomerProfile>(profile);
   const [isEditing, setIsEditing] = useState(false);
@@ -82,7 +108,9 @@ export default function ProfilePage() {
   const [saveErr, setSaveErr] = useState('');
 
   const [bills, setBills] = useState<BillRow[]>([]);
-  const [claimedOffers, setClaimedOffers] = useState<{ id: string; title: string; business: string; date: string }[]>([]);
+  const [claimedOffers, setClaimedOffers] = useState<
+    { id: string; title: string; business: string; date: string }[]
+  >([]);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [referralCode, setReferralCode] = useState('');
@@ -158,7 +186,10 @@ export default function ProfilePage() {
         const fallback: CustomerProfile = {
           firstName: parts[0] || '',
           lastName: parts.slice(1).join(' ') || '',
-          phone: '', city: '', district: '', state: '',
+          phone: '',
+          city: '',
+          district: '',
+          state: '',
         };
         setProfile(fallback);
         setTempProfile(fallback);
@@ -176,13 +207,17 @@ export default function ProfilePage() {
         try {
           const stored = JSON.parse(localStorage.getItem('claimed_offers_v2') || '[]');
           setClaimedOffers(Array.isArray(stored) ? stored : []);
-        } catch { setClaimedOffers([]); }
+        } catch {
+          setClaimedOffers([]);
+        }
       }
 
       if (!cancelled) setProfileLoading(false);
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   /* ── Delete account ─────────────────────────────────────────── */
@@ -211,10 +246,15 @@ export default function ProfilePage() {
         '/v1/storage/upload-url',
         { category: 'avatar', filename: file.name, mimeType: file.type, entityId: user?.id },
       );
-      if (urlRes.error || !urlRes.data?.uploadUrl) throw new Error(urlRes.error || 'Failed to get upload URL');
+      if (urlRes.error || !urlRes.data?.uploadUrl)
+        throw new Error(urlRes.error || 'Failed to get upload URL');
       const { uploadUrl, fileKey } = urlRes.data;
       // Step 2: PUT file to Supabase
-      const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      const put = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
       if (!put.ok) throw new Error(`Upload failed: ${put.status}`);
       // Step 3: save ref to user profile
       const patch = await apiService.patch<any>('/v1/users/me', { avatar: fileKey });
@@ -238,13 +278,19 @@ export default function ProfilePage() {
     setUnlockingTierId(null);
     if (res.error) return;
     setVoucherTiers((tiers) =>
-      tiers.map((t) => (t.id === tierId ? { ...t, unlocked: true, code: res.data.code, status: res.data.status } : t)),
+      tiers.map((t) =>
+        t.id === tierId
+          ? { ...t, unlocked: true, code: res.data.code, status: res.data.status }
+          : t,
+      ),
     );
   };
 
   const tierRewardText = (t: PlatformVoucherTier) =>
-    t.rewardType === 'PERCENT' ? `${t.rewardValue}% off`
-      : t.rewardType === 'AMOUNT' ? `₹${Number(t.rewardValue || 0).toLocaleString('en-IN')} off`
+    t.rewardType === 'PERCENT'
+      ? `${t.rewardValue}% off`
+      : t.rewardType === 'AMOUNT'
+        ? `₹${Number(t.rewardValue || 0).toLocaleString('en-IN')} off`
         : t.rewardLabel || 'Reward';
 
   const handleSave = async () => {
@@ -290,7 +336,10 @@ export default function ProfilePage() {
   })();
 
   const memberSince = user
-    ? new Date((user as any).createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    ? new Date((user as any).createdAt || Date.now()).toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
+      })
     : '';
 
   /* ── Render ───────────────────────────────────────────────────── */
@@ -309,7 +358,6 @@ export default function ProfilePage() {
   return (
     <PublicLayout>
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-
         {/* Hero Profile Card */}
         <Card className="rounded-2xl border-border bg-card relative overflow-hidden ui-fade-up">
           <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-r from-primary/15 via-transparent to-transparent pointer-events-none" />
@@ -318,7 +366,14 @@ export default function ProfilePage() {
               {/* Avatar */}
               <div className="relative shrink-0">
                 {avatarUrl ? (
-                  <ResponsiveImage src={avatarUrl} alt="Profile photo" ratio="1" sizes="96px" priority className="h-24 w-24 rounded-2xl shadow-e2 ring-4 ring-primary/15" />
+                  <ResponsiveImage
+                    src={avatarUrl}
+                    alt="Profile photo"
+                    ratio="1"
+                    sizes="96px"
+                    priority
+                    className="h-24 w-24 rounded-2xl shadow-e2 ring-4 ring-primary/15"
+                  />
                 ) : (
                   <div className="w-24 h-24 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center text-3xl font-extrabold shadow-lg shadow-primary/20 ring-4 ring-primary/15">
                     {initials}
@@ -330,7 +385,11 @@ export default function ProfilePage() {
                   className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md cursor-pointer disabled:opacity-60"
                   title="Change profile picture"
                 >
-                  {avatarUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-4 w-4" />}
+                  {avatarUploading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
                 </button>
                 <input
                   ref={avatarInputRef}
@@ -357,16 +416,21 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-4 justify-center sm:justify-start text-xs text-muted-foreground flex-wrap">
                   <span className="flex items-center gap-1">
                     <Sparkles className="h-3.5 w-3.5 text-primary" />
-                    <span className="font-semibold text-foreground">{claimedOffers.length}</span> offers claimed
+                    <span className="font-semibold text-foreground">
+                      {claimedOffers.length}
+                    </span>{' '}
+                    offers claimed
                   </span>
                   <span className="flex items-center gap-1">
                     <Receipt className="h-3.5 w-3.5 text-primary" />
-                    <span className="font-semibold text-foreground">{bills.length}</span> bills submitted
+                    <span className="font-semibold text-foreground">{bills.length}</span> bills
+                    submitted
                   </span>
                   {referralCount !== null && referralCount > 0 && (
                     <span className="flex items-center gap-1">
                       <Users className="h-3.5 w-3.5 text-success-soft-foreground" />
-                      <span className="font-semibold text-foreground">{referralCount}</span> referrals
+                      <span className="font-semibold text-foreground">{referralCount}</span>{' '}
+                      referrals
                     </span>
                   )}
                 </div>
@@ -376,8 +440,12 @@ export default function ProfilePage() {
                   <div className="mt-3 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                     {/* Code chip */}
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Referral Code</span>
-                      <span className="font-mono text-sm font-bold text-primary tracking-widest">{referralCode}</span>
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                        Referral Code
+                      </span>
+                      <span className="font-mono text-sm font-bold text-primary tracking-widest">
+                        {referralCode}
+                      </span>
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(referralCode);
@@ -387,14 +455,22 @@ export default function ProfilePage() {
                         className="text-primary hover:text-primary/70 cursor-pointer transition-colors"
                         title="Copy referral code"
                       >
-                        {referralCopied ? <Check className="h-3.5 w-3.5 text-success-soft-foreground" /> : <Copy className="h-3.5 w-3.5" />}
+                        {referralCopied ? (
+                          <Check className="h-3.5 w-3.5 text-success-soft-foreground" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
                       </button>
                     </div>
                     {/* Referral count chip */}
                     {referralCount !== null && (
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success-soft border border-success/25">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Referrals</span>
-                        <span className="text-sm font-bold text-success-soft-foreground">{referralCount}</span>
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Referrals
+                        </span>
+                        <span className="text-sm font-bold text-success-soft-foreground">
+                          {referralCount}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -404,7 +480,10 @@ export default function ProfilePage() {
               {/* Edit toggle */}
               {!isEditing ? (
                 <Button
-                  onClick={() => { setTempProfile({ ...profile }); setIsEditing(true); }}
+                  onClick={() => {
+                    setTempProfile({ ...profile });
+                    setIsEditing(true);
+                  }}
                   className="rounded-xl gap-2 font-medium bg-primary hover:bg-primary/90 text-primary-foreground shrink-0 cursor-pointer"
                 >
                   <Edit2 className="h-4 w-4" /> Edit Profile
@@ -416,11 +495,19 @@ export default function ProfilePage() {
                     disabled={saving}
                     className="rounded-xl gap-2 bg-success hover:bg-success text-white cursor-pointer disabled:opacity-60"
                   >
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
                     Save
                   </Button>
                   <Button
-                    onClick={() => { setTempProfile({ ...profile }); setIsEditing(false); setSaveErr(''); }}
+                    onClick={() => {
+                      setTempProfile({ ...profile });
+                      setIsEditing(false);
+                      setSaveErr('');
+                    }}
                     variant="outline"
                     className="rounded-xl gap-2 border-border hover:bg-secondary text-foreground cursor-pointer"
                   >
@@ -466,7 +553,9 @@ export default function ProfilePage() {
                     className="flex items-center justify-between p-3 rounded-xl bg-secondary/50 border border-border"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{r.name || 'Unnamed'}</p>
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {r.name || 'Unnamed'}
+                      </p>
                       <p className="text-xs text-muted-foreground truncate">{r.email}</p>
                     </div>
                     <span className="text-xs text-muted-foreground whitespace-nowrap ml-3">
@@ -481,23 +570,25 @@ export default function ProfilePage() {
 
         {/* Rewards — global loyalty points + platform voucher tiers */}
         <Card className="p-6 rounded-2xl border-border bg-card">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Gift className="h-4 w-4 text-primary" /> Rewards
-              </h3>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span className="text-sm font-bold text-primary">{points.toLocaleString('en-IN')} pts</span>
-              </div>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+              <Gift className="h-4 w-4 text-primary" /> Rewards
+            </h3>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              <span className="text-sm font-bold text-primary">
+                {points.toLocaleString('en-IN')} pts
+              </span>
             </div>
-            <p className="text-xs text-muted-foreground mb-4">
-              Earned from verified bills across every business on the platform.
+          </div>
+          <p className="text-xs text-muted-foreground mb-4">
+            Earned from verified bills across every business on the platform.
+          </p>
+          {voucherTiers.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No reward tiers available right now. Check back soon.
             </p>
-            {voucherTiers.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No reward tiers available right now. Check back soon.
-              </p>
-            ) : (
+          ) : (
             <div className="space-y-3">
               {voucherTiers.map((t, i) => (
                 <div
@@ -508,7 +599,9 @@ export default function ProfilePage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-semibold text-foreground truncate">{t.title}</p>
-                      {t.description && <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>}
+                      {t.description && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
+                      )}
                     </div>
                     <span className="shrink-0 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-bold text-brand-soft-foreground">
                       {tierRewardText(t)}
@@ -537,7 +630,9 @@ export default function ProfilePage() {
                         disabled={unlockingTierId === t.id}
                         className="h-7 px-3 text-xs gap-1 cursor-pointer"
                       >
-                        {unlockingTierId === t.id ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                        {unlockingTierId === t.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : null}
                         Unlock
                       </Button>
                     ) : (
@@ -549,7 +644,7 @@ export default function ProfilePage() {
                 </div>
               ))}
             </div>
-            )}
+          )}
         </Card>
 
         {/* Personal Information */}
@@ -557,7 +652,9 @@ export default function ProfilePage() {
           <h3 className="text-base font-bold text-foreground mb-5">Personal Information</h3>
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1.5">First Name</label>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                First Name
+              </label>
               <Input
                 value={isEditing ? tempProfile.firstName : profile.firstName}
                 onChange={(e) => setTempProfile({ ...tempProfile, firstName: e.target.value })}
@@ -566,7 +663,9 @@ export default function ProfilePage() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1.5">Last Name</label>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                Last Name
+              </label>
               <Input
                 value={isEditing ? tempProfile.lastName : profile.lastName}
                 onChange={(e) => setTempProfile({ ...tempProfile, lastName: e.target.value })}
@@ -577,23 +676,18 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-3">
-            <ContactRow
-              icon={Mail}
-              label="Email Address"
-              value={user.email}
-              editable={false}
-            />
+            <ContactRow icon={Mail} label="Email Address" value={user.email} editable={false} />
             <ContactRow
               icon={Phone}
               label="Phone Number"
-              value={isEditing ? (tempProfile.phone || '') : (profile.phone || '—')}
+              value={isEditing ? tempProfile.phone || '' : profile.phone || '—'}
               editable={isEditing}
               onChange={(v) => setTempProfile({ ...tempProfile, phone: v })}
             />
             <ContactRow
               icon={MapPin}
               label="City"
-              value={isEditing ? (tempProfile.city || '') : (profile.city || '—')}
+              value={isEditing ? tempProfile.city || '' : profile.city || '—'}
               editable={isEditing}
               onChange={(v) => setTempProfile({ ...tempProfile, city: v })}
             />
@@ -622,10 +716,16 @@ export default function ProfilePage() {
                     className="h-8 mt-0.5 rounded-lg border border-border bg-transparent text-sm px-1 focus:border-primary text-foreground w-full cursor-pointer"
                   >
                     <option value="">Not specified</option>
-                    {PROFESSIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+                    {PROFESSIONS.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
                   </select>
                 ) : (
-                  <p className="font-semibold text-foreground text-sm mt-0.5 truncate">{profile.profession || '—'}</p>
+                  <p className="font-semibold text-foreground text-sm mt-0.5 truncate">
+                    {profile.profession || '—'}
+                  </p>
                 )}
               </div>
             </div>
@@ -650,7 +750,10 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-2">
               {claimedOffers.map((o) => (
-                <div key={o.id} className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border">
+                <div
+                  key={o.id}
+                  className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border"
+                >
                   <div className="h-8 w-8 rounded-lg bg-brand-soft border border-primary/20 flex items-center justify-center text-brand-soft-foreground shrink-0">
                     <Tag className="h-4 w-4" />
                   </div>
@@ -680,7 +783,8 @@ export default function ProfilePage() {
           </div>
           {bills.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              No bills submitted yet. Upload a bill from a business listing to earn verified reviewer status.
+              No bills submitted yet. Upload a bill from a business listing to earn verified
+              reviewer status.
             </p>
           ) : (
             <div className="space-y-2">
@@ -689,23 +793,37 @@ export default function ProfilePage() {
                 const billNo = b.billNumber || b.billNo || `BILL-${(b.id || '').slice(0, 6)}`;
                 const amount = b.totalAmount ?? b.amount ?? '—';
                 const date = b.createdAt
-                  ? new Date(b.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  ? new Date(b.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })
                   : b.date || '';
                 const status = (b.status || 'PENDING').toUpperCase();
                 return (
-                  <div key={b.id} className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border">
+                  <div
+                    key={b.id}
+                    className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border"
+                  >
                     <div className="h-8 w-8 rounded-lg bg-brand-soft border border-primary/20 flex items-center justify-center text-brand-soft-foreground shrink-0">
                       <Building2 className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">{businessName}</p>
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {businessName}
+                      </p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <CalendarDays className="h-3 w-3" /> {date} • <span className="font-mono">{billNo}</span>
+                        <CalendarDays className="h-3 w-3" /> {date} •{' '}
+                        <span className="font-mono">{billNo}</span>
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-foreground">{typeof amount === 'number' ? `₹${amount.toLocaleString()}` : amount}</p>
-                      <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border ${STATUS_STYLE[status] || STATUS_STYLE.PENDING}`}>
+                      <p className="text-sm font-bold text-foreground">
+                        {typeof amount === 'number' ? `₹${amount.toLocaleString()}` : amount}
+                      </p>
+                      <span
+                        className={`text-xs font-semibold px-1.5 py-0.5 rounded-full border ${STATUS_STYLE[status] || STATUS_STYLE.PENDING}`}
+                      >
                         {status}
                       </span>
                     </div>
@@ -751,7 +869,8 @@ export default function ProfilePage() {
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="h-4 w-4 text-danger-soft-foreground shrink-0 mt-0.5" />
                   <p className="text-sm text-danger-soft-foreground font-medium">
-                    This will permanently delete your account and all associated data. This cannot be undone.
+                    This will permanently delete your account and all associated data. This cannot
+                    be undone.
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -760,7 +879,11 @@ export default function ProfilePage() {
                     disabled={deleting}
                     className="flex-1 rounded-xl bg-destructive hover:bg-destructive text-white cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    {deleting ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
                     Confirm Delete
                   </Button>
                   <Button
@@ -791,19 +914,27 @@ export default function ProfilePage() {
               support@lifeartgroup.in
             </a>
             <div className="flex items-center gap-4 pt-1 text-xs">
-              <a href="/privacy-policy" className="flex items-center gap-1 hover:text-primary transition-colors">
+              <a
+                href="/privacy-policy"
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+              >
                 <Shield className="h-3.5 w-3.5" /> Privacy Policy
               </a>
-              <a href="/terms-of-service" className="flex items-center gap-1 hover:text-primary transition-colors">
+              <a
+                href="/terms-of-service"
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+              >
                 <FileText className="h-3.5 w-3.5" /> Terms of Service
               </a>
-              <a href="/report" className="flex items-center gap-1 hover:text-primary transition-colors">
+              <a
+                href="/report"
+                className="flex items-center gap-1 hover:text-primary transition-colors"
+              >
                 <AlertTriangle className="h-3.5 w-3.5" /> Report Issue
               </a>
             </div>
           </div>
         </Card>
-
       </div>
     </PublicLayout>
   );

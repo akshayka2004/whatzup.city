@@ -44,7 +44,9 @@ export function normalizeOperatingHours(input: unknown): OperatingHours | null |
  * Same as `normalizeOperatingHours`, shaped for a Prisma `Json?` column: a plain `null` isn't
  * accepted there, it has to be `Prisma.DbNull`.
  */
-export function operatingHoursForDb(input: unknown): OperatingHours | typeof Prisma.DbNull | undefined {
+export function operatingHoursForDb(
+  input: unknown,
+): OperatingHours | typeof Prisma.DbNull | undefined {
   const n = normalizeOperatingHours(input);
   return n === null ? Prisma.DbNull : n;
 }

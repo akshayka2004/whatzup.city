@@ -127,29 +127,42 @@ export function OnboardingTour({ steps, storageKey, startDelayMs = 600 }: Onboar
     cardStyle = { position: 'fixed', top, bottom, left, width: cardWidth };
   } else {
     cardStyle = {
-      position: 'fixed', top: '50%', left: '50%',
-      transform: 'translate(-50%, -50%)', width: cardWidth,
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      width: cardWidth,
     };
   }
 
   return (
     // design-lint-ignore: spotlight tour needs a raw full-screen layer around the highlighted element
-    <div className="fixed inset-0" style={{ zIndex: 300 }} role="dialog" aria-modal="true" aria-label="Platform guide">
+    <div
+      className="fixed inset-0"
+      style={{ zIndex: 300 }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Platform guide"
+    >
       {/* Spotlight cutout — dark everywhere except a lit box around the target */}
       <div
         className="fixed rounded-2xl transition-all duration-300 pointer-events-none"
         style={
           rect
-            ? { top: rect.top, left: rect.left, width: rect.width, height: rect.height, boxShadow: '0 0 0 9999px rgba(0,0,0,0.65)', outline: '2px solid var(--primary, #6e41db)' }
+            ? {
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height,
+                boxShadow: '0 0 0 9999px rgba(0,0,0,0.65)',
+                outline: '2px solid var(--primary, #6e41db)',
+              }
             : { inset: 0, boxShadow: '0 0 0 9999px rgba(0,0,0,0.65)' }
         }
       />
 
       {/* Tooltip card */}
-      <div
-        style={cardStyle}
-        className="rounded-2xl border border-border bg-card p-5 shadow-2xl"
-      >
+      <div style={cardStyle} className="rounded-2xl border border-border bg-card p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-3 mb-1">
           <h3 className="text-sm font-bold text-foreground">{step.title}</h3>
           <button

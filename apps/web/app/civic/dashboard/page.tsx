@@ -10,9 +10,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Bell, Megaphone, Heart, Plus, Send, Trash2,
-  X, CheckCircle2, Clock, Globe, LogOut, AlertTriangle,
-  FileText, Loader2, Users, Newspaper, UserCog, Gift,
+  Bell,
+  Megaphone,
+  Heart,
+  Plus,
+  Send,
+  Trash2,
+  X,
+  CheckCircle2,
+  Clock,
+  Globe,
+  LogOut,
+  AlertTriangle,
+  FileText,
+  Loader2,
+  Users,
+  Newspaper,
+  UserCog,
+  Gift,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
@@ -36,10 +51,31 @@ function isExpired(n: Notice): boolean {
 
 type NoticeType = 'ALERT' | 'ANNOUNCEMENT' | 'NOTICE';
 
-const TYPE_CONFIG: Record<NoticeType, { label: string; color: string; bg: string; border: string; icon: React.ElementType }> = {
-  ALERT:        { label: 'Alert',        color: 'text-danger-soft-foreground',  bg: 'bg-danger-soft',  border: 'border-destructive/25',  icon: AlertTriangle },
-  ANNOUNCEMENT: { label: 'Announcement', color: 'text-warning-soft-foreground', bg: 'bg-warning-soft', border: 'border-warning/30', icon: Megaphone },
-  NOTICE:       { label: 'Notice',       color: 'text-info-soft-foreground',  bg: 'bg-info-soft',  border: 'border-info/25',  icon: FileText },
+const TYPE_CONFIG: Record<
+  NoticeType,
+  { label: string; color: string; bg: string; border: string; icon: React.ElementType }
+> = {
+  ALERT: {
+    label: 'Alert',
+    color: 'text-danger-soft-foreground',
+    bg: 'bg-danger-soft',
+    border: 'border-destructive/25',
+    icon: AlertTriangle,
+  },
+  ANNOUNCEMENT: {
+    label: 'Announcement',
+    color: 'text-warning-soft-foreground',
+    bg: 'bg-warning-soft',
+    border: 'border-warning/30',
+    icon: Megaphone,
+  },
+  NOTICE: {
+    label: 'Notice',
+    color: 'text-info-soft-foreground',
+    bg: 'bg-info-soft',
+    border: 'border-info/25',
+    icon: FileText,
+  },
 };
 
 const ORG_ICON: Record<string, React.ElementType> = {
@@ -77,17 +113,23 @@ export default function CivicDashboardPage() {
       .get<any>('/v1/government-alerts')
       .then((res) => {
         if (res.data && !res.error) {
-          const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+          const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
           setNotices(
             list.map((a: any) => {
               const cat = (a.category || a.type || '').toString().toUpperCase();
               return {
                 id: a.id,
                 title: a.title || '—',
-                type: (['ALERT', 'ANNOUNCEMENT', 'NOTICE'].includes(cat) ? cat : 'NOTICE') as NoticeType,
+                type: (['ALERT', 'ANNOUNCEMENT', 'NOTICE'].includes(cat)
+                  ? cat
+                  : 'NOTICE') as NoticeType,
                 body: a.body || a.content || a.message || '',
                 publishedAt: a.createdAt
-                  ? new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                  ? new Date(a.createdAt).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })
                   : a.publishedAt || '—',
                 status: a.isActive !== false ? 'ACTIVE' : 'EXPIRED',
                 expiresAt: a.expiresAt || a.validUntil || undefined,
@@ -112,7 +154,6 @@ export default function CivicDashboardPage() {
 
   const toggleCity = (c: string) =>
     setFormCities((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
-
 
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,14 +184,24 @@ export default function CivicDashboardPage() {
         title: formTitle,
         type: formType,
         body: formBody,
-        publishedAt: new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
+        publishedAt: new Date().toLocaleDateString('en-IN', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
         status: 'ACTIVE',
         expiresAt: formExpiresAt || undefined,
       };
       setNotices([newNotice, ...notices]);
     }
 
-    setFormTitle(''); setFormBody(''); setFormType('NOTICE'); setFormExpiresAt(''); setFormStartAt(''); setFormLink(''); setFormCities([]);
+    setFormTitle('');
+    setFormBody('');
+    setFormType('NOTICE');
+    setFormExpiresAt('');
+    setFormStartAt('');
+    setFormLink('');
+    setFormCities([]);
     setShowForm(false);
     setSuccess('Published successfully!');
     setTimeout(() => setSuccess(''), 3000);
@@ -187,13 +238,14 @@ export default function CivicDashboardPage() {
         }
       />
       <div className="space-y-6">
-
         {/* Verification pending banner */}
         {user?.entity?.status === 'PENDING_VERIFICATION' && (
           <div className="p-4 rounded-xl bg-warning-soft border border-warning/30 flex items-start gap-3">
             <Clock className="h-5 w-5 text-warning-soft-foreground shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-warning-soft-foreground">Verification Pending</p>
+              <p className="text-sm font-semibold text-warning-soft-foreground">
+                Verification Pending
+              </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Your organisation is under admin review. Full features unlock after approval.
               </p>
@@ -208,14 +260,33 @@ export default function CivicDashboardPage() {
           </div>
         )}
 
-
         {/* Stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
-            { label: 'Total Published', value: notices.length, icon: Bell, accent: 'text-muted-foreground' },
-            { label: 'Active Now',      value: visible.length, icon: Globe, accent: 'text-muted-foreground' },
-            { label: 'Alerts',          value: visible.filter((n) => n.type === 'ALERT').length, icon: AlertTriangle, accent: 'text-muted-foreground' },
-            { label: 'Referrals',       value: referralCount, icon: Gift, accent: 'text-success-soft-foreground' },
+            {
+              label: 'Total Published',
+              value: notices.length,
+              icon: Bell,
+              accent: 'text-muted-foreground',
+            },
+            {
+              label: 'Active Now',
+              value: visible.length,
+              icon: Globe,
+              accent: 'text-muted-foreground',
+            },
+            {
+              label: 'Alerts',
+              value: visible.filter((n) => n.type === 'ALERT').length,
+              icon: AlertTriangle,
+              accent: 'text-muted-foreground',
+            },
+            {
+              label: 'Referrals',
+              value: referralCount,
+              icon: Gift,
+              accent: 'text-success-soft-foreground',
+            },
           ].map(({ label, value, icon: Icon, accent }, i) => (
             <Card
               key={label}
@@ -236,7 +307,10 @@ export default function CivicDashboardPage() {
           <Card className="p-5 sm:p-6 rounded-2xl border-border/70 bg-card ui-pop">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-foreground">New Publication</h3>
-              <button onClick={() => setShowForm(false)} className="text-muted-foreground hover:text-foreground">
+              <button
+                onClick={() => setShowForm(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -255,7 +329,9 @@ export default function CivicDashboardPage() {
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Expires (optional)</label>
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Expires (optional)
+                  </label>
                   <Input
                     type="date"
                     value={formExpiresAt}
@@ -266,12 +342,26 @@ export default function CivicDashboardPage() {
               </div>
               <div className="grid sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Start / Issue date (optional)</label>
-                  <Input type="date" value={formStartAt} onChange={(e) => setFormStartAt(e.target.value)} className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Start / Issue date (optional)
+                  </label>
+                  <Input
+                    type="date"
+                    value={formStartAt}
+                    onChange={(e) => setFormStartAt(e.target.value)}
+                    className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+                  />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Link (optional)</label>
-                  <Input placeholder="https://…" value={formLink} onChange={(e) => setFormLink(e.target.value)} className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Link (optional)
+                  </label>
+                  <Input
+                    placeholder="https://…"
+                    value={formLink}
+                    onChange={(e) => setFormLink(e.target.value)}
+                    className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+                  />
                 </div>
               </div>
               <div className="space-y-1.5">
@@ -330,7 +420,11 @@ export default function CivicDashboardPage() {
                   disabled={submitting}
                   className="rounded-xl h-9 px-4 text-sm font-semibold gap-1.5"
                 >
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  {submitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
                   Publish
                 </Button>
               </div>
@@ -373,18 +467,26 @@ export default function CivicDashboardPage() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3 min-w-0">
-                        <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${cfg.bg} border ${cfg.border}`}>
+                        <div
+                          className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${cfg.bg} border ${cfg.border}`}
+                        >
                           <Icon className={`h-3.5 w-3.5 ${cfg.color}`} />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-xs font-bold uppercase tracking-widest ${cfg.color}`}>
+                            <span
+                              className={`text-xs font-bold uppercase tracking-widest ${cfg.color}`}
+                            >
                               {cfg.label}
                             </span>
                             <span className="text-xs text-muted-foreground">{n.publishedAt}</span>
                           </div>
-                          <h4 className="text-sm font-semibold text-foreground mt-0.5 truncate">{n.title}</h4>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">{n.body}</p>
+                          <h4 className="text-sm font-semibold text-foreground mt-0.5 truncate">
+                            {n.title}
+                          </h4>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">
+                            {n.body}
+                          </p>
                         </div>
                       </div>
                       <button

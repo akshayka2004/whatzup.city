@@ -25,7 +25,11 @@ export function ChipRow<T extends string>({
   className?: string;
 }) {
   return (
-    <div role="group" aria-label={ariaLabel} className={cn('ui-scroll-x flex gap-2 pb-1', className)}>
+    <div
+      role="group"
+      aria-label={ariaLabel}
+      className={cn('ui-scroll-x flex gap-2 pb-1', className)}
+    >
       {options.map((o) => {
         const active = o.value === value;
         return (

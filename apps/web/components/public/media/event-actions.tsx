@@ -29,7 +29,8 @@ export function eventWindow(ev: Pick<CalendarEvent, 'startDate' | 'endDate'>) {
   const s = parseDate(ev.startDate)?.getTime();
   if (s == null) return null;
   const e = parseDate(ev.endDate)?.getTime();
-  const allDay = (MIDNIGHT_UTC(s) || MIDNIGHT_IST(s)) && (e == null || MIDNIGHT_UTC(e) || MIDNIGHT_IST(e));
+  const allDay =
+    (MIDNIGHT_UTC(s) || MIDNIGHT_IST(s)) && (e == null || MIDNIGHT_UTC(e) || MIDNIGHT_IST(e));
   if (allDay) {
     const lastDay = istDayStart(Math.max(e ?? s, s));
     return { start: istDayStart(s), end: lastDay + DAY_MS, allDay: true };
@@ -38,9 +39,14 @@ export function eventWindow(ev: Pick<CalendarEvent, 'startDate' | 'endDate'>) {
   return { start: s, end, allDay: false };
 }
 
-const icsUtc = (ms: number) => new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+const icsUtc = (ms: number) =>
+  new Date(ms)
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}/, '');
 const icsDate = (ms: number) => icsUtc(ms + 5.5 * 60 * 60 * 1000).slice(0, 8); // calendar date as seen in IST
-const icsEscape = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+const icsEscape = (s: string) =>
+  s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
 
 /** RFC 5545 asks for lines <= 75 octets; fold generously at 70 characters. */
 function fold(line: string) {
@@ -76,7 +82,12 @@ export function buildIcs(ev: CalendarEvent): string | null {
 function useFlash() {
   const [on, setOn] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
   const flash = () => {
     setOn(true);
     if (timer.current) clearTimeout(timer.current);
@@ -86,7 +97,13 @@ function useFlash() {
 }
 
 /** Builds a tiny .ics Blob in the browser and downloads it. Renders nothing without a start date. */
-export function AddToCalendarButton({ event, className }: { event: CalendarEvent; className?: string }) {
+export function AddToCalendarButton({
+  event,
+  className,
+}: {
+  event: CalendarEvent;
+  className?: string;
+}) {
   const [done, flash] = useFlash();
   if (!parseDate(event.startDate)) return null;
 
@@ -109,8 +126,17 @@ export function AddToCalendarButton({ event, className }: { event: CalendarEvent
   };
 
   return (
-    <button type="button" onClick={add} className={cn(BTN, className)} aria-label={`Add ${event.title} to calendar`}>
-      {done ? <Check className="h-3.5 w-3.5 text-success" /> : <CalendarPlus className="h-3.5 w-3.5" />}
+    <button
+      type="button"
+      onClick={add}
+      className={cn(BTN, className)}
+      aria-label={`Add ${event.title} to calendar`}
+    >
+      {done ? (
+        <Check className="h-3.5 w-3.5 text-success" />
+      ) : (
+        <CalendarPlus className="h-3.5 w-3.5" />
+      )}
       <span aria-live="polite">{done ? 'Saved' : 'Add to calendar'}</span>
     </button>
   );
@@ -152,7 +178,12 @@ export function ShareButton({
   };
 
   return (
-    <button type="button" onClick={share} className={cn(BTN, className)} aria-label={`Share ${title}`}>
+    <button
+      type="button"
+      onClick={share}
+      className={cn(BTN, className)}
+      aria-label={`Share ${title}`}
+    >
       {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Share2 className="h-3.5 w-3.5" />}
       <span aria-live="polite">{copied ? 'Link copied' : label}</span>
     </button>

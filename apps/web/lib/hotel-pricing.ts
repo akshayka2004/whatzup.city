@@ -26,22 +26,35 @@ export type HotelAmenityOption = {
 export const HOTEL_AMENITIES: HotelAmenityOption[] = [
   { key: 'staycationRooms', label: 'Staycation (Rooms)', subOptions: ['AC', 'Non-AC'] },
   { key: 'dayoutPackages', label: 'Dayout Packages' },
-  { key: 'venue', label: 'Venue', subOptions: ['Open-air venues', 'Auditorium', 'Halls', 'Boardrooms', 'Convention centres'] },
+  {
+    key: 'venue',
+    label: 'Venue',
+    subOptions: ['Open-air venues', 'Auditorium', 'Halls', 'Boardrooms', 'Convention centres'],
+  },
   { key: 'fitness', label: 'Fitness (Gym)' },
   { key: 'spa', label: 'Spa (Wellness)' },
   { key: 'cafe', label: 'Cafe' },
-  { key: 'restaurant', label: 'Restaurant', subOptions: ['Fine Dining', 'À la carte', 'AC / Non-AC', 'Halal / Non-Halal'] },
+  {
+    key: 'restaurant',
+    label: 'Restaurant',
+    subOptions: ['Fine Dining', 'À la carte', 'AC / Non-AC', 'Halal / Non-Halal'],
+  },
   { key: 'buffet', label: 'Buffets', subOptions: ['Breakfast', 'Brunch', 'Lunch', 'Dinner'] },
-  { key: 'bars', label: 'Bars', subOptions: ['Happy Hours & offers', 'Premium bar', 'Executive bar', 'Local bar'] },
+  {
+    key: 'bars',
+    label: 'Bars',
+    subOptions: ['Happy Hours & offers', 'Premium bar', 'Executive bar', 'Local bar'],
+  },
 ];
 
 export type HotelAmenities = Record<string, { selected?: boolean; subChoices?: string[] }>;
 
-export function computeHotelCharge(starRating: number | undefined | null, amenities: HotelAmenities | undefined | null) {
-  const base = starRating ? (STAR_PRICING[starRating] || 0) : 0;
-  const selectedCount = amenities
-    ? Object.values(amenities).filter((a) => a?.selected).length
-    : 0;
+export function computeHotelCharge(
+  starRating: number | undefined | null,
+  amenities: HotelAmenities | undefined | null,
+) {
+  const base = starRating ? STAR_PRICING[starRating] || 0 : 0;
+  const selectedCount = amenities ? Object.values(amenities).filter((a) => a?.selected).length : 0;
   const addons = selectedCount * ADDON_PRICE;
   return { base, addons, selectedCount, total: base + addons };
 }

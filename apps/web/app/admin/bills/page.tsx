@@ -38,7 +38,10 @@ function risk(score: Escalation['fraudScore']) {
   const n = score == null ? null : Number(score);
   if (n == null || !Number.isFinite(n)) return { label: 'Not scored', tone: 'neutral' as const };
   const pct = Math.round(n * 100);
-  return { label: `${pct}% risk`, tone: pct >= 70 ? ('danger' as const) : pct >= 40 ? ('warning' as const) : ('success' as const) };
+  return {
+    label: `${pct}% risk`,
+    tone: pct >= 70 ? ('danger' as const) : pct >= 40 ? ('warning' as const) : ('success' as const),
+  };
 }
 
 /**
@@ -82,10 +85,13 @@ export default function EscalatedBillsPage() {
       return;
     }
     setSaving(true);
-    const res = await apiService.post(`/v1/admin/bill-verifications/${active.id}/platform-intervene`, {
-      decision,
-      reason: reason.trim() || undefined,
-    });
+    const res = await apiService.post(
+      `/v1/admin/bill-verifications/${active.id}/platform-intervene`,
+      {
+        decision,
+        reason: reason.trim() || undefined,
+      },
+    );
     setSaving(false);
     if (res.error) {
       toast.error(res.error);
@@ -113,7 +119,13 @@ export default function EscalatedBillsPage() {
           '—'
         ),
     },
-    { key: 'customer', header: 'Customer', value: (r) => r.bill?.user?.name ?? '', cell: (r) => r.bill?.user?.name ?? '—', hideOnMobile: true },
+    {
+      key: 'customer',
+      header: 'Customer',
+      value: (r) => r.bill?.user?.name ?? '',
+      cell: (r) => r.bill?.user?.name ?? '—',
+      hideOnMobile: true,
+    },
     {
       key: 'amount',
       header: 'Amount',
@@ -139,7 +151,12 @@ export default function EscalatedBillsPage() {
       sortable: true,
       value: (r) => r.createdAt,
       hideOnMobile: true,
-      cell: (r) => new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }),
+      cell: (r) =>
+        new Date(r.createdAt).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          timeZone: 'Asia/Kolkata',
+        }),
     },
   ];
 
@@ -152,11 +169,20 @@ export default function EscalatedBillsPage() {
             ? 'Bills a business could not settle. Review the receipt and decide; the customer and business are notified.'
             : 'Bills escalated to the platform. Super admins make the final decision; you have read-only access.'
         }
-        meta={<StatusPill tone={total > 0 ? 'warning' : 'success'} label={`${total} open`} dot={false} />}
+        meta={
+          <StatusPill
+            tone={total > 0 ? 'warning' : 'success'}
+            label={`${total} open`}
+            dot={false}
+          />
+        }
       />
 
       {error ? (
-        <div role="alert" className="rounded-card bg-danger-soft p-4 text-sm text-danger-soft-foreground">
+        <div
+          role="alert"
+          className="rounded-card bg-danger-soft p-4 text-sm text-danger-soft-foreground"
+        >
           {error}
         </div>
       ) : (
@@ -172,11 +198,18 @@ export default function EscalatedBillsPage() {
           total={total}
           onPageChange={setPage}
           defaultSort={{ key: 'fraudScore', dir: 'desc' }}
-          empty={{ icon: ShieldAlert, title: 'No escalations', description: 'Businesses are handling their own bill queues. Nothing needs the platform right now.' }}
+          empty={{
+            icon: ShieldAlert,
+            title: 'No escalations',
+            description:
+              'Businesses are handling their own bill queues. Nothing needs the platform right now.',
+          }}
           mobileCard={(r) => (
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate font-medium">{r.bill?.business?.name ?? 'Unknown business'}</p>
+                <p className="truncate font-medium">
+                  {r.bill?.business?.name ?? 'Unknown business'}
+                </p>
                 <p className="text-caption text-muted-foreground">
                   {formatINR(Number(r.bill?.amount ?? 0))} · {r.bill?.user?.name ?? 'Customer'}
                 </p>
@@ -197,7 +230,11 @@ export default function EscalatedBillsPage() {
           }
         }}
         title={active?.bill?.business?.name ?? 'Escalated bill'}
-        description={active ? `Raised ${new Date(active.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}` : undefined}
+        description={
+          active
+            ? `Raised ${new Date(active.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`
+            : undefined
+        }
         size="lg"
         footer={
           canDecide ? (
@@ -206,7 +243,11 @@ export default function EscalatedBillsPage() {
                 <Button variant="outline" onClick={() => setDecision(null)}>
                   Back
                 </Button>
-                <Button variant={decision === 'REJECTED' ? 'destructive' : 'default'} loading={saving} onClick={decide}>
+                <Button
+                  variant={decision === 'REJECTED' ? 'destructive' : 'default'}
+                  loading={saving}
+                  onClick={decide}
+                >
                   {decision === 'APPROVED' ? 'Approve bill' : 'Reject bill'}
                 </Button>
               </>
@@ -228,16 +269,27 @@ export default function EscalatedBillsPage() {
             <div className="overflow-hidden rounded-xl border border-border bg-surface-sunken">
               {active.bill?.billImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={active.bill.billImage} alt="Uploaded bill" className="max-h-[50dvh] w-full object-contain" />
+                <img
+                  src={active.bill.billImage}
+                  alt="Uploaded bill"
+                  className="max-h-[50dvh] w-full object-contain"
+                />
               ) : (
-                <p className="p-6 text-center text-caption text-muted-foreground">No image attached</p>
+                <p className="p-6 text-center text-caption text-muted-foreground">
+                  No image attached
+                </p>
               )}
             </div>
             <dl className="grid content-start grid-cols-2 gap-4 text-sm">
               {[
                 ['Amount', formatINR(Number(active.bill?.amount ?? 0))],
                 ['Bill number', active.bill?.billNumber || '—'],
-                ['Bill date', active.bill?.billDate ? new Date(active.bill.billDate).toLocaleDateString('en-IN') : '—'],
+                [
+                  'Bill date',
+                  active.bill?.billDate
+                    ? new Date(active.bill.billDate).toLocaleDateString('en-IN')
+                    : '—',
+                ],
                 ['Customer', active.bill?.user?.name || '—'],
                 ['Email', active.bill?.user?.email || (canDecide ? '—' : 'Hidden')],
                 ['Risk', risk(active.fraudScore).label],
@@ -259,13 +311,19 @@ export default function EscalatedBillsPage() {
               {decision && (
                 <div className="col-span-2 space-y-1.5">
                   <label htmlFor="decision-reason" className="text-label">
-                    {decision === 'REJECTED' ? 'Reason (shared with customer and business)' : 'Note (optional)'}
+                    {decision === 'REJECTED'
+                      ? 'Reason (shared with customer and business)'
+                      : 'Note (optional)'}
                   </label>
                   <Textarea
                     id="decision-reason"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    placeholder={decision === 'REJECTED' ? 'e.g. Amount on receipt does not match the claim' : 'Anything worth recording'}
+                    placeholder={
+                      decision === 'REJECTED'
+                        ? 'e.g. Amount on receipt does not match the claim'
+                        : 'Anything worth recording'
+                    }
                   />
                 </div>
               )}

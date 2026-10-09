@@ -1,4 +1,12 @@
-import { IsOptional, IsString, IsBoolean, IsEnum, IsEmail, MinLength, MaxLength } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsBoolean,
+  IsEnum,
+  IsEmail,
+  MinLength,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '@saas/types';
 
@@ -9,30 +17,42 @@ import { UserRole } from '@saas/types';
  */
 export class AdminUpdateUserDto {
   @ApiProperty({ required: false, maxLength: 255 })
-  @IsOptional() @IsString() @MaxLength(255)
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   name?: string;
 
   @ApiProperty({ required: false, maxLength: 50 })
-  @IsOptional() @IsString() @MaxLength(50)
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
   phone?: string;
 
   @ApiProperty({ required: false, maxLength: 50 })
-  @IsOptional() @IsString() @MaxLength(50)
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
   profession?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 
   @ApiProperty({ required: false, enum: UserRole })
-  @IsOptional() @IsEnum(UserRole)
+  @IsOptional()
+  @IsEnum(UserRole)
   role?: UserRole;
 
   @ApiProperty({ required: false, maxLength: 255 })
-  @IsOptional() @IsEmail() @MaxLength(255)
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(255)
   email?: string;
 
   @ApiProperty({ required: false, description: 'Sets a new password directly (admin action)' })
-  @IsOptional() @IsString() @MinLength(8)
+  @IsOptional()
+  @IsString()
+  @MinLength(8)
   password?: string;
 }

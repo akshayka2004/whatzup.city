@@ -73,12 +73,17 @@ function WheelCard({ wheel }: { wheel: ActiveWheel }) {
           <span className="font-semibold">{wheel.itemName}</span>
         </p>
         {wheel.description && (
-          <p className="mt-1 text-xs text-muted-foreground line-clamp-2 break-words">{wheel.description}</p>
+          <p className="mt-1 text-xs text-muted-foreground line-clamp-2 break-words">
+            {wheel.description}
+          </p>
         )}
 
         <div className="mt-3 flex flex-wrap gap-1">
           {wheel.wheelPercentages.slice(0, 7).map((p, i) => (
-            <span key={i} className="px-1.5 py-0.5 rounded-md bg-secondary text-xs font-bold text-muted-foreground">
+            <span
+              key={i}
+              className="px-1.5 py-0.5 rounded-md bg-secondary text-xs font-bold text-muted-foreground"
+            >
               {p}%
             </span>
           ))}
@@ -131,7 +136,9 @@ export default function SpinItPage() {
   const tabClass = (active: boolean) =>
     cn(
       'ui-press flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-4 text-sm font-semibold transition-colors',
-      active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground hover:text-foreground',
+      active
+        ? 'bg-primary text-primary-foreground'
+        : 'bg-secondary text-muted-foreground hover:text-foreground',
     );
 
   return (
@@ -139,8 +146,14 @@ export default function SpinItPage() {
       <div>
         <section className="relative isolate mb-5 overflow-hidden rounded-3xl border border-border bg-card p-5 sm:p-7">
           {/* Decorative drifting blobs — transform-only CSS animation, ignored by assistive tech */}
-          <span aria-hidden className="ui-drift pointer-events-none absolute -right-10 -top-12 -z-10 h-44 w-44 rounded-full bg-primary/15 blur-3xl" />
-          <span aria-hidden className="ui-drift-slow pointer-events-none absolute -bottom-14 -left-10 -z-10 h-40 w-40 rounded-full bg-accent/20 blur-3xl" />
+          <span
+            aria-hidden
+            className="ui-drift pointer-events-none absolute -right-10 -top-12 -z-10 h-44 w-44 rounded-full bg-primary/15 blur-3xl"
+          />
+          <span
+            aria-hidden
+            className="ui-drift-slow pointer-events-none absolute -bottom-14 -left-10 -z-10 h-40 w-40 rounded-full bg-accent/20 blur-3xl"
+          />
 
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
@@ -165,7 +178,11 @@ export default function SpinItPage() {
               />
               <div className="min-w-0 text-sm">
                 <p className="font-semibold text-foreground">
-                  {loadingTickets ? 'Checking your vouchers…' : summary.total === 1 ? '1 voucher won' : `${summary.total} vouchers won`}
+                  {loadingTickets
+                    ? 'Checking your vouchers…'
+                    : summary.total === 1
+                      ? '1 voucher won'
+                      : `${summary.total} vouchers won`}
                 </p>
                 <p className="text-xs text-muted-foreground tabular-nums">
                   {loadingTickets
@@ -212,7 +229,9 @@ export default function SpinItPage() {
             />
           ) : (
             <StaggerGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" gap={5}>
-              {wheels.map((w) => <WheelCard key={w.id} wheel={w} />)}
+              {wheels.map((w) => (
+                <WheelCard key={w.id} wheel={w} />
+              ))}
             </StaggerGrid>
           )
         ) : loadingTickets ? (

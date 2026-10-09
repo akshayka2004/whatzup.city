@@ -39,15 +39,14 @@ export class BusinessDocumentsController {
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @Get('documents/:docId/download')
   @ApiOperation({ summary: 'Admin gets a signed download URL for a document' })
-  async downloadDocument(
-    @CurrentUser('id') adminId: string,
-    @Param('docId') docId: string,
-  ) {
+  async downloadDocument(@CurrentUser('id') adminId: string, @Param('docId') docId: string) {
     return this.documentsService.getDocumentDownloadUrl(adminId, docId);
   }
 
   @Post(':id/documents')
-  @ApiOperation({ summary: 'Create a signed upload URL and record a PENDING verification document' })
+  @ApiOperation({
+    summary: 'Create a signed upload URL and record a PENDING verification document',
+  })
   async uploadDocument(
     @CurrentUser('id') userId: string,
     @CurrentUser('tenantId') tenantId: string,

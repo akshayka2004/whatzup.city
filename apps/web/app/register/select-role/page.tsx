@@ -43,7 +43,8 @@ const ROLES: RoleOption[] = [
     entityType: 'BUSINESS',
     role: 'BUSINESS_OWNER',
     title: 'Business / Organisation',
-    description: 'List your business, manage inventory and offers, verify bills, and grow your customer base.',
+    description:
+      'List your business, manage inventory and offers, verify bills, and grow your customer base.',
     icon: Building2,
     color: 'from-info/15 to-info/5 hover:to-info/5',
     borderColor: 'border-info/25 hover:border-info/25',
@@ -54,7 +55,8 @@ const ROLES: RoleOption[] = [
     entityType: 'GOVERNMENT',
     role: 'GOVERNMENT_ADMIN',
     title: 'Government / Public Sector',
-    description: 'Issue official alerts, publish civic announcements, and manage district notifications.',
+    description:
+      'Issue official alerts, publish civic announcements, and manage district notifications.',
     icon: ShieldAlert,
     color: 'from-warning/15 to-warning/5 hover:to-warning/5',
     borderColor: 'border-warning/30 hover:border-warning/30',
@@ -126,8 +128,14 @@ export default function SelectRolePage() {
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground flex items-center justify-center py-12 px-4 relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full blur-[160px] pointer-events-none" style={{ background: 'rgba(113,90,90,0.08)' }} />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[140px] pointer-events-none" style={{ background: 'rgba(113,90,90,0.06)' }} />
+      <div
+        className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full blur-[160px] pointer-events-none"
+        style={{ background: 'rgba(113,90,90,0.08)' }}
+      />
+      <div
+        className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[140px] pointer-events-none"
+        style={{ background: 'rgba(113,90,90,0.06)' }}
+      />
 
       <div className="max-w-3xl w-full space-y-8 relative z-10">
         {/* Header */}
@@ -163,13 +171,18 @@ export default function SelectRolePage() {
                 <button
                   key={option.entityType}
                   type="button"
-                  onClick={() => { setSelectedType(option.entityType); setError(''); }}
+                  onClick={() => {
+                    setSelectedType(option.entityType);
+                    setError('');
+                  }}
                   className={`p-6 rounded-2xl border bg-gradient-to-b ${option.color} text-left transition-all duration-200 cursor-pointer flex flex-col gap-4 relative ui-press ${
                     selected ? 'border-white scale-[1.02] shadow-xl' : option.borderColor
                   }`}
                 >
                   <div className="flex items-start justify-between">
-                    <div className={`p-3 rounded-xl ${selected ? 'bg-secondary' : 'bg-background'} transition`}>
+                    <div
+                      className={`p-3 rounded-xl ${selected ? 'bg-secondary' : 'bg-background'} transition`}
+                    >
                       <Icon className={`h-6 w-6 ${option.iconColor}`} />
                     </div>
                     {selected ? (
@@ -177,14 +190,18 @@ export default function SelectRolePage() {
                         <CheckCircle className="h-4 w-4" />
                       </span>
                     ) : (
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${option.badgeColor}`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-bold ${option.badgeColor}`}
+                      >
                         {option.entityType}
                       </span>
                     )}
                   </div>
                   <div>
                     <h3 className="font-bold text-foreground mb-1">{option.title}</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{option.description}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {option.description}
+                    </p>
                   </div>
                 </button>
               );
@@ -198,17 +215,29 @@ export default function SelectRolePage() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-medium text-muted-foreground block mb-1">
-                    {selectedType === 'BUSINESS' ? 'Business Name' : selectedType === 'GOVERNMENT' ? 'Department Name' : 'Your Name'}
+                    {selectedType === 'BUSINESS'
+                      ? 'Business Name'
+                      : selectedType === 'GOVERNMENT'
+                        ? 'Department Name'
+                        : 'Your Name'}
                   </label>
                   <Input
-                    placeholder={selectedType === 'BUSINESS' ? 'Sunrise Café' : selectedType === 'GOVERNMENT' ? 'Public Safety Dept.' : 'Jane Doe'}
+                    placeholder={
+                      selectedType === 'BUSINESS'
+                        ? 'Sunrise Café'
+                        : selectedType === 'GOVERNMENT'
+                          ? 'Public Safety Dept.'
+                          : 'Jane Doe'
+                    }
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="bg-background border-input text-sm text-foreground rounded-xl"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1">Phone Number</label>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1">
+                    Phone Number
+                  </label>
                   <Input
                     placeholder="+91 98765 43210"
                     value={phone}
@@ -224,9 +253,14 @@ export default function SelectRolePage() {
                 className="w-full h-11 bg-gradient-to-r from-primary/15 to-info/5 hover:opacity-90 text-white rounded-xl font-semibold cursor-pointer flex items-center justify-center gap-2"
               >
                 {loading ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Setting up profile...</>
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Setting up profile...
+                  </>
                 ) : (
-                  <><span>Continue</span><ArrowRight className="h-4 w-4" /></>
+                  <>
+                    <span>Continue</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </>
                 )}
               </Button>
             </Card>

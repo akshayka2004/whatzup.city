@@ -96,7 +96,9 @@ export class VouchersService {
       vouchers.map(async (v) => {
         const [unlocked, redeemed] = await Promise.all([
           this.db.voucherClaim.count({ where: { voucherId: v.id, deletedAt: null } }),
-          this.db.voucherClaim.count({ where: { voucherId: v.id, status: 'REDEEMED', deletedAt: null } }),
+          this.db.voucherClaim.count({
+            where: { voucherId: v.id, status: 'REDEEMED', deletedAt: null },
+          }),
         ]);
         return { ...v, unlockedCount: unlocked, redeemedCount: redeemed };
       }),
@@ -118,7 +120,17 @@ export class VouchersService {
   async update(userId: string, voucherId: string, dto: any) {
     await this.ownedVoucher(userId, voucherId);
     const data: any = {};
-    for (const k of ['title', 'description', 'rewardType', 'rewardValue', 'rewardLabel', 'status', 'terms', 'maxRedemptions', 'targetCities']) {
+    for (const k of [
+      'title',
+      'description',
+      'rewardType',
+      'rewardValue',
+      'rewardLabel',
+      'status',
+      'terms',
+      'maxRedemptions',
+      'targetCities',
+    ]) {
       if (dto[k] !== undefined) data[k] = dto[k];
     }
     if (dto.thresholdAmount !== undefined) data.thresholdAmount = dto.thresholdAmount;
@@ -288,7 +300,15 @@ export class VouchersService {
       where: { userId, deletedAt: null },
       orderBy: { unlockedAt: 'desc' },
       include: {
-        voucher: { select: { title: true, rewardLabel: true, rewardType: true, rewardValue: true, endDate: true } },
+        voucher: {
+          select: {
+            title: true,
+            rewardLabel: true,
+            rewardType: true,
+            rewardValue: true,
+            endDate: true,
+          },
+        },
         business: { select: { id: true, name: true, city: true } },
       },
     });

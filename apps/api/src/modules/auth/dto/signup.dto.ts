@@ -1,4 +1,12 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsEnum, IsUUID, IsBoolean } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsOptional,
+  IsEnum,
+  IsUUID,
+  IsBoolean,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRoleEnum } from '@prisma/client';
 
@@ -21,7 +29,10 @@ export class SignupDto {
   @IsString()
   phone?: string;
 
-  @ApiProperty({ description: 'Tenant UUID association (auto-resolved to default if omitted)', required: false })
+  @ApiProperty({
+    description: 'Tenant UUID association (auto-resolved to default if omitted)',
+    required: false,
+  })
   @IsOptional()
   @IsUUID()
   tenantId?: string;

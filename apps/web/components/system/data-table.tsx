@@ -23,7 +23,9 @@ export type Column<T> = {
 type Sort = { key: string; dir: 'asc' | 'desc' } | null;
 
 const read = <T,>(row: T, col: Column<T>) =>
-  col.value ? col.value(row) : ((row as Record<string, unknown>)[col.key] as string | number | null | undefined);
+  col.value
+    ? col.value(row)
+    : ((row as Record<string, unknown>)[col.key] as string | number | null | undefined);
 
 function compare(a: unknown, b: unknown) {
   if (a == null && b == null) return 0;
@@ -61,7 +63,12 @@ export function DataTable<T>({
   loading?: boolean;
   onRowClick?: (row: T) => void;
   mobileCard?: (row: T) => ReactNode;
-  empty?: { icon?: ComponentType<{ className?: string }>; title: string; description?: string; action?: { label: string; href?: string; onClick?: () => void } };
+  empty?: {
+    icon?: ComponentType<{ className?: string }>;
+    title: string;
+    description?: string;
+    action?: { label: string; href?: string; onClick?: () => void };
+  };
   page?: number;
   pageSize?: number;
   total?: number;
@@ -82,9 +89,12 @@ export function DataTable<T>({
   }, [rows, sort, columns]);
 
   const toggleSort = (key: string) =>
-    setSort((s) => (s?.key !== key ? { key, dir: 'asc' } : s.dir === 'asc' ? { key, dir: 'desc' } : null));
+    setSort((s) =>
+      s?.key !== key ? { key, dir: 'asc' } : s.dir === 'asc' ? { key, dir: 'desc' } : null,
+    );
 
-  const alignCls = (a?: Column<T>['align']) => (a === 'right' ? 'text-right' : a === 'center' ? 'text-center' : 'text-left');
+  const alignCls = (a?: Column<T>['align']) =>
+    a === 'right' ? 'text-right' : a === 'center' ? 'text-center' : 'text-left';
 
   if (!loading && rows.length === 0) {
     return (
@@ -99,11 +109,20 @@ export function DataTable<T>({
     );
   }
 
-  const paged = typeof page === 'number' && typeof pageSize === 'number' && typeof total === 'number' && onPageChange;
+  const paged =
+    typeof page === 'number' &&
+    typeof pageSize === 'number' &&
+    typeof total === 'number' &&
+    onPageChange;
   const pages = paged ? Math.max(1, Math.ceil(total / pageSize)) : 1;
 
   return (
-    <div className={cn('overflow-hidden rounded-card border border-border/70 bg-card shadow-e1', className)}>
+    <div
+      className={cn(
+        'overflow-hidden rounded-card border border-border/70 bg-card shadow-e1',
+        className,
+      )}
+    >
       {/* Phones: cards */}
       {mobileCard && (
         <ul className="divide-y divide-border/70 md:hidden" aria-label={caption}>
@@ -152,7 +171,9 @@ export function DataTable<T>({
                   <th
                     key={col.key}
                     scope="col"
-                    aria-sort={active ? (sort!.dir === 'asc' ? 'ascending' : 'descending') : undefined}
+                    aria-sort={
+                      active ? (sort!.dir === 'asc' ? 'ascending' : 'descending') : undefined
+                    }
                     className={cn(
                       'h-11 whitespace-nowrap border-b border-border/70 px-4 text-overline font-semibold text-muted-foreground',
                       alignCls(col.align),
@@ -164,11 +185,18 @@ export function DataTable<T>({
                       <button
                         type="button"
                         onClick={() => toggleSort(col.key)}
-                        className={cn('inline-flex items-center gap-1 rounded-sm hover:text-foreground', active && 'text-foreground')}
+                        className={cn(
+                          'inline-flex items-center gap-1 rounded-sm hover:text-foreground',
+                          active && 'text-foreground',
+                        )}
                       >
                         {col.header}
                         {active ? (
-                          sort!.dir === 'asc' ? <ArrowUp className="size-3.5" /> : <ArrowDown className="size-3.5" />
+                          sort!.dir === 'asc' ? (
+                            <ArrowUp className="size-3.5" />
+                          ) : (
+                            <ArrowDown className="size-3.5" />
+                          )
                         ) : (
                           <ArrowUpDown className="size-3.5 opacity-50" />
                         )}
@@ -186,7 +214,10 @@ export function DataTable<T>({
               ? Array.from({ length: 6 }).map((_, i) => (
                   <tr key={i} className="border-b border-border/50 last:border-0">
                     {columns.map((col) => (
-                      <td key={col.key} className={cn('px-4 py-3.5', col.hideOnMobile && 'hidden lg:table-cell')}>
+                      <td
+                        key={col.key}
+                        className={cn('px-4 py-3.5', col.hideOnMobile && 'hidden lg:table-cell')}
+                      >
                         <div className="ui-skeleton h-4 w-[70%]" />
                       </td>
                     ))}
@@ -212,7 +243,7 @@ export function DataTable<T>({
                           col.className,
                         )}
                       >
-                        {col.cell ? col.cell(row) : (read(row, col) as ReactNode) ?? '—'}
+                        {col.cell ? col.cell(row) : ((read(row, col) as ReactNode) ?? '—')}
                       </td>
                     ))}
                   </tr>
@@ -224,16 +255,29 @@ export function DataTable<T>({
       {paged && pages > 1 && (
         <div className="flex items-center justify-between gap-3 border-t border-border/70 px-4 py-2.5 text-label text-muted-foreground">
           <span className="tabular-nums">
-            {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total.toLocaleString('en-IN')}
+            {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of{' '}
+            {total.toLocaleString('en-IN')}
           </span>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon-sm" onClick={() => onPageChange(page - 1)} disabled={page <= 1} aria-label="Previous page">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => onPageChange(page - 1)}
+              disabled={page <= 1}
+              aria-label="Previous page"
+            >
               <ChevronLeft />
             </Button>
             <span className="px-2 tabular-nums">
               {page} / {pages}
             </span>
-            <Button variant="ghost" size="icon-sm" onClick={() => onPageChange(page + 1)} disabled={page >= pages} aria-label="Next page">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => onPageChange(page + 1)}
+              disabled={page >= pages}
+              aria-label="Next page"
+            >
               <ChevronRight />
             </Button>
           </div>
@@ -252,7 +296,10 @@ export function downloadCsv<T>(filename: string, columns: Column<T>[], rows: T[]
     return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const cols = columns.filter((c) => typeof c.header === 'string');
-  const lines = [cols.map((c) => esc(c.header)).join(','), ...rows.map((r) => cols.map((c) => esc(read(r, c))).join(','))];
+  const lines = [
+    cols.map((c) => esc(c.header)).join(','),
+    ...rows.map((r) => cols.map((c) => esc(read(r, c))).join(',')),
+  ];
   const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

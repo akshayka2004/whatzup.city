@@ -61,7 +61,10 @@ export default function ApprovalsPage() {
     notes?: string,
   ) => {
     setDocActionLoading(true);
-    const res = await apiService.post<any>(`/v1/businesses/documents/${docId}/review`, { action, notes });
+    const res = await apiService.post<any>(`/v1/businesses/documents/${docId}/review`, {
+      action,
+      notes,
+    });
     setDocActionLoading(false);
     if (!res.error) {
       const newStatus =
@@ -86,10 +89,14 @@ export default function ApprovalsPage() {
 
   const docStatusClass = (status?: string): string => {
     switch (status) {
-      case 'APPROVED': return 'bg-success-soft text-success-soft-foreground border-success/20';
-      case 'REJECTED': return 'bg-danger-soft text-danger-soft-foreground border-destructive/20';
-      case 'REUPLOAD_REQUESTED': return 'bg-warning-soft text-warning-soft-foreground border-warning/20';
-      default: return 'bg-muted text-foreground border-border';
+      case 'APPROVED':
+        return 'bg-success-soft text-success-soft-foreground border-success/20';
+      case 'REJECTED':
+        return 'bg-danger-soft text-danger-soft-foreground border-destructive/20';
+      case 'REUPLOAD_REQUESTED':
+        return 'bg-warning-soft text-warning-soft-foreground border-warning/20';
+      default:
+        return 'bg-muted text-foreground border-border';
     }
   };
 
@@ -260,14 +267,17 @@ export default function ApprovalsPage() {
           {loading ? (
             <div className="p-16 text-center">
               <Loader2 className="h-10 w-10 text-info animate-spin mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">Querying pending moderation requests...</p>
+              <p className="text-muted-foreground text-sm">
+                Querying pending moderation requests...
+              </p>
             </div>
           ) : displayApprovals.length === 0 ? (
             <Card className="p-12 text-center border border-dashed border-border bg-surface-sunken rounded-3xl">
               <Check className="mx-auto h-12 w-12 text-success-soft-foreground mb-4 bg-success-soft p-2 rounded-full" />
               <h3 className="text-lg font-bold text-foreground mb-1">Moderation Queue Clean</h3>
               <p className="text-xs text-muted-foreground">
-                No pending verifications for {tabsList.find((t) => t.val === activeTab)?.label.toLowerCase()}.
+                No pending verifications for{' '}
+                {tabsList.find((t) => t.val === activeTab)?.label.toLowerCase()}.
               </p>
             </Card>
           ) : (
@@ -361,150 +371,178 @@ export default function ApprovalsPage() {
             ── SIDE-BY-SIDE MODAL PREVIEW FOR SYSTEM VERIFICATION ──
            ============================================================ */}
         {reviewingItem && (
-          <ModalSurface onClose={() => { setReviewingItem(null); setSelectedDoc(null); }} label={`Credential audit: ${reviewingItem.entity?.name ?? 'application'}`} className="sm:max-w-6xl" hideClose>
-              <button
-                onClick={() => {
-                  setReviewingItem(null);
-                  setSelectedDoc(null);
-                }}
-                className="absolute top-5 right-5 text-muted-foreground hover:text-foreground cursor-pointer p-1 bg-secondary rounded-full"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <ModalSurface
+            onClose={() => {
+              setReviewingItem(null);
+              setSelectedDoc(null);
+            }}
+            label={`Credential audit: ${reviewingItem.entity?.name ?? 'application'}`}
+            className="sm:max-w-6xl"
+            hideClose
+          >
+            <button
+              onClick={() => {
+                setReviewingItem(null);
+                setSelectedDoc(null);
+              }}
+              className="absolute top-5 right-5 text-muted-foreground hover:text-foreground cursor-pointer p-1 bg-secondary rounded-full"
+            >
+              <X className="h-5 w-5" />
+            </button>
 
-              <div className="border-b border-border pb-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="p-1 px-2.5 rounded-lg bg-brand-soft border border-primary/20 text-xs font-bold text-brand-soft-foreground uppercase tracking-widest">
-                    {reviewingItem.entity?.type} VERIFICATION
-                  </span>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    Owner Account: {reviewingItem.entity?.user?.name} ({reviewingItem.entity?.user?.email})
-                  </p>
-                </div>
-                <h3 className="text-2xl font-bold text-muted-foreground mt-2">
-                  Credential Audit: {reviewingItem.entity?.name}
-                </h3>
+            <div className="border-b border-border pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="p-1 px-2.5 rounded-lg bg-brand-soft border border-primary/20 text-xs font-bold text-brand-soft-foreground uppercase tracking-widest">
+                  {reviewingItem.entity?.type} VERIFICATION
+                </span>
+                <p className="text-xs text-muted-foreground font-mono">
+                  Owner Account: {reviewingItem.entity?.user?.name} (
+                  {reviewingItem.entity?.user?.email})
+                </p>
               </div>
+              <h3 className="text-2xl font-bold text-muted-foreground mt-2">
+                Credential Audit: {reviewingItem.entity?.name}
+              </h3>
+            </div>
 
-              {/* Side by side layout */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden flex-1 pb-2">
-                
-                {/* LEFT SIDE (col-span-5): Metadata + Document list */}
-                <div className="lg:col-span-5 flex flex-col gap-4 overflow-y-auto pr-1">
-                  
-                  {/* Dynamic Entity Info Box */}
-                  <div className="p-4 rounded-2xl bg-secondary border border-border space-y-3">
-                    <h4 className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      {getRoleIcon(reviewingItem.entity?.type)}
-                      Profile Specifications
-                    </h4>
+            {/* Side by side layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden flex-1 pb-2">
+              {/* LEFT SIDE (col-span-5): Metadata + Document list */}
+              <div className="lg:col-span-5 flex flex-col gap-4 overflow-y-auto pr-1">
+                {/* Dynamic Entity Info Box */}
+                <div className="p-4 rounded-2xl bg-secondary border border-border space-y-3">
+                  <h4 className="text-xs font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    {getRoleIcon(reviewingItem.entity?.type)}
+                    Profile Specifications
+                  </h4>
 
-                    {/* DYNAMIC FIELD RENDERING BY ROLE */}
-                    {reviewingItem.entity?.type === 'BUSINESS' && reviewingItem.entity?.business && (
-                      <div className="space-y-2 text-xs">
-                        <div className="grid grid-cols-3 py-1 border-b border-border">
-                          <span className="text-muted-foreground">Category</span>
-                          <span className="col-span-2 text-muted-foreground font-semibold">{reviewingItem.entity.business.category?.name || 'Retail'}</span>
-                        </div>
-                        <div className="grid grid-cols-3 py-1 border-b border-border">
-                          <span className="text-muted-foreground">Owner Name</span>
-                          <span className="col-span-2 text-muted-foreground">{reviewingItem.entity.business.ownerName || 'N/A'}</span>
-                        </div>
-                        <div className="grid grid-cols-3 py-1 border-b border-border">
-                          <span className="text-muted-foreground">Website</span>
-                          <a href={reviewingItem.entity.business.website} target="_blank" rel="noreferrer" className="col-span-2 text-info hover:underline truncate">
-                            {reviewingItem.entity.business.website || 'N/A'}
-                          </a>
-                        </div>
-                        <div className="grid grid-cols-3 py-1 border-b border-border">
-                          <span className="text-muted-foreground">Address</span>
-                          <span className="col-span-2 text-foreground leading-tight">
-                            {reviewingItem.entity.business.address}, {reviewingItem.entity.business.city}, {reviewingItem.entity.business.state} - {reviewingItem.entity.business.zipCode}
-                          </span>
-                        </div>
-                        <div className="pt-2 text-muted-foreground italic">
-                          "{reviewingItem.entity.business.description}"
-                        </div>
+                  {/* DYNAMIC FIELD RENDERING BY ROLE */}
+                  {reviewingItem.entity?.type === 'BUSINESS' && reviewingItem.entity?.business && (
+                    <div className="space-y-2 text-xs">
+                      <div className="grid grid-cols-3 py-1 border-b border-border">
+                        <span className="text-muted-foreground">Category</span>
+                        <span className="col-span-2 text-muted-foreground font-semibold">
+                          {reviewingItem.entity.business.category?.name || 'Retail'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 py-1 border-b border-border">
+                        <span className="text-muted-foreground">Owner Name</span>
+                        <span className="col-span-2 text-muted-foreground">
+                          {reviewingItem.entity.business.ownerName || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 py-1 border-b border-border">
+                        <span className="text-muted-foreground">Website</span>
+                        <a
+                          href={reviewingItem.entity.business.website}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="col-span-2 text-info hover:underline truncate"
+                        >
+                          {reviewingItem.entity.business.website || 'N/A'}
+                        </a>
+                      </div>
+                      <div className="grid grid-cols-3 py-1 border-b border-border">
+                        <span className="text-muted-foreground">Address</span>
+                        <span className="col-span-2 text-foreground leading-tight">
+                          {reviewingItem.entity.business.address},{' '}
+                          {reviewingItem.entity.business.city},{' '}
+                          {reviewingItem.entity.business.state} -{' '}
+                          {reviewingItem.entity.business.zipCode}
+                        </span>
+                      </div>
+                      <div className="pt-2 text-muted-foreground italic">
+                        "{reviewingItem.entity.business.description}"
+                      </div>
 
-                        {/* Plan opted + payment submitted — live from the DB so the
+                      {/* Plan opted + payment submitted — live from the DB so the
                             approver can confirm both before approving. */}
-                        {(() => {
-                          const sub = reviewingItem.entity.business.subscriptions?.[0];
-                          const pay = reviewingItem.entity.business.payments?.[0];
-                          if (!sub && !pay) {
-                            return (
-                              <div className="mt-3 p-3 rounded-lg border border-warning/20 bg-warning-soft text-warning-soft-foreground">
-                                No plan selected and no payment submitted yet.
-                              </div>
-                            );
-                          }
+                      {(() => {
+                        const sub = reviewingItem.entity.business.subscriptions?.[0];
+                        const pay = reviewingItem.entity.business.payments?.[0];
+                        if (!sub && !pay) {
                           return (
-                            <div className="mt-3 space-y-2 p-3 rounded-lg border border-border bg-muted/30">
-                              <div className="font-semibold text-foreground">Plan &amp; Payment</div>
-                              {sub && (
-                                <>
-                                  <div className="grid grid-cols-3 py-1 border-b border-border">
-                                    <span className="text-muted-foreground">Plan opted</span>
-                                    <span className="col-span-2 text-foreground font-semibold">
-                                      {planLabel(sub.packageName)}
-                                    </span>
-                                  </div>
-                                  <div className="grid grid-cols-3 py-1 border-b border-border">
-                                    <span className="text-muted-foreground">Plan amount</span>
-                                    <span className="col-span-2 text-foreground font-semibold">
-                                      ₹{Number(sub.pricing || 0).toLocaleString('en-IN')}
-                                      <span className="text-muted-foreground font-normal">
-                                        {' '}· {sub.duration} days · {sub.status}
-                                      </span>
-                                    </span>
-                                  </div>
-                                </>
-                              )}
-                              {pay ? (
-                                <>
-                                  <div className="grid grid-cols-3 py-1 border-b border-border">
-                                    <span className="text-muted-foreground">Paid</span>
-                                    <span className="col-span-2 text-foreground font-semibold">
-                                      ₹{Number(pay.amount || 0).toLocaleString('en-IN')}
-                                      <span className="text-muted-foreground font-normal"> · {pay.method}</span>
-                                    </span>
-                                  </div>
-                                  <div className="grid grid-cols-3 py-1 border-b border-border">
-                                    <span className="text-muted-foreground">Payment status</span>
-                                    <span
-                                      className={`col-span-2 font-semibold ${
-                                        pay.status === 'SUCCESS'
-                                          ? 'text-success'
-                                          : pay.status === 'FAILED'
-                                            ? 'text-destructive'
-                                            : 'text-warning'
-                                      }`}
-                                    >
-                                      {pay.status}
-                                      {pay.status === 'PENDING' && ' — verify in Payments'}
-                                    </span>
-                                  </div>
-                                  {pay.transactionRef && (
-                                    <div className="grid grid-cols-3 py-1">
-                                      <span className="text-muted-foreground">UPI ref</span>
-                                      <span className="col-span-2 text-foreground">{pay.transactionRef}</span>
-                                    </div>
-                                  )}
-                                </>
-                              ) : (
-                                <div className="text-warning">No payment submitted yet.</div>
-                              )}
+                            <div className="mt-3 p-3 rounded-lg border border-warning/20 bg-warning-soft text-warning-soft-foreground">
+                              No plan selected and no payment submitted yet.
                             </div>
                           );
-                        })()}
-                      </div>
-                    )}
+                        }
+                        return (
+                          <div className="mt-3 space-y-2 p-3 rounded-lg border border-border bg-muted/30">
+                            <div className="font-semibold text-foreground">Plan &amp; Payment</div>
+                            {sub && (
+                              <>
+                                <div className="grid grid-cols-3 py-1 border-b border-border">
+                                  <span className="text-muted-foreground">Plan opted</span>
+                                  <span className="col-span-2 text-foreground font-semibold">
+                                    {planLabel(sub.packageName)}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-3 py-1 border-b border-border">
+                                  <span className="text-muted-foreground">Plan amount</span>
+                                  <span className="col-span-2 text-foreground font-semibold">
+                                    ₹{Number(sub.pricing || 0).toLocaleString('en-IN')}
+                                    <span className="text-muted-foreground font-normal">
+                                      {' '}
+                                      · {sub.duration} days · {sub.status}
+                                    </span>
+                                  </span>
+                                </div>
+                              </>
+                            )}
+                            {pay ? (
+                              <>
+                                <div className="grid grid-cols-3 py-1 border-b border-border">
+                                  <span className="text-muted-foreground">Paid</span>
+                                  <span className="col-span-2 text-foreground font-semibold">
+                                    ₹{Number(pay.amount || 0).toLocaleString('en-IN')}
+                                    <span className="text-muted-foreground font-normal">
+                                      {' '}
+                                      · {pay.method}
+                                    </span>
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-3 py-1 border-b border-border">
+                                  <span className="text-muted-foreground">Payment status</span>
+                                  <span
+                                    className={`col-span-2 font-semibold ${
+                                      pay.status === 'SUCCESS'
+                                        ? 'text-success'
+                                        : pay.status === 'FAILED'
+                                          ? 'text-destructive'
+                                          : 'text-warning'
+                                    }`}
+                                  >
+                                    {pay.status}
+                                    {pay.status === 'PENDING' && ' — verify in Payments'}
+                                  </span>
+                                </div>
+                                {pay.transactionRef && (
+                                  <div className="grid grid-cols-3 py-1">
+                                    <span className="text-muted-foreground">UPI ref</span>
+                                    <span className="col-span-2 text-foreground">
+                                      {pay.transactionRef}
+                                    </span>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-warning">No payment submitted yet.</div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
 
-                    {reviewingItem.entity?.type === 'INFLUENCER' && reviewingItem.entity?.influencerProfile && (
+                  {reviewingItem.entity?.type === 'INFLUENCER' &&
+                    reviewingItem.entity?.influencerProfile && (
                       <div className="space-y-2 text-xs">
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Niche</span>
-                          <span className="col-span-2 text-primary font-semibold">{reviewingItem.entity.influencerProfile.niche}</span>
+                          <span className="col-span-2 text-primary font-semibold">
+                            {reviewingItem.entity.influencerProfile.niche}
+                          </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Followers</span>
@@ -522,19 +560,66 @@ export default function ApprovalsPage() {
                           <span className="text-muted-foreground">Social Handles</span>
                           <div className="col-span-2 space-y-1">
                             {reviewingItem.entity.influencerProfile.instagram && (
-                              <p className="text-foreground">IG: <a href={`https://instagram.com/${reviewingItem.entity.influencerProfile.instagram.replace('@','')}`} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">{reviewingItem.entity.influencerProfile.instagram}</a></p>
+                              <p className="text-foreground">
+                                IG:{' '}
+                                <a
+                                  href={`https://instagram.com/${reviewingItem.entity.influencerProfile.instagram.replace('@', '')}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="font-semibold text-primary hover:underline"
+                                >
+                                  {reviewingItem.entity.influencerProfile.instagram}
+                                </a>
+                              </p>
                             )}
                             {reviewingItem.entity.influencerProfile.youtube && (
-                              <p className="text-foreground">YT: <a href={reviewingItem.entity.influencerProfile.youtube.startsWith('http') ? reviewingItem.entity.influencerProfile.youtube : `https://${reviewingItem.entity.influencerProfile.youtube}`} target="_blank" rel="noreferrer" className="text-destructive hover:underline">{reviewingItem.entity.influencerProfile.youtube}</a></p>
+                              <p className="text-foreground">
+                                YT:{' '}
+                                <a
+                                  href={
+                                    reviewingItem.entity.influencerProfile.youtube.startsWith(
+                                      'http',
+                                    )
+                                      ? reviewingItem.entity.influencerProfile.youtube
+                                      : `https://${reviewingItem.entity.influencerProfile.youtube}`
+                                  }
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-destructive hover:underline"
+                                >
+                                  {reviewingItem.entity.influencerProfile.youtube}
+                                </a>
+                              </p>
                             )}
                             {reviewingItem.entity.influencerProfile.linkedin && (
-                              <p className="text-foreground">LI: <a href={reviewingItem.entity.influencerProfile.linkedin.startsWith('http') ? reviewingItem.entity.influencerProfile.linkedin : `https://linkedin.com/in/${reviewingItem.entity.influencerProfile.linkedin}`} target="_blank" rel="noreferrer" className="text-info hover:underline">{reviewingItem.entity.influencerProfile.linkedin}</a></p>
+                              <p className="text-foreground">
+                                LI:{' '}
+                                <a
+                                  href={
+                                    reviewingItem.entity.influencerProfile.linkedin.startsWith(
+                                      'http',
+                                    )
+                                      ? reviewingItem.entity.influencerProfile.linkedin
+                                      : `https://linkedin.com/in/${reviewingItem.entity.influencerProfile.linkedin}`
+                                  }
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-info hover:underline"
+                                >
+                                  {reviewingItem.entity.influencerProfile.linkedin}
+                                </a>
+                              </p>
                             )}
                           </div>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Portfolio</span>
-                          <a href={reviewingItem.entity.influencerProfile.portfolioUrl} target="_blank" rel="noreferrer" className="col-span-2 text-info hover:underline truncate">
+                          <a
+                            href={reviewingItem.entity.influencerProfile.portfolioUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="col-span-2 text-info hover:underline truncate"
+                          >
                             {reviewingItem.entity.influencerProfile.portfolioUrl || 'N/A'}
                           </a>
                         </div>
@@ -542,7 +627,12 @@ export default function ApprovalsPage() {
                           <div className="pt-2 text-muted-foreground text-xs flex items-center gap-1.5">
                             <FileText className="h-4 w-4 text-primary" />
                             <span>Media Kit linked at: </span>
-                            <a href={reviewingItem.entity.influencerProfile.mediaKitUrl} target="_blank" rel="noreferrer" className="text-info hover:underline truncate max-w-[150px]">
+                            <a
+                              href={reviewingItem.entity.influencerProfile.mediaKitUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-info hover:underline truncate max-w-[150px]"
+                            >
                               {reviewingItem.entity.influencerProfile.mediaKitUrl}
                             </a>
                           </div>
@@ -550,20 +640,26 @@ export default function ApprovalsPage() {
                       </div>
                     )}
 
-                    {reviewingItem.entity?.type === 'PROFESSIONAL' && reviewingItem.entity?.professionalProfile && (
+                  {reviewingItem.entity?.type === 'PROFESSIONAL' &&
+                    reviewingItem.entity?.professionalProfile && (
                       <div className="space-y-2 text-xs">
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Practice Field</span>
-                          <span className="col-span-2 text-success font-semibold">{reviewingItem.entity.professionalProfile.category}</span>
+                          <span className="col-span-2 text-success font-semibold">
+                            {reviewingItem.entity.professionalProfile.category}
+                          </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Experience</span>
-                          <span className="col-span-2 text-muted-foreground">{reviewingItem.entity.professionalProfile.experienceYears} Years</span>
+                          <span className="col-span-2 text-muted-foreground">
+                            {reviewingItem.entity.professionalProfile.experienceYears} Years
+                          </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Fees / Rates</span>
                           <span className="col-span-2 text-muted-foreground font-bold font-mono">
-                            ₹{reviewingItem.entity.professionalProfile.pricingMin} - ₹{reviewingItem.entity.professionalProfile.pricingMax} / hr
+                            ₹{reviewingItem.entity.professionalProfile.pricingMin} - ₹
+                            {reviewingItem.entity.professionalProfile.pricingMax} / hr
                           </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
@@ -577,18 +673,29 @@ export default function ApprovalsPage() {
                         <div className="py-1">
                           <span className="text-muted-foreground block mb-1">Certifications:</span>
                           <div className="flex flex-wrap gap-1">
-                            {Array.isArray(reviewingItem.entity.professionalProfile.certifications) &&
-                              reviewingItem.entity.professionalProfile.certifications.map((c: string, i: number) => (
-                                <span key={i} className="px-2 py-0.5 rounded bg-secondary text-xs text-foreground border border-border">
-                                  {c}
-                                </span>
-                              ))}
+                            {Array.isArray(
+                              reviewingItem.entity.professionalProfile.certifications,
+                            ) &&
+                              reviewingItem.entity.professionalProfile.certifications.map(
+                                (c: string, i: number) => (
+                                  <span
+                                    key={i}
+                                    className="px-2 py-0.5 rounded bg-secondary text-xs text-foreground border border-border"
+                                  >
+                                    {c}
+                                  </span>
+                                ),
+                              )}
                           </div>
                         </div>
                         <div className="py-1 border-t border-border mt-2">
-                          <span className="text-muted-foreground block mb-1">Weekly Availability:</span>
+                          <span className="text-muted-foreground block mb-1">
+                            Weekly Availability:
+                          </span>
                           <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
-                            {Object.entries(reviewingItem.entity.professionalProfile.availability || {}).map(([day, hrs]: any) => (
+                            {Object.entries(
+                              reviewingItem.entity.professionalProfile.availability || {},
+                            ).map(([day, hrs]: any) => (
                               <div key={day} className="flex justify-between pr-2">
                                 <span className="capitalize">{day}:</span>
                                 <span className="text-foreground font-mono">{hrs}</span>
@@ -599,535 +706,616 @@ export default function ApprovalsPage() {
                       </div>
                     )}
 
-                    {reviewingItem.entity?.type === 'ORGANIZATION' && reviewingItem.entity?.organizationProfile && (
+                  {reviewingItem.entity?.type === 'ORGANIZATION' &&
+                    reviewingItem.entity?.organizationProfile && (
                       <div className="space-y-2 text-xs">
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">NGO Legal Name</span>
-                          <span className="col-span-2 text-destructive font-semibold">{reviewingItem.entity.organizationProfile.ngoName}</span>
+                          <span className="col-span-2 text-destructive font-semibold">
+                            {reviewingItem.entity.organizationProfile.ngoName}
+                          </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Registration #</span>
-                          <span className="col-span-2 text-muted-foreground font-mono font-bold">{reviewingItem.entity.organizationProfile.registrationNumber}</span>
+                          <span className="col-span-2 text-muted-foreground font-mono font-bold">
+                            {reviewingItem.entity.organizationProfile.registrationNumber}
+                          </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Focus Cause</span>
-                          <span className="col-span-2 text-foreground">{reviewingItem.entity.organizationProfile.causeCategory}</span>
+                          <span className="col-span-2 text-foreground">
+                            {reviewingItem.entity.organizationProfile.causeCategory}
+                          </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Operational In</span>
                           <span className="col-span-2 text-muted-foreground">
-                            {Array.isArray(reviewingItem.entity.organizationProfile.operationalAreas)
+                            {Array.isArray(
+                              reviewingItem.entity.organizationProfile.operationalAreas,
+                            )
                               ? reviewingItem.entity.organizationProfile.operationalAreas.join(', ')
                               : 'All Districts'}
                           </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Website</span>
-                          <a href={reviewingItem.entity.organizationProfile.website} target="_blank" rel="noreferrer" className="col-span-2 text-info hover:underline truncate">
+                          <a
+                            href={reviewingItem.entity.organizationProfile.website}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="col-span-2 text-info hover:underline truncate"
+                          >
                             {reviewingItem.entity.organizationProfile.website || 'N/A'}
                           </a>
                         </div>
                       </div>
                     )}
 
-                    {reviewingItem.entity?.type === 'GOVERNMENT' && reviewingItem.entity?.governmentProfile && (
+                  {reviewingItem.entity?.type === 'GOVERNMENT' &&
+                    reviewingItem.entity?.governmentProfile && (
                       <div className="space-y-2 text-xs">
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Dept Name</span>
-                          <span className="col-span-2 text-warning font-semibold">{reviewingItem.entity.governmentProfile.departmentName}</span>
+                          <span className="col-span-2 text-warning font-semibold">
+                            {reviewingItem.entity.governmentProfile.departmentName}
+                          </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Official Email</span>
-                          <span className="col-span-2 text-muted-foreground font-mono">{reviewingItem.entity.governmentProfile.officialEmail}</span>
+                          <span className="col-span-2 text-muted-foreground font-mono">
+                            {reviewingItem.entity.governmentProfile.officialEmail}
+                          </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Jurisdiction</span>
-                          <span className="col-span-2 text-muted-foreground">{reviewingItem.entity.governmentProfile.departmentType}</span>
+                          <span className="col-span-2 text-muted-foreground">
+                            {reviewingItem.entity.governmentProfile.departmentType}
+                          </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">District HQ</span>
-                          <span className="col-span-2 text-foreground">{reviewingItem.entity.governmentProfile.district}</span>
+                          <span className="col-span-2 text-foreground">
+                            {reviewingItem.entity.governmentProfile.district}
+                          </span>
                         </div>
                       </div>
                     )}
 
-                    {reviewingItem.entity?.type === 'EVENT_ORGANIZER' && reviewingItem.entity?.eventOrganizerProfile && (
+                  {reviewingItem.entity?.type === 'EVENT_ORGANIZER' &&
+                    reviewingItem.entity?.eventOrganizerProfile && (
                       <div className="space-y-2 text-xs">
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Agency Name</span>
-                          <span className="col-span-2 text-primary font-semibold">{reviewingItem.entity.eventOrganizerProfile.organizationName}</span>
+                          <span className="col-span-2 text-primary font-semibold">
+                            {reviewingItem.entity.eventOrganizerProfile.organizationName}
+                          </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Categories</span>
                           <span className="col-span-2 text-foreground">
-                            {Array.isArray(reviewingItem.entity.eventOrganizerProfile.eventCategories)
-                              ? reviewingItem.entity.eventOrganizerProfile.eventCategories.join(', ')
+                            {Array.isArray(
+                              reviewingItem.entity.eventOrganizerProfile.eventCategories,
+                            )
+                              ? reviewingItem.entity.eventOrganizerProfile.eventCategories.join(
+                                  ', ',
+                                )
                               : 'Festivals & Seminars'}
                           </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Venue Partners</span>
                           <span className="col-span-2 text-foreground">
-                            {Array.isArray(reviewingItem.entity.eventOrganizerProfile.venuePartnerships)
-                              ? reviewingItem.entity.eventOrganizerProfile.venuePartnerships.join(', ')
+                            {Array.isArray(
+                              reviewingItem.entity.eventOrganizerProfile.venuePartnerships,
+                            )
+                              ? reviewingItem.entity.eventOrganizerProfile.venuePartnerships.join(
+                                  ', ',
+                                )
                               : 'None listed'}
                           </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Ticketing Support</span>
                           <span className="col-span-2 text-muted-foreground font-semibold">
-                            {reviewingItem.entity.eventOrganizerProfile.ticketingSupport ? 'Yes, Integrated APIs' : 'No'}
+                            {reviewingItem.entity.eventOrganizerProfile.ticketingSupport
+                              ? 'Yes, Integrated APIs'
+                              : 'No'}
                           </span>
                         </div>
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Website</span>
-                          <a href={reviewingItem.entity.eventOrganizerProfile.website} target="_blank" rel="noreferrer" className="col-span-2 text-info hover:underline truncate">
+                          <a
+                            href={reviewingItem.entity.eventOrganizerProfile.website}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="col-span-2 text-info hover:underline truncate"
+                          >
                             {reviewingItem.entity.eventOrganizerProfile.website || 'N/A'}
                           </a>
                         </div>
-                        {Array.isArray(reviewingItem.entity.eventOrganizerProfile.previousEvents) && reviewingItem.entity.eventOrganizerProfile.previousEvents.length > 0 && (
-                          <div className="pt-2 border-t border-border">
-                            <span className="text-muted-foreground block mb-1">Previous Events Portfolio:</span>
-                            <div className="space-y-1.5 max-h-[100px] overflow-y-auto pr-1">
-                              {reviewingItem.entity.eventOrganizerProfile.previousEvents.map((ev: any, idx: number) => (
-                                <div key={idx} className="bg-secondary p-1.5 rounded border border-border text-xs">
-                                  <div className="flex justify-between font-bold text-foreground">
-                                    <span>{ev.name}</span>
-                                    <span className="text-muted-foreground">{ev.date}</span>
-                                  </div>
-                                  <p className="text-muted-foreground text-xs mt-0.5 leading-tight">{ev.desc}</p>
-                                </div>
-                              ))}
+                        {Array.isArray(reviewingItem.entity.eventOrganizerProfile.previousEvents) &&
+                          reviewingItem.entity.eventOrganizerProfile.previousEvents.length > 0 && (
+                            <div className="pt-2 border-t border-border">
+                              <span className="text-muted-foreground block mb-1">
+                                Previous Events Portfolio:
+                              </span>
+                              <div className="space-y-1.5 max-h-[100px] overflow-y-auto pr-1">
+                                {reviewingItem.entity.eventOrganizerProfile.previousEvents.map(
+                                  (ev: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="bg-secondary p-1.5 rounded border border-border text-xs"
+                                    >
+                                      <div className="flex justify-between font-bold text-foreground">
+                                        <span>{ev.name}</span>
+                                        <span className="text-muted-foreground">{ev.date}</span>
+                                      </div>
+                                      <p className="text-muted-foreground text-xs mt-0.5 leading-tight">
+                                        {ev.desc}
+                                      </p>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
                       </div>
                     )}
-                  </div>
+                </div>
 
-                  {/* Documents Selection Queue */}
-                  <div className="space-y-2 flex-1">
-                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
-                      Verification Credentials ({ (reviewingItem.entity?.documents || []).length } files)
-                    </label>
-                    <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                      {(reviewingItem.entity?.documents || []).length === 0 ? (
-                        <p className="text-xs text-muted-foreground italic py-4 text-center">
-                          No documents have been uploaded for verification.
-                        </p>
-                      ) : (
-                        reviewingItem.entity.documents.map((doc: any) => {
-                          const isSelected = selectedDoc?.id === doc.id;
-                          return (
-                            <div
-                              key={doc.id}
-                              onClick={() => setSelectedDoc(doc)}
-                              className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-brand-soft border-primary/40 text-brand-soft-foreground'
-                                  : 'bg-secondary border-border text-muted-foreground hover:bg-foreground/[0.04]'
-                              }`}
-                            >
-                              <div className="flex items-center gap-3 min-w-0">
-                                <FileText
-                                  className={`h-5 w-5 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}
-                                />
-                                <div className="min-w-0">
-                                  <p className="text-xs font-semibold truncate max-w-[170px]">
-                                    {doc.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {doc.documentType || 'PROOF'} {doc.documentNumber ? `(${doc.documentNumber})` : ''}
-                                  </p>
-                                </div>
+                {/* Documents Selection Queue */}
+                <div className="space-y-2 flex-1">
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
+                    Verification Credentials ({(reviewingItem.entity?.documents || []).length}{' '}
+                    files)
+                  </label>
+                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                    {(reviewingItem.entity?.documents || []).length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic py-4 text-center">
+                        No documents have been uploaded for verification.
+                      </p>
+                    ) : (
+                      reviewingItem.entity.documents.map((doc: any) => {
+                        const isSelected = selectedDoc?.id === doc.id;
+                        return (
+                          <div
+                            key={doc.id}
+                            onClick={() => setSelectedDoc(doc)}
+                            className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-brand-soft border-primary/40 text-brand-soft-foreground'
+                                : 'bg-secondary border-border text-muted-foreground hover:bg-foreground/[0.04]'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <FileText
+                                className={`h-5 w-5 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}
+                              />
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold truncate max-w-[170px]">
+                                  {doc.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {doc.documentType || 'PROOF'}{' '}
+                                  {doc.documentNumber ? `(${doc.documentNumber})` : ''}
+                                </p>
                               </div>
-                              <a
-                                href={doc.fileUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                className="p-1.5 rounded-lg bg-secondary border border-border text-info hover:bg-info/10 flex items-center gap-1 text-xs font-semibold"
-                              >
-                                <ExternalLink className="h-3.5 w-3.5" />
-                              </a>
                             </div>
-                          );
-                        })
+                            <a
+                              href={doc.fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 rounded-lg bg-secondary border border-border text-info hover:bg-info/10 flex items-center gap-1 text-xs font-semibold"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT SIDE (col-span-7): Live File Viewer */}
+              <div className="lg:col-span-7 flex flex-col bg-surface-sunken border border-border rounded-2xl p-4 min-h-[400px] overflow-hidden relative">
+                {selectedDoc ? (
+                  <div className="h-full flex flex-col">
+                    <div className="border-b border-border pb-2 mb-3 flex items-center justify-between shrink-0">
+                      <div>
+                        <h4 className="text-xs font-bold text-muted-foreground truncate max-w-[320px]">
+                          {selectedDoc.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                          {selectedDoc.documentType || 'VERIFICATION_CREDENTIAL'}{' '}
+                          {selectedDoc.issuedAuthority
+                            ? `• Issued by ${selectedDoc.issuedAuthority}`
+                            : ''}
+                        </p>
+                      </div>
+                      {selectedDoc.fileUrl && selectedDoc.fileUrl !== '#' && (
+                        <a
+                          href={selectedDoc.fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-info hover:underline flex items-center gap-1 font-semibold"
+                        >
+                          Fullscreen <ExternalLink className="h-3 w-3" />
+                        </a>
                       )}
                     </div>
-                  </div>
-                </div>
 
-                {/* RIGHT SIDE (col-span-7): Live File Viewer */}
-                <div className="lg:col-span-7 flex flex-col bg-surface-sunken border border-border rounded-2xl p-4 min-h-[400px] overflow-hidden relative">
-                  {selectedDoc ? (
-                    <div className="h-full flex flex-col">
-                      <div className="border-b border-border pb-2 mb-3 flex items-center justify-between shrink-0">
-                        <div>
-                          <h4 className="text-xs font-bold text-muted-foreground truncate max-w-[320px]">
-                            {selectedDoc.name}
-                          </h4>
-                          <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                            {selectedDoc.documentType || 'VERIFICATION_CREDENTIAL'} {selectedDoc.issuedAuthority ? `• Issued by ${selectedDoc.issuedAuthority}` : ''}
-                          </p>
-                        </div>
-                        {selectedDoc.fileUrl && selectedDoc.fileUrl !== '#' && (
-                          <a
-                            href={selectedDoc.fileUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs text-info hover:underline flex items-center gap-1 font-semibold"
-                          >
-                            Fullscreen <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                      </div>
+                    <div className="flex-1 overflow-y-auto pr-1 flex items-center justify-center bg-black/40 rounded-xl border border-border p-4 relative">
+                      {/* Check document type */}
+                      {(() => {
+                        const name = selectedDoc.name.toLowerCase();
+                        const isPdf = name.endsWith('.pdf') || selectedDoc.documentType;
+                        const isImage =
+                          name.endsWith('.png') ||
+                          name.endsWith('.jpg') ||
+                          name.endsWith('.jpeg') ||
+                          name.endsWith('.webp');
 
-                      <div className="flex-1 overflow-y-auto pr-1 flex items-center justify-center bg-black/40 rounded-xl border border-border p-4 relative">
-                        {/* Check document type */}
-                        {(() => {
-                          const name = selectedDoc.name.toLowerCase();
-                          const isPdf = name.endsWith('.pdf') || selectedDoc.documentType;
-                          const isImage =
-                            name.endsWith('.png') ||
-                            name.endsWith('.jpg') ||
-                            name.endsWith('.jpeg') ||
-                            name.endsWith('.webp');
-
-                          // Real URL preview
-                          if (selectedDoc.fileUrl && selectedDoc.fileUrl !== '#') {
-                            if (isPdf && !isImage) {
-                              return (
-                                <iframe
-                                  src={selectedDoc.fileUrl}
-                                  className="w-full h-full min-h-[300px] rounded-lg border-0 bg-white"
-                                  title="PDF Viewer"
-                                />
-                              );
-                            }
-                            if (isImage) {
-                              return (
-                                // eslint-disable-next-line @next/next/no-img-element -- KYC documents: unknown size, signed URL, shown whole
-                                <img
-                                  src={selectedDoc.fileUrl}
-                                  alt={selectedDoc.name}
-                                  className="max-w-full max-h-full object-contain rounded-lg shadow-md"
-                                />
-                              );
-                            }
-                          }
-
-                          // Fallback Mock Preview for Local Development
-                          if (isPdf) {
+                        // Real URL preview
+                        if (selectedDoc.fileUrl && selectedDoc.fileUrl !== '#') {
+                          if (isPdf && !isImage) {
                             return (
-                              <div className="w-full h-full min-h-[300px] bg-card border border-border rounded-lg p-6 flex flex-col justify-between font-serif relative overflow-hidden select-none">
-                                {/* Diagonal watermark */}
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] rotate-[-30deg] text-3xl font-sans font-bold tracking-widest text-white">
-                                  VERIFICATION AUDIT ONLY
-                                </div>
-                                <div className="border-b-2 border-warning/20 pb-4 text-center">
-                                  <h5 className="text-sm font-bold tracking-wider text-warning uppercase">
-                                    State Registry Authority
-                                  </h5>
-                                  <p className="text-xs text-muted-foreground uppercase tracking-widest font-sans mt-1">
-                                    Official Credential Certificate
-                                  </p>
-                                </div>
-
-                                <div className="space-y-4 my-4 font-sans text-left text-xs text-muted-foreground">
-                                  <div className="grid grid-cols-3 gap-2">
-                                    <span className="text-muted-foreground font-semibold">
-                                      Owner Entity:
-                                    </span>
-                                    <span className="col-span-2 text-muted-foreground font-bold">
-                                      {reviewingItem.entity?.name}
-                                    </span>
-                                  </div>
-                                  <div className="grid grid-cols-3 gap-2">
-                                    <span className="text-muted-foreground font-semibold">
-                                      License / Document ID:
-                                    </span>
-                                    <span className="col-span-2 font-mono text-info font-bold">
-                                      {selectedDoc.documentNumber || `LIC-2026-${reviewingItem.id.substring(0, 8).toUpperCase()}`}
-                                    </span>
-                                  </div>
-                                  <div className="grid grid-cols-3 gap-2">
-                                    <span className="text-muted-foreground font-semibold">
-                                      Issuer / Authority:
-                                    </span>
-                                    <span className="col-span-2 text-muted-foreground">
-                                      {selectedDoc.issuedAuthority || 'Govt Licensing Body'}
-                                    </span>
-                                  </div>
-                                  <div className="grid grid-cols-3 gap-2">
-                                    <span className="text-muted-foreground font-semibold">
-                                      Registered On:
-                                    </span>
-                                    <span className="col-span-2 text-muted-foreground">
-                                      {new Date(reviewingItem.createdAt).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                  <div className="grid grid-cols-3 gap-2">
-                                    <span className="text-muted-foreground font-semibold">Registry Status:</span>
-                                    <span className="col-span-2 text-success font-semibold flex items-center gap-1">
-                                      <span className="h-1.5 w-1.5 rounded-full bg-success animate-ping"></span>
-                                      ACTIVE & VALID
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="border-t border-border pt-4 flex justify-between items-center text-xs font-sans text-muted-foreground">
-                                  <div>
-                                    <p>
-                                      Authorized Signatory: <i>Registrar of Public Credentials</i>
-                                    </p>
-                                    <p className="mt-0.5">Hash: {reviewingItem.entity?.id}</p>
-                                  </div>
-                                  <div className="h-8 w-8 rounded-full border border-warning/20 bg-warning/5 flex items-center justify-center text-warning/45 text-xs font-bold">
-                                    SEAL
-                                  </div>
-                                </div>
-                              </div>
+                              <iframe
+                                src={selectedDoc.fileUrl}
+                                className="w-full h-full min-h-[300px] rounded-lg border-0 bg-white"
+                                title="PDF Viewer"
+                              />
                             );
                           }
+                          if (isImage) {
+                            return (
+                              // eslint-disable-next-line @next/next/no-img-element -- KYC documents: unknown size, signed URL, shown whole
+                              <img
+                                src={selectedDoc.fileUrl}
+                                alt={selectedDoc.name}
+                                className="max-w-full max-h-full object-contain rounded-lg shadow-md"
+                              />
+                            );
+                          }
+                        }
 
+                        // Fallback Mock Preview for Local Development
+                        if (isPdf) {
                           return (
-                            <div className="text-center p-4">
-                              <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2 animate-pulse" />
-                              <p className="text-xs text-muted-foreground">
-                                Preview template not available for: {selectedDoc.name}
-                              </p>
+                            <div className="w-full h-full min-h-[300px] bg-card border border-border rounded-lg p-6 flex flex-col justify-between font-serif relative overflow-hidden select-none">
+                              {/* Diagonal watermark */}
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] rotate-[-30deg] text-3xl font-sans font-bold tracking-widest text-white">
+                                VERIFICATION AUDIT ONLY
+                              </div>
+                              <div className="border-b-2 border-warning/20 pb-4 text-center">
+                                <h5 className="text-sm font-bold tracking-wider text-warning uppercase">
+                                  State Registry Authority
+                                </h5>
+                                <p className="text-xs text-muted-foreground uppercase tracking-widest font-sans mt-1">
+                                  Official Credential Certificate
+                                </p>
+                              </div>
+
+                              <div className="space-y-4 my-4 font-sans text-left text-xs text-muted-foreground">
+                                <div className="grid grid-cols-3 gap-2">
+                                  <span className="text-muted-foreground font-semibold">
+                                    Owner Entity:
+                                  </span>
+                                  <span className="col-span-2 text-muted-foreground font-bold">
+                                    {reviewingItem.entity?.name}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  <span className="text-muted-foreground font-semibold">
+                                    License / Document ID:
+                                  </span>
+                                  <span className="col-span-2 font-mono text-info font-bold">
+                                    {selectedDoc.documentNumber ||
+                                      `LIC-2026-${reviewingItem.id.substring(0, 8).toUpperCase()}`}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  <span className="text-muted-foreground font-semibold">
+                                    Issuer / Authority:
+                                  </span>
+                                  <span className="col-span-2 text-muted-foreground">
+                                    {selectedDoc.issuedAuthority || 'Govt Licensing Body'}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  <span className="text-muted-foreground font-semibold">
+                                    Registered On:
+                                  </span>
+                                  <span className="col-span-2 text-muted-foreground">
+                                    {new Date(reviewingItem.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                  <span className="text-muted-foreground font-semibold">
+                                    Registry Status:
+                                  </span>
+                                  <span className="col-span-2 text-success font-semibold flex items-center gap-1">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-success animate-ping"></span>
+                                    ACTIVE & VALID
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="border-t border-border pt-4 flex justify-between items-center text-xs font-sans text-muted-foreground">
+                                <div>
+                                  <p>
+                                    Authorized Signatory: <i>Registrar of Public Credentials</i>
+                                  </p>
+                                  <p className="mt-0.5">Hash: {reviewingItem.entity?.id}</p>
+                                </div>
+                                <div className="h-8 w-8 rounded-full border border-warning/20 bg-warning/5 flex items-center justify-center text-warning/45 text-xs font-bold">
+                                  SEAL
+                                </div>
+                              </div>
                             </div>
                           );
-                        })()}
-                      </div>
+                        }
 
-                      {/* Per-document review — actioned individually */}
-                      <div className="shrink-0 border-t border-border pt-3 mt-3 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground uppercase tracking-wider">Document status</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${docStatusClass(selectedDoc.status)}`}>
-                            {selectedDoc.status || 'PENDING'}
-                          </span>
-                        </div>
-                        {(selectedDoc.documentCategory || selectedDoc.documentSubtype) && (
-                          <p className="text-xs text-muted-foreground">
-                            {selectedDoc.documentCategory || ''}
-                            {selectedDoc.documentSubtype ? ` • ${selectedDoc.documentSubtype}` : ''}
-                          </p>
-                        )}
-                        {selectedDoc.verificationNotes && (
-                          <p className="text-xs text-warning/80 italic">Note: {selectedDoc.verificationNotes}</p>
-                        )}
-                        <div className="flex gap-2">
-                          <Button
-                            onClick={() => reviewDocument(selectedDoc.id, 'APPROVE')}
-                            disabled={docActionLoading}
-                            size="sm"
-                            className="flex-1 rounded-lg bg-success hover:bg-success text-white text-xs gap-1 cursor-pointer"
-                          >
-                            <Check className="h-3.5 w-3.5" /> Approve
-                          </Button>
-                          <Button
-                            onClick={() => reviewDocument(selectedDoc.id, 'REQUEST_REUPLOAD')}
-                            disabled={docActionLoading}
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 rounded-lg border-warning/30 text-warning hover:bg-warning/10 text-xs cursor-pointer"
-                          >
-                            Reupload
-                          </Button>
-                          <Button
-                            onClick={() => reviewDocument(selectedDoc.id, 'REJECT')}
-                            disabled={docActionLoading}
-                            size="sm"
-                            variant="outline"
-                            className="flex-1 rounded-lg border-destructive/30 text-destructive hover:bg-destructive/10 text-xs gap-1 cursor-pointer"
-                          >
-                            <X className="h-3.5 w-3.5" /> Reject
-                          </Button>
-                        </div>
+                        return (
+                          <div className="text-center p-4">
+                            <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2 animate-pulse" />
+                            <p className="text-xs text-muted-foreground">
+                              Preview template not available for: {selectedDoc.name}
+                            </p>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Per-document review — actioned individually */}
+                    <div className="shrink-0 border-t border-border pt-3 mt-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                          Document status
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-bold border ${docStatusClass(selectedDoc.status)}`}
+                        >
+                          {selectedDoc.status || 'PENDING'}
+                        </span>
+                      </div>
+                      {(selectedDoc.documentCategory || selectedDoc.documentSubtype) && (
+                        <p className="text-xs text-muted-foreground">
+                          {selectedDoc.documentCategory || ''}
+                          {selectedDoc.documentSubtype ? ` • ${selectedDoc.documentSubtype}` : ''}
+                        </p>
+                      )}
+                      {selectedDoc.verificationNotes && (
+                        <p className="text-xs text-warning/80 italic">
+                          Note: {selectedDoc.verificationNotes}
+                        </p>
+                      )}
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => reviewDocument(selectedDoc.id, 'APPROVE')}
+                          disabled={docActionLoading}
+                          size="sm"
+                          className="flex-1 rounded-lg bg-success hover:bg-success text-white text-xs gap-1 cursor-pointer"
+                        >
+                          <Check className="h-3.5 w-3.5" /> Approve
+                        </Button>
+                        <Button
+                          onClick={() => reviewDocument(selectedDoc.id, 'REQUEST_REUPLOAD')}
+                          disabled={docActionLoading}
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 rounded-lg border-warning/30 text-warning hover:bg-warning/10 text-xs cursor-pointer"
+                        >
+                          Reupload
+                        </Button>
+                        <Button
+                          onClick={() => reviewDocument(selectedDoc.id, 'REJECT')}
+                          disabled={docActionLoading}
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 rounded-lg border-destructive/30 text-destructive hover:bg-destructive/10 text-xs gap-1 cursor-pointer"
+                        >
+                          <X className="h-3.5 w-3.5" /> Reject
+                        </Button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
-                      <Eye className="h-12 w-12 text-muted-foreground mb-3 animate-pulse" />
-                      <p className="text-xs font-bold text-muted-foreground">
-                        No Document Selected
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1 max-w-[240px]">
-                        Click any of the credentials on the left list to review its pre-signed URL or mock verification certificate here.
-                      </p>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
+                    <Eye className="h-12 w-12 text-muted-foreground mb-3 animate-pulse" />
+                    <p className="text-xs font-bold text-muted-foreground">No Document Selected</p>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-[240px]">
+                      Click any of the credentials on the left list to review its pre-signed URL or
+                      mock verification certificate here.
+                    </p>
+                  </div>
+                )}
               </div>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-border">
-                <Button
-                  onClick={() => {
-                    setRejectingItem(reviewingItem);
-                    setReviewingItem(null);
-                  }}
-                  variant="outline"
-                  className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-                >
-                  Reject Application
-                </Button>
-                <Button
-                  onClick={() => {
-                    setApprovingItem(reviewingItem);
-                    setReviewingItem(null);
-                  }}
-                  className="rounded-xl bg-success hover:bg-success text-white font-semibold cursor-pointer"
-                >
-                  Approve Application
-                </Button>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-4 mt-2 border-t border-border">
+              <Button
+                onClick={() => {
+                  setRejectingItem(reviewingItem);
+                  setReviewingItem(null);
+                }}
+                variant="outline"
+                className="rounded-xl border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+              >
+                Reject Application
+              </Button>
+              <Button
+                onClick={() => {
+                  setApprovingItem(reviewingItem);
+                  setReviewingItem(null);
+                }}
+                className="rounded-xl bg-success hover:bg-success text-white font-semibold cursor-pointer"
+              >
+                Approve Application
+              </Button>
+            </div>
           </ModalSurface>
         )}
 
         {/* ── APPROVAL CONFIRMATION MODAL ──────────────────────────── */}
         {approvingItem && (
-          <ModalSurface onClose={() => setApprovingItem(null)} label="Approve Verification" className="sm:max-w-sm text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-success-soft flex items-center justify-center text-success-soft-foreground mb-4">
-                <CheckCircle className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-bold text-muted-foreground mb-2">Approve Verification</h3>
-              <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
-                Confirm approval of{' '}
-                <span className="font-semibold text-muted-foreground">"{approvingItem.entity?.name}"</span>.
-                The workspace will be fully unlocked immediately.
-              </p>
+          <ModalSurface
+            onClose={() => setApprovingItem(null)}
+            label="Approve Verification"
+            className="sm:max-w-sm text-center"
+          >
+            <div className="mx-auto w-12 h-12 rounded-full bg-success-soft flex items-center justify-center text-success-soft-foreground mb-4">
+              <CheckCircle className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-bold text-muted-foreground mb-2">Approve Verification</h3>
+            <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+              Confirm approval of{' '}
+              <span className="font-semibold text-muted-foreground">
+                "{approvingItem.entity?.name}"
+              </span>
+              . The workspace will be fully unlocked immediately.
+            </p>
 
-              {/* Payment decision — approving the business settles its first
+            {/* Payment decision — approving the business settles its first
                   payment, which activates the subscription. */}
-              {(() => {
-                const pay = approvingItem.entity?.business?.payments?.[0];
-                const sub = approvingItem.entity?.business?.subscriptions?.[0];
-                return (
-                  <div className="space-y-3 mb-5 text-left rounded-xl border border-border bg-secondary/50 p-4">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                      Payment
-                    </p>
-                    {pay ? (
-                      <>
-                        <p className="text-xs text-muted-foreground">
-                          {planLabel(sub?.packageName || pay.invoiceMetadata?.packageName)} ·{' '}
-                          <span className="font-semibold text-foreground">
-                            ₹{Number(pay.amount || 0).toLocaleString('en-IN')}
-                          </span>{' '}
-                          · {pay.method} · {pay.status}
-                        </p>
-                        <p className="text-xs font-medium text-foreground">Is the payment approved?</p>
-                        <div className="inline-flex rounded-xl border border-border p-0.5">
-                          {[{ l: 'Yes', v: true }, { l: 'No', v: false }].map((o) => (
-                            <button
-                              key={o.l}
-                              type="button"
-                              onClick={() => setPaymentApproved(o.v)}
-                              className={`rounded-lg px-5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                                paymentApproved === o.v
-                                  ? o.v
-                                    ? 'bg-success text-white'
-                                    : 'bg-destructive text-destructive-foreground'
-                                  : 'text-muted-foreground hover:text-foreground'
-                              }`}
-                            >
-                              {o.l}
-                            </button>
-                          ))}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {paymentApproved === true
-                            ? 'Payment will be verified and the subscription activated.'
-                            : paymentApproved === false
-                              ? 'Payment will be rejected; the business stays unpaid.'
-                              : 'Choose one to continue.'}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-xs text-warning">
-                        No payment submitted by this business yet.
+            {(() => {
+              const pay = approvingItem.entity?.business?.payments?.[0];
+              const sub = approvingItem.entity?.business?.subscriptions?.[0];
+              return (
+                <div className="space-y-3 mb-5 text-left rounded-xl border border-border bg-secondary/50 p-4">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                    Payment
+                  </p>
+                  {pay ? (
+                    <>
+                      <p className="text-xs text-muted-foreground">
+                        {planLabel(sub?.packageName || pay.invoiceMetadata?.packageName)} ·{' '}
+                        <span className="font-semibold text-foreground">
+                          ₹{Number(pay.amount || 0).toLocaleString('en-IN')}
+                        </span>{' '}
+                        · {pay.method} · {pay.status}
                       </p>
-                    )}
-                  </div>
-                );
-              })()}
+                      <p className="text-xs font-medium text-foreground">
+                        Is the payment approved?
+                      </p>
+                      <div className="inline-flex rounded-xl border border-border p-0.5">
+                        {[
+                          { l: 'Yes', v: true },
+                          { l: 'No', v: false },
+                        ].map((o) => (
+                          <button
+                            key={o.l}
+                            type="button"
+                            onClick={() => setPaymentApproved(o.v)}
+                            className={`rounded-lg px-5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                              paymentApproved === o.v
+                                ? o.v
+                                  ? 'bg-success text-white'
+                                  : 'bg-destructive text-destructive-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            {o.l}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {paymentApproved === true
+                          ? 'Payment will be verified and the subscription activated.'
+                          : paymentApproved === false
+                            ? 'Payment will be rejected; the business stays unpaid.'
+                            : 'Choose one to continue.'}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-warning">
+                      No payment submitted by this business yet.
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
 
-              <div className="space-y-3 mb-6 text-left">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest block">
-                  Moderator Notes
-                </label>
-                <Input
-                  placeholder="e.g. Verified license documents against state registry records."
-                  value={approveNotes}
-                  onChange={(e) => setApproveNotes(e.target.value)}
-                  className="rounded-xl border-border bg-secondary text-xs text-muted-foreground focus:border-primary"
-                />
-              </div>
+            <div className="space-y-3 mb-6 text-left">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest block">
+                Moderator Notes
+              </label>
+              <Input
+                placeholder="e.g. Verified license documents against state registry records."
+                value={approveNotes}
+                onChange={(e) => setApproveNotes(e.target.value)}
+                className="rounded-xl border-border bg-secondary text-xs text-muted-foreground focus:border-primary"
+              />
+            </div>
 
-              <div className="flex justify-center gap-3">
-                <Button
-                  onClick={() => setApprovingItem(null)}
-                  variant="outline"
-                  className="rounded-xl border-border hover:bg-secondary text-foreground px-4 cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleApprove}
-                  disabled={actionLoading}
-                  className="rounded-xl bg-success hover:bg-success text-white px-4 cursor-pointer flex items-center gap-1.5"
-                >
-                  {actionLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-                  Confirm Approval
-                </Button>
-              </div>
+            <div className="flex justify-center gap-3">
+              <Button
+                onClick={() => setApprovingItem(null)}
+                variant="outline"
+                className="rounded-xl border-border hover:bg-secondary text-foreground px-4 cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleApprove}
+                disabled={actionLoading}
+                className="rounded-xl bg-success hover:bg-success text-white px-4 cursor-pointer flex items-center gap-1.5"
+              >
+                {actionLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+                Confirm Approval
+              </Button>
+            </div>
           </ModalSurface>
         )}
 
         {/* ── REJECTION REASON MODAL ────────────────────────────────── */}
         {rejectingItem && (
-          <ModalSurface onClose={() => setRejectingItem(null)} label="Reject Submission" className="sm:max-w-md">
-              <h3 className="text-xl font-bold text-muted-foreground mb-2">Reject Submission</h3>
-              <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
-                Provide a reason for rejecting{' '}
-                <span className="font-semibold text-muted-foreground">"{rejectingItem.entity?.name}"</span>.
-                The owner will see this notification.
-              </p>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest block mb-2">
-                    Rejection Reason
-                  </label>
-                  <Input
-                    placeholder="e.g. Uploaded certificate is expired or invalid."
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                    required
-                    className="rounded-xl border-border bg-secondary text-muted-foreground text-xs focus:border-destructive"
-                  />
-                </div>
-                <div className="flex justify-end gap-3 pt-2">
-                  <Button
-                    onClick={() => setRejectingItem(null)}
-                    variant="outline"
-                    className="rounded-xl border-border hover:bg-secondary text-muted-foreground cursor-pointer"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleReject}
-                    disabled={!rejectReason || actionLoading}
-                    className="rounded-xl bg-destructive hover:bg-destructive text-white font-semibold cursor-pointer flex items-center gap-1.5"
-                  >
-                    {actionLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-                    Confirm Rejection
-                  </Button>
-                </div>
+          <ModalSurface
+            onClose={() => setRejectingItem(null)}
+            label="Reject Submission"
+            className="sm:max-w-md"
+          >
+            <h3 className="text-xl font-bold text-muted-foreground mb-2">Reject Submission</h3>
+            <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+              Provide a reason for rejecting{' '}
+              <span className="font-semibold text-muted-foreground">
+                "{rejectingItem.entity?.name}"
+              </span>
+              . The owner will see this notification.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest block mb-2">
+                  Rejection Reason
+                </label>
+                <Input
+                  placeholder="e.g. Uploaded certificate is expired or invalid."
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  required
+                  className="rounded-xl border-border bg-secondary text-muted-foreground text-xs focus:border-destructive"
+                />
               </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  onClick={() => setRejectingItem(null)}
+                  variant="outline"
+                  className="rounded-xl border-border hover:bg-secondary text-muted-foreground cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleReject}
+                  disabled={!rejectReason || actionLoading}
+                  className="rounded-xl bg-destructive hover:bg-destructive text-white font-semibold cursor-pointer flex items-center gap-1.5"
+                >
+                  {actionLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+                  Confirm Rejection
+                </Button>
+              </div>
+            </div>
           </ModalSurface>
         )}
       </div>

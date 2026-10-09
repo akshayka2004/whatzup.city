@@ -42,12 +42,7 @@ export class MediaController {
     @CurrentUser('role') role: string,
     @Body() body: CreateMediaDto,
   ) {
-    return this.mediaService.createRecord(
-      tenantId,
-      body.businessId,
-      body,
-      { userId, role },
-    );
+    return this.mediaService.createRecord(tenantId, body.businessId, body, { userId, role });
   }
 
   @Get('business/:businessId')

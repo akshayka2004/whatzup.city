@@ -15,18 +15,36 @@ import { useImpression } from '@/lib/analytics/use-impression';
 import { cn } from '@/lib/utils';
 
 // MapLibre is ~250 KB; it only loads once someone opens the map.
-const BusinessMap = dynamic(() => import('@/components/public/map/business-map').then((m) => m.BusinessMap), {
-  ssr: false,
-  loading: () => <div className="ui-skeleton h-full w-full rounded-card" />,
-});
+const BusinessMap = dynamic(
+  () => import('@/components/public/map/business-map').then((m) => m.BusinessMap),
+  {
+    ssr: false,
+    loading: () => <div className="ui-skeleton h-full w-full rounded-card" />,
+  },
+);
 
 export type ResultsMode = 'list' | 'map';
 
 /** List / Map segmented toggle. Lives next to the result count. */
-export function ViewToggle({ value, onChange, className }: { value: ResultsMode; onChange: (v: ResultsMode) => void; className?: string }) {
+export function ViewToggle({
+  value,
+  onChange,
+  className,
+}: {
+  value: ResultsMode;
+  onChange: (v: ResultsMode) => void;
+  className?: string;
+}) {
   const { t } = useI18n();
   return (
-    <div role="radiogroup" aria-label="Results view" className={cn('inline-flex rounded-full border border-border bg-card p-0.5 shadow-e1', className)}>
+    <div
+      role="radiogroup"
+      aria-label="Results view"
+      className={cn(
+        'inline-flex rounded-full border border-border bg-card p-0.5 shadow-e1',
+        className,
+      )}
+    >
       {(
         [
           ['list', t('view.list'), LayoutGrid],
@@ -41,7 +59,9 @@ export function ViewToggle({ value, onChange, className }: { value: ResultsMode;
           onClick={() => onChange(k)}
           className={cn(
             'inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium transition-colors md:h-9',
-            value === k ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground',
+            value === k
+              ? 'bg-foreground text-background'
+              : 'text-muted-foreground hover:text-foreground',
           )}
         >
           <Icon className="size-4" aria-hidden />
@@ -52,7 +72,19 @@ export function ViewToggle({ value, onChange, className }: { value: ResultsMode;
   );
 }
 
-function Row({ b, km, active, onHover, innerRef }: { b: any; km?: number | null; active: boolean; onHover: (id: string | null) => void; innerRef: (el: HTMLAnchorElement | null) => void }) {
+function Row({
+  b,
+  km,
+  active,
+  onHover,
+  innerRef,
+}: {
+  b: any;
+  km?: number | null;
+  active: boolean;
+  onHover: (id: string | null) => void;
+  innerRef: (el: HTMLAnchorElement | null) => void;
+}) {
   const rating = Number(b.avgRating ?? b.averageRating);
   const reviews = Number(b.reviewCount ?? b.totalReviews ?? 0) || 0;
   const cat = b.category?.name || b.categoryName || '';
@@ -77,21 +109,31 @@ function Row({ b, km, active, onHover, innerRef }: { b: any; km?: number | null;
         {b.logo ? (
           <ResponsiveImage src={b.logo} alt="" ratio="1" sizes="64px" className="size-full" />
         ) : (
-          <span className="flex size-full items-center justify-center text-heading font-bold text-brand-soft-foreground">{(b.name || 'B').charAt(0)}</span>
+          <span className="flex size-full items-center justify-center text-heading font-bold text-brand-soft-foreground">
+            {(b.name || 'B').charAt(0)}
+          </span>
         )}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate font-semibold">{b.name}</span>
-        <span className="block truncate text-caption text-muted-foreground">{[cat, b.city].filter(Boolean).join(' · ')}</span>
+        <span className="block truncate text-caption text-muted-foreground">
+          {[cat, b.city].filter(Boolean).join(' · ')}
+        </span>
         <span className="mt-1 flex items-center gap-2 text-caption">
           {rating > 0 && (
             <span className="inline-flex items-center gap-0.5 font-semibold">
               <Star className="size-3.5 fill-current text-warning" aria-hidden />
               {rating.toFixed(1)}
-              {reviews > 0 && <span className="font-normal text-muted-foreground">({reviews})</span>}
+              {reviews > 0 && (
+                <span className="font-normal text-muted-foreground">({reviews})</span>
+              )}
             </span>
           )}
-          {km != null && <span className="text-muted-foreground">{km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`}</span>}
+          {km != null && (
+            <span className="text-muted-foreground">
+              {km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`}
+            </span>
+          )}
         </span>
       </span>
     </Link>
@@ -130,7 +172,15 @@ export function ResultsView({
     if (picked && !items.some((b) => b.id === picked)) setPicked(null);
   }, [items, picked]);
 
-  if (mode === 'list') return <ResultsGrid items={items} distances={distances} showLinks={showLinks} onLinkClick={onLinkClick} />;
+  if (mode === 'list')
+    return (
+      <ResultsGrid
+        items={items}
+        distances={distances}
+        showLinks={showLinks}
+        onLinkClick={onLinkClick}
+      />
+    );
 
   const pickedItem = picked ? items.find((b) => b.id === picked) : null;
   const onPin = (id: string) => {
@@ -142,11 +192,23 @@ export function ResultsView({
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
       <div className={cn('relative order-1 h-[55dvh] min-h-80 lg:order-2 lg:sticky', mapClassName)}>
-        <BusinessMap points={points} activeId={active ?? picked} onSelect={onPin} center={center} className="h-full" />
+        <BusinessMap
+          points={points}
+          activeId={active ?? picked}
+          onSelect={onPin}
+          center={center}
+          className="h-full"
+        />
         {pickedItem && (
           <div className="absolute inset-x-3 bottom-3 lg:hidden">
             <div className="relative">
-              <Row b={pickedItem} km={distances?.get(pickedItem.id)} active={false} onHover={() => {}} innerRef={() => {}} />
+              <Row
+                b={pickedItem}
+                km={distances?.get(pickedItem.id)}
+                active={false}
+                onHover={() => {}}
+                innerRef={() => {}}
+              />
               <button
                 type="button"
                 onClick={() => setPicked(null)}
@@ -159,7 +221,11 @@ export function ResultsView({
           </div>
         )}
       </div>
-      <ul className="order-2 space-y-2 lg:order-1" aria-label="Results" onClickCapture={onLinkClick}>
+      <ul
+        className="order-2 space-y-2 lg:order-1"
+        aria-label="Results"
+        onClickCapture={onLinkClick}
+      >
         {items.map((b) => (
           <li key={b.id}>
             <Row

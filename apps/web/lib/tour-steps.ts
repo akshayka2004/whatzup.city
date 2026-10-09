@@ -77,7 +77,7 @@ export const BUSINESS_TOUR_STEPS: TourStep[] = [
 export const CUSTOMER_MOBILE_TOUR_STEPS: TourStep[] = [
   {
     title: 'Welcome to whtzup.city 👋',
-    description: "Quick tour of the app. Skip anytime.",
+    description: 'Quick tour of the app. Skip anytime.',
   },
   {
     selector: '[data-tour="mnav-home"]',

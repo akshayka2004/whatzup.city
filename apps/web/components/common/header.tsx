@@ -24,7 +24,15 @@ import { useI18n } from '@/lib/i18n/provider';
 import { getRoleLabel } from '@/lib/rbac';
 import { cn } from '@/lib/utils';
 
-type Notif = { id: string; title?: string; type?: string; body?: string; message?: string; isRead?: boolean; createdAt?: string };
+type Notif = {
+  id: string;
+  title?: string;
+  type?: string;
+  body?: string;
+  message?: string;
+  isRead?: boolean;
+  createdAt?: string;
+};
 
 const initials = (name: string) =>
   name
@@ -107,7 +115,10 @@ export function Header() {
         aria-label="Search businesses, offers, events and services"
         className="group hidden h-10 w-full max-w-md items-center gap-2.5 rounded-full border border-border bg-background/70 px-4 text-left text-sm text-muted-foreground transition-[border-color,background-color] hover:border-border-strong hover:bg-background md:flex"
       >
-        <Search className="size-4 shrink-0 transition-colors group-hover:text-foreground" aria-hidden />
+        <Search
+          className="size-4 shrink-0 transition-colors group-hover:text-foreground"
+          aria-hidden
+        />
         <span className="flex-1 truncate">Search everything…</span>
         <kbd className="hidden rounded-md border border-border bg-card px-1.5 py-0.5 font-mono text-caption text-muted-foreground lg:inline">
           Ctrl K
@@ -115,7 +126,13 @@ export function Header() {
       </button>
 
       <div className="flex items-center gap-1 sm:gap-1.5">
-        <Button variant="ghost" size="icon" onClick={openPalette} aria-label="Search" className="md:hidden">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={openPalette}
+          aria-label="Search"
+          className="md:hidden"
+        >
           <Search className="size-5" />
         </Button>
 
@@ -132,7 +149,10 @@ export function Header() {
 
         {/* Notifications */}
         {user ? (
-          <DropdownMenu open={notifOpen} onOpenChange={(o) => (o ? openNotifs() : setNotifOpen(false))}>
+          <DropdownMenu
+            open={notifOpen}
+            onOpenChange={(o) => (o ? openNotifs() : setNotifOpen(false))}
+          >
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -148,11 +168,18 @@ export function Header() {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[min(22rem,calc(100vw-2rem))] overflow-hidden p-0">
+            <DropdownMenuContent
+              align="end"
+              className="w-[min(22rem,calc(100vw-2rem))] overflow-hidden p-0"
+            >
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <DropdownMenuLabel className="p-0 text-sm font-semibold">
                   Notifications
-                  {unread > 0 && <span className="ml-1.5 text-caption font-medium text-brand-soft-foreground">{unread} new</span>}
+                  {unread > 0 && (
+                    <span className="ml-1.5 text-caption font-medium text-brand-soft-foreground">
+                      {unread} new
+                    </span>
+                  )}
                 </DropdownMenuLabel>
                 {unread > 0 && (
                   <button
@@ -181,15 +208,31 @@ export function Header() {
                         n.isRead && 'opacity-60',
                       )}
                     >
-                      <span className={cn('mt-1.5 size-2 shrink-0 rounded-full', n.isRead ? 'bg-transparent' : 'bg-primary')} aria-hidden />
+                      <span
+                        className={cn(
+                          'mt-1.5 size-2 shrink-0 rounded-full',
+                          n.isRead ? 'bg-transparent' : 'bg-primary',
+                        )}
+                        aria-hidden
+                      />
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium leading-snug text-foreground">{n.title || n.type || 'Notification'}</span>
+                        <span className="block text-sm font-medium leading-snug text-foreground">
+                          {n.title || n.type || 'Notification'}
+                        </span>
                         {(n.body || n.message) && (
-                          <span className="mt-0.5 line-clamp-2 block break-words text-caption text-muted-foreground">{n.body || n.message}</span>
+                          <span className="mt-0.5 line-clamp-2 block break-words text-caption text-muted-foreground">
+                            {n.body || n.message}
+                          </span>
                         )}
                         {n.createdAt && (
                           <span className="mt-1 block text-caption text-subtle-foreground">
-                            {new Date(n.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
+                            {new Date(n.createdAt).toLocaleString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              timeZone: 'Asia/Kolkata',
+                            })}
                           </span>
                         )}
                       </span>
@@ -197,7 +240,10 @@ export function Header() {
                   ))
                 )}
               </div>
-              <Link href="/notifications" className="block border-t border-border px-4 py-2.5 text-center text-sm font-medium text-primary hover:bg-secondary/60">
+              <Link
+                href="/notifications"
+                className="block border-t border-border px-4 py-2.5 text-center text-sm font-medium text-primary hover:bg-secondary/60"
+              >
                 View all
               </Link>
             </DropdownMenuContent>
@@ -247,16 +293,26 @@ export function Header() {
             )}
 
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-overline text-subtle-foreground">Theme</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={mounted ? (theme ?? 'light') : 'light'} onValueChange={setTheme}>
+            <DropdownMenuLabel className="text-overline text-subtle-foreground">
+              Theme
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={mounted ? (theme ?? 'light') : 'light'}
+              onValueChange={setTheme}
+            >
               <DropdownMenuRadioItem value="light">Light</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="dark">Dark</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="system">Match device</DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
 
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-overline text-subtle-foreground">{t('common.language')}</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={locale} onValueChange={(v) => setLocale(v as typeof locale)}>
+            <DropdownMenuLabel className="text-overline text-subtle-foreground">
+              {t('common.language')}
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={locale}
+              onValueChange={(v) => setLocale(v as typeof locale)}
+            >
               {LOCALES.map((l) => (
                 <DropdownMenuRadioItem key={l.code} value={l.code}>
                   <span lang={l.code}>{l.native}</span>

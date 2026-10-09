@@ -51,7 +51,10 @@ export class PaymentsService {
       try {
         const parsed = JSON.parse(dto.proofUrl);
         await this.storage.verifyStoredFile(parsed.bucket, parsed.path, [
-          'image/jpeg', 'image/png', 'image/webp', 'application/pdf',
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+          'application/pdf',
         ]);
       } catch (err) {
         if (err instanceof BadRequestException) throw err;
@@ -125,11 +128,21 @@ export class PaymentsService {
 
   /** Append-only financial log entry. Never throws into the caller's path. */
   private async recordTransaction(t: {
-    tenantId: string; businessId: string; paymentId?: string | null;
-    subscriptionId?: string | null; type: string; cycle: string;
-    packageName?: string | null; base: number; tax: number; total: number;
-    method?: string | null; reference?: string | null; status: string;
-    note?: string | null; createdBy?: string | null;
+    tenantId: string;
+    businessId: string;
+    paymentId?: string | null;
+    subscriptionId?: string | null;
+    type: string;
+    cycle: string;
+    packageName?: string | null;
+    base: number;
+    tax: number;
+    total: number;
+    method?: string | null;
+    reference?: string | null;
+    status: string;
+    note?: string | null;
+    createdBy?: string | null;
   }) {
     try {
       await this.db.transaction.create({
@@ -222,7 +235,12 @@ export class PaymentsService {
 
     const updated = await this.db.payment.update({
       where: { id: paymentId },
-      data: { status: 'FAILED', rejectionReason: reason, verifiedBy: adminId, verifiedAt: new Date() },
+      data: {
+        status: 'FAILED',
+        rejectionReason: reason,
+        verifiedBy: adminId,
+        verifiedAt: new Date(),
+      },
     });
 
     if (payment.subscriptionId) {
@@ -279,11 +297,17 @@ export class PaymentsService {
       include: {
         business: {
           select: {
-            id: true, name: true, slug: true, city: true, status: true,
+            id: true,
+            name: true,
+            slug: true,
+            city: true,
+            status: true,
             billingProfile: true,
           },
         },
-        subscription: { select: { id: true, packageName: true, pricing: true, endDate: true, duration: true } },
+        subscription: {
+          select: { id: true, packageName: true, pricing: true, endDate: true, duration: true },
+        },
       },
       take: 200,
     });
@@ -295,47 +319,47 @@ export class PaymentsService {
     // proofUrl is stored as {"bucket","path"} against a private bucket — hand
     // the admin a short-lived signed URL so the screenshot actually renders.
     return mapWithConcurrency(filtered, 10, async (p) => {
-        let proofSignedUrl: string | null = null;
-        if (p.proofUrl) {
-          try {
-            const parsed = JSON.parse(p.proofUrl);
-            proofSignedUrl = await this.storage.createSignedDownloadUrl(
-              parsed.bucket,
-              parsed.path,
-              900,
-            );
-          } catch {
-            proofSignedUrl = null;
-          }
+      let proofSignedUrl: string | null = null;
+      if (p.proofUrl) {
+        try {
+          const parsed = JSON.parse(p.proofUrl);
+          proofSignedUrl = await this.storage.createSignedDownloadUrl(
+            parsed.bucket,
+            parsed.path,
+            900,
+          );
+        } catch {
+          proofSignedUrl = null;
         }
-        const meta: any = p.invoiceMetadata || {};
-        const split = splitTax(Number(p.amount));
+      }
+      const meta: any = p.invoiceMetadata || {};
+      const split = splitTax(Number(p.amount));
 
-        // Identity documents are masked in the list view. Admins reveal them
-        // one at a time through the audited endpoint.
-        const bp: any = (p.business as any)?.billingProfile;
-        const business = bp
-          ? {
-              ...p.business,
-              billingProfile: {
-                ...bp,
-                pan: CryptoService.mask(this.crypto.decrypt(bp.pan)),
-                gstin: CryptoService.mask(this.crypto.decrypt(bp.gstin)),
-                masked: true,
-              },
-            }
-          : p.business;
+      // Identity documents are masked in the list view. Admins reveal them
+      // one at a time through the audited endpoint.
+      const bp: any = (p.business as any)?.billingProfile;
+      const business = bp
+        ? {
+            ...p.business,
+            billingProfile: {
+              ...bp,
+              pan: CryptoService.mask(this.crypto.decrypt(bp.pan)),
+              gstin: CryptoService.mask(this.crypto.decrypt(bp.gstin)),
+              masked: true,
+            },
+          }
+        : p.business;
 
-        return {
-          ...p,
-          business,
-          proofSignedUrl,
-          cycle: meta.cycle || 'NEW',
-          amountBase: meta.amountBase ?? split.base,
-          amountTax: meta.amountTax ?? split.tax,
-          amountTotal: split.total,
-          taxPercent: TAX_PERCENT,
-        };
+      return {
+        ...p,
+        business,
+        proofSignedUrl,
+        cycle: meta.cycle || 'NEW',
+        amountBase: meta.amountBase ?? split.base,
+        amountTax: meta.amountTax ?? split.tax,
+        amountTotal: split.total,
+        taxPercent: TAX_PERCENT,
+      };
     });
   }
 
@@ -406,7 +430,12 @@ export class PaymentsService {
     const gstin = this.crypto.decrypt(bp.gstin);
 
     if (!reveal) {
-      return { ...bp, pan: CryptoService.mask(pan), gstin: CryptoService.mask(gstin), masked: true };
+      return {
+        ...bp,
+        pan: CryptoService.mask(pan),
+        gstin: CryptoService.mask(gstin),
+        masked: true,
+      };
     }
 
     await this.audit.log({

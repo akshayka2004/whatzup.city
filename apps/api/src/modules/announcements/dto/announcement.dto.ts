@@ -1,5 +1,12 @@
 import {
-  IsString, IsOptional, IsDateString, IsObject, IsEnum, IsArray, MaxLength, ArrayMaxSize,
+  IsString,
+  IsOptional,
+  IsDateString,
+  IsObject,
+  IsEnum,
+  IsArray,
+  MaxLength,
+  ArrayMaxSize,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { AlertPriority } from '../../government-alerts/dto/create-alert.dto';
@@ -16,43 +23,62 @@ import { AlertPriority } from '../../government-alerts/dto/create-alert.dto';
  */
 export class AnnouncementDto {
   @ApiProperty({ required: false, maxLength: 500 })
-  @IsOptional() @IsString() @MaxLength(500)
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
   title?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   body?: string;
 
-  @ApiProperty({ required: false, maxLength: 100, description: 'e.g. EMERGENCY, ROAD_BLOCK, WEATHER' })
-  @IsOptional() @IsString() @MaxLength(100)
+  @ApiProperty({
+    required: false,
+    maxLength: 100,
+    description: 'e.g. EMERGENCY, ROAD_BLOCK, WEATHER',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   category?: string;
 
   @ApiProperty({ required: false, enum: AlertPriority })
-  @IsOptional() @IsEnum(AlertPriority)
+  @IsOptional()
+  @IsEnum(AlertPriority)
   priority?: AlertPriority;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsDateString()
+  @IsOptional()
+  @IsDateString()
   publishAt?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsDateString()
+  @IsOptional()
+  @IsDateString()
   expiresAt?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsDateString()
+  @IsOptional()
+  @IsDateString()
   startAt?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   targetAudience?: Record<string, any>;
 
   @ApiProperty({ required: false, type: [String] })
-  @IsOptional() @IsArray() @ArrayMaxSize(50)
-  @IsString({ each: true }) @MaxLength(100, { each: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(50)
+  @IsString({ each: true })
+  @MaxLength(100, { each: true })
   targetCities?: string[];
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString() @MaxLength(2048)
+  @IsOptional()
+  @IsString()
+  @MaxLength(2048)
   linkUrl?: string;
 }

@@ -6,9 +6,14 @@ import { Loader2 } from 'lucide-react';
 
 export default function CivicLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useRequireAuth([
-    'civic', 'admin', 'super-admin',
-    'NGO_ADMIN', 'COMMUNITY_ADMIN', 'NEWS_FORUM_ADMIN',
-    'MASTER_ADMIN', 'SUPER_ADMIN',
+    'civic',
+    'admin',
+    'super-admin',
+    'NGO_ADMIN',
+    'COMMUNITY_ADMIN',
+    'NEWS_FORUM_ADMIN',
+    'MASTER_ADMIN',
+    'SUPER_ADMIN',
   ]);
 
   if (loading || !user) {

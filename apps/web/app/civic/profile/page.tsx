@@ -11,14 +11,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  ArrowLeft, Loader2, Save, Plus, Trash2, Link2, Image as ImageIcon,
-  Upload, CheckCircle2, AlertTriangle, KeyRound, Building2,
+  ArrowLeft,
+  Loader2,
+  Save,
+  Plus,
+  Trash2,
+  Link2,
+  Image as ImageIcon,
+  Upload,
+  CheckCircle2,
+  AlertTriangle,
+  KeyRound,
+  Building2,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { apiService } from '@/lib/services/api-service';
 import { uploadCivicImage, isUploadConfigured } from '@/lib/civic-upload';
 
-interface SocialLink { label: string; url: string; }
+interface SocialLink {
+  label: string;
+  url: string;
+}
 interface CivicProfile {
   entityType: string;
   status: string;
@@ -68,8 +81,7 @@ export default function CivicProfilePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const update = (patch: Partial<CivicProfile>) =>
-    setProfile((p) => (p ? { ...p, ...patch } : p));
+  const update = (patch: Partial<CivicProfile>) => setProfile((p) => (p ? { ...p, ...patch } : p));
 
   const addLink = () =>
     setProfile((p) => (p ? { ...p, socialLinks: [...p.socialLinks, { label: '', url: '' }] } : p));
@@ -78,7 +90,10 @@ export default function CivicProfilePage() {
   const setLink = (i: number, field: keyof SocialLink, val: string) =>
     setProfile((p) =>
       p
-        ? { ...p, socialLinks: p.socialLinks.map((l, idx) => (idx === i ? { ...l, [field]: val } : l)) }
+        ? {
+            ...p,
+            socialLinks: p.socialLinks.map((l, idx) => (idx === i ? { ...l, [field]: val } : l)),
+          }
         : p,
     );
 
@@ -140,7 +155,9 @@ export default function CivicProfilePage() {
     });
     if (!res.error) {
       setPwMsg({ type: 'ok', text: 'Password updated.' });
-      setPwCurrent(''); setPwNew(''); setPwConfirm('');
+      setPwCurrent('');
+      setPwNew('');
+      setPwConfirm('');
     } else {
       setPwMsg({ type: 'err', text: res.error || 'Password change failed.' });
     }
@@ -190,7 +207,11 @@ export default function CivicProfilePage() {
                 : 'bg-danger-soft border-destructive/25 text-danger-soft-foreground'
             }`}
           >
-            {msg.type === 'ok' ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertTriangle className="h-4 w-4 shrink-0" />}
+            {msg.type === 'ok' ? (
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+            ) : (
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+            )}
             {msg.text}
           </div>
         )}
@@ -200,13 +221,23 @@ export default function CivicProfilePage() {
           <div className="relative h-32 sm:h-40 bg-gradient-to-r from-primary/20 to-accent/20">
             {profile.bannerUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <ResponsiveImage src={profile.bannerUrl} alt="" ratio="auto" sizes="(max-width: 768px) 100vw, 768px" className="absolute inset-0 h-full w-full" />
+              <ResponsiveImage
+                src={profile.bannerUrl}
+                alt=""
+                ratio="auto"
+                sizes="(max-width: 768px) 100vw, 768px"
+                className="absolute inset-0 h-full w-full"
+              />
             )}
             <button
               onClick={() => bannerInput.current?.click()}
               className="absolute top-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/50 backdrop-blur text-white text-xs font-medium hover:bg-black/70 cursor-pointer"
             >
-              {uploadingBanner ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageIcon className="h-3.5 w-3.5" />}
+              {uploadingBanner ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ImageIcon className="h-3.5 w-3.5" />
+              )}
               Banner
             </button>
             <input
@@ -214,7 +245,9 @@ export default function CivicProfilePage() {
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => handleImage(e.target.files?.[0], 'banners', setUploadingBanner, 'bannerUrl')}
+              onChange={(e) =>
+                handleImage(e.target.files?.[0], 'banners', setUploadingBanner, 'bannerUrl')
+              }
             />
           </div>
           <div className="px-4 sm:px-6 pb-5">
@@ -223,7 +256,13 @@ export default function CivicProfilePage() {
                 <div className="h-20 w-20 rounded-2xl border-4 border-background bg-card overflow-hidden flex items-center justify-center">
                   {profile.logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <ResponsiveImage src={profile.logoUrl} alt="Organisation logo" ratio="1" sizes="96px" className="h-full w-full" />
+                    <ResponsiveImage
+                      src={profile.logoUrl}
+                      alt="Organisation logo"
+                      ratio="1"
+                      sizes="96px"
+                      className="h-full w-full"
+                    />
                   ) : (
                     <Building2 className="h-8 w-8 text-muted-foreground" />
                   )}
@@ -232,19 +271,29 @@ export default function CivicProfilePage() {
                   onClick={() => logoInput.current?.click()}
                   className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:opacity-90 cursor-pointer"
                 >
-                  {uploadingLogo ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                  {uploadingLogo ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Upload className="h-3.5 w-3.5" />
+                  )}
                 </button>
                 <input
                   ref={logoInput}
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={(e) => handleImage(e.target.files?.[0], 'logos', setUploadingLogo, 'logoUrl')}
+                  onChange={(e) =>
+                    handleImage(e.target.files?.[0], 'logos', setUploadingLogo, 'logoUrl')
+                  }
                 />
               </div>
               <div className="min-w-0 pb-1">
-                <p className="text-sm font-bold truncate">{profile.organizationName || 'Organisation'}</p>
-                <p className="text-xs text-muted-foreground">{profile.entityType} · {profile.email}</p>
+                <p className="text-sm font-bold truncate">
+                  {profile.organizationName || 'Organisation'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {profile.entityType} · {profile.email}
+                </p>
               </div>
             </div>
             {!isUploadConfigured() && (
@@ -254,10 +303,20 @@ export default function CivicProfilePage() {
             )}
             <div className="grid sm:grid-cols-2 gap-3 mt-4">
               <Field label="Logo URL">
-                <Input value={profile.logoUrl ?? ''} onChange={(e) => update({ logoUrl: e.target.value })} placeholder="https://…" className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+                <Input
+                  value={profile.logoUrl ?? ''}
+                  onChange={(e) => update({ logoUrl: e.target.value })}
+                  placeholder="https://…"
+                  className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+                />
               </Field>
               <Field label="Banner URL">
-                <Input value={profile.bannerUrl ?? ''} onChange={(e) => update({ bannerUrl: e.target.value })} placeholder="https://…" className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+                <Input
+                  value={profile.bannerUrl ?? ''}
+                  onChange={(e) => update({ bannerUrl: e.target.value })}
+                  placeholder="https://…"
+                  className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+                />
               </Field>
             </div>
           </div>
@@ -268,26 +327,56 @@ export default function CivicProfilePage() {
           <h2 className="text-sm font-bold">Organisation Details</h2>
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Organisation Name">
-              <Input value={profile.organizationName} onChange={(e) => update({ organizationName: e.target.value })} className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+              <Input
+                value={profile.organizationName}
+                onChange={(e) => update({ organizationName: e.target.value })}
+                className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+              />
             </Field>
             <Field label="Contact Person">
-              <Input value={profile.contactName} onChange={(e) => update({ contactName: e.target.value })} className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+              <Input
+                value={profile.contactName}
+                onChange={(e) => update({ contactName: e.target.value })}
+                className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+              />
             </Field>
             <Field label="Phone">
-              <Input value={profile.phone} onChange={(e) => update({ phone: e.target.value })} className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+              <Input
+                value={profile.phone}
+                onChange={(e) => update({ phone: e.target.value })}
+                className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+              />
             </Field>
             <Field label="District">
-              <Input value={profile.district} onChange={(e) => update({ district: e.target.value })} className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+              <Input
+                value={profile.district}
+                onChange={(e) => update({ district: e.target.value })}
+                className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+              />
             </Field>
             <Field label="Website">
-              <Input value={profile.website} onChange={(e) => update({ website: e.target.value })} placeholder="https://…" className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+              <Input
+                value={profile.website}
+                onChange={(e) => update({ website: e.target.value })}
+                placeholder="https://…"
+                className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+              />
             </Field>
             <Field label="Address">
-              <Input value={profile.address} onChange={(e) => update({ address: e.target.value })} className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+              <Input
+                value={profile.address}
+                onChange={(e) => update({ address: e.target.value })}
+                className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+              />
             </Field>
           </div>
           <Field label="Description">
-            <Textarea value={profile.description} onChange={(e) => update({ description: e.target.value })} rows={3} className="bg-background border-input text-sm rounded-xl resize-none" />
+            <Textarea
+              value={profile.description}
+              onChange={(e) => update({ description: e.target.value })}
+              rows={3}
+              className="bg-background border-input text-sm rounded-xl resize-none"
+            />
           </Field>
         </Card>
 
@@ -298,7 +387,12 @@ export default function CivicProfilePage() {
               <Link2 className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-bold">Social Media Links</h2>
             </div>
-            <Button onClick={addLink} variant="outline" size="sm" className="rounded-xl h-8 gap-1.5 text-xs cursor-pointer">
+            <Button
+              onClick={addLink}
+              variant="outline"
+              size="sm"
+              className="rounded-xl h-8 gap-1.5 text-xs cursor-pointer"
+            >
               <Plus className="h-3.5 w-3.5" /> Add
             </Button>
           </div>
@@ -351,19 +445,38 @@ export default function CivicProfilePage() {
                   : 'bg-danger-soft border-destructive/25 text-danger-soft-foreground'
               }`}
             >
-              {pwMsg.type === 'ok' ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+              {pwMsg.type === 'ok' ? (
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              ) : (
+                <AlertTriangle className="h-3.5 w-3.5" />
+              )}
               {pwMsg.text}
             </div>
           )}
           <div className="grid sm:grid-cols-3 gap-3">
             <Field label="Current">
-              <Input type="password" value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+              <Input
+                type="password"
+                value={pwCurrent}
+                onChange={(e) => setPwCurrent(e.target.value)}
+                className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+              />
             </Field>
             <Field label="New">
-              <Input type="password" value={pwNew} onChange={(e) => setPwNew(e.target.value)} className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+              <Input
+                type="password"
+                value={pwNew}
+                onChange={(e) => setPwNew(e.target.value)}
+                className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+              />
             </Field>
             <Field label="Confirm">
-              <Input type="password" value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} className="h-10 bg-background border-input text-sm text-foreground rounded-xl" />
+              <Input
+                type="password"
+                value={pwConfirm}
+                onChange={(e) => setPwConfirm(e.target.value)}
+                className="h-10 bg-background border-input text-sm text-foreground rounded-xl"
+              />
             </Field>
           </div>
           <div className="flex justify-end">
@@ -372,7 +485,11 @@ export default function CivicProfilePage() {
               disabled={pwSaving || !pwCurrent || !pwNew}
               className="rounded-xl h-9 px-4 text-sm font-semibold gap-1.5 cursor-pointer"
             >
-              {pwSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+              {pwSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <KeyRound className="h-4 w-4" />
+              )}
               Update Password
             </Button>
           </div>

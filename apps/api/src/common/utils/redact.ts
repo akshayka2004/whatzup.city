@@ -6,12 +6,32 @@
  */
 
 const SENSITIVE_KEYS = [
-  'password', 'passwordhash', 'newpassword', 'currentpassword', 'confirmpassword',
-  'token', 'accesstoken', 'refreshtoken', 'authorization', 'cookie',
-  'secret', 'apikey', 'api_key', 'servicerolekey', 'encryptionkey',
-  'pan', 'gstin', 'gst', 'aadhaar', 'aadhar',
-  'cvv', 'cardnumber', 'accountnumber', 'ifsc',
-  'otp', 'pin',
+  'password',
+  'passwordhash',
+  'newpassword',
+  'currentpassword',
+  'confirmpassword',
+  'token',
+  'accesstoken',
+  'refreshtoken',
+  'authorization',
+  'cookie',
+  'secret',
+  'apikey',
+  'api_key',
+  'servicerolekey',
+  'encryptionkey',
+  'pan',
+  'gstin',
+  'gst',
+  'aadhaar',
+  'aadhar',
+  'cvv',
+  'cardnumber',
+  'accountnumber',
+  'ifsc',
+  'otp',
+  'pin',
 ];
 
 const REDACTED = '[REDACTED]';

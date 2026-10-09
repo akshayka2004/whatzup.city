@@ -29,7 +29,13 @@ export interface MockUser {
   phone?: string;
   password: string; // plaintext for mock only
   role: 'user' | 'business' | 'admin' | 'super-admin' | 'government';
-  rbacRole: 'USER' | 'BUSINESS_OWNER' | 'BUSINESS_MODERATOR' | 'MASTER_ADMIN' | 'SUPER_ADMIN' | 'GOVERNMENT_ADMIN';
+  rbacRole:
+    | 'USER'
+    | 'BUSINESS_OWNER'
+    | 'BUSINESS_MODERATOR'
+    | 'MASTER_ADMIN'
+    | 'SUPER_ADMIN'
+    | 'GOVERNMENT_ADMIN';
   businessId?: string;
   entity?: { id: string; type: string; status: string; name: string } | null;
   createdAt: string;
@@ -76,7 +82,13 @@ export interface PendingVerification {
   entity: {
     id: string;
     name: string;
-    type: 'BUSINESS' | 'GOVERNMENT' | 'INFLUENCER' | 'PROFESSIONAL' | 'ORGANIZATION' | 'EVENT_ORGANIZER';
+    type:
+      | 'BUSINESS'
+      | 'GOVERNMENT'
+      | 'INFLUENCER'
+      | 'PROFESSIONAL'
+      | 'ORGANIZATION'
+      | 'EVENT_ORGANIZER';
     email: string;
     phone: string;
     user: { id: string; name: string; email: string };
@@ -214,8 +226,11 @@ export const DB_KEYS = {
 
 function ls<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
-  try { return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback; }
-  catch { return fallback; }
+  try {
+    return JSON.parse(localStorage.getItem(key) || 'null') ?? fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 function lsSet(key: string, value: unknown) {
@@ -238,11 +253,21 @@ export function initMockDb() {
   Object.values(DB_KEYS).forEach((k) => localStorage.removeItem(k));
   // Wipe all legacy / scattered keys used across pages
   const LEGACY_KEYS = [
-    'user_session', 'user', 'accessToken', 'refreshToken',
-    'converted_sales_count', 'subscription_requests',
-    'support_tickets', 'business_tickets', 'issue_reports',
-    'submitted_bills', 'claimed_offers', 'saved_businesses',
-    'reg_password', 'branches_data', 'business_profile_settings',
+    'user_session',
+    'user',
+    'accessToken',
+    'refreshToken',
+    'converted_sales_count',
+    'subscription_requests',
+    'support_tickets',
+    'business_tickets',
+    'issue_reports',
+    'submitted_bills',
+    'claimed_offers',
+    'saved_businesses',
+    'reg_password',
+    'branches_data',
+    'business_profile_settings',
     'business_social_links',
   ];
   LEGACY_KEYS.forEach((k) => localStorage.removeItem(k));
@@ -285,7 +310,10 @@ export function addUser(user: MockUser) {
 export function updateUser(id: string, patch: Partial<MockUser>) {
   const users = getUsers();
   const idx = users.findIndex((u) => u.id === id);
-  if (idx >= 0) { users[idx] = { ...users[idx], ...patch }; lsSet(DB_KEYS.users, users); }
+  if (idx >= 0) {
+    users[idx] = { ...users[idx], ...patch };
+    lsSet(DB_KEYS.users, users);
+  }
 }
 
 // ── Business CRUD ─────────────────────────────────────────────────────────
@@ -309,7 +337,10 @@ export function addBusiness(biz: MockBusiness) {
 export function updateBusiness(id: string, patch: Partial<MockBusiness>) {
   const businesses = getBusinesses();
   const idx = businesses.findIndex((b) => b.id === id);
-  if (idx >= 0) { businesses[idx] = { ...businesses[idx], ...patch }; lsSet(DB_KEYS.businesses, businesses); }
+  if (idx >= 0) {
+    businesses[idx] = { ...businesses[idx], ...patch };
+    lsSet(DB_KEYS.businesses, businesses);
+  }
 }
 
 // ── Team CRUD ─────────────────────────────────────────────────────────────
@@ -341,5 +372,8 @@ export function addPendingVerification(v: PendingVerification) {
 export function updateVerification(id: string, patch: Partial<PendingVerification>) {
   const list = getPendingVerifications();
   const idx = list.findIndex((x) => x.id === id);
-  if (idx >= 0) { list[idx] = { ...list[idx], ...patch, updatedAt: new Date().toISOString() }; lsSet(DB_KEYS.pendingVerifications, list); }
+  if (idx >= 0) {
+    list[idx] = { ...list[idx], ...patch, updatedAt: new Date().toISOString() };
+    lsSet(DB_KEYS.pendingVerifications, list);
+  }
 }

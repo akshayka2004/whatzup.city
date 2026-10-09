@@ -3,7 +3,18 @@
 import { ResponsiveImage } from '@/components/common/responsive-image';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, GripVertical, Image as ImageIcon, Maximize2, Trash2, Upload, UtensilsCrossed } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  GripVertical,
+  Image as ImageIcon,
+  Maximize2,
+  Trash2,
+  Upload,
+  UtensilsCrossed,
+} from 'lucide-react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { PageHeader } from '@/components/system/page-header';
 import { Modal } from '@/components/system/modal';
@@ -30,7 +41,11 @@ interface MenuPhoto {
 }
 
 const prettyName = (filename: string) =>
-  filename.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ').trim().slice(0, 80);
+  filename
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[-_]+/g, ' ')
+    .trim()
+    .slice(0, 80);
 
 export default function MenuPhotosPage() {
   const { business, loading: bizLoading, isFood } = useOwnerBusiness();
@@ -89,7 +104,9 @@ export default function MenuPhotosPage() {
     const ok: File[] = [];
     for (const f of picked) {
       if (!ACCEPTED.includes(f.type)) {
-        problems.push(`${f.name}: only JPG, PNG or WebP images are accepted (this file is ${f.type || 'an unknown type'}).`);
+        problems.push(
+          `${f.name}: only JPG, PNG or WebP images are accepted (this file is ${f.type || 'an unknown type'}).`,
+        );
       } else {
         ok.push(f);
       }
@@ -119,7 +136,12 @@ export default function MenuPhotosPage() {
         // Phone photos are often >5 MB; resize (still sharp enough to read a menu) before sending.
         let file = original;
         try {
-          file = await optimizeImage(original, { maxWidth: 2000, maxHeight: 2000, quality: 0.85, outputType: 'jpeg' });
+          file = await optimizeImage(original, {
+            maxWidth: 2000,
+            maxHeight: 2000,
+            quality: 0.85,
+            outputType: 'jpeg',
+          });
         } catch {
           file = original;
         }
@@ -129,15 +151,19 @@ export default function MenuPhotosPage() {
           );
         }
 
-        const photoLabel = files.length === 1 && label.trim() ? label.trim() : prettyName(original.name);
+        const photoLabel =
+          files.length === 1 && label.trim() ? label.trim() : prettyName(original.name);
 
-        const urlRes = await apiService.post<{ uploadUrl: string; fileKey: string }>('/v1/media/menu/upload-url', {
-          businessId,
-          filename: file.name,
-          mimeType: file.type,
-          size: file.size,
-          label: photoLabel || undefined,
-        });
+        const urlRes = await apiService.post<{ uploadUrl: string; fileKey: string }>(
+          '/v1/media/menu/upload-url',
+          {
+            businessId,
+            filename: file.name,
+            mimeType: file.type,
+            size: file.size,
+            label: photoLabel || undefined,
+          },
+        );
         if (urlRes.error || !urlRes.data?.uploadUrl) {
           throw new Error(`could not be prepared for upload. ${urlRes.error || ''}`.trim());
         }
@@ -150,7 +176,7 @@ export default function MenuPhotosPage() {
             body: file,
           });
         } catch {
-          throw new Error("could not be uploaded. Check your internet connection and try again.");
+          throw new Error('could not be uploaded. Check your internet connection and try again.');
         }
         if (!putRes.ok) throw new Error(`failed to upload. ${await storageUploadError(putRes)}`);
 
@@ -162,7 +188,8 @@ export default function MenuPhotosPage() {
           size: file.size,
           label: photoLabel || undefined,
         });
-        if (createRes.error) throw new Error(`was uploaded but could not be saved. ${createRes.error}`);
+        if (createRes.error)
+          throw new Error(`was uploaded but could not be saved. ${createRes.error}`);
         done += 1;
       } catch (err: any) {
         failures.push(`${original.name} ${err?.message || 'failed for an unknown reason.'}`);
@@ -184,7 +211,12 @@ export default function MenuPhotosPage() {
   };
 
   const remove = async (p: MenuPhoto) => {
-    const ok = await confirm({ title: `Delete “${p.title || p.filename}”?`, description: 'It disappears from your public menu right away.', confirmLabel: 'Delete', tone: 'danger' });
+    const ok = await confirm({
+      title: `Delete “${p.title || p.filename}”?`,
+      description: 'It disappears from your public menu right away.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
     if (!ok) return;
     const res = await apiService.delete(`/v1/media/${p.id}`);
     if (res.error) return toast.error(`Couldn't delete this photo. ${res.error}`);
@@ -198,7 +230,9 @@ export default function MenuPhotosPage() {
     const prev = photos;
     setPhotos(next);
     setSavingOrder(true);
-    const res = await apiService.put(`/v1/media/menu/business/${businessId}/order`, { ids: next.map((p) => p.id) });
+    const res = await apiService.put(`/v1/media/menu/business/${businessId}/order`, {
+      ids: next.map((p) => p.id),
+    });
     setSavingOrder(false);
     if (res.error) {
       setPhotos(prev);
@@ -243,7 +277,11 @@ export default function MenuPhotosPage() {
           ))}
         </div>
       ) : !business ? (
-        <EmptyState icon={AlertTriangle} title="We couldn’t load your business" description="Refresh the page. If this keeps happening, contact support." />
+        <EmptyState
+          icon={AlertTriangle}
+          title="We couldn’t load your business"
+          description="Refresh the page. If this keeps happening, contact support."
+        />
       ) : !isFood ? (
         <EmptyState
           icon={UtensilsCrossed}
@@ -253,7 +291,10 @@ export default function MenuPhotosPage() {
       ) : (
         <>
           {listError && (
-            <p className="mb-4 flex items-start gap-2 rounded-control bg-danger-soft p-3 text-sm text-danger-soft-foreground" role="alert">
+            <p
+              className="mb-4 flex items-start gap-2 rounded-control bg-danger-soft p-3 text-sm text-danger-soft-foreground"
+              role="alert"
+            >
               <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
               {listError}
             </p>
@@ -268,9 +309,13 @@ export default function MenuPhotosPage() {
           ) : (
             <>
               <p className="mb-3 text-caption text-muted-foreground" aria-live="polite">
-                {photos.length} of {MAX_PHOTOS} photos · {savingOrder ? 'Saving order…' : 'Drag to reorder, or use the arrows.'}
+                {photos.length} of {MAX_PHOTOS} photos ·{' '}
+                {savingOrder ? 'Saving order…' : 'Drag to reorder, or use the arrows.'}
               </p>
-              <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4" aria-label="Menu photos, in display order">
+              <ul
+                className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4"
+                aria-label="Menu photos, in display order"
+              >
                 {photos.map((p, i) => (
                   <li
                     key={p.id}
@@ -297,11 +342,19 @@ export default function MenuPhotosPage() {
                     className={cn(
                       'group overflow-hidden rounded-card border bg-card shadow-e1 transition-[box-shadow,opacity,border-color]',
                       dragId === p.id && 'opacity-40',
-                      overId === p.id && dragId !== p.id ? 'border-primary ring-2 ring-primary/30' : 'border-border',
+                      overId === p.id && dragId !== p.id
+                        ? 'border-primary ring-2 ring-primary/30'
+                        : 'border-border',
                     )}
                   >
                     <div className="relative aspect-[4/5] cursor-grab bg-surface-sunken active:cursor-grabbing">
-                      <ResponsiveImage src={p.publicUrl} alt={p.title || 'Menu photo'} ratio="4 / 5" sizes="(max-width: 768px) 50vw, 25vw" className="size-full" />
+                      <ResponsiveImage
+                        src={p.publicUrl}
+                        alt={p.title || 'Menu photo'}
+                        ratio="4 / 5"
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        className="size-full"
+                      />
                       <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-caption font-semibold shadow-e1">
                         <GripVertical className="size-3.5" aria-hidden /> {i + 1}
                       </span>
@@ -315,14 +368,34 @@ export default function MenuPhotosPage() {
                       </button>
                     </div>
                     <div className="flex items-center gap-1 p-2">
-                      <p className="min-w-0 flex-1 truncate px-1 text-sm font-medium">{p.title || p.filename}</p>
-                      <Button size="icon-sm" variant="ghost" aria-label="Move earlier" disabled={i === 0 || savingOrder} onClick={() => move(i, i - 1)}>
+                      <p className="min-w-0 flex-1 truncate px-1 text-sm font-medium">
+                        {p.title || p.filename}
+                      </p>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label="Move earlier"
+                        disabled={i === 0 || savingOrder}
+                        onClick={() => move(i, i - 1)}
+                      >
                         <ArrowLeft />
                       </Button>
-                      <Button size="icon-sm" variant="ghost" aria-label="Move later" disabled={i === photos.length - 1 || savingOrder} onClick={() => move(i, i + 1)}>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label="Move later"
+                        disabled={i === photos.length - 1 || savingOrder}
+                        onClick={() => move(i, i + 1)}
+                      >
                         <ArrowRight />
                       </Button>
-                      <Button size="icon-sm" variant="ghost" aria-label="Delete photo" className="text-destructive" onClick={() => remove(p)}>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label="Delete photo"
+                        className="text-destructive"
+                        onClick={() => remove(p)}
+                      >
                         <Trash2 />
                       </Button>
                     </div>
@@ -344,7 +417,12 @@ export default function MenuPhotosPage() {
             <Button variant="outline" onClick={closeUpload} disabled={uploading}>
               Cancel
             </Button>
-            <Button type="submit" form="menu-upload" disabled={files.length === 0} loading={uploading}>
+            <Button
+              type="submit"
+              form="menu-upload"
+              disabled={files.length === 0}
+              loading={uploading}
+            >
               {uploading ? 'Uploading…' : 'Upload'}
             </Button>
           </>
@@ -358,7 +436,8 @@ export default function MenuPhotosPage() {
           >
             {files.length > 0 ? (
               <span className="flex items-center gap-2 text-sm font-medium text-success">
-                <CheckCircle2 className="size-5" aria-hidden /> {files.length} photo{files.length === 1 ? '' : 's'} selected
+                <CheckCircle2 className="size-5" aria-hidden /> {files.length} photo
+                {files.length === 1 ? '' : 's'} selected
               </span>
             ) : (
               <>
@@ -367,14 +446,31 @@ export default function MenuPhotosPage() {
               </>
             )}
           </button>
-          <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFiles} aria-label="Choose menu photos" />
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleFiles}
+            aria-label="Choose menu photos"
+          />
 
           {files.length === 1 && (
             <div>
               <label htmlFor="menu-label" className="mb-1.5 block text-sm font-medium">
-                Label <span className="font-normal text-muted-foreground">(optional, e.g. “Lunch menu”)</span>
+                Label{' '}
+                <span className="font-normal text-muted-foreground">
+                  (optional, e.g. “Lunch menu”)
+                </span>
               </label>
-              <Input id="menu-label" value={label} onChange={(e) => setLabel(e.target.value)} maxLength={80} placeholder={prettyName(files[0].name) || 'Photo label'} />
+              <Input
+                id="menu-label"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                maxLength={80}
+                placeholder={prettyName(files[0].name) || 'Photo label'}
+              />
             </div>
           )}
 
@@ -387,7 +483,10 @@ export default function MenuPhotosPage() {
           {uploadErrors.length > 0 && (
             <ul className="space-y-1.5" role="alert">
               {uploadErrors.map((m, i) => (
-                <li key={i} className="flex items-start gap-2 rounded-control bg-danger-soft p-3 text-sm text-danger-soft-foreground">
+                <li
+                  key={i}
+                  className="flex items-start gap-2 rounded-control bg-danger-soft p-3 text-sm text-danger-soft-foreground"
+                >
                   <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
                   <span className="min-w-0 break-words">{m}</span>
                 </li>
@@ -397,10 +496,19 @@ export default function MenuPhotosPage() {
         </form>
       </Modal>
 
-      <Modal open={!!viewing} onOpenChange={(o) => !o && setViewing(null)} title={viewing?.title || 'Menu photo'} size="xl">
+      <Modal
+        open={!!viewing}
+        onOpenChange={(o) => !o && setViewing(null)}
+        title={viewing?.title || 'Menu photo'}
+        size="xl"
+      >
         {viewing && (
           // eslint-disable-next-line @next/next/no-img-element -- signed storage URL
-          <img src={viewing.publicUrl} alt={viewing.title || 'Menu photo'} className="max-h-[70dvh] w-full rounded-control object-contain" />
+          <img
+            src={viewing.publicUrl}
+            alt={viewing.title || 'Menu photo'}
+            className="max-h-[70dvh] w-full rounded-control object-contain"
+          />
         )}
       </Modal>
     </BusinessLayout>

@@ -1,7 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronDown, CreditCard, Flag, LifeBuoy, Mail, ReceiptText, ShieldCheck } from 'lucide-react';
+import {
+  ChevronDown,
+  CreditCard,
+  Flag,
+  LifeBuoy,
+  Mail,
+  ReceiptText,
+  ShieldCheck,
+} from 'lucide-react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { PageHeader } from '@/components/system/page-header';
 import { SectionCard } from '@/components/system/section-card';
@@ -41,14 +49,19 @@ const FAQ = [
  */
 export default function BusinessSupportPage() {
   const { activeBusiness, activeBusinessId } = useActiveBusiness();
-  const subject = encodeURIComponent(`Support request${activeBusiness?.name ? ` — ${activeBusiness.name}` : ''}`);
+  const subject = encodeURIComponent(
+    `Support request${activeBusiness?.name ? ` — ${activeBusiness.name}` : ''}`,
+  );
   const body = encodeURIComponent(
     `Hi Whtzup.city team,\n\n[Describe what happened, what you expected, and any screenshots]\n\n—\nBusiness: ${activeBusiness?.name ?? ''}\nBusiness ID: ${activeBusinessId ?? ''}\nPage: ${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard\n`,
   );
 
   return (
     <BusinessLayout>
-      <PageHeader title="Help & support" description="Reach the Whtzup.city team or find a quick answer." />
+      <PageHeader
+        title="Help & support"
+        description="Reach the Whtzup.city team or find a quick answer."
+      />
 
       <div className="mb-6">
         <Suspense fallback={<div className="ui-skeleton h-40 rounded-card" />}>
@@ -58,9 +71,14 @@ export default function BusinessSupportPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
         <div className="space-y-6">
-          <SectionCard icon={Mail} title="Prefer email?" description="We reply within one working day (Mon–Sat, IST).">
+          <SectionCard
+            icon={Mail}
+            title="Prefer email?"
+            description="We reply within one working day (Mon–Sat, IST)."
+          >
             <p className="mb-4 text-body text-muted-foreground">
-              The email opens pre-filled with your business ID so we can look things up straight away.
+              The email opens pre-filled with your business ID so we can look things up straight
+              away.
             </p>
             <Button asChild size="lg" className="w-full">
               <a href={`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`}>
@@ -69,7 +87,11 @@ export default function BusinessSupportPage() {
             </Button>
           </SectionCard>
 
-          <SectionCard icon={Flag} title="Report a problem with a listing or offer" description="Fake businesses, misleading offers, wrong information.">
+          <SectionCard
+            icon={Flag}
+            title="Report a problem with a listing or offer"
+            description="Fake businesses, misleading offers, wrong information."
+          >
             <Button asChild variant="outline" className="w-full">
               <Link href="/report">Open a report</Link>
             </Button>
@@ -78,7 +100,11 @@ export default function BusinessSupportPage() {
           <SectionCard icon={LifeBuoy} title="Shortcuts">
             <div className="grid gap-2">
               {[
-                { href: '/dashboard/subscriptions', icon: CreditCard, label: 'Plan, invoices and payment status' },
+                {
+                  href: '/dashboard/subscriptions',
+                  icon: CreditCard,
+                  label: 'Plan, invoices and payment status',
+                },
                 { href: '/dashboard/moderation', icon: ReceiptText, label: 'Bill queue' },
                 { href: '/dashboard/team', icon: ShieldCheck, label: 'Team access' },
               ].map((l) => (
@@ -102,7 +128,10 @@ export default function BusinessSupportPage() {
                 <details className="group px-5 py-4 sm:px-6">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium [&::-webkit-details-marker]:hidden">
                     {f.q}
-                    <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden />
+                    <ChevronDown
+                      className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+                      aria-hidden
+                    />
                   </summary>
                   <p className="mt-2 text-body text-muted-foreground">{f.a}</p>
                 </details>

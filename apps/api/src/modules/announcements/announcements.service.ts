@@ -24,8 +24,10 @@ export class AnnouncementsService {
     if (data.targetAudience !== undefined) payload.targetAudience = data.targetAudience;
     if (data.targetCities !== undefined) payload.targetCities = data.targetCities;
     if (data.linkUrl !== undefined) payload.linkUrl = data.linkUrl || null;
-    if (data.publishAt !== undefined) payload.publishAt = data.publishAt ? new Date(data.publishAt) : null;
-    if (data.expiresAt !== undefined) payload.expiresAt = data.expiresAt ? new Date(data.expiresAt) : null;
+    if (data.publishAt !== undefined)
+      payload.publishAt = data.publishAt ? new Date(data.publishAt) : null;
+    if (data.expiresAt !== undefined)
+      payload.expiresAt = data.expiresAt ? new Date(data.expiresAt) : null;
     if (data.startAt !== undefined) payload.startAt = data.startAt ? new Date(data.startAt) : null;
     return payload;
   }
@@ -117,9 +119,7 @@ export class AnnouncementsService {
    */
   private async attachPublishers(announcements: any[]): Promise<any[]> {
     if (!announcements?.length) return announcements;
-    const agencyIds = Array.from(
-      new Set(announcements.map((a) => a.agencyId).filter(Boolean)),
-    );
+    const agencyIds = Array.from(new Set(announcements.map((a) => a.agencyId).filter(Boolean)));
     if (!agencyIds.length) return announcements;
 
     const entities = await (this.db as any).entity.findMany({

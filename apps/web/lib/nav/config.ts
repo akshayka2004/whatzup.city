@@ -45,7 +45,14 @@ import {
 } from 'lucide-react';
 import { MOVIES_ENABLED } from '@/lib/feature-flags';
 
-export type NavArea = 'public' | 'business' | 'staff' | 'admin' | 'super-admin' | 'civic' | 'government';
+export type NavArea =
+  | 'public'
+  | 'business'
+  | 'staff'
+  | 'admin'
+  | 'super-admin'
+  | 'civic'
+  | 'government';
 
 export type NavItem = {
   label: string;
@@ -103,7 +110,13 @@ function publicNav(ctx: NavContext): NavSpec {
           { label: 'Home', href: '/', icon: Home, exact: true, mobileTour: 'mnav-home' },
           { label: 'Browse', href: '/category', icon: Grid2x2, tour: 'nav-browse' },
           { label: 'Nearby', href: '/nearby', icon: MapPin },
-          { label: 'Search', href: '/search', icon: Search, tour: 'nav-search', mobileTour: 'mnav-search' },
+          {
+            label: 'Search',
+            href: '/search',
+            icon: Search,
+            tour: 'nav-search',
+            mobileTour: 'mnav-search',
+          },
           { label: 'Offers', href: '/offers', icon: TicketPercent, tour: 'nav-offers' },
           { label: 'Spin it', href: '/spin-it', icon: Sparkles },
           { label: 'Events', href: '/events', icon: CalendarDays, tour: 'nav-events' },
@@ -114,7 +127,13 @@ function publicNav(ctx: NavContext): NavSpec {
       {
         title: 'You',
         items: [
-          { label: 'Favorites', href: '/favorites', icon: Heart, tour: 'nav-favorites', mobileTour: 'mnav-saved' },
+          {
+            label: 'Favorites',
+            href: '/favorites',
+            icon: Heart,
+            tour: 'nav-favorites',
+            mobileTour: 'mnav-saved',
+          },
           { label: 'Notifications', href: '/notifications', icon: Bell },
           { label: 'Report Issue', href: '/report', icon: Flag },
         ],
@@ -122,7 +141,12 @@ function publicNav(ctx: NavContext): NavSpec {
     ],
     footer: [
       ctx.signedIn
-        ? { label: 'Profile Settings', href: '/profile', icon: CircleUserRound, tour: 'nav-settings' }
+        ? {
+            label: 'Profile Settings',
+            href: '/profile',
+            icon: CircleUserRound,
+            tour: 'nav-settings',
+          }
         : { label: 'Sign In / Register', href: '/login', icon: UserPlus },
       { label: 'Help & Support', href: '/support', icon: LifeBuoy },
     ],
@@ -141,16 +165,45 @@ function businessNav(ctx: NavContext): NavSpec {
       groups: [
         {
           items: [
-            { label: 'Overview', href: '/dashboard', icon: LayoutDashboard, exact: true, tour: 'nav-overview', mobileTour: 'mnav-overview' },
-            { label: 'Bill Queue', href: '/dashboard/moderation', icon: ReceiptText, tour: 'nav-moderation', highlight: true },
+            {
+              label: 'Overview',
+              href: '/dashboard',
+              icon: LayoutDashboard,
+              exact: true,
+              tour: 'nav-overview',
+              mobileTour: 'mnav-overview',
+            },
+            {
+              label: 'Bill Queue',
+              href: '/dashboard/moderation',
+              icon: ReceiptText,
+              tour: 'nav-moderation',
+              highlight: true,
+            },
             { label: 'Review Moderation', href: '/dashboard/reviews', icon: Star },
-            { label: 'Customer Reports', href: '/dashboard/customers', icon: MessageSquareWarning, tour: 'nav-customers' },
-            { label: 'Offers', href: '/dashboard/offers', icon: TicketPercent, tour: 'nav-offers', mobileTour: 'mnav-offers' },
+            {
+              label: 'Customer Reports',
+              href: '/dashboard/customers',
+              icon: MessageSquareWarning,
+              tour: 'nav-customers',
+            },
+            {
+              label: 'Offers',
+              href: '/dashboard/offers',
+              icon: TicketPercent,
+              tour: 'nav-offers',
+              mobileTour: 'mnav-offers',
+            },
           ],
         },
       ],
       footer: [{ label: 'Profile', href: '/profile', icon: CircleUserRound, tour: 'nav-settings' }],
-      mobileTabs: ['/dashboard', '/dashboard/moderation', '/dashboard/offers', '/dashboard/reviews'],
+      mobileTabs: [
+        '/dashboard',
+        '/dashboard/moderation',
+        '/dashboard/offers',
+        '/dashboard/reviews',
+      ],
       mobileLabels: { '/dashboard/moderation': 'Bills', '/dashboard/reviews': 'Reviews' },
     };
   }
@@ -163,27 +216,52 @@ function businessNav(ctx: NavContext): NavSpec {
     groups: [
       {
         items: [
-          { label: 'Overview', href: '/dashboard', icon: LayoutDashboard, exact: true, tour: 'nav-overview', mobileTour: 'mnav-overview' },
+          {
+            label: 'Overview',
+            href: '/dashboard',
+            icon: LayoutDashboard,
+            exact: true,
+            tour: 'nav-overview',
+            mobileTour: 'mnav-overview',
+          },
           { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
         ],
       },
       {
         title: 'Grow',
         items: [
-          { label: 'Offers', href: '/dashboard/offers', icon: TicketPercent, tour: 'nav-offers', mobileTour: 'mnav-offers' },
+          {
+            label: 'Offers',
+            href: '/dashboard/offers',
+            icon: TicketPercent,
+            tour: 'nav-offers',
+            mobileTour: 'mnav-offers',
+          },
           { label: 'Vouchers', href: '/dashboard/vouchers', icon: Gift, tour: 'nav-vouchers' },
-          { label: 'Spin wheel', href: '/dashboard/discounts', icon: Sparkles, tour: 'nav-discounts' },
+          {
+            label: 'Spin wheel',
+            href: '/dashboard/discounts',
+            icon: Sparkles,
+            tour: 'nav-discounts',
+          },
           { label: 'Events', href: '/dashboard/events', icon: CalendarDays },
         ],
       },
       {
         title: 'Operate',
         items: [
-          { label: 'Bill Queue', href: '/dashboard/moderation', icon: ReceiptText, tour: 'nav-moderation' },
+          {
+            label: 'Bill Queue',
+            href: '/dashboard/moderation',
+            icon: ReceiptText,
+            tour: 'nav-moderation',
+          },
           { label: 'Customers', href: '/dashboard/customers', icon: Users, tour: 'nav-customers' },
           { label: 'Reviews', href: '/dashboard/reviews', icon: Star },
           { label: 'Products', href: '/dashboard/products', icon: Package },
-          ...(ctx.isFood ? [{ label: 'Menu Photos', href: '/dashboard/menu', icon: Utensils, tour: 'nav-menu' }] : []),
+          ...(ctx.isFood
+            ? [{ label: 'Menu Photos', href: '/dashboard/menu', icon: Utensils, tour: 'nav-menu' }]
+            : []),
           { label: 'QR Code', href: '/dashboard/qr-code', icon: QrCode },
         ],
       },
@@ -191,7 +269,9 @@ function businessNav(ctx: NavContext): NavSpec {
         title: 'Business',
         items: [
           { label: 'Outlets', href: '/dashboard/outlets', icon: Network },
-          ...(ctx.isBrand ? [] : [{ label: 'Branches', href: '/dashboard/branches', icon: GitBranch }]),
+          ...(ctx.isBrand
+            ? []
+            : [{ label: 'Branches', href: '/dashboard/branches', icon: GitBranch }]),
           { label: 'Team', href: '/dashboard/team', icon: UserCog },
           { label: 'Subscription', href: '/dashboard/subscriptions', icon: CreditCard },
           { label: 'Settings', href: '/dashboard/settings', icon: Settings },
@@ -203,7 +283,12 @@ function businessNav(ctx: NavContext): NavSpec {
       { label: 'Report Issue', href: '/report', icon: Flag },
       { label: 'Profile', href: '/profile', icon: CircleUserRound, tour: 'nav-settings' },
     ],
-    mobileTabs: ['/dashboard', '/dashboard/moderation', '/dashboard/offers', '/dashboard/analytics'],
+    mobileTabs: [
+      '/dashboard',
+      '/dashboard/moderation',
+      '/dashboard/offers',
+      '/dashboard/analytics',
+    ],
     mobileLabels: { '/dashboard/moderation': 'Bills' },
   };
 }
@@ -225,7 +310,11 @@ function civicNav(): NavSpec {
     ],
     footer: [{ label: 'Help & support', href: '/support', icon: LifeBuoy }],
     mobileTabs: ['/civic/dashboard', '/civic/profile', '/government'],
-    mobileLabels: { '/civic/dashboard': 'Publish', '/civic/profile': 'Profile', '/government': 'Notices' },
+    mobileLabels: {
+      '/civic/dashboard': 'Publish',
+      '/civic/profile': 'Profile',
+      '/government': 'Notices',
+    },
   };
 }
 
@@ -315,9 +404,7 @@ function adminNav(): NavSpec {
         ],
       },
     ],
-    footer: [
-      { label: 'My Profile', href: '/admin/profile', icon: CircleUserRound },
-    ],
+    footer: [{ label: 'My Profile', href: '/admin/profile', icon: CircleUserRound }],
     mobileTabs: ['/admin', '/admin/approvals', '/admin/payments', '/admin/reports'],
   };
 }
@@ -385,9 +472,7 @@ function superAdminNav(): NavSpec {
         ],
       },
     ],
-    footer: [
-      { label: 'My Profile', href: '/super-admin/profile', icon: CircleUserRound },
-    ],
+    footer: [{ label: 'My Profile', href: '/super-admin/profile', icon: CircleUserRound }],
     mobileTabs: ['/super-admin', '/admin/approvals', '/super-admin/businesses', '/admin/payments'],
     mobileLabels: { '/super-admin': 'Overview', '/super-admin/businesses': 'Businesses' },
   };

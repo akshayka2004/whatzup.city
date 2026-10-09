@@ -26,12 +26,16 @@ export default function ForgotPasswordPage() {
     const res = await apiService.post('/v1/auth/forgot-password', { email: email.trim() });
     setSubmitting(false);
     // Same screen whether or not the account exists, so the form can't be used to probe emails.
-    if (res.error && res.status >= 500) setError("We couldn't send the email right now. Please try again in a minute.");
+    if (res.error && res.status >= 500)
+      setError("We couldn't send the email right now. Please try again in a minute.");
     else setSent(true);
   };
 
   const back = (
-    <Link href="/login" className="inline-flex items-center gap-1 font-semibold text-primary underline-offset-4 hover:underline">
+    <Link
+      href="/login"
+      className="inline-flex items-center gap-1 font-semibold text-primary underline-offset-4 hover:underline"
+    >
       <ArrowLeft className="size-4" /> Back to sign in
     </Link>
   );
@@ -43,8 +47,8 @@ export default function ForgotPasswordPage() {
         title="Check your email"
         description={
           <>
-            If an account exists for <span className="font-medium text-foreground">{email}</span>, we&apos;ve sent a link to reset
-            your password. It expires in 1 hour.
+            If an account exists for <span className="font-medium text-foreground">{email}</span>,
+            we&apos;ve sent a link to reset your password. It expires in 1 hour.
           </>
         }
         footer={back}
@@ -57,7 +61,12 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell icon={KeyRound} title="Reset your password" description="Enter your email and we’ll send you a reset link." footer={back}>
+    <AuthShell
+      icon={KeyRound}
+      title="Reset your password"
+      description="Enter your email and we’ll send you a reset link."
+      footer={back}
+    >
       {error && <FormAlert tone="error">{error}</FormAlert>}
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <AuthField

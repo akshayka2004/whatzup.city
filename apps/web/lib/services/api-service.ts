@@ -231,7 +231,11 @@ class ApiService {
       }
 
       if (!response.ok) {
-        return { data: null as unknown as T, error: await readError(response), status: response.status };
+        return {
+          data: null as unknown as T,
+          error: await readError(response),
+          status: response.status,
+        };
       }
 
       if (response.status === 204) {

@@ -220,7 +220,8 @@ export class BusinessOnboardingService {
     if (dto.postalCode !== undefined) updateData.zipCode = dto.postalCode;
     if (dto.latitude !== undefined) updateData.latitude = dto.latitude;
     if (dto.longitude !== undefined) updateData.longitude = dto.longitude;
-    if (dto.operatingHours !== undefined) updateData.operatingHours = operatingHoursForDb(dto.operatingHours);
+    if (dto.operatingHours !== undefined)
+      updateData.operatingHours = operatingHoursForDb(dto.operatingHours);
     if (dto.googleMapsUrl !== undefined) updateData.googleMapsUrl = dto.googleMapsUrl;
     if (dto.socialLinks !== undefined) updateData.socialLinks = dto.socialLinks;
     if (dto.tags !== undefined) updateData.tags = dto.tags;
@@ -233,8 +234,10 @@ export class BusinessOnboardingService {
     if (dto.billingContact !== undefined) updateData.billingContact = dto.billingContact;
     if (dto.supportContact !== undefined) updateData.supportContact = dto.supportContact;
     if (dto.branchHead !== undefined) updateData.branchHead = dto.branchHead;
-    if (dto.categoryAttributes !== undefined) updateData.categoryAttributes = dto.categoryAttributes;
-    if (dto.billSeriesPrefix !== undefined) updateData.billSeriesPrefix = dto.billSeriesPrefix.trim() || null;
+    if (dto.categoryAttributes !== undefined)
+      updateData.categoryAttributes = dto.categoryAttributes;
+    if (dto.billSeriesPrefix !== undefined)
+      updateData.billSeriesPrefix = dto.billSeriesPrefix.trim() || null;
     // Hotel category pricing
     if (dto.hotelStarRating !== undefined) updateData.hotelStarRating = dto.hotelStarRating;
     if (dto.hotelAmenities !== undefined) updateData.hotelAmenities = dto.hotelAmenities;

@@ -18,11 +18,11 @@
   --popover-foreground: oklch(0.261 0.022 269);
   --primary: oklch(0.555 0.103 43);
   --primary-foreground: oklch(0.995 0 0);
-  --secondary: oklch(0.960 0.008 78);
+  --secondary: oklch(0.96 0.008 78);
   --secondary-foreground: oklch(0.261 0.022 269);
-  --muted: oklch(0.960 0.008 78);
+  --muted: oklch(0.96 0.008 78);
   /* #667085 — clears 4.5:1 on --background and --card. Secondary text. */
-  --muted-foreground: oklch(0.530 0.035 265);
+  --muted-foreground: oklch(0.53 0.035 265);
   --accent: oklch(0.615 0.103 43);
   --accent-foreground: oklch(0.995 0 0);
   --destructive: oklch(0.651 0.176 23);
@@ -47,8 +47,8 @@
   --chart-grid: oklch(0.924 0.011 77);
   --chart-axis: oklch(0.544 0.035 265);
   /* Delta text: "good" / "bad" direction, AA on card */
-  --delta-up: oklch(0.480 0.120 155);
-  --delta-down: oklch(0.540 0.180 25);
+  --delta-up: oklch(0.48 0.12 155);
+  --delta-down: oklch(0.54 0.18 25);
 
   /*
    * Shape scale v3 (soft modern). Each step is distinct — no aliasing.
@@ -65,33 +65,33 @@
   --sidebar-foreground: oklch(0.261 0.022 269);
   --sidebar-primary: oklch(0.555 0.103 43);
   --sidebar-primary-foreground: oklch(0.995 0 0);
-  --sidebar-accent: oklch(0.960 0.008 78);
+  --sidebar-accent: oklch(0.96 0.008 78);
   --sidebar-accent-foreground: oklch(0.261 0.022 269);
   --sidebar-border: oklch(0.924 0.011 77);
   --sidebar-ring: oklch(0.555 0.103 43);
 
   /* Status — always paired with an icon or label, never hue alone */
   --success: oklch(0.732 0.146 162);
-  --success-foreground: oklch(0.240 0.050 162);
+  --success-foreground: oklch(0.24 0.05 162);
   --warning: oklch(0.757 0.139 72);
-  --warning-foreground: oklch(0.270 0.050 72);
-  --info: oklch(0.560 0.110 235);
+  --warning-foreground: oklch(0.27 0.05 72);
+  --info: oklch(0.56 0.11 235);
   --info-foreground: oklch(0.995 0 0);
 
   /* Surfaces + ink ramp (v3) */
   --surface-sunken: oklch(0.955 0.008 78);
-  --border-strong: oklch(0.860 0.014 77);
-  --subtle-foreground: oklch(0.540 0.025 265);
-  --brand-soft: oklch(0.615 0.103 43 / 0.10);
-  --brand-soft-foreground: oklch(0.480 0.100 43);
+  --border-strong: oklch(0.86 0.014 77);
+  --subtle-foreground: oklch(0.54 0.025 265);
+  --brand-soft: oklch(0.615 0.103 43 / 0.1);
+  --brand-soft-foreground: oklch(0.48 0.1 43);
   --success-soft: oklch(0.732 0.146 162 / 0.14);
-  --success-soft-foreground: oklch(0.430 0.100 160);
+  --success-soft-foreground: oklch(0.43 0.1 160);
   --warning-soft: oklch(0.757 0.139 72 / 0.18);
-  --warning-soft-foreground: oklch(0.470 0.100 65);
+  --warning-soft-foreground: oklch(0.47 0.1 65);
   --danger-soft: oklch(0.651 0.176 23 / 0.12);
-  --danger-soft-foreground: oklch(0.500 0.170 25);
-  --info-soft: oklch(0.560 0.110 235 / 0.12);
-  --info-soft-foreground: oklch(0.450 0.110 240);
+  --danger-soft-foreground: oklch(0.5 0.17 25);
+  --info-soft: oklch(0.56 0.11 235 / 0.12);
+  --info-soft-foreground: oklch(0.45 0.11 240);
 
   /* Semantic z-index scale — never arbitrary 999/9999 */
   --z-dropdown: 10;
@@ -109,26 +109,26 @@
    * accent and status hues lifted for dark surfaces. Light is the default; this
    * keeps the toggle coherent. All text pairs ≥4.5:1.
    */
-  --background: oklch(0.220 0.008 285);
-  --foreground: oklch(0.960 0.004 78);
-  --card: oklch(0.270 0.009 285);
-  --card-foreground: oklch(0.960 0.004 78);
-  --popover: oklch(0.270 0.009 285);
-  --popover-foreground: oklch(0.960 0.004 78);
-  --primary: oklch(0.700 0.108 44);
-  --primary-foreground: oklch(0.180 0.020 40);
-  --secondary: oklch(0.320 0.010 285);
-  --secondary-foreground: oklch(0.960 0.004 78);
-  --muted: oklch(0.320 0.010 285);
+  --background: oklch(0.22 0.008 285);
+  --foreground: oklch(0.96 0.004 78);
+  --card: oklch(0.27 0.009 285);
+  --card-foreground: oklch(0.96 0.004 78);
+  --popover: oklch(0.27 0.009 285);
+  --popover-foreground: oklch(0.96 0.004 78);
+  --primary: oklch(0.7 0.108 44);
+  --primary-foreground: oklch(0.18 0.02 40);
+  --secondary: oklch(0.32 0.01 285);
+  --secondary-foreground: oklch(0.96 0.004 78);
+  --muted: oklch(0.32 0.01 285);
   /* Clears 4.5:1 on --background and --card. */
-  --muted-foreground: oklch(0.740 0.020 270);
-  --accent: oklch(0.660 0.108 44);
-  --accent-foreground: oklch(0.180 0.020 40);
-  --destructive: oklch(0.680 0.176 23);
-  --destructive-foreground: oklch(0.180 0.030 23);
-  --border: oklch(0.340 0.010 285);
-  --input: oklch(0.340 0.010 285);
-  --ring: oklch(0.700 0.108 44);
+  --muted-foreground: oklch(0.74 0.02 270);
+  --accent: oklch(0.66 0.108 44);
+  --accent-foreground: oklch(0.18 0.02 40);
+  --destructive: oklch(0.68 0.176 23);
+  --destructive-foreground: oklch(0.18 0.03 23);
+  --border: oklch(0.34 0.01 285);
+  --input: oklch(0.34 0.01 285);
+  --ring: oklch(0.7 0.108 44);
   /* Same eight hues, stepped for the dark card surface (validated). */
   --chart-1: #3987e5;
   --chart-2: #d95926;
@@ -138,40 +138,40 @@
   --chart-6: #008300;
   --chart-7: #9085e9;
   --chart-8: #e66767;
-  --chart-grid: oklch(0.340 0.010 285);
-  --chart-axis: oklch(0.740 0.020 270);
-  --delta-up: oklch(0.780 0.140 155);
-  --delta-down: oklch(0.740 0.150 25);
-  --sidebar: oklch(0.250 0.008 285);
-  --sidebar-foreground: oklch(0.960 0.004 78);
-  --sidebar-primary: oklch(0.700 0.108 44);
-  --sidebar-primary-foreground: oklch(0.180 0.020 40);
-  --sidebar-accent: oklch(0.320 0.010 285);
-  --sidebar-accent-foreground: oklch(0.960 0.004 78);
-  --sidebar-border: oklch(0.340 0.010 285);
-  --sidebar-ring: oklch(0.700 0.108 44);
+  --chart-grid: oklch(0.34 0.01 285);
+  --chart-axis: oklch(0.74 0.02 270);
+  --delta-up: oklch(0.78 0.14 155);
+  --delta-down: oklch(0.74 0.15 25);
+  --sidebar: oklch(0.25 0.008 285);
+  --sidebar-foreground: oklch(0.96 0.004 78);
+  --sidebar-primary: oklch(0.7 0.108 44);
+  --sidebar-primary-foreground: oklch(0.18 0.02 40);
+  --sidebar-accent: oklch(0.32 0.01 285);
+  --sidebar-accent-foreground: oklch(0.96 0.004 78);
+  --sidebar-border: oklch(0.34 0.01 285);
+  --sidebar-ring: oklch(0.7 0.108 44);
 
   /* Status, lifted for dark surfaces (all ≥4.5:1 on --background/--card) */
-  --success: oklch(0.760 0.140 162);
-  --success-foreground: oklch(0.200 0.040 162);
-  --warning: oklch(0.790 0.130 72);
-  --warning-foreground: oklch(0.220 0.040 72);
-  --info: oklch(0.720 0.110 235);
-  --info-foreground: oklch(0.180 0.020 235);
+  --success: oklch(0.76 0.14 162);
+  --success-foreground: oklch(0.2 0.04 162);
+  --warning: oklch(0.79 0.13 72);
+  --warning-foreground: oklch(0.22 0.04 72);
+  --info: oklch(0.72 0.11 235);
+  --info-foreground: oklch(0.18 0.02 235);
 
   --surface-sunken: oklch(0.195 0.008 285);
-  --border-strong: oklch(0.420 0.012 285);
-  --subtle-foreground: oklch(0.680 0.018 270);
-  --brand-soft: oklch(0.660 0.108 44 / 0.16);
-  --brand-soft-foreground: oklch(0.800 0.090 45);
-  --success-soft: oklch(0.760 0.140 162 / 0.16);
-  --success-soft-foreground: oklch(0.830 0.120 160);
-  --warning-soft: oklch(0.790 0.130 72 / 0.16);
-  --warning-soft-foreground: oklch(0.850 0.110 75);
-  --danger-soft: oklch(0.680 0.176 23 / 0.18);
-  --danger-soft-foreground: oklch(0.820 0.110 25);
-  --info-soft: oklch(0.720 0.110 235 / 0.16);
-  --info-soft-foreground: oklch(0.830 0.090 235);
+  --border-strong: oklch(0.42 0.012 285);
+  --subtle-foreground: oklch(0.68 0.018 270);
+  --brand-soft: oklch(0.66 0.108 44 / 0.16);
+  --brand-soft-foreground: oklch(0.8 0.09 45);
+  --success-soft: oklch(0.76 0.14 162 / 0.16);
+  --success-soft-foreground: oklch(0.83 0.12 160);
+  --warning-soft: oklch(0.79 0.13 72 / 0.16);
+  --warning-soft-foreground: oklch(0.85 0.11 75);
+  --danger-soft: oklch(0.68 0.176 23 / 0.18);
+  --danger-soft-foreground: oklch(0.82 0.11 25);
+  --info-soft: oklch(0.72 0.11 235 / 0.16);
+  --info-soft-foreground: oklch(0.83 0.09 235);
 }
 
 @theme inline {
@@ -268,7 +268,12 @@
   /* Mobile touch feel: kill the default gray tap-flash (we use active:
      states for feedback instead) and skip the ~300ms tap delay browsers
      otherwise reserve for double-tap-to-zoom detection. */
-  a, button, [role='button'], input, select, textarea {
+  a,
+  button,
+  [role='button'],
+  input,
+  select,
+  textarea {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
@@ -345,32 +350,130 @@
 .bg-\[\#0d0d12\]\/80,
 .bg-\[\#0d0d12\]\/90,
 .bg-\[\#08080c\] {
-  --foreground: oklch(0.970 0.003 265);
-  --card-foreground: oklch(0.970 0.003 265);
-  --popover-foreground: oklch(0.970 0.003 265);
-  --secondary-foreground: oklch(0.970 0.003 265);
+  --foreground: oklch(0.97 0.003 265);
+  --card-foreground: oklch(0.97 0.003 265);
+  --popover-foreground: oklch(0.97 0.003 265);
+  --secondary-foreground: oklch(0.97 0.003 265);
   --muted-foreground: oklch(0.785 0.015 282);
 }
 
 /* ── Discounts: lucky wheel, tickets, Spin it page ─────────────────── */
-@keyframes discGlowPulse { 0%,100% { opacity: .35; transform: scale(1); } 50% { opacity: .7; transform: scale(1.08); } }
-@keyframes discPointerBob { 0%,100% { transform: translateX(-50%) rotate(0deg); } 50% { transform: translateX(-50%) rotate(-8deg); } }
-@keyframes discSparkle { 0% { opacity: 0; transform: scale(.4) translateY(0); } 40% { opacity: 1; } 100% { opacity: 0; transform: scale(1) translateY(-16px); } }
-@keyframes discPop { from { opacity: 0; transform: scale(.85) translateY(6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-@keyframes discFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes discShimmer { 0% { background-position: -150% 0; } 100% { background-position: 250% 0; } }
-@keyframes discConfettiFall { 0% { transform: translateY(-10px) rotate(0deg); opacity: 1; } 100% { transform: translateY(170px) rotate(380deg); opacity: 0; } }
+@keyframes discGlowPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+}
+@keyframes discPointerBob {
+  0%,
+  100% {
+    transform: translateX(-50%) rotate(0deg);
+  }
+  50% {
+    transform: translateX(-50%) rotate(-8deg);
+  }
+}
+@keyframes discSparkle {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) translateY(0);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1) translateY(-16px);
+  }
+}
+@keyframes discPop {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes discFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes discShimmer {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 250% 0;
+  }
+}
+@keyframes discConfettiFall {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(170px) rotate(380deg);
+    opacity: 0;
+  }
+}
 
-.disc-glow { animation: discGlowPulse 2.6s ease-in-out infinite; }
-.disc-pointer-idle { animation: discPointerBob 2.2s ease-in-out infinite; }
-.disc-sparkle { position: absolute; pointer-events: none; animation: discSparkle 1.7s ease-out infinite; }
-.disc-pop { animation: discPop .4s cubic-bezier(0.34,1.56,0.64,1) both; }
-.disc-fade-up { animation: discFadeUp .45s ease-out both; }
-.disc-shimmer { background-image: linear-gradient(100deg, transparent 35%, rgba(255,255,255,0.45) 50%, transparent 65%); background-size: 250% 100%; animation: discShimmer 2.4s linear infinite; }
-.disc-confetti { position: absolute; top: 0; width: 7px; height: 12px; border-radius: 2px; animation: discConfettiFall 1.3s ease-in forwards; }
+.disc-glow {
+  animation: discGlowPulse 2.6s ease-in-out infinite;
+}
+.disc-pointer-idle {
+  animation: discPointerBob 2.2s ease-in-out infinite;
+}
+.disc-sparkle {
+  position: absolute;
+  pointer-events: none;
+  animation: discSparkle 1.7s ease-out infinite;
+}
+.disc-pop {
+  animation: discPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.disc-fade-up {
+  animation: discFadeUp 0.45s ease-out both;
+}
+.disc-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 65%
+  );
+  background-size: 250% 100%;
+  animation: discShimmer 2.4s linear infinite;
+}
+.disc-confetti {
+  position: absolute;
+  top: 0;
+  width: 7px;
+  height: 12px;
+  border-radius: 2px;
+  animation: discConfettiFall 1.3s ease-in forwards;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .disc-glow, .disc-pointer-idle, .disc-sparkle, .disc-pop, .disc-fade-up, .disc-shimmer, .disc-confetti {
+  .disc-glow,
+  .disc-pointer-idle,
+  .disc-sparkle,
+  .disc-pop,
+  .disc-fade-up,
+  .disc-shimmer,
+  .disc-confetti {
     animation: none !important;
   }
 }
@@ -389,21 +492,92 @@
    - ui-scroll-x: horizontal-scroll wrapper for a table/row that doesn't
      fit a mobile viewport — negative-margin bleed + scroll-snap
 ----------------------------------------------------------------------- */
-@keyframes uiFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes uiPop { from { opacity: 0; transform: scale(.92) translateY(6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-@keyframes uiGlow { 0%,100% { opacity: .3; transform: scale(1); } 50% { opacity: .65; transform: scale(1.06); } }
-@keyframes uiShimmer { 0% { background-position: -150% 0; } 100% { background-position: 250% 0; } }
+@keyframes uiFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes uiPop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes uiGlow {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.06);
+  }
+}
+@keyframes uiShimmer {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 250% 0;
+  }
+}
 
-.ui-fade-up { animation: uiFadeUp .4s ease-out both; }
-.ui-pop { animation: uiPop .35s cubic-bezier(0.34,1.56,0.64,1) both; }
-.ui-glow { animation: uiGlow 2.8s ease-in-out infinite; }
-.ui-shimmer { background-image: linear-gradient(100deg, transparent 35%, rgba(255,255,255,0.4) 50%, transparent 65%); background-size: 250% 100%; animation: uiShimmer 2.4s linear infinite; }
-.ui-press { transition: transform .15s ease, box-shadow .15s ease; }
-.ui-press:active { transform: scale(0.97); }
-.ui-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; margin-inline: -1rem; padding-inline: 1rem; }
-.ui-scroll-x > * { scroll-snap-align: start; }
+.ui-fade-up {
+  animation: uiFadeUp 0.4s ease-out both;
+}
+.ui-pop {
+  animation: uiPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.ui-glow {
+  animation: uiGlow 2.8s ease-in-out infinite;
+}
+.ui-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 65%
+  );
+  background-size: 250% 100%;
+  animation: uiShimmer 2.4s linear infinite;
+}
+.ui-press {
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.ui-press:active {
+  transform: scale(0.97);
+}
+.ui-scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+}
+.ui-scroll-x > * {
+  scroll-snap-align: start;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .ui-fade-up, .ui-pop, .ui-glow, .ui-shimmer { animation: none !important; }
-  .ui-press:active { transform: none !important; }
+  .ui-fade-up,
+  .ui-pop,
+  .ui-glow,
+  .ui-shimmer {
+    animation: none !important;
+  }
+  .ui-press:active {
+    transform: none !important;
+  }
 }

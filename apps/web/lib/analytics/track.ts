@@ -97,10 +97,19 @@ function flushImpressions(useBeacon = false) {
   while (queue.length) {
     const chunk = queue.splice(0, BATCH_MAX);
     const body = {
-      events: chunk.map((c) => ({ event: 'LISTING_IMPRESSION', businessId: c.businessId, source: c.source, visitorId, sessionId })),
+      events: chunk.map((c) => ({
+        event: 'LISTING_IMPRESSION',
+        businessId: c.businessId,
+        source: c.source,
+        visitorId,
+        sessionId,
+      })),
     };
     if (useBeacon && typeof navigator !== 'undefined' && navigator.sendBeacon) {
-      navigator.sendBeacon('/api/v1/analytics/track/batch', new Blob([JSON.stringify(body)], { type: 'application/json' }));
+      navigator.sendBeacon(
+        '/api/v1/analytics/track/batch',
+        new Blob([JSON.stringify(body)], { type: 'application/json' }),
+      );
     } else {
       apiService.post('/v1/analytics/track/batch', body).catch(() => {});
     }
@@ -109,7 +118,8 @@ function flushImpressions(useBeacon = false) {
 
 export function trackImpression(businessId: string, source?: string) {
   if (typeof window === 'undefined' || !businessId) return;
-  const src = source ?? PATH_SOURCES.find(([re]) => re.test(window.location.pathname))?.[1] ?? 'other';
+  const src =
+    source ?? PATH_SOURCES.find(([re]) => re.test(window.location.pathname))?.[1] ?? 'other';
   const key = `${window.location.pathname}|${businessId}`;
   if (seen.has(key)) return;
   seen.add(key);

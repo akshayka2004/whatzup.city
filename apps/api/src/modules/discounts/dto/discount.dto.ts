@@ -1,4 +1,14 @@
-import { IsString, IsNotEmpty, IsUUID, IsInt, Min, Max, IsOptional, MaxLength, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsUUID,
+  IsInt,
+  Min,
+  Max,
+  IsOptional,
+  MaxLength,
+  IsDateString,
+} from 'class-validator';
 
 export class CreateDiscountDto {
   @IsUUID(undefined, { message: 'businessId must be a valid business ID' })

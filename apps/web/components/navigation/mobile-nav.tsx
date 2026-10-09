@@ -9,7 +9,13 @@ import { useNavArea, useNavSpec } from '@/hooks/use-nav';
 import { useI18n } from '@/lib/i18n/provider';
 import { allItems, isItemActive, type NavArea } from '@/lib/nav/config';
 import { cn } from '@/lib/utils';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 
 const SHEET_COPY: Record<NavArea, string> = {
   public: 'Browse your city and manage your account',
@@ -34,12 +40,19 @@ export function MobileNav({ area: layoutArea }: { area?: NavArea }) {
   const spec = useNavSpec(area);
 
   const items = allItems(spec);
-  const tabs = spec.mobileTabs.map((href) => items.find((i) => i.href === href)).filter(Boolean) as typeof items;
+  const tabs = spec.mobileTabs
+    .map((href) => items.find((i) => i.href === href))
+    .filter(Boolean) as typeof items;
   const tabHrefs = new Set(spec.mobileTabs);
-  const moreActive = !tabs.some((tab) => isItemActive(pathname, tab)) && items.some((i) => isItemActive(pathname, i));
+  const moreActive =
+    !tabs.some((tab) => isItemActive(pathname, tab)) &&
+    items.some((i) => isItemActive(pathname, i));
 
   const sheetGroups = [
-    ...spec.groups.map((g) => ({ title: g.title, items: g.items.filter((i) => !tabHrefs.has(i.href)) })),
+    ...spec.groups.map((g) => ({
+      title: g.title,
+      items: g.items.filter((i) => !tabHrefs.has(i.href)),
+    })),
     { title: undefined, items: spec.footer.filter((i) => !tabHrefs.has(i.href)) },
   ].filter((g) => g.items.length);
 
@@ -68,7 +81,12 @@ export function MobileNav({ area: layoutArea }: { area?: NavArea }) {
             >
               <Icon className="size-5" aria-hidden />
             </span>
-            <span className={cn('max-w-full truncate text-caption', active ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
+            <span
+              className={cn(
+                'max-w-full truncate text-caption',
+                active ? 'font-semibold text-foreground' : 'text-muted-foreground',
+              )}
+            >
               {label}
             </span>
           </Link>
@@ -92,7 +110,12 @@ export function MobileNav({ area: layoutArea }: { area?: NavArea }) {
           >
             <Menu className="size-5" aria-hidden />
           </span>
-          <span className={cn('text-caption', moreActive ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
+          <span
+            className={cn(
+              'text-caption',
+              moreActive ? 'font-semibold text-foreground' : 'text-muted-foreground',
+            )}
+          >
             {t('nav.menu')}
           </span>
         </button>
@@ -106,7 +129,11 @@ export function MobileNav({ area: layoutArea }: { area?: NavArea }) {
           <div className="space-y-5">
             {sheetGroups.map((group, gi) => (
               <div key={group.title ?? `g${gi}`}>
-                {group.title && <p className="px-1 pb-2 text-overline text-subtle-foreground">{tl(group.title)}</p>}
+                {group.title && (
+                  <p className="px-1 pb-2 text-overline text-subtle-foreground">
+                    {tl(group.title)}
+                  </p>
+                )}
                 <div className="grid grid-cols-2 gap-2">
                   {group.items.map((item) => {
                     const Icon = item.icon;
@@ -124,7 +151,13 @@ export function MobileNav({ area: layoutArea }: { area?: NavArea }) {
                             : 'border-border/70 bg-card text-foreground hover:bg-secondary',
                         )}
                       >
-                        <Icon className={cn('size-[18px] shrink-0', active ? 'text-primary' : 'text-muted-foreground')} aria-hidden />
+                        <Icon
+                          className={cn(
+                            'size-[18px] shrink-0',
+                            active ? 'text-primary' : 'text-muted-foreground',
+                          )}
+                          aria-hidden
+                        />
                         <span className="truncate">{tl(item.label)}</span>
                       </Link>
                     );

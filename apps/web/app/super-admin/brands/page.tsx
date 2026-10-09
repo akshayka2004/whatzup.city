@@ -63,7 +63,9 @@ export default function SuperAdminBrandsPage() {
     const t = setTimeout(() => setDebounced(search.trim()), 350);
     return () => clearTimeout(t);
   }, [search]);
-  useEffect(() => { setPage(1); }, [debounced, status]);
+  useEffect(() => {
+    setPage(1);
+  }, [debounced, status]);
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -84,10 +86,17 @@ export default function SuperAdminBrandsPage() {
     setEventsLoading(false);
   }, []);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
-  useEffect(() => { fetchEvents(); }, [fetchEvents]);
+  useEffect(() => {
+    fetchRows();
+  }, [fetchRows]);
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
-  const refresh = () => { fetchRows(); fetchEvents(); };
+  const refresh = () => {
+    fetchRows();
+    fetchEvents();
+  };
 
   const columns: Column<BrandRow>[] = [
     {
@@ -96,7 +105,14 @@ export default function SuperAdminBrandsPage() {
       cell: (b) => (
         <div className="min-w-0">
           <p className="truncate font-medium">{b.name}</p>
-          <p className="text-caption text-muted-foreground">Since {new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+          <p className="text-caption text-muted-foreground">
+            Since{' '}
+            {new Date(b.createdAt).toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })}
+          </p>
         </div>
       ),
     },
@@ -106,7 +122,9 @@ export default function SuperAdminBrandsPage() {
       cell: (b) => (
         <div className="min-w-0">
           <p className="truncate">{b.owner?.name || '—'}</p>
-          <p className="truncate text-caption text-muted-foreground">{b.owner?.email || b.owner?.phone || ''}</p>
+          <p className="truncate text-caption text-muted-foreground">
+            {b.owner?.email || b.owner?.phone || ''}
+          </p>
         </div>
       ),
       hideOnMobile: true,
@@ -118,11 +136,22 @@ export default function SuperAdminBrandsPage() {
       cell: (b) => (
         <span className="inline-flex items-center gap-2">
           <span className="font-semibold tabular-nums">{b.outletCount}</span>
-          {b.pendingOutlets > 0 && <StatusPill tone="warning" label={`${b.pendingOutlets} pending`} />}
+          {b.pendingOutlets > 0 && (
+            <StatusPill tone="warning" label={`${b.pendingOutlets} pending`} />
+          )}
         </span>
       ),
     },
-    { key: 'series', header: 'Bill series', cell: (b) => <span className="whitespace-nowrap text-caption">{seriesLabel(b.billSeriesMode, b.billSeriesPrefix)}</span>, hideOnMobile: true },
+    {
+      key: 'series',
+      header: 'Bill series',
+      cell: (b) => (
+        <span className="whitespace-nowrap text-caption">
+          {seriesLabel(b.billSeriesMode, b.billSeriesPrefix)}
+        </span>
+      ),
+      hideOnMobile: true,
+    },
     { key: 'status', header: 'Status', cell: (b) => <BrandStatusPill status={b.status} /> },
     {
       key: 'last',
@@ -131,7 +160,10 @@ export default function SuperAdminBrandsPage() {
         b.lastEvent ? (
           <div className="max-w-[16rem]">
             <p className="line-clamp-1 text-caption">{b.lastEvent.summary}</p>
-            <p className="text-caption text-muted-foreground" title={fullDate(b.lastEvent.createdAt)}>
+            <p
+              className="text-caption text-muted-foreground"
+              title={fullDate(b.lastEvent.createdAt)}
+            >
               {timeAgo(b.lastEvent.createdAt)}
             </p>
           </div>
@@ -163,24 +195,44 @@ export default function SuperAdminBrandsPage() {
             <h2 className="text-sm font-semibold text-foreground">Latest brand activity</h2>
           </div>
           {eventsLoading ? (
-            <div className="flex items-center justify-center py-8 text-muted-foreground text-sm gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
+            <div className="flex items-center justify-center py-8 text-muted-foreground text-sm gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+            </div>
           ) : events.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-muted-foreground">No brand activity yet.</p>
+            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+              No brand activity yet.
+            </p>
           ) : (
             <ul className="max-h-80 overflow-y-auto divide-y divide-border">
               {events.map((ev, i) => {
                 const m = eventMeta(ev.type);
                 const Icon = m.icon;
                 return (
-                  <li key={ev.id} className="ui-fade-up flex items-start gap-3 px-4 py-3" style={{ animationDelay: `${Math.min(i, 8) * 0.03}s` }}>
-                    <span className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border', m.bg, m.color, m.border)}>
+                  <li
+                    key={ev.id}
+                    className="ui-fade-up flex items-start gap-3 px-4 py-3"
+                    style={{ animationDelay: `${Math.min(i, 8) * 0.03}s` }}
+                  >
+                    <span
+                      className={cn(
+                        'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border',
+                        m.bg,
+                        m.color,
+                        m.border,
+                      )}
+                    >
                       <Icon className="h-4 w-4" />
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm text-foreground line-clamp-2">{ev.summary}</p>
                       <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
                         {ev.brand && (
-                          <Link href={`/super-admin/brands/${ev.brand.id}`} className="font-semibold text-primary hover:underline">{ev.brand.name}</Link>
+                          <Link
+                            href={`/super-admin/brands/${ev.brand.id}`}
+                            className="font-semibold text-primary hover:underline"
+                          >
+                            {ev.brand.name}
+                          </Link>
                         )}
                         <span className={m.color}>{m.label}</span>
                         <span title={fullDate(ev.createdAt)}>{timeAgo(ev.createdAt)}</span>
@@ -196,12 +248,20 @@ export default function SuperAdminBrandsPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <ChipRow label="Status">
             {STATUS_CHIPS.map((c) => (
-              <FilterChip key={c.value || 'all'} selected={status === c.value} onClick={() => setStatus(c.value)}>
+              <FilterChip
+                key={c.value || 'all'}
+                selected={status === c.value}
+                onClick={() => setStatus(c.value)}
+              >
                 {c.label}
               </FilterChip>
             ))}
           </ChipRow>
-          <SearchInput value={search} onChange={setSearch} placeholder="Search brand, owner or email" />
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search brand, owner or email"
+          />
         </div>
 
         <DataTable
@@ -221,13 +281,20 @@ export default function SuperAdminBrandsPage() {
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{b.name}</p>
-                  <p className="truncate text-caption text-muted-foreground">{b.owner?.name || '—'}</p>
+                  <p className="truncate text-caption text-muted-foreground">
+                    {b.owner?.name || '—'}
+                  </p>
                 </div>
                 <BrandStatusPill status={b.status} />
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                <StatusPill tone="neutral" label={`${b.outletCount} outlet${b.outletCount === 1 ? '' : 's'}`} />
-                {b.pendingOutlets > 0 && <StatusPill tone="warning" label={`${b.pendingOutlets} pending`} />}
+                <StatusPill
+                  tone="neutral"
+                  label={`${b.outletCount} outlet${b.outletCount === 1 ? '' : 's'}`}
+                />
+                {b.pendingOutlets > 0 && (
+                  <StatusPill tone="warning" label={`${b.pendingOutlets} pending`} />
+                )}
                 {b.lastEvent && (
                   <span className="inline-flex items-center gap-1 text-caption text-muted-foreground">
                     <Clock className="size-3" aria-hidden /> {timeAgo(b.lastEvent.createdAt)}

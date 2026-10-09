@@ -2,7 +2,13 @@ import { Skel, SkeletonRegion } from '@/components/common/skeletons';
 
 /** Placeholders that mirror the events / movies / government layouts so nothing jumps when data lands. */
 
-export function MediaFiltersSkeleton({ chips = true, selects = 2 }: { chips?: boolean; selects?: 1 | 2 }) {
+export function MediaFiltersSkeleton({
+  chips = true,
+  selects = 2,
+}: {
+  chips?: boolean;
+  selects?: 1 | 2;
+}) {
   return (
     <div aria-hidden className="space-y-3">
       {chips && (
@@ -45,7 +51,10 @@ export function EventGridSkeleton({ count = 6 }: { count?: number }) {
 
 export function MovieGridSkeleton({ count = 8 }: { count?: number }) {
   return (
-    <SkeletonRegion label="Loading movies" className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+    <SkeletonRegion
+      label="Loading movies"
+      className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4"
+    >
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="overflow-hidden rounded-2xl border border-border bg-card">
           <Skel className="w-full rounded-none" style={{ aspectRatio: '2 / 3' }} />
@@ -64,7 +73,10 @@ export function NoticeListSkeleton({ count = 4 }: { count?: number }) {
   return (
     <SkeletonRegion label="Loading announcements" className="space-y-3">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 pl-5">
+        <div
+          key={i}
+          className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 pl-5"
+        >
           <div aria-hidden className="absolute inset-y-0 left-0 w-1 bg-muted" />
           <div className="flex items-start gap-3">
             <Skel className="h-10 w-10 shrink-0 rounded-xl" />

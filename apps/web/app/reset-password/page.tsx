@@ -39,10 +39,18 @@ function ResetForm() {
     setError('');
     if (!strong || !matches) return;
     setSubmitting(true);
-    const res = await apiService.post('/v1/auth/reset-password', { token, tenantId, newPassword: password });
+    const res = await apiService.post('/v1/auth/reset-password', {
+      token,
+      tenantId,
+      newPassword: password,
+    });
     setSubmitting(false);
     if (res.error) {
-      setError(/expired|invalid/i.test(res.error) ? 'This reset link has expired or was already used. Request a new one.' : res.error);
+      setError(
+        /expired|invalid/i.test(res.error)
+          ? 'This reset link has expired or was already used. Request a new one.'
+          : res.error,
+      );
       return;
     }
     router.replace('/login?reset=1');
@@ -55,7 +63,10 @@ function ResetForm() {
         title="This link isn't valid"
         description="The reset link is incomplete or has expired. Request a new one and use the latest email."
         footer={
-          <Link href="/login" className="font-semibold text-primary underline-offset-4 hover:underline">
+          <Link
+            href="/login"
+            className="font-semibold text-primary underline-offset-4 hover:underline"
+          >
             Back to sign in
           </Link>
         }
@@ -68,7 +79,11 @@ function ResetForm() {
   }
 
   return (
-    <AuthShell icon={KeyRound} title="Choose a new password" description="You'll use it to sign in from now on.">
+    <AuthShell
+      icon={KeyRound}
+      title="Choose a new password"
+      description="You'll use it to sign in from now on."
+    >
       {error && (
         <FormAlert tone="error">
           {error}{' '}
@@ -92,8 +107,19 @@ function ResetForm() {
         />
         <ul className="grid gap-1.5 sm:grid-cols-2" aria-label="Password rules">
           {checks.map((c) => (
-            <li key={c.label} className={cn('flex items-center gap-1.5 text-caption', c.ok ? 'text-success-soft-foreground' : 'text-muted-foreground')}>
-              <span className={cn('flex size-4 items-center justify-center rounded-full', c.ok ? 'bg-success-soft' : 'bg-surface-sunken')}>
+            <li
+              key={c.label}
+              className={cn(
+                'flex items-center gap-1.5 text-caption',
+                c.ok ? 'text-success-soft-foreground' : 'text-muted-foreground',
+              )}
+            >
+              <span
+                className={cn(
+                  'flex size-4 items-center justify-center rounded-full',
+                  c.ok ? 'bg-success-soft' : 'bg-surface-sunken',
+                )}
+              >
                 {c.ok && <Check className="size-3" aria-hidden />}
               </span>
               {c.label}
@@ -109,7 +135,13 @@ function ResetForm() {
           autoComplete="new-password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
-          error={touched && confirm && !matches ? 'Passwords don’t match.' : touched && !confirm ? 'Type the password again.' : undefined}
+          error={
+            touched && confirm && !matches
+              ? 'Passwords don’t match.'
+              : touched && !confirm
+                ? 'Type the password again.'
+                : undefined
+          }
         />
         <Button type="submit" size="lg" className="w-full" loading={submitting}>
           Update password

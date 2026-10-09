@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  BadRequestException,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
@@ -121,7 +115,7 @@ export class StorageController {
 
     // 1. Perform extensions & MIME validation
     this.storageService.validateMimeType(body.mimeType, config.allowedTypes);
-    
+
     const ext = body.filename.split('.').pop()?.toLowerCase();
     if (!ext) {
       throw new BadRequestException('Filename must have a valid extension');
@@ -137,10 +131,7 @@ export class StorageController {
     );
 
     // 3. Create signed URL on Supabase
-    const { uploadUrl } = await this.storageService.createSignedUploadUrl(
-      config.bucket,
-      fileKey,
-    );
+    const { uploadUrl } = await this.storageService.createSignedUploadUrl(config.bucket, fileKey);
 
     return {
       uploadUrl,

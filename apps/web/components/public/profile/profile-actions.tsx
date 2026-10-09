@@ -6,7 +6,13 @@ import { cn } from '@/lib/utils';
 import type { ProfileActions } from './use-profile-actions';
 
 /** Header buttons for tablet / desktop. Same save + share logic as the mobile bar. */
-export function DesktopActions({ actions, className }: { actions: ProfileActions; className?: string }) {
+export function DesktopActions({
+  actions,
+  className,
+}: {
+  actions: ProfileActions;
+  className?: string;
+}) {
   const { callHref, directionsHref, whatsappHref, isSaved, copied } = actions;
   return (
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
@@ -38,11 +44,22 @@ export function DesktopActions({ actions, className }: { actions: ProfileActions
         onClick={actions.toggleSave}
         aria-pressed={isSaved}
         title={isSaved ? 'Remove from favorites' : 'Save to favorites'}
-        className={cn('ui-press rounded-xl', isSaved && 'border-primary/40 bg-brand-soft text-brand-soft-foreground hover:bg-primary/15')}
+        className={cn(
+          'ui-press rounded-xl',
+          isSaved &&
+            'border-primary/40 bg-brand-soft text-brand-soft-foreground hover:bg-primary/15',
+        )}
       >
-        <Heart className={cn(isSaved && 'fill-primary text-primary')} /> {isSaved ? 'Saved' : 'Save'}
+        <Heart className={cn(isSaved && 'fill-primary text-primary')} />{' '}
+        {isSaved ? 'Saved' : 'Save'}
       </Button>
-      <Button type="button" variant="outline" size="lg" onClick={actions.share} className="ui-press rounded-xl">
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        onClick={actions.share}
+        className="ui-press rounded-xl"
+      >
         {copied ? <Check className="ui-pop" /> : <Share2 />} {copied ? 'Link copied' : 'Share'}
       </Button>
     </div>
@@ -80,14 +97,23 @@ export function MobileActionBar({ actions }: { actions: ProfileActions }) {
           target="_blank"
           rel="noreferrer"
           onClick={actions.onDirections}
-          className={cn(barBtn, !callHref && 'bg-primary text-primary-foreground hover:bg-primary/90')}
+          className={cn(
+            barBtn,
+            !callHref && 'bg-primary text-primary-foreground hover:bg-primary/90',
+          )}
         >
           <Navigation className="h-5 w-5" />
           Directions
         </a>
       )}
       {whatsappHref && (
-        <a href={whatsappHref} target="_blank" rel="noreferrer" onClick={actions.onWhatsapp} className={barBtn}>
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noreferrer"
+          onClick={actions.onWhatsapp}
+          className={barBtn}
+        >
           <MessageCircle className="h-5 w-5" />
           WhatsApp
         </a>
@@ -102,7 +128,11 @@ export function MobileActionBar({ actions }: { actions: ProfileActions }) {
         {isSaved ? 'Saved' : 'Save'}
       </button>
       <button type="button" onClick={actions.share} className={cn(barBtn, 'cursor-pointer')}>
-        {copied ? <Check className="ui-pop h-5 w-5 text-success" /> : <Share2 className="h-5 w-5" />}
+        {copied ? (
+          <Check className="ui-pop h-5 w-5 text-success" />
+        ) : (
+          <Share2 className="h-5 w-5" />
+        )}
         {copied ? 'Copied' : 'Share'}
       </button>
     </div>

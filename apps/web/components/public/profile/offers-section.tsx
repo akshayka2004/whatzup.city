@@ -3,7 +3,16 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { Check, Clock, Loader2, Lock, ShoppingBag, Sparkles, Ticket, UtensilsCrossed } from 'lucide-react';
+import {
+  Check,
+  Clock,
+  Loader2,
+  Lock,
+  ShoppingBag,
+  Sparkles,
+  Ticket,
+  UtensilsCrossed,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/empty-state';
 import { StatusPill } from '@/components/common/status-pill';
@@ -14,9 +23,12 @@ import { OfferListSkeleton } from './profile-skeletons';
 import { offerExpiry } from './profile-utils';
 
 // The wheel is only for signed-in users, so keep its code out of everyone else's bundle.
-const LuckyWheel = dynamic(() => import('@/components/business/lucky-wheel').then((m) => m.LuckyWheel), {
-  ssr: false,
-});
+const LuckyWheel = dynamic(
+  () => import('@/components/business/lucky-wheel').then((m) => m.LuckyWheel),
+  {
+    ssr: false,
+  },
+);
 
 function discountLabel(o: any): string {
   return o.discountPercent
@@ -34,18 +46,26 @@ function OfferCard({ offer, index, onClaim }: { offer: any; index: number; onCla
       style={{ animationDelay: `${Math.min(index, 8) * 0.05}s` }}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 break-words text-xl font-bold leading-tight text-primary">{discountLabel(offer)}</p>
+        <p className="min-w-0 break-words text-xl font-bold leading-tight text-primary">
+          {discountLabel(offer)}
+        </p>
         {expiry?.urgency && expiry.tone && (
           <StatusPill tone={expiry.tone} label={expiry.urgency} dot={false} className="shrink-0" />
         )}
       </div>
       {(offer.fulfilment === 'DINE_IN' || offer.fulfilment === 'TAKEAWAY') && (
         <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs font-medium text-muted-foreground">
-          {offer.fulfilment === 'DINE_IN' ? <UtensilsCrossed className="h-3 w-3" /> : <ShoppingBag className="h-3 w-3" />}
+          {offer.fulfilment === 'DINE_IN' ? (
+            <UtensilsCrossed className="h-3 w-3" />
+          ) : (
+            <ShoppingBag className="h-3 w-3" />
+          )}
           {offer.fulfilment === 'DINE_IN' ? 'Dine-in only' : 'Takeaway only'}
         </span>
       )}
-      {offer.description && <p className="mt-2 text-sm text-muted-foreground">{offer.description}</p>}
+      {offer.description && (
+        <p className="mt-2 text-sm text-muted-foreground">{offer.description}</p>
+      )}
       {expiry && (
         <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
           <Clock className="h-3.5 w-3.5 shrink-0" />
@@ -83,10 +103,15 @@ export function OffersSection({
   const router = useRouter();
 
   // ── Guest teaser for the spin wheel (public, no personal data)
-  const [wheelPreview, setWheelPreview] = useState<{ itemName: string; maxPercent: number | null } | null>(null);
+  const [wheelPreview, setWheelPreview] = useState<{
+    itemName: string;
+    maxPercent: number | null;
+  } | null>(null);
   useEffect(() => {
     if (user || !businessId) return;
-    apiService.get<any>(`/v1/discounts/business/${businessId}/preview`).then((r) => !r.error && r.data && setWheelPreview(r.data));
+    apiService
+      .get<any>(`/v1/discounts/business/${businessId}/preview`)
+      .then((r) => !r.error && r.data && setWheelPreview(r.data));
   }, [user, businessId]);
 
   // ── Vouchers (spend-gated) — needs a logged-in user for spend + unlock state
@@ -112,7 +137,9 @@ export function OffersSection({
     setUnlockingId(null);
     if (!res.error && res.data?.code) {
       setVouchers((list) =>
-        list.map((v) => (v.id === id ? { ...v, unlocked: true, code: res.data.code, status: res.data.status } : v)),
+        list.map((v) =>
+          v.id === id ? { ...v, unlocked: true, code: res.data.code, status: res.data.status } : v,
+        ),
       );
     }
   };
@@ -149,10 +176,10 @@ export function OffersSection({
     }
     if (res.error) {
       // Never invent a code: a failed claim must look failed.
-      toast.error(res.error || "Could not claim this offer. Please try again.");
+      toast.error(res.error || 'Could not claim this offer. Please try again.');
       return;
     }
-    setClaimedCode(res.data?.code || claimingOffer.code || "CLAIMED");
+    setClaimedCode(res.data?.code || claimingOffer.code || 'CLAIMED');
     setClaimingOffer(null);
   };
 
@@ -161,15 +188,23 @@ export function OffersSection({
 
   return (
     <section id="offers-section" aria-label="Offers" className="mb-6 scroll-mt-16 lg:col-start-1">
-      <SectionHeading icon={Ticket} title="Offers" hint={!gated && offers.length > 0 ? `${offers.length} active` : undefined} />
+      <SectionHeading
+        icon={Ticket}
+        title="Offers"
+        hint={!gated && offers.length > 0 ? `${offers.length} active` : undefined}
+      />
 
       {gated ? (
         <div className="rounded-2xl border border-border bg-card p-6 text-center">
           <Lock className="mx-auto mb-3 h-8 w-8 text-muted-foreground opacity-60" />
-          <p className="mb-4 text-sm text-muted-foreground">Sign in to view {biz.name}&apos;s current offers.</p>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Sign in to view {biz.name}&apos;s current offers.
+          </p>
           <Button
             onClick={() =>
-              router.push(`/login?redirect=${encodeURIComponent(`/business/${businessId}?src=qr#offers-section`)}`)
+              router.push(
+                `/login?redirect=${encodeURIComponent(`/business/${businessId}?src=qr#offers-section`)}`,
+              )
             }
             size="lg"
             className="ui-press w-full rounded-xl font-semibold sm:w-auto sm:px-10"
@@ -203,13 +238,18 @@ export function OffersSection({
             </span>
             <div>
               <p className="font-semibold text-foreground">
-                Spin to win{wheelPreview.maxPercent ? ` up to ${wheelPreview.maxPercent}% off` : ' a discount'}
+                Spin to win
+                {wheelPreview.maxPercent ? ` up to ${wheelPreview.maxPercent}% off` : ' a discount'}
               </p>
-              <p className="text-caption text-muted-foreground">On {wheelPreview.itemName}. One spin per customer.</p>
+              <p className="text-caption text-muted-foreground">
+                On {wheelPreview.itemName}. One spin per customer.
+              </p>
             </div>
           </div>
           <Button
-            onClick={() => router.push(`/login?redirect=${encodeURIComponent(`/business/${businessId}`)}`)}
+            onClick={() =>
+              router.push(`/login?redirect=${encodeURIComponent(`/business/${businessId}`)}`)
+            }
             className="shrink-0"
           >
             Sign in to spin
@@ -233,8 +273,10 @@ export function OffersSection({
           </div>
           <p className="mb-4 text-sm text-muted-foreground">
             Your verified spend here:{' '}
-            <span className="font-semibold text-foreground">₹{voucherSpend.toLocaleString('en-IN')}</span>. Cross a
-            threshold to unlock the code, then show it in-store.
+            <span className="font-semibold text-foreground">
+              ₹{voucherSpend.toLocaleString('en-IN')}
+            </span>
+            . Cross a threshold to unlock the code, then show it in-store.
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {vouchers.map((v: any, i: number) => (
@@ -276,7 +318,9 @@ export function OffersSection({
 
                 {v.unlocked ? (
                   <div className="mt-3 flex items-center justify-between rounded-lg border border-success/25 bg-success/12 px-3 py-2">
-                    <span className="font-mono text-sm font-bold tracking-wider text-success">{v.code}</span>
+                    <span className="font-mono text-sm font-bold tracking-wider text-success">
+                      {v.code}
+                    </span>
                     <span className="text-xs font-semibold uppercase text-success">
                       {v.status === 'REDEEMED' ? 'Redeemed' : 'Show in-store'}
                     </span>
@@ -288,7 +332,11 @@ export function OffersSection({
                     size="lg"
                     className="ui-press mt-3 w-full gap-1.5"
                   >
-                    {unlockingId === v.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ticket className="h-4 w-4" />}
+                    {unlockingId === v.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Ticket className="h-4 w-4" />
+                    )}
                     Unlock code
                   </Button>
                 ) : (
@@ -305,7 +353,11 @@ export function OffersSection({
 
       {/* ── CLAIM CONFIRMATION MODAL */}
       {claimingOffer && (
-        <ModalShell label="Claim promotional offer" onClose={() => setClaimingOffer(null)} className="text-center sm:max-w-sm">
+        <ModalShell
+          label="Claim promotional offer"
+          onClose={() => setClaimingOffer(null)}
+          className="text-center sm:max-w-sm"
+        >
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-brand-soft-foreground">
             <Ticket className="h-6 w-6" />
           </div>
@@ -313,12 +365,19 @@ export function OffersSection({
           <p className="mb-6 text-sm text-muted-foreground">
             Are you sure you want to claim the{' '}
             <span className="font-semibold text-foreground">
-              {claimingOffer.discountPercent ? `${claimingOffer.discountPercent}% Off` : claimingOffer.title || 'this offer'}
+              {claimingOffer.discountPercent
+                ? `${claimingOffer.discountPercent}% Off`
+                : claimingOffer.title || 'this offer'}
             </span>
             ? This will generate a unique redemption code valid at {biz.name}.
           </p>
           <div className="flex justify-center gap-3">
-            <Button onClick={() => setClaimingOffer(null)} variant="outline" size="lg" className="flex-1 rounded-xl sm:flex-none sm:px-6">
+            <Button
+              onClick={() => setClaimingOffer(null)}
+              variant="outline"
+              size="lg"
+              className="flex-1 rounded-xl sm:flex-none sm:px-6"
+            >
               Cancel
             </Button>
             <Button
@@ -335,7 +394,11 @@ export function OffersSection({
 
       {/* ── CLAIM SUCCESS MODAL */}
       {claimedCode && (
-        <ModalShell label="Offer claimed" onClose={() => setClaimedCode(null)} className="text-center sm:max-w-sm">
+        <ModalShell
+          label="Offer claimed"
+          onClose={() => setClaimedCode(null)}
+          className="text-center sm:max-w-sm"
+        >
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success-soft text-success-soft-foreground">
             <Check className="ui-check h-6 w-6" />
           </div>
@@ -344,10 +407,18 @@ export function OffersSection({
             Present this code at the business counter to redeem your discount.
           </p>
           <div className="mb-6 rounded-xl border border-border bg-muted/50 p-4">
-            <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Redemption Code</p>
-            <p className="font-mono text-2xl font-extrabold tracking-wider text-success">{claimedCode}</p>
+            <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">
+              Redemption Code
+            </p>
+            <p className="font-mono text-2xl font-extrabold tracking-wider text-success">
+              {claimedCode}
+            </p>
           </div>
-          <Button onClick={() => setClaimedCode(null)} size="lg" className="ui-press w-full rounded-xl font-semibold">
+          <Button
+            onClick={() => setClaimedCode(null)}
+            size="lg"
+            className="ui-press w-full rounded-xl font-semibold"
+          >
             Done
           </Button>
         </ModalShell>

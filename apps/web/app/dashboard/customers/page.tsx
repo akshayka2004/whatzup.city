@@ -1,7 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Activity, BadgeCheck, Calendar, Download, Mail, Moon, Phone, RefreshCw, Sparkles, Star, Tag, UserCheck, UserPlus, Users } from 'lucide-react';
+import {
+  Activity,
+  BadgeCheck,
+  Calendar,
+  Download,
+  Mail,
+  Moon,
+  Phone,
+  RefreshCw,
+  Sparkles,
+  Star,
+  Tag,
+  UserCheck,
+  UserPlus,
+  Users,
+} from 'lucide-react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { PageHeader } from '@/components/system/page-header';
 import { DataTable, type Column } from '@/components/system/data-table';
@@ -44,7 +59,13 @@ interface CustomerStats {
   offerRedemptionRate: number;
   monthlyGrowth: number;
   customerRetention: number;
-  segments?: { new: number; returning: number; lapsed: number; newDays: number; lapsedDays: number };
+  segments?: {
+    new: number;
+    returning: number;
+    lapsed: number;
+    newDays: number;
+    lapsedDays: number;
+  };
 }
 
 const SEGMENT_PILL: Record<Segment, { tone: PillTone; label: string }> = {
@@ -63,7 +84,15 @@ const MORE_FILTERS = [
 ];
 
 const LIMIT = 20;
-const fmt = (d?: string) => (d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : '—');
+const fmt = (d?: string) =>
+  d
+    ? new Date(d).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'Asia/Kolkata',
+      })
+    : '—';
 const ago = (d?: string) => {
   if (!d) return '—';
   const days = Math.floor((Date.now() - new Date(d).getTime()) / 86_400_000);
@@ -134,10 +163,19 @@ export default function CustomersPage() {
     if (!businessId) return;
     setExporting(true);
     try {
-      const res = await fetch(`/api/v1/businesses/${businessId}/customers/export?${query()}`, { credentials: 'include' });
-      if (!res.ok) throw new Error(res.status === 403 ? 'You don’t have access to export these customers.' : 'Export failed. Please try again.');
+      const res = await fetch(`/api/v1/businesses/${businessId}/customers/export?${query()}`, {
+        credentials: 'include',
+      });
+      if (!res.ok)
+        throw new Error(
+          res.status === 403
+            ? 'You don’t have access to export these customers.'
+            : 'Export failed. Please try again.',
+        );
       const blob = await res.blob();
-      const name = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') || '')?.[1] || 'customers.csv';
+      const name =
+        /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') || '')?.[1] ||
+        'customers.csv';
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -171,16 +209,48 @@ export default function CustomersPage() {
           </span>
           <div className="min-w-0">
             <p className="truncate font-medium">{c.name}</p>
-            <p className="truncate text-caption text-muted-foreground">{c.email || c.phone || '—'}</p>
+            <p className="truncate text-caption text-muted-foreground">
+              {c.email || c.phone || '—'}
+            </p>
           </div>
         </div>
       ),
     },
-    { key: 'segment', header: 'Segment', cell: (c) => (c.segment ? <StatusPill {...SEGMENT_PILL[c.segment]} /> : '—') },
-    { key: 'claims', header: 'Claimed', align: 'right', value: (c) => c.offersClaimedCount, cell: (c) => <span className="tabular-nums">{c.offersClaimedCount}</span>, hideOnMobile: true },
-    { key: 'redeemed', header: 'Redeemed', align: 'right', value: (c) => c.offersRedeemedCount, cell: (c) => <span className="tabular-nums">{c.offersRedeemedCount}</span>, hideOnMobile: true },
-    { key: 'bills', header: 'Verified bills', align: 'right', value: (c) => c.totalVerifiedPurchases, cell: (c) => <span className="tabular-nums">{c.totalVerifiedPurchases}</span>, hideOnMobile: true },
-    { key: 'last', header: 'Last seen', value: (c) => c.lastInteractionDate, cell: (c) => ago(c.lastInteractionDate) },
+    {
+      key: 'segment',
+      header: 'Segment',
+      cell: (c) => (c.segment ? <StatusPill {...SEGMENT_PILL[c.segment]} /> : '—'),
+    },
+    {
+      key: 'claims',
+      header: 'Claimed',
+      align: 'right',
+      value: (c) => c.offersClaimedCount,
+      cell: (c) => <span className="tabular-nums">{c.offersClaimedCount}</span>,
+      hideOnMobile: true,
+    },
+    {
+      key: 'redeemed',
+      header: 'Redeemed',
+      align: 'right',
+      value: (c) => c.offersRedeemedCount,
+      cell: (c) => <span className="tabular-nums">{c.offersRedeemedCount}</span>,
+      hideOnMobile: true,
+    },
+    {
+      key: 'bills',
+      header: 'Verified bills',
+      align: 'right',
+      value: (c) => c.totalVerifiedPurchases,
+      cell: (c) => <span className="tabular-nums">{c.totalVerifiedPurchases}</span>,
+      hideOnMobile: true,
+    },
+    {
+      key: 'last',
+      header: 'Last seen',
+      value: (c) => c.lastInteractionDate,
+      cell: (c) => ago(c.lastInteractionDate),
+    },
   ];
 
   const segDesc = seg
@@ -204,7 +274,15 @@ export default function CustomersPage() {
           label="Customers"
           icon={Users}
           loading={statsLoading}
-          metric={stats ? { value: stats.totalCustomers, previous: stats.totalCustomers - stats.newThisMonth, change: null } : undefined}
+          metric={
+            stats
+              ? {
+                  value: stats.totalCustomers,
+                  previous: stats.totalCustomers - stats.newThisMonth,
+                  change: null,
+                }
+              : undefined
+          }
           definition={`${stats?.newThisMonth ?? 0} new this month`}
         />
         <KpiCard
@@ -227,7 +305,9 @@ export default function CustomersPage() {
           icon={BadgeCheck}
           format="pct"
           loading={statsLoading}
-          metric={stats ? { value: stats.offerRedemptionRate, previous: 0, change: null } : undefined}
+          metric={
+            stats ? { value: stats.offerRedemptionRate, previous: 0, change: null } : undefined
+          }
           definition="Share of claimers who went on to redeem"
         />
       </div>
@@ -235,16 +315,31 @@ export default function CustomersPage() {
       <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <ChipRow label="Segment">
           {segChips.map((s) => (
-            <FilterChip key={s.key} icon={s.icon} selected={filter === s.key} count={s.count || undefined} onClick={() => setFilter(s.key)}>
+            <FilterChip
+              key={s.key}
+              icon={s.icon}
+              selected={filter === s.key}
+              count={s.count || undefined}
+              onClick={() => setFilter(s.key)}
+            >
               {s.label}
             </FilterChip>
           ))}
         </ChipRow>
-        <SearchInput value={search} onChange={setSearch} placeholder="Search name, email or phone" />
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Search name, email or phone"
+        />
       </div>
       <ChipRow label="More filters" className="mb-4">
         {MORE_FILTERS.map((f) => (
-          <FilterChip key={f.key} icon={f.icon} selected={filter === f.key} onClick={() => setFilter(filter === f.key ? 'all' : f.key)}>
+          <FilterChip
+            key={f.key}
+            icon={f.icon}
+            selected={filter === f.key}
+            onClick={() => setFilter(filter === f.key ? 'all' : f.key)}
+          >
             {f.label}
           </FilterChip>
         ))}
@@ -264,27 +359,45 @@ export default function CustomersPage() {
         onPageChange={setPage}
         empty={{
           icon: filter === 'lapsed' ? Sparkles : Users,
-          title: debounced ? 'No matching customers' : filter === 'lapsed' ? 'No lapsed customers' : 'No customers here yet',
-          description: debounced ? 'Try a different name, email or phone.' : 'Customers appear once they claim an offer or a bill is verified.',
+          title: debounced
+            ? 'No matching customers'
+            : filter === 'lapsed'
+              ? 'No lapsed customers'
+              : 'No customers here yet',
+          description: debounced
+            ? 'Try a different name, email or phone.'
+            : 'Customers appear once they claim an offer or a bill is verified.',
         }}
         mobileCard={(c) => (
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-medium">{c.name}</p>
-              <p className="truncate text-caption text-muted-foreground">Last seen {ago(c.lastInteractionDate).toLowerCase()}</p>
+              <p className="truncate text-caption text-muted-foreground">
+                Last seen {ago(c.lastInteractionDate).toLowerCase()}
+              </p>
             </div>
             {c.segment && <StatusPill {...SEGMENT_PILL[c.segment]} />}
           </div>
         )}
       />
 
-      <Modal open={!!viewing} onOpenChange={(o) => !o && setViewing(null)} title={viewing?.name ?? 'Customer'} description={viewing ? `Customer since ${fmt(viewing.firstInteractionDate)}` : undefined}>
+      <Modal
+        open={!!viewing}
+        onOpenChange={(o) => !o && setViewing(null)}
+        title={viewing?.name ?? 'Customer'}
+        description={viewing ? `Customer since ${fmt(viewing.firstInteractionDate)}` : undefined}
+      >
         {viewing && (
           <div className="space-y-5">
             <div className="flex flex-wrap gap-1.5">
               {viewing.segment && <StatusPill {...SEGMENT_PILL[viewing.segment]} />}
-              <StatusPill tone={viewing.customerStatus === 'ACTIVE' ? 'success' : 'neutral'} label={viewing.customerStatus.toLowerCase()} />
-              {viewing.referralSource && <StatusPill tone="primary" label={`Referred · ${viewing.referralSource}`} />}
+              <StatusPill
+                tone={viewing.customerStatus === 'ACTIVE' ? 'success' : 'neutral'}
+                label={viewing.customerStatus.toLowerCase()}
+              />
+              {viewing.referralSource && (
+                <StatusPill tone="primary" label={`Referred · ${viewing.referralSource}`} />
+              )}
               {viewing.branchBusinessId && <StatusPill tone="neutral" label="Branch customer" />}
             </div>
             <ul className="space-y-2 text-sm">
@@ -315,7 +428,10 @@ export default function CustomersPage() {
                 ['Redeemed', viewing.offersRedeemedCount],
                 ['Verified bills', viewing.totalVerifiedPurchases],
               ].map(([l, v]) => (
-                <div key={l as string} className={cn('rounded-control bg-surface-sunken p-3 text-center')}>
+                <div
+                  key={l as string}
+                  className={cn('rounded-control bg-surface-sunken p-3 text-center')}
+                >
                   <dt className="text-caption text-muted-foreground">{l}</dt>
                   <dd className="text-title font-semibold tabular-nums">{v}</dd>
                 </div>

@@ -37,19 +37,16 @@ export async function uploadCivicImage(file: File, folder: string): Promise<stri
   }
 
   const path = `${folder}/${Date.now()}-${safeName(file.name)}`;
-  const res = await fetch(
-    `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        apikey: SUPABASE_KEY as string,
-        'x-upsert': 'true',
-        'Content-Type': file.type,
-      },
-      body: file,
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      apikey: SUPABASE_KEY as string,
+      'x-upsert': 'true',
+      'Content-Type': file.type,
     },
-  );
+    body: file,
+  });
 
   if (!res.ok) {
     throw new Error(await storageUploadError(res));

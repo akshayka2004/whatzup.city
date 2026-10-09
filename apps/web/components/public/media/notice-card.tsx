@@ -23,7 +23,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { StatusPill } from '@/components/common/status-pill';
 import { cn } from '@/lib/utils';
 import { fmtDateIST, withProtocol } from './format';
-import { SEVERITY_STYLE, isNewNotice, severityFor, typeColors, type Notice, type SocialLink } from './notice-model';
+import {
+  SEVERITY_STYLE,
+  isNewNotice,
+  severityFor,
+  typeColors,
+  type Notice,
+  type SocialLink,
+} from './notice-model';
 
 export function SocialButtons({ links }: { links: SocialLink[] }) {
   if (!links.length) return null;
@@ -96,7 +103,9 @@ export function NoticeCard({
               {isNew && <StatusPill tone="primary" label="New" dot={false} />}
             </div>
 
-            <h3 className="break-words text-base font-semibold text-foreground sm:text-lg">{notice.title}</h3>
+            <h3 className="break-words text-base font-semibold text-foreground sm:text-lg">
+              {notice.title}
+            </h3>
 
             {notice.description &&
               (long ? (
@@ -149,7 +158,10 @@ export function NoticeCard({
 
             {notice.publisher && (
               <p className="mt-3 text-xs text-muted-foreground">
-                Published by <span className="font-semibold text-foreground">{notice.publisher.organizationName}</span>
+                Published by{' '}
+                <span className="font-semibold text-foreground">
+                  {notice.publisher.organizationName}
+                </span>
               </p>
             )}
             <SocialButtons links={notice.socialLinks} />
@@ -160,7 +172,8 @@ export function NoticeCard({
               </span>
               {(notice.startAt || notice.expiresAt) && (
                 <span className="flex items-center gap-1 text-primary">
-                  {notice.startAt ? fmtDateIST(notice.startAt) : '—'} → {notice.expiresAt ? fmtDateIST(notice.expiresAt) : 'Open'}
+                  {notice.startAt ? fmtDateIST(notice.startAt) : '—'} →{' '}
+                  {notice.expiresAt ? fmtDateIST(notice.expiresAt) : 'Open'}
                 </span>
               )}
             </div>

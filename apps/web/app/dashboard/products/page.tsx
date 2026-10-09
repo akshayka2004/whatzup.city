@@ -15,7 +15,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from '@/components/ui/sonner';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
@@ -32,7 +37,8 @@ interface Product {
 type Layout = 'table' | 'grid';
 const LAYOUT_KEY = 'products:layout';
 const label = 'mb-1.5 block text-sm font-medium';
-const inr = (n: number) => (n > 0 ? `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : '—');
+const inr = (n: number) =>
+  n > 0 ? `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : '—';
 
 const toProduct = (p: any): Product => ({
   id: p.id,
@@ -83,10 +89,12 @@ export default function ProductsPage() {
       const tenant = tenantId ? `tenantId=${tenantId}&` : '';
       const all: any[] = [];
       for (let page = 1; page <= 25; page++) {
-        const res = await apiService.get<any>(`/v1/products/business/${businessId}?${tenant}page=${page}`);
+        const res = await apiService.get<any>(
+          `/v1/products/business/${businessId}?${tenant}page=${page}`,
+        );
         if (res.error || !res.data) break;
         const raw = res.data;
-        const list: any[] = Array.isArray(raw) ? raw : raw?.data ?? raw?.items ?? [];
+        const list: any[] = Array.isArray(raw) ? raw : (raw?.data ?? raw?.items ?? []);
         all.push(...list);
         const total = Number(raw?.meta?.total ?? 0);
         if (Array.isArray(raw) || list.length === 0 || all.length >= total) break;
@@ -110,30 +118,51 @@ export default function ProductsPage() {
     );
   }, [products, search, avail]);
 
-  const counts = useMemo(() => ({ on: products.filter((p) => p.isAvailable).length, off: products.filter((p) => !p.isAvailable).length }), [products]);
+  const counts = useMemo(
+    () => ({
+      on: products.filter((p) => p.isAvailable).length,
+      off: products.filter((p) => !p.isAvailable).length,
+    }),
+    [products],
+  );
 
   const openAdd = () => {
     setForm({ name: '', description: '', price: '', isAvailable: true });
     setEditor({});
   };
   const openEdit = (p: Product) => {
-    setForm({ name: p.name, description: p.description, price: p.price ? String(p.price) : '', isAvailable: p.isAvailable });
+    setForm({
+      name: p.name,
+      description: p.description,
+      price: p.price ? String(p.price) : '',
+      isAvailable: p.isAvailable,
+    });
     setEditor({ id: p.id });
   };
 
   const save = async () => {
     if (!editor) return;
     if (!form.name.trim()) return toast.error('Give the product a name.');
-    if (!businessId) return toast.error('No business found for your account. Refresh and try again.');
+    if (!businessId)
+      return toast.error('No business found for your account. Refresh and try again.');
     const price = form.price ? Number(form.price) : 0;
     if (!(price >= 0)) return toast.error('Enter a valid price.');
-    const body = { name: form.name.trim(), description: form.description.trim(), price, isAvailable: form.isAvailable };
+    const body = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      price,
+      isAvailable: form.isAvailable,
+    };
     setSaving(true);
-    const res = editor.id ? await apiService.patch<any>(`/v1/products/${editor.id}`, body) : await apiService.post<any>('/v1/products', { ...body, businessId });
+    const res = editor.id
+      ? await apiService.patch<any>(`/v1/products/${editor.id}`, body)
+      : await apiService.post<any>('/v1/products', { ...body, businessId });
     setSaving(false);
     if (res.error) return toast.error(res.error);
     const saved = toProduct({ ...body, ...(res.data ?? {}), id: res.data?.id ?? editor.id });
-    setProducts((list) => (editor.id ? list.map((p) => (p.id === editor.id ? saved : p)) : [saved, ...list]));
+    setProducts((list) =>
+      editor.id ? list.map((p) => (p.id === editor.id ? saved : p)) : [saved, ...list],
+    );
     toast.success(editor.id ? 'Product updated' : 'Product added');
     setEditor(null);
   };
@@ -143,13 +172,23 @@ export default function ProductsPage() {
     setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, isAvailable: next } : x)));
     const res = await apiService.patch(`/v1/products/${p.id}`, { isAvailable: next });
     if (res.error) {
-      setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, isAvailable: p.isAvailable } : x)));
+      setProducts((list) =>
+        list.map((x) => (x.id === p.id ? { ...x, isAvailable: p.isAvailable } : x)),
+      );
       toast.error(res.error);
     }
   };
 
   const remove = async (p: Product) => {
-    if (!(await confirm({ title: `Delete “${p.name}”?`, description: 'It disappears from your public menu right away.', confirmLabel: 'Delete', tone: 'danger' }))) return;
+    if (
+      !(await confirm({
+        title: `Delete “${p.name}”?`,
+        description: 'It disappears from your public menu right away.',
+        confirmLabel: 'Delete',
+        tone: 'danger',
+      }))
+    )
+      return;
     const res = await apiService.delete(`/v1/products/${p.id}`);
     if (res.error) return toast.error(res.error);
     setProducts((list) => list.filter((x) => x.id !== p.id));
@@ -159,7 +198,12 @@ export default function ProductsPage() {
   const RowMenu = ({ p }: { p: Product }) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${p.name}`} onClick={(e) => e.stopPropagation()}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={`Actions for ${p.name}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           <MoreHorizontal />
         </Button>
       </DropdownMenuTrigger>
@@ -176,7 +220,11 @@ export default function ProductsPage() {
 
   const AvailSwitch = ({ p }: { p: Product }) => (
     <span onClick={(e) => e.stopPropagation()} className="inline-flex">
-      <Switch checked={p.isAvailable} onCheckedChange={() => toggle(p)} aria-label={`${p.name} available`} />
+      <Switch
+        checked={p.isAvailable}
+        onCheckedChange={() => toggle(p)}
+        aria-label={`${p.name} available`}
+      />
     </span>
   );
 
@@ -189,13 +237,27 @@ export default function ProductsPage() {
       cell: (p) => (
         <div className="min-w-0">
           <p className="truncate font-medium">{p.name}</p>
-          {p.description && <p className="line-clamp-1 text-caption text-muted-foreground">{p.description}</p>}
+          {p.description && (
+            <p className="line-clamp-1 text-caption text-muted-foreground">{p.description}</p>
+          )}
         </div>
       ),
     },
-    { key: 'price', header: 'Price', align: 'right', sortable: true, value: (p) => p.price, cell: (p) => <span className="tabular-nums">{inr(p.price)}</span> },
+    {
+      key: 'price',
+      header: 'Price',
+      align: 'right',
+      sortable: true,
+      value: (p) => p.price,
+      cell: (p) => <span className="tabular-nums">{inr(p.price)}</span>,
+    },
     { key: 'avail', header: 'Available', align: 'center', cell: (p) => <AvailSwitch p={p} /> },
-    { key: 'actions', header: <span className="sr-only">Actions</span>, align: 'right', cell: (p) => <RowMenu p={p} /> },
+    {
+      key: 'actions',
+      header: <span className="sr-only">Actions</span>,
+      align: 'right',
+      cell: (p) => <RowMenu p={p} />,
+    },
   ];
 
   return (
@@ -212,19 +274,35 @@ export default function ProductsPage() {
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <ChipRow label="Availability">
-          <FilterChip selected={avail === 'all'} count={products.length || undefined} onClick={() => setAvail('all')}>
+          <FilterChip
+            selected={avail === 'all'}
+            count={products.length || undefined}
+            onClick={() => setAvail('all')}
+          >
             All
           </FilterChip>
-          <FilterChip selected={avail === 'on'} count={counts.on || undefined} onClick={() => setAvail('on')}>
+          <FilterChip
+            selected={avail === 'on'}
+            count={counts.on || undefined}
+            onClick={() => setAvail('on')}
+          >
             Available
           </FilterChip>
-          <FilterChip selected={avail === 'off'} count={counts.off || undefined} onClick={() => setAvail('off')}>
+          <FilterChip
+            selected={avail === 'off'}
+            count={counts.off || undefined}
+            onClick={() => setAvail('off')}
+          >
             Sold out
           </FilterChip>
         </ChipRow>
         <div className="flex items-center gap-2">
           <SearchInput value={search} onChange={setSearch} placeholder="Search products" />
-          <div role="radiogroup" aria-label="Layout" className="inline-flex shrink-0 rounded-full border border-border bg-card p-0.5">
+          <div
+            role="radiogroup"
+            aria-label="Layout"
+            className="inline-flex shrink-0 rounded-full border border-border bg-card p-0.5"
+          >
             {(
               [
                 ['table', 'Table', Rows3],
@@ -238,7 +316,12 @@ export default function ProductsPage() {
                 aria-checked={layout === k}
                 aria-label={l}
                 onClick={() => changeLayout(k)}
-                className={cn('flex size-10 items-center justify-center rounded-full transition-colors', layout === k ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground')}
+                className={cn(
+                  'flex size-10 items-center justify-center rounded-full transition-colors',
+                  layout === k
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
               >
                 <Icon className="size-4" />
               </button>
@@ -259,7 +342,9 @@ export default function ProductsPage() {
           empty={{
             icon: Box,
             title: products.length ? 'No matching products' : 'No products yet',
-            description: products.length ? 'Try another search or filter.' : 'Add your first product to build your catalog.',
+            description: products.length
+              ? 'Try another search or filter.'
+              : 'Add your first product to build your catalog.',
             action: products.length ? undefined : { label: 'Add product', onClick: openAdd },
           }}
           mobileCard={(p) => (
@@ -273,25 +358,51 @@ export default function ProductsPage() {
           )}
         />
       ) : visible.length === 0 ? (
-        <EmptyState icon={Box} title={products.length ? 'No matching products' : 'No products yet'} action={products.length ? undefined : { label: 'Add product', onClick: openAdd }} />
+        <EmptyState
+          icon={Box}
+          title={products.length ? 'No matching products' : 'No products yet'}
+          action={products.length ? undefined : { label: 'Add product', onClick: openAdd }}
+        />
       ) : (
         <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           {visible.map((p) => (
             <li key={p.id}>
-              <article className={cn('flex h-full flex-col rounded-card border border-border bg-card p-4 shadow-e1', !p.isAvailable && 'opacity-70')}>
+              <article
+                className={cn(
+                  'flex h-full flex-col rounded-card border border-border bg-card p-4 shadow-e1',
+                  !p.isAvailable && 'opacity-70',
+                )}
+              >
                 <div className="flex items-start justify-between gap-2">
-                  <button type="button" onClick={() => openEdit(p)} className="min-w-0 text-left font-semibold leading-snug hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => openEdit(p)}
+                    className="min-w-0 text-left font-semibold leading-snug hover:underline"
+                  >
                     <span className="line-clamp-2 break-words">{p.name}</span>
                   </button>
                   <RowMenu p={p} />
                 </div>
-                {p.description && <p className="mt-1 line-clamp-2 text-caption text-muted-foreground">{p.description}</p>}
+                {p.description && (
+                  <p className="mt-1 line-clamp-2 text-caption text-muted-foreground">
+                    {p.description}
+                  </p>
+                )}
                 <div className="mt-auto flex items-center justify-between gap-2 pt-4">
                   <span className="text-heading font-semibold tabular-nums">{inr(p.price)}</span>
-                  {p.isAvailable ? <AvailSwitch p={p} /> : <StatusPill tone="neutral" label="Sold out" />}
+                  {p.isAvailable ? (
+                    <AvailSwitch p={p} />
+                  ) : (
+                    <StatusPill tone="neutral" label="Sold out" />
+                  )}
                 </div>
                 {!p.isAvailable && (
-                  <Button size="sm" variant="ghost" className="mt-2 self-start" onClick={() => toggle(p)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="mt-2 self-start"
+                    onClick={() => toggle(p)}
+                  >
                     Mark available
                   </Button>
                 )}
@@ -327,23 +438,47 @@ export default function ProductsPage() {
             <label htmlFor="p-name" className={label}>
               Name
             </label>
-            <Input id="p-name" value={form.name} maxLength={255} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Chicken biryani" />
+            <Input
+              id="p-name"
+              value={form.name}
+              maxLength={255}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              placeholder="Chicken biryani"
+            />
           </div>
           <div>
             <label htmlFor="p-price" className={label}>
               Price (₹) <span className="font-normal text-muted-foreground">(optional)</span>
             </label>
-            <Input id="p-price" type="number" inputMode="decimal" min={0} step="0.01" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} placeholder="220" />
+            <Input
+              id="p-price"
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="0.01"
+              value={form.price}
+              onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+              placeholder="220"
+            />
           </div>
           <div>
             <label htmlFor="p-desc" className={label}>
               Description <span className="font-normal text-muted-foreground">(optional)</span>
             </label>
-            <Textarea id="p-desc" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Served with raita and pickle" className="h-20 resize-none" />
+            <Textarea
+              id="p-desc"
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              placeholder="Served with raita and pickle"
+              className="h-20 resize-none"
+            />
           </div>
           <label className="flex items-center justify-between gap-3 rounded-control border border-border p-3">
             <span className="text-sm font-medium">Available now</span>
-            <Switch checked={form.isAvailable} onCheckedChange={(v) => setForm((f) => ({ ...f, isAvailable: v }))} />
+            <Switch
+              checked={form.isAvailable}
+              onCheckedChange={(v) => setForm((f) => ({ ...f, isAvailable: v }))}
+            />
           </label>
           <button type="submit" hidden />
         </form>

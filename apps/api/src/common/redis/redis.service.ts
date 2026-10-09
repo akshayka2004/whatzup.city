@@ -20,7 +20,7 @@ export class RedisService implements OnModuleDestroy {
 
   constructor(private readonly configService: ConfigService) {
     const redisUrl = this.configService.get<string>('REDIS_URL', 'redis://localhost:6379');
-    
+
     // Set maxRetriesPerRequest to 1 or 2 so it fails fast and triggers fallback when down
     this.client = new Redis(redisUrl, {
       maxRetriesPerRequest: 2,
@@ -50,7 +50,9 @@ export class RedisService implements OnModuleDestroy {
     try {
       return await redisCall();
     } catch (error: any) {
-      this.logger.warn(`Redis operation "${opName}" failed: ${error.message}. Using in-memory fallback.`);
+      this.logger.warn(
+        `Redis operation "${opName}" failed: ${error.message}. Using in-memory fallback.`,
+      );
       return Promise.resolve(fallbackCall());
     }
   }
@@ -75,7 +77,7 @@ export class RedisService implements OnModuleDestroy {
           return null;
         }
         return entry.value as T;
-      }
+      },
     );
   }
 
@@ -93,7 +95,7 @@ export class RedisService implements OnModuleDestroy {
           await this.client.set(key, serialized);
         }
       },
-      () => {}
+      () => {},
     );
   }
 
@@ -104,7 +106,7 @@ export class RedisService implements OnModuleDestroy {
       async () => {
         await this.client.del(key);
       },
-      () => {}
+      () => {},
     );
   }
 
@@ -125,14 +127,19 @@ export class RedisService implements OnModuleDestroy {
         }
       },
       () => {
-        const regexStr = '^' + pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, (ch) => (ch === '*' ? '.*' : ch === '?' ? '.' : '\\' + ch)) + '$';
+        const regexStr =
+          '^' +
+          pattern.replace(/[-\/\\^$*+?.()|[\]{}]/g, (ch) =>
+            ch === '*' ? '.*' : ch === '?' ? '.' : '\\' + ch,
+          ) +
+          '$';
         const regex = new RegExp(regexStr);
         for (const key of this.fallbackStore.keys()) {
           if (regex.test(key)) {
             this.fallbackStore.delete(key);
           }
         }
-      }
+      },
     );
   }
 
@@ -151,7 +158,7 @@ export class RedisService implements OnModuleDestroy {
           return false;
         }
         return true;
-      }
+      },
     );
   }
 
@@ -168,7 +175,7 @@ export class RedisService implements OnModuleDestroy {
       async () => {
         return this.client.incr(key);
       },
-      () => fallbackVal
+      () => fallbackVal,
     );
   }
 
@@ -182,7 +189,7 @@ export class RedisService implements OnModuleDestroy {
       async () => {
         await this.client.expire(key, ttlSeconds);
       },
-      () => {}
+      () => {},
     );
   }
 
@@ -200,11 +207,7 @@ export class RedisService implements OnModuleDestroy {
    *     this.db.category.findMany({ where: { tenantId: 'abc' } })
    *   );
    */
-  async withCache<T>(
-    key: string,
-    ttlSeconds: number,
-    loader: () => Promise<T>,
-  ): Promise<T> {
+  async withCache<T>(key: string, ttlSeconds: number, loader: () => Promise<T>): Promise<T> {
     const cached = await this.get<T>(key);
     if (cached !== null && cached !== undefined) {
       return cached;

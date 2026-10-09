@@ -1,4 +1,13 @@
-import { IsString, IsOptional, IsDateString, IsObject, IsEnum, IsArray, MaxLength, ArrayMaxSize } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsDateString,
+  IsObject,
+  IsEnum,
+  IsArray,
+  MaxLength,
+  ArrayMaxSize,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum AlertPriority {

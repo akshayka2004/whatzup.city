@@ -43,7 +43,9 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List payments awaiting verification; ?cycle=RENEWAL for renewals only (Admin)' })
+  @ApiOperation({
+    summary: 'List payments awaiting verification; ?cycle=RENEWAL for renewals only (Admin)',
+  })
   async pending(@Query('cycle') cycle?: 'NEW' | 'RENEWAL') {
     return this.paymentsService.listPending(cycle);
   }
@@ -52,7 +54,10 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Billing details for a business; ?reveal=true unmasks PAN/GSTIN and is audited (Admin)' })
+  @ApiOperation({
+    summary:
+      'Billing details for a business; ?reveal=true unmasks PAN/GSTIN and is audited (Admin)',
+  })
   async adminBilling(
     @CurrentUser('id') adminId: string,
     @Param('businessId') businessId: string,

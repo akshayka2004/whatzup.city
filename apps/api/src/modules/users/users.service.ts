@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { PasswordService } from '../auth/password.service';
@@ -112,16 +117,20 @@ export class UsersService {
     };
   }
 
-  async update(id: string, data: { name?: string; phone?: string; avatar?: string; profession?: string }) {
+  async update(
+    id: string,
+    data: { name?: string; phone?: string; avatar?: string; profession?: string },
+  ) {
     // Whitelist self-editable fields only — never let /me set role, status, etc.
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name;
     if (data.phone !== undefined) updateData.phone = data.phone;
     if (data.profession !== undefined) updateData.profession = data.profession || null;
     if (data.avatar !== undefined) {
-      updateData.avatar = data.avatar && !data.avatar.trim().startsWith('{')
-        ? JSON.stringify({ bucket: 'profile-media', path: data.avatar })
-        : data.avatar;
+      updateData.avatar =
+        data.avatar && !data.avatar.trim().startsWith('{')
+          ? JSON.stringify({ bucket: 'profile-media', path: data.avatar })
+          : data.avatar;
     }
     const user = await this.db.user.update({ where: { id }, data: updateData });
     await this.redis.del(`user:${id}`);
@@ -150,20 +159,32 @@ export class UsersService {
     if (data.email !== undefined) {
       const email = String(data.email).trim().toLowerCase();
       if (email && email !== user.email) {
-        const clash = await this.db.user.findFirst({ where: { email, deletedAt: null, NOT: { id } } });
+        const clash = await this.db.user.findFirst({
+          where: { email, deletedAt: null, NOT: { id } },
+        });
         if (clash) throw new ConflictException('Email already in use');
         payload.email = email;
       }
     }
     if (data.password) {
-      if (String(data.password).length < 8) throw new BadRequestException('Password must be at least 8 characters');
+      if (String(data.password).length < 8)
+        throw new BadRequestException('Password must be at least 8 characters');
       payload.passwordHash = await this.passwordService.hash(data.password);
     }
 
     const updated = await this.db.user.update({
       where: { id },
       data: payload,
-      select: { id: true, email: true, name: true, phone: true, role: true, isActive: true, profession: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        profession: true,
+        createdAt: true,
+      },
     });
     await this.redis.del(`user:${id}`);
     return updated;
@@ -279,7 +300,10 @@ export class UsersService {
         })
       : [];
     const billMap = new Map(
-      billAgg.map((b: any) => [b.userId, { count: b._count._all, total: Number(b._sum.amount ?? 0) }]),
+      billAgg.map((b: any) => [
+        b.userId,
+        { count: b._count._all, total: Number(b._sum.amount ?? 0) },
+      ]),
     );
 
     return {
@@ -378,7 +402,12 @@ export class UsersService {
    */
   async createAdminUser(
     tenantId: string,
-    data: { name: string; email: string; password: string; role: 'MASTER_ADMIN' | 'PORTAL_ADMIN' | 'PLATFORM_STAFF' },
+    data: {
+      name: string;
+      email: string;
+      password: string;
+      role: 'MASTER_ADMIN' | 'PORTAL_ADMIN' | 'PLATFORM_STAFF';
+    },
   ) {
     if (!data.name || !data.email || !data.password) {
       throw new BadRequestException('Name, email and password are required');
@@ -389,12 +418,17 @@ export class UsersService {
 
     const validRoles = ['MASTER_ADMIN', 'PORTAL_ADMIN', 'PLATFORM_STAFF'];
     if (!validRoles.includes(data.role)) {
-      throw new BadRequestException('Invalid role — must be MASTER_ADMIN, PORTAL_ADMIN, or PLATFORM_STAFF');
+      throw new BadRequestException(
+        'Invalid role — must be MASTER_ADMIN, PORTAL_ADMIN, or PLATFORM_STAFF',
+      );
     }
 
     const emailNormalized = data.email.trim().toLowerCase();
-    const existing = await this.db.user.findFirst({ where: { email: emailNormalized, deletedAt: null } });
-    if (existing) throw new ConflictException(`User with email "${emailNormalized}" already exists`);
+    const existing = await this.db.user.findFirst({
+      where: { email: emailNormalized, deletedAt: null },
+    });
+    if (existing)
+      throw new ConflictException(`User with email "${emailNormalized}" already exists`);
 
     const passwordHash = await this.passwordService.hash(data.password);
 

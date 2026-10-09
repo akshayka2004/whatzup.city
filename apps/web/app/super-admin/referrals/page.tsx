@@ -14,7 +14,9 @@ export default function SuperAdminReferralsPage() {
     setLoading(true);
     apiService
       .get<any>('/v1/users/referral-leaderboard')
-      .then((res) => { if (res.data && !res.error) setData(res.data); })
+      .then((res) => {
+        if (res.data && !res.error) setData(res.data);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -25,15 +27,32 @@ export default function SuperAdminReferralsPage() {
     <SuperAdminLayout>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Referrals</h1>
-        <p className="text-muted-foreground text-sm mt-1">Platform-wide referral statistics and top referrers</p>
+        <p className="text-muted-foreground text-sm mt-1">
+          Platform-wide referral statistics and top referrers
+        </p>
       </div>
 
       {/* KPI strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
-          { label: 'Total Referred Users', value: loading ? '…' : totalReferred.toLocaleString(), icon: Users, color: 'text-brand-soft-foreground bg-brand-soft' },
-          { label: 'Active Referrers', value: loading ? '…' : leaderboard.length.toLocaleString(), icon: Share2, color: 'text-info-soft-foreground bg-info-soft' },
-          { label: 'Top Referral Count', value: loading ? '…' : (leaderboard[0]?.referralCount ?? 0).toLocaleString(), icon: TrendingUp, color: 'text-success-soft-foreground bg-success-soft' },
+          {
+            label: 'Total Referred Users',
+            value: loading ? '…' : totalReferred.toLocaleString(),
+            icon: Users,
+            color: 'text-brand-soft-foreground bg-brand-soft',
+          },
+          {
+            label: 'Active Referrers',
+            value: loading ? '…' : leaderboard.length.toLocaleString(),
+            icon: Share2,
+            color: 'text-info-soft-foreground bg-info-soft',
+          },
+          {
+            label: 'Top Referral Count',
+            value: loading ? '…' : (leaderboard[0]?.referralCount ?? 0).toLocaleString(),
+            icon: TrendingUp,
+            color: 'text-success-soft-foreground bg-success-soft',
+          },
         ].map((stat, i) => {
           const Icon = stat.icon;
           return (
@@ -75,11 +94,21 @@ export default function SuperAdminReferralsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-secondary/40">
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground">#</th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground">User</th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground">Email</th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground">Referral Code</th>
-                  <th className="text-right px-6 py-3 text-xs font-semibold text-muted-foreground">Referrals</th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground">
+                    #
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground">
+                    User
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground">
+                    Email
+                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-muted-foreground">
+                    Referral Code
+                  </th>
+                  <th className="text-right px-6 py-3 text-xs font-semibold text-muted-foreground">
+                    Referrals
+                  </th>
                 </tr>
               </thead>
               <tbody>

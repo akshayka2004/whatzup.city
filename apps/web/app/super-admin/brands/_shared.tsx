@@ -1,7 +1,17 @@
 import type { ElementType } from 'react';
 import {
-  Sparkles, ArrowRightLeft, Pencil, Hash, Store, Trash2, CheckCircle2,
-  XCircle, Ban, RotateCcw, Receipt, Activity,
+  Sparkles,
+  ArrowRightLeft,
+  Pencil,
+  Hash,
+  Store,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  Ban,
+  RotateCcw,
+  Receipt,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -39,11 +49,16 @@ export const EVENT_META: Record<string, EventMeta> = {
 export const EVENT_TYPES = Object.keys(EVENT_META);
 
 export function eventMeta(type: string): EventMeta {
-  return EVENT_META[type] ?? {
-    label: type.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase()),
-    icon: Activity,
-    ...tone.muted,
-  };
+  return (
+    EVENT_META[type] ?? {
+      label: type
+        .replace(/_/g, ' ')
+        .toLowerCase()
+        .replace(/^\w/, (c) => c.toUpperCase()),
+      icon: Activity,
+      ...tone.muted,
+    }
+  );
 }
 
 export function timeAgo(iso?: string | null): string {
@@ -58,7 +73,11 @@ export function timeAgo(iso?: string | null): string {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   if (d < 30) return `${d}d ago`;
-  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 export function fullDate(iso?: string | null): string {

@@ -8,13 +8,40 @@ import { CalendarDays, Clapperboard, Tag, Megaphone, Building2 } from 'lucide-re
 import { MOVIES_ENABLED } from '@/lib/feature-flags';
 
 const LINKS = [
-  { label: 'Events', href: '/staff/events', icon: CalendarDays, desc: 'Publish and manage platform events.' },
+  {
+    label: 'Events',
+    href: '/staff/events',
+    icon: CalendarDays,
+    desc: 'Publish and manage platform events.',
+  },
   ...(MOVIES_ENABLED
-    ? [{ label: 'Movies', href: '/staff/movies', icon: Clapperboard, desc: 'Publish movie listings.' }]
+    ? [
+        {
+          label: 'Movies',
+          href: '/staff/movies',
+          icon: Clapperboard,
+          desc: 'Publish movie listings.',
+        },
+      ]
     : []),
-  { label: 'Platform Offers', href: '/staff/platform-offers', icon: Tag, desc: 'Publish curated platform deals.' },
-  { label: 'Announcements', href: '/staff/announcements', icon: Megaphone, desc: 'Broadcast civic notices and alerts.' },
-  { label: 'Businesses', href: '/staff/businesses', icon: Building2, desc: 'Look up registered businesses (read-only).' },
+  {
+    label: 'Platform Offers',
+    href: '/staff/platform-offers',
+    icon: Tag,
+    desc: 'Publish curated platform deals.',
+  },
+  {
+    label: 'Announcements',
+    href: '/staff/announcements',
+    icon: Megaphone,
+    desc: 'Broadcast civic notices and alerts.',
+  },
+  {
+    label: 'Businesses',
+    href: '/staff/businesses',
+    icon: Building2,
+    desc: 'Look up registered businesses (read-only).',
+  },
 ];
 
 export default function StaffOverviewPage() {
@@ -24,7 +51,9 @@ export default function StaffOverviewPage() {
     <StaffLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome{user?.name ? `, ${user.name}` : ''}</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Welcome{user?.name ? `, ${user.name}` : ''}
+          </h1>
           <p className="text-muted-foreground text-sm mt-1">Platform data-entry workspace.</p>
         </div>
 
@@ -38,9 +67,7 @@ export default function StaffOverviewPage() {
                 className="block ui-fade-up"
                 style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
               >
-                <Card
-                  className="p-5 rounded-2xl border-border bg-card hover:border-primary/30 hover:bg-secondary/40 transition-all duration-200 ease-out cursor-pointer h-full hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100"
-                >
+                <Card className="p-5 rounded-2xl border-border bg-card hover:border-primary/30 hover:bg-secondary/40 transition-all duration-200 ease-out cursor-pointer h-full hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100">
                   <div className="h-10 w-10 rounded-xl bg-brand-soft flex items-center justify-center text-brand-soft-foreground mb-3">
                     <Icon className="h-5 w-5" />
                   </div>

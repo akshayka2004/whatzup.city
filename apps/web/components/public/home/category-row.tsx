@@ -11,7 +11,13 @@ import { FALLBACK_CATEGORIES, iconForCategory, type HomeCategory } from './home-
  * scrolls on every screen size, with arrow buttons on pointer devices.
  * Keeps the home page's first screen for content instead of a 20-tile grid.
  */
-export function CategoryRow({ categories, loading }: { categories: HomeCategory[]; loading: boolean }) {
+export function CategoryRow({
+  categories,
+  loading,
+}: {
+  categories: HomeCategory[];
+  loading: boolean;
+}) {
   const list = categories.length > 0 ? categories : loading ? [] : FALLBACK_CATEGORIES;
   const scroller = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ start: true, end: false });
@@ -19,7 +25,10 @@ export function CategoryRow({ categories, loading }: { categories: HomeCategory[
   const measure = () => {
     const el = scroller.current;
     if (!el) return;
-    setEdges({ start: el.scrollLeft <= 24, end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 24 });
+    setEdges({
+      start: el.scrollLeft <= 24,
+      end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 24,
+    });
   };
   useEffect(() => {
     measure();
@@ -33,7 +42,11 @@ export function CategoryRow({ categories, loading }: { categories: HomeCategory[
     };
   }, [list.length]);
 
-  const nudge = (dir: 1 | -1) => scroller.current?.scrollBy({ left: dir * scroller.current.clientWidth * 0.8, behavior: 'smooth' });
+  const nudge = (dir: 1 | -1) =>
+    scroller.current?.scrollBy({
+      left: dir * scroller.current.clientWidth * 0.8,
+      behavior: 'smooth',
+    });
 
   return (
     <nav aria-label="Browse by category" className="relative mb-10 md:mb-12">
@@ -65,7 +78,9 @@ export function CategoryRow({ categories, loading }: { categories: HomeCategory[
                 <Link
                   key={c.slug}
                   href={`/category?type=${encodeURIComponent(c.slug)}`}
-                  title={count ? `${c.name} · ${count} ${count === 1 ? 'listing' : 'listings'}` : c.name}
+                  title={
+                    count ? `${c.name} · ${count} ${count === 1 ? 'listing' : 'listings'}` : c.name
+                  }
                   className="group flex w-[84px] shrink-0 flex-col items-center gap-1.5 rounded-xl px-1 py-2 text-center"
                 >
                   <span className="flex size-11 items-center justify-center rounded-full bg-brand-soft text-brand-soft-foreground transition-[background-color,transform] duration-200 group-hover:scale-105 group-hover:bg-primary/15 motion-reduce:group-hover:scale-100">

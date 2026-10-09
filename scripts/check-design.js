@@ -25,11 +25,22 @@ const RULES = [
   {
     id: 'raw-palette',
     why: 'use semantic tokens (success/warning/danger/info/brand-soft, muted, border…)',
-    re: new RegExp(`\\b(?:bg|text|border|from|to|via|ring|fill|stroke|outline|divide|shadow)-${PALETTE}-\\d{2,3}\\b`, 'g'),
+    re: new RegExp(
+      `\\b(?:bg|text|border|from|to|via|ring|fill|stroke|outline|divide|shadow)-${PALETTE}-\\d{2,3}\\b`,
+      'g',
+    ),
   },
   { id: 'hex-arbitrary', why: 'no [#hex] values — add a token', re: /\[#[0-9a-fA-F]{3,8}\]/g },
-  { id: 'micro-text', why: 'min UI text is 12px (text-caption / text-xs)', re: /text-\[(?:[0-9]|1[01])px\]/g },
-  { id: 'hand-modal', why: 'use <Modal> / ui/dialog / ui/sheet instead of fixed inset-0 overlays', re: /\bfixed inset-0\b/g },
+  {
+    id: 'micro-text',
+    why: 'min UI text is 12px (text-caption / text-xs)',
+    re: /text-\[(?:[0-9]|1[01])px\]/g,
+  },
+  {
+    id: 'hand-modal',
+    why: 'use <Modal> / ui/dialog / ui/sheet instead of fixed inset-0 overlays',
+    re: /\bfixed inset-0\b/g,
+  },
   {
     id: 'native-dialog',
     why: 'use toast() / useConfirm() instead of alert()/confirm()',
@@ -54,7 +65,9 @@ function walk(dir, out) {
   return out;
 }
 
-const files = SCAN.flatMap((d) => (fs.existsSync(path.join(ROOT, d)) ? walk(path.join(ROOT, d), []) : []));
+const files = SCAN.flatMap((d) =>
+  fs.existsSync(path.join(ROOT, d)) ? walk(path.join(ROOT, d), []) : [],
+);
 const totals = Object.fromEntries(RULES.map((r) => [r.id, 0]));
 const perFile = new Map();
 const hits = [];
@@ -66,8 +79,10 @@ for (const file of files) {
   if (src.includes('design-lint-disable-file')) continue;
   const lines = src.split('\n');
   lines.forEach((line, i) => {
-    // `design-lint-ignore` on the line (or the one above) exempts deliberate full-screen layers.
-    if (line.includes('design-lint-ignore') || (i > 0 && lines[i - 1].includes('design-lint-ignore'))) return;
+    // `design-lint-ignore` on the line or up to three lines above (formatters reflow JSX)
+    // exempts deliberate full-screen layers.
+    if (lines.slice(Math.max(0, i - 3), i + 1).some((l) => l.includes('design-lint-ignore')))
+      return;
     for (const rule of RULES) {
       rule.re.lastIndex = 0;
       const m = line.match(rule.re);
@@ -81,7 +96,8 @@ for (const file of files) {
 
 const total = Object.values(totals).reduce((a, b) => a + b, 0);
 console.log('Design guard — apps/web');
-for (const r of RULES) console.log(`  ${String(totals[r.id]).padStart(5)}  ${r.id.padEnd(14)} ${r.why}`);
+for (const r of RULES)
+  console.log(`  ${String(totals[r.id]).padStart(5)}  ${r.id.padEnd(14)} ${r.why}`);
 console.log(`  ${String(total).padStart(5)}  total in ${perFile.size} files`);
 if (listAll) hits.forEach((h) => console.log('    ' + h));
 else if (perFile.size) {

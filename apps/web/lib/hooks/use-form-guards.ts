@@ -47,7 +47,12 @@ export function useDirty<T>(value: T) {
  *
  *   const { restored, clear } = useDraft('offer-create', form, setForm);
  */
-export function useDraft<T>(key: string, value: T, apply: (draft: T) => void, opts: { enabled?: boolean; delayMs?: number } = {}) {
+export function useDraft<T>(
+  key: string,
+  value: T,
+  apply: (draft: T) => void,
+  opts: { enabled?: boolean; delayMs?: number } = {},
+) {
   const { enabled = true, delayMs = 600 } = opts;
   const [restored, setRestored] = useState(false);
   const applied = useRef(false);

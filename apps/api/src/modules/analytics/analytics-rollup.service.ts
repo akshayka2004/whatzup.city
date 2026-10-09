@@ -137,7 +137,10 @@ export class AnalyticsRollupService implements OnApplicationBootstrap, OnModuleD
   /** Day keys in [from, to] that have been computed. */
   async computedDays(from: string, to: string): Promise<Set<string>> {
     const rows = await this.db.dailyBusinessStat.findMany({
-      where: { businessId: ROLLUP_SENTINEL, date: { gte: new Date(`${from}T00:00:00Z`), lte: new Date(`${to}T00:00:00Z`) } },
+      where: {
+        businessId: ROLLUP_SENTINEL,
+        date: { gte: new Date(`${from}T00:00:00Z`), lte: new Date(`${to}T00:00:00Z`) },
+      },
       select: { date: true },
     });
     return new Set(rows.map((r) => r.date.toISOString().slice(0, 10)));

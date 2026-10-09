@@ -18,8 +18,16 @@ import { apiService } from '@/lib/services/api-service';
 import { formatINR, planLabel, TAX_PERCENT } from '@/lib/subscription-plans';
 import { cn } from '@/lib/utils';
 import {
-  Receipt, Loader2, CheckCircle2, XCircle, Building2, ExternalLink,
-  FileText, Mail, MapPin, Hash,
+  Receipt,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Building2,
+  ExternalLink,
+  FileText,
+  Mail,
+  MapPin,
+  Hash,
 } from 'lucide-react';
 
 type Pending = {
@@ -35,14 +43,30 @@ type Pending = {
   proofSignedUrl?: string | null;
   invoiceMetadata?: any;
   business?: {
-    id: string; name: string; slug: string; city: string; status: string;
+    id: string;
+    name: string;
+    slug: string;
+    city: string;
+    status: string;
     billingProfile?: {
-      billingName: string; hasGst: boolean; gstin?: string | null; pan?: string | null;
-      addressLine: string; city?: string | null; state?: string | null;
-      pincode: string; invoiceEmail: string;
+      billingName: string;
+      hasGst: boolean;
+      gstin?: string | null;
+      pan?: string | null;
+      addressLine: string;
+      city?: string | null;
+      state?: string | null;
+      pincode: string;
+      invoiceEmail: string;
     } | null;
   } | null;
-  subscription?: { id: string; packageName: string; pricing: string | number; endDate?: string; duration?: number } | null;
+  subscription?: {
+    id: string;
+    packageName: string;
+    pricing: string | number;
+    endDate?: string;
+    duration?: number;
+  } | null;
 };
 
 function fmtDate(v?: string | null) {
@@ -61,30 +85,41 @@ export default function AdminPaymentApprovalsPage() {
   const load = async () => {
     setLoading(true);
     const res = await apiService.get<any>('/v1/payments/admin/pending?cycle=RENEWAL');
-    const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+    const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
     setRows(list);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const verify = async (id: string) => {
-    setBusyId(id); setMsg('');
+    setBusyId(id);
+    setMsg('');
     const res = await apiService.post<any>(`/v1/payments/${id}/verify`, {});
     setBusyId(null);
-    if (res.error) { setMsg(res.error); return; }
+    if (res.error) {
+      setMsg(res.error);
+      return;
+    }
     setMsg('Payment verified — subscription renewed.');
     setRows((r) => r.filter((x) => x.id !== id));
   };
 
   const reject = async (id: string) => {
     if (!reason.trim()) return;
-    setBusyId(id); setMsg('');
+    setBusyId(id);
+    setMsg('');
     const res = await apiService.post<any>(`/v1/payments/${id}/reject`, { reason: reason.trim() });
     setBusyId(null);
-    if (res.error) { setMsg(res.error); return; }
+    if (res.error) {
+      setMsg(res.error);
+      return;
+    }
     setMsg('Payment rejected.');
-    setRejectingId(null); setReason('');
+    setRejectingId(null);
+    setReason('');
     setRows((r) => r.filter((x) => x.id !== id));
   };
 
@@ -125,12 +160,21 @@ export default function AdminPaymentApprovalsPage() {
               const base = p.amountBase ?? 0;
               const tax = p.amountTax ?? 0;
               return (
-                <Card key={p.id} className="p-5 ui-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
+                <Card
+                  key={p.id}
+                  className="p-5 ui-fade-up"
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+                >
                   <div className="grid lg:grid-cols-[220px_1fr] gap-5">
                     {/* Proof */}
                     <div>
                       {p.proofSignedUrl ? (
-                        <a href={p.proofSignedUrl} target="_blank" rel="noopener noreferrer" className="block">
+                        <a
+                          href={p.proofSignedUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block"
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed payment proof */}
                           <img
                             src={p.proofSignedUrl}
@@ -173,14 +217,19 @@ export default function AdminPaymentApprovalsPage() {
                         <div className="text-muted-foreground">
                           Plan:{' '}
                           <span className="text-foreground font-medium">
-                            {planLabel(p.subscription?.packageName || p.invoiceMetadata?.packageName)}
+                            {planLabel(
+                              p.subscription?.packageName || p.invoiceMetadata?.packageName,
+                            )}
                           </span>
                         </div>
                         <div className="text-muted-foreground">
                           Method: <span className="text-foreground font-medium">{p.method}</span>
                         </div>
                         <div className="text-muted-foreground">
-                          UPI ref: <span className="text-foreground font-medium">{p.transactionRef || '—'}</span>
+                          UPI ref:{' '}
+                          <span className="text-foreground font-medium">
+                            {p.transactionRef || '—'}
+                          </span>
                         </div>
                       </div>
 
@@ -192,7 +241,8 @@ export default function AdminPaymentApprovalsPage() {
                         {bp ? (
                           <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
                             <div className="text-muted-foreground">
-                              Billing name: <span className="text-foreground font-medium">{bp.billingName}</span>
+                              Billing name:{' '}
+                              <span className="text-foreground font-medium">{bp.billingName}</span>
                             </div>
                             <div className="text-muted-foreground">
                               GST:{' '}
@@ -206,7 +256,9 @@ export default function AdminPaymentApprovalsPage() {
                             </div>
                             <div className="text-muted-foreground flex items-center gap-1">
                               <Mail className="h-3 w-3" />
-                              <span className="text-foreground font-medium break-all">{bp.invoiceEmail}</span>
+                              <span className="text-foreground font-medium break-all">
+                                {bp.invoiceEmail}
+                              </span>
                             </div>
                             <div className="text-muted-foreground sm:col-span-2 flex items-start gap-1">
                               <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
@@ -219,7 +271,8 @@ export default function AdminPaymentApprovalsPage() {
                           </div>
                         ) : (
                           <p className="text-xs text-warning">
-                            No billing details on file — the business has not completed the invoice step.
+                            No billing details on file — the business has not completed the invoice
+                            step.
                           </p>
                         )}
                       </div>
@@ -238,10 +291,17 @@ export default function AdminPaymentApprovalsPage() {
                               disabled={busyId === p.id || !reason.trim()}
                               className="h-10 rounded-xl bg-destructive text-destructive-foreground cursor-pointer"
                             >
-                              {busyId === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm rejection'}
+                              {busyId === p.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Confirm rejection'
+                              )}
                             </Button>
                             <Button
-                              onClick={() => { setRejectingId(null); setReason(''); }}
+                              onClick={() => {
+                                setRejectingId(null);
+                                setReason('');
+                              }}
                               className="h-10 rounded-xl bg-muted text-foreground cursor-pointer"
                             >
                               Cancel

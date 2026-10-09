@@ -15,19 +15,39 @@ import { KERALA_CITIES } from '@/lib/constants';
 import { LegalFooter } from '@/components/common/legal-footer';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
 import { authService } from '@/lib/services/auth-service';
-import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/business/registration-details';
 import {
-  STAR_OPTIONS, HOTEL_AMENITIES, computeHotelCharge, type HotelAmenities,
+  RegistrationDetailsForm,
+  type RegistrationDetails,
+} from '@/components/business/registration-details';
+import {
+  STAR_OPTIONS,
+  HOTEL_AMENITIES,
+  computeHotelCharge,
+  type HotelAmenities,
 } from '@/lib/hotel-pricing';
-import { AmenityDetailsEditor, type AmenityItem } from '@/components/business/amenity-details-editor';
+import {
+  AmenityDetailsEditor,
+  type AmenityItem,
+} from '@/components/business/amenity-details-editor';
 import { HOME_CHEF_PLANS, HOME_CHEF_DURATION_DAYS, getHomeChefPlan } from '@/lib/home-chef-pricing';
 import { useLaunchOffer } from '@/hooks/use-launch-offer';
 import { invalidateActiveBusinessCache } from '@/hooks/use-active-business';
-import { BillSeriesQuestion, type BillSeriesMode } from '@/components/business/brand-conversion-prompt';
+import {
+  BillSeriesQuestion,
+  type BillSeriesMode,
+} from '@/components/business/brand-conversion-prompt';
 import { LaunchOfferBanner } from '@/components/business/launch-offer-banner';
 import {
-  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, HOTEL_DURATION_DAYS, getPlan, formatINR, withTax, TAX_PERCENT,
-  PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
+  SUBSCRIPTION_PLANS,
+  PLAN_DURATION_DAYS,
+  HOTEL_DURATION_DAYS,
+  getPlan,
+  formatINR,
+  withTax,
+  TAX_PERCENT,
+  PAYMENT_QR_SRC,
+  PAYMENT_UPI_ID,
+  PAYMENT_PAYEE_NAME,
 } from '@/lib/subscription-plans';
 import {
   User as UserIcon,
@@ -62,7 +82,27 @@ import { StepPlanPayment } from './_wizard/step-plan-payment';
 
 export default function UnifiedRegisterPage() {
   const w = useRegisterWizard();
-  const { currentStep, role, brandCtx, outletMode, outletError, brandLaunchUsed, isHotel, selectedPlan, hotelStarRating, hotelAmenities, launchOffer, launchSlotsLeft, categoryLabel, claimLaunch, resuming, STEP_TITLES, TOTAL_STEPS, error, success } = w;
+  const {
+    currentStep,
+    role,
+    brandCtx,
+    outletMode,
+    outletError,
+    brandLaunchUsed,
+    isHotel,
+    selectedPlan,
+    hotelStarRating,
+    hotelAmenities,
+    launchOffer,
+    launchSlotsLeft,
+    categoryLabel,
+    claimLaunch,
+    resuming,
+    STEP_TITLES,
+    TOTAL_STEPS,
+    error,
+    success,
+  } = w;
 
   // Hold the UI until the resume check finishes, otherwise an existing business
   // flashes step 1 before being moved to their real step.
@@ -91,126 +131,137 @@ export default function UnifiedRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen w-full font-sans flex flex-col"
-         >
+    <div className="min-h-screen w-full font-sans flex flex-col">
       {/* Centered content area */}
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden text-foreground">
         {/* Ambient background decoration */}
-        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[160px] pointer-events-none"
-             style={{ background: 'rgba(113,90,90,0.08)' }} />
-        <div className="absolute bottom-[-15%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[140px] pointer-events-none"
-             style={{ background: 'rgba(113,90,90,0.06)' }} />
+        <div
+          className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[160px] pointer-events-none"
+          style={{ background: 'rgba(113,90,90,0.08)' }}
+        />
+        <div
+          className="absolute bottom-[-15%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[140px] pointer-events-none"
+          style={{ background: 'rgba(113,90,90,0.06)' }}
+        />
 
-      <div className="w-full max-w-4xl relative z-10 space-y-6">
-        {/* Top Header */}
-        <div className="text-center space-y-2 mb-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted border border-border text-muted-foreground text-xs font-semibold tracking-wide">
-            <BrandLogo alt="Whtzup.city Logo" className="h-5 w-auto object-contain" />
-            <span className="font-semibold tracking-tight">whtzup.city</span>
+        <div className="w-full max-w-4xl relative z-10 space-y-6">
+          {/* Top Header */}
+          <div className="text-center space-y-2 mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted border border-border text-muted-foreground text-xs font-semibold tracking-wide">
+              <BrandLogo alt="Whtzup.city Logo" className="h-5 w-auto object-contain" />
+              <span className="font-semibold tracking-tight">whtzup.city</span>
+            </div>
+            {outletMode && brandCtx ? (
+              <>
+                <h1 className="text-foreground text-3xl md:text-4xl font-extrabold tracking-tight">
+                  Adding an outlet to {brandCtx.name}
+                </h1>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Finish this outlet&apos;s details and choose its plan. Your brand&apos;s invoice
+                  details are filled in for you.
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-foreground text-3xl md:text-4xl font-extrabold tracking-tight">
+                  Create Your Account
+                </h1>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Complete registration steps to unlock full catalog listings, reviews, and alerts.
+                </p>
+              </>
+            )}
           </div>
-          {outletMode && brandCtx ? (
-            <>
-              <h1 className="text-foreground text-3xl md:text-4xl font-extrabold tracking-tight">
-                Adding an outlet to {brandCtx.name}
-              </h1>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Finish this outlet&apos;s details and choose its plan. Your brand&apos;s invoice details are
-                filled in for you.
-              </p>
-            </>
-          ) : (
-            <>
-              <h1 className="text-foreground text-3xl md:text-4xl font-extrabold tracking-tight">
-                Create Your Account
-              </h1>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Complete registration steps to unlock full catalog listings, reviews, and alerts.
-              </p>
-            </>
-          )}
-        </div>
 
-        {/* Stepper bar */}
-        <div className="w-full rounded-card border border-border bg-card p-4 shadow-e1">
-          {/* Display only: earlier steps create the account/draft, so jumping back is done by each step's own Back button. */}
-          <Stepper steps={STEP_TITLES} current={currentStep - 1} />
+          {/* Stepper bar */}
+          <div className="w-full rounded-card border border-border bg-card p-4 shadow-e1">
+            {/* Display only: earlier steps create the account/draft, so jumping back is done by each step's own Back button. */}
+            <Stepper steps={STEP_TITLES} current={currentStep - 1} />
 
-          {/* Persistent cost context — visible from step 1, not just the payment step */}
-          {role === 'BUSINESS' && (
-            <div className="mt-4 pt-3 border-t border-border flex items-center justify-between gap-2 text-xs">
-              <span className="text-muted-foreground">
-                {isHotel ? 'Hotel listing' : 'Business listing'}
-              </span>
-              {claimLaunch ? (
-                <span className="font-semibold text-success-soft-foreground">
-                  Launch Offer · {formatINR(launchOffer.status?.price ?? 2500)} · {launchOffer.status?.durationDays ?? 180} days
+            {/* Persistent cost context — visible from step 1, not just the payment step */}
+            {role === 'BUSINESS' && (
+              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between gap-2 text-xs">
+                <span className="text-muted-foreground">
+                  {isHotel ? 'Hotel listing' : 'Business listing'}
                 </span>
-              ) : isHotel ? (
-                hotelStarRating ? (
+                {claimLaunch ? (
+                  <span className="font-semibold text-success-soft-foreground">
+                    Launch Offer · {formatINR(launchOffer.status?.price ?? 2500)} ·{' '}
+                    {launchOffer.status?.durationDays ?? 180} days
+                  </span>
+                ) : isHotel ? (
+                  hotelStarRating ? (
+                    <span className="font-semibold text-foreground">
+                      {formatINR(
+                        withTax(computeHotelCharge(hotelStarRating, hotelAmenities).total).total,
+                      )}{' '}
+                      · {HOTEL_DURATION_DAYS} days
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Price depends on star rating &amp; amenities — set in the final step
+                    </span>
+                  )
+                ) : selectedPlan ? (
                   <span className="font-semibold text-foreground">
-                    {formatINR(withTax(computeHotelCharge(hotelStarRating, hotelAmenities).total).total)} · {HOTEL_DURATION_DAYS} days
+                    {getPlan(selectedPlan)?.name} ·{' '}
+                    {formatINR(getPlan(selectedPlan)?.offerPrice || 0)} · {PLAN_DURATION_DAYS} days
                   </span>
                 ) : (
-                  <span className="text-muted-foreground">Price depends on star rating &amp; amenities — set in the final step</span>
-                )
-              ) : selectedPlan ? (
-                <span className="font-semibold text-foreground">
-                  {getPlan(selectedPlan)?.name} · {formatINR(getPlan(selectedPlan)?.offerPrice || 0)} · {PLAN_DURATION_DAYS} days
-                </span>
-              ) : (
-                <span className="text-muted-foreground">
-                  Plans from {formatINR(Math.min(...SUBSCRIPTION_PLANS.map((p) => p.offerPrice)))} · {PLAN_DURATION_DAYS} days — pick one in the final step
-                </span>
-              )}
+                  <span className="text-muted-foreground">
+                    Plans from {formatINR(Math.min(...SUBSCRIPTION_PLANS.map((p) => p.offerPrice)))}{' '}
+                    · {PLAN_DURATION_DAYS} days — pick one in the final step
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Launch offer — live slot count. Generic on step 1, per-category once a business account is being created. */}
+          {launchOffer.enabled &&
+            launchOffer.status &&
+            !brandLaunchUsed &&
+            (currentStep === 1 || role === 'BUSINESS') && (
+              <LaunchOfferBanner
+                slotsPerCategory={launchOffer.status.slotsPerCategory}
+                price={launchOffer.status.price}
+                durationDays={launchOffer.status.durationDays}
+                bonusDays={launchOffer.status.bonusDays}
+                categoryName={role === 'BUSINESS' && currentStep >= 2 ? categoryLabel : null}
+                slotsLeft={launchSlotsLeft}
+              />
+            )}
+
+          {/* Main Alert Banners */}
+          {error && (
+            <div className="p-4 rounded-xl bg-danger-soft border border-destructive/25 text-danger-soft-foreground text-sm font-medium flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
+
+          {success && (
+            <div className="p-4 rounded-xl bg-success-soft border border-success/25 text-success-soft-foreground text-sm font-medium flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 shrink-0" />
+              <span>{success}</span>
+            </div>
+          )}
+
+          {/* Form Card */}
+          <Card className="backdrop-blur-xl p-6 md:p-8 rounded-2xl shadow-2xl relative overflow-hidden">
+            {/* STEP 1: Account Type Selection */}
+            {currentStep === 1 && <StepAccountType w={w} />}
+
+            {/* STEP 2: Account Details & Validation */}
+            {currentStep === 2 && <StepCredentials w={w} />}
+
+            {/* STEP 3: Kerala Entity Profile Setup & Document Upload */}
+            {currentStep === 3 && <StepProfile w={w} />}
+
+            {/* ── STEP 4 (business only): plan / classification, then payment ── */}
+            {currentStep === 4 && role === 'BUSINESS' && <StepPlanPayment w={w} />}
+          </Card>
         </div>
-
-        {/* Launch offer — live slot count. Generic on step 1, per-category once a business account is being created. */}
-        {launchOffer.enabled && launchOffer.status && !brandLaunchUsed && (currentStep === 1 || role === 'BUSINESS') && (
-          <LaunchOfferBanner
-            slotsPerCategory={launchOffer.status.slotsPerCategory}
-            price={launchOffer.status.price}
-            durationDays={launchOffer.status.durationDays}
-            bonusDays={launchOffer.status.bonusDays}
-            categoryName={role === 'BUSINESS' && currentStep >= 2 ? categoryLabel : null}
-            slotsLeft={launchSlotsLeft}
-          />
-        )}
-
-        {/* Main Alert Banners */}
-        {error && (
-          <div className="p-4 rounded-xl bg-danger-soft border border-destructive/25 text-danger-soft-foreground text-sm font-medium flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {success && (
-          <div className="p-4 rounded-xl bg-success-soft border border-success/25 text-success-soft-foreground text-sm font-medium flex items-center gap-3">
-            <CheckCircle className="h-5 w-5 shrink-0" />
-            <span>{success}</span>
-          </div>
-        )}
-
-        {/* Form Card */}
-        <Card className="backdrop-blur-xl p-6 md:p-8 rounded-2xl shadow-2xl relative overflow-hidden"
-              >
-
-          {/* STEP 1: Account Type Selection */}
-          {currentStep === 1 && <StepAccountType w={w} />}
-
-          {/* STEP 2: Account Details & Validation */}
-          {currentStep === 2 && <StepCredentials w={w} />}
-
-          {/* STEP 3: Kerala Entity Profile Setup & Document Upload */}
-          {currentStep === 3 && <StepProfile w={w} />}
-
-          {/* ── STEP 4 (business only): plan / classification, then payment ── */}
-          {currentStep === 4 && role === 'BUSINESS' && <StepPlanPayment w={w} />}
-
-        </Card>
-      </div>
       </div>
 
       {/* Footer — dark wrapper so theme vars resolve on the always-dark register page */}

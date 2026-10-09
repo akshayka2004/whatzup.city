@@ -1,15 +1,29 @@
 'use client';
 
 import Link from 'next/link';
-import { forwardRef, useState, type ComponentType, type InputHTMLAttributes, type ReactNode } from 'react';
+import {
+  forwardRef,
+  useState,
+  type ComponentType,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from 'react';
 import { Building2, Eye, EyeOff, ShieldCheck, Store } from 'lucide-react';
 import { BrandLogo } from '@/components/common/brand-logo';
 import { cn } from '@/lib/utils';
 
 const POINTS = [
-  { icon: ShieldCheck, title: 'Verified & trusted', desc: 'Every business is checked before it goes live.' },
+  {
+    icon: ShieldCheck,
+    title: 'Verified & trusted',
+    desc: 'Every business is checked before it goes live.',
+  },
   { icon: Store, title: 'Local offers', desc: 'Claim deals from businesses around you.' },
-  { icon: Building2, title: 'Civic updates', desc: 'Announcements and public services in one place.' },
+  {
+    icon: Building2,
+    title: 'Civic updates',
+    desc: 'Announcements and public services in one place.',
+  },
 ];
 
 /**
@@ -47,7 +61,10 @@ export function AuthShell({
             aria-hidden
           />
           <div className="relative">
-            <Link href="/" className="inline-flex items-center gap-2 rounded-full bg-card/80 px-3 py-1.5 shadow-e1 backdrop-blur">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-full bg-card/80 px-3 py-1.5 shadow-e1 backdrop-blur"
+            >
               <BrandLogo alt="Whtzup.city" className="h-6 w-auto object-contain" />
               <span className="text-sm font-semibold tracking-tight">whtzup.city</span>
             </Link>
@@ -55,12 +72,16 @@ export function AuthShell({
               Your city, <span className="text-primary">connected.</span>
             </h1>
             <p className="mt-3 max-w-sm text-body text-muted-foreground">
-              Verified businesses, local offers and civic updates across Kerala — from one trusted account.
+              Verified businesses, local offers and civic updates across Kerala — from one trusted
+              account.
             </p>
           </div>
           <ul className="relative space-y-2">
             {POINTS.map((p) => (
-              <li key={p.title} className="flex items-start gap-3 rounded-2xl bg-card/80 p-3 shadow-e1 backdrop-blur">
+              <li
+                key={p.title}
+                className="flex items-start gap-3 rounded-2xl bg-card/80 p-3 shadow-e1 backdrop-blur"
+              >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-soft-foreground">
                   <p.icon className="size-[18px]" aria-hidden />
                 </span>
@@ -87,7 +108,9 @@ export function AuthShell({
             <h2 className="text-title">{title}</h2>
             {description && <p className="mt-1.5 text-body text-muted-foreground">{description}</p>}
             <div className="mt-7">{children}</div>
-            {footer && <div className="mt-8 text-center text-sm text-muted-foreground">{footer}</div>}
+            {footer && (
+              <div className="mt-8 text-center text-sm text-muted-foreground">{footer}</div>
+            )}
           </div>
         </section>
       </div>
@@ -118,7 +141,12 @@ export const AuthField = forwardRef<HTMLInputElement, FieldProps>(function AuthF
         {label}
       </label>
       <div className="relative">
-        {Icon && <Icon className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />}
+        {Icon && (
+          <Icon
+            className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+        )}
         <input
           ref={ref}
           id={fieldId}
@@ -164,7 +192,9 @@ export function FormAlert({ tone, children }: { tone: 'error' | 'success'; child
       role={tone === 'error' ? 'alert' : 'status'}
       className={cn(
         'mb-5 rounded-xl px-3.5 py-3 text-sm',
-        tone === 'error' ? 'bg-danger-soft text-danger-soft-foreground' : 'bg-success-soft text-success-soft-foreground',
+        tone === 'error'
+          ? 'bg-danger-soft text-danger-soft-foreground'
+          : 'bg-success-soft text-success-soft-foreground',
       )}
     >
       {children}

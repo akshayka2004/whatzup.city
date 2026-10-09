@@ -9,7 +9,15 @@ import type { Metric } from '@/lib/services/analytics-v2';
 import { formatValue, type ValueFormat } from './format';
 
 /** Delta pill. Colour = good/bad (not up/down): `goodWhen="down"` for refunds, churn, etc. */
-export function Delta({ change, goodWhen = 'up', className }: { change: number | null; goodWhen?: 'up' | 'down'; className?: string }) {
+export function Delta({
+  change,
+  goodWhen = 'up',
+  className,
+}: {
+  change: number | null;
+  goodWhen?: 'up' | 'down';
+  className?: string;
+}) {
   if (change == null) {
     return <span className={cn('text-caption text-subtle-foreground', className)}>new</span>;
   }
@@ -27,7 +35,9 @@ export function Delta({ change, goodWhen = 'up', className }: { change: number |
     >
       <Icon className="size-3.5" aria-hidden />
       <span className="sr-only">{flat ? 'No change' : up ? 'Up' : 'Down'}</span>
-      {flat ? '0%' : `${Math.abs(change) >= 1000 ? '999+' : Math.abs(Math.round(change * 10) / 10)}%`}
+      {flat
+        ? '0%'
+        : `${Math.abs(change) >= 1000 ? '999+' : Math.abs(Math.round(change * 10) / 10)}%`}
     </span>
   );
 }
@@ -85,7 +95,10 @@ export function KpiCard({
                 <Info className="size-3.5" />
               </span>
             </PopoverTrigger>
-            <PopoverContent className="w-64 text-caption text-muted-foreground" onClick={(e) => e.stopPropagation()}>
+            <PopoverContent
+              className="w-64 text-caption text-muted-foreground"
+              onClick={(e) => e.stopPropagation()}
+            >
               {definition}
             </PopoverContent>
           </Popover>
@@ -100,18 +113,30 @@ export function KpiCard({
       ) : (
         <div className="mt-2 flex items-end justify-between gap-3">
           <div className="min-w-0">
-            <p className={cn('truncate font-bold tracking-tight tabular-nums text-foreground', compact ? 'text-xl' : 'text-[1.625rem] leading-tight')}>
+            <p
+              className={cn(
+                'truncate font-bold tracking-tight tabular-nums text-foreground',
+                compact ? 'text-xl' : 'text-[1.625rem] leading-tight',
+              )}
+            >
               {formatValue(metric?.value, format, true)}
             </p>
             {metric && (
               <p className="mt-1 flex items-center gap-1.5">
                 <Delta change={metric.change} goodWhen={goodWhen} />
-                <span className="whitespace-nowrap text-caption text-subtle-foreground">vs {formatValue(metric.previous, format, true)}</span>
+                <span className="whitespace-nowrap text-caption text-subtle-foreground">
+                  vs {formatValue(metric.previous, format, true)}
+                </span>
               </p>
             )}
           </div>
           {spark && spark.length > 1 && (
-            <Sparkline data={spark} width={56} height={26} className={selected ? 'text-primary' : 'text-chart-axis'} />
+            <Sparkline
+              data={spark}
+              width={56}
+              height={26}
+              className={selected ? 'text-primary' : 'text-chart-axis'}
+            />
           )}
         </div>
       )}
@@ -136,7 +161,9 @@ export function KpiCard({
         onClick={onSelect}
         className="absolute inset-0 rounded-card outline-none focus-visible:ring-[3px] focus-visible:ring-ring/45"
       />
-      {selected && <span className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-primary" aria-hidden />}
+      {selected && (
+        <span className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-primary" aria-hidden />
+      )}
       <div className="pointer-events-none relative">{body}</div>
     </div>
   ) : (

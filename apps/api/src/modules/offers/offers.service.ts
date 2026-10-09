@@ -58,8 +58,10 @@ export class OffersService {
       endDate: data.endDate ? new Date(data.endDate) : defaultEnd,
     };
     // discountPercent is Int? — must be integer (Math.round prevents float rejection)
-    if (data.discountPercent !== undefined) payload.discountPercent = Math.round(Number(data.discountPercent));
-    else if (data.discountPercentage !== undefined) payload.discountPercent = Math.round(Number(data.discountPercentage));
+    if (data.discountPercent !== undefined)
+      payload.discountPercent = Math.round(Number(data.discountPercent));
+    else if (data.discountPercentage !== undefined)
+      payload.discountPercent = Math.round(Number(data.discountPercentage));
     if (data.discountAmount !== undefined) payload.discountAmount = data.discountAmount;
     if (data.code !== undefined) payload.code = data.code;
     if (data.maxRedemptions !== undefined) payload.maxRedemptions = data.maxRedemptions;
@@ -67,7 +69,10 @@ export class OffersService {
     payload.targetCities = Array.isArray(data.targetCities) ? data.targetCities : [];
     if (data.fulfilment !== undefined) payload.fulfilment = data.fulfilment;
 
-    const offer = await this.offerRepo.create(tenantId, { businessId: actualBusinessId, ...payload });
+    const offer = await this.offerRepo.create(tenantId, {
+      businessId: actualBusinessId,
+      ...payload,
+    });
     await this.redis.delPattern(`offers:${tenantId}:*`);
 
     await this.auditService.log({
@@ -103,10 +108,7 @@ export class OffersService {
 
       const where: any = { ...criteria, deletedAt: null };
       if (city) {
-        where.OR = [
-          { targetCities: { equals: [] } },
-          { targetCities: { array_contains: city } },
-        ];
+        where.OR = [{ targetCities: { equals: [] } }, { targetCities: { array_contains: city } }];
       }
 
       const [data, total] = await Promise.all([
@@ -115,7 +117,18 @@ export class OffersService {
           skip: skipVal,
           take: limitVal,
           orderBy: { endDate: 'asc' },
-          include: { business: { select: { id: true, name: true, slug: true, logo: true, city: true, operatingHours: true } } },
+          include: {
+            business: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                logo: true,
+                city: true,
+                operatingHours: true,
+              },
+            },
+          },
         }),
         this.offerRepo.model.count({ where }),
       ]);
@@ -148,7 +161,9 @@ export class OffersService {
 
     // Authenticated (dashboard) path
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
-    const actualBusinessId = await this.resolveBusinessId(tenantId, businessId).catch(() => businessId);
+    const actualBusinessId = await this.resolveBusinessId(tenantId, businessId).catch(
+      () => businessId,
+    );
     const pagination = new PaginationParamsDto();
     pagination.page = 1;
     pagination.limit = 100;
@@ -172,7 +187,12 @@ export class OffersService {
   /** Records a deduped detail-view click for the business dashboard/super-admin click count. */
   async trackClick(tenantId: string, id: string, actorKey: string) {
     const resolvedTenant = await this.tenantResolver.resolveTenantId(tenantId);
-    await recordOfferClick(this.db, { tenantId: resolvedTenant, offerKind: 'BUSINESS', offerId: id, actorKey });
+    await recordOfferClick(this.db, {
+      tenantId: resolvedTenant,
+      offerKind: 'BUSINESS',
+      offerId: id,
+      actorKey,
+    });
   }
 
   async update(tenantId: string, id: string, userId: string, data: any) {
@@ -190,13 +210,16 @@ export class OffersService {
     }
     if (data.startDate !== undefined) payload.startDate = new Date(data.startDate);
     if (data.endDate !== undefined) payload.endDate = new Date(data.endDate);
-    if (data.discountPercent !== undefined) payload.discountPercent = Math.round(Number(data.discountPercent));
-    else if (data.discountPercentage !== undefined) payload.discountPercent = Math.round(Number(data.discountPercentage));
+    if (data.discountPercent !== undefined)
+      payload.discountPercent = Math.round(Number(data.discountPercent));
+    else if (data.discountPercentage !== undefined)
+      payload.discountPercent = Math.round(Number(data.discountPercentage));
     if (data.discountAmount !== undefined) payload.discountAmount = data.discountAmount;
     if (data.code !== undefined) payload.code = data.code;
     if (data.maxRedemptions !== undefined) payload.maxRedemptions = data.maxRedemptions;
     if (data.terms !== undefined) payload.terms = data.terms;
-    if (data.targetCities !== undefined) payload.targetCities = Array.isArray(data.targetCities) ? data.targetCities : [];
+    if (data.targetCities !== undefined)
+      payload.targetCities = Array.isArray(data.targetCities) ? data.targetCities : [];
     if (data.fulfilment !== undefined) payload.fulfilment = data.fulfilment;
 
     const offer = await this.offerRepo.update(tenantId, id, payload);
@@ -282,7 +305,9 @@ export class OffersService {
 
     // Fire-and-forget summary refresh
     void this.analyticsSummary.refreshUserSpending(tenantId, userId).catch(() => {});
-    void this.analyticsSummary.refreshBusinessSummary(tenantId, redeemed.businessId).catch(() => {});
+    void this.analyticsSummary
+      .refreshBusinessSummary(tenantId, redeemed.businessId)
+      .catch(() => {});
 
     return redeemed;
   }

@@ -17,7 +17,9 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@saas/types';
 import { PlatformVouchersService } from './platform-vouchers.service';
 import {
-  CreatePlatformVoucherDto, UpdatePlatformVoucherDto, RedeemPlatformVoucherDto,
+  CreatePlatformVoucherDto,
+  UpdatePlatformVoucherDto,
+  RedeemPlatformVoucherDto,
 } from './dto/platform-voucher.dto';
 
 @ApiTags('Platform Vouchers')
@@ -48,7 +50,9 @@ export class PlatformVouchersController {
 
   // ── BUSINESS STAFF ─────────────────────────────────────────────────────
   @Post('redeem')
-  @ApiOperation({ summary: 'Redeem a customer platform-voucher code in-store (any business staff)' })
+  @ApiOperation({
+    summary: 'Redeem a customer platform-voucher code in-store (any business staff)',
+  })
   redeem(
     @CurrentUser('id') userId: string,
     @CurrentUser('businessId') businessId: string,

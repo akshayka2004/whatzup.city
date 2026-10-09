@@ -26,7 +26,10 @@ export function Funnel({ stages }: { stages: { stage: string; value: number }[] 
             <div className="h-2.5 overflow-hidden rounded-full bg-surface-sunken">
               <div
                 className="h-full rounded-full bg-primary transition-[width] duration-500 ease-out-quint"
-                style={{ width: `${Math.max(s.value > 0 ? 2 : 0, (s.value / top) * 100)}%`, opacity: 1 - i * 0.15 }}
+                style={{
+                  width: `${Math.max(s.value > 0 ? 2 : 0, (s.value / top) * 100)}%`,
+                  opacity: 1 - i * 0.15,
+                }}
               />
             </div>
           </li>

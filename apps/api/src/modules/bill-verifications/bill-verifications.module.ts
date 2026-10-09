@@ -9,7 +9,14 @@ import { AnalyticsModule } from '../analytics/analytics.module';
 import { BrandsModule } from '../brands/brands.module';
 
 @Module({
-  imports: [FraudModule, AuditModule, VerifiedPurchasesModule, NotificationsModule, AnalyticsModule, BrandsModule],
+  imports: [
+    FraudModule,
+    AuditModule,
+    VerifiedPurchasesModule,
+    NotificationsModule,
+    AnalyticsModule,
+    BrandsModule,
+  ],
   controllers: [BillVerificationsController],
   providers: [BillVerificationsService],
 })

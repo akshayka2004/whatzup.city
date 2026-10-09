@@ -11,7 +11,13 @@ import { NotificationsModule } from '../notifications/notifications.module';
 @Module({
   imports: [NotificationsModule],
   controllers: [AnalyticsController, AnalyticsV2Controller],
-  providers: [AnalyticsService, AnalyticsSummaryService, AnalyticsV2Service, AnalyticsRollupService, WeeklyDigestService],
+  providers: [
+    AnalyticsService,
+    AnalyticsSummaryService,
+    AnalyticsV2Service,
+    AnalyticsRollupService,
+    WeeklyDigestService,
+  ],
   exports: [AnalyticsService, AnalyticsSummaryService, AnalyticsV2Service, AnalyticsRollupService],
 })
 export class AnalyticsModule {}

@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { universalOnboardingService, EntityOnboardingProgress } from '@/lib/services/onboarding-service';
+import {
+  universalOnboardingService,
+  EntityOnboardingProgress,
+} from '@/lib/services/onboarding-service';
 import { onboardingService } from '@/lib/services/onboarding-service';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,7 +47,9 @@ export default function RoleOnboardingWizard() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [entityData, setEntityData] = useState<any>(null);
-  const [onboardingProgress, setOnboardingProgress] = useState<EntityOnboardingProgress | null>(null);
+  const [onboardingProgress, setOnboardingProgress] = useState<EntityOnboardingProgress | null>(
+    null,
+  );
   const [currentStep, setCurrentStep] = useState(1);
 
   // Form States — Dynamic based on role
@@ -204,7 +209,10 @@ export default function RoleOnboardingWizard() {
           setError(res.error || 'Failed to retrieve onboarding details.');
         }
       } catch (err: any) {
-        setError(err.message || "We couldn't load your onboarding details. Refresh the page and try again.");
+        setError(
+          err.message ||
+            "We couldn't load your onboarding details. Refresh the page and try again.",
+        );
       } finally {
         setLoading(false);
       }
@@ -240,11 +248,21 @@ export default function RoleOnboardingWizard() {
   // Dynamic step titles mapping
   const stepConfig: Record<string, { steps: string[]; icons: React.ComponentType<any>[] }> = {
     influencer: {
-      steps: ['Identity Profiles', 'Audience Insights', 'Media Kit Showcase', 'Verification Documents'],
+      steps: [
+        'Identity Profiles',
+        'Audience Insights',
+        'Media Kit Showcase',
+        'Verification Documents',
+      ],
       icons: [UserIcon, Sparkles, Briefcase, UploadCloud],
     },
     professional: {
-      steps: ['Expert Details', 'Services & Rates', 'Availability Hours', 'Professional Credentials'],
+      steps: [
+        'Expert Details',
+        'Services & Rates',
+        'Availability Hours',
+        'Professional Credentials',
+      ],
       icons: [Briefcase, DollarSign, Calendar, UploadCloud],
     },
     'event-organizer': {
@@ -285,7 +303,10 @@ export default function RoleOnboardingWizard() {
       if (currentStep === 1) {
         payload = { niche, instagram, youtube, facebook, linkedin };
       } else if (currentStep === 2) {
-        payload = { followersCount: Number(followersCount), engagementRate: Number(engagementRate) };
+        payload = {
+          followersCount: Number(followersCount),
+          engagementRate: Number(engagementRate),
+        };
       } else if (currentStep === 3) {
         payload = { portfolioUrl, mediaKitUrl };
       }
@@ -332,7 +353,9 @@ export default function RoleOnboardingWizard() {
         setError(response.error || `Failed to save step ${currentStep} progress.`);
       }
     } catch (err: any) {
-      setError(err.message || "We couldn't save your profile details. Check the form and try again.");
+      setError(
+        err.message || "We couldn't save your profile details. Check the form and try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -436,7 +459,7 @@ export default function RoleOnboardingWizard() {
       const response = await universalOnboardingService.submitForVerification(entityId);
       if (response.data && !response.error) {
         setSuccess('Application successfully submitted! Redirecting to Restricted Dashboard...');
-        
+
         // Update local session status
         if (typeof window !== 'undefined') {
           const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
@@ -463,7 +486,9 @@ export default function RoleOnboardingWizard() {
         setError(response.error || 'Failed to submit onboarding application.');
       }
     } catch (err: any) {
-      setError(err.message || "We couldn't submit your application for verification. Please try again.");
+      setError(
+        err.message || "We couldn't submit your application for verification. Please try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -491,7 +516,7 @@ export default function RoleOnboardingWizard() {
         </div>
 
         {/* Step tracker */}
-        <div className="w-full p-4 rounded-2xl" >
+        <div className="w-full p-4 rounded-2xl">
           <div className="flex justify-between items-center text-xs font-semibold text-muted-foreground mb-3 px-2">
             <span>Progress Status</span>
             <span className="text-info-soft-foreground">
@@ -507,8 +532,8 @@ export default function RoleOnboardingWizard() {
                   i + 1 < currentStep
                     ? 'text-success-soft-foreground font-bold'
                     : i + 1 === currentStep
-                    ? 'text-info-soft-foreground font-bold border-b border-info/25 pb-1'
-                    : 'text-muted-foreground/50'
+                      ? 'text-info-soft-foreground font-bold border-b border-info/25 pb-1'
+                      : 'text-muted-foreground/50'
                 }
               >
                 Step {i + 1}
@@ -550,7 +575,9 @@ export default function RoleOnboardingWizard() {
                 {role === 'influencer' && currentStep === 1 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Niche Category</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Niche Category
+                      </label>
                       <Input
                         placeholder="Fashion, Tech, Food, Travel, Gaming"
                         value={niche}
@@ -561,7 +588,9 @@ export default function RoleOnboardingWizard() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">Instagram Handle</label>
+                        <label className="text-xs font-medium text-muted-foreground">
+                          Instagram Handle
+                        </label>
                         <Input
                           placeholder="@myhandle"
                           value={instagram}
@@ -570,7 +599,9 @@ export default function RoleOnboardingWizard() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">YouTube Channel URL</label>
+                        <label className="text-xs font-medium text-muted-foreground">
+                          YouTube Channel URL
+                        </label>
                         <Input
                           placeholder="youtube.com/c/channel"
                           value={youtube}
@@ -581,7 +612,9 @@ export default function RoleOnboardingWizard() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">Facebook Page link</label>
+                        <label className="text-xs font-medium text-muted-foreground">
+                          Facebook Page link
+                        </label>
                         <Input
                           placeholder="facebook.com/page"
                           value={facebook}
@@ -590,7 +623,9 @@ export default function RoleOnboardingWizard() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">LinkedIn Profile link</label>
+                        <label className="text-xs font-medium text-muted-foreground">
+                          LinkedIn Profile link
+                        </label>
                         <Input
                           placeholder="linkedin.com/in/profile"
                           value={linkedin}
@@ -606,7 +641,9 @@ export default function RoleOnboardingWizard() {
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">Total Followers Count</label>
+                        <label className="text-xs font-medium text-muted-foreground">
+                          Total Followers Count
+                        </label>
                         <Input
                           type="number"
                           placeholder="15000"
@@ -617,7 +654,9 @@ export default function RoleOnboardingWizard() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">Engagement Rate (%)</label>
+                        <label className="text-xs font-medium text-muted-foreground">
+                          Engagement Rate (%)
+                        </label>
                         <Input
                           type="number"
                           step="0.01"
@@ -635,7 +674,9 @@ export default function RoleOnboardingWizard() {
                 {role === 'influencer' && currentStep === 3 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Portfolio Website URL</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Portfolio Website URL
+                      </label>
                       <Input
                         placeholder="https://myportfolio.com"
                         value={portfolioUrl}
@@ -644,7 +685,9 @@ export default function RoleOnboardingWizard() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Media Kit PDF Link (Optional)</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Media Kit PDF Link (Optional)
+                      </label>
                       <Input
                         placeholder="https://drive.google.com/mediakit.pdf"
                         value={mediaKitUrl}
@@ -659,7 +702,9 @@ export default function RoleOnboardingWizard() {
                 {role === 'professional' && currentStep === 1 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Service Category</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Service Category
+                      </label>
                       <Input
                         placeholder="Legal Advisor, Fitness Trainer, Freelance Architect, Plumbing Expert"
                         value={category}
@@ -669,7 +714,9 @@ export default function RoleOnboardingWizard() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Years of Experience</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Years of Experience
+                      </label>
                       <Input
                         type="number"
                         placeholder="5"
@@ -680,7 +727,9 @@ export default function RoleOnboardingWizard() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground">Certifications (Add list)</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Certifications (Add list)
+                      </label>
                       <div className="flex gap-2">
                         <Input
                           placeholder="e.g. Bar License, AWS Solutions Architect"
@@ -710,7 +759,9 @@ export default function RoleOnboardingWizard() {
                             {c}
                             <button
                               type="button"
-                              onClick={() => setCertifications(certifications.filter((_, i) => i !== idx))}
+                              onClick={() =>
+                                setCertifications(certifications.filter((_, i) => i !== idx))
+                              }
                               className="text-danger-soft-foreground hover:text-danger-soft-foreground ml-1"
                             >
                               &times;
@@ -726,7 +777,9 @@ export default function RoleOnboardingWizard() {
                   <>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">Min Pricing Hour / Rate ($)</label>
+                        <label className="text-xs font-medium text-muted-foreground">
+                          Min Pricing Hour / Rate ($)
+                        </label>
                         <Input
                           type="number"
                           placeholder="25"
@@ -737,7 +790,9 @@ export default function RoleOnboardingWizard() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">Max Pricing Hour / Rate ($)</label>
+                        <label className="text-xs font-medium text-muted-foreground">
+                          Max Pricing Hour / Rate ($)
+                        </label>
                         <Input
                           type="number"
                           placeholder="150"
@@ -749,7 +804,9 @@ export default function RoleOnboardingWizard() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground">Operational Service Regions</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Operational Service Regions
+                      </label>
                       <div className="flex gap-2">
                         <Input
                           placeholder="e.g. Manhattan, Brooklyn, Queens"
@@ -779,7 +836,9 @@ export default function RoleOnboardingWizard() {
                             {a}
                             <button
                               type="button"
-                              onClick={() => setServiceAreas(serviceAreas.filter((_, i) => i !== idx))}
+                              onClick={() =>
+                                setServiceAreas(serviceAreas.filter((_, i) => i !== idx))
+                              }
                               className="text-danger-soft-foreground hover:text-danger-soft-foreground ml-1"
                             >
                               &times;
@@ -797,13 +856,28 @@ export default function RoleOnboardingWizard() {
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
                         Set Weekly Availability Hours
                       </label>
-                      {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
-                        <div key={day} className="flex justify-between items-center gap-4 py-2 border-b border-border">
-                          <span className="capitalize text-xs font-medium text-muted-foreground">{day}</span>
+                      {[
+                        'monday',
+                        'tuesday',
+                        'wednesday',
+                        'thursday',
+                        'friday',
+                        'saturday',
+                        'sunday',
+                      ].map((day) => (
+                        <div
+                          key={day}
+                          className="flex justify-between items-center gap-4 py-2 border-b border-border"
+                        >
+                          <span className="capitalize text-xs font-medium text-muted-foreground">
+                            {day}
+                          </span>
                           <Input
                             placeholder="Closed or 9am - 5pm"
                             value={availability[day] || ''}
-                            onChange={(e) => setAvailability({ ...availability, [day]: e.target.value })}
+                            onChange={(e) =>
+                              setAvailability({ ...availability, [day]: e.target.value })
+                            }
                             className="max-w-[200px] h-8 bg-background border-input text-xs rounded-lg"
                           />
                         </div>
@@ -816,7 +890,9 @@ export default function RoleOnboardingWizard() {
                 {role === 'event-organizer' && currentStep === 1 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Organizer / Agency Name</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Organizer / Agency Name
+                      </label>
                       <Input
                         placeholder="Metropolitan Events Ltd."
                         value={organizationName}
@@ -860,7 +936,9 @@ export default function RoleOnboardingWizard() {
                 {role === 'event-organizer' && currentStep === 2 && (
                   <>
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground">Categories of Hosted Events</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Categories of Hosted Events
+                      </label>
                       <div className="flex gap-2">
                         <Input
                           placeholder="Concerts, Food Festivals, Coding Hackathons"
@@ -890,7 +968,9 @@ export default function RoleOnboardingWizard() {
                             {ec}
                             <button
                               type="button"
-                              onClick={() => setEventCategories(eventCategories.filter((_, i) => i !== idx))}
+                              onClick={() =>
+                                setEventCategories(eventCategories.filter((_, i) => i !== idx))
+                              }
                               className="text-danger-soft-foreground hover:text-danger-soft-foreground ml-1"
                             >
                               &times;
@@ -901,7 +981,9 @@ export default function RoleOnboardingWizard() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground">Partnered Venues (Optional)</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Partnered Venues (Optional)
+                      </label>
                       <div className="flex gap-2">
                         <Input
                           placeholder="Downtown Amphitheater, Metropolitan Convention Center"
@@ -931,7 +1013,9 @@ export default function RoleOnboardingWizard() {
                             {v}
                             <button
                               type="button"
-                              onClick={() => setVenuePartnerships(venuePartnerships.filter((_, i) => i !== idx))}
+                              onClick={() =>
+                                setVenuePartnerships(venuePartnerships.filter((_, i) => i !== idx))
+                              }
                               className="text-danger-soft-foreground hover:text-danger-soft-foreground ml-1"
                             >
                               &times;
@@ -949,7 +1033,10 @@ export default function RoleOnboardingWizard() {
                         onChange={(e) => setTicketingSupport(e.target.checked)}
                         className="h-4 w-4 rounded bg-background border-input text-info-soft-foreground focus:ring-info/30"
                       />
-                      <label htmlFor="ticketingCheck" className="text-xs text-muted-foreground font-medium cursor-pointer">
+                      <label
+                        htmlFor="ticketingCheck"
+                        className="text-xs text-muted-foreground font-medium cursor-pointer"
+                      >
                         Do you require integrated digital ticketing support?
                       </label>
                     </div>
@@ -959,7 +1046,9 @@ export default function RoleOnboardingWizard() {
                 {role === 'event-organizer' && currentStep === 3 && (
                   <>
                     <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-4">
-                      <label className="text-xs font-bold text-muted-foreground">Add a Past Event Showcase</label>
+                      <label className="text-xs font-bold text-muted-foreground">
+                        Add a Past Event Showcase
+                      </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Input
                           placeholder="Event Title"
@@ -1001,7 +1090,9 @@ export default function RoleOnboardingWizard() {
                     </div>
 
                     <div className="space-y-2 pt-2">
-                      <span className="text-xs font-semibold text-muted-foreground">Added Events ({previousEvents.length})</span>
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        Added Events ({previousEvents.length})
+                      </span>
                       <div className="space-y-2 max-h-36 overflow-y-auto pr-2">
                         {previousEvents.map((ev, idx) => (
                           <div
@@ -1010,11 +1101,15 @@ export default function RoleOnboardingWizard() {
                           >
                             <div>
                               <p className="font-bold text-foreground">{ev.name}</p>
-                              <p className="text-xs text-muted-foreground">{ev.date} - {ev.description}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {ev.date} - {ev.description}
+                              </p>
                             </div>
                             <Button
                               type="button"
-                              onClick={() => setPreviousEvents(previousEvents.filter((_, i) => i !== idx))}
+                              onClick={() =>
+                                setPreviousEvents(previousEvents.filter((_, i) => i !== idx))
+                              }
                               className="h-10 w-10 p-0 bg-transparent text-danger-soft-foreground hover:bg-danger-soft"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -1030,7 +1125,9 @@ export default function RoleOnboardingWizard() {
                 {role === 'ngo' && currentStep === 1 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">NGO / Organization Name</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        NGO / Organization Name
+                      </label>
                       <Input
                         placeholder="Global Help Federation"
                         value={ngoName}
@@ -1040,7 +1137,9 @@ export default function RoleOnboardingWizard() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Registry Certificate Number</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Registry Certificate Number
+                      </label>
                       <Input
                         placeholder="NGO-12345/A"
                         value={registrationNumber}
@@ -1050,7 +1149,9 @@ export default function RoleOnboardingWizard() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Website Link</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Website Link
+                      </label>
                       <Input
                         placeholder="https://globalhelp.org"
                         value={website}
@@ -1064,7 +1165,9 @@ export default function RoleOnboardingWizard() {
                 {role === 'ngo' && currentStep === 2 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Primary Cause Category</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Primary Cause Category
+                      </label>
                       <Input
                         placeholder="Disaster Relief, Education For All, Stray Animals Rescue, Climate Action"
                         value={causeCategory}
@@ -1074,7 +1177,9 @@ export default function RoleOnboardingWizard() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground">Operational Target Regions</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Operational Target Regions
+                      </label>
                       <div className="flex gap-2">
                         <Input
                           placeholder="e.g. District A, District B, State-wide"
@@ -1104,7 +1209,9 @@ export default function RoleOnboardingWizard() {
                             {a}
                             <button
                               type="button"
-                              onClick={() => setOperationalAreas(operationalAreas.filter((_, i) => i !== idx))}
+                              onClick={() =>
+                                setOperationalAreas(operationalAreas.filter((_, i) => i !== idx))
+                              }
                               className="text-danger-soft-foreground hover:text-danger-soft-foreground ml-1"
                             >
                               &times;
@@ -1120,7 +1227,9 @@ export default function RoleOnboardingWizard() {
                 {role === 'government' && currentStep === 1 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Official Department Name</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Official Department Name
+                      </label>
                       <Input
                         placeholder="Department of Civic Infrastructure"
                         value={departmentName}
@@ -1130,7 +1239,9 @@ export default function RoleOnboardingWizard() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Official Authority Email</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Official Authority Email
+                      </label>
                       <Input
                         type="email"
                         placeholder="contact@civic.gov.in"
@@ -1141,16 +1252,26 @@ export default function RoleOnboardingWizard() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">Department Authority Type</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Department Authority Type
+                      </label>
                       <select
                         value={departmentType}
                         onChange={(e) => setDepartmentType(e.target.value)}
                         className="w-full h-11 px-3 bg-background border border-input text-muted-foreground rounded-xl text-sm focus:outline-none cursor-pointer"
                       >
-                        <option value="Local" className="bg-card">Local Civic Body / Municipality</option>
-                        <option value="District" className="bg-card">District Commissioner Office</option>
-                        <option value="State" className="bg-card">State Administration</option>
-                        <option value="Federal" className="bg-card">Federal Ministry</option>
+                        <option value="Local" className="bg-card">
+                          Local Civic Body / Municipality
+                        </option>
+                        <option value="District" className="bg-card">
+                          District Commissioner Office
+                        </option>
+                        <option value="State" className="bg-card">
+                          State Administration
+                        </option>
+                        <option value="Federal" className="bg-card">
+                          Federal Ministry
+                        </option>
                       </select>
                     </div>
                   </>
@@ -1159,7 +1280,9 @@ export default function RoleOnboardingWizard() {
                 {role === 'government' && currentStep === 2 && (
                   <>
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">District / Jurisdiction Coverage</label>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        District / Jurisdiction Coverage
+                      </label>
                       <Input
                         placeholder="South Bengaluru Division, Miami-Dade District"
                         value={district}
@@ -1210,15 +1333,21 @@ export default function RoleOnboardingWizard() {
                   Submit Verification Documents
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Upload verification papers (Gazette papers, licenses, certificates, ID cards) to verify your entity profile.
+                  Upload verification papers (Gazette papers, licenses, certificates, ID cards) to
+                  verify your entity profile.
                 </p>
               </div>
 
               {/* Upload form container */}
-              <form onSubmit={handleUploadDoc} className="p-5 rounded-2xl bg-muted/30 border border-border space-y-4">
+              <form
+                onSubmit={handleUploadDoc}
+                className="p-5 rounded-2xl bg-muted/30 border border-border space-y-4"
+              >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Document Type Label</label>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Document Type Label
+                    </label>
                     <Input
                       placeholder="e.g. Authority Letter, Press License, TIN Document"
                       value={docTypeLabel}
@@ -1228,7 +1357,9 @@ export default function RoleOnboardingWizard() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">Document / Certificate ID Number</label>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      Document / Certificate ID Number
+                    </label>
                     <Input
                       placeholder="e.g. LIC-998877"
                       value={docNumber}
@@ -1239,7 +1370,9 @@ export default function RoleOnboardingWizard() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">Issued Authority Name</label>
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Issued Authority Name
+                  </label>
                   <Input
                     placeholder="e.g. Internal Revenue Department, Ministry of Press"
                     value={issuedAuthority}
@@ -1259,13 +1392,21 @@ export default function RoleOnboardingWizard() {
                   <UploadCloud className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
                   {verificationDoc ? (
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-brand-soft-foreground">{verificationDoc.name}</p>
-                      <p className="text-xs text-muted-foreground">{(verificationDoc.size / 1024 / 1024).toFixed(2)} MB • Click to replace</p>
+                      <p className="text-sm font-semibold text-brand-soft-foreground">
+                        {verificationDoc.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {(verificationDoc.size / 1024 / 1024).toFixed(2)} MB • Click to replace
+                      </p>
                     </div>
                   ) : (
                     <div>
-                      <p className="text-sm font-semibold text-foreground">Drag files here or click to browse</p>
-                      <p className="text-xs text-muted-foreground mt-1">Supports PDF, PNG, JPG, WEBP (Max 10MB)</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        Drag files here or click to browse
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Supports PDF, PNG, JPG, WEBP (Max 10MB)
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1311,7 +1452,11 @@ export default function RoleOnboardingWizard() {
                             <FileCheck className="h-4 w-4 text-success-soft-foreground shrink-0" />
                             {doc.documentType}
                           </p>
-                          {doc.documentNumber && <p className="text-xs text-muted-foreground font-mono">ID: {doc.documentNumber}</p>}
+                          {doc.documentNumber && (
+                            <p className="text-xs text-muted-foreground font-mono">
+                              ID: {doc.documentNumber}
+                            </p>
+                          )}
                           <a
                             href={doc.fileUrl}
                             target="_blank"

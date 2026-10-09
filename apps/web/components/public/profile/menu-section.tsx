@@ -33,14 +33,20 @@ export function MenuSection({
   const [viewing, setViewing] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-  const prodQ = useCachedGet<any>(productCount > 0 ? `/v1/products/business/${businessId}` : null, { ttlMs: 60_000 });
-  const products = useMemo(() => asList(prodQ.data).filter((p) => p && p.isAvailable !== false), [prodQ.data]);
+  const prodQ = useCachedGet<any>(productCount > 0 ? `/v1/products/business/${businessId}` : null, {
+    ttlMs: 60_000,
+  });
+  const products = useMemo(
+    () => asList(prodQ.data).filter((p) => p && p.isAvailable !== false),
+    [prodQ.data],
+  );
 
   const hasPhotos = menuPhotos.length > 0;
   const title = hasPhotos ? 'Menu' : 'Products';
 
   const step = useCallback(
-    (dir: 1 | -1) => setViewing((i) => (i == null ? i : (i + dir + menuPhotos.length) % menuPhotos.length)),
+    (dir: 1 | -1) =>
+      setViewing((i) => (i == null ? i : (i + dir + menuPhotos.length) % menuPhotos.length)),
     [menuPhotos.length],
   );
 
@@ -118,12 +124,20 @@ export function MenuSection({
                           />
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="break-words text-sm font-semibold text-foreground">{p.name}</p>
+                          <p className="break-words text-sm font-semibold text-foreground">
+                            {p.name}
+                          </p>
                           {p.description && (
-                            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{p.description}</p>
+                            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                              {p.description}
+                            </p>
                           )}
                         </div>
-                        {price && <span className="shrink-0 text-sm font-bold text-foreground">{price}</span>}
+                        {price && (
+                          <span className="shrink-0 text-sm font-bold text-foreground">
+                            {price}
+                          </span>
+                        )}
                       </li>
                     );
                   })}

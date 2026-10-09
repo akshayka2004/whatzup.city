@@ -125,10 +125,16 @@ export class ReviewsService {
    * An empty reply removes it. Replies are plain text and capped at 1,000 characters.
    */
   async reply(id: string, user: AccessUser, text: string) {
-    const review = await this.db.review.findFirst({ where: { id, deletedAt: null }, select: { id: true, businessId: true } });
+    const review = await this.db.review.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true, businessId: true },
+    });
     if (!review) throw new NotFoundException('Review not found');
     await assertBusinessAccess(this.db, review.businessId, user);
-    const clean = (text ?? '').replace(/<[^>]*>/g, '').trim().slice(0, 1000);
+    const clean = (text ?? '')
+      .replace(/<[^>]*>/g, '')
+      .trim()
+      .slice(0, 1000);
     return this.db.review.update({
       where: { id },
       data: clean

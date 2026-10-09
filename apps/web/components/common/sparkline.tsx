@@ -19,7 +19,8 @@ export function Sparkline({
   fill?: boolean;
 }) {
   const pts = data.filter((n) => Number.isFinite(n));
-  if (pts.length < 2) return <div className={cn('shrink-0', className)} style={{ width, height }} aria-hidden />;
+  if (pts.length < 2)
+    return <div className={cn('shrink-0', className)} style={{ width, height }} aria-hidden />;
 
   const min = Math.min(...pts);
   const max = Math.max(...pts);
@@ -27,7 +28,9 @@ export function Sparkline({
   const pad = 2;
   const x = (i: number) => pad + (i * (width - pad * 2)) / (pts.length - 1);
   const y = (v: number) => height - pad - ((v - min) * (height - pad * 2)) / span;
-  const line = pts.map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+  const line = pts
+    .map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`)
+    .join(' ');
   const area = `${line} L${x(pts.length - 1).toFixed(1)} ${height} L${x(0).toFixed(1)} ${height} Z`;
   const id = `spark-${pts.length}-${Math.round(max)}-${Math.round(min)}`;
 
@@ -50,7 +53,14 @@ export function Sparkline({
           <path d={area} fill={`url(#${id})`} />
         </>
       )}
-      <path d={line} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={line}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       <circle cx={x(pts.length - 1)} cy={y(pts[pts.length - 1])} r="2.25" fill="currentColor" />
     </svg>
   );
@@ -77,7 +87,11 @@ export function TrendBadge({
     <span
       className={cn(
         'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums',
-        flat ? 'bg-muted text-muted-foreground' : good ? 'bg-success/15 text-success-foreground dark:text-success' : 'bg-danger-soft text-danger-soft-foreground',
+        flat
+          ? 'bg-muted text-muted-foreground'
+          : good
+            ? 'bg-success/15 text-success-foreground dark:text-success'
+            : 'bg-danger-soft text-danger-soft-foreground',
         className,
       )}
     >

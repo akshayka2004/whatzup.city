@@ -31,9 +31,15 @@ export async function recordOfferClick(
 
   try {
     if (params.offerKind === 'BUSINESS') {
-      await db.offer.update({ where: { id: params.offerId }, data: { clickCount: { increment: 1 } } });
+      await db.offer.update({
+        where: { id: params.offerId },
+        data: { clickCount: { increment: 1 } },
+      });
     } else {
-      await db.platformOffer.update({ where: { id: params.offerId }, data: { clickCount: { increment: 1 } } });
+      await db.platformOffer.update({
+        where: { id: params.offerId },
+        data: { clickCount: { increment: 1 } },
+      });
     }
   } catch (err: any) {
     if (err?.code !== 'P2025') throw err; // offer doesn't exist — ignore, dedupe row already written

@@ -1,4 +1,14 @@
-import { IsString, IsNotEmpty, IsNumber, IsEnum, IsInt, Min, Max, IsObject, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsEnum,
+  IsInt,
+  Min,
+  Max,
+  IsObject,
+  IsOptional,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum PackageNameEnum {
@@ -57,7 +67,8 @@ export class AssignHotelPackageDto {
 
   @ApiProperty({
     required: false,
-    description: 'Structured detail entries (halls, rooms, menu sections, etc.) keyed by amenity key. Omit to leave the business\'s existing details untouched — e.g. on a renewal call that only resends amenities.',
+    description:
+      "Structured detail entries (halls, rooms, menu sections, etc.) keyed by amenity key. Omit to leave the business's existing details untouched — e.g. on a renewal call that only resends amenities.",
   })
   @IsOptional()
   @IsObject()

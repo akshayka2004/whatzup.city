@@ -46,7 +46,10 @@ export class VerifiedPurchasesService {
 
     // The customer's purchase count moves on verification, never on upload.
     await this.db.businessCustomer
-      .updateMany({ where: { userId, businessId, deletedAt: null }, data: { totalVerifiedPurchases: { increment: 1 } } })
+      .updateMany({
+        where: { userId, businessId, deletedAt: null },
+        data: { totalVerifiedPurchases: { increment: 1 } },
+      })
       .catch(() => undefined);
 
     this.logger.log(

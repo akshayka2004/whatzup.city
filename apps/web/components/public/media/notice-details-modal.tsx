@@ -25,95 +25,108 @@ export function NoticeDetailsModal({
     closeBtn.current?.focus();
   }, []);
 
-
   return (
-    <ModalSurface onClose={onClose} label={notice.title} hideClose className="flex max-h-[88dvh] flex-col overflow-hidden p-0 sm:max-w-lg">
-        <button
-          ref={closeBtn}
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="ui-press absolute right-2 top-2 z-10 flex h-11 w-11 cursor-pointer items-center justify-center text-muted-foreground hover:text-foreground"
-        >
-          <X className="h-5 w-5" />
-        </button>
+    <ModalSurface
+      onClose={onClose}
+      label={notice.title}
+      hideClose
+      className="flex max-h-[88dvh] flex-col overflow-hidden p-0 sm:max-w-lg"
+    >
+      <button
+        ref={closeBtn}
+        type="button"
+        onClick={onClose}
+        aria-label="Close"
+        className="ui-press absolute right-2 top-2 z-10 flex h-11 w-11 cursor-pointer items-center justify-center text-muted-foreground hover:text-foreground"
+      >
+        <X className="h-5 w-5" />
+      </button>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 pb-6 sm:p-6">
-          <div className="mb-4 flex items-center gap-3 pr-10">
-            <div className="shrink-0 rounded-xl bg-brand-soft p-3 text-brand-soft-foreground">
-              <Bell className="h-6 w-6" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="break-words text-xl font-bold text-foreground">{notice.title}</h3>
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    'rounded-full px-2 py-0.5 text-xs font-semibold',
-                    typeColors[notice.type] || typeColors.Announcement,
-                  )}
-                >
-                  {notice.type}
-                </span>
-                <span className="text-xs text-muted-foreground">{fmtDateIST(notice.date) || notice.date}</span>
-              </div>
-            </div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 pb-6 sm:p-6">
+        <div className="mb-4 flex items-center gap-3 pr-10">
+          <div className="shrink-0 rounded-xl bg-brand-soft p-3 text-brand-soft-foreground">
+            <Bell className="h-6 w-6" />
           </div>
-
-          <div className="mb-6 rounded-xl border border-border bg-secondary p-4">
-            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">{notice.description}</p>
-          </div>
-
-          {(notice.publisher || notice.socialLinks.length > 0) && (
-            <div className="mb-6">
-              {notice.publisher && (
-                <p className="mb-2 text-xs text-muted-foreground">
-                  Published by <span className="font-semibold text-foreground">{notice.publisher.organizationName}</span>
-                </p>
-              )}
-              <SocialButtons links={notice.socialLinks} />
+          <div className="min-w-0">
+            <h3 className="break-words text-xl font-bold text-foreground">{notice.title}</h3>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  'rounded-full px-2 py-0.5 text-xs font-semibold',
+                  typeColors[notice.type] || typeColors.Announcement,
+                )}
+              >
+                {notice.type}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {fmtDateIST(notice.date) || notice.date}
+              </span>
             </div>
-          )}
-
-          {notice.attachments.length > 0 && (
-            <div className="mb-6">
-              <h4 className="mb-3 text-sm font-semibold text-foreground">Attached Documents & Media</h4>
-              <div className="space-y-2">
-                {notice.attachments.map((a, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border bg-secondary p-3 transition-colors hover:bg-muted"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      {a.type === 'image' ? (
-                        <ImageIcon className="h-5 w-5 shrink-0 text-primary" />
-                      ) : (
-                        <FileText className="h-5 w-5 shrink-0 text-primary" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="break-words text-sm font-semibold text-foreground">{a.name}</p>
-                        <p className="text-xs text-muted-foreground">{a.size}</p>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onDownload(a)}
-                      className="ui-press h-11 shrink-0 cursor-pointer gap-1 sm:h-9"
-                    >
-                      <Download className="h-3.5 w-3.5" /> Download
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-end">
-            <Button onClick={onClose} className="h-11 cursor-pointer sm:h-9">
-              Close
-            </Button>
           </div>
         </div>
+
+        <div className="mb-6 rounded-xl border border-border bg-secondary p-4">
+          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
+            {notice.description}
+          </p>
+        </div>
+
+        {(notice.publisher || notice.socialLinks.length > 0) && (
+          <div className="mb-6">
+            {notice.publisher && (
+              <p className="mb-2 text-xs text-muted-foreground">
+                Published by{' '}
+                <span className="font-semibold text-foreground">
+                  {notice.publisher.organizationName}
+                </span>
+              </p>
+            )}
+            <SocialButtons links={notice.socialLinks} />
+          </div>
+        )}
+
+        {notice.attachments.length > 0 && (
+          <div className="mb-6">
+            <h4 className="mb-3 text-sm font-semibold text-foreground">
+              Attached Documents & Media
+            </h4>
+            <div className="space-y-2">
+              {notice.attachments.map((a, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-border bg-secondary p-3 transition-colors hover:bg-muted"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    {a.type === 'image' ? (
+                      <ImageIcon className="h-5 w-5 shrink-0 text-primary" />
+                    ) : (
+                      <FileText className="h-5 w-5 shrink-0 text-primary" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="break-words text-sm font-semibold text-foreground">{a.name}</p>
+                      <p className="text-xs text-muted-foreground">{a.size}</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onDownload(a)}
+                    className="ui-press h-11 shrink-0 cursor-pointer gap-1 sm:h-9"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Download
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end">
+          <Button onClick={onClose} className="h-11 cursor-pointer sm:h-9">
+            Close
+          </Button>
+        </div>
+      </div>
     </ModalSurface>
   );
 }

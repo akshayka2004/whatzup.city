@@ -67,7 +67,9 @@ export default function ReportsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await apiService.get<any>(`/v1/reports${status === 'ALL' ? '' : `?status=${status}`}`);
+    const res = await apiService.get<any>(
+      `/v1/reports${status === 'ALL' ? '' : `?status=${status}`}`,
+    );
     setLoading(false);
     if (res.error) {
       toast.error(res.error);
@@ -83,7 +85,11 @@ export default function ReportsPage() {
   const shown = useMemo(() => {
     const term = q.trim().toLowerCase();
     if (!term) return rows;
-    return rows.filter((r) => [r.description, r.type, r.reporter?.name, r.reporter?.email].some((v) => v?.toLowerCase().includes(term)));
+    return rows.filter((r) =>
+      [r.description, r.type, r.reporter?.name, r.reporter?.email].some((v) =>
+        v?.toLowerCase().includes(term),
+      ),
+    );
   }, [rows, q]);
 
   const act = async (kind: 'resolve' | 'dismiss') => {
@@ -95,7 +101,9 @@ export default function ReportsPage() {
     setSaving(kind);
     const res =
       kind === 'resolve'
-        ? await apiService.patch(`/v1/reports/${active.id}/resolve`, { resolution: resolution.trim() })
+        ? await apiService.patch(`/v1/reports/${active.id}/resolve`, {
+            resolution: resolution.trim(),
+          })
         : await apiService.patch(`/v1/reports/${active.id}/dismiss`, {});
     setSaving(null);
     if (res.error) {
@@ -109,24 +117,42 @@ export default function ReportsPage() {
   };
 
   const columns: Column<Report>[] = [
-    { key: 'type', header: 'Type', sortable: true, cell: (r) => <span className="font-medium">{TYPE_LABELS[r.type] ?? r.type}</span> },
+    {
+      key: 'type',
+      header: 'Type',
+      sortable: true,
+      cell: (r) => <span className="font-medium">{TYPE_LABELS[r.type] ?? r.type}</span>,
+    },
     {
       key: 'subject',
       header: 'About',
       value: (r) => split(r.description).business ?? split(r.description).subject ?? '',
       cell: (r) => {
         const s = split(r.description);
-        return <span className="line-clamp-1 max-w-[28ch]">{s.business ?? s.subject ?? s.body}</span>;
+        return (
+          <span className="line-clamp-1 max-w-[28ch]">{s.business ?? s.subject ?? s.body}</span>
+        );
       },
     },
-    { key: 'reporter', header: 'Reported by', value: (r) => r.reporter?.name ?? '', cell: (r) => r.reporter?.name ?? '—', hideOnMobile: true },
+    {
+      key: 'reporter',
+      header: 'Reported by',
+      value: (r) => r.reporter?.name ?? '',
+      cell: (r) => r.reporter?.name ?? '—',
+      hideOnMobile: true,
+    },
     { key: 'status', header: 'Status', cell: (r) => <StatusPill status={r.status} /> },
     {
       key: 'createdAt',
       header: 'Received',
       sortable: true,
       value: (r) => r.createdAt,
-      cell: (r) => new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }),
+      cell: (r) =>
+        new Date(r.createdAt).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          timeZone: 'Asia/Kolkata',
+        }),
     },
   ];
 
@@ -137,7 +163,15 @@ export default function ReportsPage() {
       <PageHeader
         title="Reports"
         description="Problems flagged by customers and businesses: fake listings, misleading offers, abusive reviews."
-        meta={pendingCount != null && <StatusPill tone={pendingCount ? 'warning' : 'success'} label={`${pendingCount} pending`} dot={false} />}
+        meta={
+          pendingCount != null && (
+            <StatusPill
+              tone={pendingCount ? 'warning' : 'success'}
+              label={`${pendingCount} pending`}
+              dot={false}
+            />
+          )
+        }
       />
 
       <Toolbar
@@ -184,12 +218,18 @@ export default function ReportsPage() {
           setResolution(r.resolution ?? '');
         }}
         defaultSort={{ key: 'createdAt', dir: 'desc' }}
-        empty={{ icon: ShieldAlert, title: status === 'PENDING' ? 'No open reports' : 'No reports here', description: 'New reports from customers and businesses show up here.' }}
+        empty={{
+          icon: ShieldAlert,
+          title: status === 'PENDING' ? 'No open reports' : 'No reports here',
+          description: 'New reports from customers and businesses show up here.',
+        }}
         mobileCard={(r) => (
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-medium">{TYPE_LABELS[r.type] ?? r.type}</p>
-              <p className="truncate text-caption text-muted-foreground">{split(r.description).business ?? split(r.description).body}</p>
+              <p className="truncate text-caption text-muted-foreground">
+                {split(r.description).business ?? split(r.description).body}
+              </p>
             </div>
             <StatusPill status={r.status} />
           </div>
@@ -200,12 +240,20 @@ export default function ReportsPage() {
         open={!!active}
         onOpenChange={(o) => !o && setActive(null)}
         title={active ? (TYPE_LABELS[active.type] ?? active.type) : 'Report'}
-        description={active ? `Received ${new Date(active.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}` : undefined}
+        description={
+          active
+            ? `Received ${new Date(active.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`
+            : undefined
+        }
         size="lg"
         footer={
           active?.status === 'PENDING' ? (
             <>
-              <Button variant="outline" loading={saving === 'dismiss'} onClick={() => act('dismiss')}>
+              <Button
+                variant="outline"
+                loading={saving === 'dismiss'}
+                onClick={() => act('dismiss')}
+              >
                 <X /> Dismiss
               </Button>
               <Button loading={saving === 'resolve'} onClick={() => act('resolve')}>
@@ -231,15 +279,24 @@ export default function ReportsPage() {
                   <div>
                     <dt className="text-caption text-muted-foreground">Reported by</dt>
                     <dd className="mt-0.5 font-medium">{active.reporter?.name ?? '—'}</dd>
-                    {active.reporter?.email && <dd className="text-caption text-muted-foreground">{active.reporter.email}</dd>}
+                    {active.reporter?.email && (
+                      <dd className="text-caption text-muted-foreground">
+                        {active.reporter.email}
+                      </dd>
+                    )}
                   </div>
                   {(s.business || active.targetType) && (
                     <div className="col-span-2">
                       <dt className="text-caption text-muted-foreground">About</dt>
                       <dd className="mt-0.5 flex items-center gap-2 font-medium">
-                        {s.business ?? `${active.targetType?.toLowerCase()} ${active.targetId?.slice(0, 8) ?? ''}`}
+                        {s.business ??
+                          `${active.targetType?.toLowerCase()} ${active.targetId?.slice(0, 8) ?? ''}`}
                         {href && (
-                          <Link href={href} target="_blank" className="inline-flex items-center gap-1 text-label text-primary hover:underline">
+                          <Link
+                            href={href}
+                            target="_blank"
+                            className="inline-flex items-center gap-1 text-label text-primary hover:underline"
+                          >
                             Open <ExternalLink className="size-3.5" />
                           </Link>
                         )}

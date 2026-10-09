@@ -287,9 +287,15 @@ export class OnboardingVerificationService {
           data: { status: 'APPROVED' },
         });
 
-        await this.recordBrandEvent(business, adminId, 'OUTLET_APPROVED', `Outlet "${business.name}" approved`, {
-          notes: dto.notes,
-        });
+        await this.recordBrandEvent(
+          business,
+          adminId,
+          'OUTLET_APPROVED',
+          `Outlet "${business.name}" approved`,
+          {
+            notes: dto.notes,
+          },
+        );
 
         // Sync to Search index
         try {
@@ -309,7 +315,10 @@ export class OnboardingVerificationService {
     // 5. Update onboarding progress status — progress may be stored under entity.id OR business.id
     const progressEntityIds = [request.entityId];
     if (request.entity.type === 'BUSINESS') {
-      const biz = await this.db.business.findFirst({ where: { entityId: request.entityId }, select: { id: true } });
+      const biz = await this.db.business.findFirst({
+        where: { entityId: request.entityId },
+        select: { id: true },
+      });
       if (biz) progressEntityIds.push(biz.id);
     }
     await this.db.onboardingProgress.updateMany({
@@ -416,9 +425,15 @@ export class OnboardingVerificationService {
           data: { status: 'REJECTED', rejectionReason: dto.reason },
         });
 
-        await this.recordBrandEvent(business, adminId, 'OUTLET_REJECTED', `Outlet "${business.name}" rejected`, {
-          reason: dto.reason,
-        });
+        await this.recordBrandEvent(
+          business,
+          adminId,
+          'OUTLET_REJECTED',
+          `Outlet "${business.name}" rejected`,
+          {
+            reason: dto.reason,
+          },
+        );
 
         // Remove from index if exists
         try {
@@ -438,7 +453,10 @@ export class OnboardingVerificationService {
     // 5. Update onboarding progress status — progress may be stored under entity.id OR business.id
     const progressEntityIds = [request.entityId];
     if (request.entity.type === 'BUSINESS') {
-      const biz = await this.db.business.findFirst({ where: { entityId: request.entityId }, select: { id: true } });
+      const biz = await this.db.business.findFirst({
+        where: { entityId: request.entityId },
+        select: { id: true },
+      });
       if (biz) progressEntityIds.push(biz.id);
     }
     await this.db.onboardingProgress.updateMany({

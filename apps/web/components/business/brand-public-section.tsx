@@ -32,18 +32,27 @@ export function BrandPublicChip({ brand }: { brand?: { name: string } | null }) 
  * list below and by the profile's tab bar, so both read from one cached request.
  */
 export function useOtherOutlets(brandId?: string | null, currentBusinessId?: string) {
-  const { data, loading } = useCachedGet<any>(brandId ? `/v1/brands/${brandId}/outlets/public` : null, {
-    ttlMs: 120_000,
-  });
+  const { data, loading } = useCachedGet<any>(
+    brandId ? `/v1/brands/${brandId}/outlets/public` : null,
+    {
+      ttlMs: 120_000,
+    },
+  );
   const outlets = useMemo<PublicOutlet[]>(() => {
-    const list: PublicOutlet[] = Array.isArray(data) ? data : data?.data ?? [];
+    const list: PublicOutlet[] = Array.isArray(data) ? data : (data?.data ?? []);
     return list.filter((o) => o.id !== currentBusinessId);
   }, [data, currentBusinessId]);
   return { outlets, loading };
 }
 
 /** Sibling outlets of the same brand. Renders nothing when there are none or the lookup fails. */
-export function OtherOutlets({ brandId, currentBusinessId }: { brandId?: string | null; currentBusinessId: string }) {
+export function OtherOutlets({
+  brandId,
+  currentBusinessId,
+}: {
+  brandId?: string | null;
+  currentBusinessId: string;
+}) {
   const { outlets } = useOtherOutlets(brandId, currentBusinessId);
 
   if (!brandId || outlets.length === 0) return null;
@@ -73,7 +82,9 @@ export function OtherOutlets({ brandId, currentBusinessId }: { brandId?: string 
               </div>
             )}
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-foreground">{o.outletLabel?.trim() || o.name}</p>
+              <p className="truncate text-sm font-semibold text-foreground">
+                {o.outletLabel?.trim() || o.name}
+              </p>
               {(o.city || o.district) && (
                 <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3 shrink-0" />

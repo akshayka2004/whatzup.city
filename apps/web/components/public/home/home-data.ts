@@ -1,7 +1,29 @@
 import {
-  Utensils, UtensilsCrossed, Shirt, Hotel, BedDouble, Building2, Stethoscope, Landmark,
-  Dumbbell, CalendarDays, Store, Scissors, Gift, Car, Briefcase, LayoutGrid, ShoppingBag,
-  GraduationCap, Laptop, Search, Tag, Shield, MapPin, Megaphone, Star,
+  Utensils,
+  UtensilsCrossed,
+  Shirt,
+  Hotel,
+  BedDouble,
+  Building2,
+  Stethoscope,
+  Landmark,
+  Dumbbell,
+  CalendarDays,
+  Store,
+  Scissors,
+  Gift,
+  Car,
+  Briefcase,
+  LayoutGrid,
+  ShoppingBag,
+  GraduationCap,
+  Laptop,
+  Search,
+  Tag,
+  Shield,
+  MapPin,
+  Megaphone,
+  Star,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -27,14 +49,14 @@ export type HomeCategory = {
 // Slugs must match real rows in the `business_categories` table
 // (packages/database/prisma/seed.ts). Used ONLY when /v1/categories returns nothing.
 export const FALLBACK_CATEGORIES: HomeCategory[] = [
-  { name: 'Restaurants',           slug: 'restaurants' },
-  { name: 'Shopping & Retail',     slug: 'retail' },
+  { name: 'Restaurants', slug: 'restaurants' },
+  { name: 'Shopping & Retail', slug: 'retail' },
   { name: 'Professional Services', slug: 'services' },
-  { name: 'Medical & Health',      slug: 'healthcare' },
-  { name: 'Education Hubs',        slug: 'education' },
-  { name: 'Tech & Agency',         slug: 'technology' },
-  { name: 'Real Estate',           slug: 'real_estate' },
-  { name: 'Health & Fitness',      slug: 'fitness_wellness' },
+  { name: 'Medical & Health', slug: 'healthcare' },
+  { name: 'Education Hubs', slug: 'education' },
+  { name: 'Tech & Agency', slug: 'technology' },
+  { name: 'Real Estate', slug: 'real_estate' },
+  { name: 'Health & Fitness', slug: 'fitness_wellness' },
 ];
 
 // First match wins, so more specific rules (buffet, staycation, retail) sit above broader ones.
@@ -59,8 +81,14 @@ const ICON_RULES: Array<[RegExp, LucideIcon]> = [
   [/business|service|consult|agency|professional/, Briefcase],
 ];
 
-export function iconForCategory(c: { slug?: string; name?: string; icon?: string | null }): LucideIcon {
-  const hay = `${c.slug ?? ''} ${c.name ?? ''} ${c.icon ?? ''}`.toLowerCase().replace(/[_-]+/g, ' ');
+export function iconForCategory(c: {
+  slug?: string;
+  name?: string;
+  icon?: string | null;
+}): LucideIcon {
+  const hay = `${c.slug ?? ''} ${c.name ?? ''} ${c.icon ?? ''}`
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ');
   for (const [re, Icon] of ICON_RULES) if (re.test(hay)) return Icon;
   return LayoutGrid;
 }
@@ -68,7 +96,10 @@ export function iconForCategory(c: { slug?: string; name?: string; icon?: string
 /** Sum of live listings across a category tree (parents and children are counted separately by the API). */
 export function sumListings(nodes: any[]): number {
   return nodes.reduce(
-    (n, c) => n + (Number(c?.listingsCount) || 0) + (Array.isArray(c?.children) ? sumListings(c.children) : 0),
+    (n, c) =>
+      n +
+      (Number(c?.listingsCount) || 0) +
+      (Array.isArray(c?.children) ? sumListings(c.children) : 0),
     0,
   );
 }
@@ -78,32 +109,38 @@ export const FEATURES: Array<{ icon: LucideIcon; title: string; description: str
   {
     icon: Search,
     title: 'Precision Directory',
-    description: 'Find local providers instantly using refined search criteria, tags, and proximity mapping.',
+    description:
+      'Find local providers instantly using refined search criteria, tags, and proximity mapping.',
   },
   {
     icon: Tag,
     title: 'Direct Consumer Offers',
-    description: 'Claim geo-targeted discounts, limited-time flash sales, and rewards from neighbourhood shops.',
+    description:
+      'Claim geo-targeted discounts, limited-time flash sales, and rewards from neighbourhood shops.',
   },
   {
     icon: Shield,
     title: 'Trust & Verification',
-    description: 'Every merchant undergoes business-licence and regulatory verification before going live.',
+    description:
+      'Every merchant undergoes business-licence and regulatory verification before going live.',
   },
   {
     icon: MapPin,
     title: 'Geographic Discovery',
-    description: 'Discover verified utility services, artisan spots, and essential shops closest to you.',
+    description:
+      'Discover verified utility services, artisan spots, and essential shops closest to you.',
   },
   {
     icon: Megaphone,
     title: 'Civic Alert Broadcasts',
-    description: 'Keep tabs on administrative notices, utility updates, roadworks, and townhall briefs.',
+    description:
+      'Keep tabs on administrative notices, utility updates, roadworks, and townhall briefs.',
   },
   {
     icon: Star,
     title: 'Invoice-Verified Reviews',
-    description: 'Reviews are backed by an uploaded transaction bill, so the feedback comes from real customers.',
+    description:
+      'Reviews are backed by an uploaded transaction bill, so the feedback comes from real customers.',
   },
 ];
 

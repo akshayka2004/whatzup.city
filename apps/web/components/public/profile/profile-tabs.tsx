@@ -40,7 +40,11 @@ export function ProfileTabs({ tabs }: { tabs: ProfileTab[] }) {
         const el = document.getElementById(id);
         if (el && el.getBoundingClientRect().top - base <= 130) current = id;
       }
-      if (scroller && scroller.scrollTop > 40 && scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4) {
+      if (
+        scroller &&
+        scroller.scrollTop > 40 &&
+        scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 4
+      ) {
         current = list[list.length - 1];
       }
       setActive((prev) => (prev === current ? prev : current));
@@ -62,7 +66,10 @@ export function ProfileTabs({ tabs }: { tabs: ProfileTab[] }) {
     const bar = barRef.current;
     const el = bar?.querySelector<HTMLElement>(`[data-tab="${active}"]`);
     if (!bar || !el) return;
-    bar.scrollTo({ left: el.offsetLeft - (bar.clientWidth - el.offsetWidth) / 2, behavior: 'smooth' });
+    bar.scrollTo({
+      left: el.offsetLeft - (bar.clientWidth - el.offsetWidth) / 2,
+      behavior: 'smooth',
+    });
   }, [active]);
 
   return (

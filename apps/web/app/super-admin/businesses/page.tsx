@@ -2,7 +2,18 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BadgeCheck, Building2, MoreHorizontal, Pencil, QrCode, RefreshCw, Star, Store, Trash2, X } from 'lucide-react';
+import {
+  BadgeCheck,
+  Building2,
+  MoreHorizontal,
+  Pencil,
+  QrCode,
+  RefreshCw,
+  Star,
+  Store,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { PageHeader } from '@/components/system/page-header';
 import { DataTable, type Column } from '@/components/system/data-table';
@@ -16,8 +27,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from '@/components/ui/sonner';
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES } from '@/lib/constants';
@@ -60,10 +83,25 @@ interface Biz {
 
 const label = 'mb-1.5 block text-sm font-medium';
 
-function FilterSelect({ value, onChange, placeholder, options, className }: { value: string; onChange: (v: string) => void; placeholder: string; options: { value: string; label: string }[]; className?: string }) {
+function FilterSelect({
+  value,
+  onChange,
+  placeholder,
+  options,
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  options: { value: string; label: string }[];
+  className?: string;
+}) {
   return (
     <Select value={value || ANY} onValueChange={(v) => onChange(v === ANY ? '' : v)}>
-      <SelectTrigger className={className ?? 'h-11 w-full rounded-full sm:w-44'} aria-label={placeholder}>
+      <SelectTrigger
+        className={className ?? 'h-11 w-full rounded-full sm:w-44'}
+        aria-label={placeholder}
+      >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
@@ -117,7 +155,10 @@ export default function SuperAdminBusinessesPage() {
     if (b) setBrandId(b);
     setUrlReady(true);
   }, []);
-  useEffect(() => setPage(1), [debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter, brandId, sort]);
+  useEffect(
+    () => setPage(1),
+    [debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter, brandId, sort],
+  );
 
   useEffect(() => {
     if (!brandId) {
@@ -159,7 +200,12 @@ export default function SuperAdminBusinessesPage() {
     if (!urlReady) return;
     setLoading(true);
     const [sortBy, sortOrder] = sort.split(':');
-    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE), sortBy, sortOrder });
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(PAGE_SIZE),
+      sortBy,
+      sortOrder,
+    });
     if (debounced) params.set('search', debounced);
     if (catFilter) params.set('categoryId', catFilter);
     if (cityFilter) params.set('city', cityFilter);
@@ -177,7 +223,18 @@ export default function SuperAdminBusinessesPage() {
       if (res.error) toast.error(res.error);
     }
     setLoading(false);
-  }, [urlReady, page, debounced, catFilter, cityFilter, statusFilter, verifiedFilter, halalFilter, brandId, sort]);
+  }, [
+    urlReady,
+    page,
+    debounced,
+    catFilter,
+    cityFilter,
+    statusFilter,
+    verifiedFilter,
+    halalFilter,
+    brandId,
+    sort,
+  ]);
 
   useEffect(() => {
     fetchRows();
@@ -219,7 +276,8 @@ export default function SuperAdminBusinessesPage() {
   const remove = async (b: Biz) => {
     const ok = await confirm({
       title: `Delete ${b.name}?`,
-      description: 'It disappears from search and discovery. This is a soft delete and can be recovered from the database.',
+      description:
+        'It disappears from search and discovery. This is a soft delete and can be recovered from the database.',
       confirmLabel: 'Delete',
       tone: 'danger',
     });
@@ -234,7 +292,12 @@ export default function SuperAdminBusinessesPage() {
   const RowMenu = ({ b }: { b: Biz }) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${b.name}`} onClick={(e) => e.stopPropagation()}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={`Actions for ${b.name}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           <MoreHorizontal />
         </Button>
       </DropdownMenuTrigger>
@@ -266,7 +329,9 @@ export default function SuperAdminBusinessesPage() {
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 font-medium">
             <span className="truncate">{b.name}</span>
-            {b.isVerified && <BadgeCheck className="size-4 shrink-0 text-success" aria-label="Verified" />}
+            {b.isVerified && (
+              <BadgeCheck className="size-4 shrink-0 text-success" aria-label="Verified" />
+            )}
           </p>
           <p className="truncate text-caption text-muted-foreground">{b.email || b.phone || '—'}</p>
           {b.brand && (
@@ -286,7 +351,12 @@ export default function SuperAdminBusinessesPage() {
         </div>
       ),
     },
-    { key: 'category', header: 'Category', cell: (b) => b.category?.name || '—', hideOnMobile: true },
+    {
+      key: 'category',
+      header: 'Category',
+      cell: (b) => b.category?.name || '—',
+      hideOnMobile: true,
+    },
     { key: 'city', header: 'City', cell: (b) => b.city || '—', hideOnMobile: true },
     {
       key: 'rating',
@@ -304,10 +374,34 @@ export default function SuperAdminBusinessesPage() {
         ),
       hideOnMobile: true,
     },
-    { key: 'live', header: 'Offers · events', align: 'right', cell: (b) => `${b._count?.offers ?? 0} · ${b._count?.events ?? 0}`, hideOnMobile: true },
-    { key: 'billed', header: 'Verified spend', align: 'right', value: (b) => Number(b.totalBillAmount || 0), cell: (b) => `₹${Number(b.totalBillAmount || 0).toLocaleString('en-IN')}`, hideOnMobile: true },
-    { key: 'status', header: 'Status', cell: (b) => <StatusPill tone={statusTone(b.status)} label={humanizeStatus(b.status || '—')} /> },
-    { key: 'actions', header: <span className="sr-only">Actions</span>, align: 'right', cell: (b) => <RowMenu b={b} /> },
+    {
+      key: 'live',
+      header: 'Offers · events',
+      align: 'right',
+      cell: (b) => `${b._count?.offers ?? 0} · ${b._count?.events ?? 0}`,
+      hideOnMobile: true,
+    },
+    {
+      key: 'billed',
+      header: 'Verified spend',
+      align: 'right',
+      value: (b) => Number(b.totalBillAmount || 0),
+      cell: (b) => `₹${Number(b.totalBillAmount || 0).toLocaleString('en-IN')}`,
+      hideOnMobile: true,
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (b) => (
+        <StatusPill tone={statusTone(b.status)} label={humanizeStatus(b.status || '—')} />
+      ),
+    },
+    {
+      key: 'actions',
+      header: <span className="sr-only">Actions</span>,
+      align: 'right',
+      cell: (b) => <RowMenu b={b} />,
+    },
   ];
 
   const filtersActive = !!(catFilter || cityFilter || verifiedFilter || halalFilter);
@@ -333,7 +427,13 @@ export default function SuperAdminBusinessesPage() {
               {brandName || 'this brand'}
             </Link>
           </span>
-          <Button variant="ghost" size="icon-sm" onClick={clearBrandFilter} aria-label="Clear brand filter" className="rounded-full">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={clearBrandFilter}
+            aria-label="Clear brand filter"
+            className="rounded-full"
+          >
             <X />
           </Button>
         </div>
@@ -341,17 +441,35 @@ export default function SuperAdminBusinessesPage() {
 
       <ChipRow label="Status" className="mb-3">
         {['', ...STATUS_OPTIONS].map((s) => (
-          <FilterChip key={s || 'all'} selected={statusFilter === s} onClick={() => setStatusFilter(s)}>
+          <FilterChip
+            key={s || 'all'}
+            selected={statusFilter === s}
+            onClick={() => setStatusFilter(s)}
+          >
             {s ? humanizeStatus(s) : 'All'}
           </FilterChip>
         ))}
       </ChipRow>
 
       <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search name, email, phone, city" />
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Search name, email, phone, city"
+        />
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-          <FilterSelect value={catFilter} onChange={setCatFilter} placeholder="All categories" options={categories.map((c) => ({ value: c.id, label: c.name }))} />
-          <FilterSelect value={cityFilter} onChange={setCityFilter} placeholder="All cities" options={KERALA_CITIES.map((c) => ({ value: c, label: c }))} />
+          <FilterSelect
+            value={catFilter}
+            onChange={setCatFilter}
+            placeholder="All categories"
+            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          />
+          <FilterSelect
+            value={cityFilter}
+            onChange={setCityFilter}
+            placeholder="All cities"
+            options={KERALA_CITIES.map((c) => ({ value: c, label: c }))}
+          />
           <FilterSelect
             value={verifiedFilter}
             onChange={setVerifiedFilter}
@@ -409,12 +527,18 @@ export default function SuperAdminBusinessesPage() {
         pageSize={PAGE_SIZE}
         total={total}
         onPageChange={setPage}
-        empty={{ icon: Building2, title: 'No businesses match', description: 'Try clearing a filter or the search.' }}
+        empty={{
+          icon: Building2,
+          title: 'No businesses match',
+          description: 'Try clearing a filter or the search.',
+        }}
         mobileCard={(b) => (
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-medium">{b.name}</p>
-              <p className="truncate text-caption text-muted-foreground">{[b.category?.name, b.city].filter(Boolean).join(' · ') || '—'}</p>
+              <p className="truncate text-caption text-muted-foreground">
+                {[b.category?.name, b.city].filter(Boolean).join(' · ') || '—'}
+              </p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <StatusPill tone={statusTone(b.status)} label={humanizeStatus(b.status || '—')} />
@@ -464,16 +588,32 @@ export default function SuperAdminBusinessesPage() {
                 <label htmlFor={`b-${k}`} className={label}>
                   {l}
                 </label>
-                <Input id={`b-${k}`} value={(form[k] as string) || ''} onChange={(e) => set(k, e.target.value)} />
+                <Input
+                  id={`b-${k}`}
+                  value={(form[k] as string) || ''}
+                  onChange={(e) => set(k, e.target.value)}
+                />
               </div>
             ))}
             <div>
               <span className={label}>Category</span>
-              <FilterSelect className="w-full" value={form.categoryId || ''} onChange={(v) => set('categoryId', v)} placeholder="—" options={categories.map((c) => ({ value: c.id, label: c.name }))} />
+              <FilterSelect
+                className="w-full"
+                value={form.categoryId || ''}
+                onChange={(v) => set('categoryId', v)}
+                placeholder="—"
+                options={categories.map((c) => ({ value: c.id, label: c.name }))}
+              />
             </div>
             <div>
               <span className={label}>City</span>
-              <FilterSelect className="w-full" value={form.city || ''} onChange={(v) => set('city', v)} placeholder="—" options={KERALA_CITIES.map((c) => ({ value: c, label: c }))} />
+              <FilterSelect
+                className="w-full"
+                value={form.city || ''}
+                onChange={(v) => set('city', v)}
+                placeholder="—"
+                options={KERALA_CITIES.map((c) => ({ value: c, label: c }))}
+              />
             </div>
             <div>
               <span className={label}>Status</span>
@@ -507,13 +647,22 @@ export default function SuperAdminBusinessesPage() {
               <label htmlFor="b-address" className={label}>
                 Address
               </label>
-              <Input id="b-address" value={form.address || ''} onChange={(e) => set('address', e.target.value)} />
+              <Input
+                id="b-address"
+                value={form.address || ''}
+                onChange={(e) => set('address', e.target.value)}
+              />
             </div>
             <div className="md:col-span-2">
               <label htmlFor="b-desc" className={label}>
                 Description
               </label>
-              <Textarea id="b-desc" value={form.description || ''} onChange={(e) => set('description', e.target.value)} className="min-h-24" />
+              <Textarea
+                id="b-desc"
+                value={form.description || ''}
+                onChange={(e) => set('description', e.target.value)}
+                className="min-h-24"
+              />
             </div>
             <label className="flex items-center justify-between gap-3 rounded-control border border-border p-3 md:col-span-2">
               <span className="text-sm font-medium">Verified merchant</span>
@@ -524,8 +673,20 @@ export default function SuperAdminBusinessesPage() {
         )}
       </Modal>
 
-      <Modal open={!!qrBiz} onOpenChange={(o) => !o && setQrBiz(null)} title={qrBiz ? `${qrBiz.name} — QR code` : 'QR code'} description="Preview, print or download a replacement for the business.">
-        {qrBiz && <BusinessQrCard businessId={qrBiz.id} businessName={qrBiz.name} category={qrBiz.category?.name} city={qrBiz.city} />}
+      <Modal
+        open={!!qrBiz}
+        onOpenChange={(o) => !o && setQrBiz(null)}
+        title={qrBiz ? `${qrBiz.name} — QR code` : 'QR code'}
+        description="Preview, print or download a replacement for the business."
+      >
+        {qrBiz && (
+          <BusinessQrCard
+            businessId={qrBiz.id}
+            businessName={qrBiz.name}
+            category={qrBiz.category?.name}
+            city={qrBiz.city}
+          />
+        )}
       </Modal>
     </SuperAdminLayout>
   );

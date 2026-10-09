@@ -15,7 +15,7 @@ export const SupabaseClientProvider: Provider = {
     if (!supabaseUrl || !serviceRoleKey) {
       logger.warn(
         'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured — storage features disabled. ' +
-        'Set both env vars to enable file uploads.',
+          'Set both env vars to enable file uploads.',
       );
       // Return null — StorageService throws ServiceUnavailableException when called without a client.
       return null as unknown as SupabaseClient;

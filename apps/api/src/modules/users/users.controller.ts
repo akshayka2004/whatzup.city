@@ -1,4 +1,16 @@
-import { Controller, Get, Patch, Delete, Post, Param, Body, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Delete,
+  Post,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -30,11 +42,7 @@ export class UsersController {
     @Query('limit') limit?: number,
     @Query('role') role?: string,
   ) {
-    return this.usersService.findAll(
-      currentUser.tenantId,
-      { page, limit, role },
-      currentUser.role,
-    );
+    return this.usersService.findAll(currentUser.tenantId, { page, limit, role }, currentUser.role);
   }
 
   @Get('admin/all-registrations')
@@ -49,7 +57,15 @@ export class UsersController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
   ) {
-    return this.usersService.findAllRegistrations({ page, limit, role, search, tenantId, sortBy, sortOrder });
+    return this.usersService.findAllRegistrations({
+      page,
+      limit,
+      role,
+      search,
+      tenantId,
+      sortBy,
+      sortOrder,
+    });
   }
 
   @Get('tenant/registrations')
@@ -141,10 +157,18 @@ export class UsersController {
 
   @Post('admin/create')
   @Roles(UserRole.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Super Admin creates a Portal Admin, Master Admin, or Platform Staff account' })
+  @ApiOperation({
+    summary: 'Super Admin creates a Portal Admin, Master Admin, or Platform Staff account',
+  })
   async createAdmin(
     @CurrentUser('tenantId') tenantId: string,
-    @Body() body: { name: string; email: string; password: string; role: 'MASTER_ADMIN' | 'PORTAL_ADMIN' | 'PLATFORM_STAFF' },
+    @Body()
+    body: {
+      name: string;
+      email: string;
+      password: string;
+      role: 'MASTER_ADMIN' | 'PORTAL_ADMIN' | 'PLATFORM_STAFF';
+    },
   ) {
     return this.usersService.createAdminUser(tenantId, body);
   }

@@ -18,7 +18,10 @@ export class TrackEventDto {
   @IsOptional()
   tenantId?: string;
 
-  @ApiProperty({ description: 'Optional User ID (overridden by the signed-in user when present)', required: false })
+  @ApiProperty({
+    description: 'Optional User ID (overridden by the signed-in user when present)',
+    required: false,
+  })
   @IsUUID()
   @IsOptional()
   userId?: string;

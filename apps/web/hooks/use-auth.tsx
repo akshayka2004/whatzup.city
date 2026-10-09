@@ -78,9 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ) {
       return '/civic/dashboard';
     }
-    
+
     // Check for Business and other specialized entity roles
-    const isBusinessOrEntity = 
+    const isBusinessOrEntity =
       u.role === 'business' ||
       u.role === 'business_moderator' ||
       u.role === 'business_staff' ||
@@ -130,11 +130,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // A QR-scan deep link (?redirect=/business/:id) wins over the usual
         // role-based landing page — but only once validated as same-origin.
         const target =
-          redirectTo && isSafeBusinessRedirect(redirectTo) ? redirectTo : resolveRedirect(loggedInUser);
+          redirectTo && isSafeBusinessRedirect(redirectTo)
+            ? redirectTo
+            : resolveRedirect(loggedInUser);
         router.push(target);
         // Background refresh: loads full permissions without blocking redirect
-        authService.fetchCurrentUser()
-          .then((fresh) => { if (fresh) setUser(fresh); })
+        authService
+          .fetchCurrentUser()
+          .then((fresh) => {
+            if (fresh) setUser(fresh);
+          })
           .catch(() => {});
         return true;
       }
@@ -193,10 +198,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-
-
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, switchRole, refreshUser }}>
+    <AuthContext.Provider
+      value={{ user, loading, signIn, signUp, signOut, switchRole, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );

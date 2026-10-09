@@ -7,8 +7,18 @@ export const STATUSES = ['UPCOMING', 'NOW_SHOWING', 'ENDED'];
 export const CERTIFICATIONS = ['U', 'U/A', 'A', 'S'];
 
 const FIELDS = [
-  'name', 'posterImage', 'languages', 'durationMinutes', 'certification',
-  'synopsis', 'trailerUrl', 'bookingUrl', 'status', 'targetCities', 'genres', 'cast',
+  'name',
+  'posterImage',
+  'languages',
+  'durationMinutes',
+  'certification',
+  'synopsis',
+  'trailerUrl',
+  'bookingUrl',
+  'status',
+  'targetCities',
+  'genres',
+  'cast',
 ] as const;
 
 @Injectable()
@@ -23,7 +33,11 @@ export class MoviesService {
     if (dto.status !== undefined && !STATUSES.includes(dto.status)) {
       throw new BadRequestException(`status must be one of ${STATUSES.join(', ')}`);
     }
-    if (dto.certification !== undefined && dto.certification && !CERTIFICATIONS.includes(dto.certification)) {
+    if (
+      dto.certification !== undefined &&
+      dto.certification &&
+      !CERTIFICATIONS.includes(dto.certification)
+    ) {
       throw new BadRequestException(`certification must be one of ${CERTIFICATIONS.join(', ')}`);
     }
   }
@@ -36,8 +50,10 @@ export class MoviesService {
     if (Array.isArray(dto.languages) === false && dto.languages !== undefined) data.languages = [];
     if (Array.isArray(dto.genres) === false && dto.genres !== undefined) data.genres = [];
     if (Array.isArray(dto.cast) === false && dto.cast !== undefined) data.cast = [];
-    if (Array.isArray(dto.targetCities) === false && dto.targetCities !== undefined) data.targetCities = [];
-    if (dto.releaseDate !== undefined) data.releaseDate = dto.releaseDate ? new Date(dto.releaseDate) : null;
+    if (Array.isArray(dto.targetCities) === false && dto.targetCities !== undefined)
+      data.targetCities = [];
+    if (dto.releaseDate !== undefined)
+      data.releaseDate = dto.releaseDate ? new Date(dto.releaseDate) : null;
     return data;
   }
 
@@ -50,7 +66,13 @@ export class MoviesService {
     const movie = await this.db.movie.create({
       data: { tenantId: resolvedTenant, name: dto.name, createdBy: userId, ...data },
     });
-    await this.audit.log({ tenantId: resolvedTenant, userId, action: 'ADMIN_CREATE_MOVIE', resource: 'MOVIE', resourceId: movie.id });
+    await this.audit.log({
+      tenantId: resolvedTenant,
+      userId,
+      action: 'ADMIN_CREATE_MOVIE',
+      resource: 'MOVIE',
+      resourceId: movie.id,
+    });
     return movie;
   }
 
@@ -60,7 +82,13 @@ export class MoviesService {
     this.validate(dto);
     const data = this.buildData(dto);
     const updated = await this.db.movie.update({ where: { id }, data });
-    await this.audit.log({ tenantId: m.tenantId, userId, action: 'ADMIN_UPDATE_MOVIE', resource: 'MOVIE', resourceId: id });
+    await this.audit.log({
+      tenantId: m.tenantId,
+      userId,
+      action: 'ADMIN_UPDATE_MOVIE',
+      resource: 'MOVIE',
+      resourceId: id,
+    });
     return updated;
   }
 
@@ -68,7 +96,13 @@ export class MoviesService {
     const m = await this.db.movie.findFirst({ where: { id, deletedAt: null } });
     if (!m) throw new NotFoundException('Movie not found');
     await this.db.movie.update({ where: { id }, data: { deletedAt: new Date() } });
-    await this.audit.log({ tenantId: m.tenantId, userId, action: 'ADMIN_DELETE_MOVIE', resource: 'MOVIE', resourceId: id });
+    await this.audit.log({
+      tenantId: m.tenantId,
+      userId,
+      action: 'ADMIN_DELETE_MOVIE',
+      resource: 'MOVIE',
+      resourceId: id,
+    });
     return { success: true };
   }
 
@@ -94,10 +128,7 @@ export class MoviesService {
     const where: any = { deletedAt: null };
     if (status && STATUSES.includes(status)) where.status = status;
     if (city) {
-      where.OR = [
-        { targetCities: { equals: [] } },
-        { targetCities: { array_contains: city } },
-      ];
+      where.OR = [{ targetCities: { equals: [] } }, { targetCities: { array_contains: city } }];
     }
     const [data, total] = await Promise.all([
       this.db.movie.findMany({

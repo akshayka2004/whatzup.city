@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+  ConflictException,
+} from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { AuditService } from '../audit/audit.service';
 import { PasswordService } from '../auth/password.service';
@@ -31,7 +37,8 @@ export class BranchesService {
       const staff = await this.db.businessStaff.findFirst({
         where: { tenantId, businessId: business.id, userId, deletedAt: null },
       });
-      if (!staff) throw new ForbiddenException('Not authorized to manage branches of this business');
+      if (!staff)
+        throw new ForbiddenException('Not authorized to manage branches of this business');
     }
     return business;
   }
@@ -61,7 +68,9 @@ export class BranchesService {
     const adminEmail = data.adminEmail?.trim().toLowerCase();
     const adminPassword = data.adminPassword;
     if (adminEmail && adminPassword) {
-      const existing = await this.db.user.findFirst({ where: { email: adminEmail, deletedAt: null } });
+      const existing = await this.db.user.findFirst({
+        where: { email: adminEmail, deletedAt: null },
+      });
       if (existing) throw new ConflictException(`A user with email "${adminEmail}" already exists`);
     }
 

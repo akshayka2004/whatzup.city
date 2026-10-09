@@ -39,7 +39,11 @@ type Invoice = {
 
 function fmtDate(v?: string | null) {
   if (!v) return '—';
-  return new Date(v).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(v).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 export default function InvoicePage() {
@@ -64,10 +68,18 @@ export default function InvoicePage() {
 
   const statusMeta =
     invoice?.status === 'SUCCESS'
-      ? { label: 'Paid & Verified', tone: 'bg-success-soft text-success-soft-foreground', icon: CheckCircle2 }
+      ? {
+          label: 'Paid & Verified',
+          tone: 'bg-success-soft text-success-soft-foreground',
+          icon: CheckCircle2,
+        }
       : invoice?.status === 'FAILED'
         ? { label: 'Rejected', tone: 'bg-danger-soft text-danger-soft-foreground', icon: XCircle }
-        : { label: 'Pending Verification', tone: 'bg-warning-soft text-warning-soft-foreground', icon: Clock };
+        : {
+            label: 'Pending Verification',
+            tone: 'bg-warning-soft text-warning-soft-foreground',
+            icon: Clock,
+          };
   const StatusIcon = statusMeta.icon;
 
   return (
@@ -81,7 +93,11 @@ export default function InvoicePage() {
             <ArrowLeft className="h-4 w-4" /> Back
           </button>
           {invoice && (
-            <Button onClick={() => window.print()} size="sm" className="rounded-xl gap-1.5 cursor-pointer">
+            <Button
+              onClick={() => window.print()}
+              size="sm"
+              className="rounded-xl gap-1.5 cursor-pointer"
+            >
               <Download className="h-4 w-4" /> Download / Print
             </Button>
           )}
@@ -94,26 +110,41 @@ export default function InvoicePage() {
         ) : error || !invoice ? (
           <Card className="p-10 text-center">
             <FileText className="h-10 w-10 mx-auto text-muted-foreground opacity-40 mb-3" />
-            <p className="text-sm text-muted-foreground break-words">{error || 'Invoice not found.'}</p>
+            <p className="text-sm text-muted-foreground break-words">
+              {error || 'Invoice not found.'}
+            </p>
           </Card>
         ) : (
           <Card className="p-6 sm:p-8 print:shadow-none print:border-0 print:p-0">
-            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold mb-6 ${statusMeta.tone}`}>
+            <div
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold mb-6 ${statusMeta.tone}`}
+            >
               <StatusIcon className="h-3.5 w-3.5" /> {statusMeta.label}
             </div>
 
             {/* Issuer vs invoice meta */}
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-6 border-b border-border">
               <div>
-                <h1 className="text-lg font-extrabold text-foreground break-words">Lifeart Business Services Pvt. Ltd.</h1>
-                <p className="text-xs text-muted-foreground mt-1 break-words">29/3372, Vazhuthacaud, AIR Road</p>
-                <p className="text-xs text-muted-foreground break-words">Thiruvananthapuram, Kerala 695014, India</p>
-                <p className="text-xs text-muted-foreground mt-1 break-words">support@lifeartgroup.in</p>
+                <h1 className="text-lg font-extrabold text-foreground break-words">
+                  Lifeart Business Services Pvt. Ltd.
+                </h1>
+                <p className="text-xs text-muted-foreground mt-1 break-words">
+                  29/3372, Vazhuthacaud, AIR Road
+                </p>
+                <p className="text-xs text-muted-foreground break-words">
+                  Thiruvananthapuram, Kerala 695014, India
+                </p>
+                <p className="text-xs text-muted-foreground mt-1 break-words">
+                  support@lifeartgroup.in
+                </p>
               </div>
               <div className="text-left sm:text-right">
                 <h2 className="text-2xl font-extrabold tracking-tight text-foreground">INVOICE</h2>
                 <p className="text-xs text-muted-foreground mt-1">
-                  No: <span className="font-semibold text-foreground">INV-{invoice.id.slice(0, 8).toUpperCase()}</span>
+                  No:{' '}
+                  <span className="font-semibold text-foreground">
+                    INV-{invoice.id.slice(0, 8).toUpperCase()}
+                  </span>
                 </p>
                 <p className="text-xs text-muted-foreground">Date: {fmtDate(invoice.createdAt)}</p>
               </div>
@@ -121,23 +152,37 @@ export default function InvoicePage() {
 
             {/* Bill to */}
             <div className="py-6 border-b border-border">
-              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">Billed to</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">
+                Billed to
+              </p>
               {invoice.billingProfile ? (
                 <div className="text-sm space-y-0.5">
-                  <p className="font-semibold text-foreground break-words">{invoice.billingProfile.billingName}</p>
+                  <p className="font-semibold text-foreground break-words">
+                    {invoice.billingProfile.billingName}
+                  </p>
                   <p className="text-muted-foreground break-words">
                     {invoice.billingProfile.addressLine}
                     {invoice.billingProfile.city ? `, ${invoice.billingProfile.city}` : ''}
-                    {invoice.billingProfile.state ? `, ${invoice.billingProfile.state}` : ''} — {invoice.billingProfile.pincode}
+                    {invoice.billingProfile.state ? `, ${invoice.billingProfile.state}` : ''} —{' '}
+                    {invoice.billingProfile.pincode}
                   </p>
                   <p className="text-muted-foreground break-words">
-                    GSTIN: {invoice.billingProfile.hasGst ? invoice.billingProfile.gstin : 'Not registered'}
+                    GSTIN:{' '}
+                    {invoice.billingProfile.hasGst
+                      ? invoice.billingProfile.gstin
+                      : 'Not registered'}
                   </p>
-                  <p className="text-muted-foreground break-words">PAN: {invoice.billingProfile.pan || '—'}</p>
-                  <p className="text-muted-foreground break-words">Email: {invoice.billingProfile.invoiceEmail}</p>
+                  <p className="text-muted-foreground break-words">
+                    PAN: {invoice.billingProfile.pan || '—'}
+                  </p>
+                  <p className="text-muted-foreground break-words">
+                    Email: {invoice.billingProfile.invoiceEmail}
+                  </p>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground break-words">{invoice.business?.name}</p>
+                <p className="text-sm text-muted-foreground break-words">
+                  {invoice.business?.name}
+                </p>
               )}
             </div>
 
@@ -153,14 +198,17 @@ export default function InvoicePage() {
                 <tbody>
                   <tr className="border-t border-border">
                     <td className="py-2.5 text-foreground break-words">
-                      {planLabel(invoice.packageName)} — {invoice.cycle === 'RENEWAL' ? 'Renewal' : 'New subscription'}
+                      {planLabel(invoice.packageName)} —{' '}
+                      {invoice.cycle === 'RENEWAL' ? 'Renewal' : 'New subscription'}
                     </td>
                     <td className="py-2.5 text-right text-foreground whitespace-nowrap">
                       {formatINR(Number(invoice.amountBase))}
                     </td>
                   </tr>
                   <tr className="border-t border-border">
-                    <td className="py-2.5 text-muted-foreground">GST ({Number(invoice.taxPercent)}%)</td>
+                    <td className="py-2.5 text-muted-foreground">
+                      GST ({Number(invoice.taxPercent)}%)
+                    </td>
                     <td className="py-2.5 text-right text-muted-foreground whitespace-nowrap">
                       {formatINR(Number(invoice.amountTax))}
                     </td>
@@ -180,24 +228,28 @@ export default function InvoicePage() {
               <div className="text-muted-foreground">Payment method</div>
               <div className="text-foreground text-right">{invoice.method}</div>
               <div className="text-muted-foreground">Transaction ref</div>
-              <div className="text-foreground text-right break-all">{invoice.transactionRef || '—'}</div>
+              <div className="text-foreground text-right break-all">
+                {invoice.transactionRef || '—'}
+              </div>
             </div>
 
             {/* Status footnote */}
             <div className="pt-6">
               {invoice.status === 'SUCCESS' && (
-                <p className="text-xs text-success">Payment verified on {fmtDate(invoice.verifiedAt)}.</p>
+                <p className="text-xs text-success">
+                  Payment verified on {fmtDate(invoice.verifiedAt)}.
+                </p>
               )}
               {invoice.status === 'FAILED' && (
                 <p className="text-xs text-destructive break-words">
-                  Payment rejected{invoice.rejectionReason ? `: ${invoice.rejectionReason}` : '.'} Please resubmit payment from
-                  Subscriptions.
+                  Payment rejected{invoice.rejectionReason ? `: ${invoice.rejectionReason}` : '.'}{' '}
+                  Please resubmit payment from Subscriptions.
                 </p>
               )}
               {invoice.status !== 'SUCCESS' && invoice.status !== 'FAILED' && (
                 <p className="text-xs text-muted-foreground">
-                  This is a provisional invoice. It will be confirmed once our team verifies your payment, usually within 24
-                  hours.
+                  This is a provisional invoice. It will be confirmed once our team verifies your
+                  payment, usually within 24 hours.
                 </p>
               )}
             </div>

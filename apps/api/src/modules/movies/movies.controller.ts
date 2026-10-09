@@ -1,5 +1,13 @@
 import {
-  Controller, Get, Post, Patch, Delete, Param, Body, Query, UseGuards,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { MoviesService } from './movies.service';
@@ -54,7 +62,11 @@ export class MoviesController {
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Patch('admin/:id')
   @ApiBearerAuth()
-  async adminUpdate(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: MovieDto) {
+  async adminUpdate(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: MovieDto,
+  ) {
     return this.moviesService.adminUpdate(id, userId, dto);
   }
 

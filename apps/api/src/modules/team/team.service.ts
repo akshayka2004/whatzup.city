@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { AuditService } from '../audit/audit.service';
 import { PasswordService } from '../auth/password.service';
@@ -19,7 +26,11 @@ export class TeamService {
    * Resolve businessId — accept either business.id OR entity.id. Caller must be
    * the business owner.
    */
-  private async resolveBusinessForOwner(tenantId: string, businessOrEntityId: string, userId: string) {
+  private async resolveBusinessForOwner(
+    tenantId: string,
+    businessOrEntityId: string,
+    userId: string,
+  ) {
     const business = await this.db.business.findFirst({
       where: {
         tenantId,
@@ -39,7 +50,16 @@ export class TeamService {
     const staff = await this.db.businessStaff.findMany({
       where: { tenantId, businessId: business.id, deletedAt: null },
       include: {
-        user: { select: { id: true, name: true, email: true, avatar: true, lastLoginAt: true, isActive: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            lastLoginAt: true,
+            isActive: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -87,19 +107,21 @@ export class TeamService {
     const passwordHash = await this.passwordService.hash(data.password);
 
     // Map frontend role to BusinessMemberRole
-    const memberRole = data.role === 'BUSINESS_OWNER' || data.role === 'BUSINESS_ADMIN'
-      ? 'OWNER'
-      : data.role === 'BUSINESS_MODERATOR'
-        ? 'MODERATOR'
-        : 'STAFF';
+    const memberRole =
+      data.role === 'BUSINESS_OWNER' || data.role === 'BUSINESS_ADMIN'
+        ? 'OWNER'
+        : data.role === 'BUSINESS_MODERATOR'
+          ? 'MODERATOR'
+          : 'STAFF';
 
     // Set the User.role to the correct business role so login redirects to /dashboard
     // and businessId resolves correctly from the JWT/me endpoint.
-    const userRoleEnum = memberRole === 'OWNER'
-      ? 'BUSINESS_OWNER'
-      : memberRole === 'MODERATOR'
-        ? 'BUSINESS_MODERATOR'
-        : 'BUSINESS_STAFF';
+    const userRoleEnum =
+      memberRole === 'OWNER'
+        ? 'BUSINESS_OWNER'
+        : memberRole === 'MODERATOR'
+          ? 'BUSINESS_MODERATOR'
+          : 'BUSINESS_STAFF';
 
     // Create user — pre-verified so they can sign in immediately.
     const user = await this.db.user.create({
@@ -204,16 +226,25 @@ export class TeamService {
     // Update BusinessStaff role if provided
     const staffUpdate: any = {};
     if (data.role) {
-      const memberRole = data.role === 'BUSINESS_OWNER' || data.role === 'BUSINESS_ADMIN'
-        ? 'OWNER'
-        : data.role === 'BUSINESS_MODERATOR' ? 'MODERATOR' : 'STAFF';
+      const memberRole =
+        data.role === 'BUSINESS_OWNER' || data.role === 'BUSINESS_ADMIN'
+          ? 'OWNER'
+          : data.role === 'BUSINESS_MODERATOR'
+            ? 'MODERATOR'
+            : 'STAFF';
       staffUpdate.role = memberRole;
 
       // Also update User.role
-      const userRoleEnum = memberRole === 'OWNER'
-        ? 'BUSINESS_OWNER'
-        : memberRole === 'MODERATOR' ? 'BUSINESS_MODERATOR' : 'BUSINESS_STAFF';
-      await this.db.user.update({ where: { id: staff.userId }, data: { role: userRoleEnum as any } });
+      const userRoleEnum =
+        memberRole === 'OWNER'
+          ? 'BUSINESS_OWNER'
+          : memberRole === 'MODERATOR'
+            ? 'BUSINESS_MODERATOR'
+            : 'BUSINESS_STAFF';
+      await this.db.user.update({
+        where: { id: staff.userId },
+        data: { role: userRoleEnum as any },
+      });
     }
 
     if (Object.keys(staffUpdate).length > 0) {
@@ -231,7 +262,18 @@ export class TeamService {
 
     const updated = await this.db.businessStaff.findFirst({
       where: { id: staffId },
-      include: { user: { select: { id: true, name: true, email: true, avatar: true, lastLoginAt: true, isActive: true } } },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+            lastLoginAt: true,
+            isActive: true,
+          },
+        },
+      },
     });
 
     return {

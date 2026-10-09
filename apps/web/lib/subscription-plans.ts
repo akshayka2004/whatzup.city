@@ -37,11 +37,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     offerPrice: 1500,
     offers: 1,
     vouchers: 1,
-    features: [
-      'Web App Listing',
-      'Website Listing (information only)',
-      'No backlinks',
-    ],
+    features: ['Web App Listing', 'Website Listing (information only)', 'No backlinks'],
   },
   {
     code: 'WHTZUP_PLUS',
@@ -50,11 +46,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     offerPrice: 2500,
     offers: 3,
     vouchers: 3,
-    features: [
-      'Web App Listing',
-      'Website Listing (information only)',
-      'No backlinks',
-    ],
+    features: ['Web App Listing', 'Website Listing (information only)', 'No backlinks'],
   },
   {
     code: 'WHTZUP_X',
@@ -63,11 +55,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     offerPrice: 5000,
     offers: 5,
     vouchers: 5,
-    features: [
-      'Web App Listing',
-      'Website Listing with backlinks',
-      'Information only',
-    ],
+    features: ['Web App Listing', 'Website Listing with backlinks', 'Information only'],
   },
   {
     code: 'WHTZUP_XL',

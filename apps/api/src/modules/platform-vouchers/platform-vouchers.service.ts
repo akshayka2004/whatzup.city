@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { DatabaseService } from '../../common/database/database.service';
 import { TenantResolverService } from '../../common/database/tenant-resolver.service';
@@ -76,8 +72,12 @@ export class PlatformVouchersService {
     return Promise.all(
       tiers.map(async (t) => {
         const [unlocked, redeemed] = await Promise.all([
-          this.db.platformVoucherClaim.count({ where: { platformVoucherId: t.id, deletedAt: null } }),
-          this.db.platformVoucherClaim.count({ where: { platformVoucherId: t.id, status: 'REDEEMED', deletedAt: null } }),
+          this.db.platformVoucherClaim.count({
+            where: { platformVoucherId: t.id, deletedAt: null },
+          }),
+          this.db.platformVoucherClaim.count({
+            where: { platformVoucherId: t.id, status: 'REDEEMED', deletedAt: null },
+          }),
         ]);
         return { ...t, unlockedCount: unlocked, redeemedCount: redeemed };
       }),
@@ -88,7 +88,16 @@ export class PlatformVouchersService {
     const existing = await this.db.platformVoucher.findFirst({ where: { id, deletedAt: null } });
     if (!existing) throw new NotFoundException('Platform voucher not found');
     const data: any = {};
-    for (const k of ['title', 'description', 'rewardType', 'rewardValue', 'rewardLabel', 'status', 'terms', 'maxRedemptions']) {
+    for (const k of [
+      'title',
+      'description',
+      'rewardType',
+      'rewardValue',
+      'rewardLabel',
+      'status',
+      'terms',
+      'maxRedemptions',
+    ]) {
       if (dto[k] !== undefined) data[k] = dto[k];
     }
     if (dto.thresholdPoints !== undefined) data.thresholdPoints = dto.thresholdPoints;
@@ -188,7 +197,9 @@ export class PlatformVouchersService {
   }
 
   async unlock(userId: string, tierId: string) {
-    const tier = await this.db.platformVoucher.findFirst({ where: { id: tierId, deletedAt: null } });
+    const tier = await this.db.platformVoucher.findFirst({
+      where: { id: tierId, deletedAt: null },
+    });
     if (!tier) throw new NotFoundException('Platform voucher not found');
     if (tier.status !== 'ACTIVE' || tier.endDate < new Date()) {
       throw new BadRequestException('This voucher is no longer available');
@@ -222,7 +233,9 @@ export class PlatformVouchersService {
       });
       return { code: claim.code, status: claim.status, alreadyUnlocked: false };
     } catch {
-      const race = await this.db.platformVoucherClaim.findFirst({ where: { platformVoucherId: tierId, userId } });
+      const race = await this.db.platformVoucherClaim.findFirst({
+        where: { platformVoucherId: tierId, userId },
+      });
       if (race) return { code: race.code, status: race.status, alreadyUnlocked: true };
       throw new BadRequestException('Could not unlock voucher, please retry');
     }
@@ -234,12 +247,18 @@ export class PlatformVouchersService {
       where: { redeemedByBusinessId: businessId, status: 'REDEEMED', deletedAt: null },
       orderBy: { redeemedAt: 'desc' },
       include: {
-        platformVoucher: { select: { title: true, rewardType: true, rewardValue: true, rewardLabel: true } },
+        platformVoucher: {
+          select: { title: true, rewardType: true, rewardValue: true, rewardLabel: true },
+        },
         user: { select: { name: true } },
       },
     });
     const totalRewardValue = claims.reduce(
-      (sum, c) => sum + (c.platformVoucher.rewardType === 'AMOUNT' ? Number(c.platformVoucher.rewardValue ?? 0) : 0),
+      (sum, c) =>
+        sum +
+        (c.platformVoucher.rewardType === 'AMOUNT'
+          ? Number(c.platformVoucher.rewardValue ?? 0)
+          : 0),
       0,
     );
     return {
@@ -251,7 +270,8 @@ export class PlatformVouchersService {
         customerName: c.user?.name ?? 'Customer',
         tierTitle: c.platformVoucher.title,
         rewardType: c.platformVoucher.rewardType,
-        rewardValue: c.platformVoucher.rewardValue != null ? Number(c.platformVoucher.rewardValue) : null,
+        rewardValue:
+          c.platformVoucher.rewardValue != null ? Number(c.platformVoucher.rewardValue) : null,
         rewardLabel: c.platformVoucher.rewardLabel,
         redeemedAt: c.redeemedAt,
       })),
@@ -263,7 +283,15 @@ export class PlatformVouchersService {
       where: { userId, deletedAt: null },
       orderBy: { unlockedAt: 'desc' },
       include: {
-        platformVoucher: { select: { title: true, rewardLabel: true, rewardType: true, rewardValue: true, endDate: true } },
+        platformVoucher: {
+          select: {
+            title: true,
+            rewardLabel: true,
+            rewardType: true,
+            rewardValue: true,
+            endDate: true,
+          },
+        },
       },
     });
   }

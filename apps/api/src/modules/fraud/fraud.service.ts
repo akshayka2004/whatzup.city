@@ -25,7 +25,12 @@ export class FraudService {
         // (usually the same invoice number) must not be flagged as a duplicate of it.
         NOT: { verifications: { some: { status: 'RE_UPLOAD_REQUESTED' } } },
       },
-      select: { id: true, businessId: true, createdAt: true, business: { select: { name: true, outletLabel: true } } },
+      select: {
+        id: true,
+        businessId: true,
+        createdAt: true,
+        business: { select: { name: true, outletLabel: true } },
+      },
       orderBy: { createdAt: 'asc' },
       take: 3,
     });

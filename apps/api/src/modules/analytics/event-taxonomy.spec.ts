@@ -1,4 +1,11 @@
-import { ALLOWED_EVENTS, deviceOf, eventsFor, groupOf, isBotUserAgent, normaliseSource } from './event-taxonomy';
+import {
+  ALLOWED_EVENTS,
+  deviceOf,
+  eventsFor,
+  groupOf,
+  isBotUserAgent,
+  normaliseSource,
+} from './event-taxonomy';
 
 const CHROME_ANDROID =
   'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36';

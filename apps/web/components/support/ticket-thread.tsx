@@ -22,7 +22,13 @@ export type TicketSummary = {
   opener?: { id: string; name?: string; email?: string } | null;
 };
 
-type Message = { id: string; body: string; fromStaff: boolean; createdAt: string; authorName: string };
+type Message = {
+  id: string;
+  body: string;
+  fromStaff: boolean;
+  createdAt: string;
+  authorName: string;
+};
 type Ticket = TicketSummary & { messages: Message[] };
 
 export const TICKET_STATUS_LABEL: Record<string, string> = {
@@ -33,7 +39,10 @@ export const TICKET_STATUS_LABEL: Record<string, string> = {
 };
 
 /** Colour by who needs to act: amber when it's on the viewer, blue when waiting on the other side. */
-export function ticketTone(status: string, staff = false): 'warning' | 'info' | 'success' | 'neutral' {
+export function ticketTone(
+  status: string,
+  staff = false,
+): 'warning' | 'info' | 'success' | 'neutral' {
   if (status === 'RESOLVED') return 'success';
   if (status === 'CLOSED') return 'neutral';
   const onViewer = staff ? status === 'OPEN' : status === 'PENDING';
@@ -41,13 +50,27 @@ export function ticketTone(status: string, staff = false): 'warning' | 'info' | 
 }
 
 const when = (d: string) =>
-  new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+  new Date(d).toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Kolkata',
+  });
 
 /**
  * One support conversation. `staff` switches the reply box to support-agent mode and shows
  * the resolve/close controls; customers can close or reopen their own ticket.
  */
-export function TicketThread({ id, staff = false, onChanged }: { id: string; staff?: boolean; onChanged?: () => void }) {
+export function TicketThread({
+  id,
+  staff = false,
+  onChanged,
+}: {
+  id: string;
+  staff?: boolean;
+  onChanged?: () => void;
+}) {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
@@ -87,7 +110,11 @@ export function TicketThread({ id, staff = false, onChanged }: { id: string; sta
       toast.error(res.error);
       return;
     }
-    toast.success(status === 'OPEN' ? 'Ticket reopened' : `Ticket ${TICKET_STATUS_LABEL[status]?.toLowerCase() ?? status.toLowerCase()}`);
+    toast.success(
+      status === 'OPEN'
+        ? 'Ticket reopened'
+        : `Ticket ${TICKET_STATUS_LABEL[status]?.toLowerCase() ?? status.toLowerCase()}`,
+    );
     await load();
     onChanged?.();
   };
@@ -98,7 +125,10 @@ export function TicketThread({ id, staff = false, onChanged }: { id: string; sta
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <StatusPill tone={ticketTone(ticket.status, staff)} label={TICKET_STATUS_LABEL[ticket.status] ?? ticket.status} />
+        <StatusPill
+          tone={ticketTone(ticket.status, staff)}
+          label={TICKET_STATUS_LABEL[ticket.status] ?? ticket.status}
+        />
         <span className="text-caption text-muted-foreground">
           {ticket.category.toLowerCase()} · opened {when(ticket.createdAt)}
         </span>
@@ -112,10 +142,17 @@ export function TicketThread({ id, staff = false, onChanged }: { id: string; sta
               <div
                 className={cn(
                   'max-w-[85%] rounded-2xl px-4 py-2.5',
-                  mine ? 'rounded-br-md bg-primary text-primary-foreground' : 'rounded-bl-md bg-surface-sunken text-foreground',
+                  mine
+                    ? 'rounded-br-md bg-primary text-primary-foreground'
+                    : 'rounded-bl-md bg-surface-sunken text-foreground',
                 )}
               >
-                <p className={cn('text-caption font-semibold', mine ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
+                <p
+                  className={cn(
+                    'text-caption font-semibold',
+                    mine ? 'text-primary-foreground/80' : 'text-muted-foreground',
+                  )}
+                >
                   {m.authorName} · {when(m.createdAt)}
                 </p>
                 <p className="mt-0.5 whitespace-pre-line break-words text-sm">{m.body}</p>
@@ -128,7 +165,9 @@ export function TicketThread({ id, staff = false, onChanged }: { id: string; sta
 
       {closed && !staff ? (
         <div className="flex items-center justify-between gap-3 rounded-xl bg-surface-sunken p-3 text-sm">
-          <span className="text-muted-foreground">This ticket is {ticket.status.toLowerCase()}.</span>
+          <span className="text-muted-foreground">
+            This ticket is {ticket.status.toLowerCase()}.
+          </span>
           <Button size="sm" variant="outline" onClick={() => setStatus('OPEN')}>
             Reopen
           </Button>
@@ -151,7 +190,12 @@ export function TicketThread({ id, staff = false, onChanged }: { id: string; sta
             <div className="flex gap-2">
               {staff ? (
                 <>
-                  <Button size="sm" variant="outline" onClick={() => setStatus('RESOLVED')} disabled={closed}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setStatus('RESOLVED')}
+                    disabled={closed}
+                  >
                     Mark resolved
                   </Button>
                   {closed && (

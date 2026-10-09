@@ -62,15 +62,21 @@ export function Modal({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className={className}>
           <DrawerHeader className="text-left">
-            <DrawerTitle className={cn('text-heading', hideTitle && 'sr-only')}>{title}</DrawerTitle>
+            <DrawerTitle className={cn('text-heading', hideTitle && 'sr-only')}>
+              {title}
+            </DrawerTitle>
             {description ? (
               <DrawerDescription>{description}</DrawerDescription>
             ) : (
-              <DrawerDescription className="sr-only">{typeof title === 'string' ? title : ''}</DrawerDescription>
+              <DrawerDescription className="sr-only">
+                {typeof title === 'string' ? title : ''}
+              </DrawerDescription>
             )}
           </DrawerHeader>
           <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2">{children}</div>
-          {footer && <DrawerFooter className="flex-col-reverse gap-2 [&>*]:w-full">{footer}</DrawerFooter>}
+          {footer && (
+            <DrawerFooter className="flex-col-reverse gap-2 [&>*]:w-full">{footer}</DrawerFooter>
+          )}
         </DrawerContent>
       </Drawer>
     );
@@ -78,13 +84,17 @@ export function Modal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn('max-h-[88dvh] grid-rows-[auto_1fr_auto]', SIZES[size], className)}>
+      <DialogContent
+        className={cn('max-h-[88dvh] grid-rows-[auto_1fr_auto]', SIZES[size], className)}
+      >
         <DialogHeader>
           <DialogTitle className={cn('text-heading', hideTitle && 'sr-only')}>{title}</DialogTitle>
           {description ? (
             <DialogDescription>{description}</DialogDescription>
           ) : (
-            <DialogDescription className="sr-only">{typeof title === 'string' ? title : ''}</DialogDescription>
+            <DialogDescription className="sr-only">
+              {typeof title === 'string' ? title : ''}
+            </DialogDescription>
           )}
         </DialogHeader>
         <div className="-mx-6 min-h-0 overflow-y-auto px-6">{children}</div>

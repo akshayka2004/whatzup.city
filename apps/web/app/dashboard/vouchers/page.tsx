@@ -50,14 +50,46 @@ const REWARD_TYPES = [
   { value: 'FREEBIE', label: 'Freebie' },
 ] as const;
 
-const rewardText = (v: { rewardType: string; rewardValue?: number | null; rewardLabel?: string | null }) =>
-  v.rewardType === 'PERCENT' ? `${v.rewardValue}%` : v.rewardType === 'AMOUNT' ? `₹${Number(v.rewardValue || 0).toLocaleString('en-IN')}` : v.rewardLabel || 'Gift';
+const rewardText = (v: {
+  rewardType: string;
+  rewardValue?: number | null;
+  rewardLabel?: string | null;
+}) =>
+  v.rewardType === 'PERCENT'
+    ? `${v.rewardValue}%`
+    : v.rewardType === 'AMOUNT'
+      ? `₹${Number(v.rewardValue || 0).toLocaleString('en-IN')}`
+      : v.rewardLabel || 'Gift';
 
-const fmtDay = (iso: string) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
+const fmtDay = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Asia/Kolkata',
+  });
 const label = 'mb-1.5 block text-sm font-medium';
 
-type Form = { title: string; threshold: string; rewardType: string; rewardValue: string; rewardLabel: string; endDate: string; maxRedemptions: string; description: string };
-const EMPTY: Form = { title: '', threshold: '', rewardType: 'AMOUNT', rewardValue: '', rewardLabel: '', endDate: '', maxRedemptions: '', description: '' };
+type Form = {
+  title: string;
+  threshold: string;
+  rewardType: string;
+  rewardValue: string;
+  rewardLabel: string;
+  endDate: string;
+  maxRedemptions: string;
+  description: string;
+};
+const EMPTY: Form = {
+  title: '',
+  threshold: '',
+  rewardType: 'AMOUNT',
+  rewardValue: '',
+  rewardLabel: '',
+  endDate: '',
+  maxRedemptions: '',
+  description: '',
+};
 
 export default function VouchersPage() {
   const { user } = useAuth();
@@ -102,9 +134,12 @@ export default function VouchersPage() {
 
   const submit = async () => {
     if (!businessId) return;
-    if (!form.title.trim() || !form.threshold || !form.endDate) return toast.error('Title, spend threshold and end date are required.');
-    if (form.rewardType !== 'FREEBIE' && !form.rewardValue) return toast.error('Enter the reward value, or choose Freebie.');
-    if (form.rewardType === 'FREEBIE' && !form.rewardLabel.trim()) return toast.error('Describe the freebie, e.g. “Free dessert”.');
+    if (!form.title.trim() || !form.threshold || !form.endDate)
+      return toast.error('Title, spend threshold and end date are required.');
+    if (form.rewardType !== 'FREEBIE' && !form.rewardValue)
+      return toast.error('Enter the reward value, or choose Freebie.');
+    if (form.rewardType === 'FREEBIE' && !form.rewardLabel.trim())
+      return toast.error('Describe the freebie, e.g. “Free dessert”.');
     setSaving(true);
     const res = await apiService.post('/v1/vouchers', {
       businessId,
@@ -126,7 +161,12 @@ export default function VouchersPage() {
   };
 
   const remove = async (v: Voucher) => {
-    const ok = await confirm({ title: `Delete “${v.title}”?`, description: 'Customers who unlocked it lose the code.', confirmLabel: 'Delete', tone: 'danger' });
+    const ok = await confirm({
+      title: `Delete “${v.title}”?`,
+      description: 'Customers who unlocked it lose the code.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
     if (!ok) return;
     const res = await apiService.delete(`/v1/vouchers/${v.id}`);
     if (res.error) return toast.error(res.error);
@@ -145,7 +185,9 @@ export default function VouchersPage() {
   const redeem = (path: string, extra: Record<string, unknown>) => async (code: string) => {
     const res = await apiService.post<any>(path, { ...extra, code });
     if (res.error) return { error: res.error };
-    return { message: `Redeemed: ${res.data?.voucherTitle ?? 'voucher'} — ${res.data?.customer ?? 'customer'}` };
+    return {
+      message: `Redeemed: ${res.data?.voucherTitle ?? 'voucher'} — ${res.data?.customer ?? 'customer'}`,
+    };
   };
 
   return (
@@ -209,16 +251,41 @@ export default function VouchersPage() {
                 valueCaption={v.rewardType === 'FREEBIE' ? undefined : 'off'}
                 title={v.title}
                 subtitle={`Unlocks at ₹${Number(v.thresholdAmount).toLocaleString('en-IN')} verified spend`}
-                status={ended ? { tone: 'neutral', label: 'Ended' } : live ? { tone: 'success', label: 'Live', live: true } : { tone: 'neutral', label: 'Paused' }}
+                status={
+                  ended
+                    ? { tone: 'neutral', label: 'Ended' }
+                    : live
+                      ? { tone: 'success', label: 'Live', live: true }
+                      : { tone: 'neutral', label: 'Paused' }
+                }
                 chips={[
                   { label: `Ends ${fmtDay(v.endDate)}` },
-                  ...(v.maxRedemptions ? [{ label: `${v.currentRedemptions}/${v.maxRedemptions} used`, tone: v.currentRedemptions >= v.maxRedemptions ? ('warning' as const) : ('neutral' as const) }] : []),
+                  ...(v.maxRedemptions
+                    ? [
+                        {
+                          label: `${v.currentRedemptions}/${v.maxRedemptions} used`,
+                          tone:
+                            v.currentRedemptions >= v.maxRedemptions
+                              ? ('warning' as const)
+                              : ('neutral' as const),
+                        },
+                      ]
+                    : []),
                 ]}
                 muted={ended}
                 stats={[
-                  { label: 'Unlocked', value: v.unlockedCount ?? 0, hint: 'Customers who crossed the spend threshold' },
+                  {
+                    label: 'Unlocked',
+                    value: v.unlockedCount ?? 0,
+                    hint: 'Customers who crossed the spend threshold',
+                  },
                   { label: 'Redeemed', value: v.redeemedCount ?? 0 },
-                  { label: 'Redeem rate', value: v.unlockedCount ? `${Math.round(((v.redeemedCount ?? 0) / v.unlockedCount) * 100)}%` : '—' },
+                  {
+                    label: 'Redeem rate',
+                    value: v.unlockedCount
+                      ? `${Math.round(((v.redeemedCount ?? 0) / v.unlockedCount) * 100)}%`
+                      : '—',
+                  },
                 ]}
                 primary={
                   !ended ? (
@@ -242,7 +309,9 @@ export default function VouchersPage() {
         action={
           <span className="text-sm font-semibold tabular-nums">
             {platformRedemptions.length}
-            {platformTotalReward > 0 ? ` · ₹${platformTotalReward.toLocaleString('en-IN')} given` : ''}
+            {platformTotalReward > 0
+              ? ` · ₹${platformTotalReward.toLocaleString('en-IN')} given`
+              : ''}
           </span>
         }
       >
@@ -263,7 +332,10 @@ export default function VouchersPage() {
                   <p className="truncate text-caption text-muted-foreground">{r.tierTitle}</p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="text-sm font-semibold text-primary">{rewardText(r)}{r.rewardType === 'FREEBIE' ? '' : ' off'}</p>
+                  <p className="text-sm font-semibold text-primary">
+                    {rewardText(r)}
+                    {r.rewardType === 'FREEBIE' ? '' : ' off'}
+                  </p>
                   <p className="text-caption text-muted-foreground">{fmtDay(r.redeemedAt)}</p>
                 </div>
               </li>
@@ -300,19 +372,35 @@ export default function VouchersPage() {
             <label htmlFor="v-title" className={label}>
               Title
             </label>
-            <Input id="v-title" value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="₹500 off when you spend ₹5,000" />
+            <Input
+              id="v-title"
+              value={form.title}
+              onChange={(e) => set('title', e.target.value)}
+              placeholder="₹500 off when you spend ₹5,000"
+            />
           </div>
           <div>
             <label htmlFor="v-threshold" className={label}>
               Spend threshold (₹)
             </label>
-            <Input id="v-threshold" type="number" inputMode="numeric" value={form.threshold} onChange={(e) => set('threshold', e.target.value)} placeholder="5000" />
+            <Input
+              id="v-threshold"
+              type="number"
+              inputMode="numeric"
+              value={form.threshold}
+              onChange={(e) => set('threshold', e.target.value)}
+              placeholder="5000"
+            />
           </div>
           <div>
             <span className={label}>Reward</span>
             <ChipRow label="Reward type" wrap>
               {REWARD_TYPES.map((r) => (
-                <FilterChip key={r.value} selected={form.rewardType === r.value} onClick={() => set('rewardType', r.value)}>
+                <FilterChip
+                  key={r.value}
+                  selected={form.rewardType === r.value}
+                  onClick={() => set('rewardType', r.value)}
+                >
                   {r.label}
                 </FilterChip>
               ))}
@@ -323,32 +411,64 @@ export default function VouchersPage() {
               <label htmlFor="v-value" className={label}>
                 Reward value ({form.rewardType === 'PERCENT' ? '%' : '₹'})
               </label>
-              <Input id="v-value" type="number" inputMode="numeric" value={form.rewardValue} onChange={(e) => set('rewardValue', e.target.value)} placeholder={form.rewardType === 'PERCENT' ? '10' : '500'} />
+              <Input
+                id="v-value"
+                type="number"
+                inputMode="numeric"
+                value={form.rewardValue}
+                onChange={(e) => set('rewardValue', e.target.value)}
+                placeholder={form.rewardType === 'PERCENT' ? '10' : '500'}
+              />
             </div>
           )}
           <div className={form.rewardType === 'FREEBIE' ? 'sm:col-span-2' : undefined}>
             <label htmlFor="v-label" className={label}>
-              {form.rewardType === 'FREEBIE' ? 'What they get' : 'Label shown to customers (optional)'}
+              {form.rewardType === 'FREEBIE'
+                ? 'What they get'
+                : 'Label shown to customers (optional)'}
             </label>
-            <Input id="v-label" value={form.rewardLabel} onChange={(e) => set('rewardLabel', e.target.value)} placeholder="Free dessert" />
+            <Input
+              id="v-label"
+              value={form.rewardLabel}
+              onChange={(e) => set('rewardLabel', e.target.value)}
+              placeholder="Free dessert"
+            />
           </div>
           <div>
             <label htmlFor="v-end" className={label}>
               Valid until
             </label>
-            <Input id="v-end" type="date" value={form.endDate} min={new Date().toISOString().slice(0, 10)} onChange={(e) => set('endDate', e.target.value)} />
+            <Input
+              id="v-end"
+              type="date"
+              value={form.endDate}
+              min={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => set('endDate', e.target.value)}
+            />
           </div>
           <div>
             <label htmlFor="v-max" className={label}>
               Max redemptions <span className="font-normal text-muted-foreground">(optional)</span>
             </label>
-            <Input id="v-max" type="number" inputMode="numeric" value={form.maxRedemptions} onChange={(e) => set('maxRedemptions', e.target.value)} placeholder="Unlimited" />
+            <Input
+              id="v-max"
+              type="number"
+              inputMode="numeric"
+              value={form.maxRedemptions}
+              onChange={(e) => set('maxRedemptions', e.target.value)}
+              placeholder="Unlimited"
+            />
           </div>
           <div className="sm:col-span-2">
             <label htmlFor="v-desc" className={label}>
               Details <span className="font-normal text-muted-foreground">(optional)</span>
             </label>
-            <Input id="v-desc" value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Dine-in only, one per customer" />
+            <Input
+              id="v-desc"
+              value={form.description}
+              onChange={(e) => set('description', e.target.value)}
+              placeholder="Dine-in only, one per customer"
+            />
           </div>
           <button type="submit" hidden />
         </form>

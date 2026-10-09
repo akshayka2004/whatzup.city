@@ -29,7 +29,7 @@ const MovieDetailsModal = dynamic(
 
 /** Same list-shape handling the page has always used for GET /v1/movies. */
 function extractList(body: any): Movie[] {
-  const list = Array.isArray(body) ? body : body?.data ?? [];
+  const list = Array.isArray(body) ? body : (body?.data ?? []);
   return Array.isArray(list) ? list : [];
 }
 
@@ -43,7 +43,9 @@ export function MoviesClient({ initialMovies = null }: { initialMovies?: unknown
   if (!MOVIES_ENABLED) notFound();
   // The server renders the default list (all cities, any status); it stays valid until a filter is chosen.
   const seeded = useRef(initialMovies != null);
-  const [movies, setMovies] = useState<Movie[]>(() => (initialMovies != null ? extractList(initialMovies) : []));
+  const [movies, setMovies] = useState<Movie[]>(() =>
+    initialMovies != null ? extractList(initialMovies) : [],
+  );
   const [loading, setLoading] = useState(initialMovies == null);
   const [city, setCity] = useState('');
   const [status, setStatus] = useState('');
@@ -88,11 +90,19 @@ export function MoviesClient({ initialMovies = null }: { initialMovies?: unknown
   };
 
   const languageChips = useMemo(
-    () => chipsFrom('All languages', movies.flatMap((m) => (Array.isArray(m.languages) ? m.languages : []))),
+    () =>
+      chipsFrom(
+        'All languages',
+        movies.flatMap((m) => (Array.isArray(m.languages) ? m.languages : [])),
+      ),
     [movies],
   );
   const genreChips = useMemo(
-    () => chipsFrom('All genres', movies.flatMap((m) => (Array.isArray(m.genres) ? m.genres : []))),
+    () =>
+      chipsFrom(
+        'All genres',
+        movies.flatMap((m) => (Array.isArray(m.genres) ? m.genres : [])),
+      ),
     [movies],
   );
   // A selection that vanished after a refetch (other city / status) quietly counts as "All".
@@ -103,7 +113,8 @@ export function MoviesClient({ initialMovies = null }: { initialMovies?: unknown
     () =>
       movies.filter(
         (m) =>
-          (!activeLanguage || (Array.isArray(m.languages) && m.languages.includes(activeLanguage))) &&
+          (!activeLanguage ||
+            (Array.isArray(m.languages) && m.languages.includes(activeLanguage))) &&
           (!activeGenre || (Array.isArray(m.genres) && m.genres.includes(activeGenre))),
       ),
     [movies, activeLanguage, activeGenre],
@@ -125,7 +136,9 @@ export function MoviesClient({ initialMovies = null }: { initialMovies?: unknown
             <SelectContent>
               <SelectItem value="all">All Cities</SelectItem>
               {KERALA_CITIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -144,10 +157,20 @@ export function MoviesClient({ initialMovies = null }: { initialMovies?: unknown
         {!loading && (languageChips.length > 2 || genreChips.length > 2) && (
           <div className="mb-4 space-y-2">
             {languageChips.length > 2 && (
-              <ChipRow options={languageChips} value={activeLanguage} onChange={setLanguage} ariaLabel="Language" />
+              <ChipRow
+                options={languageChips}
+                value={activeLanguage}
+                onChange={setLanguage}
+                ariaLabel="Language"
+              />
             )}
             {genreChips.length > 2 && (
-              <ChipRow options={genreChips} value={activeGenre} onChange={setGenre} ariaLabel="Genre" />
+              <ChipRow
+                options={genreChips}
+                value={activeGenre}
+                onChange={setGenre}
+                ariaLabel="Genre"
+              />
             )}
           </div>
         )}
@@ -169,7 +192,11 @@ export function MoviesClient({ initialMovies = null }: { initialMovies?: unknown
               }}
             />
           ) : (
-            <EmptyState icon={Clapperboard} title="No movies listed" description="Check back soon." />
+            <EmptyState
+              icon={Clapperboard}
+              title="No movies listed"
+              description="Check back soon."
+            />
           )
         ) : (
           <div className="ui-stagger grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">

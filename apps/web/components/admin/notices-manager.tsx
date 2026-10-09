@@ -26,15 +26,8 @@ const PRIORITY_BY_CATEGORY: Record<NoticeCategory, string> = {
   NOTICE: 'LOW',
 };
 
-
 // ── Reusable tag input ──────────────────────────────────────────────────────
-function TagInput({
-  tags,
-  onChange,
-}: {
-  tags: string[];
-  onChange: (tags: string[]) => void;
-}) {
+function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
   const [inputVal, setInputVal] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -69,7 +62,10 @@ function TagInput({
           {tag}
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onChange(tags.filter((t) => t !== tag)); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange(tags.filter((t) => t !== tag));
+            }}
             className="ml-0.5 text-warning/60 hover:text-warning cursor-pointer"
           >
             <X className="h-3 w-3" />
@@ -81,7 +77,9 @@ function TagInput({
         value={inputVal}
         onChange={(e) => setInputVal(e.target.value)}
         onKeyDown={handleKeyDown}
-        onBlur={() => { if (inputVal.trim()) addTag(inputVal); }}
+        onBlur={() => {
+          if (inputVal.trim()) addTag(inputVal);
+        }}
         placeholder={tags.length === 0 ? 'e.g. emergency, weather...' : ''}
         className="flex-1 min-w-[140px] bg-transparent text-foreground text-sm outline-none placeholder:text-muted-foreground"
       />
@@ -98,25 +96,36 @@ export function NoticesManager() {
     setLoading(true);
     const res = await apiService.get<any>('/v1/government-alerts');
     if (res.data && !res.error) {
-      const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
       setNotices(
         list.map((n: any) => ({
           id: n.id,
           title: n.title || '',
-          sender: n.targetAudience?.sender || n.publishedBy || n.sender || n.issuedBy || 'Platform Admin',
+          sender:
+            n.targetAudience?.sender || n.publishedBy || n.sender || n.issuedBy || 'Platform Admin',
           status: n.isActive !== false ? 'BROADCASTING' : 'EXPIRED',
           date: n.createdAt
-            ? new Date(n.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            ? new Date(n.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })
             : n.date || '—',
           body: n.body || n.content || n.message || '',
-          tags: Array.isArray(n.targetAudience?.tags) ? n.targetAudience.tags : Array.isArray(n.tags) ? n.tags : [],
+          tags: Array.isArray(n.targetAudience?.tags)
+            ? n.targetAudience.tags
+            : Array.isArray(n.tags)
+              ? n.tags
+              : [],
         })),
       );
     }
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchNotices(); }, [fetchNotices]);
+  useEffect(() => {
+    fetchNotices();
+  }, [fetchNotices]);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [viewingNotice, setViewingNotice] = useState<Notice | null>(null);
@@ -158,7 +167,9 @@ export function NoticesManager() {
     setBody('');
     setCategory('ANNOUNCEMENT');
     setFormTags([]);
-    setFormStartAt(''); setFormExpiresAt(''); setFormLink('');
+    setFormStartAt('');
+    setFormExpiresAt('');
+    setFormLink('');
     fetchNotices();
   };
 
@@ -179,7 +190,9 @@ export function NoticesManager() {
     setBody('');
     setCategory('ANNOUNCEMENT');
     setFormTags([]);
-    setFormStartAt(''); setFormExpiresAt(''); setFormLink('');
+    setFormStartAt('');
+    setFormExpiresAt('');
+    setFormLink('');
     setIsCreateOpen(true);
   };
 
@@ -187,9 +200,7 @@ export function NoticesManager() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Civic Notices & Announcements
-          </h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Civic Notices & Announcements</h1>
           <p className="text-muted-foreground">
             Broadcast official notices, government safety alerts, and system bulletin news
           </p>
@@ -210,7 +221,9 @@ export function NoticesManager() {
         <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
           <Bell className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
           <p className="text-foreground font-semibold mb-1">No notices yet</p>
-          <p className="text-sm text-muted-foreground">Published alerts and notices will appear here.</p>
+          <p className="text-sm text-muted-foreground">
+            Published alerts and notices will appear here.
+          </p>
         </Card>
       ) : null}
 
@@ -288,172 +301,200 @@ export function NoticesManager() {
 
       {/* VIEW MODAL */}
       {viewingNotice && (
-        <ModalSurface onClose={() => setViewingNotice(null)} label="Notice details" className="sm:max-w-md">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-warning-soft text-warning-soft-foreground rounded-xl">
-                <Bell className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-foreground">{viewingNotice.title}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {viewingNotice.sender} • {viewingNotice.date}
-                </p>
+        <ModalSurface
+          onClose={() => setViewingNotice(null)}
+          label="Notice details"
+          className="sm:max-w-md"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-warning-soft text-warning-soft-foreground rounded-xl">
+              <Bell className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-foreground">{viewingNotice.title}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {viewingNotice.sender} • {viewingNotice.date}
+              </p>
+            </div>
+          </div>
+          <div className="bg-secondary p-4 rounded-xl border border-border mb-4">
+            <p className="text-sm text-foreground leading-relaxed">{viewingNotice.body}</p>
+          </div>
+          {viewingNotice.tags.length > 0 && (
+            <div className="mb-5">
+              <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Tags</p>
+              <div className="flex flex-wrap gap-1.5">
+                {viewingNotice.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-warning-soft border border-warning/20 text-warning-soft-foreground text-xs font-medium"
+                  >
+                    <Tag className="h-2.5 w-2.5" />
+                    {tag}
+                  </span>
+                ))}
               </div>
             </div>
-            <div className="bg-secondary p-4 rounded-xl border border-border mb-4">
-              <p className="text-sm text-foreground leading-relaxed">{viewingNotice.body}</p>
-            </div>
-            {viewingNotice.tags.length > 0 && (
-              <div className="mb-5">
-                <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Tags</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {viewingNotice.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-warning-soft border border-warning/20 text-warning-soft-foreground text-xs font-medium"
-                    >
-                      <Tag className="h-2.5 w-2.5" />
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="flex justify-end">
-              <Button
-                onClick={() => setViewingNotice(null)}
-                className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
-              >
-                Close
-              </Button>
-            </div>
+          )}
+          <div className="flex justify-end">
+            <Button
+              onClick={() => setViewingNotice(null)}
+              className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer"
+            >
+              Close
+            </Button>
+          </div>
         </ModalSurface>
       )}
 
       {/* CREATE MODAL */}
       {isCreateOpen && (
-        <ModalSurface onClose={() => setIsCreateOpen(false)} label="Create New Alert" className="sm:max-w-md">
-            <h3 className="text-xl font-bold text-foreground mb-4">Create New Alert</h3>
-            <form onSubmit={handleCreate} className="space-y-4">
+        <ModalSurface
+          onClose={() => setIsCreateOpen(false)}
+          label="Create New Alert"
+          className="sm:max-w-md"
+        >
+          <h3 className="text-xl font-bold text-foreground mb-4">Create New Alert</h3>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-2">Alert Title</label>
+              <Input
+                placeholder="e.g. Weather Advisory"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-2">Type</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as NoticeCategory)}
+                className="w-full h-10 px-3 rounded-xl border border-border bg-secondary text-foreground text-sm focus:border-primary focus:outline-none cursor-pointer"
+              >
+                <option value="ANNOUNCEMENT">Announcement</option>
+                <option value="ALERT">Alert</option>
+                <option value="NOTICE">Notice</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-2">
+                Sender Authority
+              </label>
+              <Input
+                placeholder="e.g. Civic Authority"
+                value={sender}
+                onChange={(e) => setSender(e.target.value)}
+                className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-2">Alert Body</label>
+              <textarea
+                placeholder="Describe the alert..."
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                rows={4}
+                className="w-full rounded-xl border border-border bg-secondary text-foreground px-3 py-2 text-sm focus:border-primary focus:outline-none resize-none"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-2">
+                Tags
+                <span className="ml-1 text-xs text-muted-foreground font-normal">
+                  (press Enter or comma to add)
+                </span>
+              </label>
+              <TagInput tags={formTags} onChange={setFormTags} />
+              <p className="text-xs text-muted-foreground mt-1">
+                Create custom tags relevant to this alert (e.g. weather, road-closure, health)
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-foreground block mb-2">
-                  Alert Title
+                  Start / Issue date
                 </label>
                 <Input
-                  placeholder="e.g. Weather Advisory"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
+                  type="date"
+                  value={formStartAt}
+                  onChange={(e) => setFormStartAt(e.target.value)}
+                  className="rounded-xl border-border bg-secondary text-foreground text-sm"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground block mb-2">Type</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as NoticeCategory)}
-                  className="w-full h-10 px-3 rounded-xl border border-border bg-secondary text-foreground text-sm focus:border-primary focus:outline-none cursor-pointer"
-                >
-                  <option value="ANNOUNCEMENT">Announcement</option>
-                  <option value="ALERT">Alert</option>
-                  <option value="NOTICE">Notice</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-2">
-                  Sender Authority
-                </label>
+                <label className="text-sm font-medium text-foreground block mb-2">Expires On</label>
                 <Input
-                  placeholder="e.g. Civic Authority"
-                  value={sender}
-                  onChange={(e) => setSender(e.target.value)}
-                  className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
+                  type="date"
+                  value={formExpiresAt}
+                  onChange={(e) => setFormExpiresAt(e.target.value)}
+                  className="rounded-xl border-border bg-secondary text-foreground text-sm"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-2">
-                  Alert Body
-                </label>
-                <textarea
-                  placeholder="Describe the alert..."
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  rows={4}
-                  className="w-full rounded-xl border border-border bg-secondary text-foreground px-3 py-2 text-sm focus:border-primary focus:outline-none resize-none"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-2">
-                  Tags
-                  <span className="ml-1 text-xs text-muted-foreground font-normal">(press Enter or comma to add)</span>
-                </label>
-                <TagInput tags={formTags} onChange={setFormTags} />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Create custom tags relevant to this alert (e.g. weather, road-closure, health)
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-2">Start / Issue date</label>
-                  <Input type="date" value={formStartAt} onChange={(e) => setFormStartAt(e.target.value)} className="rounded-xl border-border bg-secondary text-foreground text-sm" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-2">Expires On</label>
-                  <Input type="date" value={formExpiresAt} onChange={(e) => setFormExpiresAt(e.target.value)} className="rounded-xl border-border bg-secondary text-foreground text-sm" />
-                </div>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground block mb-2">Link (optional)</label>
-                <Input placeholder="https://…" value={formLink} onChange={(e) => setFormLink(e.target.value)} className="rounded-xl border-border bg-secondary text-foreground" />
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCreateOpen(false)}
-                  className="rounded-xl border-border hover:bg-secondary text-foreground cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer gap-1.5"
-                >
-                  {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Publish Alert
-                </Button>
-              </div>
-            </form>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-2">
+                Link (optional)
+              </label>
+              <Input
+                placeholder="https://…"
+                value={formLink}
+                onChange={(e) => setFormLink(e.target.value)}
+                className="rounded-xl border-border bg-secondary text-foreground"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCreateOpen(false)}
+                className="rounded-xl border-border hover:bg-secondary text-foreground cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer gap-1.5"
+              >
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                Publish Alert
+              </Button>
+            </div>
+          </form>
         </ModalSurface>
       )}
 
       {/* DELETE MODAL */}
       {deletingNotice && (
-        <ModalSurface onClose={() => setDeletingNotice(null)} label="Delete Notice" className="sm:max-w-sm text-center">
-            <div className="mx-auto w-12 h-12 rounded-full bg-danger-soft flex items-center justify-center text-danger-soft-foreground mb-4">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">Delete Notice</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Delete{' '}
-              <span className="font-semibold text-foreground">"{deletingNotice.title}"</span>?
-            </p>
-            <div className="flex justify-center gap-3">
-              <Button
-                onClick={() => setDeletingNotice(null)}
-                variant="outline"
-                className="rounded-xl border-border hover:bg-secondary text-foreground px-4 cursor-pointer"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleDelete}
-                className="rounded-xl bg-destructive hover:bg-destructive text-white px-4 cursor-pointer"
-              >
-                Delete
-              </Button>
-            </div>
+        <ModalSurface
+          onClose={() => setDeletingNotice(null)}
+          label="Delete Notice"
+          className="sm:max-w-sm text-center"
+        >
+          <div className="mx-auto w-12 h-12 rounded-full bg-danger-soft flex items-center justify-center text-danger-soft-foreground mb-4">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+          <h3 className="text-lg font-bold text-foreground mb-2">Delete Notice</h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            Delete <span className="font-semibold text-foreground">"{deletingNotice.title}"</span>?
+          </p>
+          <div className="flex justify-center gap-3">
+            <Button
+              onClick={() => setDeletingNotice(null)}
+              variant="outline"
+              className="rounded-xl border-border hover:bg-secondary text-foreground px-4 cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDelete}
+              className="rounded-xl bg-destructive hover:bg-destructive text-white px-4 cursor-pointer"
+            >
+              Delete
+            </Button>
+          </div>
         </ModalSurface>
       )}
     </div>

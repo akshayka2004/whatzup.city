@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { DEFAULT_LOCALE, LOCALE_STORAGE_KEY, translate, type Locale } from './index';
 import { LABEL_KEYS } from './labels';
 

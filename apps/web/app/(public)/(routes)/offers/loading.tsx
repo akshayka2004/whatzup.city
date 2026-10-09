@@ -1,5 +1,9 @@
 import { PublicLayout } from '@/components/layouts/public-layout';
-import { ChipRowSkeleton, CouponGridSkeleton, PageTitleSkeleton } from '@/components/public/offers/skeletons';
+import {
+  ChipRowSkeleton,
+  CouponGridSkeleton,
+  PageTitleSkeleton,
+} from '@/components/public/offers/skeletons';
 
 export default function Loading() {
   return (

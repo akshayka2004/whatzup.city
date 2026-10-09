@@ -25,62 +25,95 @@ export type AmenityItem = {
 };
 
 type FieldLabels = {
-  title: string; titlePh: string;
-  capacity: string; capacityPh: string;
-  price: string; pricePh: string;
+  title: string;
+  titlePh: string;
+  capacity: string;
+  capacityPh: string;
+  price: string;
+  pricePh: string;
 };
 
 const DEFAULT_LABELS: FieldLabels = {
-  title: 'Name', titlePh: 'e.g. Standard Package',
-  capacity: 'Capacity', capacityPh: 'e.g. 20 people',
-  price: 'Price', pricePh: 'e.g. ₹1,000',
+  title: 'Name',
+  titlePh: 'e.g. Standard Package',
+  capacity: 'Capacity',
+  capacityPh: 'e.g. 20 people',
+  price: 'Price',
+  pricePh: 'e.g. ₹1,000',
 };
 
 const AMENITY_LABELS: Record<string, FieldLabels> = {
   staycationRooms: {
-    title: 'Room type', titlePh: 'e.g. Deluxe Room, Suite',
-    capacity: 'Capacity', capacityPh: 'e.g. 2 adults + 1 child',
-    price: 'Price', pricePh: 'e.g. ₹3,500 / night',
+    title: 'Room type',
+    titlePh: 'e.g. Deluxe Room, Suite',
+    capacity: 'Capacity',
+    capacityPh: 'e.g. 2 adults + 1 child',
+    price: 'Price',
+    pricePh: 'e.g. ₹3,500 / night',
   },
   dayoutPackages: {
-    title: 'Package name', titlePh: 'e.g. Full-Day Family Package',
-    capacity: 'Group size', capacityPh: 'e.g. up to 6 people',
-    price: 'Price', pricePh: 'e.g. ₹1,200 / person',
+    title: 'Package name',
+    titlePh: 'e.g. Full-Day Family Package',
+    capacity: 'Group size',
+    capacityPh: 'e.g. up to 6 people',
+    price: 'Price',
+    pricePh: 'e.g. ₹1,200 / person',
   },
   venue: {
-    title: 'Hall / space name', titlePh: 'e.g. Grand Ballroom',
-    capacity: 'Capacity', capacityPh: 'e.g. 200 guests seated',
-    price: 'Rental cost', pricePh: 'e.g. ₹25,000 / day',
+    title: 'Hall / space name',
+    titlePh: 'e.g. Grand Ballroom',
+    capacity: 'Capacity',
+    capacityPh: 'e.g. 200 guests seated',
+    price: 'Rental cost',
+    pricePh: 'e.g. ₹25,000 / day',
   },
   fitness: {
-    title: 'Facility name', titlePh: 'e.g. Fitness Centre',
-    capacity: 'Capacity', capacityPh: 'e.g. 15 people',
-    price: 'Price', pricePh: 'e.g. ₹300 / day pass',
+    title: 'Facility name',
+    titlePh: 'e.g. Fitness Centre',
+    capacity: 'Capacity',
+    capacityPh: 'e.g. 15 people',
+    price: 'Price',
+    pricePh: 'e.g. ₹300 / day pass',
   },
   spa: {
-    title: 'Service name', titlePh: 'e.g. Deep Tissue Massage',
-    capacity: 'Duration', capacityPh: 'e.g. 60 minutes',
-    price: 'Price', pricePh: 'e.g. ₹2,000',
+    title: 'Service name',
+    titlePh: 'e.g. Deep Tissue Massage',
+    capacity: 'Duration',
+    capacityPh: 'e.g. 60 minutes',
+    price: 'Price',
+    pricePh: 'e.g. ₹2,000',
   },
   cafe: {
-    title: 'Cafe name / section', titlePh: 'e.g. Poolside Cafe',
-    capacity: 'Seating', capacityPh: 'e.g. 30 seats',
-    price: 'Avg. cost for two', pricePh: 'e.g. ₹800',
+    title: 'Cafe name / section',
+    titlePh: 'e.g. Poolside Cafe',
+    capacity: 'Seating',
+    capacityPh: 'e.g. 30 seats',
+    price: 'Avg. cost for two',
+    pricePh: 'e.g. ₹800',
   },
   restaurant: {
-    title: 'Section name', titlePh: 'e.g. Main Dining Hall',
-    capacity: 'Seating capacity', capacityPh: 'e.g. 80 seats',
-    price: 'Avg. cost for two', pricePh: 'e.g. ₹1,500',
+    title: 'Section name',
+    titlePh: 'e.g. Main Dining Hall',
+    capacity: 'Seating capacity',
+    capacityPh: 'e.g. 80 seats',
+    price: 'Avg. cost for two',
+    pricePh: 'e.g. ₹1,500',
   },
   buffet: {
-    title: 'Meal type', titlePh: 'e.g. Sunday Brunch',
-    capacity: 'Timing', capacityPh: 'e.g. 12pm – 3pm',
-    price: 'Price per person', pricePh: 'e.g. ₹999',
+    title: 'Meal type',
+    titlePh: 'e.g. Sunday Brunch',
+    capacity: 'Timing',
+    capacityPh: 'e.g. 12pm – 3pm',
+    price: 'Price per person',
+    pricePh: 'e.g. ₹999',
   },
   bars: {
-    title: 'Bar name / type', titlePh: 'e.g. Rooftop Bar',
-    capacity: 'Seating', capacityPh: 'e.g. 40 seats',
-    price: 'Price range', pricePh: 'e.g. ₹300 – ₹800',
+    title: 'Bar name / type',
+    titlePh: 'e.g. Rooftop Bar',
+    capacity: 'Seating',
+    capacityPh: 'e.g. 40 seats',
+    price: 'Price range',
+    pricePh: 'e.g. ₹300 – ₹800',
   },
 };
 
@@ -153,20 +186,38 @@ function ItemForm({ labels, initial, onSave, onCancel }: ItemFormProps) {
           <Input
             value={featureInput}
             onChange={(e) => setFeatureInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addFeature(); } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addFeature();
+              }
+            }}
             placeholder="Feature — press Enter to add (e.g. AC, Projector, Sea view)"
             className="h-9 bg-background border-input rounded-lg text-xs"
           />
-          <Button type="button" onClick={addFeature} size="sm" variant="outline" className="h-9 rounded-lg px-3 shrink-0">
+          <Button
+            type="button"
+            onClick={addFeature}
+            size="sm"
+            variant="outline"
+            className="h-9 rounded-lg px-3 shrink-0"
+          >
             Add
           </Button>
         </div>
         {features.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {features.map((f, i) => (
-              <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-secondary text-foreground">
+              <span
+                key={i}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-secondary text-foreground"
+              >
                 {f}
-                <button type="button" onClick={() => setFeatures((fs) => fs.filter((_, idx) => idx !== i))} className="cursor-pointer">
+                <button
+                  type="button"
+                  onClick={() => setFeatures((fs) => fs.filter((_, idx) => idx !== i))}
+                  className="cursor-pointer"
+                >
                   <X className="h-2.5 w-2.5" />
                 </button>
               </span>
@@ -182,10 +233,22 @@ function ItemForm({ labels, initial, onSave, onCancel }: ItemFormProps) {
         className="w-full p-2.5 bg-background border border-input rounded-lg text-xs text-foreground"
       />
       <div className="flex justify-end gap-2 pt-0.5">
-        <Button type="button" onClick={onCancel} size="sm" variant="outline" className="h-8 rounded-lg text-xs">
+        <Button
+          type="button"
+          onClick={onCancel}
+          size="sm"
+          variant="outline"
+          className="h-8 rounded-lg text-xs"
+        >
           Cancel
         </Button>
-        <Button type="button" onClick={save} disabled={!title.trim()} size="sm" className="h-8 rounded-lg text-xs">
+        <Button
+          type="button"
+          onClick={save}
+          disabled={!title.trim()}
+          size="sm"
+          className="h-8 rounded-lg text-xs"
+        >
           Save item
         </Button>
       </div>
@@ -200,7 +263,12 @@ interface AmenityDetailsEditorProps {
   onDetailsChange: (next: Record<string, AmenityItem[]>) => void;
 }
 
-export function AmenityDetailsEditor({ amenities, onAmenitiesChange, details, onDetailsChange }: AmenityDetailsEditorProps) {
+export function AmenityDetailsEditor({
+  amenities,
+  onAmenitiesChange,
+  details,
+  onDetailsChange,
+}: AmenityDetailsEditorProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [adding, setAdding] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<{ key: string; id: string } | null>(null);
@@ -210,7 +278,11 @@ export function AmenityDetailsEditor({ amenities, onAmenitiesChange, details, on
     onAmenitiesChange({ ...amenities, [key]: { ...amenities[key], selected: !on } });
     if (on) {
       // Deselecting collapses it too, so a stale open panel doesn't linger.
-      setExpanded((prev) => { const next = new Set(prev); next.delete(key); return next; });
+      setExpanded((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
     }
   };
 
@@ -247,7 +319,10 @@ export function AmenityDetailsEditor({ amenities, onAmenitiesChange, details, on
         const itemList = items(a.key);
         const labels = labelsFor(a.key);
         return (
-          <div key={a.key} className={`rounded-xl border transition ${on ? 'border-primary/40 bg-primary/5' : 'border-border'}`}>
+          <div
+            key={a.key}
+            className={`rounded-xl border transition ${on ? 'border-primary/40 bg-primary/5' : 'border-border'}`}
+          >
             <div className="flex items-center gap-2 p-3">
               <button
                 type="button"
@@ -257,10 +332,14 @@ export function AmenityDetailsEditor({ amenities, onAmenitiesChange, details, on
                 <div>
                   <div className="text-sm font-semibold text-foreground">{a.label}</div>
                   {a.subOptions && (
-                    <div className="text-xs text-muted-foreground mt-0.5">{a.subOptions.join(' · ')}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {a.subOptions.join(' · ')}
+                    </div>
                   )}
                 </div>
-                <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${on ? 'bg-primary/15 text-primary' : 'bg-secondary text-muted-foreground'}`}>
+                <span
+                  className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${on ? 'bg-primary/15 text-primary' : 'bg-secondary text-muted-foreground'}`}
+                >
                   {on ? `Selected · ₹${ADDON_PRICE.toLocaleString('en-IN')}` : 'Not selected'}
                 </span>
               </button>
@@ -270,15 +349,21 @@ export function AmenityDetailsEditor({ amenities, onAmenitiesChange, details, on
                   onClick={() => toggleExpanded(a.key)}
                   className="shrink-0 flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground cursor-pointer px-2 py-1 rounded-lg hover:bg-secondary"
                 >
-                  {itemList.length > 0 ? `${itemList.length} item${itemList.length === 1 ? '' : 's'}` : 'Add details'}
-                  {isOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                  {itemList.length > 0
+                    ? `${itemList.length} item${itemList.length === 1 ? '' : 's'}`
+                    : 'Add details'}
+                  {isOpen ? (
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  )}
                 </button>
               )}
             </div>
 
             {on && isOpen && (
               <div className="px-3 pb-3 space-y-2">
-                {itemList.map((item) => (
+                {itemList.map((item) =>
                   editingItem?.key === a.key && editingItem?.id === item.id ? (
                     <ItemForm
                       key={item.id}
@@ -288,36 +373,70 @@ export function AmenityDetailsEditor({ amenities, onAmenitiesChange, details, on
                       onCancel={() => setEditingItem(null)}
                     />
                   ) : (
-                    <div key={item.id} className="rounded-xl border border-border bg-background p-3 flex items-start justify-between gap-3">
+                    <div
+                      key={item.id}
+                      className="rounded-xl border border-border bg-background p-3 flex items-start justify-between gap-3"
+                    >
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold text-foreground break-words">{item.title}</div>
+                        <div className="text-sm font-semibold text-foreground break-words">
+                          {item.title}
+                        </div>
                         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
-                          {item.capacity && <span>{labels.capacity}: {item.capacity}</span>}
-                          {item.price && <span>{labels.price}: {item.price}</span>}
+                          {item.capacity && (
+                            <span>
+                              {labels.capacity}: {item.capacity}
+                            </span>
+                          )}
+                          {item.price && (
+                            <span>
+                              {labels.price}: {item.price}
+                            </span>
+                          )}
                         </div>
                         {item.features.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {item.features.map((f, i) => (
-                              <span key={i} className="px-1.5 py-0.5 rounded-full text-xs bg-secondary text-muted-foreground break-words">{f}</span>
+                              <span
+                                key={i}
+                                className="px-1.5 py-0.5 rounded-full text-xs bg-secondary text-muted-foreground break-words"
+                              >
+                                {f}
+                              </span>
                             ))}
                           </div>
                         )}
-                        {item.notes && <p className="text-xs text-muted-foreground mt-1.5 break-words">{item.notes}</p>}
+                        {item.notes && (
+                          <p className="text-xs text-muted-foreground mt-1.5 break-words">
+                            {item.notes}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <button type="button" onClick={() => setEditingItem({ key: a.key, id: item.id })} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer">
+                        <button
+                          type="button"
+                          onClick={() => setEditingItem({ key: a.key, id: item.id })}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer"
+                        >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
-                        <button type="button" onClick={() => removeItem(a.key, item.id)} className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer">
+                        <button
+                          type="button"
+                          onClick={() => removeItem(a.key, item.id)}
+                          className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                        >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </div>
-                  )
-                ))}
+                  ),
+                )}
 
                 {adding === a.key ? (
-                  <ItemForm labels={labels} onSave={(it) => saveItem(a.key, it)} onCancel={() => setAdding(null)} />
+                  <ItemForm
+                    labels={labels}
+                    onSave={(it) => saveItem(a.key, it)}
+                    onCancel={() => setAdding(null)}
+                  />
                 ) : (
                   <button
                     type="button"

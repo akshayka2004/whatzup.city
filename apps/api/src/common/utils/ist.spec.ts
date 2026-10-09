@@ -1,4 +1,12 @@
-import { bucketKey, dayKeys, istDateKey, istDayStart, istRange, pctChange, previousRange } from './ist';
+import {
+  bucketKey,
+  dayKeys,
+  istDateKey,
+  istDayStart,
+  istRange,
+  pctChange,
+  previousRange,
+} from './ist';
 
 describe('IST helpers', () => {
   it('assigns late-evening UTC to the next IST day', () => {

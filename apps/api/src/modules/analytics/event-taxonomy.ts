@@ -63,7 +63,20 @@ export function deviceOf(ua?: string | null): 'mobile' | 'tablet' | 'desktop' | 
   return 'desktop';
 }
 
-const SOURCES = new Set(['home', 'search', 'category', 'nearby', 'offers', 'events', 'qr', 'share', 'related', 'favorites', 'direct', 'external']);
+const SOURCES = new Set([
+  'home',
+  'search',
+  'category',
+  'nearby',
+  'offers',
+  'events',
+  'qr',
+  'share',
+  'related',
+  'favorites',
+  'direct',
+  'external',
+]);
 
 /** Normalises the client-sent source; anything unknown becomes 'other'. */
 export function normaliseSource(src?: unknown): string {

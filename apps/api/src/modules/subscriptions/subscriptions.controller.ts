@@ -1,7 +1,11 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
-import { AssignPackageDto, AssignHotelPackageDto, AssignHomeChefPackageDto } from './dto/subscription.dto';
+import {
+  AssignPackageDto,
+  AssignHotelPackageDto,
+  AssignHomeChefPackageDto,
+} from './dto/subscription.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -43,7 +47,9 @@ export class SubscriptionsController {
   @Post('businesses/:businessId/claim-launch-offer')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Reserve a launch-offer slot and queue its special-priced plan for payment' })
+  @ApiOperation({
+    summary: 'Reserve a launch-offer slot and queue its special-priced plan for payment',
+  })
   async claimLaunchOffer(
     @CurrentUser('id') userId: string,
     @CurrentUser('tenantId') tenantId: string,
@@ -64,7 +70,9 @@ export class SubscriptionsController {
   @Post('businesses/:businessId/assign-hotel')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Assign hotel star-classification pricing to a business (Hotel category only)' })
+  @ApiOperation({
+    summary: 'Assign hotel star-classification pricing to a business (Hotel category only)',
+  })
   async assignHotel(
     @CurrentUser('id') userId: string,
     @CurrentUser('tenantId') tenantId: string,
@@ -77,7 +85,9 @@ export class SubscriptionsController {
   @Post('businesses/:businessId/assign-homechef')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Assign a Home Chef annual tier to a business (Home Chef subcategory only)' })
+  @ApiOperation({
+    summary: 'Assign a Home Chef annual tier to a business (Home Chef subcategory only)',
+  })
   async assignHomeChef(
     @CurrentUser('id') userId: string,
     @CurrentUser('tenantId') tenantId: string,

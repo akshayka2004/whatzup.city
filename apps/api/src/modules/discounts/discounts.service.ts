@@ -54,7 +54,10 @@ export class DiscountsService {
   private async generateCode(tenantId: string): Promise<string> {
     for (let i = 0; i < 5; i++) {
       const code = 'SPIN-' + randomBytes(4).toString('hex').toUpperCase().slice(0, 6);
-      const exists = await this.db.discountSpin.findFirst({ where: { tenantId, code }, select: { id: true } });
+      const exists = await this.db.discountSpin.findFirst({
+        where: { tenantId, code },
+        select: { id: true },
+      });
       if (!exists) return code;
     }
     // Extremely unlikely; fall back to a longer code.
@@ -109,7 +112,9 @@ export class DiscountsService {
       discounts.map(async (d) => {
         const [spun, redeemed] = await Promise.all([
           this.db.discountSpin.count({ where: { discountId: d.id, deletedAt: null } }),
-          this.db.discountSpin.count({ where: { discountId: d.id, status: 'REDEEMED', deletedAt: null } }),
+          this.db.discountSpin.count({
+            where: { discountId: d.id, status: 'REDEEMED', deletedAt: null },
+          }),
         ]);
         return { ...d, spunCount: spun, redeemedCount: redeemed };
       }),
@@ -149,7 +154,13 @@ export class DiscountsService {
     const mySpin = userId
       ? await this.db.discountSpin.findFirst({
           where: { discountId: discount.id, userId, deletedAt: null },
-          select: { discountPercent: true, code: true, status: true, itemName: true, expiresAt: true },
+          select: {
+            discountPercent: true,
+            code: true,
+            status: true,
+            itemName: true,
+            expiresAt: true,
+          },
         })
       : null;
 
@@ -179,7 +190,15 @@ export class DiscountsService {
       orderBy: { createdAt: 'desc' },
       take: limit,
       include: {
-        business: { select: { id: true, name: true, city: true, logo: true, category: { select: { name: true } } } },
+        business: {
+          select: {
+            id: true,
+            name: true,
+            city: true,
+            logo: true,
+            category: { select: { name: true } },
+          },
+        },
       },
     });
     return discounts.map((d) => ({
@@ -207,7 +226,8 @@ export class DiscountsService {
       where: { id: discountId, deletedAt: null },
     });
     if (!discount) throw new NotFoundException('Discount campaign not found');
-    if (!discount.isActive) throw new BadRequestException('This discount wheel is no longer active.');
+    if (!discount.isActive)
+      throw new BadRequestException('This discount wheel is no longer active.');
     const now = new Date();
     if (discount.startDate && discount.startDate > now) {
       throw new BadRequestException('This discount wheel has not started yet.');
@@ -216,10 +236,14 @@ export class DiscountsService {
       throw new BadRequestException('This discount wheel has ended.');
     }
 
-    const existing = await this.db.discountSpin.findFirst({ where: { discountId, userId, deletedAt: null } });
+    const existing = await this.db.discountSpin.findFirst({
+      where: { discountId, userId, deletedAt: null },
+    });
     if (existing) return { ...existing, alreadySpun: true };
 
-    const percentages = Array.isArray(discount.wheelPercentages) ? (discount.wheelPercentages as number[]) : [];
+    const percentages = Array.isArray(discount.wheelPercentages)
+      ? (discount.wheelPercentages as number[])
+      : [];
     if (percentages.length === 0) {
       throw new BadRequestException('This discount wheel has no segments configured.');
     }
@@ -247,7 +271,9 @@ export class DiscountsService {
     } catch (err: any) {
       // Unique (discountId, userId) race — two tabs spinning at the same instant.
       if (err.code === 'P2002') {
-        const raced = await this.db.discountSpin.findFirst({ where: { discountId, userId, deletedAt: null } });
+        const raced = await this.db.discountSpin.findFirst({
+          where: { discountId, userId, deletedAt: null },
+        });
         if (raced) return { ...raced, alreadySpun: true };
       }
       throw err;
@@ -274,8 +300,10 @@ export class DiscountsService {
       include: { user: { select: { id: true, name: true } } },
     });
     if (!spin) throw new NotFoundException('Ticket code not found for this business');
-    if (spin.status === 'REDEEMED') throw new BadRequestException('This ticket has already been redeemed');
-    if (spin.expiresAt && spin.expiresAt < new Date()) throw new BadRequestException('This ticket has expired');
+    if (spin.status === 'REDEEMED')
+      throw new BadRequestException('This ticket has already been redeemed');
+    if (spin.expiresAt && spin.expiresAt < new Date())
+      throw new BadRequestException('This ticket has expired');
 
     return this.db.discountSpin.update({
       where: { id: spin.id },

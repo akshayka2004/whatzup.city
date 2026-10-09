@@ -71,7 +71,9 @@ function pickPublic(biz: any) {
     description: biz.description,
     status: biz.status,
     categoryId: biz.categoryId,
-    category: biz.category ? { id: biz.category.id, name: biz.category.name, slug: biz.category.slug } : null,
+    category: biz.category
+      ? { id: biz.category.id, name: biz.category.name, slug: biz.category.slug }
+      : null,
     subcategory: biz.subcategory,
     address: biz.address,
     city: biz.city,
@@ -103,7 +105,11 @@ function pickPublic(biz: any) {
   };
 }
 
-export async function generateMetadata({ params }: { params: Promise<RouteParams> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<RouteParams>;
+}): Promise<Metadata> {
   const { id } = await params;
   const biz = await getBusiness(id);
   if (!biz) {
@@ -139,7 +145,9 @@ function buildJsonLd(biz: any, id: string) {
   const categoryText = `${biz.category?.name || ''} ${biz.category?.slug || ''}`.toLowerCase();
   const type = /hotel|resort|lodg|homestay|stay\b/.test(categoryText)
     ? 'Hotel'
-    : /restaurant|food|cafe|café|bakery|dining|kitchen|caterer|sweets|biryani|tea|juice/.test(categoryText)
+    : /restaurant|food|cafe|café|bakery|dining|kitchen|caterer|sweets|biryani|tea|juice/.test(
+          categoryText,
+        )
       ? 'Restaurant'
       : 'LocalBusiness';
 

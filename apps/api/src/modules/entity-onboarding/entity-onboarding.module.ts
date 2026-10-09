@@ -5,10 +5,7 @@ import { AuditModule } from '../audit/audit.module';
 import { MediaModule } from '../media/media.module';
 
 @Module({
-  imports: [
-    AuditModule,
-    MediaModule,
-  ],
+  imports: [AuditModule, MediaModule],
   controllers: [EntityOnboardingController],
   providers: [EntityOnboardingService],
   exports: [EntityOnboardingService],

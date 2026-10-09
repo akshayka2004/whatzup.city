@@ -4,7 +4,13 @@
  * Last-resort boundary: replaces the whole document, so it can't rely on the
  * app's providers or Tailwind tokens being mounted — inline styles only.
  */
-export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   return (
     <html lang="en">
       <body
@@ -22,11 +28,15 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
         }}
       >
         <div style={{ maxWidth: 420 }}>
-          <h1 style={{ fontSize: '1.5rem', margin: '0 0 .5rem' }}>Whtzup.city is having a moment</h1>
+          <h1 style={{ fontSize: '1.5rem', margin: '0 0 .5rem' }}>
+            Whtzup.city is having a moment
+          </h1>
           <p style={{ color: '#667085', margin: '0 0 1.25rem', fontSize: '.95rem' }}>
             Something went wrong on our side. Please reload — it usually fixes itself.
           </p>
-          {error.digest && <p style={{ color: '#98A2B3', fontSize: '.75rem' }}>Reference: {error.digest}</p>}
+          {error.digest && (
+            <p style={{ color: '#98A2B3', fontSize: '.75rem' }}>Reference: {error.digest}</p>
+          )}
           <button
             type="button"
             onClick={reset}

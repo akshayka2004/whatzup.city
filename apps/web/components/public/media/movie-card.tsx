@@ -62,7 +62,9 @@ export function MovieCard({
         <span
           className={cn(
             'absolute left-2 top-2 rounded-full px-2 py-0.5 text-xs font-bold',
-            m.status === 'NOW_SHOWING' ? 'bg-success text-success-foreground' : 'bg-primary text-primary-foreground',
+            m.status === 'NOW_SHOWING'
+              ? 'bg-success text-success-foreground'
+              : 'bg-primary text-primary-foreground',
           )}
         >
           {STATUS_LABEL[m.status] || m.status}
@@ -75,11 +77,16 @@ export function MovieCard({
       </button>
 
       <div className="flex flex-1 flex-col p-3">
-        <h3 className="line-clamp-2 break-words text-sm font-semibold leading-tight text-foreground">{m.name}</h3>
+        <h3 className="line-clamp-2 break-words text-sm font-semibold leading-tight text-foreground">
+          {m.name}
+        </h3>
 
         <div className="mt-2 flex flex-wrap items-center gap-1">
           {langs.slice(0, 3).map((l) => (
-            <span key={l} className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-soft-foreground">
+            <span
+              key={l}
+              className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-soft-foreground"
+            >
               {l}
             </span>
           ))}
@@ -89,7 +96,10 @@ export function MovieCard({
             </span>
           )}
           {genres.map((g) => (
-            <span key={g} className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
+            <span
+              key={g}
+              className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground"
+            >
               {g}
             </span>
           ))}

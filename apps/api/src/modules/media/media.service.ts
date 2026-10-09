@@ -36,18 +36,24 @@ export class MediaService implements OnModuleInit {
 
   onModuleInit() {
     // Run cleanup job every 24 hours (86400000 ms)
-    setInterval(() => {
-      this.cleanOrphanedFiles().catch((err) =>
-        this.logger.error(`Error running interval cleanup job: ${err.message}`),
-      );
-    }, 24 * 60 * 60 * 1000);
+    setInterval(
+      () => {
+        this.cleanOrphanedFiles().catch((err) =>
+          this.logger.error(`Error running interval cleanup job: ${err.message}`),
+        );
+      },
+      24 * 60 * 60 * 1000,
+    );
 
     // Also run it 5 minutes after startup to clean up immediately
-    setTimeout(() => {
-      this.cleanOrphanedFiles().catch((err) =>
-        this.logger.error(`Error running startup cleanup job: ${err.message}`),
-      );
-    }, 5 * 60 * 1000);
+    setTimeout(
+      () => {
+        this.cleanOrphanedFiles().catch((err) =>
+          this.logger.error(`Error running startup cleanup job: ${err.message}`),
+        );
+      },
+      5 * 60 * 1000,
+    );
   }
 
   /**
@@ -109,10 +115,7 @@ export class MediaService implements OnModuleInit {
     // tenant-scope-ok: platform-wide storage statistics (admin)
     const bizCount = await this.db.business.count({
       where: {
-        OR: [
-          { logo: { contains: fileKey } },
-          { coverImage: { contains: fileKey } },
-        ],
+        OR: [{ logo: { contains: fileKey } }, { coverImage: { contains: fileKey } }],
       },
     });
     if (bizCount > 0) return true;
@@ -240,10 +243,7 @@ export class MediaService implements OnModuleInit {
     );
 
     // 4. Generate signed upload URL
-    const { uploadUrl } = await this.storageService.createSignedUploadUrl(
-      this.bucket,
-      fileKey,
-    );
+    const { uploadUrl } = await this.storageService.createSignedUploadUrl(this.bucket, fileKey);
 
     return { uploadUrl, fileKey };
   }
@@ -251,7 +251,16 @@ export class MediaService implements OnModuleInit {
   async createRecord(
     tenantId: string,
     businessId: string,
-    data: { url: string; type: string; filename: string; size: number; mimeType: string; title?: string; description?: string; tags?: string[] },
+    data: {
+      url: string;
+      type: string;
+      filename: string;
+      size: number;
+      mimeType: string;
+      title?: string;
+      description?: string;
+      tags?: string[];
+    },
     userContext?: { userId: string; role: string },
   ) {
     // Enforce BOLA checks on create if userContext is provided

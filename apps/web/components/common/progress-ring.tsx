@@ -26,7 +26,14 @@ export function ProgressRing({
       aria-label={`${Math.round(clamped)} percent`}
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} className="stroke-muted" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          strokeWidth={stroke}
+          className="stroke-muted"
+        />
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -39,7 +46,9 @@ export function ProgressRing({
           className="stroke-primary transition-[stroke-dashoffset] duration-1000 ease-out"
         />
       </svg>
-      <span className="absolute text-sm font-bold text-foreground tabular-nums">{label ?? `${Math.round(clamped)}%`}</span>
+      <span className="absolute text-sm font-bold text-foreground tabular-nums">
+        {label ?? `${Math.round(clamped)}%`}
+      </span>
     </div>
   );
 }

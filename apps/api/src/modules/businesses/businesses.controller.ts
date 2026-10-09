@@ -103,7 +103,9 @@ export class BusinessesController {
   @Roles(UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Get('admin/all')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List all businesses across tenants (super-admin; read-only for platform staff)' })
+  @ApiOperation({
+    summary: 'List all businesses across tenants (super-admin; read-only for platform staff)',
+  })
   async adminAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -147,7 +149,9 @@ export class BusinessesController {
   @Roles(UserRole.SUPER_ADMIN)
   @Delete('admin/:id')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Soft-delete a business — removes it from search/discovery (super-admin)' })
+  @ApiOperation({
+    summary: 'Soft-delete a business — removes it from search/discovery (super-admin)',
+  })
   async adminDelete(@Param('id') id: string, @CurrentUser('id') adminId: string) {
     await this.businessesService.adminSoftDelete(id, adminId);
     return { message: 'Business deleted' };
@@ -195,10 +199,7 @@ export class BusinessesController {
   @Public()
   @Get(':id/tags')
   @ApiOperation({ summary: 'Get tags for a business (public)' })
-  async getTags(
-    @Query('tenantId') tenantId: string = 'default',
-    @Param('id') businessId: string,
-  ) {
+  async getTags(@Query('tenantId') tenantId: string = 'default', @Param('id') businessId: string) {
     return this.businessesService.getTags(tenantId, businessId);
   }
 

@@ -51,7 +51,8 @@ export class OcrService {
 
     // Naive Invoice number extraction
     // `/` is allowed so slash-style series ("SC/2026/001") are captured whole, not cut at the first slash.
-    const invoiceRegex = /(?:invoice|bill|receipt|no|num)(?:[\s#.:-]*)([a-zA-Z0-9][a-zA-Z0-9/-]{3,})/i;
+    const invoiceRegex =
+      /(?:invoice|bill|receipt|no|num)(?:[\s#.:-]*)([a-zA-Z0-9][a-zA-Z0-9/-]{3,})/i;
     const invoiceMatch = rawText.match(invoiceRegex);
     const invoiceNumber = invoiceMatch ? invoiceMatch[1] : null;
 

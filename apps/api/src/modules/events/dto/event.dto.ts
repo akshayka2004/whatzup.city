@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsOptional, IsString, IsArray, IsIn, IsNumber, IsDateString, MaxLength, ArrayMaxSize,
+  IsOptional,
+  IsString,
+  IsArray,
+  IsIn,
+  IsNumber,
+  IsDateString,
+  MaxLength,
+  ArrayMaxSize,
 } from 'class-validator';
 import { TICKET_TYPES, EVENT_CATEGORIES } from '../events.service';
 
@@ -14,77 +21,106 @@ import { TICKET_TYPES, EVENT_CATEGORIES } from '../events.service';
  */
 export class EventDto {
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   businessId?: string;
 
-  @ApiProperty({ required: false, description: 'Tenant override for platform-hosted events with no business' })
-  @IsOptional() @IsString()
+  @ApiProperty({
+    required: false,
+    description: 'Tenant override for platform-hosted events with no business',
+  })
+  @IsOptional()
+  @IsString()
   tenantId?: string;
 
   @ApiProperty({ required: false, maxLength: 255 })
-  @IsOptional() @IsString() @MaxLength(255)
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   hostLabel?: string;
 
   @ApiProperty({ required: false, maxLength: 255 })
-  @IsOptional() @IsString() @MaxLength(255)
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   title?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   description?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   posterImage?: string;
 
   @ApiProperty({ required: false, maxLength: 255 })
-  @IsOptional() @IsString() @MaxLength(255)
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   venue?: string;
 
   @ApiProperty({ required: false, maxLength: 100 })
-  @IsOptional() @IsString() @MaxLength(100)
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   city?: string;
 
   @ApiProperty({ required: false, type: [String] })
-  @IsOptional() @IsArray() @ArrayMaxSize(20)
-  @IsString({ each: true }) @MaxLength(100, { each: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(100, { each: true })
   targetCities?: string[];
 
   @ApiProperty({ required: false, enum: EVENT_CATEGORIES })
-  @IsOptional() @IsIn(EVENT_CATEGORIES)
+  @IsOptional()
+  @IsIn(EVENT_CATEGORIES)
   @MaxLength(30, { message: 'The category is too long (30 characters max).' })
   category?: string;
 
   @ApiProperty({ required: false, enum: TICKET_TYPES })
-  @IsOptional() @IsIn(TICKET_TYPES)
+  @IsOptional()
+  @IsIn(TICKET_TYPES)
   @MaxLength(10, { message: 'The ticket type is too long (10 characters max).' })
   ticketType?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsNumber()
+  @IsOptional()
+  @IsNumber()
   ticketPrice?: number;
 
   @ApiProperty({ required: false, description: 'Named tiers, e.g. [{ name: "Gold", price: 999 }]' })
-  @IsOptional() @IsArray() @ArrayMaxSize(20)
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
   ticketTiers?: { name: string; price: number }[];
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsDateString()
+  @IsOptional()
+  @IsDateString()
   startDate?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsDateString()
+  @IsOptional()
+  @IsDateString()
   endDate?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   registrationUrl?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   ticketUrl?: string;
 
   @ApiProperty({ required: false, maxLength: 30 })
-  @IsOptional() @IsString() @MaxLength(30)
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
   status?: string;
 }

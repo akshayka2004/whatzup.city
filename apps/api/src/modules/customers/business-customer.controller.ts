@@ -19,7 +19,12 @@ export class BusinessCustomerController {
 
   @Get('businesses/:businessId/customers')
   @ApiOperation({ summary: 'List CRM customers for a business with filters and search' })
-  @ApiQuery({ name: 'filter', required: false, description: 'all|claimed|redeemed|active_month|new_month|repeat|high_engagement|branch|referral' })
+  @ApiQuery({
+    name: 'filter',
+    required: false,
+    description:
+      'all|claimed|redeemed|active_month|new_month|repeat|high_engagement|branch|referral',
+  })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
@@ -54,7 +59,10 @@ export class BusinessCustomerController {
     const csv = await this.svc.exportCsv(businessId, filter, search);
     const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="customers-${(filter || 'all').replace(/[^a-z_]/gi, '')}-${day}.csv"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="customers-${(filter || 'all').replace(/[^a-z_]/gi, '')}-${day}.csv"`,
+    );
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).send(csv);
   }

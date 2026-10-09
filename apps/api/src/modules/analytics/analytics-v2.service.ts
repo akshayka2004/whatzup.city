@@ -3,7 +3,17 @@ import { Prisma } from '@prisma/client';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { assertBusinessAccess, type AccessUser } from '../../common/utils/business-access';
-import { addDaysKey, bucketKey, dayKeys, istDateKey, istDayStart, istRange, pctChange, previousRange, type IstRange } from '../../common/utils/ist';
+import {
+  addDaysKey,
+  bucketKey,
+  dayKeys,
+  istDateKey,
+  istDayStart,
+  istRange,
+  pctChange,
+  previousRange,
+  type IstRange,
+} from '../../common/utils/ist';
 import { AnalyticsRollupService } from './analytics-rollup.service';
 import { ACTION_GROUPS, EVENT_GROUPS, eventsFor, groupOf, type EventGroup } from './event-taxonomy';
 
@@ -41,7 +51,11 @@ function bizIn(s: PlatformScope, col = 'business_id') {
 type Metric = { value: number; previous: number; change: number | null };
 
 const n = (v: unknown) => (typeof v === 'bigint' ? Number(v) : v == null ? 0 : Number(v));
-const metric = (value: number, previous: number): Metric => ({ value, previous, change: pctChange(value, previous) });
+const metric = (value: number, previous: number): Metric => ({
+  value,
+  previous,
+  change: pctChange(value, previous),
+});
 const round1 = (v: number) => Math.round(v * 10) / 10;
 
 /** IST calendar day of a UTC timestamp column, as 'YYYY-MM-DD'. */
@@ -69,8 +83,18 @@ export class AnalyticsV2Service {
   ) {}
 
   private range(q: RangeQuery) {
-    const r = istRange({ from: q.from, to: q.to, days: q.days ? Number(q.days) : 30, maxDays: 400 });
-    const g: Granularity = q.granularity && ['day', 'week', 'month'].includes(q.granularity) ? q.granularity : r.days > 120 ? 'week' : 'day';
+    const r = istRange({
+      from: q.from,
+      to: q.to,
+      days: q.days ? Number(q.days) : 30,
+      maxDays: 400,
+    });
+    const g: Granularity =
+      q.granularity && ['day', 'week', 'month'].includes(q.granularity)
+        ? q.granularity
+        : r.days > 120
+          ? 'week'
+          : 'day';
     return { r, prev: previousRange(r), g };
   }
 
@@ -102,9 +126,15 @@ export class AnalyticsV2Service {
     }));
   }
 
-  private async eventTotals(businessId: string | null, r: IstRange, extra: Prisma.Sql = Prisma.empty) {
+  private async eventTotals(
+    businessId: string | null,
+    r: IstRange,
+    extra: Prisma.Sql = Prisma.empty,
+  ) {
     const where = businessId ? Prisma.sql`business_id = ${businessId}::uuid AND` : Prisma.empty;
-    const rows = await this.db.$queryRaw<{ event: string; total: bigint; visitors: bigint }[]>(Prisma.sql`
+    const rows = await this.db.$queryRaw<
+      { event: string; total: bigint; visitors: bigint }[]
+    >(Prisma.sql`
       SELECT event, count(*) AS total, count(DISTINCT ${VID}) AS visitors
       FROM analytics_events
       WHERE ${where} created_at >= ${r.start} AND created_at < ${r.end} AND deleted_at IS NULL AND ${HUMAN} ${extra}
@@ -115,14 +145,21 @@ export class AnalyticsV2Service {
       const g = groupOf(row.event);
       if (g) byGroup[g] += n(row.total);
     }
-    const distinct = await this.db.$queryRaw<{ viewers: bigint; actors: bigint; seers: bigint }[]>(Prisma.sql`
+    const distinct = await this.db.$queryRaw<
+      { viewers: bigint; actors: bigint; seers: bigint }[]
+    >(Prisma.sql`
       SELECT
         count(DISTINCT ${VID}) FILTER (WHERE event IN (${Prisma.join(eventsFor('profileView'))})) AS viewers,
         count(DISTINCT ${VID}) FILTER (WHERE event IN (${Prisma.join(eventsFor(...ACTION_GROUPS))})) AS actors,
         count(DISTINCT ${VID}) FILTER (WHERE event IN (${Prisma.join(eventsFor('impression'))})) AS seers
       FROM analytics_events
       WHERE ${where} created_at >= ${r.start} AND created_at < ${r.end} AND deleted_at IS NULL AND ${HUMAN} ${extra}`);
-    return { byGroup, viewers: n(distinct[0]?.viewers), actors: n(distinct[0]?.actors), seers: n(distinct[0]?.seers) };
+    return {
+      byGroup,
+      viewers: n(distinct[0]?.viewers),
+      actors: n(distinct[0]?.actors),
+      seers: n(distinct[0]?.seers),
+    };
   }
 
   private async businessOutcomes(businessId: string, r: IstRange) {
@@ -132,15 +169,29 @@ export class AnalyticsV2Service {
         FROM offer_redemptions r JOIN offers o ON o.id = r.offer_id
         WHERE o.business_id = ${businessId}::uuid AND r.deleted_at IS NULL
           AND r.created_at >= ${r.start} AND r.created_at < ${r.end}`),
-      this.db.discountSpin.count({ where: { businessId, deletedAt: null, redeemedAt: { gte: r.start, lt: r.end } } }),
-      this.db.voucherClaim.count({ where: { businessId, deletedAt: null, redeemedAt: { gte: r.start, lt: r.end } } }),
+      this.db.discountSpin.count({
+        where: { businessId, deletedAt: null, redeemedAt: { gte: r.start, lt: r.end } },
+      }),
+      this.db.voucherClaim.count({
+        where: { businessId, deletedAt: null, redeemedAt: { gte: r.start, lt: r.end } },
+      }),
       this.db.bill.aggregate({
-        where: { businessId, deletedAt: null, status: 'VERIFIED', verifiedAt: { gte: r.start, lt: r.end } },
+        where: {
+          businessId,
+          deletedAt: null,
+          status: 'VERIFIED',
+          verifiedAt: { gte: r.start, lt: r.end },
+        },
         _sum: { amount: true },
         _count: { _all: true },
       }),
       this.db.review.aggregate({
-        where: { businessId, deletedAt: null, status: { not: 'REMOVED' }, createdAt: { gte: r.start, lt: r.end } },
+        where: {
+          businessId,
+          deletedAt: null,
+          status: { not: 'REMOVED' },
+          createdAt: { gte: r.start, lt: r.end },
+        },
         _avg: { rating: true },
         _count: { _all: true },
       }),
@@ -237,21 +288,42 @@ export class AnalyticsV2Service {
     const today = istDateKey(new Date());
     const lastDone = r.to < today ? r.to : addDaysKey(today, -1);
     let rawStart = r.start;
-    let rolled: { date: Date; views: number; visitors: number; actions: number; claims: number; verifiedSpend: Prisma.Decimal }[] = [];
+    let rolled: {
+      date: Date;
+      views: number;
+      visitors: number;
+      actions: number;
+      claims: number;
+      verifiedSpend: Prisma.Decimal;
+    }[] = [];
     if (r.from <= lastDone) {
       const needed = dayKeys(istRange({ from: r.from, to: lastDone, maxDays: 400 }));
       const done = await this.rollups.computedDays(r.from, lastDone);
       if (needed.every((d) => done.has(d))) {
         rolled = await this.db.dailyBusinessStat.findMany({
-          where: { businessId, date: { gte: new Date(`${r.from}T00:00:00Z`), lte: new Date(`${lastDone}T00:00:00Z`) } },
-          select: { date: true, views: true, visitors: true, actions: true, claims: true, verifiedSpend: true },
+          where: {
+            businessId,
+            date: { gte: new Date(`${r.from}T00:00:00Z`), lte: new Date(`${lastDone}T00:00:00Z`) },
+          },
+          select: {
+            date: true,
+            views: true,
+            visitors: true,
+            actions: true,
+            claims: true,
+            verifiedSpend: true,
+          },
         });
         rawStart = istDayStart(addDaysKey(lastDone, 1));
       }
     }
     const rawNeeded = rawStart < r.end;
-    const [ev, claims, spend] = !rawNeeded ? [[], [], []] as const : await Promise.all([
-      this.db.$queryRaw<{ d: string; views: bigint; visitors: bigint; actions: bigint }[]>(Prisma.sql`
+    const [ev, claims, spend] = !rawNeeded
+      ? ([[], [], []] as const)
+      : await Promise.all([
+          this.db.$queryRaw<
+            { d: string; views: bigint; visitors: bigint; actions: bigint }[]
+          >(Prisma.sql`
         SELECT ${istDay('created_at')} AS d,
           count(*) FILTER (WHERE event IN (${views})) AS views,
           count(DISTINCT ${VID}) FILTER (WHERE event IN (${views})) AS visitors,
@@ -260,28 +332,48 @@ export class AnalyticsV2Service {
         WHERE business_id = ${businessId}::uuid AND created_at >= ${rawStart} AND created_at < ${r.end}
           AND deleted_at IS NULL AND ${HUMAN}
         GROUP BY d`),
-      this.db.$queryRaw<{ d: string; claims: bigint }[]>(Prisma.sql`
+          this.db.$queryRaw<{ d: string; claims: bigint }[]>(Prisma.sql`
         SELECT ${istDay('r.created_at')} AS d, count(*) AS claims
         FROM offer_redemptions r JOIN offers o ON o.id = r.offer_id
         WHERE o.business_id = ${businessId}::uuid AND r.deleted_at IS NULL
           AND r.created_at >= ${rawStart} AND r.created_at < ${r.end}
         GROUP BY d`),
-      this.db.$queryRaw<{ d: string; spend: Prisma.Decimal }[]>(Prisma.sql`
+          this.db.$queryRaw<{ d: string; spend: Prisma.Decimal }[]>(Prisma.sql`
         SELECT ${istDay('verified_at')} AS d, sum(amount) AS spend
         FROM bills
         WHERE business_id = ${businessId}::uuid AND deleted_at IS NULL AND status = 'VERIFIED'
           AND verified_at >= ${rawStart} AND verified_at < ${r.end}
         GROUP BY d`),
-    ]);
+        ]);
 
     // Visitors are distinct per day; summing days into weeks/months over-counts returning visitors,
     // so coarser buckets report "visits" semantics and say so via `visitorsAreDailyUnique`.
-    const buckets = new Map<string, { date: string; views: number; visitors: number; actions: number; claims: number; spend: number }>();
+    const buckets = new Map<
+      string,
+      {
+        date: string;
+        views: number;
+        visitors: number;
+        actions: number;
+        claims: number;
+        spend: number;
+      }
+    >();
     for (const day of dayKeys(r)) {
       const k = bucketKey(day, g);
-      if (!buckets.has(k)) buckets.set(k, { date: k, views: 0, visitors: 0, actions: 0, claims: 0, spend: 0 });
+      if (!buckets.has(k))
+        buckets.set(k, { date: k, views: 0, visitors: 0, actions: 0, claims: 0, spend: 0 });
     }
-    const add = (d: string, f: (b: { views: number; visitors: number; actions: number; claims: number; spend: number }) => void) => {
+    const add = (
+      d: string,
+      f: (b: {
+        views: number;
+        visitors: number;
+        actions: number;
+        claims: number;
+        spend: number;
+      }) => void,
+    ) => {
       const b = buckets.get(bucketKey(d, g));
       if (b) f(b);
     };
@@ -332,7 +424,14 @@ export class AnalyticsV2Service {
   private async offerTable(businessId: string, r: IstRange) {
     const offers = await this.db.offer.findMany({
       where: { businessId, deletedAt: null },
-      select: { id: true, title: true, status: true, startDate: true, endDate: true, discountPercent: true },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        startDate: true,
+        endDate: true,
+        discountPercent: true,
+      },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
@@ -346,7 +445,11 @@ export class AnalyticsV2Service {
       }),
       this.db.offerClick.groupBy({
         by: ['offerId'],
-        where: { offerKind: 'BUSINESS', offerId: { in: ids }, clickDate: { gte: new Date(`${r.from}T00:00:00Z`), lte: new Date(`${r.to}T00:00:00Z`) } },
+        where: {
+          offerKind: 'BUSINESS',
+          offerId: { in: ids },
+          clickDate: { gte: new Date(`${r.from}T00:00:00Z`), lte: new Date(`${r.to}T00:00:00Z`) },
+        },
         _count: { _all: true },
       }),
     ]);
@@ -382,23 +485,44 @@ export class AnalyticsV2Service {
     const bw = bizWhere(sc);
     const [ev, users, businesses, revenue, gmv, claims] = await Promise.all([
       this.eventTotals(null, r, bizIn(sc)),
-      this.db.user.count({ where: { deletedAt: null, role: 'USER', createdAt: { gte: r.start, lt: r.end } } }),
-      this.db.business.count({ where: { deletedAt: null, ...bw, createdAt: { gte: r.start, lt: r.end } } }),
+      this.db.user.count({
+        where: { deletedAt: null, role: 'USER', createdAt: { gte: r.start, lt: r.end } },
+      }),
+      this.db.business.count({
+        where: { deletedAt: null, ...bw, createdAt: { gte: r.start, lt: r.end } },
+      }),
       this.db.transaction.groupBy({
         by: ['cycle'],
-        where: { type: 'PAYMENT_VERIFIED', createdAt: { gte: r.start, lt: r.end }, ...(scoped(sc) ? { business: bw } : {}) },
+        where: {
+          type: 'PAYMENT_VERIFIED',
+          createdAt: { gte: r.start, lt: r.end },
+          ...(scoped(sc) ? { business: bw } : {}),
+        },
         _sum: { amountBase: true, amountTax: true },
         _count: { _all: true },
       }),
       this.db.bill.aggregate({
-        where: { deletedAt: null, status: 'VERIFIED', verifiedAt: { gte: r.start, lt: r.end }, ...(scoped(sc) ? { business: bw } : {}) },
+        where: {
+          deletedAt: null,
+          status: 'VERIFIED',
+          verifiedAt: { gte: r.start, lt: r.end },
+          ...(scoped(sc) ? { business: bw } : {}),
+        },
         _sum: { amount: true },
         _count: { _all: true },
       }),
-      this.db.offerRedemption.count({ where: { deletedAt: null, createdAt: { gte: r.start, lt: r.end }, ...(scoped(sc) ? { offer: { business: bw } } : {}) } }),
+      this.db.offerRedemption.count({
+        where: {
+          deletedAt: null,
+          createdAt: { gte: r.start, lt: r.end },
+          ...(scoped(sc) ? { offer: { business: bw } } : {}),
+        },
+      }),
     ]);
     const rev = (cycle?: string) =>
-      revenue.filter((x) => !cycle || x.cycle === cycle).reduce((s, x) => s + Number(x._sum.amountBase ?? 0), 0);
+      revenue
+        .filter((x) => !cycle || x.cycle === cycle)
+        .reduce((s, x) => s + Number(x._sum.amountBase ?? 0), 0);
     return {
       visitors: ev.viewers,
       profileViews: ev.byGroup.profileView,
@@ -417,23 +541,61 @@ export class AnalyticsV2Service {
     };
   }
 
-  private async computePlatform(r: IstRange, prev: IstRange, g: Granularity, sc: PlatformScope = {}) {
+  private async computePlatform(
+    r: IstRange,
+    prev: IstRange,
+    g: Granularity,
+    sc: PlatformScope = {},
+  ) {
     const now = new Date();
     const bw = bizWhere(sc);
     const viaBiz = scoped(sc) ? { business: bw } : {};
     const bCity = sc.city ? Prisma.sql`AND lower(b.city) = lower(${sc.city})` : Prisma.empty;
-    const bCat = sc.categoryId ? Prisma.sql`AND b.category_id = ${sc.categoryId}::uuid` : Prisma.empty;
+    const bCat = sc.categoryId
+      ? Prisma.sql`AND b.category_id = ${sc.categoryId}::uuid`
+      : Prisma.empty;
     const in7 = new Date(now.getTime() + 7 * 86400000);
-    const [cur, before, snapshot, series, topBusinesses, topCategories, topCities, searches, planMix, statusMix] = await Promise.all([
+    const [
+      cur,
+      before,
+      snapshot,
+      series,
+      topBusinesses,
+      topCategories,
+      topCities,
+      searches,
+      planMix,
+      statusMix,
+    ] = await Promise.all([
       this.platformTotals(r, sc),
       this.platformTotals(prev, sc),
       Promise.all([
         this.db.business.count({ where: { deletedAt: null, ...bw, status: 'APPROVED' } }),
-        this.db.business.count({ where: { deletedAt: null, ...bw, status: { in: ['PENDING_VERIFICATION', 'UNDER_REVIEW'] } } }),
+        this.db.business.count({
+          where: {
+            deletedAt: null,
+            ...bw,
+            status: { in: ['PENDING_VERIFICATION', 'UNDER_REVIEW'] },
+          },
+        }),
         this.db.payment.count({ where: { deletedAt: null, status: 'PENDING', ...viaBiz } }),
         this.db.moderationReport.count({ where: { deletedAt: null, status: 'PENDING' } }),
-        this.db.business.count({ where: { deletedAt: null, ...bw, trialStatus: 'ACTIVE', trialEndDate: { gte: now, lt: in7 } } }),
-        this.db.subscription.count({ where: { deletedAt: null, status: 'ACTIVE', endDate: { gte: now, lt: new Date(now.getTime() + 30 * 86400000) }, ...viaBiz } }),
+        this.db.business.count({
+          where: {
+            deletedAt: null,
+            ...bw,
+            trialStatus: 'ACTIVE',
+            trialEndDate: { gte: now, lt: in7 },
+          },
+        }),
+        this.db.subscription.count({
+          where: {
+            deletedAt: null,
+            status: 'ACTIVE',
+            endDate: { gte: now, lt: new Date(now.getTime() + 30 * 86400000) },
+            ...viaBiz,
+          },
+        }),
       ]),
       this.platformSeries(r, g, sc),
       this.db.$queryRaw<{ id: string; name: string; city: string; visitors: bigint }[]>(Prisma.sql`
@@ -471,8 +633,16 @@ export class AnalyticsV2Service {
       }),
     ]);
 
-    const [activeBusinesses, pendingApprovals, pendingPayments, openReports, trialsEnding7d, renewalsDue30d] = snapshot;
-    const status = (s: string[]) => statusMix.filter((x) => s.includes(x.status)).reduce((a, x) => a + x._count._all, 0);
+    const [
+      activeBusinesses,
+      pendingApprovals,
+      pendingPayments,
+      openReports,
+      trialsEnding7d,
+      renewalsDue30d,
+    ] = snapshot;
+    const status = (s: string[]) =>
+      statusMix.filter((x) => s.includes(x.status)).reduce((a, x) => a + x._count._all, 0);
     const k = (name: keyof typeof cur) => metric(cur[name] as number, before[name] as number);
 
     return {
@@ -496,19 +666,56 @@ export class AnalyticsV2Service {
         verifiedBills: k('verifiedBills'),
         offerClaims: k('offerClaims'),
       },
-      snapshot: { activeBusinesses, pendingApprovals, pendingPayments, openReports, trialsEnding7d, renewalsDue30d },
+      snapshot: {
+        activeBusinesses,
+        pendingApprovals,
+        pendingPayments,
+        openReports,
+        trialsEnding7d,
+        renewalsDue30d,
+      },
       onboardingFunnel: [
-        { stage: 'Started', value: status(['DRAFT', 'PENDING_VERIFICATION', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'SUSPENDED', 'ARCHIVED']) },
-        { stage: 'Submitted', value: status(['PENDING_VERIFICATION', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'SUSPENDED', 'ARCHIVED']) },
+        {
+          stage: 'Started',
+          value: status([
+            'DRAFT',
+            'PENDING_VERIFICATION',
+            'UNDER_REVIEW',
+            'APPROVED',
+            'REJECTED',
+            'SUSPENDED',
+            'ARCHIVED',
+          ]),
+        },
+        {
+          stage: 'Submitted',
+          value: status([
+            'PENDING_VERIFICATION',
+            'UNDER_REVIEW',
+            'APPROVED',
+            'REJECTED',
+            'SUSPENDED',
+            'ARCHIVED',
+          ]),
+        },
         { stage: 'Approved', value: status(['APPROVED', 'SUSPENDED', 'ARCHIVED']) },
       ],
       series,
-      topBusinesses: topBusinesses.map((b) => ({ id: b.id, name: b.name, city: b.city, visitors: n(b.visitors) })),
+      topBusinesses: topBusinesses.map((b) => ({
+        id: b.id,
+        name: b.name,
+        city: b.city,
+        visitors: n(b.visitors),
+      })),
       topCategories: topCategories.map((c) => ({ name: c.name, visitors: n(c.visitors) })),
       cities: topCities.map((c) => ({ city: c.city, businesses: n(c.businesses) })),
       searches: searches.map((s) => ({ query: s.q, total: n(s.total), zeroResults: n(s.zero) })),
       planMix: planMix
-        .map((p) => ({ plan: p.packageName ?? 'Other', revenue: Number(p._sum.amountBase ?? 0), count: p._count._all }))
+        .map((p) => ({
+          plan: p.packageName ?? 'Other',
+          revenue: Number(p._sum.amountBase ?? 0),
+          count: p._count._all,
+        }))
         .sort((a, b) => b.revenue - a.revenue),
       generatedAt: new Date().toISOString(),
     };
@@ -531,10 +738,14 @@ export class AnalyticsV2Service {
         SELECT ${istDay('created_at')} AS d, sum(amount_base) AS amt FROM transactions
         WHERE type = 'PAYMENT_VERIFIED' AND created_at >= ${r.start} AND created_at < ${r.end} ${bizIn(sc)} GROUP BY d`),
     ]);
-    const buckets = new Map<string, { date: string; visitors: number; newUsers: number; newBusinesses: number; revenue: number }>();
+    const buckets = new Map<
+      string,
+      { date: string; visitors: number; newUsers: number; newBusinesses: number; revenue: number }
+    >();
     for (const day of dayKeys(r)) {
       const k = bucketKey(day, g);
-      if (!buckets.has(k)) buckets.set(k, { date: k, visitors: 0, newUsers: 0, newBusinesses: 0, revenue: 0 });
+      if (!buckets.has(k))
+        buckets.set(k, { date: k, visitors: 0, newUsers: 0, newBusinesses: 0, revenue: 0 });
     }
     const at = (d: string) => buckets.get(bucketKey(d, g));
     ev.forEach((x) => at(x.d) && (at(x.d)!.visitors += n(x.visitors)));

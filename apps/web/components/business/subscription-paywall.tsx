@@ -20,9 +20,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import {
-  SUBSCRIPTION_PLANS, PLAN_DURATION_DAYS, HOTEL_DURATION_DAYS, RENEWAL_REMINDER_DAYS,
-  getPlan, formatINR, withTax, TAX_PERCENT,
-  PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME,
+  SUBSCRIPTION_PLANS,
+  PLAN_DURATION_DAYS,
+  HOTEL_DURATION_DAYS,
+  RENEWAL_REMINDER_DAYS,
+  getPlan,
+  formatINR,
+  withTax,
+  TAX_PERCENT,
+  PAYMENT_QR_SRC,
+  PAYMENT_UPI_ID,
+  PAYMENT_PAYEE_NAME,
 } from '@/lib/subscription-plans';
 import { computeHotelCharge, type HotelAmenities } from '@/lib/hotel-pricing';
 import { HOME_CHEF_PLANS, HOME_CHEF_DURATION_DAYS, getHomeChefPlan } from '@/lib/home-chef-pricing';
@@ -43,7 +51,12 @@ function daysUntil(iso?: string | null) {
 }
 
 // Pages an unpaid business must still reach: ask for help, see plans/invoices, switch outlet.
-const PAYWALL_EXEMPT = ['/dashboard/support', '/dashboard/subscriptions', '/dashboard/invoice', '/dashboard/outlets'];
+const PAYWALL_EXEMPT = [
+  '/dashboard/support',
+  '/dashboard/subscriptions',
+  '/dashboard/invoice',
+  '/dashboard/outlets',
+];
 
 export function SubscriptionPaywall() {
   const pathname = usePathname();
@@ -78,22 +91,29 @@ export function SubscriptionPaywall() {
         if (cancelled) return;
         if (subRes.status === 'fulfilled' && !subRes.value.error) setSub(subRes.value.data);
         if (payRes.status === 'fulfilled' && !payRes.value.error) {
-          const pays = Array.isArray(payRes.value.data) ? payRes.value.data : payRes.value.data?.data ?? [];
+          const pays = Array.isArray(payRes.value.data)
+            ? payRes.value.data
+            : (payRes.value.data?.data ?? []);
           setPendingPayment(pays.some((p: any) => p.status === 'PENDING'));
         }
       }
       setReady(true);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const isHotel = biz?.category?.slug === 'hotel';
-  const isHomeChef = Array.isArray(biz?.subcategoryIds) && biz.subcategoryIds.includes('home_chefs');
+  const isHomeChef =
+    Array.isArray(biz?.subcategoryIds) && biz.subcategoryIds.includes('home_chefs');
   const hotelCharge = computeHotelCharge(biz?.hotelStarRating, biz?.hotelAmenities);
   const plan = getPlan(selectedPlan);
   const homeChefPlan = getHomeChefPlan(homeChefTier);
   // Prices are GST-exclusive; tax is added on top, same as registration.
-  const totals = withTax(isHotel ? hotelCharge.total : isHomeChef ? homeChefPlan?.price || 0 : plan?.offerPrice || 0);
+  const totals = withTax(
+    isHotel ? hotelCharge.total : isHomeChef ? homeChefPlan?.price || 0 : plan?.offerPrice || 0,
+  );
   const amount = totals.total;
 
   // `getActive` returns a synthetic FREE tier when nothing is active.
@@ -103,7 +123,12 @@ export function SubscriptionPaywall() {
     hasPaidActive && remaining !== null && remaining <= RENEWAL_REMINDER_DAYS && remaining >= 0;
 
   const mustPay = ready && !!biz && !hasPaidActive && !pendingPayment;
-  const show = ready && !!biz && !done && !dismissed && (mustPay || expiringSoon || (pendingPayment && !hasPaidActive));
+  const show =
+    ready &&
+    !!biz &&
+    !done &&
+    !dismissed &&
+    (mustPay || expiringSoon || (pendingPayment && !hasPaidActive));
 
   if (!show || PAYWALL_EXEMPT.some((p) => pathname?.startsWith(p))) return null;
 
@@ -129,8 +154,14 @@ export function SubscriptionPaywall() {
       if (assignRes.error) throw new Error(assignRes.error);
       const subscriptionId = (assignRes.data as any)?.id;
 
-      const signed = await onboardingService.getSignedUrl(biz.id, proof.name, proof.type, 'payment');
-      if (!signed.data || signed.error) throw new Error(signed.error || 'Failed to get upload URL.');
+      const signed = await onboardingService.getSignedUrl(
+        biz.id,
+        proof.name,
+        proof.type,
+        'payment',
+      );
+      if (!signed.data || signed.error)
+        throw new Error(signed.error || 'Failed to get upload URL.');
       const ok = await onboardingService.uploadFile(signed.data.uploadUrl, proof);
       if (!ok) throw new Error('Failed to upload the screenshot.');
 
@@ -140,7 +171,11 @@ export function SubscriptionPaywall() {
         proofUrl: JSON.stringify({ bucket: 'verification-documents', path: signed.data.fileKey }),
         transactionRef: payerRef || undefined,
         subscriptionId,
-        packageName: isHotel ? `HOTEL_${biz.hotelStarRating}STAR` : isHomeChef ? `HOMECHEF_${homeChefTier}` : selectedPlan,
+        packageName: isHotel
+          ? `HOTEL_${biz.hotelStarRating}STAR`
+          : isHomeChef
+            ? `HOMECHEF_${homeChefTier}`
+            : selectedPlan,
       });
       if (res.error) throw new Error(res.error);
       setDone(true);
@@ -155,178 +190,205 @@ export function SubscriptionPaywall() {
     <ModalSurface
       // Only the reminder states can be dismissed; "choose a plan" is mandatory.
       onClose={() => (expiringSoon || awaiting) && setDismissed(true)}
-      label={awaiting ? 'Payment awaiting verification' : expiringSoon ? 'Your plan is expiring soon' : 'Choose a plan to continue'}
+      label={
+        awaiting
+          ? 'Payment awaiting verification'
+          : expiringSoon
+            ? 'Your plan is expiring soon'
+            : 'Choose a plan to continue'
+      }
       className="p-0 sm:max-w-3xl"
       hideClose
     >
-        <div className="flex items-start justify-between gap-4 p-6 border-b border-border">
-          <div>
-            <h2 className="text-xl font-bold text-foreground">
-              {awaiting
-                ? 'Payment awaiting verification'
-                : expiringSoon
-                  ? 'Your plan is expiring soon'
-                  : 'Choose a plan to continue'}
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {awaiting
-                ? 'We have your payment screenshot. Our team will verify it and activate your listing shortly.'
-                : expiringSoon
-                  ? `Your plan expires in ${remaining} day${remaining === 1 ? '' : 's'}. Renew now to stay listed.`
-                  : 'An active plan is required to keep your business listed on Whtzup.city.'}
-            </p>
-          </div>
-          {(expiringSoon || awaiting) && (
-            <button
-              type="button"
-              onClick={() => setDismissed(true)}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
-              aria-label="Dismiss"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          )}
+      <div className="flex items-start justify-between gap-4 p-6 border-b border-border">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">
+            {awaiting
+              ? 'Payment awaiting verification'
+              : expiringSoon
+                ? 'Your plan is expiring soon'
+                : 'Choose a plan to continue'}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {awaiting
+              ? 'We have your payment screenshot. Our team will verify it and activate your listing shortly.'
+              : expiringSoon
+                ? `Your plan expires in ${remaining} day${remaining === 1 ? '' : 's'}. Renew now to stay listed.`
+                : 'An active plan is required to keep your business listed on Whtzup.city.'}
+          </p>
         </div>
-
-        {awaiting ? (
-          <div className="p-6 flex items-center gap-3 text-sm text-muted-foreground">
-            <ShieldCheck className="h-5 w-5 text-success-soft-foreground shrink-0" />
-            Nothing more to do right now — you'll be notified once it's approved.
-          </div>
-        ) : (
-          <div className="p-6 space-y-6">
-            {/* Plan choice — hotels are priced by classification, Home Chefs by tier */}
-            {isHotel ? (
-              <div className="rounded-xl border border-border p-4 space-y-1.5 text-sm">
-                <h3 className="text-sm font-bold text-foreground mb-2">Your hotel listing</h3>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>{biz?.hotelStarRating}★ classification</span>
-                  <span>{formatINR(hotelCharge.base)}</span>
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>{hotelCharge.selectedCount} service{hotelCharge.selectedCount === 1 ? '' : 's'}</span>
-                  <span>{formatINR(hotelCharge.addons)}</span>
-                </div>
-              </div>
-            ) : isHomeChef ? (
-              <div className="grid sm:grid-cols-3 gap-3">
-                {HOME_CHEF_PLANS.map((p) => (
-                  <button
-                    key={p.code}
-                    type="button"
-                    onClick={() => setHomeChefTier(p.code)}
-                    className={cn(
-                      'p-4 rounded-xl border text-left transition cursor-pointer',
-                      homeChefTier === p.code
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-border',
-                    )}
-                  >
-                    <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
-                    <div className="text-lg font-extrabold text-foreground">{formatINR(p.price)}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {p.offers} offers · {p.vouchers} vouchers
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {SUBSCRIPTION_PLANS.map((p) => (
-                  <button
-                    key={p.code}
-                    type="button"
-                    onClick={() => setSelectedPlan(p.code)}
-                    className={cn(
-                      'p-4 rounded-xl border text-left transition cursor-pointer',
-                      selectedPlan === p.code
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-border',
-                    )}
-                  >
-                    <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-lg font-extrabold text-foreground">{formatINR(p.offerPrice)}</span>
-                      <span className="text-xs text-muted-foreground line-through">{formatINR(p.mrp)}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {p.offers} offers · {p.vouchers} vouchers
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            <div className="flex justify-between items-baseline rounded-xl border border-border p-4">
-              <div>
-                <span className="text-sm font-bold text-foreground">Amount payable</span>
-                <div className="text-xs text-muted-foreground">
-                  {formatINR(totals.base)} + {formatINR(totals.tax)} GST ({TAX_PERCENT}%)
-                </div>
-              </div>
-              <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
-            </div>
-            <p className="text-xs text-muted-foreground -mt-4">
-              Valid for {isHotel ? HOTEL_DURATION_DAYS : isHomeChef ? HOME_CHEF_DURATION_DAYS : PLAN_DURATION_DAYS} days from activation.
-            </p>
-
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-border p-6">
-              <h3 className="text-sm font-bold text-foreground">Scan to pay</h3>
-              {/* eslint-disable-next-line @next/next/no-img-element -- payment QR must stay pixel-exact, no lossy re-encode */}
-              <img
-                src={PAYMENT_QR_SRC}
-                alt="UPI payment QR code"
-                width={320}
-                height={320}
-                className="w-full max-w-[320px] aspect-square object-contain rounded-xl bg-white p-4"
-              />
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground">Or pay to UPI ID</p>
-                <p className="text-sm font-bold text-foreground tracking-wide select-all">
-                  {PAYMENT_UPI_ID}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {PAYMENT_PAYEE_NAME} · pay the exact amount shown above
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-muted-foreground">
-                Payment screenshot <span className="text-destructive">*</span>
-              </label>
-              <label className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-dashed border-input cursor-pointer hover:bg-muted/40 transition">
-                <UploadCloud className="h-5 w-5 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  {proof ? proof.name : 'Click to upload your payment screenshot'}
-                </span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => setProof(e.target.files?.[0] || null)}
-                />
-              </label>
-              <Input
-                value={payerRef}
-                onChange={(e) => setPayerRef(e.target.value)}
-                placeholder="UPI transaction reference (optional)"
-                className="h-11 rounded-xl"
-              />
-            </div>
-
-            {error && <p className="text-xs text-destructive">{error}</p>}
-
-            <Button
-              type="button"
-              onClick={submit}
-              disabled={submitting || !proof || (!isHotel && !isHomeChef && !selectedPlan) || (isHomeChef && !homeChefTier)}
-              className="w-full h-11 rounded-xl font-semibold cursor-pointer"
-            >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit payment for verification'}
-            </Button>
-          </div>
+        {(expiringSoon || awaiting) && (
+          <button
+            type="button"
+            onClick={() => setDismissed(true)}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+            aria-label="Dismiss"
+          >
+            <X className="h-5 w-5" />
+          </button>
         )}
+      </div>
+
+      {awaiting ? (
+        <div className="p-6 flex items-center gap-3 text-sm text-muted-foreground">
+          <ShieldCheck className="h-5 w-5 text-success-soft-foreground shrink-0" />
+          Nothing more to do right now — you'll be notified once it's approved.
+        </div>
+      ) : (
+        <div className="p-6 space-y-6">
+          {/* Plan choice — hotels are priced by classification, Home Chefs by tier */}
+          {isHotel ? (
+            <div className="rounded-xl border border-border p-4 space-y-1.5 text-sm">
+              <h3 className="text-sm font-bold text-foreground mb-2">Your hotel listing</h3>
+              <div className="flex justify-between text-muted-foreground">
+                <span>{biz?.hotelStarRating}★ classification</span>
+                <span>{formatINR(hotelCharge.base)}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>
+                  {hotelCharge.selectedCount} service{hotelCharge.selectedCount === 1 ? '' : 's'}
+                </span>
+                <span>{formatINR(hotelCharge.addons)}</span>
+              </div>
+            </div>
+          ) : isHomeChef ? (
+            <div className="grid sm:grid-cols-3 gap-3">
+              {HOME_CHEF_PLANS.map((p) => (
+                <button
+                  key={p.code}
+                  type="button"
+                  onClick={() => setHomeChefTier(p.code)}
+                  className={cn(
+                    'p-4 rounded-xl border text-left transition cursor-pointer',
+                    homeChefTier === p.code
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border hover:border-border',
+                  )}
+                >
+                  <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
+                  <div className="text-lg font-extrabold text-foreground">{formatINR(p.price)}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {p.offers} offers · {p.vouchers} vouchers
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {SUBSCRIPTION_PLANS.map((p) => (
+                <button
+                  key={p.code}
+                  type="button"
+                  onClick={() => setSelectedPlan(p.code)}
+                  className={cn(
+                    'p-4 rounded-xl border text-left transition cursor-pointer',
+                    selectedPlan === p.code
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border hover:border-border',
+                  )}
+                >
+                  <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-lg font-extrabold text-foreground">
+                      {formatINR(p.offerPrice)}
+                    </span>
+                    <span className="text-xs text-muted-foreground line-through">
+                      {formatINR(p.mrp)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {p.offers} offers · {p.vouchers} vouchers
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="flex justify-between items-baseline rounded-xl border border-border p-4">
+            <div>
+              <span className="text-sm font-bold text-foreground">Amount payable</span>
+              <div className="text-xs text-muted-foreground">
+                {formatINR(totals.base)} + {formatINR(totals.tax)} GST ({TAX_PERCENT}%)
+              </div>
+            </div>
+            <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
+          </div>
+          <p className="text-xs text-muted-foreground -mt-4">
+            Valid for{' '}
+            {isHotel
+              ? HOTEL_DURATION_DAYS
+              : isHomeChef
+                ? HOME_CHEF_DURATION_DAYS
+                : PLAN_DURATION_DAYS}{' '}
+            days from activation.
+          </p>
+
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-border p-6">
+            <h3 className="text-sm font-bold text-foreground">Scan to pay</h3>
+            {/* eslint-disable-next-line @next/next/no-img-element -- payment QR must stay pixel-exact, no lossy re-encode */}
+            <img
+              src={PAYMENT_QR_SRC}
+              alt="UPI payment QR code"
+              width={320}
+              height={320}
+              className="w-full max-w-[320px] aspect-square object-contain rounded-xl bg-white p-4"
+            />
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">Or pay to UPI ID</p>
+              <p className="text-sm font-bold text-foreground tracking-wide select-all">
+                {PAYMENT_UPI_ID}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {PAYMENT_PAYEE_NAME} · pay the exact amount shown above
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-muted-foreground">
+              Payment screenshot <span className="text-destructive">*</span>
+            </label>
+            <label className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-dashed border-input cursor-pointer hover:bg-muted/40 transition">
+              <UploadCloud className="h-5 w-5 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {proof ? proof.name : 'Click to upload your payment screenshot'}
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => setProof(e.target.files?.[0] || null)}
+              />
+            </label>
+            <Input
+              value={payerRef}
+              onChange={(e) => setPayerRef(e.target.value)}
+              placeholder="UPI transaction reference (optional)"
+              className="h-11 rounded-xl"
+            />
+          </div>
+
+          {error && <p className="text-xs text-destructive">{error}</p>}
+
+          <Button
+            type="button"
+            onClick={submit}
+            disabled={
+              submitting ||
+              !proof ||
+              (!isHotel && !isHomeChef && !selectedPlan) ||
+              (isHomeChef && !homeChefTier)
+            }
+            className="w-full h-11 rounded-xl font-semibold cursor-pointer"
+          >
+            {submitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              'Submit payment for verification'
+            )}
+          </Button>
+        </div>
+      )}
     </ModalSurface>
   );
 }

@@ -33,7 +33,7 @@ export function timeAgo(dateStr: string): string {
 /** The API wraps lists inconsistently ({data}, {items}, bare array) — normalise. */
 export function asList(body: unknown): any[] {
   const b = body as any;
-  const list = Array.isArray(b) ? b : b?.data ?? b?.items ?? [];
+  const list = Array.isArray(b) ? b : (b?.data ?? b?.items ?? []);
   return Array.isArray(list) ? list : [];
 }
 
@@ -85,13 +85,19 @@ export function directionsUrl(biz: any, branch?: any): string | null {
   const b = branch ?? biz;
   const c = validCoords(b?.latitude, b?.longitude) ?? validCoords(biz?.latitude, biz?.longitude);
   if (c) return `https://www.google.com/maps/dir/?api=1&destination=${c[0]},${c[1]}`;
-  if (!branch && typeof biz?.googleMapsUrl === 'string' && /^https?:\/\//i.test(biz.googleMapsUrl)) {
+  if (
+    !branch &&
+    typeof biz?.googleMapsUrl === 'string' &&
+    /^https?:\/\//i.test(biz.googleMapsUrl)
+  ) {
     return biz.googleMapsUrl;
   }
   const address = branch
     ? [branch.address, branch.city, branch.state].filter(Boolean).join(', ')
     : addressOf(biz);
-  return address ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}` : null;
+  return address
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`
+    : null;
 }
 
 /** WhatsApp deep link, only when the listing actually carries a WhatsApp number/link. */
@@ -107,7 +113,11 @@ export function whatsappUrl(biz: any): string | null {
 }
 
 /** Fire-and-forget analytics ping. Never blocks or throws. */
-export function trackBizEvent(biz: any, event: string, opts: { source?: string; metadata?: Record<string, unknown> } = {}) {
+export function trackBizEvent(
+  biz: any,
+  event: string,
+  opts: { source?: string; metadata?: Record<string, unknown> } = {},
+) {
   if (!biz?.id) return;
   track(event, { businessId: biz.id, ...opts });
 }
@@ -127,7 +137,9 @@ export type OfferExpiry = {
 export function offerExpiry(o: any): OfferExpiry | null {
   const raw = o?.expiresAt || o?.validUntil;
   if (!raw) return null;
-  const label = o.expiresAt ? `Expires ${shortDate(o.expiresAt)}` : `Valid until ${shortDate(o.validUntil)}`;
+  const label = o.expiresAt
+    ? `Expires ${shortDate(o.expiresAt)}`
+    : `Valid until ${shortDate(o.validUntil)}`;
   const end = new Date(raw).getTime();
   if (!Number.isFinite(end)) return { label, urgency: null, tone: null };
   const ms = end - Date.now();
@@ -155,7 +167,11 @@ export function socialLinksOf(biz: any): SocialLink[] {
       text: biz.instagram.startsWith('@') ? biz.instagram : `@${biz.instagram}`,
     });
   } else if (str(sl.instagram)) {
-    out.push({ kind: 'instagram', href: `https://instagram.com/${sl.instagram.replace('@', '')}`, text: sl.instagram });
+    out.push({
+      kind: 'instagram',
+      href: `https://instagram.com/${sl.instagram.replace('@', '')}`,
+      text: sl.instagram,
+    });
   }
   if (str(sl.facebook)) {
     out.push({
@@ -175,7 +191,9 @@ export function socialLinksOf(biz: any): SocialLink[] {
   if (str(sl.linkedin)) {
     out.push({
       kind: 'linkedin',
-      href: sl.linkedin.startsWith('http') ? sl.linkedin : `https://linkedin.com/company/${sl.linkedin}`,
+      href: sl.linkedin.startsWith('http')
+        ? sl.linkedin
+        : `https://linkedin.com/company/${sl.linkedin}`,
       text: sl.linkedin,
     });
   }

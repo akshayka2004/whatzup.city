@@ -7,21 +7,45 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  UserCog, UserPlus, Shield, ShieldCheck, Store, Mail, Trash2,
-  Clock, CheckCircle2, XCircle, X, AlertTriangle, Loader2, Copy, Key,
-  Edit2, ToggleLeft, ToggleRight, Lock,
+  UserCog,
+  UserPlus,
+  Shield,
+  ShieldCheck,
+  Store,
+  Mail,
+  Trash2,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  X,
+  AlertTriangle,
+  Loader2,
+  Copy,
+  Key,
+  Edit2,
+  ToggleLeft,
+  ToggleRight,
+  Lock,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
 import { canAccess } from '@/lib/rbac';
 import { useAuth } from '@/hooks/use-auth';
 
-const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
+const ROLE_CONFIG: Record<
+  string,
+  { label: string; color: string; bg: string; icon: React.ElementType }
+> = {
   OWNER: { label: 'Owner', color: 'text-primary', bg: 'bg-primary/10', icon: ShieldCheck },
   BUSINESS_OWNER: { label: 'Owner', color: 'text-primary', bg: 'bg-primary/10', icon: ShieldCheck },
   BUSINESS_ADMIN: { label: 'Owner', color: 'text-primary', bg: 'bg-primary/10', icon: ShieldCheck },
   MODERATOR: { label: 'Moderator', color: 'text-warning', bg: 'bg-warning/10', icon: Shield },
-  BUSINESS_MODERATOR: { label: 'Moderator', color: 'text-warning', bg: 'bg-warning/10', icon: Shield },
+  BUSINESS_MODERATOR: {
+    label: 'Moderator',
+    color: 'text-warning',
+    bg: 'bg-warning/10',
+    icon: Shield,
+  },
   STAFF: { label: 'Staff', color: 'text-muted-foreground', bg: 'bg-muted', icon: Store },
   BUSINESS_STAFF: { label: 'Staff', color: 'text-muted-foreground', bg: 'bg-muted', icon: Store },
 };
@@ -52,14 +76,20 @@ export default function TeamManagementPage() {
   const [loadingTeam, setLoadingTeam] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<TeamMember | null>(null);
-  const [createdCredentials, setCreatedCredentials] = useState<{ name: string; email: string; password: string } | null>(null);
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    name: string;
+    email: string;
+    password: string;
+  } | null>(null);
 
   // Edit modal state
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
-  const [editRole, setEditRole] = useState<'BUSINESS_MODERATOR' | 'BUSINESS_STAFF'>('BUSINESS_STAFF');
+  const [editRole, setEditRole] = useState<'BUSINESS_MODERATOR' | 'BUSINESS_STAFF'>(
+    'BUSINESS_STAFF',
+  );
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState('');
 
@@ -76,12 +106,17 @@ export default function TeamManagementPage() {
   const [formEmail, setFormEmail] = useState('');
   const [formPassword, setFormPassword] = useState(generatePassword());
   const [formPhone, setFormPhone] = useState('');
-  const [formRole, setFormRole] = useState<'BUSINESS_MODERATOR' | 'BUSINESS_STAFF'>('BUSINESS_STAFF');
+  const [formRole, setFormRole] = useState<'BUSINESS_MODERATOR' | 'BUSINESS_STAFF'>(
+    'BUSINESS_STAFF',
+  );
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
 
   useEffect(() => {
-    const role = user?.rbacRole || (user?.role === 'business' ? 'BUSINESS_OWNER' : user?.role) || 'BUSINESS_OWNER';
+    const role =
+      user?.rbacRole ||
+      (user?.role === 'business' ? 'BUSINESS_OWNER' : user?.role) ||
+      'BUSINESS_OWNER';
     setUserRole(role);
   }, [user]);
 
@@ -90,7 +125,7 @@ export default function TeamManagementPage() {
     setLoadingTeam(true);
     const res = await apiService.get<any>(`/v1/businesses/${businessId}/team`);
     if (res.data && !res.error) {
-      const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
       setTeam(list);
     }
     setLoadingTeam(false);
@@ -120,22 +155,34 @@ export default function TeamManagementPage() {
   }
 
   const openCreateModal = () => {
-    setFormName(''); setFormEmail(''); setFormPassword(generatePassword());
-    setFormPhone(''); setFormRole('BUSINESS_STAFF'); setCreateError('');
+    setFormName('');
+    setFormEmail('');
+    setFormPassword(generatePassword());
+    setFormPhone('');
+    setFormRole('BUSINESS_STAFF');
+    setCreateError('');
     setShowCreateModal(true);
   };
 
   const handleCreate = async () => {
     if (!formName || !formEmail || !formPassword || !businessId) {
-      setCreateError('Name, email and password are required'); return;
+      setCreateError('Name, email and password are required');
+      return;
     }
-    setCreating(true); setCreateError('');
+    setCreating(true);
+    setCreateError('');
     const res = await apiService.post<any>(`/v1/businesses/${businessId}/team`, {
-      name: formName, email: formEmail, password: formPassword,
-      phone: formPhone || undefined, role: formRole,
+      name: formName,
+      email: formEmail,
+      password: formPassword,
+      phone: formPhone || undefined,
+      role: formRole,
     });
     setCreating(false);
-    if (res.error) { setCreateError(res.error); return; }
+    if (res.error) {
+      setCreateError(res.error);
+      return;
+    }
     setShowCreateModal(false);
     setCreatedCredentials({ name: formName, email: formEmail, password: formPassword });
     await fetchTeam();
@@ -143,7 +190,9 @@ export default function TeamManagementPage() {
 
   const openEdit = (m: TeamMember) => {
     setEditingMember(m);
-    setEditName(m.name); setEditEmail(m.email); setEditPhone('');
+    setEditName(m.name);
+    setEditEmail(m.email);
+    setEditPhone('');
     const isOwner = ['OWNER', 'BUSINESS_OWNER', 'BUSINESS_ADMIN'].includes(m.role);
     const isMod = ['MODERATOR', 'BUSINESS_MODERATOR'].includes(m.role);
     setEditRole(isMod ? 'BUSINESS_MODERATOR' : 'BUSINESS_STAFF');
@@ -152,7 +201,8 @@ export default function TeamManagementPage() {
 
   const handleEdit = async () => {
     if (!editingMember) return;
-    setEditSaving(true); setEditError('');
+    setEditSaving(true);
+    setEditError('');
     const res = await apiService.patch<any>(`/v1/team/${editingMember.id}`, {
       name: editName || undefined,
       email: editEmail || undefined,
@@ -160,7 +210,10 @@ export default function TeamManagementPage() {
       role: editRole,
     });
     setEditSaving(false);
-    if (res.error) { setEditError(res.error); return; }
+    if (res.error) {
+      setEditError(res.error);
+      return;
+    }
     setEditingMember(null);
     await fetchTeam();
   };
@@ -171,18 +224,28 @@ export default function TeamManagementPage() {
   };
 
   const openReset = (m: TeamMember) => {
-    setResetMember(m); setResetPassword(generatePassword()); setResetError('');
+    setResetMember(m);
+    setResetPassword(generatePassword());
+    setResetError('');
   };
 
   const handleReset = async () => {
     if (!resetMember || !resetPassword) return;
-    setResetSaving(true); setResetError('');
+    setResetSaving(true);
+    setResetError('');
     const res = await apiService.post<any>(`/v1/team/${resetMember.id}/reset-password`, {
       password: resetPassword,
     });
     setResetSaving(false);
-    if (res.error) { setResetError(res.error); return; }
-    setCreatedCredentials({ name: resetMember.name, email: resetMember.email, password: resetPassword });
+    if (res.error) {
+      setResetError(res.error);
+      return;
+    }
+    setCreatedCredentials({
+      name: resetMember.name,
+      email: resetMember.email,
+      password: resetPassword,
+    });
     setResetMember(null);
   };
 
@@ -197,8 +260,12 @@ export default function TeamManagementPage() {
     navigator.clipboard?.writeText(text);
   };
 
-  const ownerCount = team.filter((m) => ['OWNER', 'BUSINESS_OWNER', 'BUSINESS_ADMIN'].includes(m.role)).length;
-  const moderatorCount = team.filter((m) => ['MODERATOR', 'BUSINESS_MODERATOR'].includes(m.role)).length;
+  const ownerCount = team.filter((m) =>
+    ['OWNER', 'BUSINESS_OWNER', 'BUSINESS_ADMIN'].includes(m.role),
+  ).length;
+  const moderatorCount = team.filter((m) =>
+    ['MODERATOR', 'BUSINESS_MODERATOR'].includes(m.role),
+  ).length;
   const staffCount = team.filter((m) => ['STAFF', 'BUSINESS_STAFF'].includes(m.role)).length;
 
   return (
@@ -233,7 +300,12 @@ export default function TeamManagementPage() {
             const cfg = ROLE_CONFIG[stat.role];
             return (
               <Card key={stat.label} className="p-4 rounded-2xl border-border bg-card text-center">
-                <div className={cn('h-8 w-8 rounded-lg flex items-center justify-center mx-auto mb-2', cfg.bg)}>
+                <div
+                  className={cn(
+                    'h-8 w-8 rounded-lg flex items-center justify-center mx-auto mb-2',
+                    cfg.bg,
+                  )}
+                >
                   <cfg.icon className={cn('h-4 w-4', cfg.color)} />
                 </div>
                 <p className="text-xl font-bold text-foreground">{stat.value}</p>
@@ -245,7 +317,9 @@ export default function TeamManagementPage() {
 
         {/* Team list */}
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground px-1">Team Members ({team.length})</h3>
+          <h3 className="text-sm font-semibold text-foreground px-1">
+            Team Members ({team.length})
+          </h3>
           {loadingTeam ? (
             <div className="flex items-center justify-center h-20">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -254,7 +328,9 @@ export default function TeamManagementPage() {
             <Card className="p-8 rounded-2xl border-dashed border-border bg-secondary text-center">
               <UserCog className="h-8 w-8 mx-auto text-muted-foreground mb-2 opacity-40" />
               <p className="text-foreground font-semibold text-sm mb-1">No team members yet</p>
-              <p className="text-xs text-muted-foreground">Create an account using the button above.</p>
+              <p className="text-xs text-muted-foreground">
+                Create an account using the button above.
+              </p>
             </Card>
           ) : null}
           {team.map((member, i) => {
@@ -268,34 +344,52 @@ export default function TeamManagementPage() {
               >
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={cn('h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0', cfg.bg, cfg.color)}>
+                    <div
+                      className={cn(
+                        'h-10 w-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0',
+                        cfg.bg,
+                        cfg.color,
+                      )}
+                    >
                       {(member.name || member.email || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-foreground truncate">{member.name}</p>
-                        <span className={cn('text-xs font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shrink-0', cfg.bg, cfg.color)}>
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {member.name}
+                        </p>
+                        <span
+                          className={cn(
+                            'text-xs font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shrink-0',
+                            cfg.bg,
+                            cfg.color,
+                          )}
+                        >
                           <cfg.icon className="h-2.5 w-2.5" />
                           {cfg.label}
                         </span>
-                        <span className={cn(
-                          'text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0',
-                          member.isActive
-                            ? 'bg-success-soft text-success-soft-foreground'
-                            : 'bg-danger-soft text-danger-soft-foreground',
-                        )}>
+                        <span
+                          className={cn(
+                            'text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0',
+                            member.isActive
+                              ? 'bg-success-soft text-success-soft-foreground'
+                              : 'bg-danger-soft text-danger-soft-foreground',
+                          )}
+                        >
                           {member.isActive ? 'Active' : 'Disabled'}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 min-w-0">
-                        <Mail className="h-3 w-3 shrink-0" /> <span className="truncate">{member.email}</span>
+                        <Mail className="h-3 w-3 shrink-0" />{' '}
+                        <span className="truncate">{member.email}</span>
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {member.lastActive && (
                       <p className="hidden sm:flex text-xs text-muted-foreground items-center gap-1 mr-2">
-                        <Clock className="h-3 w-3" /> {new Date(member.lastActive).toLocaleDateString()}
+                        <Clock className="h-3 w-3" />{' '}
+                        {new Date(member.lastActive).toLocaleDateString()}
                       </p>
                     )}
                     {!isOwner && (
@@ -348,7 +442,9 @@ export default function TeamManagementPage() {
                       </>
                     )}
                     {isOwner && (
-                      <span className="text-xs text-muted-foreground px-2 py-1 rounded-lg border border-border">You</span>
+                      <span className="text-xs text-muted-foreground px-2 py-1 rounded-lg border border-border">
+                        You
+                      </span>
                     )}
                   </div>
                 </div>
@@ -359,220 +455,402 @@ export default function TeamManagementPage() {
 
         {/* ── CREATE MODAL ────────────────────────────────────── */}
         {showCreateModal && (
-          <ModalSurface onClose={() => setShowCreateModal(false)} label="Create Team Account" className="sm:max-w-md" hideClose>
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <UserPlus className="h-4 w-4 text-primary" />
-                  Create Team Account
-                </h3>
-                <button onClick={() => setShowCreateModal(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <p className="text-xs text-muted-foreground mb-4">
-                Set up login credentials for your team member. Share the credentials after creation.
+          <ModalSurface
+            onClose={() => setShowCreateModal(false)}
+            label="Create Team Account"
+            className="sm:max-w-md"
+            hideClose
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <UserPlus className="h-4 w-4 text-primary" />
+                Create Team Account
+              </h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Set up login credentials for your team member. Share the credentials after creation.
+            </p>
+            {createError && (
+              <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">
+                {createError}
               </p>
-              {createError && (
-                <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">{createError}</p>
-              )}
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Full Name</label>
-                  <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="Jane Doe" className="rounded-xl border-border bg-secondary text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Email Address</label>
-                  <Input type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} placeholder="jane@yourbusiness.com" className="rounded-xl border-border bg-secondary text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Password</label>
-                  <div className="flex gap-2">
-                    <Input value={formPassword} onChange={(e) => setFormPassword(e.target.value)} className="rounded-xl border-border bg-secondary text-sm font-mono" />
-                    <Button type="button" onClick={() => setFormPassword(generatePassword())} variant="outline" size="sm" className="h-11 w-11 p-0 shrink-0 rounded-xl border-border cursor-pointer" title="Regenerate">
-                      <Key className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Phone (optional)</label>
-                  <Input value={formPhone} onChange={(e) => setFormPhone(e.target.value)} placeholder="+91 91234 56789" className="rounded-xl border-border bg-secondary text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Role</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(['BUSINESS_MODERATOR', 'BUSINESS_STAFF'] as const).map((role) => {
-                      const cfg = ROLE_CONFIG[role];
-                      return (
-                        <button key={role} type="button" onClick={() => setFormRole(role)}
-                          className={cn('flex flex-col items-start p-3 rounded-xl border transition-all text-left cursor-pointer',
-                            formRole === role ? 'border-primary/50 bg-primary/10' : 'border-border bg-secondary hover:bg-secondary')}>
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <cfg.icon className={cn('h-3.5 w-3.5', cfg.color)} />
-                            <span className={cn('text-xs font-semibold', cfg.color)}>{cfg.label}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            {role === 'BUSINESS_MODERATOR' ? 'Bill review, customer moderation' : 'Offers, listings, media upload'}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <Button onClick={handleCreate} disabled={!formName || !formEmail || !formPassword || creating}
-                  className="w-full rounded-xl bg-primary hover:bg-primary text-white text-sm font-semibold gap-2 cursor-pointer">
-                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserPlus className="h-4 w-4" /> Create Account</>}
-                </Button>
+            )}
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
+                  Full Name
+                </label>
+                <Input
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="Jane Doe"
+                  className="rounded-xl border-border bg-secondary text-sm"
+                />
               </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
+                  Email Address
+                </label>
+                <Input
+                  type="email"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  placeholder="jane@yourbusiness.com"
+                  className="rounded-xl border-border bg-secondary text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
+                  Password
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    value={formPassword}
+                    onChange={(e) => setFormPassword(e.target.value)}
+                    className="rounded-xl border-border bg-secondary text-sm font-mono"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => setFormPassword(generatePassword())}
+                    variant="outline"
+                    size="sm"
+                    className="h-11 w-11 p-0 shrink-0 rounded-xl border-border cursor-pointer"
+                    title="Regenerate"
+                  >
+                    <Key className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
+                  Phone (optional)
+                </label>
+                <Input
+                  value={formPhone}
+                  onChange={(e) => setFormPhone(e.target.value)}
+                  placeholder="+91 91234 56789"
+                  className="rounded-xl border-border bg-secondary text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
+                  Role
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['BUSINESS_MODERATOR', 'BUSINESS_STAFF'] as const).map((role) => {
+                    const cfg = ROLE_CONFIG[role];
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => setFormRole(role)}
+                        className={cn(
+                          'flex flex-col items-start p-3 rounded-xl border transition-all text-left cursor-pointer',
+                          formRole === role
+                            ? 'border-primary/50 bg-primary/10'
+                            : 'border-border bg-secondary hover:bg-secondary',
+                        )}
+                      >
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <cfg.icon className={cn('h-3.5 w-3.5', cfg.color)} />
+                          <span className={cn('text-xs font-semibold', cfg.color)}>
+                            {cfg.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {role === 'BUSINESS_MODERATOR'
+                            ? 'Bill review, customer moderation'
+                            : 'Offers, listings, media upload'}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <Button
+                onClick={handleCreate}
+                disabled={!formName || !formEmail || !formPassword || creating}
+                className="w-full rounded-xl bg-primary hover:bg-primary text-white text-sm font-semibold gap-2 cursor-pointer"
+              >
+                {creating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4" /> Create Account
+                  </>
+                )}
+              </Button>
+            </div>
           </ModalSurface>
         )}
 
         {/* ── EDIT MODAL ──────────────────────────────────────── */}
         {editingMember && (
-          <ModalSurface onClose={() => setEditingMember(null)} label="Edit Team Member" className="sm:max-w-md" hideClose>
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <Edit2 className="h-4 w-4 text-primary" />
-                  Edit Team Member
-                </h3>
-                <button onClick={() => setEditingMember(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
-                  <X className="h-4 w-4" />
-                </button>
+          <ModalSurface
+            onClose={() => setEditingMember(null)}
+            label="Edit Team Member"
+            className="sm:max-w-md"
+            hideClose
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Edit2 className="h-4 w-4 text-primary" />
+                Edit Team Member
+              </h3>
+              <button
+                onClick={() => setEditingMember(null)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {editError && (
+              <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">
+                {editError}
+              </p>
+            )}
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
+                  Full Name
+                </label>
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="rounded-xl border-border bg-secondary text-sm"
+                />
               </div>
-              {editError && (
-                <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">{editError}</p>
-              )}
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Full Name</label>
-                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="rounded-xl border-border bg-secondary text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Email Address</label>
-                  <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="rounded-xl border-border bg-secondary text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Phone (optional)</label>
-                  <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="Leave blank to keep current" className="rounded-xl border-border bg-secondary text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">Role</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(['BUSINESS_MODERATOR', 'BUSINESS_STAFF'] as const).map((role) => {
-                      const cfg = ROLE_CONFIG[role];
-                      return (
-                        <button key={role} type="button" onClick={() => setEditRole(role)}
-                          className={cn('flex flex-col items-start p-3 rounded-xl border transition-all text-left cursor-pointer',
-                            editRole === role ? 'border-primary/50 bg-primary/10' : 'border-border bg-secondary hover:bg-secondary')}>
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <cfg.icon className={cn('h-3.5 w-3.5', cfg.color)} />
-                            <span className={cn('text-xs font-semibold', cfg.color)}>{cfg.label}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            {role === 'BUSINESS_MODERATOR' ? 'Bill review, customer moderation' : 'Offers, listings, media upload'}
-                          </p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <Button variant="outline" onClick={() => setEditingMember(null)} className="flex-1 rounded-xl border-border cursor-pointer">Cancel</Button>
-                  <Button onClick={handleEdit} disabled={editSaving} className="flex-1 rounded-xl bg-primary hover:bg-primary text-white cursor-pointer">
-                    {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
-                  </Button>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
+                  Email Address
+                </label>
+                <Input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  className="rounded-xl border-border bg-secondary text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
+                  Phone (optional)
+                </label>
+                <Input
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="Leave blank to keep current"
+                  className="rounded-xl border-border bg-secondary text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
+                  Role
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['BUSINESS_MODERATOR', 'BUSINESS_STAFF'] as const).map((role) => {
+                    const cfg = ROLE_CONFIG[role];
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => setEditRole(role)}
+                        className={cn(
+                          'flex flex-col items-start p-3 rounded-xl border transition-all text-left cursor-pointer',
+                          editRole === role
+                            ? 'border-primary/50 bg-primary/10'
+                            : 'border-border bg-secondary hover:bg-secondary',
+                        )}
+                      >
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <cfg.icon className={cn('h-3.5 w-3.5', cfg.color)} />
+                          <span className={cn('text-xs font-semibold', cfg.color)}>
+                            {cfg.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {role === 'BUSINESS_MODERATOR'
+                            ? 'Bill review, customer moderation'
+                            : 'Offers, listings, media upload'}
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+              <div className="flex gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditingMember(null)}
+                  className="flex-1 rounded-xl border-border cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleEdit}
+                  disabled={editSaving}
+                  className="flex-1 rounded-xl bg-primary hover:bg-primary text-white cursor-pointer"
+                >
+                  {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
           </ModalSurface>
         )}
 
         {/* ── RESET PASSWORD MODAL ─────────────────────────────── */}
         {resetMember && (
-          <ModalSurface onClose={() => setResetMember(null)} label="Reset Password" className="sm:max-w-sm" hideClose>
-              <div className="flex items-center justify-between mb-5">
-                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <Lock className="h-4 w-4 text-info" />
-                  Reset Password
-                </h3>
-                <button onClick={() => setResetMember(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <p className="text-xs text-muted-foreground mb-4">
-                Setting a new password for <span className="font-bold text-foreground">{resetMember.name}</span>.
-                Their current sessions will be invalidated.
+          <ModalSurface
+            onClose={() => setResetMember(null)}
+            label="Reset Password"
+            className="sm:max-w-sm"
+            hideClose
+          >
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Lock className="h-4 w-4 text-info" />
+                Reset Password
+              </h3>
+              <button
+                onClick={() => setResetMember(null)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Setting a new password for{' '}
+              <span className="font-bold text-foreground">{resetMember.name}</span>. Their current
+              sessions will be invalidated.
+            </p>
+            {resetError && (
+              <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">
+                {resetError}
               </p>
-              {resetError && (
-                <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">{resetError}</p>
-              )}
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">New Password</label>
-                  <div className="flex gap-2">
-                    <Input value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} className="rounded-xl border-border bg-secondary text-sm font-mono" />
-                    <Button type="button" onClick={() => setResetPassword(generatePassword())} variant="outline" size="sm" className="h-11 w-11 p-0 shrink-0 rounded-xl border-border cursor-pointer">
-                      <Key className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
+            )}
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
+                  New Password
+                </label>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setResetMember(null)} className="flex-1 rounded-xl border-border cursor-pointer">Cancel</Button>
-                  <Button onClick={handleReset} disabled={resetSaving || !resetPassword} className="flex-1 rounded-xl bg-info hover:bg-info text-white cursor-pointer">
-                    {resetSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reset'}
+                  <Input
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                    className="rounded-xl border-border bg-secondary text-sm font-mono"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => setResetPassword(generatePassword())}
+                    variant="outline"
+                    size="sm"
+                    className="h-11 w-11 p-0 shrink-0 rounded-xl border-border cursor-pointer"
+                  >
+                    <Key className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setResetMember(null)}
+                  className="flex-1 rounded-xl border-border cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleReset}
+                  disabled={resetSaving || !resetPassword}
+                  className="flex-1 rounded-xl bg-info hover:bg-info text-white cursor-pointer"
+                >
+                  {resetSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reset'}
+                </Button>
+              </div>
+            </div>
           </ModalSurface>
         )}
 
         {/* ── CREATED CREDENTIALS DISPLAY ─────────────────────── */}
         {createdCredentials && (
-          <ModalSurface onClose={() => setCreatedCredentials(null)} label="Credentials Ready" className="sm:max-w-md" hideClose>
-              <div className="flex items-center gap-2 mb-4">
-                <CheckCircle2 className="h-5 w-5 text-success" />
-                <h3 className="text-base font-bold text-foreground">Credentials Ready</h3>
+          <ModalSurface
+            onClose={() => setCreatedCredentials(null)}
+            label="Credentials Ready"
+            className="sm:max-w-md"
+            hideClose
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <CheckCircle2 className="h-5 w-5 text-success" />
+              <h3 className="text-base font-bold text-foreground">Credentials Ready</h3>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Share these credentials with{' '}
+              <span className="font-bold text-foreground">{createdCredentials.name}</span>. Copy
+              them now — the password will not be shown again.
+            </p>
+            <div className="space-y-2 mb-4">
+              <div className="bg-secondary border border-border rounded-lg p-3">
+                <p className="text-xs text-muted-foreground uppercase mb-0.5">Email</p>
+                <p className="text-sm font-mono text-foreground">{createdCredentials.email}</p>
               </div>
-              <p className="text-xs text-muted-foreground mb-4">
-                Share these credentials with <span className="font-bold text-foreground">{createdCredentials.name}</span>.
-                Copy them now — the password will not be shown again.
-              </p>
-              <div className="space-y-2 mb-4">
-                <div className="bg-secondary border border-border rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground uppercase mb-0.5">Email</p>
-                  <p className="text-sm font-mono text-foreground">{createdCredentials.email}</p>
-                </div>
-                <div className="bg-secondary border border-border rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground uppercase mb-0.5">Password</p>
-                  <p className="text-sm font-mono text-foreground">{createdCredentials.password}</p>
-                </div>
+              <div className="bg-secondary border border-border rounded-lg p-3">
+                <p className="text-xs text-muted-foreground uppercase mb-0.5">Password</p>
+                <p className="text-sm font-mono text-foreground">{createdCredentials.password}</p>
               </div>
-              <div className="flex gap-2">
-                <Button onClick={() => copyAll(createdCredentials)} variant="outline"
-                  className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary gap-2 cursor-pointer">
-                  <Copy className="h-3.5 w-3.5" /> Copy All
-                </Button>
-                <Button onClick={() => setCreatedCredentials(null)}
-                  className="flex-1 rounded-xl bg-primary hover:bg-primary text-white cursor-pointer">
-                  Done
-                </Button>
-              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => copyAll(createdCredentials)}
+                variant="outline"
+                className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary gap-2 cursor-pointer"
+              >
+                <Copy className="h-3.5 w-3.5" /> Copy All
+              </Button>
+              <Button
+                onClick={() => setCreatedCredentials(null)}
+                className="flex-1 rounded-xl bg-primary hover:bg-primary text-white cursor-pointer"
+              >
+                Done
+              </Button>
+            </div>
           </ModalSurface>
         )}
 
         {/* ── REMOVE CONFIRM ──────────────────────────────────── */}
         {confirmRemove && (
-          <ModalSurface onClose={() => setConfirmRemove(null)} label="Remove Member" className="sm:max-w-xs text-center" hideClose>
-              <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="h-6 w-6 text-destructive" />
-              </div>
-              <h3 className="text-base font-bold text-foreground mb-2">Remove Member</h3>
-              <p className="text-xs text-muted-foreground mb-5">
-                <span className="text-foreground font-semibold">{confirmRemove.name}</span> will lose
-                access immediately.
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setConfirmRemove(null)} className="flex-1 rounded-xl border-border text-sm cursor-pointer">Cancel</Button>
-                <Button onClick={() => handleRemove(confirmRemove)} className="flex-1 rounded-xl bg-destructive hover:bg-destructive text-white text-sm cursor-pointer">Remove</Button>
-              </div>
+          <ModalSurface
+            onClose={() => setConfirmRemove(null)}
+            label="Remove Member"
+            className="sm:max-w-xs text-center"
+            hideClose
+          >
+            <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="h-6 w-6 text-destructive" />
+            </div>
+            <h3 className="text-base font-bold text-foreground mb-2">Remove Member</h3>
+            <p className="text-xs text-muted-foreground mb-5">
+              <span className="text-foreground font-semibold">{confirmRemove.name}</span> will lose
+              access immediately.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmRemove(null)}
+                className="flex-1 rounded-xl border-border text-sm cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => handleRemove(confirmRemove)}
+                className="flex-1 rounded-xl bg-destructive hover:bg-destructive text-white text-sm cursor-pointer"
+              >
+                Remove
+              </Button>
+            </div>
           </ModalSurface>
         )}
       </div>

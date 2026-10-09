@@ -9,20 +9,57 @@ import { Prisma } from '@saas/database';
 import { DatabaseService } from '../../common/database/database.service';
 import { AuditService } from '../audit/audit.service';
 import {
-  AssignPackageDto, AssignHotelPackageDto, AssignHomeChefPackageDto, HomeChefTierEnum,
-  PackageNameEnum, ACTIVE_PACKAGES,
+  AssignPackageDto,
+  AssignHotelPackageDto,
+  AssignHomeChefPackageDto,
+  HomeChefTierEnum,
+  PackageNameEnum,
+  ACTIVE_PACKAGES,
 } from './dto/subscription.dto';
 
 // Mirrors apps/web/lib/hotel-pricing.ts — keep both in sync.
-const HOTEL_STAR_PRICING: Record<number, number> = { 5: 15000, 4: 12500, 3: 10000, 2: 7500, 1: 5000 };
+const HOTEL_STAR_PRICING: Record<number, number> = {
+  5: 15000,
+  4: 12500,
+  3: 10000,
+  2: 7500,
+  1: 5000,
+};
 const HOTEL_ADDON_PRICE = 2500;
 
 // Home Chef category only — fixed annual tiers, exclusive to that subcategory.
 // Mirrors apps/web/lib/home-chef-pricing.ts — keep both in sync.
-const HOME_CHEF_PRICING: Record<HomeChefTierEnum, { pricing: number; offers: number; vouchers: number; backlinks: boolean; whatsappCampaign: boolean }> = {
-  [HomeChefTierEnum.STARTER]: { pricing: 2500, offers: 1, vouchers: 1, backlinks: false, whatsappCampaign: false },
-  [HomeChefTierEnum.GROWTH]: { pricing: 5000, offers: 5, vouchers: 5, backlinks: true, whatsappCampaign: false },
-  [HomeChefTierEnum.PREMIUM]: { pricing: 7500, offers: 7, vouchers: 7, backlinks: true, whatsappCampaign: true },
+const HOME_CHEF_PRICING: Record<
+  HomeChefTierEnum,
+  {
+    pricing: number;
+    offers: number;
+    vouchers: number;
+    backlinks: boolean;
+    whatsappCampaign: boolean;
+  }
+> = {
+  [HomeChefTierEnum.STARTER]: {
+    pricing: 2500,
+    offers: 1,
+    vouchers: 1,
+    backlinks: false,
+    whatsappCampaign: false,
+  },
+  [HomeChefTierEnum.GROWTH]: {
+    pricing: 5000,
+    offers: 5,
+    vouchers: 5,
+    backlinks: true,
+    whatsappCampaign: false,
+  },
+  [HomeChefTierEnum.PREMIUM]: {
+    pricing: 7500,
+    offers: 7,
+    vouchers: 7,
+    backlinks: true,
+    whatsappCampaign: true,
+  },
 };
 
 /** Standard packages are billed per quarter. */
@@ -182,7 +219,12 @@ export class SubscriptionsService {
    * (never trusts client-sent price), persists the classification onto the
    * business, and creates the Subscription directly (planId stays null).
    */
-  async assignHotelPackage(userId: string, tenantId: string, businessId: string, dto: AssignHotelPackageDto) {
+  async assignHotelPackage(
+    userId: string,
+    tenantId: string,
+    businessId: string,
+    dto: AssignHotelPackageDto,
+  ) {
     const business = await this.db.business.findFirst({
       where: { tenantId, OR: [{ id: businessId }, { entityId: businessId }] },
     });
@@ -241,7 +283,12 @@ export class SubscriptionsService {
       action: 'SUBSCRIPTION_SELECTED',
       resource: 'SUBSCRIPTION',
       resourceId: subscription.id,
-      metadata: { packageName: subscription.packageName, price: pricing, starRating: dto.starRating, selectedCount },
+      metadata: {
+        packageName: subscription.packageName,
+        price: pricing,
+        starRating: dto.starRating,
+        selectedCount,
+      },
     });
 
     return subscription;
@@ -252,7 +299,12 @@ export class SubscriptionsService {
    * subcategory — replaces the standard package picker the same way hotel
    * classification does, but with no star/amenity math, just a flat tier price.
    */
-  async assignHomeChefPackage(userId: string, tenantId: string, businessId: string, dto: AssignHomeChefPackageDto) {
+  async assignHomeChefPackage(
+    userId: string,
+    tenantId: string,
+    businessId: string,
+    dto: AssignHomeChefPackageDto,
+  ) {
     const business = await this.db.business.findFirst({
       where: { tenantId, OR: [{ id: businessId }, { entityId: businessId }] },
     });
@@ -324,7 +376,11 @@ export class SubscriptionsService {
       launchOfferClaimedAt: { not: null },
       deletedAt: null,
       OR: [
-        { status: { in: ['PENDING_VERIFICATION', 'UNDER_REVIEW', 'APPROVED', 'SUSPENDED', 'ARCHIVED'] } },
+        {
+          status: {
+            in: ['PENDING_VERIFICATION', 'UNDER_REVIEW', 'APPROVED', 'SUSPENDED', 'ARCHIVED'],
+          },
+        },
         { status: 'DRAFT', launchOfferClaimedAt: { gte: holdCutoff } },
       ],
     };
@@ -419,7 +475,11 @@ export class SubscriptionsService {
 
       // tenant-scope-ok: slots are counted platform-wide per category by design
       const taken = await tx.business.count({
-        where: { ...this.slotHolderWhere(), categoryId: business.categoryId, id: { not: business.id } },
+        where: {
+          ...this.slotHolderWhere(),
+          categoryId: business.categoryId,
+          id: { not: business.id },
+        },
       });
       if (taken >= LAUNCH_OFFER_SLOTS_PER_CATEGORY) {
         throw new ConflictException(
@@ -470,7 +530,11 @@ export class SubscriptionsService {
       action: 'LAUNCH_OFFER_CLAIMED',
       resource: 'SUBSCRIPTION',
       resourceId: subscription.id,
-      metadata: { categoryId: business.categoryId, packageName: LAUNCH_OFFER_PACKAGE_NAME, price: LAUNCH_OFFER_PRICE },
+      metadata: {
+        categoryId: business.categoryId,
+        packageName: LAUNCH_OFFER_PACKAGE_NAME,
+        price: LAUNCH_OFFER_PRICE,
+      },
     });
 
     return subscription;
@@ -542,8 +606,13 @@ export class SubscriptionsService {
               orderBy: { createdAt: 'desc' },
               take: 1,
               select: {
-                id: true, amount: true, status: true, method: true,
-                transactionRef: true, createdAt: true, verifiedAt: true,
+                id: true,
+                amount: true,
+                status: true,
+                method: true,
+                transactionRef: true,
+                createdAt: true,
+                verifiedAt: true,
               },
             },
           },
@@ -610,8 +679,12 @@ export class SubscriptionsService {
         postingLimits: 10,
         categoryLimits: 2,
         featureFlags: {
-          listingPackage: true, backlinks: true, sponsoredPoster: true,
-          whatsappCampaign: true, offers: 10, vouchers: 10,
+          listingPackage: true,
+          backlinks: true,
+          sponsoredPoster: true,
+          whatsappCampaign: true,
+          offers: 10,
+          vouchers: 10,
         },
         features: [
           'Web App Listing',
@@ -626,8 +699,13 @@ export class SubscriptionsService {
         postingLimits: 20,
         categoryLimits: 3,
         featureFlags: {
-          listingPackage: true, backlinks: true, sponsoredPoster: true,
-          sponsoredVideo: true, whatsappCampaign: true, offers: 20, vouchers: 20,
+          listingPackage: true,
+          backlinks: true,
+          sponsoredPoster: true,
+          sponsoredVideo: true,
+          whatsappCampaign: true,
+          offers: 20,
+          vouchers: 20,
         },
         features: [
           'Web App Listing',

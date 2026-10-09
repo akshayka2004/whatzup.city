@@ -44,7 +44,13 @@ export interface BusinessSummary {
   offerPerformance: Array<{ title: string; redemptions: number; discount: number; status: string }>;
   redemptionTrend: Array<{ date: string; count: number }>;
   ratingDistribution: Array<{ stars: number; count: number }>;
-  recentReviews: Array<{ rating: number; title: string | null; comment: string; author: string; createdAt: string }>;
+  recentReviews: Array<{
+    rating: number;
+    title: string | null;
+    comment: string;
+    author: string;
+    createdAt: string;
+  }>;
 }
 
 export interface TopSpender {
@@ -129,9 +135,7 @@ class AnalyticsService {
    * Raw event-based metrics for a specific business.
    */
   async getBusinessAnalytics(businessId: string, days = 30): Promise<any | null> {
-    const res = await apiService.get<any>(
-      `/v1/analytics/business/${businessId}?days=${days}`,
-    );
+    const res = await apiService.get<any>(`/v1/analytics/business/${businessId}?days=${days}`);
     if (res.error || !res.data) return null;
     return res.data;
   }
@@ -142,11 +146,7 @@ class AnalyticsService {
    * Track a client-side analytics event (page views, button clicks, etc.).
    * Fire-and-forget — swallows errors so it never breaks the page.
    */
-  trackEvent(data: {
-    event: string;
-    businessId?: string;
-    metadata?: Record<string, any>;
-  }): void {
+  trackEvent(data: { event: string; businessId?: string; metadata?: Record<string, any> }): void {
     apiService.post('/v1/analytics/track', data).catch(() => {});
   }
 }

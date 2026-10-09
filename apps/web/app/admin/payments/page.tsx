@@ -39,19 +39,24 @@ export default function AdminPaymentsPage() {
   const load = async () => {
     setLoading(true);
     const res = await apiService.get<any>('/v1/payments/admin/pending');
-    const list = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
+    const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
     setRows(list);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const verify = async (id: string) => {
     setBusyId(id);
     setMsg('');
     const res = await apiService.post<any>(`/v1/payments/${id}/verify`, {});
     setBusyId(null);
-    if (res.error) { setMsg(res.error); return; }
+    if (res.error) {
+      setMsg(res.error);
+      return;
+    }
     setMsg('Payment verified — subscription activated.');
     setRows((r) => r.filter((x) => x.id !== id));
   };
@@ -62,7 +67,10 @@ export default function AdminPaymentsPage() {
     setMsg('');
     const res = await apiService.post<any>(`/v1/payments/${id}/reject`, { reason: reason.trim() });
     setBusyId(null);
-    if (res.error) { setMsg(res.error); return; }
+    if (res.error) {
+      setMsg(res.error);
+      return;
+    }
     setMsg('Payment rejected.');
     setRejectingId(null);
     setReason('');
@@ -77,7 +85,9 @@ export default function AdminPaymentsPage() {
             <Receipt className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">Payment Verification</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+              Payment Verification
+            </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Review uploaded payment screenshots. Verifying activates the business's subscription.
             </p>
@@ -93,18 +103,29 @@ export default function AdminPaymentsPage() {
         ) : rows.length === 0 ? (
           <Card className="p-10 text-center">
             <CheckCircle2 className="h-10 w-10 text-success-soft-foreground mx-auto mb-3" />
-            <p className="text-sm font-semibold text-foreground">No payments awaiting verification</p>
+            <p className="text-sm font-semibold text-foreground">
+              No payments awaiting verification
+            </p>
             <p className="text-xs text-muted-foreground mt-1">New submissions will appear here.</p>
           </Card>
         ) : (
           <div className="space-y-4">
             {rows.map((p, i) => (
-              <Card key={p.id} className="p-5 ui-fade-up" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
+              <Card
+                key={p.id}
+                className="p-5 ui-fade-up"
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+              >
                 <div className="grid md:grid-cols-[220px_1fr] gap-5">
                   {/* Proof */}
                   <div>
                     {p.proofSignedUrl ? (
-                      <a href={p.proofSignedUrl} target="_blank" rel="noopener noreferrer" className="block group">
+                      <a
+                        href={p.proofSignedUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block group"
+                      >
                         {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed payment proof */}
                         <img
                           src={p.proofSignedUrl}
@@ -131,7 +152,8 @@ export default function AdminPaymentsPage() {
                           {p.business?.name || 'Unknown business'}
                         </h3>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {p.business?.city} · submitted {new Date(p.createdAt).toLocaleString('en-IN')}
+                          {p.business?.city} · submitted{' '}
+                          {new Date(p.createdAt).toLocaleString('en-IN')}
                         </p>
                       </div>
                       <div className="text-right">
@@ -151,7 +173,9 @@ export default function AdminPaymentsPage() {
                       </div>
                       <div className="text-muted-foreground">
                         UPI ref:{' '}
-                        <span className="text-foreground font-medium">{p.transactionRef || '—'}</span>
+                        <span className="text-foreground font-medium">
+                          {p.transactionRef || '—'}
+                        </span>
                       </div>
                     </div>
 
@@ -169,10 +193,17 @@ export default function AdminPaymentsPage() {
                             disabled={busyId === p.id || !reason.trim()}
                             className="h-10 rounded-xl bg-destructive text-destructive-foreground cursor-pointer"
                           >
-                            {busyId === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm rejection'}
+                            {busyId === p.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              'Confirm rejection'
+                            )}
                           </Button>
                           <Button
-                            onClick={() => { setRejectingId(null); setReason(''); }}
+                            onClick={() => {
+                              setRejectingId(null);
+                              setReason('');
+                            }}
                             className="h-10 rounded-xl bg-muted text-foreground cursor-pointer"
                           >
                             Cancel

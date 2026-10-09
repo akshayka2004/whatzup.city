@@ -26,7 +26,11 @@ export const MESSAGES: Record<Locale, Dict> = {
   ml: Object.assign({}, ...AREAS.map((a) => a.ml)),
 };
 
-export function translate(locale: Locale, key: string, vars?: Record<string, string | number>): string {
+export function translate(
+  locale: Locale,
+  key: string,
+  vars?: Record<string, string | number>,
+): string {
   let out = MESSAGES[locale]?.[key] ?? MESSAGES.en[key] ?? key;
   if (vars) {
     for (const [k, v] of Object.entries(vars)) out = out.replaceAll(`{${k}}`, String(v));

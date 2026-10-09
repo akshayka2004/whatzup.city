@@ -1,4 +1,14 @@
-import { IsString, IsNotEmpty, IsUUID, IsInt, Min, IsOptional, MaxLength, IsArray, ArrayMaxSize } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsUUID,
+  IsInt,
+  Min,
+  IsOptional,
+  MaxLength,
+  IsArray,
+  ArrayMaxSize,
+} from 'class-validator';
 
 export class MenuUploadUrlDto {
   @IsUUID(undefined, { message: 'businessId must be a valid business ID' })
@@ -6,7 +16,9 @@ export class MenuUploadUrlDto {
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(255, { message: 'The file name is too long (255 characters max). Rename the file and try again.' })
+  @MaxLength(255, {
+    message: 'The file name is too long (255 characters max). Rename the file and try again.',
+  })
   filename!: string;
 
   @IsString()
@@ -34,7 +46,9 @@ export class CreateMenuPhotoDto {
 
   @IsString()
   @IsNotEmpty()
-  @MaxLength(255, { message: 'The file name is too long (255 characters max). Rename the file and try again.' })
+  @MaxLength(255, {
+    message: 'The file name is too long (255 characters max). Rename the file and try again.',
+  })
   filename!: string;
 
   @IsString()

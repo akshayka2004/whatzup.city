@@ -63,7 +63,10 @@ export default function AdminProfilePage() {
     setSaving(true);
     setSaveMsg('');
     setSaveErr('');
-    const res = await apiService.patch<any>('/v1/users/me', { name: name.trim(), phone: phone.trim() || undefined });
+    const res = await apiService.patch<any>('/v1/users/me', {
+      name: name.trim(),
+      phone: phone.trim() || undefined,
+    });
     setSaving(false);
     if (res.error) {
       setSaveErr(res.error);
@@ -84,9 +87,14 @@ export default function AdminProfilePage() {
         '/v1/storage/upload-url',
         { category: 'avatar', filename: file.name, mimeType: file.type, entityId: user?.id },
       );
-      if (urlRes.error || !urlRes.data?.uploadUrl) throw new Error(urlRes.error || 'Upload URL failed');
+      if (urlRes.error || !urlRes.data?.uploadUrl)
+        throw new Error(urlRes.error || 'Upload URL failed');
       const { uploadUrl, fileKey } = urlRes.data;
-      const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      const put = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
       if (!put.ok) throw new Error(`Upload failed: ${put.status}`);
       const patch = await apiService.patch<any>('/v1/users/me', { avatar: fileKey });
       if (patch.error) throw new Error(patch.error);
@@ -151,7 +159,13 @@ export default function AdminProfilePage() {
             <div className="relative">
               <div className="h-16 w-16 rounded-2xl overflow-hidden bg-gradient-to-tr from-primary to-info flex items-center justify-center text-2xl font-extrabold text-white">
                 {avatarUrl ? (
-                  <ResponsiveImage src={avatarUrl} alt="Avatar" ratio="1" sizes="96px" className="h-full w-full" />
+                  <ResponsiveImage
+                    src={avatarUrl}
+                    alt="Avatar"
+                    ratio="1"
+                    sizes="96px"
+                    className="h-full w-full"
+                  />
                 ) : (
                   initials
                 )}
@@ -167,7 +181,13 @@ export default function AdminProfilePage() {
                   <Camera className="h-3 w-3 text-white" />
                 )}
               </button>
-              <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
             </div>
             <div>
               <p className="text-lg font-bold text-foreground">{user?.name}</p>
@@ -224,9 +244,7 @@ export default function AdminProfilePage() {
                 <Check className="h-3.5 w-3.5" /> {saveMsg}
               </p>
             )}
-            {saveErr && (
-              <p className="text-xs text-destructive">{saveErr}</p>
-            )}
+            {saveErr && <p className="text-xs text-destructive">{saveErr}</p>}
 
             <Button
               type="submit"
@@ -239,7 +257,10 @@ export default function AdminProfilePage() {
         </Card>
 
         {/* Password change */}
-        <Card className="ui-fade-up p-6 rounded-2xl border-border bg-card" style={{ animationDelay: '0.05s' }}>
+        <Card
+          className="ui-fade-up p-6 rounded-2xl border-border bg-card"
+          style={{ animationDelay: '0.05s' }}
+        >
           <h3 className="text-base font-bold text-foreground flex items-center gap-2 mb-5">
             <KeyRound className="h-4 w-4 text-warning" />
             Change Password
@@ -247,7 +268,9 @@ export default function AdminProfilePage() {
 
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-foreground block mb-1.5">Current Password</label>
+              <label className="text-xs font-medium text-foreground block mb-1.5">
+                Current Password
+              </label>
               <div className="relative">
                 <Input
                   type={showCurrent ? 'text' : 'password'}
@@ -267,7 +290,9 @@ export default function AdminProfilePage() {
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-foreground block mb-1.5">New Password</label>
+              <label className="text-xs font-medium text-foreground block mb-1.5">
+                New Password
+              </label>
               <div className="relative">
                 <Input
                   type={showNew ? 'text' : 'password'}
@@ -288,7 +313,9 @@ export default function AdminProfilePage() {
               </div>
             </div>
             <div>
-              <label className="text-xs font-medium text-foreground block mb-1.5">Confirm New Password</label>
+              <label className="text-xs font-medium text-foreground block mb-1.5">
+                Confirm New Password
+              </label>
               <Input
                 type="password"
                 value={confirmPassword}
@@ -304,9 +331,7 @@ export default function AdminProfilePage() {
                 <Check className="h-3.5 w-3.5" /> {pwMsg}
               </p>
             )}
-            {pwErr && (
-              <p className="text-xs text-destructive">{pwErr}</p>
-            )}
+            {pwErr && <p className="text-xs text-destructive">{pwErr}</p>}
 
             <Button
               type="submit"

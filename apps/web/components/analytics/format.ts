@@ -24,7 +24,11 @@ export function formatPct(v: number | null | undefined, digits = 1): string {
 
 export type ValueFormat = 'number' | 'inr' | 'pct';
 
-export function formatValue(v: number | null | undefined, kind: ValueFormat = 'number', compact = false) {
+export function formatValue(
+  v: number | null | undefined,
+  kind: ValueFormat = 'number',
+  compact = false,
+) {
   if (kind === 'inr') return formatINR(v, compact);
   if (kind === 'pct') return formatPct(v);
   return formatNumber(v, compact);
@@ -33,7 +37,8 @@ export function formatValue(v: number | null | undefined, kind: ValueFormat = 'n
 /** "12 Oct" for day keys, "Oct 2026" for month buckets (keys are IST calendar dates). */
 export function formatDateKey(key: string, granularity: 'day' | 'week' | 'month' = 'day'): string {
   const d = new Date(`${key}T00:00:00Z`);
-  if (granularity === 'month') return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  if (granularity === 'month')
+    return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric', timeZone: 'UTC' });
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
 

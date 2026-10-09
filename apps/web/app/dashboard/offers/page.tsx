@@ -1,7 +1,21 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { Copy, Eye, Pause, Pencil, Play, Plus, ShoppingBag, Store, Tag, TicketPercent, Trash2, UtensilsCrossed, X } from 'lucide-react';
+import {
+  Copy,
+  Eye,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+  ShoppingBag,
+  Store,
+  Tag,
+  TicketPercent,
+  Trash2,
+  UtensilsCrossed,
+  X,
+} from 'lucide-react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { PageHeader } from '@/components/system/page-header';
 import { FilterChip, ChipRow } from '@/components/system/filter-chip';
@@ -48,7 +62,14 @@ type Bucket = 'current' | 'live' | 'scheduled' | 'paused' | 'ended';
 
 const dateOnly = (iso?: string) => (iso ? iso.slice(0, 10) : '');
 const todayKey = () => new Date().toISOString().slice(0, 10);
-const fmtDay = (iso?: string) => (iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }) : '');
+const fmtDay = (iso?: string) =>
+  iso
+    ? new Date(iso).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        timeZone: 'Asia/Kolkata',
+      })
+    : '';
 
 function bucketOf(o: Offer, now = Date.now()): Exclude<Bucket, 'current'> {
   if (o.expiresAt && new Date(o.expiresAt).getTime() < now) return 'ended';
@@ -65,12 +86,19 @@ const BUCKET_PILL = {
 } as const;
 
 const valueLabel = (o: { discount: number; discountAmount: number }) =>
-  o.discountAmount > 0 && !(o.discount > 0) ? `₹${o.discountAmount.toLocaleString('en-IN')}` : `${o.discount || 0}%`;
+  o.discountAmount > 0 && !(o.discount > 0)
+    ? `₹${o.discountAmount.toLocaleString('en-IN')}`
+    : `${o.discount || 0}%`;
 
 // Tags have no column yet; they ride in the description as "Tags: a, b".
 const parseTags = (description?: string | null) => {
   const m = /^Tags:\s*(.+)$/m.exec(description || '');
-  return m ? m[1].split(',').map((t) => t.trim()).filter(Boolean) : [];
+  return m
+    ? m[1]
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+    : [];
 };
 
 function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
@@ -93,7 +121,10 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[
       onClick={() => ref.current?.focus()}
     >
       {tags.map((t) => (
-        <span key={t} className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-caption font-medium text-brand-soft-foreground">
+        <span
+          key={t}
+          className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-2 py-0.5 text-caption font-medium text-brand-soft-foreground"
+        >
           {t}
           <button
             type="button"
@@ -134,7 +165,18 @@ type Form = {
   fulfilment: Fulfilment;
 };
 
-const EMPTY: Form = { title: '', discountType: 'PERCENT', discount: '', discountAmount: '', active: true, tags: [], startsAt: '', expiresAt: '', cities: [], fulfilment: 'BOTH' };
+const EMPTY: Form = {
+  title: '',
+  discountType: 'PERCENT',
+  discount: '',
+  discountAmount: '',
+  active: true,
+  tags: [],
+  startsAt: '',
+  expiresAt: '',
+  cities: [],
+  fulfilment: 'BOTH',
+};
 
 const label = 'mb-1.5 block text-sm font-medium';
 
@@ -161,7 +203,7 @@ export default function OffersPage() {
       apiService.get<any>(`/v1/analytics/v2/business/${businessId}/offers?days=30`),
     ]);
     if (res.data && !res.error) {
-      const list = Array.isArray(res.data) ? res.data : res.data?.data ?? res.data?.items ?? [];
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? res.data?.items ?? []);
       setOffers(
         list.map((o: any) => ({
           id: o.id,
@@ -173,14 +215,22 @@ export default function OffersPage() {
           targetCities: Array.isArray(o.targetCities) ? o.targetCities : [],
           startsAt: o.startDate || o.startsAt || undefined,
           expiresAt: o.endDate || o.expiresAt || undefined,
-          fulfilment: o.fulfilment === 'DINE_IN' || o.fulfilment === 'TAKEAWAY' ? o.fulfilment : 'BOTH',
+          fulfilment:
+            o.fulfilment === 'DINE_IN' || o.fulfilment === 'TAKEAWAY' ? o.fulfilment : 'BOTH',
           claimsTotal: Number(o.currentRedemptions ?? 0),
           maxRedemptions: o.maxRedemptions ?? null,
         })),
       );
     }
     const rows = Array.isArray(st.data?.offers) ? st.data.offers : [];
-    setStats(Object.fromEntries(rows.map((r: any) => [r.id, { viewers: r.viewers ?? 0, claims: r.claims ?? 0, conversion: r.conversion ?? null }])));
+    setStats(
+      Object.fromEntries(
+        rows.map((r: any) => [
+          r.id,
+          { viewers: r.viewers ?? 0, claims: r.claims ?? 0, conversion: r.conversion ?? null },
+        ]),
+      ),
+    );
     setLoading(false);
   }, [businessId]);
 
@@ -230,9 +280,12 @@ export default function OffersPage() {
     const pct = Number(form.discount);
     const amt = Number(form.discountAmount);
     if (!form.title.trim()) return toast.error('Give the offer a title.');
-    if (form.discountType === 'PERCENT' && !(pct >= 1 && pct <= 100)) return toast.error('Enter a discount between 1% and 100%.');
-    if (form.discountType === 'AMOUNT' && !(amt >= 1)) return toast.error('Enter the amount off in ₹.');
-    if (form.startsAt && form.expiresAt && form.expiresAt < form.startsAt) return toast.error('The end date is before the start date.');
+    if (form.discountType === 'PERCENT' && !(pct >= 1 && pct <= 100))
+      return toast.error('Enter a discount between 1% and 100%.');
+    if (form.discountType === 'AMOUNT' && !(amt >= 1))
+      return toast.error('Enter the amount off in ₹.');
+    if (form.startsAt && form.expiresAt && form.expiresAt < form.startsAt)
+      return toast.error('The end date is before the start date.');
 
     const body: Record<string, unknown> = {
       title: form.title.trim(),
@@ -250,7 +303,9 @@ export default function OffersPage() {
         ...body,
         businessId,
         startDate: form.startsAt ? new Date(form.startsAt).toISOString() : new Date().toISOString(),
-        endDate: form.expiresAt ? new Date(form.expiresAt).toISOString() : new Date(Date.now() + 30 * 86_400_000).toISOString(),
+        endDate: form.expiresAt
+          ? new Date(form.expiresAt).toISOString()
+          : new Date(Date.now() + 30 * 86_400_000).toISOString(),
       });
     } else {
       if (form.startsAt) body.startDate = new Date(form.startsAt).toISOString();
@@ -267,7 +322,9 @@ export default function OffersPage() {
   const toggleActive = async (o: Offer) => {
     const next = !o.active;
     setOffers((list) => list.map((x) => (x.id === o.id ? { ...x, active: next } : x)));
-    const res = await apiService.patch(`/v1/offers/${o.id}`, { status: next ? 'ACTIVE' : 'PAUSED' });
+    const res = await apiService.patch(`/v1/offers/${o.id}`, {
+      status: next ? 'ACTIVE' : 'PAUSED',
+    });
     if (res.error) {
       setOffers((list) => list.map((x) => (x.id === o.id ? { ...x, active: o.active } : x)));
       toast.error(res.error);
@@ -275,7 +332,12 @@ export default function OffersPage() {
   };
 
   const remove = async (o: Offer) => {
-    const ok = await confirm({ title: `Delete “${o.title}”?`, description: 'Customers who already claimed it keep their code. This cannot be undone.', confirmLabel: 'Delete', tone: 'danger' });
+    const ok = await confirm({
+      title: `Delete “${o.title}”?`,
+      description: 'Customers who already claimed it keep their code. This cannot be undone.',
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
     if (!ok) return;
     const res = await apiService.delete(`/v1/offers/${o.id}`);
     if (res.error) return toast.error(res.error);
@@ -290,9 +352,15 @@ export default function OffersPage() {
     description: '',
     discountPercent: form.discountType === 'PERCENT' ? Number(form.discount) || 0 : null,
     discountAmount: form.discountType === 'AMOUNT' ? Number(form.discountAmount) || 0 : null,
-    endDate: form.expiresAt ? new Date(`${form.expiresAt}T23:59:59+05:30`).toISOString() : new Date(Date.now() + 30 * 86_400_000).toISOString(),
+    endDate: form.expiresAt
+      ? new Date(`${form.expiresAt}T23:59:59+05:30`).toISOString()
+      : new Date(Date.now() + 30 * 86_400_000).toISOString(),
     fulfilment: isFood ? form.fulfilment : 'BOTH',
-    business: { name: business?.name || 'Your business', city: business?.city ?? null, operatingHours: business?.operatingHours ?? undefined },
+    business: {
+      name: business?.name || 'Your business',
+      city: business?.city ?? null,
+      operatingHours: business?.operatingHours ?? undefined,
+    },
   });
 
   return (
@@ -317,7 +385,12 @@ export default function OffersPage() {
             ['ended', 'Ended'],
           ] as const
         ).map(([k, l]) => (
-          <FilterChip key={k} selected={bucket === k} count={counts[k] || undefined} onClick={() => setBucket(k)}>
+          <FilterChip
+            key={k}
+            selected={bucket === k}
+            count={counts[k] || undefined}
+            onClick={() => setBucket(k)}
+          >
             {l}
           </FilterChip>
         ))}
@@ -329,7 +402,11 @@ export default function OffersPage() {
         <EmptyState
           icon={TicketPercent}
           title={offers.length ? 'Nothing in this view' : 'No offers yet'}
-          description={offers.length ? 'Try another status.' : 'Publish your first offer — it shows on your profile and the Offers page.'}
+          description={
+            offers.length
+              ? 'Try another status.'
+              : 'Publish your first offer — it shows on your profile and the Offers page.'
+          }
           action={offers.length ? undefined : { label: 'New offer', onClick: openCreate }}
         />
       ) : (
@@ -338,13 +415,24 @@ export default function OffersPage() {
             const b = bucketOf(o);
             const st = stats[o.id];
             const chips: { label: string; tone?: 'info' | 'warning' | 'neutral' }[] = [];
-            if (b === 'scheduled' && o.startsAt) chips.push({ label: `Starts ${fmtDay(o.startsAt)}`, tone: 'info' });
+            if (b === 'scheduled' && o.startsAt)
+              chips.push({ label: `Starts ${fmtDay(o.startsAt)}`, tone: 'info' });
             if (b !== 'ended' && o.expiresAt) {
               const days = Math.ceil((new Date(o.expiresAt).getTime() - Date.now()) / 86_400_000);
-              chips.push({ label: days <= 3 ? `Ends in ${Math.max(days, 0)}d` : `Ends ${fmtDay(o.expiresAt)}`, tone: days <= 3 ? 'warning' : 'neutral' });
+              chips.push({
+                label: days <= 3 ? `Ends in ${Math.max(days, 0)}d` : `Ends ${fmtDay(o.expiresAt)}`,
+                tone: days <= 3 ? 'warning' : 'neutral',
+              });
             }
-            if (o.fulfilment !== 'BOTH') chips.push({ label: o.fulfilment === 'DINE_IN' ? 'Dine-in' : 'Takeaway' });
-            if (o.targetCities.length) chips.push({ label: o.targetCities.length === 1 ? o.targetCities[0] : `${o.targetCities.length} cities` });
+            if (o.fulfilment !== 'BOTH')
+              chips.push({ label: o.fulfilment === 'DINE_IN' ? 'Dine-in' : 'Takeaway' });
+            if (o.targetCities.length)
+              chips.push({
+                label:
+                  o.targetCities.length === 1
+                    ? o.targetCities[0]
+                    : `${o.targetCities.length} cities`,
+              });
             return (
               <PromoCard
                 key={o.id}
@@ -358,9 +446,17 @@ export default function OffersPage() {
                 muted={b === 'ended'}
                 onOpen={() => openEdit(o)}
                 stats={[
-                  { label: 'Viewers', value: st?.viewers ?? 0, hint: 'People who opened this offer in the last 30 days' },
+                  {
+                    label: 'Viewers',
+                    value: st?.viewers ?? 0,
+                    hint: 'People who opened this offer in the last 30 days',
+                  },
                   { label: 'Claims', value: st?.claims ?? 0, hint: 'Claims in the last 30 days' },
-                  { label: 'Conversion', value: st?.conversion != null ? `${st.conversion}%` : '—', hint: 'Claims ÷ viewers' },
+                  {
+                    label: 'Conversion',
+                    value: st?.conversion != null ? `${st.conversion}%` : '—',
+                    hint: 'Claims ÷ viewers',
+                  },
                 ]}
                 primary={
                   b !== 'ended' ? (
@@ -373,7 +469,11 @@ export default function OffersPage() {
                 menu={[
                   { label: 'Edit', icon: Pencil, onClick: () => openEdit(o) },
                   { label: 'Duplicate', icon: Copy, onClick: () => openEdit(o, true) },
-                  { label: 'View public page', icon: Eye, onClick: () => window.open('/offers', '_blank', 'noopener') },
+                  {
+                    label: 'View public page',
+                    icon: Eye,
+                    onClick: () => window.open('/offers', '_blank', 'noopener'),
+                  },
                   { label: 'Delete', icon: Trash2, onClick: () => remove(o), danger: true },
                 ]}
               />
@@ -394,7 +494,11 @@ export default function OffersPage() {
               Cancel
             </Button>
             <Button loading={saving} onClick={save}>
-              {editor?.mode === 'edit' ? 'Save changes' : form.active ? 'Publish offer' : 'Save as paused'}
+              {editor?.mode === 'edit'
+                ? 'Save changes'
+                : form.active
+                  ? 'Publish offer'
+                  : 'Save as paused'}
             </Button>
           </>
         }
@@ -411,7 +515,13 @@ export default function OffersPage() {
               <label htmlFor="offer-title" className={label}>
                 Title
               </label>
-              <Input id="offer-title" value={form.title} maxLength={255} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Weekday lunch special" />
+              <Input
+                id="offer-title"
+                value={form.title}
+                maxLength={255}
+                onChange={(e) => set('title', e.target.value)}
+                placeholder="e.g. Weekday lunch special"
+              />
             </div>
 
             <div>
@@ -419,7 +529,11 @@ export default function OffersPage() {
                 Discount
               </span>
               <div className="flex gap-2" role="group" aria-labelledby="offer-discount-label">
-                <div className="flex shrink-0 overflow-hidden rounded-control border border-input" role="radiogroup" aria-label="Discount type">
+                <div
+                  className="flex shrink-0 overflow-hidden rounded-control border border-input"
+                  role="radiogroup"
+                  aria-label="Discount type"
+                >
                   {(['PERCENT', 'AMOUNT'] as const).map((t) => (
                     <button
                       key={t}
@@ -427,16 +541,40 @@ export default function OffersPage() {
                       role="radio"
                       aria-checked={form.discountType === t}
                       onClick={() => set('discountType', t)}
-                      className={cn('h-11 w-11 text-sm font-semibold transition-colors', form.discountType === t ? 'bg-primary text-primary-foreground' : 'bg-card text-muted-foreground hover:bg-secondary')}
+                      className={cn(
+                        'h-11 w-11 text-sm font-semibold transition-colors',
+                        form.discountType === t
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-card text-muted-foreground hover:bg-secondary',
+                      )}
                     >
                       {t === 'PERCENT' ? '%' : '₹'}
                     </button>
                   ))}
                 </div>
                 {form.discountType === 'PERCENT' ? (
-                  <Input key="pct" type="number" inputMode="numeric" min={1} max={100} aria-label="Percent off" value={form.discount} onChange={(e) => set('discount', e.target.value)} placeholder="20" />
+                  <Input
+                    key="pct"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={100}
+                    aria-label="Percent off"
+                    value={form.discount}
+                    onChange={(e) => set('discount', e.target.value)}
+                    placeholder="20"
+                  />
                 ) : (
-                  <Input key="amt" type="number" inputMode="numeric" min={1} aria-label="Rupees off" value={form.discountAmount} onChange={(e) => set('discountAmount', e.target.value)} placeholder="500" />
+                  <Input
+                    key="amt"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    aria-label="Rupees off"
+                    value={form.discountAmount}
+                    onChange={(e) => set('discountAmount', e.target.value)}
+                    placeholder="500"
+                  />
                 )}
               </div>
             </div>
@@ -446,7 +584,12 @@ export default function OffersPage() {
                 <span className={label}>Available for</span>
                 <ChipRow label="Available for" wrap>
                   {FULFILMENT_OPTIONS.map(({ value, label: l, icon }) => (
-                    <FilterChip key={value} icon={icon} selected={form.fulfilment === value} onClick={() => set('fulfilment', value)}>
+                    <FilterChip
+                      key={value}
+                      icon={icon}
+                      selected={form.fulfilment === value}
+                      onClick={() => set('fulfilment', value)}
+                    >
                       {l}
                     </FilterChip>
                   ))}
@@ -459,25 +602,51 @@ export default function OffersPage() {
                 <label htmlFor="offer-start" className={label}>
                   Starts
                 </label>
-                <Input id="offer-start" type="date" value={form.startsAt} min={editor?.mode === 'create' ? todayKey() : undefined} onChange={(e) => set('startsAt', e.target.value)} />
+                <Input
+                  id="offer-start"
+                  type="date"
+                  value={form.startsAt}
+                  min={editor?.mode === 'create' ? todayKey() : undefined}
+                  onChange={(e) => set('startsAt', e.target.value)}
+                />
               </div>
               <div>
                 <label htmlFor="offer-end" className={label}>
                   Ends
                 </label>
-                <Input id="offer-end" type="date" value={form.expiresAt} min={form.startsAt || todayKey()} onChange={(e) => set('expiresAt', e.target.value)} />
+                <Input
+                  id="offer-end"
+                  type="date"
+                  value={form.expiresAt}
+                  min={form.startsAt || todayKey()}
+                  onChange={(e) => set('expiresAt', e.target.value)}
+                />
               </div>
-              <p className="col-span-2 -mt-1 text-caption text-muted-foreground">Leave empty to start today and run for 30 days.</p>
+              <p className="col-span-2 -mt-1 text-caption text-muted-foreground">
+                Leave empty to start today and run for 30 days.
+              </p>
             </div>
 
             <div>
               <span className={label}>
-                Show in cities <span className="font-normal text-muted-foreground">(none = everywhere)</span>
+                Show in cities{' '}
+                <span className="font-normal text-muted-foreground">(none = everywhere)</span>
               </span>
               <div className="max-h-32 overflow-y-auto rounded-control border border-border p-2">
                 <ChipRow label="Cities" wrap>
                   {KERALA_CITIES.map((c) => (
-                    <FilterChip key={c} selected={form.cities.includes(c)} onClick={() => set('cities', form.cities.includes(c) ? form.cities.filter((x) => x !== c) : [...form.cities, c])}>
+                    <FilterChip
+                      key={c}
+                      selected={form.cities.includes(c)}
+                      onClick={() =>
+                        set(
+                          'cities',
+                          form.cities.includes(c)
+                            ? form.cities.filter((x) => x !== c)
+                            : [...form.cities, c],
+                        )
+                      }
+                    >
                       {c}
                     </FilterChip>
                   ))}
@@ -495,7 +664,9 @@ export default function OffersPage() {
             <label className="flex items-center justify-between gap-3 rounded-control border border-border p-3">
               <span>
                 <span className="block text-sm font-medium">Live</span>
-                <span className="block text-caption text-muted-foreground">Turn off to keep it as a paused draft.</span>
+                <span className="block text-caption text-muted-foreground">
+                  Turn off to keep it as a paused draft.
+                </span>
               </span>
               <Switch checked={form.active} onCheckedChange={(v) => set('active', v)} />
             </label>
@@ -505,7 +676,13 @@ export default function OffersPage() {
           <aside className="md:sticky md:top-0 md:self-start" aria-label="Customer preview">
             <p className="mb-2 text-overline text-muted-foreground">Customer preview</p>
             <div className="pointer-events-none select-none" aria-hidden>
-              <OfferCoupon offer={preview} claimed={false} justClaimed={false} onView={() => {}} onClaim={() => {}} />
+              <OfferCoupon
+                offer={preview}
+                claimed={false}
+                justClaimed={false}
+                onView={() => {}}
+                onClaim={() => {}}
+              />
             </div>
           </aside>
         </div>

@@ -26,9 +26,12 @@ export default function StaffBusinessesPage() {
     setLoading(true);
     const params = new URLSearchParams({ limit: '50' });
     if (q) params.set('search', q);
-    apiService.get<any>(`/v1/businesses/admin/all?${params.toString()}`).then((res) => {
-      setRows(res.data?.data ?? []);
-    }).finally(() => setLoading(false));
+    apiService
+      .get<any>(`/v1/businesses/admin/all?${params.toString()}`)
+      .then((res) => {
+        setRows(res.data?.data ?? []);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -41,7 +44,9 @@ export default function StaffBusinessesPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Businesses</h1>
-          <p className="text-muted-foreground text-sm mt-1">Read-only lookup — for reference while publishing content.</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            Read-only lookup — for reference while publishing content.
+          </p>
         </div>
 
         <div className="relative max-w-sm">
@@ -55,7 +60,9 @@ export default function StaffBusinessesPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          <div className="flex items-center justify-center py-16">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
         ) : rows.length === 0 ? (
           <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
             <Building2 className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
@@ -67,26 +74,55 @@ export default function StaffBusinessesPage() {
               <table className="w-full text-sm min-w-[560px]">
                 <thead>
                   <tr className="border-b border-border bg-secondary/40">
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Business</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Category</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">City</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Contact</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Status</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                      Business
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                      Category
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                      City
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                      Contact
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                      Status
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((b) => (
-                    <tr key={b.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
+                    <tr
+                      key={b.id}
+                      className="border-b border-border last:border-0 hover:bg-secondary/20"
+                    >
                       <td className="px-5 py-3 font-semibold text-foreground">{b.name}</td>
-                      <td className="px-5 py-3 text-muted-foreground text-xs">{b.category?.name || '—'}</td>
                       <td className="px-5 py-3 text-muted-foreground text-xs">
-                        {b.city ? <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {b.city}</span> : '—'}
+                        {b.category?.name || '—'}
                       </td>
                       <td className="px-5 py-3 text-muted-foreground text-xs">
-                        {b.phone ? <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {b.phone}</span> : (b.email || '—')}
+                        {b.city ? (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="h-3 w-3" /> {b.city}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="px-5 py-3 text-muted-foreground text-xs">
+                        {b.phone ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Phone className="h-3 w-3" /> {b.phone}
+                          </span>
+                        ) : (
+                          b.email || '—'
+                        )}
                       </td>
                       <td className="px-5 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${b.status === 'APPROVED' ? 'bg-success-soft text-success-soft-foreground' : 'bg-muted text-muted-foreground'}`}>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-bold ${b.status === 'APPROVED' ? 'bg-success-soft text-success-soft-foreground' : 'bg-muted text-muted-foreground'}`}
+                        >
                           {b.status}
                         </span>
                       </td>

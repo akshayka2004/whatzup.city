@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, IsArray, IsObject, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  IsArray,
+  IsObject,
+  IsEnum,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateOnboardingStepDto {
@@ -174,7 +182,10 @@ export class UploadEntityDocumentDto {
   @IsString()
   documentType!: string;
 
-  @ApiProperty({ example: 'https://cloud-storage.com/doc.pdf', description: 'URL of the uploaded file' })
+  @ApiProperty({
+    example: 'https://cloud-storage.com/doc.pdf',
+    description: 'URL of the uploaded file',
+  })
   @IsString()
   fileUrl!: string;
 

@@ -39,7 +39,13 @@ const TONE_CLASS: Record<PillTone, string> = {
   other: 'bg-muted text-muted-foreground',
 };
 
-export function OutletStatusPill({ status, className }: { status?: string | null; className?: string }) {
+export function OutletStatusPill({
+  status,
+  className,
+}: {
+  status?: string | null;
+  className?: string;
+}) {
   const { label, tone } = outletStatusMeta(status);
   return (
     <span
@@ -103,7 +109,9 @@ export function OutletSwitcher({ compact }: { compact?: boolean }) {
             <>
               <span className="flex min-w-0 items-center gap-2">
                 <Store className="h-4 w-4 shrink-0 text-primary" />
-                <span className="truncate text-sm font-medium">{active ? outletDisplayName(active) : brand.name}</span>
+                <span className="truncate text-sm font-medium">
+                  {active ? outletDisplayName(active) : brand.name}
+                </span>
               </span>
               <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
             </>
@@ -131,11 +139,19 @@ export function OutletSwitcher({ compact }: { compact?: boolean }) {
               className="min-h-11 cursor-pointer gap-3 rounded-lg px-2 py-2"
             >
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-foreground">{outletDisplayName(o)}</span>
-                {o.city && <span className="block truncate text-xs text-muted-foreground">{o.city}</span>}
+                <span className="block truncate text-sm font-medium text-foreground">
+                  {outletDisplayName(o)}
+                </span>
+                {o.city && (
+                  <span className="block truncate text-xs text-muted-foreground">{o.city}</span>
+                )}
               </span>
               <OutletStatusPill status={o.status} />
-              {isActive ? <Check className="h-4 w-4 shrink-0 text-primary" /> : <span className="h-4 w-4 shrink-0" />}
+              {isActive ? (
+                <Check className="h-4 w-4 shrink-0 text-primary" />
+              ) : (
+                <span className="h-4 w-4 shrink-0" />
+              )}
             </DropdownMenuItem>
           );
         })}

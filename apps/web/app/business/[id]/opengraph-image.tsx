@@ -47,126 +47,161 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   let biz: any = null;
   try {
     const { id } = await params;
-    biz = unwrapOne<any>(await serverGet(`/v1/businesses/${encodeURIComponent(id)}`, { revalidate: 600, timeoutMs: 3000 }));
+    biz = unwrapOne<any>(
+      await serverGet(`/v1/businesses/${encodeURIComponent(id)}`, {
+        revalidate: 600,
+        timeoutMs: 3000,
+      }),
+    );
     if (!biz || typeof biz.name !== 'string') biz = null;
   } catch {
     biz = null;
   }
 
-  const name = clip(drawable(biz?.name), 72) || (biz ? 'Local business' : "Kerala's trusted local directory");
-  const category = clip(drawable(biz?.category?.name), 40) || (biz ? '' : 'Discover local businesses');
-  const place = clip([drawable(biz?.district || biz?.city), drawable(biz?.state)].filter(Boolean).join(', '), 48);
+  const name =
+    clip(drawable(biz?.name), 72) || (biz ? 'Local business' : "Kerala's trusted local directory");
+  const category =
+    clip(drawable(biz?.category?.name), 40) || (biz ? '' : 'Discover local businesses');
+  const place = clip(
+    [drawable(biz?.district || biz?.city), drawable(biz?.state)].filter(Boolean).join(', '),
+    48,
+  );
   const rating = Number(biz?.averageRating) || 0;
   const reviews = Number(biz?.totalReviews ?? biz?._count?.reviews) || 0;
 
   return new ImageResponse(
-    (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        background: C.bg,
+        padding: 44,
+      }}
+    >
       <div
         style={{
-          width: '100%',
-          height: '100%',
+          position: 'relative',
+          flex: 1,
           display: 'flex',
-          background: C.bg,
-          padding: 44,
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          background: C.card,
+          borderRadius: 40,
+          padding: '52px 64px 52px 80px',
+          overflow: 'hidden',
+          border: '2px solid rgba(102,112,133,0.2)',
         }}
       >
         <div
           style={{
-            position: 'relative',
-            flex: 1,
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 18,
+            background: C.primary,
             display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            background: C.card,
-            borderRadius: 40,
-            padding: '52px 64px 52px 80px',
-            overflow: 'hidden',
-            border: '2px solid rgba(102,112,133,0.2)',
           }}
-        >
-          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 18, background: C.primary, display: 'flex' }} />
+        />
 
-          {/* Brand row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 26,
-                  background: C.primary,
-                  color: '#FFFFFF',
-                  fontSize: 30,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                W
-              </div>
-              <div style={{ marginLeft: 16, fontSize: 32, color: C.ink, display: 'flex' }}>Whtzup.city</div>
+        {/* Brand row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                background: C.primary,
+                color: '#FFFFFF',
+                fontSize: 30,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              W
             </div>
-            {biz?.isVerified && (
-              <div
-                style={{
-                  display: 'flex',
-                  padding: '8px 22px',
-                  borderRadius: 999,
-                  border: `2px solid ${C.primary}`,
-                  color: C.primary,
-                  fontSize: 26,
-                }}
-              >
-                Verified
-              </div>
-            )}
+            <div style={{ marginLeft: 16, fontSize: 32, color: C.ink, display: 'flex' }}>
+              Whtzup.city
+            </div>
           </div>
+          {biz?.isVerified && (
+            <div
+              style={{
+                display: 'flex',
+                padding: '8px 22px',
+                borderRadius: 999,
+                border: `2px solid ${C.primary}`,
+                color: C.primary,
+                fontSize: 26,
+              }}
+            >
+              Verified
+            </div>
+          )}
+        </div>
 
-          {/* Name block */}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {category && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignSelf: 'flex-start',
-                  padding: '8px 24px',
-                  borderRadius: 999,
-                  background: 'rgba(184,111,80,0.12)',
-                  color: C.primary,
-                  fontSize: 30,
-                  marginBottom: 24,
-                }}
-              >
-                {category}
-              </div>
-            )}
-            <div style={{ display: 'flex', fontSize: nameSize(name.length), lineHeight: 1.08, color: C.ink }}>{name}</div>
-            {place && <div style={{ display: 'flex', marginTop: 22, fontSize: 34, color: C.muted }}>{place}</div>}
+        {/* Name block */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {category && (
+            <div
+              style={{
+                display: 'flex',
+                alignSelf: 'flex-start',
+                padding: '8px 24px',
+                borderRadius: 999,
+                background: 'rgba(184,111,80,0.12)',
+                color: C.primary,
+                fontSize: 30,
+                marginBottom: 24,
+              }}
+            >
+              {category}
+            </div>
+          )}
+          <div
+            style={{
+              display: 'flex',
+              fontSize: nameSize(name.length),
+              lineHeight: 1.08,
+              color: C.ink,
+            }}
+          >
+            {name}
           </div>
+          {place && (
+            <div style={{ display: 'flex', marginTop: 22, fontSize: 34, color: C.muted }}>
+              {place}
+            </div>
+          )}
+        </div>
 
-          {/* Rating row */}
-          <div style={{ display: 'flex', alignItems: 'center', height: 56 }}>
-            {rating > 0 ? (
-              <>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <StarIcon key={n} on={n <= Math.round(rating)} />
-                ))}
-                <div style={{ display: 'flex', marginLeft: 12, fontSize: 38, color: C.ink }}>{rating.toFixed(1)}</div>
-                {reviews > 0 && (
-                  <div style={{ display: 'flex', marginLeft: 14, fontSize: 30, color: C.muted }}>
-                    {`(${reviews} review${reviews === 1 ? '' : 's'})`}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div style={{ display: 'flex', fontSize: 30, color: C.muted }}>
-                Offers, reviews and opening hours on Whtzup.city
+        {/* Rating row */}
+        <div style={{ display: 'flex', alignItems: 'center', height: 56 }}>
+          {rating > 0 ? (
+            <>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <StarIcon key={n} on={n <= Math.round(rating)} />
+              ))}
+              <div style={{ display: 'flex', marginLeft: 12, fontSize: 38, color: C.ink }}>
+                {rating.toFixed(1)}
               </div>
-            )}
-          </div>
+              {reviews > 0 && (
+                <div style={{ display: 'flex', marginLeft: 14, fontSize: 30, color: C.muted }}>
+                  {`(${reviews} review${reviews === 1 ? '' : 's'})`}
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ display: 'flex', fontSize: 30, color: C.muted }}>
+              Offers, reviews and opening hours on Whtzup.city
+            </div>
+          )}
         </div>
       </div>
-    ),
+    </div>,
     { ...size },
   );
 }

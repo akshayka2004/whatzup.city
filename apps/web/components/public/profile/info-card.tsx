@@ -37,7 +37,13 @@ const SOCIAL_ICON: Record<SocialKind, ComponentType<{ className?: string }>> = {
   website: Globe,
 };
 
-function Row({ icon: Icon, children }: { icon: ComponentType<{ className?: string }>; children: ReactNode }) {
+function Row({
+  icon: Icon,
+  children,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  children: ReactNode;
+}) {
   return (
     <div className="flex min-h-11 items-center gap-3 text-sm text-foreground">
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
@@ -75,7 +81,10 @@ export function InfoCard({ biz }: { biz: any }) {
           )}
           {phone && (
             <Row icon={Phone}>
-              <a href={telHref(phone)} className="text-foreground hover:text-primary hover:underline">
+              <a
+                href={telHref(phone)}
+                className="text-foreground hover:text-primary hover:underline"
+              >
                 {phone}
               </a>
             </Row>
@@ -91,7 +100,12 @@ export function InfoCard({ biz }: { biz: any }) {
           )}
           {socials.map((s) => (
             <Row key={s.kind + s.href} icon={SOCIAL_ICON[s.kind]}>
-              <a href={s.href} target="_blank" rel="noreferrer" className="break-all text-primary hover:underline">
+              <a
+                href={s.href}
+                target="_blank"
+                rel="noreferrer"
+                className="break-all text-primary hover:underline"
+              >
                 {s.text}
               </a>
             </Row>
@@ -103,7 +117,12 @@ export function InfoCard({ biz }: { biz: any }) {
 
       {biz.website && (
         <Button asChild variant="outline" size="lg" className="ui-press w-full rounded-xl">
-          <a href={ensureHttp(biz.website)} target="_blank" rel="noreferrer" onClick={() => trackBizEvent(biz, 'WEBSITE_CLICK')}>
+          <a
+            href={ensureHttp(biz.website)}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => trackBizEvent(biz, 'WEBSITE_CLICK')}
+          >
             <Globe /> Visit Website
           </a>
         </Button>

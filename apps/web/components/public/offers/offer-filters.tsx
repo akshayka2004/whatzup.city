@@ -20,7 +20,13 @@ export const SORT_OPTIONS: { value: OfferSort; label: string }[] = [
 ];
 
 /** Horizontally scrolling quick filters. 44px tall touch targets; the row scrolls, the page never does. */
-export function OfferFilterChips({ value, onChange }: { value: OfferChip; onChange: (chip: OfferChip) => void }) {
+export function OfferFilterChips({
+  value,
+  onChange,
+}: {
+  value: OfferChip;
+  onChange: (chip: OfferChip) => void;
+}) {
   return (
     <div role="group" aria-label="Filter offers" className="ui-scroll-x flex gap-2 pb-1">
       {CHIPS.map(({ id, label, icon: Icon }) => {

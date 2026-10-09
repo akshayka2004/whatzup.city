@@ -15,7 +15,12 @@ const _geist = Geist({ subsets: ['latin'] });
 const _geistMono = Geist_Mono({ subsets: ['latin'], preload: false });
 // Malayalam glyphs. Geist has none, so the browser only downloads this (unicode-range subset)
 // when Malayalam text is actually on screen; English-only visitors never fetch it.
-const malayalam = Noto_Sans_Malayalam({ subsets: ['malayalam'], display: 'swap', preload: false, variable: '--font-ml' });
+const malayalam = Noto_Sans_Malayalam({
+  subsets: ['malayalam'],
+  display: 'swap',
+  preload: false,
+  variable: '--font-ml',
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -68,7 +73,9 @@ export default function RootLayout({
           <ThemeProviderClient>
             <I18nProvider>
               <ConfirmProvider>
-                <a href="#main-content" className="ui-skip-link">Skip to content</a>
+                <a href="#main-content" className="ui-skip-link">
+                  Skip to content
+                </a>
                 <CommandPalette />
                 {children}
                 <Toaster position="top-center" richColors closeButton />

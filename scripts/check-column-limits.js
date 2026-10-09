@@ -28,18 +28,28 @@ const ROOT = path.join(__dirname, '..');
 const SCHEMA = path.join(ROOT, 'packages', 'database', 'prisma', 'schema.prisma');
 const API_SRC = path.join(ROOT, 'apps', 'api', 'src');
 
-const STRIP = /^(Create|Update|Patch|Admin|Submit|Save|Upsert|Add|Edit|New|Reject|Approve)+|(Dto|Request|Input|Payload|Body)$/g;
+const STRIP =
+  /^(Create|Update|Patch|Admin|Submit|Save|Upsert|Add|Edit|New|Reject|Approve)+|(Dto|Request|Input|Payload|Body)$/g;
 
 function parseSchema() {
   const models = {}; // model -> { field -> { type: 'varchar'|'text', size? } }
   let model = null;
   for (const line of fs.readFileSync(SCHEMA, 'utf8').split(/\r?\n/)) {
     const m = line.match(/^model\s+(\w+)/);
-    if (m) { model = m[1]; models[model] = {}; continue; }
-    if (/^}/.test(line)) { model = null; continue; }
+    if (m) {
+      model = m[1];
+      models[model] = {};
+      continue;
+    }
+    if (/^}/.test(line)) {
+      model = null;
+      continue;
+    }
     if (!model) continue;
     const f = line.match(/^\s+(\w+)\s+String\??\s.*@db\.(VarChar|Text)(?:\((\d+)\))?/);
-    if (f) models[model][f[1]] = f[2] === 'VarChar' ? { type: 'varchar', size: Number(f[3]) } : { type: 'text' };
+    if (f)
+      models[model][f[1]] =
+        f[2] === 'VarChar' ? { type: 'varchar', size: Number(f[3]) } : { type: 'text' };
   }
   return models;
 }
@@ -47,8 +57,9 @@ function parseSchema() {
 function walk(dir, test, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
-    if (e.isDirectory()) { if (e.name !== 'node_modules' && e.name !== 'dist') walk(p, test, out); }
-    else if (test(e.name)) out.push(p);
+    if (e.isDirectory()) {
+      if (e.name !== 'node_modules' && e.name !== 'dist') walk(p, test, out);
+    } else if (test(e.name)) out.push(p);
   }
   return out;
 }
@@ -76,14 +87,24 @@ function scanDtos(models) {
       let decos = [];
       for (const raw of cm[2].split(/\r?\n/)) {
         const l = raw.trim();
-        if (l.startsWith('@')) { decos.push(l); continue; }
+        if (l.startsWith('@')) {
+          decos.push(l);
+          continue;
+        }
         const p = l.match(/^(?:readonly\s+)?(\w+)[!?]?\s*:\s*string\b/);
         if (p && decos.length) {
           const maxM = decos.join(' ').match(/MaxLength\((\d+)/);
           for (const mn of matched) {
             const col = models[mn][p[1]];
             if (col && col.type === 'varchar') {
-              props.push({ file, cls, prop: p[1], max: maxM ? Number(maxM[1]) : null, model: mn, size: col.size });
+              props.push({
+                file,
+                cls,
+                prop: p[1],
+                max: maxM ? Number(maxM[1]) : null,
+                model: mn,
+                size: col.size,
+              });
             }
           }
         }
@@ -116,9 +137,14 @@ function analyze() {
   const props = scanDtos(models);
   for (const p of props) {
     if (p.max !== null && p.max > p.size) {
-      errors.push(`${rel(p.file)} ${p.cls}.${p.prop}: @MaxLength(${p.max}) > ${p.model}.${p.prop} VarChar(${p.size})`);
+      errors.push(
+        `${rel(p.file)} ${p.cls}.${p.prop}: @MaxLength(${p.max}) > ${p.model}.${p.prop} VarChar(${p.size})`,
+      );
     } else if (p.max === null) {
-      warnings.push({ ...p, text: `${rel(p.file)} ${p.cls}.${p.prop}: no @MaxLength -> ${p.model}.${p.prop} VarChar(${p.size})` });
+      warnings.push({
+        ...p,
+        text: `${rel(p.file)} ${p.cls}.${p.prop}: no @MaxLength -> ${p.model}.${p.prop} VarChar(${p.size})`,
+      });
     }
   }
 
@@ -146,7 +172,9 @@ if (require.main === module) {
     errors.forEach((e) => console.log('  ' + e));
   }
   if (warnings.length) {
-    console.log(`\nWARNINGS (${warnings.length}) - string DTO fields feeding a VarChar column with no @MaxLength`);
+    console.log(
+      `\nWARNINGS (${warnings.length}) - string DTO fields feeding a VarChar column with no @MaxLength`,
+    );
     [...new Set(warnings.map((w) => w.text))].forEach((w) => console.log('  ' + w));
   }
   if (!errors.length && !warnings.length) console.log('Column limits OK.');

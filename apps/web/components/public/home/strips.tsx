@@ -9,12 +9,13 @@ import { CalendarDays, Clapperboard, MapPin, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ResponsiveImage } from '@/components/common/responsive-image';
 import {
-  BusinessCardSkeleton, OfferCardSkeleton, Skel, SkeletonRegion,
+  BusinessCardSkeleton,
+  OfferCardSkeleton,
+  Skel,
+  SkeletonRegion,
 } from '@/components/common/skeletons';
 import { SectionHeader } from './section-header';
-import {
-  asStrings, discountText, eventPrice, fmtDay, fmtShortDate, listOf,
-} from './home-data';
+import { asStrings, discountText, eventPrice, fmtDay, fmtShortDate, listOf } from './home-data';
 
 /* ────────────── shared strip primitives ────────────── */
 
@@ -79,7 +80,15 @@ function Strip({
   );
 }
 
-function SkeletonSlots({ width, children, count = 4 }: { width: string; children: ReactNode; count?: number }) {
+function SkeletonSlots({
+  width,
+  children,
+  count = 4,
+}: {
+  width: string;
+  children: ReactNode;
+  count?: number;
+}) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
@@ -105,7 +114,11 @@ export function TrendingOffers({ body, loading }: { body: unknown; loading: bool
       items={items}
       loading={loading}
       cols="md:grid-cols-3 lg:grid-cols-4"
-      skeleton={<SkeletonSlots width={W}><OfferCardSkeleton /></SkeletonSlots>}
+      skeleton={
+        <SkeletonSlots width={W}>
+          <OfferCardSkeleton />
+        </SkeletonSlots>
+      }
     >
       {items.map((o: any) => {
         const biz = o.business ?? {};
@@ -128,7 +141,9 @@ export function TrendingOffers({ body, loading }: { body: unknown; loading: bool
                   />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-semibold text-muted-foreground">{biz.name || 'Local business'}</p>
+                  <p className="truncate text-xs font-semibold text-muted-foreground">
+                    {biz.name || 'Local business'}
+                  </p>
                   <p className="text-xl font-black leading-tight tabular-nums text-primary">
                     {discount || 'Special offer'}
                   </p>
@@ -140,13 +155,21 @@ export function TrendingOffers({ body, loading }: { body: unknown; loading: bool
                 )}
               </div>
               <div className="flex flex-1 flex-col gap-1 p-4">
-                <p className="line-clamp-1 text-sm font-bold text-foreground">{o.title || o.name}</p>
+                <p className="line-clamp-1 text-sm font-bold text-foreground">
+                  {o.title || o.name}
+                </p>
                 {o.description && (
-                  <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{o.description}</p>
+                  <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                    {o.description}
+                  </p>
                 )}
                 <div className="mt-auto flex items-center justify-between gap-2 pt-2 text-xs text-muted-foreground">
                   <span>{ends ? `Ends ${ends}` : ''}</span>
-                  {claimed > 0 && <span className="font-semibold text-foreground/70">{claimed.toLocaleString('en-IN')} claimed</span>}
+                  {claimed > 0 && (
+                    <span className="font-semibold text-foreground/70">
+                      {claimed.toLocaleString('en-IN')} claimed
+                    </span>
+                  )}
                 </div>
               </div>
             </Link>
@@ -172,7 +195,11 @@ export function TrendingBusinesses({ body, loading }: { body: unknown; loading: 
       items={items}
       loading={loading}
       cols="md:grid-cols-3 lg:grid-cols-4"
-      skeleton={<SkeletonSlots width={W}><BusinessCardSkeleton /></SkeletonSlots>}
+      skeleton={
+        <SkeletonSlots width={W}>
+          <BusinessCardSkeleton />
+        </SkeletonSlots>
+      }
     >
       {items.map((b: any, i: number) => (
         <Slot key={b.id} width={W} height={248}>
@@ -197,7 +224,11 @@ export function UpcomingEvents({ body, loading }: { body: unknown; loading: bool
       items={items}
       loading={loading}
       cols="md:grid-cols-3"
-      skeleton={<SkeletonSlots width={W} count={3}><OfferCardSkeleton /></SkeletonSlots>}
+      skeleton={
+        <SkeletonSlots width={W} count={3}>
+          <OfferCardSkeleton />
+        </SkeletonSlots>
+      }
     >
       {items.map((ev: any) => {
         const day = fmtDay(ev.startDate);
@@ -218,13 +249,19 @@ export function UpcomingEvents({ body, loading }: { body: unknown; loading: bool
                 />
                 {day && (
                   <div className="absolute left-2.5 top-2.5 rounded-xl border border-border bg-card/95 px-2.5 py-1 text-center leading-none shadow-sm">
-                    <span className="block text-base font-black tabular-nums text-foreground">{day.day}</span>
-                    <span className="block text-xs font-bold uppercase tracking-wide text-primary">{day.month}</span>
+                    <span className="block text-base font-black tabular-nums text-foreground">
+                      {day.day}
+                    </span>
+                    <span className="block text-xs font-bold uppercase tracking-wide text-primary">
+                      {day.month}
+                    </span>
                   </div>
                 )}
               </div>
               <div className="flex flex-1 flex-col gap-1 p-4">
-                <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground">{ev.title}</h3>
+                <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground">
+                  {ev.title}
+                </h3>
                 {host && <p className="truncate text-xs text-muted-foreground">by {host}</p>}
                 <div className="mt-auto flex items-center justify-between gap-2 pt-2">
                   {where ? (
@@ -232,11 +269,15 @@ export function UpcomingEvents({ body, loading }: { body: unknown; loading: bool
                       <MapPin className="h-3 w-3 shrink-0" />
                       <span className="truncate">{where}</span>
                     </span>
-                  ) : <span />}
+                  ) : (
+                    <span />
+                  )}
                   <span
                     className={cn(
                       'shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold',
-                      ev.ticketType === 'PAID' ? 'bg-brand-soft text-brand-soft-foreground' : 'bg-success/10 text-success-foreground dark:text-success',
+                      ev.ticketType === 'PAID'
+                        ? 'bg-brand-soft text-brand-soft-foreground'
+                        : 'bg-success/10 text-success-foreground dark:text-success',
                     )}
                   >
                     {price}

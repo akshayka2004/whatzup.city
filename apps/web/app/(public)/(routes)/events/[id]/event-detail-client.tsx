@@ -16,7 +16,14 @@ import { EVENT_CATEGORIES } from '@/lib/constants';
 import { apiService } from '@/lib/services/api-service';
 import { track } from '@/lib/analytics/track';
 
-export function EventDetailClient({ ev }: { ev: Ev & { businessId?: string | null; business?: { id?: string; name?: string; logo?: string | null } | null } }) {
+export function EventDetailClient({
+  ev,
+}: {
+  ev: Ev & {
+    businessId?: string | null;
+    business?: { id?: string; name?: string; logo?: string | null } | null;
+  };
+}) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => setNow(Date.now()), []);
 
@@ -24,14 +31,17 @@ export function EventDetailClient({ ev }: { ev: Ev & { businessId?: string | nul
   const ended = now != null && new Date(ev.endDate || ev.startDate).getTime() < now - 86400000;
   const where = [ev.venue, ev.city].filter(Boolean).join(', ');
   const tiers = Array.isArray(ev.ticketTiers) ? ev.ticketTiers : [];
-  const category = ev.category ? (EVENT_CATEGORIES.find((c) => c.value === ev.category)?.label ?? ev.category) : null;
+  const category = ev.category
+    ? (EVENT_CATEGORIES.find((c) => c.value === ev.category)?.label ?? ev.category)
+    : null;
   const host = ev.business?.name || ev.hostLabel;
   const hostId = ev.business?.id || ev.businessId;
 
   const go = async (type: 'REGISTER' | 'TICKET') => {
     const res = await apiService.post<any>(`/v1/events/${ev.id}/click`, { type });
     const url = res.data?.url;
-    if (url) window.open(url.startsWith('http') ? url : `https://${url}`, '_blank', 'noopener,noreferrer');
+    if (url)
+      window.open(url.startsWith('http') ? url : `https://${url}`, '_blank', 'noopener,noreferrer');
   };
 
   useEffect(() => {
@@ -44,7 +54,13 @@ export function EventDetailClient({ ev }: { ev: Ev & { businessId?: string | nul
         back={{ href: '/events', label: 'All events' }}
         eyebrow={category ?? 'Event'}
         title={ev.title}
-        meta={live ? <StatusPill tone="success" live label="Happening now" /> : ended ? <StatusPill tone="neutral" label="Ended" /> : null}
+        meta={
+          live ? (
+            <StatusPill tone="success" live label="Happening now" />
+          ) : ended ? (
+            <StatusPill tone="neutral" label="Ended" />
+          ) : null
+        }
         description={host ? `Hosted by ${host}` : undefined}
       />
 
@@ -62,7 +78,9 @@ export function EventDetailClient({ ev }: { ev: Ev & { businessId?: string | nul
           </div>
           {ev.description && (
             <SectionCard title="About this event">
-              <p className="whitespace-pre-line break-words text-body text-foreground">{ev.description}</p>
+              <p className="whitespace-pre-line break-words text-body text-foreground">
+                {ev.description}
+              </p>
             </SectionCard>
           )}
         </div>
@@ -76,7 +94,9 @@ export function EventDetailClient({ ev }: { ev: Ev & { businessId?: string | nul
                   <dt className="sr-only">When</dt>
                   <dd className="font-medium">
                     {fmtDateIST(ev.startDate)}
-                    {ev.endDate && ev.endDate !== ev.startDate ? ` – ${fmtDateIST(ev.endDate)}` : ''}
+                    {ev.endDate && ev.endDate !== ev.startDate
+                      ? ` – ${fmtDateIST(ev.endDate)}`
+                      : ''}
                   </dd>
                 </div>
               </div>
@@ -102,7 +122,11 @@ export function EventDetailClient({ ev }: { ev: Ev & { businessId?: string | nul
                 <div>
                   <dt className="sr-only">Price</dt>
                   <dd className="font-medium">
-                    {ev.ticketType !== 'PAID' ? 'Free entry' : tiers.length ? 'Tickets' : `₹${Number(ev.ticketPrice || 0).toLocaleString('en-IN')}`}
+                    {ev.ticketType !== 'PAID'
+                      ? 'Free entry'
+                      : tiers.length
+                        ? 'Tickets'
+                        : `₹${Number(ev.ticketPrice || 0).toLocaleString('en-IN')}`}
                   </dd>
                   {tiers.length > 0 && (
                     <ul className="mt-1 space-y-0.5 text-caption text-muted-foreground">
@@ -150,7 +174,10 @@ export function EventDetailClient({ ev }: { ev: Ev & { businessId?: string | nul
             )}
             <div className="mt-3 flex gap-2">
               <AddToCalendarButton event={ev} />
-              <ShareButton title={ev.title} text={`${ev.title}${where ? ` — ${where}` : ''} on Whtzup.city`} />
+              <ShareButton
+                title={ev.title}
+                text={`${ev.title}${where ? ` — ${where}` : ''} on Whtzup.city`}
+              />
             </div>
           </SectionCard>
         </div>

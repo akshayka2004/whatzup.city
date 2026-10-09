@@ -14,10 +14,10 @@ export class LaunchInterestsService {
   // ── BUSINESSES ──────────────────────────────────────────────
 
   async findBusinesses(params: { page?: number; limit?: number; search?: string }) {
-    const page  = Math.max(1, Number(params.page)  || 1);
+    const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.min(Number(params.limit) || 30, 100);
-    const skip  = (page - 1) * limit;
-    const q     = params.search?.trim() || null;
+    const skip = (page - 1) * limit;
+    const q = params.search?.trim() || null;
 
     // Shared FROM + WHERE clause (reused for data + count)
     const searchClause = q
@@ -77,10 +77,10 @@ export class LaunchInterestsService {
   // ── INDIVIDUALS ─────────────────────────────────────────────
 
   async findIndividuals(params: { page?: number; limit?: number; search?: string }) {
-    const page  = Math.max(1, Number(params.page)  || 1);
+    const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.min(Number(params.limit) || 30, 100);
-    const skip  = (page - 1) * limit;
-    const q     = params.search?.trim() || null;
+    const skip = (page - 1) * limit;
+    const q = params.search?.trim() || null;
 
     const searchClause = q
       ? Prisma.sql`AND (

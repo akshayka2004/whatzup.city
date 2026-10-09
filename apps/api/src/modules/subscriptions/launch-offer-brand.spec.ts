@@ -36,7 +36,9 @@ describe('claimLaunchOffer — one slot per brand', () => {
     const { service, db, tx } = makeService(1);
     db.business.findFirst.mockResolvedValue({ ...baseBusiness, brandId: 'brand-1' });
 
-    await expect(service.claimLaunchOffer('owner-1', 'ten-1', 'biz-2')).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.claimLaunchOffer('owner-1', 'ten-1', 'biz-2')).rejects.toBeInstanceOf(
+      ConflictException,
+    );
     // took the per-brand lock, and never reserved a slot
     expect(tx.$queryRaw).toHaveBeenCalledTimes(2);
     expect(tx.business.update).not.toHaveBeenCalled();
@@ -55,7 +57,10 @@ describe('claimLaunchOffer — one slot per brand', () => {
       const { service, db, tx } = makeService(0);
       db.business.findFirst.mockResolvedValue({ ...baseBusiness, brandId });
       await service.claimLaunchOffer('owner-1', 'ten-1', 'biz-2');
-      expect(tx.business.update).toHaveBeenCalledWith({ where: { id: 'biz-2' }, data: { launchOfferClaimedAt: expect.any(Date) } });
+      expect(tx.business.update).toHaveBeenCalledWith({
+        where: { id: 'biz-2' },
+        data: { launchOfferClaimedAt: expect.any(Date) },
+      });
       // single business: only the per-category lock, no brand lock
       expect(tx.$queryRaw).toHaveBeenCalledTimes(brandId ? 2 : 1);
     }

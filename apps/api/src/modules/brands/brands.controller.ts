@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -35,7 +46,9 @@ export class BrandsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get('brands/mine')
-  @ApiOperation({ summary: "The signed-in owner's brand and its outlets (null for a single business)" })
+  @ApiOperation({
+    summary: "The signed-in owner's brand and its outlets (null for a single business)",
+  })
   mine(@CurrentUser('id') userId: string) {
     return this.brands.getMine(userId);
   }
@@ -91,8 +104,13 @@ export class BrandsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get('brands/:brandId/billing-defaults')
-  @ApiOperation({ summary: "Head outlet's invoice details, to pre-fill a new outlet's invoice form" })
-  billingDefaults(@CurrentUser('id') userId: string, @Param('brandId', ParseUUIDPipe) brandId: string) {
+  @ApiOperation({
+    summary: "Head outlet's invoice details, to pre-fill a new outlet's invoice form",
+  })
+  billingDefaults(
+    @CurrentUser('id') userId: string,
+    @Param('brandId', ParseUUIDPipe) brandId: string,
+  ) {
     return this.brands.billingDefaults(userId, brandId);
   }
 
@@ -140,7 +158,12 @@ export class BrandsController {
   @ApiBearerAuth()
   @Get('admin/brands')
   @ApiOperation({ summary: 'All brand accounts across tenants' })
-  adminList(@Query('q') q?: string, @Query('status') status?: string, @Query('page') page?: number, @Query('limit') limit?: number) {
+  adminList(
+    @Query('q') q?: string,
+    @Query('status') status?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
     return this.brands.adminList({ q, status, page, limit });
   }
 

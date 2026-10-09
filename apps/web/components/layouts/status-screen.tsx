@@ -37,11 +37,15 @@ export function StatusScreen({
       className={cn(
         'flex w-full items-center justify-center p-4',
         // design-lint-ignore: blocking gate (trial expired / suspended), not a dismissible dialog
-        overlay ? 'fixed inset-0 z-[var(--z-modal)] bg-background/90 backdrop-blur-md' : 'h-dvh bg-background',
+        overlay
+          ? 'fixed inset-0 z-[var(--z-modal)] bg-background/90 backdrop-blur-md'
+          : 'h-dvh bg-background',
       )}
     >
       <div className="ui-fade-up w-full max-w-md space-y-6 rounded-sheet border border-border/70 bg-card p-8 text-center shadow-e3">
-        <div className={cn('mx-auto flex size-16 items-center justify-center rounded-2xl', TONE[tone])}>
+        <div
+          className={cn('mx-auto flex size-16 items-center justify-center rounded-2xl', TONE[tone])}
+        >
           <Icon className="size-7" />
         </div>
         <div className="space-y-2">
@@ -53,7 +57,10 @@ export function StatusScreen({
         {children}
         <p className="text-caption text-muted-foreground">
           Questions? Contact{' '}
-          <a href="mailto:support@lifeartgroup.in" className="font-medium text-primary underline-offset-4 hover:underline">
+          <a
+            href="mailto:support@lifeartgroup.in"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
             support@lifeartgroup.in
           </a>
         </p>

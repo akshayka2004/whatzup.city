@@ -61,10 +61,7 @@ export class AnalyticsController {
   @Get('overview')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get overview dashboard metrics (Admin only)' })
-  async getOverview(
-    @CurrentUser('tenantId') tenantId: string,
-    @CurrentUser('role') role: string,
-  ) {
+  async getOverview(@CurrentUser('tenantId') tenantId: string, @CurrentUser('role') role: string) {
     return this.analyticsService.getOverview(tenantId, role);
   }
 
@@ -98,7 +95,9 @@ export class AnalyticsController {
   @UseGuards(JwtAuthGuard)
   @Get('business/:businessId/summary')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Rich business analytics summary — offers, redemptions, reviews, team, impressions' })
+  @ApiOperation({
+    summary: 'Rich business analytics summary — offers, redemptions, reviews, team, impressions',
+  })
   async getBusinessSummary(
     @CurrentUser('tenantId') tenantId: string,
     @Param('businessId') businessId: string,
@@ -120,10 +119,7 @@ export class AnalyticsController {
   @Get('top-spenders')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Top spenders leaderboard from pre-aggregated summary (Admin only)' })
-  async getTopSpenders(
-    @CurrentUser('tenantId') tenantId: string,
-    @Query('limit') limit?: number,
-  ) {
+  async getTopSpenders(@CurrentUser('tenantId') tenantId: string, @Query('limit') limit?: number) {
     return this.summaryService.getTopSpenders(tenantId, limit ? Number(limit) : 10);
   }
 
@@ -132,10 +128,7 @@ export class AnalyticsController {
   @Get('top-referrers')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Top referrers leaderboard from pre-aggregated summary (Admin only)' })
-  async getTopReferrers(
-    @Query('entityType') entityType?: string,
-    @Query('limit') limit?: number,
-  ) {
+  async getTopReferrers(@Query('entityType') entityType?: string, @Query('limit') limit?: number) {
     return this.summaryService.getTopReferrers(entityType, limit ? Number(limit) : 10);
   }
 }

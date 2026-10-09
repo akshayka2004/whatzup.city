@@ -34,7 +34,8 @@ import { apiService } from '@/lib/services/api-service';
 import { analyticsV2, type BusinessReport } from '@/lib/services/analytics-v2';
 import { cn } from '@/lib/utils';
 
-const list = (d: any): any[] => (Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : Array.isArray(d?.items) ? d.items : []);
+const list = (d: any): any[] =>
+  Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : Array.isArray(d?.items) ? d.items : [];
 
 const MISSING_LABEL: Record<string, { label: string; href: string }> = {
   name: { label: 'Add your business name', href: '/dashboard/settings#profile' },
@@ -48,15 +49,31 @@ const MISSING_LABEL: Record<string, { label: string; href: string }> = {
 };
 
 function greeting() {
-  const h = Number(new Date().toLocaleString('en-IN', { hour: 'numeric', hour12: false, timeZone: 'Asia/Kolkata' }));
+  const h = Number(
+    new Date().toLocaleString('en-IN', {
+      hour: 'numeric',
+      hour12: false,
+      timeZone: 'Asia/Kolkata',
+    }),
+  );
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
-type Task = { key: string; icon: typeof Clock; title: string; detail: string; href: string; tone: 'warning' | 'info' | 'neutral' };
+type Task = {
+  key: string;
+  icon: typeof Clock;
+  title: string;
+  detail: string;
+  href: string;
+  tone: 'warning' | 'info' | 'neutral';
+};
 
 export default function BusinessOverviewPage() {
   const { user } = useAuth();
-  const role = user?.rbacRole || (user?.role === 'business' ? 'BUSINESS_OWNER' : user?.role) || 'BUSINESS_OWNER';
+  const role =
+    user?.rbacRole ||
+    (user?.role === 'business' ? 'BUSINESS_OWNER' : user?.role) ||
+    'BUSINESS_OWNER';
   const isModerator = role === 'BUSINESS_MODERATOR';
   const isStaff = role === 'BUSINESS_STAFF';
   const canSeeNumbers = !isModerator && !isStaff;
@@ -66,7 +83,9 @@ export default function BusinessOverviewPage() {
   const [report, setReport] = useState<BusinessReport | null>(null);
   const [offers, setOffers] = useState<any[] | null>(null);
   const [pendingBills, setPendingBills] = useState<number | null>(null);
-  const [completeness, setCompleteness] = useState<{ score: number; missing: string[] } | null>(null);
+  const [completeness, setCompleteness] = useState<{ score: number; missing: string[] } | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!activeBusinessId) return;
@@ -75,14 +94,20 @@ export default function BusinessOverviewPage() {
       canSeeNumbers ? analyticsV2.business(activeBusinessId, { days: 7 }) : Promise.resolve(null),
       apiService.get<any>(`/v1/offers/my/${activeBusinessId}`),
       apiService.get<any>(`/v1/businesses/${activeBusinessId}/bill-verifications?status=PENDING`),
-      canSeeNumbers ? apiService.get<any>(`/v1/dashboard/${activeBusinessId}/completeness`) : Promise.resolve(null),
+      canSeeNumbers
+        ? apiService.get<any>(`/v1/dashboard/${activeBusinessId}/completeness`)
+        : Promise.resolve(null),
     ]).then(([rep, off, bills, comp]) => {
       if (!alive) return;
       if (rep && !rep.error) setReport(rep.data);
       setOffers(off.error ? [] : list(off.data));
       if (!bills.error) {
         const d = bills.data as any;
-        setPendingBills(typeof d?.total === 'number' ? d.total : list(d).filter((b) => b.status === 'PENDING').length);
+        setPendingBills(
+          typeof d?.total === 'number'
+            ? d.total
+            : list(d).filter((b) => b.status === 'PENDING').length,
+        );
       } else setPendingBills(0);
       if (comp && !comp.error && comp.data) setCompleteness(comp.data as any);
     });
@@ -93,10 +118,15 @@ export default function BusinessOverviewPage() {
 
   const now = Date.now();
   const activeOffers = useMemo(
-    () => (offers ?? []).filter((o) => o.status === 'ACTIVE' && (!o.endDate || new Date(o.endDate).getTime() > now)),
+    () =>
+      (offers ?? []).filter(
+        (o) => o.status === 'ACTIVE' && (!o.endDate || new Date(o.endDate).getTime() > now),
+      ),
     [offers, now],
   );
-  const expiringSoon = activeOffers.filter((o) => o.endDate && new Date(o.endDate).getTime() - now < 7 * 86400000);
+  const expiringSoon = activeOffers.filter(
+    (o) => o.endDate && new Date(o.endDate).getTime() - now < 7 * 86400000,
+  );
 
   const tasks: Task[] = [];
   if (pendingBills) {
@@ -114,7 +144,10 @@ export default function BusinessOverviewPage() {
       key: 'expiring',
       icon: Clock,
       title: `${expiringSoon.length} offer${expiringSoon.length === 1 ? '' : 's'} ending this week`,
-      detail: expiringSoon.map((o) => o.title).slice(0, 2).join(', '),
+      detail: expiringSoon
+        .map((o) => o.title)
+        .slice(0, 2)
+        .join(', '),
       href: '/dashboard/offers',
       tone: 'info',
     });
@@ -138,7 +171,12 @@ export default function BusinessOverviewPage() {
     { label: 'New offer', href: '/dashboard/offers', icon: Plus, show: !isStaff },
     { label: 'Review bills', href: '/dashboard/moderation', icon: ReceiptText, show: true },
     { label: 'Redeem a code', href: '/dashboard/vouchers', icon: Sparkles, show: !isModerator },
-    { label: 'Menu photos', href: '/dashboard/menu', icon: Utensils, show: !!isFood && !isModerator },
+    {
+      label: 'Menu photos',
+      href: '/dashboard/menu',
+      icon: Utensils,
+      show: !!isFood && !isModerator,
+    },
     { label: 'Storefront QR', href: '/dashboard/qr-code', icon: QrCode, show: !isModerator },
     { label: 'Reviews', href: '/dashboard/reviews', icon: Star, show: true },
   ].filter((a) => a.show);
@@ -148,7 +186,11 @@ export default function BusinessOverviewPage() {
       <PageHeader
         eyebrow={bizName ?? (isModerator ? 'Moderation' : 'Business')}
         title={`${greeting()}${name ? `, ${name}` : ''}`}
-        description={isModerator ? 'Here is what needs moderating today.' : 'Here is how your business is doing this week.'}
+        description={
+          isModerator
+            ? 'Here is what needs moderating today.'
+            : 'Here is how your business is doing this week.'
+        }
         meta={status && <StatusPill status={status} />}
         actions={
           activeBusinessId && (
@@ -177,21 +219,53 @@ export default function BusinessOverviewPage() {
               <h2 id="week-heading" className="text-heading">
                 Last 7 days
               </h2>
-              <Link href="/dashboard/analytics" className="inline-flex items-center gap-1 text-label text-primary hover:underline">
+              <Link
+                href="/dashboard/analytics"
+                className="inline-flex items-center gap-1 text-label text-primary hover:underline"
+              >
                 Full analytics <ArrowRight className="size-4" />
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <KpiCard label="Visitors" icon={Users} metric={report?.kpis.visitors} loading={!report} spark={report?.series.points.map((p) => p.visitors)} />
-              <KpiCard label="Customer actions" icon={MousePointerClick} metric={report?.kpis.actions} loading={!report} spark={report?.series.points.map((p) => p.actions)} />
-              <KpiCard label="Offer claims" icon={TicketPercent} metric={report?.kpis.offerClaims} loading={!report} spark={report?.series.points.map((p) => p.claims)} />
-              <KpiCard label="Verified spend" icon={BadgeIndianRupee} format="inr" metric={report?.kpis.verifiedSpend} loading={!report} spark={report?.series.points.map((p) => p.spend)} />
+              <KpiCard
+                label="Visitors"
+                icon={Users}
+                metric={report?.kpis.visitors}
+                loading={!report}
+                spark={report?.series.points.map((p) => p.visitors)}
+              />
+              <KpiCard
+                label="Customer actions"
+                icon={MousePointerClick}
+                metric={report?.kpis.actions}
+                loading={!report}
+                spark={report?.series.points.map((p) => p.actions)}
+              />
+              <KpiCard
+                label="Offer claims"
+                icon={TicketPercent}
+                metric={report?.kpis.offerClaims}
+                loading={!report}
+                spark={report?.series.points.map((p) => p.claims)}
+              />
+              <KpiCard
+                label="Verified spend"
+                icon={BadgeIndianRupee}
+                format="inr"
+                metric={report?.kpis.verifiedSpend}
+                loading={!report}
+                spark={report?.series.points.map((p) => p.spend)}
+              />
             </div>
           </section>
         )}
 
         <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <SectionCard title="Needs your attention" description={tasks.length ? undefined : 'You are all caught up.'} padded={false}>
+          <SectionCard
+            title="Needs your attention"
+            description={tasks.length ? undefined : 'You are all caught up.'}
+            padded={false}
+          >
             {pendingBills == null ? (
               <div className="space-y-3 px-6 pb-6">
                 <div className="ui-skeleton h-14" />
@@ -199,26 +273,39 @@ export default function BusinessOverviewPage() {
               </div>
             ) : tasks.length === 0 ? (
               <div className="flex items-center gap-3 px-6 pb-6 text-sm text-muted-foreground">
-                <CheckCircle2 className="size-5 text-success" aria-hidden /> Nothing pending. Nice work.
+                <CheckCircle2 className="size-5 text-success" aria-hidden /> Nothing pending. Nice
+                work.
               </div>
             ) : (
               <ul className="divide-y divide-border/60">
                 {tasks.map((t) => (
                   <li key={t.key}>
-                    <Link href={t.href} className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-secondary/50 sm:px-6">
+                    <Link
+                      href={t.href}
+                      className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-secondary/50 sm:px-6"
+                    >
                       <span
                         className={cn(
                           'flex size-10 shrink-0 items-center justify-center rounded-xl',
-                          t.tone === 'warning' ? 'bg-warning-soft text-warning-soft-foreground' : t.tone === 'info' ? 'bg-info-soft text-info-soft-foreground' : 'bg-surface-sunken text-muted-foreground',
+                          t.tone === 'warning'
+                            ? 'bg-warning-soft text-warning-soft-foreground'
+                            : t.tone === 'info'
+                              ? 'bg-info-soft text-info-soft-foreground'
+                              : 'bg-surface-sunken text-muted-foreground',
                         )}
                       >
                         <t.icon className="size-5" aria-hidden />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block font-medium">{t.title}</span>
-                        <span className="block truncate text-caption text-muted-foreground">{t.detail}</span>
+                        <span className="block truncate text-caption text-muted-foreground">
+                          {t.detail}
+                        </span>
                       </span>
-                      <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+                      <ArrowRight
+                        className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                        aria-hidden
+                      />
                     </Link>
                   </li>
                 ))}
@@ -270,11 +357,16 @@ export default function BusinessOverviewPage() {
                   {activeOffers.slice(0, 5).map((o) => {
                     const stat = report?.offers.find((x) => x.id === o.id);
                     return (
-                      <li key={o.id} className="flex items-center justify-between gap-3 px-5 py-3.5 sm:px-6">
+                      <li
+                        key={o.id}
+                        className="flex items-center justify-between gap-3 px-5 py-3.5 sm:px-6"
+                      >
                         <div className="min-w-0">
                           <p className="truncate font-medium">{o.title}</p>
                           <p className="text-caption text-muted-foreground">
-                            {o.endDate ? `Ends ${new Date(o.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` : 'No end date'}
+                            {o.endDate
+                              ? `Ends ${new Date(o.endDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+                              : 'No end date'}
                             {stat ? ` · ${stat.claims} claimed this week` : ''}
                           </p>
                         </div>
@@ -292,7 +384,10 @@ export default function BusinessOverviewPage() {
           )}
 
           {canSeeNumbers && (
-            <SectionCard title="Profile strength" description="Complete profiles get found more often.">
+            <SectionCard
+              title="Profile strength"
+              description="Complete profiles get found more often."
+            >
               {completeness == null ? (
                 <div className="ui-skeleton h-32" />
               ) : (
@@ -309,8 +404,14 @@ export default function BusinessOverviewPage() {
                         if (!item) return null;
                         return (
                           <li key={m}>
-                            <Link href={item.href} className="flex items-center gap-2 text-sm hover:text-primary">
-                              <Circle className="size-4 shrink-0 text-subtle-foreground" aria-hidden />
+                            <Link
+                              href={item.href}
+                              className="flex items-center gap-2 text-sm hover:text-primary"
+                            >
+                              <Circle
+                                className="size-4 shrink-0 text-subtle-foreground"
+                                aria-hidden
+                              />
                               <span className="truncate">{item.label}</span>
                             </Link>
                           </li>
@@ -326,7 +427,8 @@ export default function BusinessOverviewPage() {
           {isModerator && (
             <SectionCard title="Your role" icon={BarChart3}>
               <p className="text-body text-muted-foreground">
-                As a moderator you review bills, reviews and customer reports. Analytics and billing stay with the owner.
+                As a moderator you review bills, reviews and customer reports. Analytics and billing
+                stay with the owner.
               </p>
             </SectionCard>
           )}

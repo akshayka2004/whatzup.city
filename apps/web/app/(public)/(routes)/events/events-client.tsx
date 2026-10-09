@@ -32,7 +32,7 @@ const WHEN_OPTIONS: ChipOption<When>[] = [
 
 /** Same list-shape handling the page has always used for GET /v1/events. */
 function extractList(body: any): Ev[] {
-  const list = Array.isArray(body) ? body : body?.data ?? [];
+  const list = Array.isArray(body) ? body : (body?.data ?? []);
   return Array.isArray(list) ? list : [];
 }
 
@@ -54,7 +54,9 @@ function matchesWhen(ev: Ev, when: When, now: number): boolean {
 export function EventsClient({ initialEvents = null }: { initialEvents?: unknown | null }) {
   // The server renders the default (all cities) list; it stays valid until the viewer picks a city.
   const seeded = useRef(initialEvents != null);
-  const [events, setEvents] = useState<Ev[]>(() => (initialEvents != null ? extractList(initialEvents) : []));
+  const [events, setEvents] = useState<Ev[]>(() =>
+    initialEvents != null ? extractList(initialEvents) : [],
+  );
   const [loading, setLoading] = useState(initialEvents == null);
   const [city, setCity] = useState('');
   const [category, setCategory] = useState('');
@@ -127,30 +129,51 @@ export function EventsClient({ initialEvents = null }: { initialEvents?: unknown
     <PublicLayout>
       <div>
         <h1 className="mb-1 text-2xl font-bold tracking-tight sm:text-3xl">Events</h1>
-        <p className="mb-5 text-muted-foreground">Discover events near you — register or grab tickets.</p>
+        <p className="mb-5 text-muted-foreground">
+          Discover events near you — register or grab tickets.
+        </p>
 
-        <ChipRow options={WHEN_OPTIONS} value={when} onChange={setWhen} ariaLabel="When" className="mb-3" />
+        <ChipRow
+          options={WHEN_OPTIONS}
+          value={when}
+          onChange={setWhen}
+          ariaLabel="When"
+          className="mb-3"
+        />
 
         <div className="mb-6 grid grid-cols-2 gap-3 sm:flex">
           <Select value={city || 'all'} onValueChange={handleCityChange}>
-            <SelectTrigger aria-label="City" className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
+            <SelectTrigger
+              aria-label="City"
+              className="w-full rounded-xl data-[size=default]:h-11 sm:w-52"
+            >
               <SelectValue placeholder="Filter by city" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Cities</SelectItem>
               {KERALA_CITIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={category || 'all'} onValueChange={(v) => setCategory(v === 'all' ? '' : v)}>
-            <SelectTrigger aria-label="Category" className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
+          <Select
+            value={category || 'all'}
+            onValueChange={(v) => setCategory(v === 'all' ? '' : v)}
+          >
+            <SelectTrigger
+              aria-label="Category"
+              className="w-full rounded-xl data-[size=default]:h-11 sm:w-52"
+            >
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               {EVENT_CATEGORIES.map((c) => (
-                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                <SelectItem key={c.value} value={c.value}>
+                  {c.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -171,7 +194,11 @@ export function EventsClient({ initialEvents = null }: { initialEvents?: unknown
               icon={CalendarDays}
               title="No upcoming events"
               description="Check back soon."
-              action={city ? { label: 'Show all cities', onClick: () => handleCityChange('all') } : undefined}
+              action={
+                city
+                  ? { label: 'Show all cities', onClick: () => handleCityChange('all') }
+                  : undefined
+              }
             />
           )
         ) : (

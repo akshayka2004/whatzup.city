@@ -12,9 +12,19 @@
 import { useMemo } from 'react';
 import { AlertCircle, CalendarOff, Clock, Copy, Moon, Plus, Trash2, X } from 'lucide-react';
 import {
-  DAY_KEYS, DAY_LABELS, MAX_SHIFTS_PER_DAY, MAX_CLOSURES, MAX_CLOSURE_REASON,
-  defaultOperatingHours, validateOperatingHours, istParts,
-  type OperatingHours, type DaySchedule, type Shift, type Closure, type DayKey,
+  DAY_KEYS,
+  DAY_LABELS,
+  MAX_SHIFTS_PER_DAY,
+  MAX_CLOSURES,
+  MAX_CLOSURE_REASON,
+  defaultOperatingHours,
+  validateOperatingHours,
+  istParts,
+  type OperatingHours,
+  type DaySchedule,
+  type Shift,
+  type Closure,
+  type DayKey,
 } from '@saas/types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -32,7 +42,8 @@ const toMin = (t: string) => {
   const [h, m] = t.split(':').map(Number);
   return h * 60 + (m || 0);
 };
-const fromMin = (n: number) => `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`;
+const fromMin = (n: number) =>
+  `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`;
 
 function nextShift(shifts: Shift[]): Shift {
   const last = shifts[shifts.length - 1];
@@ -67,7 +78,12 @@ export function OperatingHoursEditor({
         <p className="mt-0.5 text-xs text-muted-foreground">
           Customers see when you are open, and whether you are open right now.
         </p>
-        <Button type="button" size="sm" className="ui-press mt-3 min-h-10" onClick={() => onChange(defaultOperatingHours())}>
+        <Button
+          type="button"
+          size="sm"
+          className="ui-press mt-3 min-h-10"
+          onClick={() => onChange(defaultOperatingHours())}
+        >
           Set opening hours
         </Button>
       </div>
@@ -95,7 +111,9 @@ export function OperatingHoursEditor({
     <div className="space-y-5">
       {/* Shortcuts */}
       <div className="space-y-2">
-        <p className="text-xs font-medium text-muted-foreground">Quick presets (applies to open days)</p>
+        <p className="text-xs font-medium text-muted-foreground">
+          Quick presets (applies to open days)
+        </p>
         <div className="ui-scroll-x flex gap-2 overflow-x-auto pb-1">
           {PRESETS.map((p) => (
             <button
@@ -136,7 +154,12 @@ export function OperatingHoursEditor({
                       day,
                       open
                         ? { ...sched, closed: true }
-                        : { closed: false, shifts: sched.shifts.length ? sched.shifts : [{ open: '09:00', close: '18:00' }] },
+                        : {
+                            closed: false,
+                            shifts: sched.shifts.length
+                              ? sched.shifts
+                              : [{ open: '09:00', close: '18:00' }],
+                          },
                     )
                   }
                   className={cn(
@@ -155,10 +178,16 @@ export function OperatingHoursEditor({
                   {sched.shifts.map((shift, i) => {
                     const midnight = shift.close === '24:00';
                     const setShift = (patch: Partial<Shift>) =>
-                      setDay(day, { ...sched, shifts: sched.shifts.map((s, j) => (j === i ? { ...s, ...patch } : s)) });
+                      setDay(day, {
+                        ...sched,
+                        shifts: sched.shifts.map((s, j) => (j === i ? { ...s, ...patch } : s)),
+                      });
                     const removeShift = () => {
                       const rest = sched.shifts.filter((_, j) => j !== i);
-                      setDay(day, rest.length ? { ...sched, shifts: rest } : { closed: true, shifts: [] });
+                      setDay(
+                        day,
+                        rest.length ? { ...sched, shifts: rest } : { closed: true, shifts: [] },
+                      );
                     };
                     return (
                       <div key={i} className="space-y-1.5">
@@ -175,9 +204,18 @@ export function OperatingHoursEditor({
                             />
                           </label>
                           <label className="block space-y-1">
-                            <span className="text-xs font-medium text-muted-foreground">Closes</span>
+                            <span className="text-xs font-medium text-muted-foreground">
+                              Closes
+                            </span>
                             {midnight ? (
-                              <div className={cn(timeInputCls, 'flex items-center text-muted-foreground')}>12:00 AM</div>
+                              <div
+                                className={cn(
+                                  timeInputCls,
+                                  'flex items-center text-muted-foreground',
+                                )}
+                              >
+                                12:00 AM
+                              </div>
                             ) : (
                               <input
                                 type="time"
@@ -202,7 +240,9 @@ export function OperatingHoursEditor({
                           onClick={() =>
                             setShift({
                               close: midnight
-                                ? shift.open && shift.open < '23:30' ? '23:30' : ''
+                                ? shift.open && shift.open < '23:30'
+                                  ? '23:30'
+                                  : ''
                                 : '24:00',
                             })
                           }
@@ -225,7 +265,9 @@ export function OperatingHoursEditor({
                     size="sm"
                     className="ui-press min-h-10"
                     disabled={sched.shifts.length >= MAX_SHIFTS_PER_DAY}
-                    onClick={() => setDay(day, { ...sched, shifts: [...sched.shifts, nextShift(sched.shifts)] })}
+                    onClick={() =>
+                      setDay(day, { ...sched, shifts: [...sched.shifts, nextShift(sched.shifts)] })
+                    }
                   >
                     <Plus className="h-4 w-4" /> Add a shift
                   </Button>
@@ -251,7 +293,10 @@ export function OperatingHoursEditor({
           const patch = (p: Partial<Closure>) =>
             setClosures(hours.closures.map((x, j) => (j === i ? { ...x, ...p } : x)));
           return (
-            <div key={c.id || i} className="ui-fade-up space-y-2 rounded-xl border border-border bg-background/50 p-3">
+            <div
+              key={c.id || i}
+              className="ui-fade-up space-y-2 rounded-xl border border-border bg-background/50 p-3"
+            >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">Closure {i + 1}</span>
                 <button
@@ -269,7 +314,12 @@ export function OperatingHoursEditor({
                   <input
                     type="date"
                     value={c.from}
-                    onChange={(e) => patch({ from: e.target.value, ...(c.to < e.target.value ? { to: e.target.value } : {}) })}
+                    onChange={(e) =>
+                      patch({
+                        from: e.target.value,
+                        ...(c.to < e.target.value ? { to: e.target.value } : {}),
+                      })
+                    }
                     className={timeInputCls}
                   />
                 </label>
@@ -307,7 +357,10 @@ export function OperatingHoursEditor({
           disabled={hours.closures.length >= MAX_CLOSURES}
           onClick={() => {
             const today = istParts(new Date()).date;
-            setClosures([...hours.closures, { id: newClosureId(), from: today, to: today, reason: '' }]);
+            setClosures([
+              ...hours.closures,
+              { id: newClosureId(), from: today, to: today, reason: '' },
+            ]);
           }}
         >
           <Plus className="h-4 w-4" /> Add closure
@@ -320,7 +373,9 @@ export function OperatingHoursEditor({
             <AlertCircle className="h-3.5 w-3.5" /> Fix these before saving
           </p>
           <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-xs text-destructive">
-            {errors.map((e) => <li key={e}>{e}</li>)}
+            {errors.map((e) => (
+              <li key={e}>{e}</li>
+            ))}
           </ul>
         </div>
       )}

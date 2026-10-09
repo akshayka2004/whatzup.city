@@ -11,7 +11,11 @@ const PLATFORM_ROLES = new Set(['SUPER_ADMIN', 'MASTER_ADMIN']);
  * platform admins, the owner, active team members, or the owner of the brand the
  * outlet belongs to. Throws 404 for unknown ids and 403 otherwise.
  */
-export async function assertBusinessAccess(db: DatabaseService, businessId: string, user: AccessUser) {
+export async function assertBusinessAccess(
+  db: DatabaseService,
+  businessId: string,
+  user: AccessUser,
+) {
   const business = await db.business.findFirst({
     where: { deletedAt: null, OR: [{ id: businessId }, { entityId: businessId }] },
     select: {

@@ -88,11 +88,7 @@ export class VerificationService {
     );
 
     // Start 15-day free trial for approved business (Release 1)
-    await this.trialsService.startTrial(
-      tenantId,
-      verification.businessId,
-      updatedBusiness.ownerId,
-    );
+    await this.trialsService.startTrial(tenantId, verification.businessId, updatedBusiness.ownerId);
 
     await this.auditService.log({
       tenantId,

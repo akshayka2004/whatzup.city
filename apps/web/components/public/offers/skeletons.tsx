@@ -38,9 +38,18 @@ export function CouponSkeleton({ image = false }: { image?: boolean }) {
   );
 }
 
-export function CouponGridSkeleton({ count = 4, className }: { count?: number; className?: string }) {
+export function CouponGridSkeleton({
+  count = 4,
+  className,
+}: {
+  count?: number;
+  className?: string;
+}) {
   return (
-    <SkeletonRegion label="Loading offers" className={cn('grid grid-cols-1 gap-4 md:grid-cols-2', className)}>
+    <SkeletonRegion
+      label="Loading offers"
+      className={cn('grid grid-cols-1 gap-4 md:grid-cols-2', className)}
+    >
       {Array.from({ length: count }).map((_, i) => (
         <CouponSkeleton key={i} image={i === 0} />
       ))}
@@ -71,7 +80,10 @@ export function WheelCardSkeleton() {
 
 export function WheelGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <SkeletonRegion label="Loading wheels" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <SkeletonRegion
+      label="Loading wheels"
+      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+    >
       {Array.from({ length: count }).map((_, i) => (
         <WheelCardSkeleton key={i} />
       ))}
@@ -98,7 +110,10 @@ export function TicketSkeleton() {
 
 export function TicketGridSkeleton({ count = 3 }: { count?: number }) {
   return (
-    <SkeletonRegion label="Loading vouchers" className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <SkeletonRegion
+      label="Loading vouchers"
+      className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
+    >
       {Array.from({ length: count }).map((_, i) => (
         <TicketSkeleton key={i} />
       ))}
@@ -127,7 +142,10 @@ export function SavedCardSkeleton() {
 
 export function SavedGridSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <SkeletonRegion label="Loading saved businesses" className="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <SkeletonRegion
+      label="Loading saved businesses"
+      className="grid grid-cols-1 gap-4 md:grid-cols-2"
+    >
       {Array.from({ length: count }).map((_, i) => (
         <SavedCardSkeleton key={i} />
       ))}

@@ -12,10 +12,7 @@ export interface OptimizationOptions {
   outputType?: 'webp' | 'jpeg';
 }
 
-export async function optimizeImage(
-  file: File,
-  options: OptimizationOptions = {},
-): Promise<File> {
+export async function optimizeImage(file: File, options: OptimizationOptions = {}): Promise<File> {
   const {
     maxWidth = 1200,
     maxHeight = 1200,

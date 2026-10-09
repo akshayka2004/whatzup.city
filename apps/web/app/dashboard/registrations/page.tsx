@@ -6,9 +6,18 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
-  Users, Building2, UserCheck,
-  Search, ChevronLeft, ChevronRight,
-  Mail, Phone, Globe, Calendar, Tag, RefreshCw,
+  Users,
+  Building2,
+  UserCheck,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Mail,
+  Phone,
+  Globe,
+  Calendar,
+  Tag,
+  RefreshCw,
   FileText,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
@@ -32,9 +41,7 @@ function InitialsAvatar({ name, type }: { name: string; type: 'business' | 'indi
     <div
       className={cn(
         'h-9 w-9 rounded-xl flex items-center justify-center text-sm font-bold shrink-0',
-        type === 'business'
-          ? 'bg-info/20 text-info'
-          : 'bg-primary/20 text-primary',
+        type === 'business' ? 'bg-info/20 text-info' : 'bg-primary/20 text-primary',
       )}
     >
       {initials}
@@ -116,7 +123,9 @@ export default function DashboardRegistrationsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Registrations</h1>
+            <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
+              Registrations
+            </h1>
             <p className="text-muted-foreground text-sm mt-0.5">
               Interest submissions from the platform launch page.
             </p>
@@ -136,8 +145,18 @@ export default function DashboardRegistrationsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: 'Total Submissions', value: stats.total, icon: Users, color: 'text-primary' },
-            { label: 'Business Interests', value: stats.businesses, icon: Building2, color: 'text-info' },
-            { label: 'Individual Interests', value: stats.individuals, icon: UserCheck, color: 'text-primary' },
+            {
+              label: 'Business Interests',
+              value: stats.businesses,
+              icon: Building2,
+              color: 'text-info',
+            },
+            {
+              label: 'Individual Interests',
+              value: stats.individuals,
+              icon: UserCheck,
+              color: 'text-primary',
+            },
           ].map((stat, i) => {
             const Icon = stat.icon;
             return (
@@ -286,7 +305,9 @@ function BusinessRow({
           <InitialsAvatar name={item.businessName || '?'} type="business" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-sm text-foreground truncate">{item.businessName}</span>
+              <span className="font-semibold text-sm text-foreground truncate">
+                {item.businessName}
+              </span>
               {item.category && (
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-info-soft text-info-soft-foreground">
                   {item.category}

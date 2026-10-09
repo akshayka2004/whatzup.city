@@ -12,7 +12,12 @@ import { StatusPill } from '@/components/common/status-pill';
 import { apiService } from '@/lib/services/api-service';
 import { TicketThread, ticketTone, type TicketSummary } from '@/components/support/ticket-thread';
 
-const STAFF_LABEL: Record<string, string> = { OPEN: 'Needs reply', PENDING: 'Waiting on customer', RESOLVED: 'Resolved', CLOSED: 'Closed' };
+const STAFF_LABEL: Record<string, string> = {
+  OPEN: 'Needs reply',
+  PENDING: 'Waiting on customer',
+  RESOLVED: 'Resolved',
+  CLOSED: 'Closed',
+};
 
 function Inbox() {
   const sp = useSearchParams();
@@ -27,7 +32,9 @@ function Inbox() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await apiService.get<any>(`/v1/support/tickets/admin/all?page=${page}${status ? `&status=${status}` : ''}`);
+    const res = await apiService.get<any>(
+      `/v1/support/tickets/admin/all?page=${page}${status ? `&status=${status}` : ''}`,
+    );
     setLoading(false);
     setRows(Array.isArray(res.data?.data) ? res.data.data : []);
     setTotal(res.data?.total ?? 0);
@@ -45,17 +52,47 @@ function Inbox() {
   };
 
   const columns: Column<TicketSummary>[] = [
-    { key: 'subject', header: 'Subject', sortable: true, cell: (t) => <span className="font-medium">{t.subject}</span> },
-    { key: 'business', header: 'Business', value: (t) => t.business?.name ?? '', cell: (t) => t.business?.name ?? '—', hideOnMobile: true },
-    { key: 'opener', header: 'From', value: (t) => t.opener?.name ?? '', cell: (t) => t.opener?.name ?? t.opener?.email ?? '—', hideOnMobile: true },
+    {
+      key: 'subject',
+      header: 'Subject',
+      sortable: true,
+      cell: (t) => <span className="font-medium">{t.subject}</span>,
+    },
+    {
+      key: 'business',
+      header: 'Business',
+      value: (t) => t.business?.name ?? '',
+      cell: (t) => t.business?.name ?? '—',
+      hideOnMobile: true,
+    },
+    {
+      key: 'opener',
+      header: 'From',
+      value: (t) => t.opener?.name ?? '',
+      cell: (t) => t.opener?.name ?? t.opener?.email ?? '—',
+      hideOnMobile: true,
+    },
     { key: 'category', header: 'Topic', cell: (t) => t.category.toLowerCase(), hideOnMobile: true },
-    { key: 'status', header: 'Status', cell: (t) => <StatusPill tone={ticketTone(t.status, true)} label={STAFF_LABEL[t.status] ?? t.status} /> },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (t) => (
+        <StatusPill tone={ticketTone(t.status, true)} label={STAFF_LABEL[t.status] ?? t.status} />
+      ),
+    },
     {
       key: 'lastReplyAt',
       header: 'Last activity',
       sortable: true,
       value: (t) => t.lastReplyAt,
-      cell: (t) => new Date(t.lastReplyAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }),
+      cell: (t) =>
+        new Date(t.lastReplyAt).toLocaleString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'Asia/Kolkata',
+        }),
     },
   ];
 
@@ -63,7 +100,10 @@ function Inbox() {
 
   return (
     <>
-      <PageHeader title="Support inbox" description="Tickets from businesses and customers. Replying moves a ticket to “waiting on customer”." />
+      <PageHeader
+        title="Support inbox"
+        description="Tickets from businesses and customers. Replying moves a ticket to “waiting on customer”."
+      />
       <ChipRow label="Status" className="mb-4">
         {(['OPEN', 'PENDING', 'RESOLVED', 'CLOSED', ''] as const).map((s) => (
           <FilterChip
@@ -89,14 +129,23 @@ function Inbox() {
         pageSize={25}
         total={total}
         onPageChange={setPage}
-        empty={{ icon: LifeBuoy, title: status === 'OPEN' ? 'Inbox zero' : 'No tickets here', description: 'New tickets from businesses appear here.' }}
+        empty={{
+          icon: LifeBuoy,
+          title: status === 'OPEN' ? 'Inbox zero' : 'No tickets here',
+          description: 'New tickets from businesses appear here.',
+        }}
         mobileCard={(t) => (
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="truncate font-medium">{t.subject}</p>
-              <p className="truncate text-caption text-muted-foreground">{t.business?.name ?? t.opener?.name ?? ''}</p>
+              <p className="truncate text-caption text-muted-foreground">
+                {t.business?.name ?? t.opener?.name ?? ''}
+              </p>
             </div>
-            <StatusPill tone={ticketTone(t.status, true)} label={STAFF_LABEL[t.status] ?? t.status} />
+            <StatusPill
+              tone={ticketTone(t.status, true)}
+              label={STAFF_LABEL[t.status] ?? t.status}
+            />
           </div>
         )}
       />

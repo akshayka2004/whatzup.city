@@ -1,10 +1,20 @@
 import {
-  Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PlatformOffersService } from './platform-offers.service';
 import {
-  CreatePlatformOfferDto, UpdatePlatformOfferDto, SetPlatformOfferStatusDto,
+  CreatePlatformOfferDto,
+  UpdatePlatformOfferDto,
+  SetPlatformOfferStatusDto,
 } from './dto/platform-offer.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -25,10 +35,7 @@ export class PlatformOffersController {
   @Public()
   @Get('public')
   @ApiOperation({ summary: 'List published platform offers' })
-  async listPublic(
-    @Query('tenantId') tenantId?: string,
-    @Query('category') category?: string,
-  ) {
+  async listPublic(@Query('tenantId') tenantId?: string, @Query('category') category?: string) {
     return this.service.listPublic(tenantId, category);
   }
 
@@ -53,10 +60,7 @@ export class PlatformOffersController {
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List all platform offers (Admin only)' })
-  async listForAdmin(
-    @Query('category') category?: string,
-    @Query('status') status?: string,
-  ) {
+  async listForAdmin(@Query('category') category?: string, @Query('status') status?: string) {
     return this.service.listForAdmin(category, status);
   }
 

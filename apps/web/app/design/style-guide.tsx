@@ -36,7 +36,16 @@ const SWATCHES = [
   ['border-strong', 'bg-border-strong'],
 ] as const;
 
-const CHART = ['bg-chart-1', 'bg-chart-2', 'bg-chart-3', 'bg-chart-4', 'bg-chart-5', 'bg-chart-6', 'bg-chart-7', 'bg-chart-8'];
+const CHART = [
+  'bg-chart-1',
+  'bg-chart-2',
+  'bg-chart-3',
+  'bg-chart-4',
+  'bg-chart-5',
+  'bg-chart-6',
+  'bg-chart-7',
+  'bg-chart-8',
+];
 
 const RADII = [
   ['xs 6', 'rounded-xs'],
@@ -53,11 +62,22 @@ type Row = { id: string; name: string; city: string; status: string; revenue: nu
 const ROWS: Row[] = [
   { id: '1', name: 'Malabar Spice House', city: 'Kozhikode', status: 'APPROVED', revenue: 182000 },
   { id: '2', name: 'Cochin Craft Brews', city: 'Kochi', status: 'PENDING', revenue: 64500 },
-  { id: '3', name: 'Trivandrum Textiles', city: 'Thiruvananthapuram', status: 'REJECTED', revenue: 0 },
+  {
+    id: '3',
+    name: 'Trivandrum Textiles',
+    city: 'Thiruvananthapuram',
+    status: 'REJECTED',
+    revenue: 0,
+  },
   { id: '4', name: 'Thrissur Sweets', city: 'Thrissur', status: 'ACTIVE', revenue: 98200 },
 ];
 const COLUMNS: Column<Row>[] = [
-  { key: 'name', header: 'Business', sortable: true, cell: (r) => <span className="font-medium">{r.name}</span> },
+  {
+    key: 'name',
+    header: 'Business',
+    sortable: true,
+    cell: (r) => <span className="font-medium">{r.name}</span>,
+  },
   { key: 'city', header: 'City', sortable: true, hideOnMobile: true },
   { key: 'status', header: 'Status', cell: (r) => <StatusPill status={r.status} /> },
   {
@@ -94,7 +114,10 @@ export function StyleGuide() {
         description="Tokens and primitives. Every screen should be built from what is on this page."
         breadcrumbs={[{ label: 'Internal', href: '/' }, { label: 'Design system' }]}
         actions={
-          <Button variant="outline" onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}>
+          <Button
+            variant="outline"
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+          >
             {resolvedTheme === 'dark' ? <Sun /> : <Moon />} Toggle theme
           </Button>
         }
@@ -105,7 +128,9 @@ export function StyleGuide() {
           <p className="text-display">Display — Discover Kerala</p>
           <p className="text-title">Title — Business analytics</p>
           <p className="text-heading">Heading — Offer performance</p>
-          <p className="text-body text-muted-foreground">Body — Verified businesses, offers and civic updates across your city.</p>
+          <p className="text-body text-muted-foreground">
+            Body — Verified businesses, offers and civic updates across your city.
+          </p>
           <p className="text-label">Label — Opening hours</p>
           <p className="text-caption text-muted-foreground">Caption — Updated 2 minutes ago</p>
           <p className="text-overline text-muted-foreground">Overline — Section</p>
@@ -135,14 +160,20 @@ export function StyleGuide() {
       <Section title="Shape scale">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {RADII.map(([label, cls]) => (
-            <div key={label} className={`flex h-20 items-end border border-border-strong/70 bg-card p-3 shadow-e1 ${cls}`}>
+            <div
+              key={label}
+              className={`flex h-20 items-end border border-border-strong/70 bg-card p-3 shadow-e1 ${cls}`}
+            >
               <span className="text-caption text-muted-foreground">{label}</span>
             </div>
           ))}
         </div>
         <div className="grid grid-cols-3 gap-4">
           {(['shadow-e1', 'shadow-e2', 'shadow-e3'] as const).map((s) => (
-            <div key={s} className={`flex h-20 items-center justify-center rounded-card bg-card ${s}`}>
+            <div
+              key={s}
+              className={`flex h-20 items-center justify-center rounded-card bg-card ${s}`}
+            >
               <span className="text-caption text-muted-foreground">{s}</span>
             </div>
           ))}
@@ -178,7 +209,18 @@ export function StyleGuide() {
 
       <Section title="Badges & status">
         <div className="flex flex-wrap gap-2">
-          {(['brand', 'neutral', 'success', 'warning', 'danger', 'info', 'outline', 'default'] as const).map((v) => (
+          {(
+            [
+              'brand',
+              'neutral',
+              'success',
+              'warning',
+              'danger',
+              'info',
+              'outline',
+              'default',
+            ] as const
+          ).map((v) => (
             <Badge key={v} variant={v}>
               {v}
             </Badge>
@@ -227,7 +269,9 @@ export function StyleGuide() {
                 <CardTitle className="capitalize">{v}</CardTitle>
                 <CardDescription>Card variant</CardDescription>
               </CardHeader>
-              <CardContent className="text-body text-muted-foreground">Content sits on a 20px radius surface.</CardContent>
+              <CardContent className="text-body text-muted-foreground">
+                Content sits on a 20px radius surface.
+              </CardContent>
             </Card>
           ))}
         </div>
@@ -235,7 +279,11 @@ export function StyleGuide() {
           icon={ICONS.settings}
           title="Section card"
           description="Settings groups, dashboard panels and detail sections."
-          action={<Button size="sm" variant="outline">Edit</Button>}
+          action={
+            <Button size="sm" variant="outline">
+              Edit
+            </Button>
+          }
           footer={<Button size="sm">Save</Button>}
         >
           <div className="grid gap-3 sm:grid-cols-2">
@@ -253,7 +301,11 @@ export function StyleGuide() {
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
           </TabsList>
         </Tabs>
-        <Stepper steps={['Account', 'Company', 'Contacts', 'Hours', 'Plan', 'Payment']} current={step} onStepClick={setStep} />
+        <Stepper
+          steps={['Account', 'Company', 'Contacts', 'Hours', 'Plan', 'Payment']}
+          current={step}
+          onStepClick={setStep}
+        />
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setStep((s) => Math.max(0, s - 1))}>
             Back
@@ -299,14 +351,24 @@ export function StyleGuide() {
           <Button
             variant="danger"
             onClick={async () => {
-              const ok = await confirm({ title: 'Delete offer?', description: 'This cannot be undone.', confirmLabel: 'Delete', tone: 'danger' });
+              const ok = await confirm({
+                title: 'Delete offer?',
+                description: 'This cannot be undone.',
+                confirmLabel: 'Delete',
+                tone: 'danger',
+              });
               if (ok) toast.success('Deleted');
             }}
           >
             Confirm dialog
           </Button>
         </div>
-        <EmptyState icon={ICONS.offers} title="No offers yet" description="Create your first offer to show it on your public page." action={{ label: 'New offer', onClick: () => setOpen(true) }} />
+        <EmptyState
+          icon={ICONS.offers}
+          title="No offers yet"
+          description="Create your first offer to show it on your public page."
+          action={{ label: 'New offer', onClick: () => setOpen(true) }}
+        />
         <Modal
           open={open}
           onOpenChange={setOpen}
@@ -317,7 +379,14 @@ export function StyleGuide() {
               <Button variant="outline" onClick={() => setOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={() => { setOpen(false); toast.success('Saved'); }}>Save</Button>
+              <Button
+                onClick={() => {
+                  setOpen(false);
+                  toast.success('Saved');
+                }}
+              >
+                Save
+              </Button>
             </>
           }
         >

@@ -1,6 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsOptional, IsString, IsArray, IsIn, IsInt, IsDateString, MaxLength, ArrayMaxSize,
+  IsOptional,
+  IsString,
+  IsArray,
+  IsIn,
+  IsInt,
+  IsDateString,
+  MaxLength,
+  ArrayMaxSize,
 } from 'class-validator';
 import { STATUSES, CERTIFICATIONS } from '../movies.service';
 
@@ -14,60 +21,82 @@ import { STATUSES, CERTIFICATIONS } from '../movies.service';
  */
 export class MovieDto {
   @ApiProperty({ required: false, maxLength: 255 })
-  @IsOptional() @IsString() @MaxLength(255)
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
   name?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   posterImage?: string;
 
   @ApiProperty({ required: false, type: [String], description: 'e.g. ["Malayalam", "English"]' })
-  @IsOptional() @IsArray() @ArrayMaxSize(20)
-  @IsString({ each: true }) @MaxLength(50, { each: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
   languages?: string[];
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsInt()
+  @IsOptional()
+  @IsInt()
   durationMinutes?: number;
 
   @ApiProperty({ required: false, enum: CERTIFICATIONS })
-  @IsOptional() @IsIn(CERTIFICATIONS)
+  @IsOptional()
+  @IsIn(CERTIFICATIONS)
   @MaxLength(10, { message: 'The certification is too long (10 characters max).' })
   certification?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsDateString()
+  @IsOptional()
+  @IsDateString()
   releaseDate?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   synopsis?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   trailerUrl?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   bookingUrl?: string;
 
   @ApiProperty({ required: false, enum: STATUSES })
-  @IsOptional() @IsIn(STATUSES)
+  @IsOptional()
+  @IsIn(STATUSES)
   @MaxLength(20, { message: 'The status is too long (20 characters max).' })
   status?: string;
 
   @ApiProperty({ required: false, type: [String] })
-  @IsOptional() @IsArray() @ArrayMaxSize(20)
-  @IsString({ each: true }) @MaxLength(100, { each: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(100, { each: true })
   targetCities?: string[];
 
   @ApiProperty({ required: false, type: [String], description: 'e.g. ["Action", "Drama"]' })
-  @IsOptional() @IsArray() @ArrayMaxSize(20)
-  @IsString({ each: true }) @MaxLength(50, { each: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
   genres?: string[];
 
   @ApiProperty({ required: false, type: [String] })
-  @IsOptional() @IsArray() @ArrayMaxSize(50)
-  @IsString({ each: true }) @MaxLength(100, { each: true })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(50)
+  @IsString({ each: true })
+  @MaxLength(100, { each: true })
   cast?: string[];
 }

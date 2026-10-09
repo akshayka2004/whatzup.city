@@ -6,12 +6,25 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
-  Users, Search, ChevronLeft, ChevronRight, RefreshCw,
-  ArrowUp, ArrowDown, ArrowUpDown, ShieldCheck, ShieldX, Receipt,
+  Users,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  ShieldCheck,
+  ShieldX,
+  Receipt,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
@@ -34,16 +47,28 @@ interface UserRow {
 }
 
 const ROLE_OPTIONS = [
-  'ALL', 'USER', 'BUSINESS_ADMIN', 'BUSINESS_OWNER', 'NGO_ADMIN', 'COMMUNITY_ADMIN',
-  'NEWS_FORUM_ADMIN', 'GOVERNMENT_ADMIN', 'INFLUENCER', 'PROFESSIONAL',
-  'EVENT_ORGANIZER', 'MASTER_ADMIN', 'SUPER_ADMIN',
+  'ALL',
+  'USER',
+  'BUSINESS_ADMIN',
+  'BUSINESS_OWNER',
+  'NGO_ADMIN',
+  'COMMUNITY_ADMIN',
+  'NEWS_FORUM_ADMIN',
+  'GOVERNMENT_ADMIN',
+  'INFLUENCER',
+  'PROFESSIONAL',
+  'EVENT_ORGANIZER',
+  'MASTER_ADMIN',
+  'SUPER_ADMIN',
 ];
 
 const roleColor = (role: string): string => {
-  if (role.includes('SUPER') || role.includes('MASTER')) return 'bg-danger-soft text-danger-soft-foreground';
+  if (role.includes('SUPER') || role.includes('MASTER'))
+    return 'bg-danger-soft text-danger-soft-foreground';
   if (role.includes('GOVERNMENT')) return 'bg-warning-soft text-warning-soft-foreground';
   if (role.includes('BUSINESS')) return 'bg-info-soft text-info-soft-foreground';
-  if (role.includes('NGO') || role.includes('COMMUNITY') || role.includes('NEWS')) return 'bg-success-soft text-success-soft-foreground';
+  if (role.includes('NGO') || role.includes('COMMUNITY') || role.includes('NEWS'))
+    return 'bg-success-soft text-success-soft-foreground';
   if (role === 'USER') return 'bg-muted text-foreground';
   return 'bg-primary/15 text-primary';
 };
@@ -73,8 +98,8 @@ export default function SuperAdminUsersPage() {
     const k = clientSort.key;
     const dir = clientSort.dir === 'asc' ? 1 : -1;
     return [...rows].sort((a, b) => {
-      const av: any = k === 'categoryName' ? (a.categoryName || '') : (a[k] ?? 0);
-      const bv: any = k === 'categoryName' ? (b.categoryName || '') : (b[k] ?? 0);
+      const av: any = k === 'categoryName' ? a.categoryName || '' : (a[k] ?? 0);
+      const bv: any = k === 'categoryName' ? b.categoryName || '' : (b[k] ?? 0);
       if (av < bv) return -1 * dir;
       if (av > bv) return 1 * dir;
       return 0;
@@ -82,7 +107,9 @@ export default function SuperAdminUsersPage() {
   }, [rows, clientSort]);
 
   const toggleClientSort = (key: 'billCount' | 'totalSpent' | 'categoryName') => {
-    setClientSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'desc' }));
+    setClientSort((s) =>
+      s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'desc' },
+    );
   };
 
   useEffect(() => {
@@ -90,7 +117,9 @@ export default function SuperAdminUsersPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => { setPage(1); }, [debouncedSearch, roleFilter, sortBy, sortOrder]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, roleFilter, sortBy, sortOrder]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -112,7 +141,9 @@ export default function SuperAdminUsersPage() {
     setLoading(false);
   }, [page, debouncedSearch, roleFilter, sortBy, sortOrder]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const toggleSort = (key: SortKey) => {
     if (sortBy === key) {
@@ -123,15 +154,35 @@ export default function SuperAdminUsersPage() {
     }
   };
 
-  const SortHeader = ({ label, sortKey, align = 'left' }: { label: string; sortKey: SortKey; align?: 'left' | 'right' }) => (
-    <th className={cn('px-5 py-3 text-xs font-semibold text-muted-foreground select-none', align === 'right' ? 'text-right' : 'text-left')}>
+  const SortHeader = ({
+    label,
+    sortKey,
+    align = 'left',
+  }: {
+    label: string;
+    sortKey: SortKey;
+    align?: 'left' | 'right';
+  }) => (
+    <th
+      className={cn(
+        'px-5 py-3 text-xs font-semibold text-muted-foreground select-none',
+        align === 'right' ? 'text-right' : 'text-left',
+      )}
+    >
       <button
         onClick={() => toggleSort(sortKey)}
-        className={cn('inline-flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer', align === 'right' && 'flex-row-reverse')}
+        className={cn(
+          'inline-flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer',
+          align === 'right' && 'flex-row-reverse',
+        )}
       >
         {label}
         {sortBy === sortKey ? (
-          sortOrder === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+          sortOrder === 'asc' ? (
+            <ArrowUp className="h-3 w-3" />
+          ) : (
+            <ArrowDown className="h-3 w-3" />
+          )
         ) : (
           <ArrowUpDown className="h-3 w-3 opacity-40" />
         )}
@@ -140,7 +191,9 @@ export default function SuperAdminUsersPage() {
   );
 
   const fmtDate = (d?: string | null) =>
-    d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+    d
+      ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '—';
 
   return (
     <SuperAdminLayout>
@@ -181,7 +234,9 @@ export default function SuperAdminUsersPage() {
             </SelectTrigger>
             <SelectContent>
               {ROLE_OPTIONS.map((r) => (
-                <SelectItem key={r} value={r}>{r === 'ALL' ? 'All roles' : r}</SelectItem>
+                <SelectItem key={r} value={r}>
+                  {r === 'ALL' ? 'All roles' : r}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -210,19 +265,57 @@ export default function SuperAdminUsersPage() {
                     <SortHeader label="Email" sortKey="email" />
                     <SortHeader label="Role" sortKey="role" />
                     <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground select-none">
-                      <button onClick={() => toggleClientSort('categoryName')} className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer">
-                        Category {clientSort.key === 'categoryName' ? (clientSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                      <button
+                        onClick={() => toggleClientSort('categoryName')}
+                        className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer"
+                      >
+                        Category{' '}
+                        {clientSort.key === 'categoryName' ? (
+                          clientSort.dir === 'asc' ? (
+                            <ArrowUp className="h-3 w-3" />
+                          ) : (
+                            <ArrowDown className="h-3 w-3" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-40" />
+                        )}
                       </button>
                     </th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">Tenant / Business</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                      Tenant / Business
+                    </th>
                     <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground select-none">
-                      <button onClick={() => toggleClientSort('billCount')} className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer flex-row-reverse">
-                        Bills {clientSort.key === 'billCount' ? (clientSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                      <button
+                        onClick={() => toggleClientSort('billCount')}
+                        className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer flex-row-reverse"
+                      >
+                        Bills{' '}
+                        {clientSort.key === 'billCount' ? (
+                          clientSort.dir === 'asc' ? (
+                            <ArrowUp className="h-3 w-3" />
+                          ) : (
+                            <ArrowDown className="h-3 w-3" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-40" />
+                        )}
                       </button>
                     </th>
                     <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground select-none">
-                      <button onClick={() => toggleClientSort('totalSpent')} className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer flex-row-reverse">
-                        Total Spent {clientSort.key === 'totalSpent' ? (clientSort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                      <button
+                        onClick={() => toggleClientSort('totalSpent')}
+                        className="inline-flex items-center gap-1 hover:text-foreground cursor-pointer flex-row-reverse"
+                      >
+                        Total Spent{' '}
+                        {clientSort.key === 'totalSpent' ? (
+                          clientSort.dir === 'asc' ? (
+                            <ArrowUp className="h-3 w-3" />
+                          ) : (
+                            <ArrowDown className="h-3 w-3" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-40" />
+                        )}
                       </button>
                     </th>
                     <SortHeader label="Joined" sortKey="createdAt" />
@@ -247,13 +340,22 @@ export default function SuperAdminUsersPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3">
-                        <span className={cn('px-2 py-0.5 rounded-full text-xs font-bold', roleColor(u.role))}>
+                        <span
+                          className={cn(
+                            'px-2 py-0.5 rounded-full text-xs font-bold',
+                            roleColor(u.role),
+                          )}
+                        >
                           {u.role}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-muted-foreground text-xs">{u.categoryName || '—'}</td>
+                      <td className="px-5 py-3 text-muted-foreground text-xs">
+                        {u.categoryName || '—'}
+                      </td>
                       <td className="px-5 py-3 text-muted-foreground">
-                        <p className="text-foreground text-xs font-medium">{u.business?.name || u.tenant?.name || '—'}</p>
+                        <p className="text-foreground text-xs font-medium">
+                          {u.business?.name || u.tenant?.name || '—'}
+                        </p>
                         {u.business?.status && (
                           <p className="text-xs text-muted-foreground">{u.business.status}</p>
                         )}
@@ -266,7 +368,9 @@ export default function SuperAdminUsersPage() {
                       <td className="px-5 py-3 text-right font-semibold text-success whitespace-nowrap">
                         ₹{(u.totalSpent ?? 0).toLocaleString('en-IN')}
                       </td>
-                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{fmtDate(u.createdAt)}</td>
+                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">
+                        {fmtDate(u.createdAt)}
+                      </td>
                       <td className="px-5 py-3 text-right">
                         {u.isActive ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-soft text-success-soft-foreground border border-success/20 text-xs font-bold">

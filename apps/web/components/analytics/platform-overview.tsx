@@ -32,28 +32,93 @@ import { BarList } from './bar-list';
 import { Funnel } from './funnel';
 import { RangePicker, useReportRange } from './range-picker';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { KERALA_CITIES } from '@/lib/constants';
 import { formatINR, formatNumber, formatRange, type ValueFormat } from './format';
 
-const TimeSeriesChart = dynamic(() => import('./time-series-chart').then((m) => m.TimeSeriesChart), {
-  ssr: false,
-  loading: () => <div className="ui-skeleton h-[280px] rounded-xl" />,
-});
+const TimeSeriesChart = dynamic(
+  () => import('./time-series-chart').then((m) => m.TimeSeriesChart),
+  {
+    ssr: false,
+    loading: () => <div className="ui-skeleton h-[280px] rounded-xl" />,
+  },
+);
 
 type Pt = PlatformReport['series']['points'][number];
 type Key = 'visitors' | 'newUsers' | 'newBusinesses' | 'revenue' | 'gmv' | 'offerClaims';
 
-const KPIS: { key: Key; label: string; icon: typeof Users; format: ValueFormat; series?: keyof Pt; definition: string }[] = [
-  { key: 'visitors', label: 'Unique visitors', icon: Eye, format: 'number', series: 'visitors', definition: 'Distinct people who used the public site (any tracked event), bots excluded. Coarser than daily buckets sum daily uniques.' },
-  { key: 'newUsers', label: 'New customers', icon: UserPlus, format: 'number', series: 'newUsers', definition: 'Customer accounts (role USER) created in the period.' },
-  { key: 'newBusinesses', label: 'New businesses', icon: Store, format: 'number', series: 'newBusinesses', definition: 'Business registrations started in the period, any status.' },
-  { key: 'revenue', label: 'Revenue (ex-GST)', icon: CircleDollarSign, format: 'inr', series: 'revenue', definition: 'Subscription payments verified by an admin in the period, before 18% GST. Source: transaction ledger.' },
-  { key: 'gmv', label: 'Verified GMV', icon: BadgeIndianRupee, format: 'inr', definition: 'Sum of customer bills approved by businesses in the period (spend driven through the platform).' },
-  { key: 'offerClaims', label: 'Offer claims', icon: TicketPercent, format: 'number', definition: 'Business offers claimed by customers in the period.' },
+const KPIS: {
+  key: Key;
+  label: string;
+  icon: typeof Users;
+  format: ValueFormat;
+  series?: keyof Pt;
+  definition: string;
+}[] = [
+  {
+    key: 'visitors',
+    label: 'Unique visitors',
+    icon: Eye,
+    format: 'number',
+    series: 'visitors',
+    definition:
+      'Distinct people who used the public site (any tracked event), bots excluded. Coarser than daily buckets sum daily uniques.',
+  },
+  {
+    key: 'newUsers',
+    label: 'New customers',
+    icon: UserPlus,
+    format: 'number',
+    series: 'newUsers',
+    definition: 'Customer accounts (role USER) created in the period.',
+  },
+  {
+    key: 'newBusinesses',
+    label: 'New businesses',
+    icon: Store,
+    format: 'number',
+    series: 'newBusinesses',
+    definition: 'Business registrations started in the period, any status.',
+  },
+  {
+    key: 'revenue',
+    label: 'Revenue (ex-GST)',
+    icon: CircleDollarSign,
+    format: 'inr',
+    series: 'revenue',
+    definition:
+      'Subscription payments verified by an admin in the period, before 18% GST. Source: transaction ledger.',
+  },
+  {
+    key: 'gmv',
+    label: 'Verified GMV',
+    icon: BadgeIndianRupee,
+    format: 'inr',
+    definition:
+      'Sum of customer bills approved by businesses in the period (spend driven through the platform).',
+  },
+  {
+    key: 'offerClaims',
+    label: 'Offer claims',
+    icon: TicketPercent,
+    format: 'number',
+    definition: 'Business offers claimed by customers in the period.',
+  },
 ];
 
-type AuditRow = { id: string; action?: string; resource?: string; createdAt?: string; user?: { name?: string; email?: string } | null };
+type AuditRow = {
+  id: string;
+  action?: string;
+  resource?: string;
+  createdAt?: string;
+  user?: { name?: string; email?: string } | null;
+};
 
 const ALL = '__all';
 
@@ -86,7 +151,9 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
   useEffect(() => {
     apiService.get<any>('/v1/categories').then((res) => {
       const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
-      setCategories(list.filter((c: any) => !c.parentId).map((c: any) => ({ id: c.id, name: c.name })));
+      setCategories(
+        list.filter((c: any) => !c.parentId).map((c: any) => ({ id: c.id, name: c.name })),
+      );
     });
   }, []);
   const [report, setReport] = useState<PlatformReport | null>(null);
@@ -101,12 +168,18 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
     let alive = true;
     setLoading(true);
     setError(null);
-    analyticsV2.platform({ ...range.params, city: scope.city || undefined, categoryId: scope.categoryId || undefined }).then((res) => {
-      if (!alive) return;
-      if (res.error || !res.data) setError(res.error || 'Could not load the report');
-      else setReport(res.data);
-      setLoading(false);
-    });
+    analyticsV2
+      .platform({
+        ...range.params,
+        city: scope.city || undefined,
+        categoryId: scope.categoryId || undefined,
+      })
+      .then((res) => {
+        if (!alive) return;
+        if (res.error || !res.data) setError(res.error || 'Could not load the report');
+        else setReport(res.data);
+        setLoading(false);
+      });
     return () => {
       alive = false;
     };
@@ -130,12 +203,48 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
 
   const snap = report?.snapshot;
   const attention = [
-    { label: 'Approvals waiting', value: snap?.pendingApprovals, href: '/admin/approvals', icon: ClipboardCheck, urgent: (snap?.pendingApprovals ?? 0) > 0 },
-    { label: 'Payments to verify', value: snap?.pendingPayments, href: '/admin/payment-approvals', icon: CircleDollarSign, urgent: (snap?.pendingPayments ?? 0) > 0 },
-    { label: 'Open reports', value: snap?.openReports, href: "/admin/reports", icon: ShieldAlert, urgent: (snap?.openReports ?? 0) > 0 },
-    { label: 'Trials ending in 7 days', value: snap?.trialsEnding7d, href: area === 'super-admin' ? '/super-admin/businesses' : '/admin/subscriptions', icon: Clock, urgent: false },
-    { label: 'Renewals due in 30 days', value: snap?.renewalsDue30d, href: '/admin/subscriptions', icon: CalendarClock, urgent: false },
-    { label: 'Live businesses', value: snap?.activeBusinesses, href: area === 'super-admin' ? '/super-admin/businesses' : '/admin/approvals', icon: Store, urgent: false },
+    {
+      label: 'Approvals waiting',
+      value: snap?.pendingApprovals,
+      href: '/admin/approvals',
+      icon: ClipboardCheck,
+      urgent: (snap?.pendingApprovals ?? 0) > 0,
+    },
+    {
+      label: 'Payments to verify',
+      value: snap?.pendingPayments,
+      href: '/admin/payment-approvals',
+      icon: CircleDollarSign,
+      urgent: (snap?.pendingPayments ?? 0) > 0,
+    },
+    {
+      label: 'Open reports',
+      value: snap?.openReports,
+      href: '/admin/reports',
+      icon: ShieldAlert,
+      urgent: (snap?.openReports ?? 0) > 0,
+    },
+    {
+      label: 'Trials ending in 7 days',
+      value: snap?.trialsEnding7d,
+      href: area === 'super-admin' ? '/super-admin/businesses' : '/admin/subscriptions',
+      icon: Clock,
+      urgent: false,
+    },
+    {
+      label: 'Renewals due in 30 days',
+      value: snap?.renewalsDue30d,
+      href: '/admin/subscriptions',
+      icon: CalendarClock,
+      urgent: false,
+    },
+    {
+      label: 'Live businesses',
+      value: snap?.activeBusinesses,
+      href: area === 'super-admin' ? '/super-admin/businesses' : '/admin/approvals',
+      icon: Store,
+      urgent: false,
+    },
   ];
 
   const exportCsv = () => {
@@ -161,10 +270,23 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
         eyebrow={area === 'super-admin' ? 'Super admin' : 'Admin'}
         title="Platform overview"
         description="Growth, money and trust across every business on Whtzup.city."
-        meta={report && <span className="text-caption text-muted-foreground">{formatRange(report.range.from, report.range.to)} · vs previous {report.range.days} days</span>}
+        meta={
+          report && (
+            <span className="text-caption text-muted-foreground">
+              {formatRange(report.range.from, report.range.to)} · vs previous {report.range.days}{' '}
+              days
+            </span>
+          )
+        }
         actions={
           <>
-            <Button variant="ghost" size="icon" aria-label="Refresh" onClick={() => setNonce((x) => x + 1)} disabled={loading}>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Refresh"
+              onClick={() => setNonce((x) => x + 1)}
+              disabled={loading}
+            >
               <RefreshCw className={loading ? 'animate-spin' : ''} />
             </Button>
             <Button variant="outline" onClick={exportCsv} disabled={!report}>
@@ -176,7 +298,10 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <Select value={scope.city || ALL} onValueChange={(v) => scope.set('city', v === ALL ? '' : v)}>
+        <Select
+          value={scope.city || ALL}
+          onValueChange={(v) => scope.set('city', v === ALL ? '' : v)}
+        >
           <SelectTrigger className="h-10 w-full rounded-full sm:w-48" aria-label="City">
             <SelectValue />
           </SelectTrigger>
@@ -189,7 +314,10 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
             ))}
           </SelectContent>
         </Select>
-        <Select value={scope.categoryId || ALL} onValueChange={(v) => scope.set('category', v === ALL ? '' : v)}>
+        <Select
+          value={scope.categoryId || ALL}
+          onValueChange={(v) => scope.set('category', v === ALL ? '' : v)}
+        >
           <SelectTrigger className="h-10 w-full rounded-full sm:w-56" aria-label="Category">
             <SelectValue />
           </SelectTrigger>
@@ -204,19 +332,24 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
         </Select>
         {(scope.city || scope.categoryId) && (
           <>
-            <Button
-              variant="ghost"
-              onClick={scope.clear}
-            >
+            <Button variant="ghost" onClick={scope.clear}>
               Clear
             </Button>
-            <p className="w-full text-caption text-muted-foreground sm:w-auto">New customers and search terms aren’t tied to a business, so they show the whole platform.</p>
+            <p className="w-full text-caption text-muted-foreground sm:w-auto">
+              New customers and search terms aren’t tied to a business, so they show the whole
+              platform.
+            </p>
           </>
         )}
       </div>
 
       {error && !report ? (
-        <EmptyState icon={RefreshCw} title="The report didn't load" description={error} action={{ label: 'Try again', onClick: () => setNonce((x) => x + 1) }} />
+        <EmptyState
+          icon={RefreshCw}
+          title="The report didn't load"
+          description={error}
+          action={{ label: 'Try again', onClick: () => setNonce((x) => x + 1) }}
+        />
       ) : (
         <div className="space-y-6">
           {/* Needs attention: live queue counts, independent of the date range */}
@@ -227,16 +360,32 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
                 href={a.href}
                 className={cn(
                   'group flex flex-col justify-between gap-3 rounded-card border p-4 transition-colors',
-                  a.urgent ? 'border-warning/40 bg-warning-soft' : 'border-border/70 bg-card hover:border-border-strong',
+                  a.urgent
+                    ? 'border-warning/40 bg-warning-soft'
+                    : 'border-border/70 bg-card hover:border-border-strong',
                 )}
               >
-                <span className={cn('flex items-center justify-between text-label', a.urgent ? 'text-warning-soft-foreground' : 'text-muted-foreground')}>
+                <span
+                  className={cn(
+                    'flex items-center justify-between text-label',
+                    a.urgent ? 'text-warning-soft-foreground' : 'text-muted-foreground',
+                  )}
+                >
                   <span className="flex items-center gap-1.5">
                     <a.icon className="size-4" aria-hidden /> {a.label}
                   </span>
-                  <ChevronRight className="size-4 opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
+                  <ChevronRight
+                    className="size-4 opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-hidden
+                  />
                 </span>
-                {a.value == null ? <span className="ui-skeleton h-7 w-12" /> : <span className="text-2xl font-bold tabular-nums text-foreground">{formatNumber(a.value)}</span>}
+                {a.value == null ? (
+                  <span className="ui-skeleton h-7 w-12" />
+                ) : (
+                  <span className="text-2xl font-bold tabular-nums text-foreground">
+                    {formatNumber(a.value)}
+                  </span>
+                )}
               </Link>
             ))}
           </div>
@@ -262,12 +411,20 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
             {loading && !report ? (
               <div className="ui-skeleton h-[280px] rounded-xl" />
             ) : (
-              <TimeSeriesChart points={chartPoints} label={sel.label} format={sel.format} granularity={report?.range.granularity} />
+              <TimeSeriesChart
+                points={chartPoints}
+                label={sel.label}
+                format={sel.format}
+                granularity={report?.range.granularity}
+              />
             )}
           </SectionCard>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <SectionCard title="Revenue" description="Verified subscription payments in this period">
+            <SectionCard
+              title="Revenue"
+              description="Verified subscription payments in this period"
+            >
               {report ? (
                 <div className="space-y-5">
                   <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -287,7 +444,12 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
                     <p className="mb-2 text-overline text-subtle-foreground">By plan</p>
                     <BarList
                       format="inr"
-                      items={report.planMix.map((p) => ({ key: p.plan, label: p.plan.replace(/_/g, ' '), hint: `${p.count} paid`, value: p.revenue }))}
+                      items={report.planMix.map((p) => ({
+                        key: p.plan,
+                        label: p.plan.replace(/_/g, ' '),
+                        hint: `${p.count} paid`,
+                        value: p.revenue,
+                      }))}
                       emptyLabel="No verified payments in this period"
                     />
                   </div>
@@ -296,8 +458,15 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
                 <div className="ui-skeleton h-48" />
               )}
             </SectionCard>
-            <SectionCard title="Business onboarding" description="Registrations started in this period, by how far they got">
-              {report ? <Funnel stages={report.onboardingFunnel} /> : <div className="ui-skeleton h-40" />}
+            <SectionCard
+              title="Business onboarding"
+              description="Registrations started in this period, by how far they got"
+            >
+              {report ? (
+                <Funnel stages={report.onboardingFunnel} />
+              ) : (
+                <div className="ui-skeleton h-40" />
+              )}
             </SectionCard>
           </div>
 
@@ -321,18 +490,35 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
               )}
             </SectionCard>
             <SectionCard title="Top categories" description="Unique profile visitors by category">
-              {report ? <BarList items={report.topCategories.map((c) => ({ key: c.name, label: c.name, value: c.visitors }))} /> : <div className="ui-skeleton h-48" />}
+              {report ? (
+                <BarList
+                  items={report.topCategories.map((c) => ({
+                    key: c.name,
+                    label: c.name,
+                    value: c.visitors,
+                  }))}
+                />
+              ) : (
+                <div className="ui-skeleton h-48" />
+              )}
             </SectionCard>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <SectionCard title="What people search for" description="Most frequent searches · red = searches that found nothing">
+            <SectionCard
+              title="What people search for"
+              description="Most frequent searches · red = searches that found nothing"
+            >
               {report ? (
                 <BarList
                   items={report.searches.map((s) => ({
                     key: s.query,
                     label: s.query,
-                    hint: s.zeroResults ? <span className="text-danger-soft-foreground">{s.zeroResults} with no results</span> : undefined,
+                    hint: s.zeroResults ? (
+                      <span className="text-danger-soft-foreground">
+                        {s.zeroResults} with no results
+                      </span>
+                    ) : undefined,
                     value: s.total,
                   }))}
                   emptyLabel="No searches recorded in this period"
@@ -342,7 +528,17 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
               )}
             </SectionCard>
             <SectionCard title="Live businesses by city">
-              {report ? <BarList items={report.cities.map((c) => ({ key: c.city, label: c.city, value: c.businesses }))} /> : <div className="ui-skeleton h-48" />}
+              {report ? (
+                <BarList
+                  items={report.cities.map((c) => ({
+                    key: c.city,
+                    label: c.city,
+                    value: c.businesses,
+                  }))}
+                />
+              ) : (
+                <div className="ui-skeleton h-48" />
+              )}
             </SectionCard>
           </div>
 
@@ -362,16 +558,34 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
             ) : (
               <ul className="divide-y divide-border/60">
                 {audit.map((a) => (
-                  <li key={a.id} className="flex items-center justify-between gap-3 px-5 py-3 sm:px-6">
+                  <li
+                    key={a.id}
+                    className="flex items-center justify-between gap-3 px-5 py-3 sm:px-6"
+                  >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{(a.action || 'Action').replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase())}</p>
+                      <p className="truncate text-sm font-medium">
+                        {(a.action || 'Action')
+                          .replace(/_/g, ' ')
+                          .toLowerCase()
+                          .replace(/^\w/, (c) => c.toUpperCase())}
+                      </p>
                       <p className="truncate text-caption text-muted-foreground">
-                        {a.resource?.toLowerCase()} {a.user?.name || a.user?.email ? `· ${a.user?.name || a.user?.email}` : ''}
+                        {a.resource?.toLowerCase()}{' '}
+                        {a.user?.name || a.user?.email ? `· ${a.user?.name || a.user?.email}` : ''}
                       </p>
                     </div>
                     {a.createdAt && (
-                      <time className="shrink-0 text-caption text-subtle-foreground" dateTime={a.createdAt}>
-                        {new Date(a.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}
+                      <time
+                        className="shrink-0 text-caption text-subtle-foreground"
+                        dateTime={a.createdAt}
+                      >
+                        {new Date(a.createdAt).toLocaleString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          timeZone: 'Asia/Kolkata',
+                        })}
                       </time>
                     )}
                   </li>
@@ -382,8 +596,13 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
 
           {report && (
             <p className="text-caption text-subtle-foreground">
-              All times IST. Revenue from the payment ledger (verified only, excluding GST). Bots excluded from visitor counts. Updated{' '}
-              {new Date(report.generatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}.
+              All times IST. Revenue from the payment ledger (verified only, excluding GST). Bots
+              excluded from visitor counts. Updated{' '}
+              {new Date(report.generatedAt).toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+              .
             </p>
           )}
         </div>

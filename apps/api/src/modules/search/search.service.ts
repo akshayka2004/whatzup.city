@@ -141,7 +141,11 @@ export class SearchService implements OnApplicationBootstrap {
       }
       return rows.map((r) => {
         const s = byBiz.get(r.id);
-        return { ...r, activeOfferCount: s?.count ?? 0, offerFulfilments: s ? Array.from(s.modes) : [] };
+        return {
+          ...r,
+          activeOfferCount: s?.count ?? 0,
+          offerFulfilments: s ? Array.from(s.modes) : [],
+        };
       });
     } catch (err) {
       this.logger.warn('attachOfferSummary failed, returning rows without it');
@@ -237,7 +241,8 @@ export class SearchService implements OnApplicationBootstrap {
       const searchParams: any = {
         q: expandedQuery,
         // Ranking priority: name → categoryName → subcategoryName → tags → offerTitles → branchNames → description
-        query_by: 'name,categoryName,subcategoryName,tags,offerTitles,branchNames,productNames,description',
+        query_by:
+          'name,categoryName,subcategoryName,tags,offerTitles,branchNames,productNames,description',
         query_by_weights: '10,7,6,5,4,3,2,1',
         // Public discovery spans all tenants but only APPROVED businesses;
         // internal search is scoped to the caller's tenant.
@@ -291,11 +296,24 @@ export class SearchService implements OnApplicationBootstrap {
         { name: { contains: term, mode: 'insensitive' } },
         { description: { contains: term, mode: 'insensitive' } },
         // Subcategories are stored as a JSON array of slugs (e.g. home_chefs), so match the slug form.
-        { subcategoryIds: { array_contains: [term.trim().toLowerCase().replace(/[\s-]+/g, '_')] } },
+        {
+          subcategoryIds: {
+            array_contains: [
+              term
+                .trim()
+                .toLowerCase()
+                .replace(/[\s-]+/g, '_'),
+            ],
+          },
+        },
         { category: { is: { name: { contains: term, mode: 'insensitive' } } } },
         { branches: { some: { name: { contains: term, mode: 'insensitive' } } } },
         { offers: { some: { title: { contains: term, mode: 'insensitive' }, deletedAt: null } } },
-        { offers: { some: { description: { contains: term, mode: 'insensitive' }, deletedAt: null } } },
+        {
+          offers: {
+            some: { description: { contains: term, mode: 'insensitive' }, deletedAt: null },
+          },
+        },
         { businessTags: { some: { tag: { contains: term, mode: 'insensitive' } } } },
       ]);
     }
@@ -316,7 +334,9 @@ export class SearchService implements OnApplicationBootstrap {
       });
       const now = new Date();
       let pool: any[] = filters?.openNow
-        ? candidates.filter((b: any) => getOpenStatus(b.operatingHours as any, now)?.isOpen === true)
+        ? candidates.filter(
+            (b: any) => getOpenStatus(b.operatingHours as any, now)?.isOpen === true,
+          )
         : candidates;
       pool = pool.map((b: any) => {
         const copy = { ...b };
@@ -326,10 +346,17 @@ export class SearchService implements OnApplicationBootstrap {
       });
       if (filters?.fulfilment) {
         const withOffers = await this.attachOfferSummary(pool);
-        pool = withOffers.filter((b: any) =>
-          Array.isArray(b.offerFulfilments) && (b.offerFulfilments.includes(filters.fulfilment) || b.offerFulfilments.includes('BOTH')),
+        pool = withOffers.filter(
+          (b: any) =>
+            Array.isArray(b.offerFulfilments) &&
+            (b.offerFulfilments.includes(filters.fulfilment) ||
+              b.offerFulfilments.includes('BOTH')),
         );
-        const response = { data: pool.slice((page - 1) * limit, page * limit), meta: { total: pool.length, page, limit }, source: 'postgres-filtered' };
+        const response = {
+          data: pool.slice((page - 1) * limit, page * limit),
+          meta: { total: pool.length, page, limit },
+          source: 'postgres-filtered',
+        };
         await this.redis.set(cacheKey, response, 120);
         return response;
       }
@@ -530,7 +557,9 @@ export class SearchService implements OnApplicationBootstrap {
           await this.redis.set(cacheKey, result, 60); // 1 min TTL for suggestions
           return result;
         }
-      } catch (_) { /* fall through to Postgres */ }
+      } catch (_) {
+        /* fall through to Postgres */
+      }
     }
 
     // Postgres fallback for suggestions
@@ -544,7 +573,16 @@ export class SearchService implements OnApplicationBootstrap {
             { name: { startsWith: term, mode: 'insensitive' } },
             { name: { contains: term, mode: 'insensitive' } },
             // Subcategories are stored as a JSON array of slugs (e.g. home_chefs), so match the slug form.
-        { subcategoryIds: { array_contains: [term.trim().toLowerCase().replace(/[\s-]+/g, '_')] } },
+            {
+              subcategoryIds: {
+                array_contains: [
+                  term
+                    .trim()
+                    .toLowerCase()
+                    .replace(/[\s-]+/g, '_'),
+                ],
+              },
+            },
             { businessTags: { some: { tag: { contains: term, mode: 'insensitive' } } } },
           ]),
         },

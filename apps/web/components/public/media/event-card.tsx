@@ -1,6 +1,14 @@
 'use client';
 
-import { Calendar, CalendarDays, ChevronDown, ChevronUp, ExternalLink, MapPin, Ticket } from 'lucide-react';
+import {
+  Calendar,
+  CalendarDays,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  MapPin,
+  Ticket,
+} from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ResponsiveImage } from '@/components/common/responsive-image';
@@ -96,7 +104,9 @@ export function EventCard({
           <span
             className={cn(
               'rounded-md px-2 py-0.5 text-xs font-semibold',
-              ev.ticketType === 'PAID' ? 'bg-brand-soft text-brand-soft-foreground' : 'bg-success-soft text-success-soft-foreground',
+              ev.ticketType === 'PAID'
+                ? 'bg-brand-soft text-brand-soft-foreground'
+                : 'bg-success-soft text-success-soft-foreground',
             )}
           >
             {priceLabel(ev)}
@@ -109,13 +119,18 @@ export function EventCard({
           </Link>
         </h3>
         {(ev.business?.name || ev.hostLabel) && (
-          <p className="mt-0.5 text-xs text-muted-foreground">by {ev.business?.name || ev.hostLabel}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            by {ev.business?.name || ev.hostLabel}
+          </p>
         )}
 
         {tiers.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {tiers.map((t, i) => (
-              <span key={i} className="break-words rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
+              <span
+                key={i}
+                className="break-words rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-foreground"
+              >
                 {t.name}: ₹{Number(t.price).toLocaleString('en-IN')}
               </span>
             ))}
@@ -123,7 +138,11 @@ export function EventCard({
         )}
 
         <div className="mt-2 flex-1">
-          <p className={cn('break-words text-sm text-muted-foreground', !expanded && 'line-clamp-2')}>{ev.description}</p>
+          <p
+            className={cn('break-words text-sm text-muted-foreground', !expanded && 'line-clamp-2')}
+          >
+            {ev.description}
+          </p>
           {ev.description && ev.description.length > 90 && (
             <button
               type="button"
@@ -184,7 +203,10 @@ export function EventCard({
 
         <div className="mt-2 flex gap-2">
           <AddToCalendarButton event={ev} />
-          <ShareButton title={ev.title} text={`${ev.title}${where ? ` — ${where}` : ''} on Whtzup.city`} />
+          <ShareButton
+            title={ev.title}
+            text={`${ev.title}${where ? ` — ${where}` : ''} on Whtzup.city`}
+          />
         </div>
       </div>
     </article>

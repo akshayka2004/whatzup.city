@@ -17,7 +17,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const isAllowedRole = !!user && !ADMIN_ROLES.includes(user.role) && !ADMIN_ROLES.includes(user.rbacRole || '');
+  const isAllowedRole =
+    !!user && !ADMIN_ROLES.includes(user.role) && !ADMIN_ROLES.includes(user.rbacRole || '');
   const showTour = mounted && isAllowedRole;
 
   return (
@@ -26,7 +27,10 @@ export function PublicLayout({ children }: { children: ReactNode }) {
       before={
         showTour &&
         (isMobile ? (
-          <OnboardingTour steps={CUSTOMER_MOBILE_TOUR_STEPS} storageKey="onboarding_tour_customer_mobile_v1" />
+          <OnboardingTour
+            steps={CUSTOMER_MOBILE_TOUR_STEPS}
+            storageKey="onboarding_tour_customer_mobile_v1"
+          />
         ) : (
           <OnboardingTour steps={CUSTOMER_TOUR_STEPS} storageKey="onboarding_tour_customer_v1" />
         ))

@@ -1,7 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { CalendarDays, Check, Hash, IndianRupee, Loader2, Receipt, Star, Upload } from 'lucide-react';
+import {
+  CalendarDays,
+  Check,
+  Hash,
+  IndianRupee,
+  Loader2,
+  Receipt,
+  Star,
+  Upload,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,7 +22,8 @@ import { ModalShell } from './profile-ui';
 const RATING_WORDS = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
 
 const fieldLabel = 'mb-2 flex items-center gap-1.5 text-sm font-medium text-muted-foreground';
-const fieldInput = 'h-11 rounded-xl border-input bg-background text-base text-foreground focus-visible:ring-primary md:text-sm';
+const fieldInput =
+  'h-11 rounded-xl border-input bg-background text-base text-foreground focus-visible:ring-primary md:text-sm';
 
 /**
  * Verified-purchase flow: bill upload + star rating + review in one form.
@@ -65,12 +75,15 @@ export default function BillDialog({
       }
 
       // 2. Request signed upload URL
-      const signedRes = await apiService.post<{ uploadUrl: string; fileKey: string }>('/v1/storage/upload-url', {
-        entityId: businessId,
-        filename: fileToUpload.name,
-        mimeType: fileToUpload.type,
-        category: 'bill',
-      });
+      const signedRes = await apiService.post<{ uploadUrl: string; fileKey: string }>(
+        '/v1/storage/upload-url',
+        {
+          entityId: businessId,
+          filename: fileToUpload.name,
+          mimeType: fileToUpload.type,
+          category: 'bill',
+        },
+      );
 
       if (!signedRes.data || signedRes.error) {
         throw new Error(signedRes.error || 'Failed to get upload URL');
@@ -210,7 +223,9 @@ export default function BillDialog({
             ) : (
               <>
                 <Upload className="mb-2 h-6 w-6 text-muted-foreground" />
-                <p className="text-xs text-muted-foreground">Tap to upload receipt image (JPG, PNG, PDF)</p>
+                <p className="text-xs text-muted-foreground">
+                  Tap to upload receipt image (JPG, PNG, PDF)
+                </p>
               </>
             )}
             <input
@@ -248,13 +263,17 @@ export default function BillDialog({
                 <Star
                   className={cn(
                     'h-7 w-7 transition-colors',
-                    (billRatingHover || billRating) >= star ? 'fill-warning text-warning' : 'text-muted-foreground/30',
+                    (billRatingHover || billRating) >= star
+                      ? 'fill-warning text-warning'
+                      : 'text-muted-foreground/30',
                   )}
                 />
               </button>
             ))}
             {billRating > 0 && (
-              <span className="ml-2 self-center text-sm text-muted-foreground">{RATING_WORDS[billRating]}</span>
+              <span className="ml-2 self-center text-sm text-muted-foreground">
+                {RATING_WORDS[billRating]}
+              </span>
             )}
           </div>
         </div>
@@ -274,13 +293,22 @@ export default function BillDialog({
         </div>
 
         {error && (
-          <p role="alert" className="rounded-xl border border-destructive/25 bg-danger-soft px-3 py-2 text-sm text-danger-soft-foreground">
+          <p
+            role="alert"
+            className="rounded-xl border border-destructive/25 bg-danger-soft px-3 py-2 text-sm text-danger-soft-foreground"
+          >
             {error}
           </p>
         )}
 
         <div className="flex justify-end gap-3 pt-2">
-          <Button type="button" variant="outline" size="lg" onClick={onClose} className="flex-1 rounded-xl sm:flex-none sm:px-6">
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            onClick={onClose}
+            className="flex-1 rounded-xl sm:flex-none sm:px-6"
+          >
             Cancel
           </Button>
           <Button

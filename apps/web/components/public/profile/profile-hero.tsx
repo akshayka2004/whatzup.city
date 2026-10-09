@@ -67,7 +67,12 @@ function Gallery({ slides, name, onBack }: { slides: Slide[]; name: string; onBa
           </span>
         </div>
       ) : (
-        <Carousel setApi={setApi} opts={{ loop: many, align: 'start' }} className="group" aria-label={`${name} photos`}>
+        <Carousel
+          setApi={setApi}
+          opts={{ loop: many, align: 'start' }}
+          className="group"
+          aria-label={`${name} photos`}
+        >
           <CarouselContent className="ml-0">
             {slides.map((s, i) => (
               <CarouselItem key={s.src + i} className="pl-0">
@@ -93,7 +98,10 @@ function Gallery({ slides, name, onBack }: { slides: Slide[]; name: string; onBa
 
       {/* Scrim keeps the dots / counter readable on bright photos. */}
       {slides.length > 0 && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/35 to-transparent" aria-hidden />
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/35 to-transparent"
+          aria-hidden
+        />
       )}
 
       <button
@@ -111,7 +119,11 @@ function Gallery({ slides, name, onBack }: { slides: Slide[]; name: string; onBa
             <Images className="h-3.5 w-3.5" />
             {index + 1} / {slides.length}
           </div>
-          <div className="absolute inset-x-0 bottom-3.5 flex justify-center gap-1.5" role="group" aria-label="Choose photo">
+          <div
+            className="absolute inset-x-0 bottom-3.5 flex justify-center gap-1.5"
+            role="group"
+            aria-label="Choose photo"
+          >
             {slides.map((s, i) => (
               <button
                 key={s.src + i}
@@ -157,7 +169,8 @@ export function ProfileHero({
 
   const slides = useMemo<Slide[]>(() => {
     const out: Slide[] = [];
-    if (typeof biz.coverImage === 'string' && biz.coverImage) out.push({ src: biz.coverImage, alt: `${biz.name} cover photo` });
+    if (typeof biz.coverImage === 'string' && biz.coverImage)
+      out.push({ src: biz.coverImage, alt: `${biz.name} cover photo` });
     for (const p of menuPhotos.slice(0, 6)) {
       if (p?.publicUrl) out.push({ src: p.publicUrl, alt: p.title || `${biz.name} menu` });
     }
@@ -218,7 +231,9 @@ export function ProfileHero({
             )}
           </div>
 
-          <h1 className="break-words text-2xl font-bold leading-tight text-foreground sm:text-3xl">{biz.name}</h1>
+          <h1 className="break-words text-2xl font-bold leading-tight text-foreground sm:text-3xl">
+            {biz.name}
+          </h1>
 
           <p className="text-sm text-muted-foreground sm:text-base">
             {biz.category?.name || ''}
@@ -230,7 +245,11 @@ export function ProfileHero({
               type="button"
               onClick={() => onJump('reviews')}
               className="ui-press inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-lg"
-              aria-label={rating > 0 ? `Rated ${rating.toFixed(1)}, ${reviewCount} reviews. Jump to reviews` : 'No reviews yet. Jump to reviews'}
+              aria-label={
+                rating > 0
+                  ? `Rated ${rating.toFixed(1)}, ${reviewCount} reviews. Jump to reviews`
+                  : 'No reviews yet. Jump to reviews'
+              }
             >
               {rating > 0 ? (
                 <>
@@ -257,7 +276,10 @@ export function ProfileHero({
           )}
         </div>
 
-        <DesktopActions actions={actions} className="mt-5 hidden md:mt-0 md:flex md:max-w-[26rem] md:justify-end" />
+        <DesktopActions
+          actions={actions}
+          className="mt-5 hidden md:mt-0 md:flex md:max-w-[26rem] md:justify-end"
+        />
       </div>
     </header>
   );

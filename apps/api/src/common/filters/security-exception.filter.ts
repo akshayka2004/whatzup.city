@@ -1,10 +1,4 @@
-import {
-  ExceptionFilter,
-  Catch,
-  ArgumentsHost,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Response } from 'express';
 import { Prisma } from '@saas/database';
 import { JsonLoggerService } from '../logger/json-logger.service';
@@ -24,20 +18,27 @@ export class SecurityExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const resObj = exception.getResponse();
-      message = typeof resObj === 'object' && resObj !== null && 'message' in resObj
-        ? (resObj as any).message
-        : exception.message;
+      message =
+        typeof resObj === 'object' && resObj !== null && 'message' in resObj
+          ? (resObj as any).message
+          : exception.message;
     }
     // 2. Handle Prisma Database Engine Exceptions
     else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
-      this.logger.error(`[Prisma Client Error Code ${exception.code}]: ${exception.message}`, exception.stack, 'Database');
-      
+      this.logger.error(
+        `[Prisma Client Error Code ${exception.code}]: ${exception.message}`,
+        exception.stack,
+        'Database',
+      );
+
       switch (exception.code) {
         case 'P2002': {
           status = HttpStatus.CONFLICT;
           // meta.target lists the violated column(s) — names only, never values.
           const target = (exception.meta as any)?.target;
-          const fields = (Array.isArray(target) ? target : typeof target === 'string' ? [target] : [])
+          const fields = (
+            Array.isArray(target) ? target : typeof target === 'string' ? [target] : []
+          )
             .filter((t: unknown) => typeof t === 'string' && /^[A-Za-z0-9_]+$/.test(t as string))
             .map((t: string) => t.replace(/_/g, ' '));
           message = fields.length
@@ -47,11 +48,13 @@ export class SecurityExceptionFilter implements ExceptionFilter {
         }
         case 'P2025':
           status = HttpStatus.NOT_FOUND;
-          message = 'That record no longer exists. It may have been deleted. Refresh and try again.';
+          message =
+            'That record no longer exists. It may have been deleted. Refresh and try again.';
           break;
         case 'P2003':
           status = HttpStatus.BAD_REQUEST;
-          message = 'This action refers to a record that does not exist, or is still in use by something else.';
+          message =
+            'This action refers to a record that does not exist, or is still in use by something else.';
           break;
         // A string value didn't fit its column (e.g. a VarChar length cap).
         // DTOs should catch this before it reaches Postgres, but this is the
@@ -63,11 +66,17 @@ export class SecurityExceptionFilter implements ExceptionFilter {
         // reliable fallback. Names only, never values.
         case 'P2000': {
           status = HttpStatus.BAD_REQUEST;
-          this.logger.error(`[P2000 meta]: ${JSON.stringify(exception.meta ?? {})}`, undefined, 'Database');
+          this.logger.error(
+            `[P2000 meta]: ${JSON.stringify(exception.meta ?? {})}`,
+            undefined,
+            'Database',
+          );
           const meta = exception.meta as any;
           const column = meta?.column_name ?? meta?.column;
           const columnLabel =
-            typeof column === 'string' && /^[A-Za-z0-9_]+$/.test(column) ? column.replace(/_/g, ' ') : null;
+            typeof column === 'string' && /^[A-Za-z0-9_]+$/.test(column)
+              ? column.replace(/_/g, ' ')
+              : null;
           const modelName = /prisma\.(\w+)\.\w+\(\)/.exec(exception.message)?.[1];
           const modelLabel = modelName ? modelName.replace(/([A-Z])/g, ' $1').toLowerCase() : null;
           message = columnLabel
@@ -85,7 +94,8 @@ export class SecurityExceptionFilter implements ExceptionFilter {
         case 'P2021':
         case 'P2022':
           status = HttpStatus.INTERNAL_SERVER_ERROR;
-          message = 'Database schema is out of date for this build — re-run the deploy (migrate + generate + restart).';
+          message =
+            'Database schema is out of date for this build — re-run the deploy (migrate + generate + restart).';
           break;
         default:
           status = HttpStatus.BAD_REQUEST;
@@ -101,16 +111,25 @@ export class SecurityExceptionFilter implements ExceptionFilter {
     // 3. Prisma: the query itself was malformed / missing required data. The raw
     //    message embeds the query and model names, so never send it to the client.
     else if (exception instanceof Prisma.PrismaClientValidationError) {
-      this.logger.error(`[Prisma Validation Error]: ${exception.message}`, exception.stack, 'Database');
+      this.logger.error(
+        `[Prisma Validation Error]: ${exception.message}`,
+        exception.stack,
+        'Database',
+      );
       status = HttpStatus.BAD_REQUEST;
-      message = 'Some required information is missing or in the wrong format. Check the form and try again.';
+      message =
+        'Some required information is missing or in the wrong format. Check the form and try again.';
     }
     // 4. Prisma: the database could not be reached (pooler cold start, restart, outage).
     else if (
       exception instanceof Prisma.PrismaClientInitializationError ||
       exception instanceof Prisma.PrismaClientRustPanicError
     ) {
-      this.logger.error(`[Prisma Connection Error]: ${exception.message}`, exception.stack, 'Database');
+      this.logger.error(
+        `[Prisma Connection Error]: ${exception.message}`,
+        exception.stack,
+        'Database',
+      );
       status = HttpStatus.SERVICE_UNAVAILABLE;
       message = 'The database is temporarily unreachable. Wait a few seconds and try again.';
     }

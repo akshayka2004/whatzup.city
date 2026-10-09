@@ -25,7 +25,8 @@ function LoginForm() {
     setError('');
     const errs: typeof fieldErrors = {};
     if (!email.trim()) errs.email = 'Enter your email address.';
-    else if (!/^\S+@\S+\.\S+$/.test(email.trim())) errs.email = 'That email address doesn’t look right.';
+    else if (!/^\S+@\S+\.\S+$/.test(email.trim()))
+      errs.email = 'That email address doesn’t look right.';
     if (!password) errs.password = 'Enter your password.';
     setFieldErrors(errs);
     if (Object.keys(errs).length) return;
@@ -35,7 +36,9 @@ function LoginForm() {
       const ok = await signIn(email.trim(), password, redirectTo);
       if (!ok) setError('Email or password is incorrect.');
     } catch (err: any) {
-      setError(err?.message || "We couldn't sign you in. Check your email and password, then try again.");
+      setError(
+        err?.message || "We couldn't sign you in. Check your email and password, then try again.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -48,13 +51,18 @@ function LoginForm() {
       footer={
         <>
           New to Whtzup.city?{' '}
-          <Link href="/register" className="font-semibold text-primary underline-offset-4 hover:underline">
+          <Link
+            href="/register"
+            className="font-semibold text-primary underline-offset-4 hover:underline"
+          >
             Create an account
           </Link>
         </>
       }
     >
-      {resetDone && <FormAlert tone="success">Password updated. Sign in with your new password.</FormAlert>}
+      {resetDone && (
+        <FormAlert tone="success">Password updated. Sign in with your new password.</FormAlert>
+      )}
       {error && <FormAlert tone="error">{error}</FormAlert>}
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -83,7 +91,10 @@ function LoginForm() {
             error={fieldErrors.password}
           />
           <div className="mt-2 text-right">
-            <Link href="/forgot-password" className="text-label text-primary underline-offset-4 hover:underline">
+            <Link
+              href="/forgot-password"
+              className="text-label text-primary underline-offset-4 hover:underline"
+            >
               Forgot password?
             </Link>
           </div>

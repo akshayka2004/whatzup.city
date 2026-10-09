@@ -13,7 +13,13 @@ export interface SectionLink {
  * Sections need `id` and `className="scroll-mt-28"`. The app scrolls inside <main>, so the observer
  * is rooted there. Falls back to plain anchors when IntersectionObserver is unavailable.
  */
-export function SectionNav({ sections, className }: { sections: SectionLink[]; className?: string }) {
+export function SectionNav({
+  sections,
+  className,
+}: {
+  sections: SectionLink[];
+  className?: string;
+}) {
   const [active, setActive] = useState(sections[0]?.id);
 
   useEffect(() => {
@@ -21,7 +27,9 @@ export function SectionNav({ sections, className }: { sections: SectionLink[]; c
     const root = document.getElementById('main-content');
     const io = new IntersectionObserver(
       (entries) => {
-        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
         if (visible[0]) setActive(visible[0].target.id);
       },
       { root, rootMargin: '-96px 0px -60% 0px', threshold: 0 },
@@ -36,7 +44,10 @@ export function SectionNav({ sections, className }: { sections: SectionLink[]; c
   return (
     <nav
       aria-label="Sections"
-      className={cn('sticky top-0 z-20 -mx-4 border-b border-border/60 bg-background/90 px-4 py-2 backdrop-blur', className)}
+      className={cn(
+        'sticky top-0 z-20 -mx-4 border-b border-border/60 bg-background/90 px-4 py-2 backdrop-blur',
+        className,
+      )}
     >
       <div className="ui-scroll-x flex gap-2">
         {sections.map((s) => (

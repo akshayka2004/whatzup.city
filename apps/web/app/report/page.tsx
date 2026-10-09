@@ -7,8 +7,17 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  AlertTriangle, ArrowLeft, Check, Flag,
-  Store, Tag, Star, MessageSquare, Globe, ShieldAlert, Loader2,
+  AlertTriangle,
+  ArrowLeft,
+  Check,
+  Flag,
+  Store,
+  Tag,
+  Star,
+  MessageSquare,
+  Globe,
+  ShieldAlert,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/services/api-service';
@@ -23,12 +32,48 @@ type IssueType =
   | 'other';
 
 const ISSUE_TYPES: { id: IssueType; label: string; desc: string; icon: any; color: string }[] = [
-  { id: 'fake_business', label: 'Fake / Duplicate Business', desc: 'Business listing appears fraudulent or is a duplicate.', icon: Store, color: 'text-danger-soft-foreground' },
-  { id: 'fraudulent_offer', label: 'Fraudulent Offer', desc: 'Offer is misleading, expired, or not honored.', icon: Tag, color: 'text-warning-soft-foreground' },
-  { id: 'fake_review', label: 'Fake Review', desc: 'Review appears to be fabricated or purchased.', icon: Star, color: 'text-warning-soft-foreground' },
-  { id: 'inappropriate_content', label: 'Inappropriate Content', desc: 'Media or description violates community guidelines.', icon: ShieldAlert, color: 'text-brand-soft-foreground' },
-  { id: 'wrong_info', label: 'Wrong Information', desc: 'Address, hours, or contact info is incorrect.', icon: Globe, color: 'text-info-soft-foreground' },
-  { id: 'other', label: 'Other Issue', desc: 'Something else that needs admin attention.', icon: MessageSquare, color: 'text-muted-foreground' },
+  {
+    id: 'fake_business',
+    label: 'Fake / Duplicate Business',
+    desc: 'Business listing appears fraudulent or is a duplicate.',
+    icon: Store,
+    color: 'text-danger-soft-foreground',
+  },
+  {
+    id: 'fraudulent_offer',
+    label: 'Fraudulent Offer',
+    desc: 'Offer is misleading, expired, or not honored.',
+    icon: Tag,
+    color: 'text-warning-soft-foreground',
+  },
+  {
+    id: 'fake_review',
+    label: 'Fake Review',
+    desc: 'Review appears to be fabricated or purchased.',
+    icon: Star,
+    color: 'text-warning-soft-foreground',
+  },
+  {
+    id: 'inappropriate_content',
+    label: 'Inappropriate Content',
+    desc: 'Media or description violates community guidelines.',
+    icon: ShieldAlert,
+    color: 'text-brand-soft-foreground',
+  },
+  {
+    id: 'wrong_info',
+    label: 'Wrong Information',
+    desc: 'Address, hours, or contact info is incorrect.',
+    icon: Globe,
+    color: 'text-info-soft-foreground',
+  },
+  {
+    id: 'other',
+    label: 'Other Issue',
+    desc: 'Something else that needs admin attention.',
+    icon: MessageSquare,
+    color: 'text-muted-foreground',
+  },
 ];
 
 export default function ReportPage() {
@@ -68,7 +113,9 @@ export default function ReportPage() {
 
     // Reports must be attributable — guests are sent to sign in, then back here.
     if (!user) {
-      const back = encodeURIComponent('/report' + (typeof window !== 'undefined' ? window.location.search : ''));
+      const back = encodeURIComponent(
+        '/report' + (typeof window !== 'undefined' ? window.location.search : ''),
+      );
       router.push(`/login?redirect=${back}`);
       return;
     }
@@ -130,8 +177,12 @@ export default function ReportPage() {
         {step === 'type' && (
           <div className="space-y-6">
             <div>
-              <h1 className="text-2xl font-extrabold text-foreground tracking-tight mb-1">What are you reporting?</h1>
-              <p className="text-muted-foreground text-sm">Select the issue category to continue.</p>
+              <h1 className="text-2xl font-extrabold text-foreground tracking-tight mb-1">
+                What are you reporting?
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                Select the issue category to continue.
+              </p>
             </div>
             <div className="grid sm:grid-cols-2 gap-3 ui-fade-up">
               {ISSUE_TYPES.map((type) => {
@@ -172,11 +223,16 @@ export default function ReportPage() {
         {step === 'details' && selectedType && (
           <div className="space-y-6">
             <div className="flex items-center gap-2">
-              <button onClick={() => setStep('type')} className="text-muted-foreground hover:text-foreground cursor-pointer">
+              <button
+                onClick={() => setStep('type')}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
                 <ArrowLeft className="h-4 w-4" />
               </button>
               <div>
-                <h1 className="text-2xl font-extrabold text-foreground tracking-tight mb-0.5">Report Details</h1>
+                <h1 className="text-2xl font-extrabold text-foreground tracking-tight mb-0.5">
+                  Report Details
+                </h1>
                 <p className="text-muted-foreground text-sm capitalize">
                   {ISSUE_TYPES.find((t) => t.id === selectedType)?.label}
                 </p>
@@ -224,7 +280,11 @@ export default function ReportPage() {
                   <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-info-soft border border-info/25">
                     <AlertTriangle className="h-3.5 w-3.5 text-info-soft-foreground shrink-0 mt-0.5" />
                     <p className="text-xs text-info-soft-foreground">
-                      You are not logged in. <Link href="/login" className="underline font-medium">Sign in</Link> so admins can follow up with you.
+                      You are not logged in.{' '}
+                      <Link href="/login" className="underline font-medium">
+                        Sign in
+                      </Link>{' '}
+                      so admins can follow up with you.
                     </p>
                   </div>
                 )}
@@ -234,9 +294,7 @@ export default function ReportPage() {
                     False reports may result in account restrictions. Only report genuine issues.
                   </p>
                 </div>
-                {error && (
-                  <p className="text-xs text-danger-soft-foreground">{error}</p>
-                )}
+                {error && <p className="text-xs text-danger-soft-foreground">{error}</p>}
                 <Button
                   type="submit"
                   disabled={submitting}
@@ -258,10 +316,15 @@ export default function ReportPage() {
             </div>
             <h2 className="text-xl font-extrabold text-foreground">Report Submitted</h2>
             <p className="text-muted-foreground text-sm">
-              Your report <strong className="text-foreground">{submittedId}</strong> has been submitted and is visible to our admin team. We will review it within 24–48 hours.
+              Your report <strong className="text-foreground">{submittedId}</strong> has been
+              submitted and is visible to our admin team. We will review it within 24–48 hours.
             </p>
             <div className="flex gap-2 justify-center pt-2">
-              <Button onClick={reset} variant="outline" className="rounded-xl border-border text-muted-foreground hover:bg-muted/40 cursor-pointer">
+              <Button
+                onClick={reset}
+                variant="outline"
+                className="rounded-xl border-border text-muted-foreground hover:bg-muted/40 cursor-pointer"
+              >
                 Report Another
               </Button>
               <Button

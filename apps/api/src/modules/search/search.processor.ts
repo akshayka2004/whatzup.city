@@ -37,8 +37,14 @@ export class SearchProcessor extends WorkerHost {
           const biz = business as any;
 
           // Aggregate extra searchable text fields
-          const branchNames = (biz.branches ?? []).map((b: any) => b.name).filter(Boolean).join(' ');
-          const offerTitles = (biz.offers ?? []).map((o: any) => o.title).filter(Boolean).join(' ');
+          const branchNames = (biz.branches ?? [])
+            .map((b: any) => b.name)
+            .filter(Boolean)
+            .join(' ');
+          const offerTitles = (biz.offers ?? [])
+            .map((o: any) => o.title)
+            .filter(Boolean)
+            .join(' ');
           const tags: string[] = (biz.businessTags ?? []).map((t: any) => t.tag).filter(Boolean);
           const productNames = ''; // Products not in this query path; extend here if model grows
 

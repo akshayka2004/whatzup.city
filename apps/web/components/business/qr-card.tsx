@@ -40,7 +40,11 @@ export function BusinessQrCard({ businessId, businessName, category, city }: Bus
       // Snapshots the whole styled card (branding, name, QR, footer) — not just the raw QR pattern.
       const dataUrl = await toPng(cardRef.current, { pixelRatio: 3, backgroundColor: '#FBF8F2' });
       const link = document.createElement('a');
-      const safeName = businessName.replace(/[^a-z0-9]+/gi, '-').toLowerCase().replace(/^-+|-+$/g, '') || 'business';
+      const safeName =
+        businessName
+          .replace(/[^a-z0-9]+/gi, '-')
+          .toLowerCase()
+          .replace(/^-+|-+$/g, '') || 'business';
       link.download = `${safeName}-qr.png`;
       link.href = dataUrl;
       link.click();
@@ -54,11 +58,26 @@ export function BusinessQrCard({ businessId, businessName, category, city }: Bus
   return (
     <div>
       <div className="flex items-center gap-2 mb-4 print:hidden">
-        <Button onClick={() => window.print()} size="sm" variant="outline" className="rounded-xl gap-1.5 cursor-pointer">
+        <Button
+          onClick={() => window.print()}
+          size="sm"
+          variant="outline"
+          className="rounded-xl gap-1.5 cursor-pointer"
+        >
           <Printer className="h-4 w-4" /> Print
         </Button>
-        <Button onClick={handleDownload} disabled={!qrReady || downloading} size="sm" className="rounded-xl gap-1.5 cursor-pointer">
-          {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download PNG
+        <Button
+          onClick={handleDownload}
+          disabled={!qrReady || downloading}
+          size="sm"
+          className="rounded-xl gap-1.5 cursor-pointer"
+        >
+          {downloading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}{' '}
+          Download PNG
         </Button>
       </div>
 
@@ -80,16 +99,34 @@ export function BusinessQrCard({ businessId, businessName, category, city }: Bus
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontWeight: 700, fontSize: 15, color: '#C1633B' }}>whtzup.city</span>
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.5, color: '#8A8073', textTransform: 'uppercase' }}>
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: 1.5,
+              color: '#8A8073',
+              textTransform: 'uppercase',
+            }}
+          >
             Official business QR
           </span>
         </div>
         <div style={{ height: 1, background: 'rgba(31,27,22,0.12)' }} />
 
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontWeight: 700, fontSize: 20, lineHeight: 1.25, wordBreak: 'break-word' }}>{businessName}</div>
+          <div style={{ fontWeight: 700, fontSize: 20, lineHeight: 1.25, wordBreak: 'break-word' }}>
+            {businessName}
+          </div>
           {(category || city) && (
-            <div style={{ fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: '#8A8073', marginTop: 4 }}>
+            <div
+              style={{
+                fontSize: 10,
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+                color: '#8A8073',
+                marginTop: 4,
+              }}
+            >
               {[category, city].filter(Boolean).join(' · ')}
             </div>
           )}
@@ -110,17 +147,30 @@ export function BusinessQrCard({ businessId, businessName, category, city }: Bus
 
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontWeight: 600, fontSize: 12 }}>
-            Scan <span style={{ color: '#C1633B' }}>&rarr;</span> sign in <span style={{ color: '#C1633B' }}>&rarr;</span> see today&apos;s offers
+            Scan <span style={{ color: '#C1633B' }}>&rarr;</span> sign in{' '}
+            <span style={{ color: '#C1633B' }}>&rarr;</span> see today&apos;s offers
           </div>
-          <div style={{ fontSize: 9, color: '#8A8073', marginTop: 4, fontFamily: 'monospace', wordBreak: 'break-all' }}>
+          <div
+            style={{
+              fontSize: 9,
+              color: '#8A8073',
+              marginTop: 4,
+              fontFamily: 'monospace',
+              wordBreak: 'break-all',
+            }}
+          >
             {targetUrl.replace(/^https?:\/\//, '')}
           </div>
         </div>
 
         <div style={{ height: 1, background: 'rgba(31,27,22,0.12)' }} />
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontWeight: 700, fontSize: 10, letterSpacing: 1.5, color: '#C1633B' }}>WHTZUP.CITY</div>
-          <div style={{ fontSize: 9, color: '#8A8073', marginTop: 2 }}>Discover local businesses, offers &amp; events near you</div>
+          <div style={{ fontWeight: 700, fontSize: 10, letterSpacing: 1.5, color: '#C1633B' }}>
+            WHTZUP.CITY
+          </div>
+          <div style={{ fontSize: 9, color: '#8A8073', marginTop: 2 }}>
+            Discover local businesses, offers &amp; events near you
+          </div>
         </div>
       </div>
     </div>

@@ -96,7 +96,11 @@ export function ChartSkeleton({ className }: { className?: string }) {
       <Skel className="h-4 w-40 mb-4" />
       <div className="flex h-44 items-end gap-2">
         {[40, 65, 50, 80, 55, 90, 70, 60].map((h, i) => (
-          <Skel key={i} className="flex-1 rounded-t-md rounded-b-none" style={{ height: `${h}%` }} />
+          <Skel
+            key={i}
+            className="flex-1 rounded-t-md rounded-b-none"
+            style={{ height: `${h}%` }}
+          />
         ))}
       </div>
     </div>

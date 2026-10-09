@@ -5,10 +5,25 @@ import { Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /** Row above a list/table: search on the left, filters in the middle, actions right. Stacks on phones. */
-export function Toolbar({ children, actions, className }: { children?: ReactNode; actions?: ReactNode; className?: string }) {
+export function Toolbar({
+  children,
+  actions,
+  className,
+}: {
+  children?: ReactNode;
+  actions?: ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={cn('mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between', className)}>
-      <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">{children}</div>
+    <div
+      className={cn(
+        'mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
+        className,
+      )}
+    >
+      <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+        {children}
+      </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
@@ -30,7 +45,10 @@ export function SearchInput({
 }) {
   return (
     <div className={cn('relative w-full sm:max-w-xs', className)}>
-      <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+      <Search
+        className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+        aria-hidden
+      />
       <input
         type="search"
         value={value}

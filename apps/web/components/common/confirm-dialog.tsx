@@ -59,7 +59,9 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         <AlertDialogContent className="ui-pop max-w-[calc(100vw-2rem)] sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>{options?.title}</AlertDialogTitle>
-            {options?.description && <AlertDialogDescription>{options.description}</AlertDialogDescription>}
+            {options?.description && (
+              <AlertDialogDescription>{options.description}</AlertDialogDescription>
+            )}
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-2">
             <AlertDialogCancel className="min-h-11" onClick={() => settle(false)}>
@@ -68,7 +70,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             <AlertDialogAction
               className={cn(
                 'min-h-11',
-                options?.tone === 'danger' && 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+                options?.tone === 'danger' &&
+                  'bg-destructive text-destructive-foreground hover:bg-destructive/90',
               )}
               onClick={() => settle(true)}
             >
@@ -87,6 +90,10 @@ export function useConfirm(): ConfirmFn {
   return (
     ctx ??
     ((opts) =>
-      Promise.resolve(typeof window !== 'undefined' ? window.confirm(opts.description ? `${opts.title}\n\n${opts.description}` : opts.title) : false))
+      Promise.resolve(
+        typeof window !== 'undefined'
+          ? window.confirm(opts.description ? `${opts.title}\n\n${opts.description}` : opts.title)
+          : false,
+      ))
   );
 }

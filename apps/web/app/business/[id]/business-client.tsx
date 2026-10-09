@@ -9,7 +9,11 @@ import { EmptyState } from '@/components/common/empty-state';
 import { useCachedGet } from '@/lib/use-cached-get';
 import { useOtherOutlets } from '@/components/business/brand-public-section';
 import { ProfileHero } from '@/components/public/profile/profile-hero';
-import { ProfileTabs, scrollToSection, type ProfileTab } from '@/components/public/profile/profile-tabs';
+import {
+  ProfileTabs,
+  scrollToSection,
+  type ProfileTab,
+} from '@/components/public/profile/profile-tabs';
 import { MobileActionBar } from '@/components/public/profile/profile-actions';
 import { AboutSection, hasAboutContent } from '@/components/public/profile/about-section';
 import { InfoCard } from '@/components/public/profile/info-card';
@@ -30,7 +34,10 @@ export interface BusinessClientProps {
   initialBusiness?: any | null;
 }
 
-export default function BusinessClient({ businessId, initialBusiness = null }: BusinessClientProps) {
+export default function BusinessClient({
+  businessId,
+  initialBusiness = null,
+}: BusinessClientProps) {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
@@ -47,14 +54,29 @@ export default function BusinessClient({ businessId, initialBusiness = null }: B
   // (Skipped during SSR: the hook's cache is module-level and would be shared between requests.)
   const bizKey = typeof window === 'undefined' ? null : `/v1/businesses/${businessId}`;
   const bizQ = useCachedGet<any>(bizKey, { ttlMs: 0, initialData: initialBusiness });
-  const offersQ = useCachedGet<any>(businessId ? `/v1/offers/business/${businessId}` : null, { ttlMs: 30_000 });
-  const reviewsQ = useCachedGet<any>(businessId ? `/v1/reviews/business/${businessId}` : null, { ttlMs: 30_000 });
-  const menuQ = useCachedGet<any>(businessId ? `/v1/media/menu/business/${businessId}` : null, { ttlMs: 60_000 });
+  const offersQ = useCachedGet<any>(businessId ? `/v1/offers/business/${businessId}` : null, {
+    ttlMs: 30_000,
+  });
+  const reviewsQ = useCachedGet<any>(businessId ? `/v1/reviews/business/${businessId}` : null, {
+    ttlMs: 30_000,
+  });
+  const menuQ = useCachedGet<any>(businessId ? `/v1/media/menu/business/${businessId}` : null, {
+    ttlMs: 60_000,
+  });
 
   const biz = bizQ.data;
-  const offers = useMemo(() => asList(offersQ.data).filter((o: any) => o.isActive !== false).slice(0, 5), [offersQ.data]);
+  const offers = useMemo(
+    () =>
+      asList(offersQ.data)
+        .filter((o: any) => o.isActive !== false)
+        .slice(0, 5),
+    [offersQ.data],
+  );
   const reviews = useMemo(() => asList(reviewsQ.data), [reviewsQ.data]);
-  const menuPhotos = useMemo<any[]>(() => (Array.isArray(menuQ.data) ? menuQ.data : []), [menuQ.data]);
+  const menuPhotos = useMemo<any[]>(
+    () => (Array.isArray(menuQ.data) ? menuQ.data : []),
+    [menuQ.data],
+  );
 
   const { outlets: otherOutlets } = useOtherOutlets(biz?.brandId, biz?.id || businessId);
   const actions = useProfileActions(businessId, biz);
@@ -73,7 +95,9 @@ export default function BusinessClient({ businessId, initialBusiness = null }: B
   useEffect(() => {
     if (qrScrolled.current || !fromQr || !user || !biz || offersQ.loading) return;
     qrScrolled.current = true;
-    document.getElementById('offers-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document
+      .getElementById('offers-section')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [fromQr, user, biz, offersQ.loading]);
 
   const onReviewPosted = useCallback(
@@ -163,7 +187,12 @@ export default function BusinessClient({ businessId, initialBusiness = null }: B
           />
 
           {hasMenu && (
-            <MenuSection biz={biz} businessId={businessId} menuPhotos={menuPhotos} productCount={productCount} />
+            <MenuSection
+              biz={biz}
+              businessId={businessId}
+              menuPhotos={menuPhotos}
+              productCount={productCount}
+            />
           )}
 
           <ReviewsSection

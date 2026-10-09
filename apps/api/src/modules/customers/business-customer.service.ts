@@ -8,7 +8,6 @@ function prismaAny(db: DatabaseService): any {
 
 type InteractionType = 'OFFER_CLAIM' | 'OFFER_REDEEM' | 'BILL_UPLOAD' | 'REVIEW' | 'CAMPAIGN';
 
-
 /** Lifecycle windows, in days: "new" = first seen within, "lapsed" = not seen within. */
 export const SEGMENT_DAYS = { new: 30, lapsed: 60 } as const;
 const EXPORT_MAX = 10_000;
@@ -25,7 +24,10 @@ export function segmentOf(r: {
   const last = new Date(r.lastInteractionDate).getTime();
   if (now - last > SEGMENT_DAYS.lapsed * 86_400_000) return 'lapsed';
   if (now - first <= SEGMENT_DAYS.new * 86_400_000) return 'new';
-  const repeat = (r.offersClaimedCount ?? 0) > 1 || (r.offersRedeemedCount ?? 0) > 1 || (r.totalVerifiedPurchases ?? 0) > 1;
+  const repeat =
+    (r.offersClaimedCount ?? 0) > 1 ||
+    (r.offersRedeemedCount ?? 0) > 1 ||
+    (r.totalVerifiedPurchases ?? 0) > 1;
   return repeat ? 'returning' : 'one-time';
 }
 
@@ -209,7 +211,9 @@ export class BusinessCustomerService {
       db.businessCustomer.count({ where }),
       db.businessCustomer.findMany({
         where,
-        include: { user: { select: { id: true, name: true, email: true, phone: true, avatar: true } } },
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true, avatar: true } },
+        },
         orderBy: { lastInteractionDate: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
@@ -228,7 +232,18 @@ export class BusinessCustomerService {
       orderBy: { lastInteractionDate: 'desc' },
       take: EXPORT_MAX,
     });
-    const header = ['Name', 'Email', 'Phone', 'Segment', 'Offers claimed', 'Offers redeemed', 'Verified bills', 'First seen', 'Last seen', 'Referral source'];
+    const header = [
+      'Name',
+      'Email',
+      'Phone',
+      'Segment',
+      'Offers claimed',
+      'Offers redeemed',
+      'Verified bills',
+      'First seen',
+      'Last seen',
+      'Referral source',
+    ];
     const lines = records.map((r: any) => {
       const row = this.toRow(r);
       return [
@@ -247,7 +262,7 @@ export class BusinessCustomerService {
         .join(',');
     });
     // BOM so Excel opens UTF-8 (Malayalam names) correctly.
-    return '﻿' +[header.join(','), ...lines].join('\r\n');
+    return '﻿' + [header.join(','), ...lines].join('\r\n');
   }
 
   // ── Business CRM: analytics summary ──────────────────────────────────
@@ -277,7 +292,8 @@ export class BusinessCustomerService {
       }),
       db.businessCustomer.count({
         where: {
-          businessId, deletedAt: null,
+          businessId,
+          deletedAt: null,
           firstInteractionDate: { gte: lastMonth, lt: startOfMonth },
         },
       }),
@@ -292,7 +308,8 @@ export class BusinessCustomerService {
       }),
       db.businessCustomer.count({
         where: {
-          businessId, deletedAt: null,
+          businessId,
+          deletedAt: null,
           OR: [
             { offersClaimedCount: { gt: 1 } },
             { offersRedeemedCount: { gt: 1 } },
@@ -305,9 +322,12 @@ export class BusinessCustomerService {
       db.businessCustomer.count({ where: this.buildWhere(businessId, 'lapsed') }),
     ]);
 
-    const monthlyGrowth = newLastMonth > 0
-      ? Math.round(((newThisMonth - newLastMonth) / newLastMonth) * 100)
-      : newThisMonth > 0 ? 100 : 0;
+    const monthlyGrowth =
+      newLastMonth > 0
+        ? Math.round(((newThisMonth - newLastMonth) / newLastMonth) * 100)
+        : newThisMonth > 0
+          ? 100
+          : 0;
 
     const claimRate = total > 0 ? Math.round((claimed / total) * 100) : 0;
     const redemptionRate = claimed > 0 ? Math.round((redeemed / claimed) * 100) : 0;
@@ -324,7 +344,13 @@ export class BusinessCustomerService {
       offerRedemptionRate: redemptionRate,
       monthlyGrowth,
       customerRetention: retentionRate,
-      segments: { new: segNew, returning: segReturning, lapsed: segLapsed, newDays: SEGMENT_DAYS.new, lapsedDays: SEGMENT_DAYS.lapsed },
+      segments: {
+        new: segNew,
+        returning: segReturning,
+        lapsed: segLapsed,
+        newDays: SEGMENT_DAYS.new,
+        lapsedDays: SEGMENT_DAYS.lapsed,
+      },
     };
   }
 }

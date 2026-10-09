@@ -9,7 +9,14 @@ import { AnalyticsV2Service, type Granularity } from './analytics-v2.service';
 import { AnalyticsRollupService } from './analytics-rollup.service';
 import { WeeklyDigestService } from './weekly-digest.service';
 
-type RangeParams = { from?: string; to?: string; days?: string; granularity?: Granularity; city?: string; categoryId?: string };
+type RangeParams = {
+  from?: string;
+  to?: string;
+  days?: string;
+  granularity?: Granularity;
+  city?: string;
+  categoryId?: string;
+};
 
 const toQuery = (q: RangeParams) => ({
   from: q.from,
@@ -31,12 +38,18 @@ export class AnalyticsV2Controller {
 
   @Get('business/:businessId/digest')
   @ApiOperation({ summary: "Preview last week's owner digest for a business (nothing is sent)" })
-  digestPreview(@Param('businessId', new ParseUUIDPipe()) businessId: string, @CurrentUser() user: { id: string; role?: string }) {
+  digestPreview(
+    @Param('businessId', new ParseUUIDPipe()) businessId: string,
+    @CurrentUser() user: { id: string; role?: string },
+  ) {
     return this.digest.preview(businessId, user);
   }
 
   @Get('business/:businessId/report')
-  @ApiOperation({ summary: 'Business report: KPIs vs previous period, IST series, funnel, sources, heatmap, offers' })
+  @ApiOperation({
+    summary:
+      'Business report: KPIs vs previous period, IST series, funnel, sources, heatmap, offers',
+  })
   businessReport(
     @Param('businessId', new ParseUUIDPipe()) businessId: string,
     @CurrentUser() user: { id: string; role?: string },
@@ -66,7 +79,9 @@ export class AnalyticsV2Controller {
   @UseGuards(RolesGuard)
   @Roles(UserRole.SUPER_ADMIN)
   @Post('rollups/backfill')
-  @ApiOperation({ summary: 'Recompute daily business rollups for the last N IST days (super admin)' })
+  @ApiOperation({
+    summary: 'Recompute daily business rollups for the last N IST days (super admin)',
+  })
   backfill(@Query('days') days?: string) {
     return this.rollups.backfill(days ? Number(days) : 90);
   }

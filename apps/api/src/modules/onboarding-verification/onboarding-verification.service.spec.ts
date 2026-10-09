@@ -210,10 +210,20 @@ describe('OnboardingVerificationService', () => {
 
     it('records an OUTLET_APPROVED brand event when the approved business is an outlet of a brand', async () => {
       const mockRequest = {
-        id: 'vr-1', tenantId: 'tenant-789', entityId: 'ent-1', status: 'PENDING',
+        id: 'vr-1',
+        tenantId: 'tenant-789',
+        entityId: 'ent-1',
+        status: 'PENDING',
         entity: { id: 'ent-1', type: 'BUSINESS', name: 'Spice Co - Beach', userId: 'owner-456' },
       };
-      const outlet = { id: 'biz-1', ownerId: 'owner-456', name: 'Spice Co - Beach', status: 'PENDING_VERIFICATION', tenantId: 'tenant-789', brandId: 'brand-1' };
+      const outlet = {
+        id: 'biz-1',
+        ownerId: 'owner-456',
+        name: 'Spice Co - Beach',
+        status: 'PENDING_VERIFICATION',
+        tenantId: 'tenant-789',
+        brandId: 'brand-1',
+      };
       mockDb.tenant.findUnique.mockResolvedValue({ id: 'default-id', slug: 'default' });
       mockDb.verificationRequest.findFirst.mockResolvedValue(mockRequest);
       mockDb.verificationRequest.update.mockResolvedValue({ ...mockRequest, status: 'APPROVED' });
@@ -223,16 +233,31 @@ describe('OnboardingVerificationService', () => {
       await service.approve('admin-uid', 'default-id', 'vr-1', { notes: 'ok' });
 
       expect(mockDb.brandEvent.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ brandId: 'brand-1', businessId: 'biz-1', actorId: 'admin-uid', type: 'OUTLET_APPROVED' }),
+        data: expect.objectContaining({
+          brandId: 'brand-1',
+          businessId: 'biz-1',
+          actorId: 'admin-uid',
+          type: 'OUTLET_APPROVED',
+        }),
       });
     });
 
     it('does not write a brand event for a standalone business', async () => {
       const mockRequest = {
-        id: 'vr-2', tenantId: 'tenant-789', entityId: 'ent-2', status: 'PENDING',
+        id: 'vr-2',
+        tenantId: 'tenant-789',
+        entityId: 'ent-2',
+        status: 'PENDING',
         entity: { id: 'ent-2', type: 'BUSINESS', name: 'Solo Cafe', userId: 'owner-456' },
       };
-      const solo = { id: 'biz-2', ownerId: 'owner-456', name: 'Solo Cafe', status: 'PENDING_VERIFICATION', tenantId: 'tenant-789', brandId: null };
+      const solo = {
+        id: 'biz-2',
+        ownerId: 'owner-456',
+        name: 'Solo Cafe',
+        status: 'PENDING_VERIFICATION',
+        tenantId: 'tenant-789',
+        brandId: null,
+      };
       mockDb.tenant.findUnique.mockResolvedValue({ id: 'default-id', slug: 'default' });
       mockDb.verificationRequest.findFirst.mockResolvedValue(mockRequest);
       mockDb.verificationRequest.update.mockResolvedValue({ ...mockRequest, status: 'APPROVED' });

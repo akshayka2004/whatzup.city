@@ -13,33 +13,108 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
-import { RegistrationDetailsForm, type RegistrationDetails } from '@/components/business/registration-details';
+import {
+  RegistrationDetailsForm,
+  type RegistrationDetails,
+} from '@/components/business/registration-details';
 import { BrandSettingsCard } from '@/components/business/brand-settings-card';
 import { validateOperatingHours, type OperatingHours } from '@saas/types';
 import {
-  STAR_OPTIONS, STAR_PRICING, ADDON_PRICE, computeHotelCharge, type HotelAmenities,
+  STAR_OPTIONS,
+  STAR_PRICING,
+  ADDON_PRICE,
+  computeHotelCharge,
+  type HotelAmenities,
 } from '@/lib/hotel-pricing';
-import { AmenityDetailsEditor, type AmenityItem } from '@/components/business/amenity-details-editor';
+import {
+  AmenityDetailsEditor,
+  type AmenityItem,
+} from '@/components/business/amenity-details-editor';
 import { useRouter } from 'next/navigation';
 import {
-  Instagram, Facebook, Linkedin, Twitter, Youtube,
-  Globe, Phone, Plus, Trash2, Check, Edit2, X,
-  Building2, User, Loader2, MapPin, Mail, Tag, Upload, Image as ImageIcon,
+  Instagram,
+  Facebook,
+  Linkedin,
+  Twitter,
+  Youtube,
+  Globe,
+  Phone,
+  Plus,
+  Trash2,
+  Check,
+  Edit2,
+  X,
+  Building2,
+  User,
+  Loader2,
+  MapPin,
+  Mail,
+  Tag,
+  Upload,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 /* ── Social platform config ───────────────────────────────────── */
 const PLATFORM_OPTIONS = [
-  { id: 'instagram', label: 'Instagram', icon: Instagram, color: 'text-primary', placeholder: '@handle or URL' },
-  { id: 'facebook', label: 'Facebook', icon: Facebook, color: 'text-info', placeholder: 'Page URL' },
-  { id: 'linkedin', label: 'LinkedIn', icon: Linkedin, color: 'text-info', placeholder: 'Company page URL' },
-  { id: 'x', label: 'X / Twitter', icon: Twitter, color: 'text-foreground/80', placeholder: '@handle' },
-  { id: 'youtube', label: 'YouTube', icon: Youtube, color: 'text-destructive', placeholder: 'Channel URL' },
-  { id: 'website', label: 'Website', icon: Globe, color: 'text-info', placeholder: 'https://example.com' },
-  { id: 'whatsapp', label: 'WhatsApp', icon: Phone, color: 'text-success', placeholder: '+91 98765 43210' },
-  { id: 'custom', label: 'Custom Platform', icon: Globe, color: 'text-primary', placeholder: 'Platform name or URL' },
+  {
+    id: 'instagram',
+    label: 'Instagram',
+    icon: Instagram,
+    color: 'text-primary',
+    placeholder: '@handle or URL',
+  },
+  {
+    id: 'facebook',
+    label: 'Facebook',
+    icon: Facebook,
+    color: 'text-info',
+    placeholder: 'Page URL',
+  },
+  {
+    id: 'linkedin',
+    label: 'LinkedIn',
+    icon: Linkedin,
+    color: 'text-info',
+    placeholder: 'Company page URL',
+  },
+  {
+    id: 'x',
+    label: 'X / Twitter',
+    icon: Twitter,
+    color: 'text-foreground/80',
+    placeholder: '@handle',
+  },
+  {
+    id: 'youtube',
+    label: 'YouTube',
+    icon: Youtube,
+    color: 'text-destructive',
+    placeholder: 'Channel URL',
+  },
+  {
+    id: 'website',
+    label: 'Website',
+    icon: Globe,
+    color: 'text-info',
+    placeholder: 'https://example.com',
+  },
+  {
+    id: 'whatsapp',
+    label: 'WhatsApp',
+    icon: Phone,
+    color: 'text-success',
+    placeholder: '+91 98765 43210',
+  },
+  {
+    id: 'custom',
+    label: 'Custom Platform',
+    icon: Globe,
+    color: 'text-primary',
+    placeholder: 'Platform name or URL',
+  },
 ] as const;
 
-type PlatformId = typeof PLATFORM_OPTIONS[number]['id'];
+type PlatformId = (typeof PLATFORM_OPTIONS)[number]['id'];
 
 interface SocialLink {
   id: string;
@@ -86,8 +161,15 @@ export default function BusinessSettingsPage() {
   const [businessLoading, setBusinessLoading] = useState(true);
   const [business, setBusiness] = useState<BusinessRecord | null>(null);
   const [profile, setProfile] = useState<BusinessProfileForm>({
-    businessName: '', businessEmail: '', businessPhone: '', address: '', city: '', state: '',
-    ownerName: '', ownerPhone: '', description: '',
+    businessName: '',
+    businessEmail: '',
+    businessPhone: '',
+    address: '',
+    city: '',
+    state: '',
+    ownerName: '',
+    ownerPhone: '',
+    description: '',
   });
   const [tempProfile, setTempProfile] = useState<BusinessProfileForm>(profile);
   const [editing, setEditing] = useState(false);
@@ -184,7 +266,8 @@ export default function BusinessSettingsPage() {
           if (sl && typeof sl === 'object' && Object.keys(sl).length > 0) {
             const arr: SocialLink[] = Object.entries(sl).map(([platform, value], i) => ({
               id: `srv-${i}`,
-              platform: (PLATFORM_OPTIONS.find((p) => p.id === platform)?.id || 'custom') as PlatformId,
+              platform: (PLATFORM_OPTIONS.find((p) => p.id === platform)?.id ||
+                'custom') as PlatformId,
               customName: platform,
               value: String(value),
             }));
@@ -214,7 +297,9 @@ export default function BusinessSettingsPage() {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   /* ── Save registration / KYC details ─────────────────────────── */
@@ -259,7 +344,11 @@ export default function BusinessSettingsPage() {
       amenityDetails: amenityDetails || {},
     });
     setSavingHotel(false);
-    setHotelMsg(res.error ? res.error : 'Hotel details saved. Changing star rating or amenities does not affect an already-active listing charge until renewal.');
+    setHotelMsg(
+      res.error
+        ? res.error
+        : 'Hotel details saved. Changing star rating or amenities does not affect an already-active listing charge until renewal.',
+    );
   };
 
   /* ── Save business profile ───────────────────────────────────── */
@@ -350,8 +439,14 @@ export default function BusinessSettingsPage() {
 
   /* ── Logo upload (business-media is a public bucket) ──────────────── */
   const handleLogoUpload = async (file: File) => {
-    if (!business?.id) { setErrMsg('Save your business profile first.'); return; }
-    if (!file.type.startsWith('image/')) { setErrMsg('Logo must be an image.'); return; }
+    if (!business?.id) {
+      setErrMsg('Save your business profile first.');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setErrMsg('Logo must be an image.');
+      return;
+    }
     setLogoUploading(true);
     setErrMsg('');
     try {
@@ -359,9 +454,14 @@ export default function BusinessSettingsPage() {
         '/v1/storage/upload-url',
         { category: 'logo', filename: file.name, mimeType: file.type, entityId: business.id },
       );
-      if (signed.error || !signed.data?.uploadUrl) throw new Error(signed.error || 'Upload URL failed');
+      if (signed.error || !signed.data?.uploadUrl)
+        throw new Error(signed.error || 'Upload URL failed');
       const { uploadUrl, fileKey, bucket } = signed.data;
-      const put = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+      const put = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
       if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
       // business-media is public → deterministic public URL from the signed host.
       const publicUrl = `${new URL(uploadUrl).origin}/storage/v1/object/public/${bucket}/${fileKey}`;
@@ -408,7 +508,10 @@ export default function BusinessSettingsPage() {
   return (
     <BusinessLayout>
       <div className="mx-auto max-w-4xl space-y-8">
-        <PageHeader title="Settings" description="Your public profile, social links, brand and registration details.">
+        <PageHeader
+          title="Settings"
+          description="Your public profile, social links, brand and registration details."
+        >
           <SectionNav
             sections={[
               { id: 'profile', label: 'Profile' },
@@ -420,7 +523,6 @@ export default function BusinessSettingsPage() {
           />
         </PageHeader>
 
-
         {/* Business Logo */}
         <Card id="profile" className="scroll-mt-28 p-6">
           <h2 className="text-base font-bold text-foreground flex items-center gap-2 mb-5">
@@ -429,24 +531,43 @@ export default function BusinessSettingsPage() {
           <div className="flex items-center gap-5 flex-wrap">
             <div className="h-20 w-20 rounded-2xl border border-border bg-secondary/60 overflow-hidden flex items-center justify-center shrink-0">
               {logoUrl ? (
-                <ResponsiveImage src={logoUrl} alt="Business logo" ratio="1" sizes="128px" className="h-full w-full" imgClassName="object-contain" />
+                <ResponsiveImage
+                  src={logoUrl}
+                  alt="Business logo"
+                  ratio="1"
+                  sizes="128px"
+                  className="h-full w-full"
+                  imgClassName="object-contain"
+                />
               ) : (
                 <Building2 className="h-8 w-8 text-muted-foreground" />
               )}
             </div>
             <div className="space-y-2">
-              <label className={`inline-flex h-11 items-center gap-2 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors ${logoUploading ? 'opacity-60 pointer-events-none' : 'cursor-pointer'}`}>
-                {logoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              <label
+                className={`inline-flex h-11 items-center gap-2 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors ${logoUploading ? 'opacity-60 pointer-events-none' : 'cursor-pointer'}`}
+              >
+                {logoUploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4" />
+                )}
                 {logoUrl ? 'Replace Logo' : 'Upload Logo'}
                 <input
                   type="file"
                   accept="image/*"
                   className="hidden"
                   disabled={logoUploading}
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); e.target.value = ''; }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleLogoUpload(f);
+                    e.target.value = '';
+                  }}
                 />
               </label>
-              <p className="text-xs text-muted-foreground">PNG, JPG or WebP. Shown on your storefront and listing cards.</p>
+              <p className="text-xs text-muted-foreground">
+                PNG, JPG or WebP. Shown on your storefront and listing cards.
+              </p>
             </div>
           </div>
         </Card>
@@ -460,7 +581,11 @@ export default function BusinessSettingsPage() {
             </h2>
             {!editing ? (
               <Button
-                onClick={() => { setTempProfile(profile); setEditing(true); setErrMsg(''); }}
+                onClick={() => {
+                  setTempProfile(profile);
+                  setEditing(true);
+                  setErrMsg('');
+                }}
                 variant="outline"
                 size="sm"
                 className="h-10 rounded-xl border-border text-foreground gap-1.5 cursor-pointer hover:bg-secondary"
@@ -475,11 +600,19 @@ export default function BusinessSettingsPage() {
                   size="sm"
                   className="h-10 rounded-xl bg-success hover:bg-success text-white gap-1.5 cursor-pointer disabled:opacity-60"
                 >
-                  {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                  {saving ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Check className="h-3.5 w-3.5" />
+                  )}
                   Save
                 </Button>
                 <Button
-                  onClick={() => { setTempProfile(profile); setEditing(false); setErrMsg(''); }}
+                  onClick={() => {
+                    setTempProfile(profile);
+                    setEditing(false);
+                    setErrMsg('');
+                  }}
                   variant="outline"
                   size="sm"
                   className="h-10 w-10 rounded-xl border-border text-foreground cursor-pointer hover:bg-secondary"
@@ -491,17 +624,21 @@ export default function BusinessSettingsPage() {
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
-            {([
-              { label: 'Business Name', key: 'businessName', icon: Building2 },
-              { label: 'Business Email', key: 'businessEmail', icon: Mail },
-              { label: 'Business Phone', key: 'businessPhone', icon: Phone },
-              { label: 'Owner Name', key: 'ownerName', icon: User },
-              { label: 'Owner Phone', key: 'ownerPhone', icon: Phone },
-              { label: 'City', key: 'city', icon: MapPin },
-              { label: 'State', key: 'state', icon: MapPin },
-            ] as const).map(({ label, key, icon: Icon }) => (
+            {(
+              [
+                { label: 'Business Name', key: 'businessName', icon: Building2 },
+                { label: 'Business Email', key: 'businessEmail', icon: Mail },
+                { label: 'Business Phone', key: 'businessPhone', icon: Phone },
+                { label: 'Owner Name', key: 'ownerName', icon: User },
+                { label: 'Owner Phone', key: 'ownerPhone', icon: Phone },
+                { label: 'City', key: 'city', icon: MapPin },
+                { label: 'State', key: 'state', icon: MapPin },
+              ] as const
+            ).map(({ label, key, icon: Icon }) => (
               <div key={key}>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">{label}</label>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                  {label}
+                </label>
                 {editing ? (
                   <Input
                     value={tempProfile[key]}
@@ -517,7 +654,9 @@ export default function BusinessSettingsPage() {
               </div>
             ))}
             <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-muted-foreground block mb-1.5">Address</label>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                Address
+              </label>
               {editing ? (
                 <Input
                   value={tempProfile.address}
@@ -533,7 +672,9 @@ export default function BusinessSettingsPage() {
 
             {/* Description */}
             <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-muted-foreground block mb-1.5">Short Description</label>
+              <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                Short Description
+              </label>
               {editing ? (
                 <textarea
                   value={tempProfile.description}
@@ -543,7 +684,9 @@ export default function BusinessSettingsPage() {
                   className="w-full rounded-xl border border-border bg-secondary/60 text-foreground text-sm p-3 focus:border-primary resize-none"
                 />
               ) : (
-                <div className="px-3 py-2.5 rounded-xl bg-secondary/60 border border-border text-sm text-foreground whitespace-pre-wrap">{profile.description || '—'}</div>
+                <div className="px-3 py-2.5 rounded-xl bg-secondary/60 border border-border text-sm text-foreground whitespace-pre-wrap">
+                  {profile.description || '—'}
+                </div>
               )}
             </div>
 
@@ -554,21 +697,40 @@ export default function BusinessSettingsPage() {
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {tags.map((t) => (
-                  <span key={t} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-soft text-brand-soft-foreground border border-primary/20 text-xs font-medium">
-                    <Tag className="h-3 w-3" />{t}
+                  <span
+                    key={t}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-soft text-brand-soft-foreground border border-primary/20 text-xs font-medium"
+                  >
+                    <Tag className="h-3 w-3" />
+                    {t}
                     {editing && (
-                      <button type="button" onClick={() => removeTag(t)} className="ml-0.5 hover:text-primary/70 cursor-pointer"><X className="h-3 w-3" /></button>
+                      <button
+                        type="button"
+                        onClick={() => removeTag(t)}
+                        className="ml-0.5 hover:text-primary/70 cursor-pointer"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     )}
                   </span>
                 ))}
-                {tags.length === 0 && !editing && <span className="text-sm text-muted-foreground">—</span>}
+                {tags.length === 0 && !editing && (
+                  <span className="text-sm text-muted-foreground">—</span>
+                )}
               </div>
               {editing && (
                 <Input
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(tagInput); } }}
-                  onBlur={() => { if (tagInput.trim()) addTag(tagInput); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault();
+                      addTag(tagInput);
+                    }
+                  }}
+                  onBlur={() => {
+                    if (tagInput.trim()) addTag(tagInput);
+                  }}
                   placeholder="Type a tag, press Enter"
                   className="mt-2 rounded-xl border-border bg-secondary/60 text-foreground text-sm focus:border-primary"
                 />
@@ -578,10 +740,16 @@ export default function BusinessSettingsPage() {
             {/* Halal — food businesses only */}
             {isFood && (
               <div className="sm:col-span-2">
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Halal Status</label>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                  Halal Status
+                </label>
                 {editing ? (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 max-w-md">
-                    {[{ v: '', l: 'Not specified' }, { v: 'HALAL', l: 'Halal' }, { v: 'NON_HALAL', l: 'Non-Halal' }].map((o) => (
+                    {[
+                      { v: '', l: 'Not specified' },
+                      { v: 'HALAL', l: 'Halal' },
+                      { v: 'NON_HALAL', l: 'Non-Halal' },
+                    ].map((o) => (
                       <button
                         type="button"
                         key={o.l}
@@ -594,7 +762,11 @@ export default function BusinessSettingsPage() {
                   </div>
                 ) : (
                   <div className="px-3 py-2.5 rounded-xl bg-secondary/60 border border-border text-sm text-foreground">
-                    {halalStatus === 'HALAL' ? 'Halal' : halalStatus === 'NON_HALAL' ? 'Non-Halal' : '—'}
+                    {halalStatus === 'HALAL'
+                      ? 'Halal'
+                      : halalStatus === 'NON_HALAL'
+                        ? 'Non-Halal'
+                        : '—'}
                   </div>
                 )}
               </div>
@@ -661,23 +833,32 @@ export default function BusinessSettingsPage() {
           </div>
 
           {addingLink && (
-            <form onSubmit={handleAddLink} className="mt-4 p-4 rounded-xl border border-border bg-secondary/60 space-y-3 ui-pop">
+            <form
+              onSubmit={handleAddLink}
+              className="mt-4 p-4 rounded-xl border border-border bg-secondary/60 space-y-3 ui-pop"
+            >
               <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">Platform</label>
+                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                  Platform
+                </label>
                 <select
                   value={newPlatform}
                   onChange={(e) => setNewPlatform(e.target.value as PlatformId)}
                   className="w-full h-9 rounded-xl border border-border bg-card text-sm text-foreground px-3 cursor-pointer"
                 >
                   {PLATFORM_OPTIONS.map((p) => (
-                    <option key={p.id} value={p.id}>{p.label}</option>
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
                   ))}
                 </select>
               </div>
 
               {newPlatform === 'custom' && (
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Platform Name</label>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">
+                    Platform Name
+                  </label>
                   <Input
                     value={newCustomName}
                     onChange={(e) => setNewCustomName(e.target.value)}
@@ -710,7 +891,11 @@ export default function BusinessSettingsPage() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" className="flex-1 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold cursor-pointer">
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="flex-1 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold cursor-pointer"
+                >
                   Add
                 </Button>
               </div>
@@ -727,16 +912,29 @@ export default function BusinessSettingsPage() {
         <div id="details" className="scroll-mt-28 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-foreground tracking-tight">Registration details</h2>
-              <p className="text-sm text-muted-foreground">Company, PAN/GST, contacts, and category status.</p>
+              <h2 className="text-lg font-bold text-foreground tracking-tight">
+                Registration details
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Company, PAN/GST, contacts, and category status.
+              </p>
             </div>
             <div className="flex items-center gap-3">
               {regMsg && (
-                <span className={cn('text-xs font-medium', /saved/i.test(regMsg) ? 'text-success' : 'text-destructive')}>
+                <span
+                  className={cn(
+                    'text-xs font-medium',
+                    /saved/i.test(regMsg) ? 'text-success' : 'text-destructive',
+                  )}
+                >
                   {regMsg}
                 </span>
               )}
-              <Button onClick={handleSaveReg} disabled={savingReg || !business} className="gap-1.5 shrink-0">
+              <Button
+                onClick={handleSaveReg}
+                disabled={savingReg || !business}
+                className="gap-1.5 shrink-0"
+              >
                 {savingReg ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Save details
               </Button>
@@ -756,18 +954,30 @@ export default function BusinessSettingsPage() {
           <div id="hotel" className="scroll-mt-28 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-bold text-foreground tracking-tight">Hotel classification & amenities</h2>
+                <h2 className="text-lg font-bold text-foreground tracking-tight">
+                  Hotel classification & amenities
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                  Star classification sets your base listing charge; each amenity adds ₹{ADDON_PRICE.toLocaleString('en-IN')} recurring.
+                  Star classification sets your base listing charge; each amenity adds ₹
+                  {ADDON_PRICE.toLocaleString('en-IN')} recurring.
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 {hotelMsg && (
-                  <span className={cn('text-xs font-medium max-w-xs text-right', /saved/i.test(hotelMsg) ? 'text-success' : 'text-destructive')}>
+                  <span
+                    className={cn(
+                      'text-xs font-medium max-w-xs text-right',
+                      /saved/i.test(hotelMsg) ? 'text-success' : 'text-destructive',
+                    )}
+                  >
                     {hotelMsg}
                   </span>
                 )}
-                <Button onClick={handleSaveHotel} disabled={savingHotel || !business} className="gap-1.5 shrink-0">
+                <Button
+                  onClick={handleSaveHotel}
+                  disabled={savingHotel || !business}
+                  className="gap-1.5 shrink-0"
+                >
                   {savingHotel ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                   Save details
                 </Button>
@@ -785,11 +995,15 @@ export default function BusinessSettingsPage() {
                       onClick={() => setHotelStarRating(star)}
                       className={cn(
                         'p-3 rounded-xl border text-center transition cursor-pointer',
-                        hotelStarRating === star ? 'border-primary bg-primary/10' : 'border-border hover:border-border',
+                        hotelStarRating === star
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-border',
                       )}
                     >
                       <div className="text-sm font-extrabold text-foreground">{star}★</div>
-                      <div className="text-xs text-muted-foreground mt-1">₹{STAR_PRICING[star].toLocaleString('en-IN')}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        ₹{STAR_PRICING[star].toLocaleString('en-IN')}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -798,7 +1012,8 @@ export default function BusinessSettingsPage() {
               <div>
                 <h3 className="text-sm font-bold text-foreground mb-2">Amenities</h3>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Select each service you offer, then add the specific rooms, halls, menus, etc. Guests see these details on your public page.
+                  Select each service you offer, then add the specific rooms, halls, menus, etc.
+                  Guests see these details on your public page.
                 </p>
                 <AmenityDetailsEditor
                   amenities={hotelAmenities}
@@ -813,10 +1028,13 @@ export default function BusinessSettingsPage() {
                 return (
                   <div className="rounded-xl border border-border p-4 flex items-center justify-between">
                     <div className="text-xs text-muted-foreground">
-                      Base ₹{charge.base.toLocaleString('en-IN')} + {charge.selectedCount} amenit{charge.selectedCount === 1 ? 'y' : 'ies'} × ₹{ADDON_PRICE.toLocaleString('en-IN')}
+                      Base ₹{charge.base.toLocaleString('en-IN')} + {charge.selectedCount} amenit
+                      {charge.selectedCount === 1 ? 'y' : 'ies'} × ₹
+                      {ADDON_PRICE.toLocaleString('en-IN')}
                     </div>
                     <div className="text-lg font-extrabold text-foreground">
-                      ₹{charge.total.toLocaleString('en-IN')}<span className="text-xs font-normal text-muted-foreground">/yr</span>
+                      ₹{charge.total.toLocaleString('en-IN')}
+                      <span className="text-xs font-normal text-muted-foreground">/yr</span>
                     </div>
                   </div>
                 );
@@ -824,7 +1042,6 @@ export default function BusinessSettingsPage() {
             </Card>
           </div>
         )}
-
       </div>
     </BusinessLayout>
   );

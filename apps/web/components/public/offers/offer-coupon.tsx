@@ -4,7 +4,16 @@ import { useI18n } from '@/lib/i18n/provider';
 
 import { useEffect, useState } from 'react';
 import { getOpenStatus } from '@saas/types';
-import { Clock, Eye, MapPin, Phone, ShoppingBag, Sparkles, Tag, UtensilsCrossed } from 'lucide-react';
+import {
+  Clock,
+  Eye,
+  MapPin,
+  Phone,
+  ShoppingBag,
+  Sparkles,
+  Tag,
+  UtensilsCrossed,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ReportButton } from '@/components/report-button';
 import { StatusPill } from '@/components/common/status-pill';
@@ -14,7 +23,13 @@ import type { Offer } from './offer-model';
 import { useSecondTick } from './offer-clock';
 
 /** SVG tick that draws itself (`ui-check`) when `animate`; static otherwise. */
-export function TickIcon({ className, animate = false }: { className?: string; animate?: boolean }) {
+export function TickIcon({
+  className,
+  animate = false,
+}: {
+  className?: string;
+  animate?: boolean;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -80,7 +95,13 @@ function ExpiryLine({ expiresAt }: { expiresAt: string }) {
   let label: string;
   let urgent = false;
   if (now == null) {
-    label = t('offer.endsOn', { date: new Date(end).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }) });
+    label = t('offer.endsOn', {
+      date: new Date(end).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        timeZone: 'Asia/Kolkata',
+      }),
+    });
   } else {
     const ms = end - now;
     urgent = ms < 3 * DAY;
@@ -90,7 +111,12 @@ function ExpiryLine({ expiresAt }: { expiresAt: string }) {
   }
 
   return (
-    <div className={cn('flex items-center gap-1.5 text-xs', urgent ? 'font-medium text-warning-soft-foreground' : 'text-muted-foreground')}>
+    <div
+      className={cn(
+        'flex items-center gap-1.5 text-xs',
+        urgent ? 'font-medium text-warning-soft-foreground' : 'text-muted-foreground',
+      )}
+    >
       <Clock className="h-3.5 w-3.5 shrink-0" />
       <span suppressHydrationWarning className="tabular-nums">
         {label}
@@ -193,12 +219,16 @@ export function OfferCoupon({
           <div className="p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h3 className="line-clamp-2 break-words font-semibold leading-snug text-foreground">{offer.title}</h3>
+                <h3 className="line-clamp-2 break-words font-semibold leading-snug text-foreground">
+                  {offer.title}
+                </h3>
                 {offer.business && (
                   <p className="mt-0.5 flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
                     {offer.isPlatform && <MapPin className="h-3.5 w-3.5 shrink-0" />}
                     <span className="truncate">{offer.business}</span>
-                    {!offer.isPlatform && offer.city && <span className="shrink-0">· {offer.city}</span>}
+                    {!offer.isPlatform && offer.city && (
+                      <span className="shrink-0">· {offer.city}</span>
+                    )}
                   </p>
                 )}
               </div>
@@ -208,7 +238,9 @@ export function OfferCoupon({
                   key={claimed ? 'claimed' : 'discount'}
                   className={cn(
                     'max-w-[45%] shrink-0 break-words rounded-xl px-3 py-1 text-right text-lg font-bold leading-tight',
-                    claimed ? 'bg-success-soft text-success-soft-foreground' : 'bg-brand-soft text-brand-soft-foreground',
+                    claimed
+                      ? 'bg-success-soft text-success-soft-foreground'
+                      : 'bg-brand-soft text-brand-soft-foreground',
                     justClaimed && 'ui-pop',
                   )}
                 >
@@ -218,7 +250,9 @@ export function OfferCoupon({
                     <>
                       {offer.discountLabel}
                       {!offer.isPlatform && (
-                        <span className="block text-xs font-semibold uppercase leading-3 tracking-wide opacity-80">off</span>
+                        <span className="block text-xs font-semibold uppercase leading-3 tracking-wide opacity-80">
+                          off
+                        </span>
                       )}
                     </>
                   )}
@@ -239,15 +273,23 @@ export function OfferCoupon({
               )}
               {(offer.fulfilment === 'DINE_IN' || offer.fulfilment === 'TAKEAWAY') && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                  {offer.fulfilment === 'DINE_IN' ? <UtensilsCrossed className="h-3 w-3" /> : <ShoppingBag className="h-3 w-3" />}
+                  {offer.fulfilment === 'DINE_IN' ? (
+                    <UtensilsCrossed className="h-3 w-3" />
+                  ) : (
+                    <ShoppingBag className="h-3 w-3" />
+                  )}
                   {offer.fulfilment === 'DINE_IN' ? 'Dine-in only' : 'Takeaway only'}
                 </span>
               )}
-              {!offer.isPlatform && !!offer.operatingHours && <OpenPill hours={offer.operatingHours} />}
+              {!offer.isPlatform && !!offer.operatingHours && (
+                <OpenPill hours={offer.operatingHours} />
+              )}
             </div>
 
             {offer.description && (
-              <p className="mt-3 line-clamp-2 break-words text-sm text-muted-foreground">{offer.description}</p>
+              <p className="mt-3 line-clamp-2 break-words text-sm text-muted-foreground">
+                {offer.description}
+              </p>
             )}
             {offer.expiresAt && (
               <div className="mt-3">
@@ -265,7 +307,11 @@ export function OfferCoupon({
           <div aria-hidden className="mx-3 border-t border-dashed border-border" />
           <div className="flex flex-wrap items-center gap-2 px-4 pb-4 pt-3 sm:px-5">
             {primary && <div className="w-full">{primary}</div>}
-            <Button onClick={() => onView(offer)} variant="outline" className="ui-press h-11 flex-1 gap-1.5 rounded-xl">
+            <Button
+              onClick={() => onView(offer)}
+              variant="outline"
+              className="ui-press h-11 flex-1 gap-1.5 rounded-xl"
+            >
               <Eye className="h-4 w-4" /> View details
             </Button>
             <ReportButton
