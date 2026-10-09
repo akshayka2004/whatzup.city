@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import Link from 'next/link';
 import { CheckCircle2, MapPin, Search, Star, Store, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,6 +35,7 @@ export function HomeHero({
   city, onCityChange, searchQuery, onSearchQueryChange, onSearch,
   featuredBusiness, featuredOffer, announcement, panelLoading,
 }: HeroProps) {
+  const { t } = useI18n();
   const identity = getCityIdentity(city);
   const bizAvg = Number(featuredBusiness?.averageRating ?? featuredBusiness?.avgRating ?? 0);
   const bizReviews = Number(featuredBusiness?.totalReviews ?? featuredBusiness?.reviewCount ?? 0);
@@ -81,10 +84,11 @@ export function HomeHero({
 
           <div className="space-y-2.5">
             <h1 className="text-display text-foreground">
-              Find what&apos;s good in <span className="text-primary">{city || 'Kerala'}</span>
+              {t('home.hero.lead')} <span className="text-primary">{city || 'Kerala'}</span>
+              {t('home.hero.trail')}
             </h1>
             <p className="hidden max-w-md text-body text-muted-foreground sm:block">
-              Verified businesses, live offers, events and civic updates — all in one place.
+              {t('home.hero.subtitle')}
             </p>
           </div>
 
@@ -100,13 +104,13 @@ export function HomeHero({
             <input
               value={searchQuery}
               onChange={(e) => onSearchQueryChange(e.target.value)}
-              placeholder="Restaurants, doctors, shops…"
+              placeholder={t('home.hero.placeholder')}
               aria-label="Search businesses"
               className="h-10 min-w-0 flex-1 bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
             />
             <Button type="submit" shape="pill" className="h-10 shrink-0 px-5" aria-label="Search">
               <Search className="sm:hidden" />
-              <span className="hidden sm:inline">Search</span>
+              <span className="hidden sm:inline">{t('action.search')}</span>
             </Button>
           </form>
 
@@ -114,10 +118,10 @@ export function HomeHero({
             <Select value={city || 'all'} onValueChange={onCityChange}>
               <SelectTrigger aria-label="Your city" className="h-10 w-auto min-w-36 gap-1.5 rounded-full border-border-strong/60 bg-card text-sm">
                 <MapPin className="size-4 text-primary" aria-hidden />
-                <SelectValue placeholder="All cities" />
+                <SelectValue placeholder={t('home.allCities')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All cities</SelectItem>
+                <SelectItem value="all">{t('home.allCities')}</SelectItem>
                 {KERALA_CITIES.map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}

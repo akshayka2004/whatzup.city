@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useEffect, useState } from 'react';
 import { getOpenStatus } from '@saas/types';
 import { Clock, Eye, MapPin, Phone, ShoppingBag, Sparkles, Tag, UtensilsCrossed } from 'lucide-react';
@@ -64,6 +66,7 @@ function formatCountdown(ms: number) {
  * the label is a fixed IST date so server HTML and hydration agree exactly.
  */
 function ExpiryLine({ expiresAt }: { expiresAt: string }) {
+  const { t } = useI18n();
   const [base, setBase] = useState<number | null>(null);
   useEffect(() => setBase(Date.now()), []);
 
@@ -77,17 +80,17 @@ function ExpiryLine({ expiresAt }: { expiresAt: string }) {
   let label: string;
   let urgent = false;
   if (now == null) {
-    label = `Ends ${new Date(end).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })}`;
+    label = t('offer.endsOn', { date: new Date(end).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' }) });
   } else {
     const ms = end - now;
     urgent = ms < 3 * DAY;
     if (ms <= 0) label = 'Ending now';
-    else if (ms < DAY) label = `Ends in ${formatCountdown(ms)}`;
-    else label = `Ends in ${Math.ceil(ms / DAY)} days`;
+    else if (ms < DAY) label = t('offer.endsIn', { time: formatCountdown(ms) });
+    else label = t('offer.endsInDays', { n: Math.ceil(ms / DAY) });
   }
 
   return (
-    <div className={cn('flex items-center gap-1.5 text-xs', urgent ? 'font-medium text-warning' : 'text-muted-foreground')}>
+    <div className={cn('flex items-center gap-1.5 text-xs', urgent ? 'font-medium text-warning-soft-foreground' : 'text-muted-foreground')}>
       <Clock className="h-3.5 w-3.5 shrink-0" />
       <span suppressHydrationWarning className="tabular-nums">
         {label}
@@ -124,6 +127,7 @@ export function OfferCoupon({
   onView: (offer: Offer) => void;
   onClaim: (offer: Offer) => void;
 }) {
+  const { t } = useI18n();
   const showBadge = claimed || !!offer.discountLabel;
   const showImage = !!offer.imageUrl || !!offer.imagePending;
 
@@ -135,7 +139,7 @@ export function OfferCoupon({
       primary = (
         <a href={`tel:${offer.phone}`} className="block">
           <Button className="ui-press h-11 w-full gap-1.5 rounded-xl">
-            <Phone className="h-4 w-4" /> Call
+            <Phone className="h-4 w-4" /> {t('offer.call')}
           </Button>
         </a>
       );
@@ -148,13 +152,13 @@ export function OfferCoupon({
           justClaimed && 'ui-pop',
         )}
       >
-        <TickIcon animate={justClaimed} className="h-4 w-4" /> Claimed
+        <TickIcon animate={justClaimed} className="h-4 w-4" /> {t('offer.claimed')}
       </div>
     );
   } else {
     primary = (
       <Button onClick={() => onClaim(offer)} className="ui-press h-11 w-full gap-1.5 rounded-xl">
-        <Sparkles className="h-4 w-4" /> Claim offer
+        <Sparkles className="h-4 w-4" /> {t('offer.claim')}
       </Button>
     );
   }

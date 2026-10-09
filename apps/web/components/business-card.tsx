@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -47,6 +49,7 @@ export function BusinessCard({
   /** Also show the street address and Instagram / website links (Search results). */
   showLinks?: boolean;
 }) {
+  const { t } = useI18n();
   const pathname = usePathname();
   const isFood = /food|restaurant|cafe|bakery|hotel/i.test(business.category?.slug || business.category?.name || '');
   const rating = business.avgRating ?? business.averageRating;
@@ -136,7 +139,7 @@ export function BusinessCard({
               <span className="inline-flex items-center gap-1.5 rounded-full bg-card/92 px-2.5 py-1 text-caption font-semibold shadow-e1 backdrop-blur-sm">
                 <span aria-hidden className={status.isOpen ? 'ui-live-dot' : 'size-2 rounded-full bg-muted-foreground/60'} />
                 <span className={status.isOpen ? 'text-success-soft-foreground' : 'text-muted-foreground'}>
-                  {status.isOpen ? 'Open' : 'Closed'}
+                  {status.isOpen ? t('card.open') : t('card.closed')}
                 </span>
               </span>
             )}

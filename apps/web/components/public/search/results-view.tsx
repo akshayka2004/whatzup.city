@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { ResponsiveImage } from '@/components/common/responsive-image';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -22,12 +24,13 @@ export type ResultsMode = 'list' | 'map';
 
 /** List / Map segmented toggle. Lives next to the result count. */
 export function ViewToggle({ value, onChange, className }: { value: ResultsMode; onChange: (v: ResultsMode) => void; className?: string }) {
+  const { t } = useI18n();
   return (
     <div role="radiogroup" aria-label="Results view" className={cn('inline-flex rounded-full border border-border bg-card p-0.5 shadow-e1', className)}>
       {(
         [
-          ['list', 'List', LayoutGrid],
-          ['map', 'Map', MapIcon],
+          ['list', t('view.list'), LayoutGrid],
+          ['map', t('view.map'), MapIcon],
         ] as const
       ).map(([k, l, Icon]) => (
         <button

@@ -9,6 +9,7 @@ import { Search, Loader2, Building2, Tag, Clock, X } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useCachedGet } from '@/lib/use-cached-get';
 import { track } from '@/lib/analytics/track';
+import { useI18n } from '@/lib/i18n/provider';
 import { categoryLabel } from '@/lib/platform-offers';
 import { GridSkeleton } from '@/components/common/skeletons';
 import { EmptyState } from '@/components/common/empty-state';
@@ -72,6 +73,7 @@ const FALLBACK_IDEAS = ['Restaurants', 'Salon', 'Hotels', 'Gifts'];
 const EMPTY_MORE = { key: '', items: [] as any[], page: 1, done: false, loading: false };
 
 function SearchContent() {
+  const { t } = useI18n();
   const { value: state, update, externalVersion } = useUrlState<SearchState>({ parse: parseSearch, apply: applySearch });
   const { recents, add: addRecent, remove: removeRecent, clear: clearRecents } = useRecentSearches();
 
@@ -317,14 +319,15 @@ function SearchContent() {
   const countLabel = (() => {
     const n = !clientOnly && total != null ? total : results.length;
     const plus = clientOnly && hasMore ? '+' : '';
-    return `${n}${plus} ${n === 1 && !plus ? 'result' : 'results'}${state.q ? ` for “${state.q}”` : ''}`;
+    const count = plus ? t('search.resultsPlus', { n }) : t(n === 1 ? 'search.result' : 'search.results', { n });
+    return state.q ? t('search.for', { count, q: state.q }) : count;
   })();
 
   const rememberSearch = () => addRecent(state.q);
 
   return (
     <div className="mx-auto max-w-6xl">
-      <h1 className="mb-3 text-2xl font-bold sm:text-3xl">Search Businesses</h1>
+      <h1 className="mb-3 text-2xl font-bold sm:text-3xl">{t('search.title')}</h1>
 
       {/* Sticky: search box + filter chips stay in reach while the results scroll */}
       <div className="sticky top-0 z-30 -mx-4 border-b border-border/60 bg-background/95 px-4 pb-2 pt-2">
@@ -343,7 +346,7 @@ function SearchContent() {
               aria-controls="search-suggestions"
               aria-activedescendant={activeSugg >= 0 ? optId(activeSugg) : undefined}
               onKeyDown={onSearchKeyDown}
-              placeholder="Search by name, category, product, or offer…"
+              placeholder={t('search.placeholder')}
               value={searchTerm}
               onChange={(e) => {
                 skipSuggest.current = null;
@@ -371,13 +374,13 @@ function SearchContent() {
             {showRecents && (
               <div className="ui-pop absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
                 <div className="flex items-center justify-between px-4 pb-1 pt-3">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Recent searches</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t('search.recent')}</p>
                   <button
                     type="button"
                     onClick={clearRecents}
                     className="-my-2 min-h-11 cursor-pointer px-1 text-xs font-medium text-primary hover:underline"
                   >
-                    Clear
+                    {t('search.clear')}
                   </button>
                 </div>
                 {recents.map((r) => (
@@ -414,7 +417,7 @@ function SearchContent() {
               >
                 {suggestions.businesses.length > 0 && (
                   <div>
-                    <p className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Businesses</p>
+                    <p className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t('search.businesses')}</p>
                     {suggestions.businesses.map((b, i) => (
                       <Link
                         key={b.id}
@@ -439,7 +442,7 @@ function SearchContent() {
                 )}
                 {suggestions.categories.length > 0 && (
                   <div>
-                    <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Categories</p>
+                    <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t('search.categories')}</p>
                     {suggestions.categories.map((cat, j) => {
                       const i = suggestions.businesses.length + j;
                       return (
@@ -461,7 +464,7 @@ function SearchContent() {
                 )}
                 {suggestions.subcategories.filter(Boolean).length > 0 && (
                   <div>
-                    <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Subcategories</p>
+                    <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t('search.subcategories')}</p>
                     {subs.map((sub, j) => {
                       const i = suggestions.businesses.length + suggestions.categories.length + j;
                       return (
@@ -494,7 +497,7 @@ function SearchContent() {
 
       <div className="mb-3 mt-3 flex min-h-10 items-center justify-between gap-3">
         <p aria-live="polite" className="text-sm text-muted-foreground">
-          {loading ? 'Searching…' : failed ? '' : countLabel}
+          {loading ? t('search.searching') : failed ? '' : countLabel}
         </p>
         <ViewToggle value={state.view} onChange={(view) => update({ view })} />
       </div>
@@ -526,34 +529,34 @@ function SearchContent() {
       ) : failed ? (
         <EmptyState
           icon={Search}
-          title="We couldn't load results"
-          description="Check your connection and try again."
-          action={{ label: 'Try again', onClick: () => void first.refresh() }}
+          title={t('search.loadFailed')}
+          description={t('search.loadFailedHint')}
+          action={{ label: t('search.tryAgain'), onClick: () => void first.refresh() }}
         />
       ) : results.length === 0 ? (
         items.length > 0 || hasMore ? (
           // Results exist, but the active filters hide all of them.
           <EmptyState
             icon={Search}
-            title="No matches with these filters"
+            title={t('search.noMatchFilters')}
             description={
               state.open
                 ? 'Only businesses with listed opening hours can be matched to "Open now".'
-                : 'Try removing a filter to see more businesses.'
+                : t('search.removeFilterHint')
             }
-            action={{ label: 'Clear filters', onClick: clearAllFilters }}
+            action={{ label: t('search.clearFilters'), onClick: clearAllFilters }}
             secondary={hasMore ? { label: 'Load more results', onClick: () => void loadMore() } : undefined}
           />
         ) : platformResults.length === 0 ? (
           <div>
             <EmptyState
               icon={Search}
-              title="No results found"
-              description="Try a different search term or city."
-              action={state.city ? { label: 'Search all cities', onClick: () => update({ city: '' }) } : undefined}
+              title={t('search.noResults')}
+              description={t('search.noResultsHint')}
+              action={state.city ? { label: t('search.allCitiesCta'), onClick: () => update({ city: '' }) } : undefined}
             />
             <div className="mt-5 text-center">
-              <p className="mb-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Popular right now</p>
+              <p className="mb-2.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t('search.popular')}</p>
               <div className="flex flex-wrap justify-center gap-2">
                 {ideas.map((idea) => (
                   <button
@@ -583,10 +586,10 @@ function SearchContent() {
               >
                 {extra.loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+                    <Loader2 className="h-4 w-4 animate-spin" /> {t('search.loading')}
                   </>
                 ) : (
-                  'Show more results'
+                  t('search.showMore')
                 )}
               </Button>
             </div>

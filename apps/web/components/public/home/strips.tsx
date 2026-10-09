@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { type ReactNode } from 'react';
 import { BusinessCard } from '@/components/business-card';
 import Link from 'next/link';
@@ -92,12 +94,13 @@ function SkeletonSlots({ width, children, count = 4 }: { width: string; children
 /* ────────────── trending offers ────────────── */
 
 export function TrendingOffers({ body, loading }: { body: unknown; loading: boolean }) {
+  const { t } = useI18n();
   const items = listOf(body).slice(0, 8);
   const W = 'w-[78%] sm:w-72';
   return (
     <Strip
-      title="Trending Offers"
-      subtitle="Most-claimed deals from local businesses"
+      title={t('home.trendingOffers')}
+      subtitle={t('home.trendingOffersSub')}
       href="/offers"
       items={items}
       loading={loading}
@@ -157,13 +160,14 @@ export function TrendingOffers({ body, loading }: { body: unknown; loading: bool
 /* ────────────── trending businesses ────────────── */
 
 export function TrendingBusinesses({ body, loading }: { body: unknown; loading: boolean }) {
+  const { t } = useI18n();
   const items = listOf(body).slice(0, 8);
   const W = 'w-[72%] sm:w-64';
 
   return (
     <Strip
-      title="Trending Businesses"
-      subtitle="Local favourites getting the most attention"
+      title={t('home.trendingBusinesses')}
+      subtitle={t('home.trendingBusinessesSub')}
       href="/search"
       items={items}
       loading={loading}
@@ -182,12 +186,13 @@ export function TrendingBusinesses({ body, loading }: { body: unknown; loading: 
 /* ────────────── upcoming events ────────────── */
 
 export function UpcomingEvents({ body, loading }: { body: unknown; loading: boolean }) {
+  const { t } = useI18n();
   const items = listOf(body).slice(0, 6);
   const W = 'w-[78%] sm:w-72';
   return (
     <Strip
-      title="Upcoming Events"
-      subtitle="What's on across Kerala"
+      title={t('home.events')}
+      subtitle={t('home.eventsSub')}
       href="/events"
       items={items}
       loading={loading}
@@ -249,12 +254,13 @@ export function UpcomingEvents({ body, loading }: { body: unknown; loading: bool
 /* ────────────── now showing (movies) ────────────── */
 
 export function NowShowing({ body, loading }: { body: unknown; loading: boolean }) {
+  const { t } = useI18n();
   const items = listOf(body).slice(0, 6);
   const W = 'w-36 sm:w-40';
   return (
     <Strip
-      title="Now Showing"
-      subtitle="Movies in theatres now"
+      title={t('home.movies')}
+      subtitle={t('home.moviesSub')}
       href="/movies"
       items={items}
       loading={loading}

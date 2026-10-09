@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useState } from 'react';
 import { BadgeCheck, Clock, SlidersHorizontal, Star, Tag, X } from 'lucide-react';
 import {
@@ -66,6 +68,7 @@ export function FilterBar({
   defaultSort?: SortKey;
   className?: string;
 }) {
+  const { t } = useI18n();
   const [sheet, setSheet] = useState(false);
   const active = countActive(filters, keysFor(show), defaultSort);
   const showSort = show.sorts.length > 1;
@@ -104,7 +107,7 @@ export function FilterBar({
             className={chipClass(filters.open)}
           >
             <Clock className="h-4 w-4" />
-            Open now
+            {t('filter.openNow')}
           </button>
         )}
         {show.rating && (
