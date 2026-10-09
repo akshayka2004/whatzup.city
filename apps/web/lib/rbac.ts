@@ -165,11 +165,11 @@ export function isBusinessRole(role: string): boolean {
     UserRole.BUSINESS_MODERATOR,
     UserRole.BUSINESS_STAFF,
     UserRole.BUSINESS_ADMIN,
-  ].includes(role as UserRoleType);
+  ].some((r) => r === role);
 }
 
 export function isPlatformAdmin(role: string): boolean {
-  return [UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN].includes(role as UserRoleType);
+  return ([UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN] as string[]).includes(role);
 }
 
 export function getPermissions(role: string): string[] {
@@ -185,7 +185,7 @@ export function getRoleLabel(role: string): string {
     [UserRole.BUSINESS_MODERATOR]: 'Moderator',
     [UserRole.BUSINESS_ADMIN]: 'Business Owner',
     [UserRole.GOVERNMENT_ADMIN]: 'Government',
-    [UserRole.INFLUENCER]: 'Influencer / Content Creator',
+    INFLUENCER: 'Influencer / Content Creator',
     [UserRole.USER]: 'Customer',
   };
   return labels[role] ?? role;

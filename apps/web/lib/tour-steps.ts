@@ -1,4 +1,4 @@
-import type { TourStep } from '@/components/onboarding/onboarding-tour';
+import type { TourStep } from '@/components/onboarding/platform-tour';
 
 export const CUSTOMER_TOUR_STEPS: TourStep[] = [
   {

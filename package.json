@@ -17,7 +17,7 @@
     "clean": "turbo run clean && rimraf node_modules",
     "lint:design": "node scripts/check-design.js",
     "lint:design:strict": "node scripts/check-design.js --strict",
-    "db:check-limits":"node scripts/check-column-limits.js --strict",
+    "db:check-limits": "node scripts/check-column-limits.js --strict",
     "security:tenant-scope": "node scripts/check-tenant-scope.js",
     "security:tenant-scope:strict": "node scripts/check-tenant-scope.js --strict",
     "security:audit": "pnpm audit --audit-level=high",
@@ -34,5 +34,10 @@
     "rimraf": "^5.0.5",
     "turbo": "^2.0.0"
   },
-  "packageManager": "pnpm@9.1.0"
+  "packageManager": "pnpm@9.1.0",
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.2.18"
+    }
+  }
 }

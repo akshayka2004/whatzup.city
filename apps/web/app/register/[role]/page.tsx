@@ -124,10 +124,11 @@ export default function RoleOnboardingWizard() {
       setLoading(false);
       return;
     }
+    const id: string = entityId;
 
     async function loadProgress() {
       try {
-        const res = await universalOnboardingService.getProgress(entityId);
+        const res = await universalOnboardingService.getProgress(id);
         if (res.data && !res.error) {
           const entity = res.data.entity;
           const progress = res.data.onboardingProgress;
@@ -185,7 +186,7 @@ export default function RoleOnboardingWizard() {
           }
 
           // Load documents
-          const docRes = await universalOnboardingService.getDocuments(entityId);
+          const docRes = await universalOnboardingService.getDocuments(id);
           if (docRes.data) {
             setUploadedDocs(docRes.data);
           }
@@ -391,7 +392,7 @@ export default function RoleOnboardingWizard() {
       setSuccess('Verification document registered successfully!');
 
       // Reload document lists
-      const docRes = await universalOnboardingService.getDocuments(entityId);
+      const docRes = await universalOnboardingService.getDocuments(entityId!);
       if (docRes.data) {
         setUploadedDocs(docRes.data);
       }
