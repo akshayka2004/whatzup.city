@@ -17,6 +17,8 @@ const SHEET_COPY: Record<NavArea, string> = {
   staff: 'Platform data-entry workspace',
   admin: 'Approvals, payments and moderation',
   'super-admin': 'Platform control',
+  civic: 'Publish to your community',
+  government: 'Official notices',
 };
 
 /**

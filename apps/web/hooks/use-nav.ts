@@ -21,6 +21,8 @@ export function useNavArea(layoutArea?: NavArea): NavArea {
   if (layoutArea) return layoutArea;
   if (pathname.startsWith('/dashboard')) return 'business';
   if (pathname.startsWith('/staff')) return 'staff';
+  if (pathname.startsWith('/civic')) return 'civic';
+  if (pathname.startsWith('/government/dashboard')) return 'government';
   if (pathname.startsWith('/super-admin')) return 'super-admin';
   if (pathname.startsWith('/admin')) return isSuperAdminUser(user) ? 'super-admin' : 'admin';
   return 'public';

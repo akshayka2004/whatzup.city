@@ -45,7 +45,7 @@ import {
 } from 'lucide-react';
 import { MOVIES_ENABLED } from '@/lib/feature-flags';
 
-export type NavArea = 'public' | 'business' | 'staff' | 'admin' | 'super-admin';
+export type NavArea = 'public' | 'business' | 'staff' | 'admin' | 'super-admin' | 'civic' | 'government';
 
 export type NavItem = {
   label: string;
@@ -208,6 +208,47 @@ function businessNav(ctx: NavContext): NavSpec {
   };
 }
 
+function civicNav(): NavSpec {
+  return {
+    area: 'civic',
+    home: '/civic/dashboard',
+    title: 'Civic portal',
+    subtitle: 'NGO · community · news',
+    groups: [
+      {
+        items: [
+          { label: 'Publications', href: '/civic/dashboard', icon: Megaphone, exact: true },
+          { label: 'Organisation profile', href: '/civic/profile', icon: CircleUserRound },
+          { label: 'Public notices', href: '/government', icon: Bell },
+        ],
+      },
+    ],
+    footer: [{ label: 'Help & support', href: '/support', icon: LifeBuoy }],
+    mobileTabs: ['/civic/dashboard', '/civic/profile', '/government'],
+    mobileLabels: { '/civic/dashboard': 'Publish', '/civic/profile': 'Profile', '/government': 'Notices' },
+  };
+}
+
+function governmentNav(): NavSpec {
+  return {
+    area: 'government',
+    home: '/government/dashboard',
+    title: 'Government portal',
+    subtitle: 'Official communications',
+    groups: [
+      {
+        items: [
+          { label: 'Notices', href: '/government/dashboard', icon: Megaphone, exact: true },
+          { label: 'Public view', href: '/government', icon: Bell, exact: true },
+        ],
+      },
+    ],
+    footer: [{ label: 'Help & support', href: '/support', icon: LifeBuoy }],
+    mobileTabs: ['/government/dashboard', '/government'],
+    mobileLabels: { '/government/dashboard': 'Notices', '/government': 'Public' },
+  };
+}
+
 function staffNav(): NavSpec {
   return {
     area: 'staff',
@@ -362,6 +403,10 @@ export function getNav(area: NavArea, ctx: NavContext = {}): NavSpec {
       return adminNav();
     case 'super-admin':
       return superAdminNav();
+    case 'civic':
+      return civicNav();
+    case 'government':
+      return governmentNav();
     default:
       return publicNav(ctx);
   }

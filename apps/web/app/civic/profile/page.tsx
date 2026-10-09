@@ -1,5 +1,8 @@
 'use client';
 
+import { CivicLayout } from '@/components/layouts/civic-layout';
+import { PageHeader } from '@/components/system/page-header';
+
 import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -144,54 +147,39 @@ export default function CivicProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 text-primary animate-spin" />
-      </div>
+      <CivicLayout>
+        <div className="ui-skeleton h-96 rounded-card" />
+      </CivicLayout>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
-        <Card className="p-8 rounded-2xl text-center max-w-md">
+      <CivicLayout>
+        <Card className="mx-auto max-w-md p-8 text-center">
           <AlertTriangle className="h-8 w-8 mx-auto text-danger-soft-foreground mb-3" />
           <p className="text-sm text-muted-foreground">{msg?.text || 'Profile unavailable.'}</p>
           <Button onClick={() => router.push('/civic/dashboard')} className="mt-4 rounded-xl">
             Back to Dashboard
           </Button>
         </Card>
-      </div>
+      </CivicLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border/70 bg-card/40 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <Button
-              onClick={() => router.push('/civic/dashboard')}
-              variant="outline"
-              size="sm"
-              className="rounded-xl border-border/70 h-9 gap-1.5 cursor-pointer"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Back</span>
-            </Button>
-            <h1 className="text-sm sm:text-base font-bold truncate">Organisation Profile</h1>
-          </div>
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="rounded-xl gap-2 bg-gradient-to-r from-primary to-accent text-primary-foreground text-xs font-semibold h-9 px-4 cursor-pointer"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save
+    <CivicLayout>
+      <PageHeader
+        back={{ href: '/civic/dashboard', label: 'Publications' }}
+        title="Organisation profile"
+        description="How your organisation appears on its public notices."
+        actions={
+          <Button onClick={handleSave} loading={saving}>
+            <Save /> Save
           </Button>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+        }
+      />
+      <div className="space-y-6">
         {msg && (
           <div
             className={`p-3 rounded-xl border text-sm font-medium flex items-center gap-2 ${
@@ -387,8 +375,8 @@ export default function CivicProfilePage() {
             </Button>
           </div>
         </Card>
-      </main>
-    </div>
+      </div>
+    </CivicLayout>
   );
 }
 

@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resolveRedirect = (u: User) => {
     if (u.role === 'super-admin' || u.rbacRole === 'SUPER_ADMIN') {
-      return '/super-admin/tenants';
+      return '/super-admin';
     }
     if (u.role === 'admin' || u.rbacRole === 'MASTER_ADMIN') {
       return '/admin';

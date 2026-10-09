@@ -1,5 +1,8 @@
 'use client';
 
+import { GovernmentLayout } from '@/components/layouts/civic-layout';
+import { PageHeader } from '@/components/system/page-header';
+
 import { ModalSurface } from '@/components/system/modal-surface';
 import { toast } from '@/components/ui/sonner';
 import { useState, useEffect, useCallback } from 'react';
@@ -12,7 +15,6 @@ import {
   X, CheckCircle2, Clock, Building2, LogOut, AlertTriangle,
   FileText, Eye, Loader2,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES } from '@/lib/constants';
 
@@ -41,7 +43,6 @@ const TYPE_CONFIG: Record<NoticeType, { label: string; color: string; bg: string
 };
 
 export default function GovDashboardPage() {
-  const router = useRouter();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loadingNotices, setLoadingNotices] = useState(true);
 
@@ -86,15 +87,6 @@ export default function GovDashboardPage() {
   const toggleCity = (c: string) =>
     setFormCities((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
 
-  const handleSignOut = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('user_session');
-      localStorage.removeItem('user');
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-    }
-    router.push('/login');
-  };
 
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,48 +141,18 @@ export default function GovDashboardPage() {
   const alertCount = visibleNotices.filter((n) => n.type === 'ALERT').length;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="border-b border-border/70 bg-card/40 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-9 w-9 rounded-xl bg-warning-soft border border-warning/30 flex items-center justify-center shrink-0">
-              <Building2 className="h-5 w-5 text-warning-soft-foreground" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-foreground truncate">Government Portal</p>
-              <p className="text-xs text-muted-foreground truncate">Official Civic Communications</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              onClick={() => setShowForm(true)}
-              className="rounded-xl gap-2 bg-gradient-to-r from-primary to-accent text-primary-foreground text-xs font-semibold cursor-pointer h-9 px-3"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">New Notice</span>
-            </Button>
-            <Button
-              onClick={handleSignOut}
-              variant="outline"
-              size="sm"
-              className="rounded-xl border-border/70 text-danger-soft-foreground hover:bg-danger-soft cursor-pointer gap-1.5"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* Welcome */}
-        <div>
-          <h1 className="text-2xl font-extrabold text-foreground">Civic Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Publish alerts, announcements, and official notices to the public platform.
-          </p>
-        </div>
+    <GovernmentLayout>
+      <PageHeader
+        eyebrow="Government portal"
+        title="Official notices"
+        description="Publish alerts, announcements and official notices to the public platform."
+        actions={
+          <Button onClick={() => setShowForm(true)}>
+            <Plus /> New notice
+          </Button>
+        }
+      />
+      <div className="space-y-6">
 
         {/* Success toast */}
         {success && (
@@ -296,7 +258,7 @@ export default function GovDashboardPage() {
             </div>
           )}
         </div>
-      </main>
+      </div>
 
       {/* ── New Notice Modal ─────────────────────────────────────── */}
       {showForm && (
@@ -427,6 +389,6 @@ export default function GovDashboardPage() {
             </form>
         </ModalSurface>
       )}
-    </div>
+    </GovernmentLayout>
   );
 }

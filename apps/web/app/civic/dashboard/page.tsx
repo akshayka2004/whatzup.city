@@ -1,5 +1,8 @@
 'use client';
 
+import { CivicLayout } from '@/components/layouts/civic-layout';
+import { PageHeader } from '@/components/system/page-header';
+
 import { toast } from '@/components/ui/sonner';
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
@@ -11,7 +14,6 @@ import {
   X, CheckCircle2, Clock, Globe, LogOut, AlertTriangle,
   FileText, Loader2, Users, Newspaper, UserCog, Gift,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES } from '@/lib/constants';
@@ -53,7 +55,6 @@ const ORG_COLOR: Record<string, string> = {
 };
 
 export default function CivicDashboardPage() {
-  const router = useRouter();
   const { user } = useAuth();
 
   const orgType = (user?.entity?.type as string) ?? 'NGO';
@@ -112,13 +113,6 @@ export default function CivicDashboardPage() {
   const toggleCity = (c: string) =>
     setFormCities((cs) => (cs.includes(c) ? cs.filter((x) => x !== c) : [...cs, c]));
 
-  const handleSignOut = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('user_session');
-      localStorage.removeItem('user');
-    }
-    router.push('/login');
-  };
 
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,50 +175,18 @@ export default function CivicDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="border-b border-border/70 bg-card/40 backdrop-blur-xl sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className={`h-9 w-9 rounded-xl border flex items-center justify-center shrink-0 ${orgColorClass}`}>
-              <OrgIcon className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-foreground truncate">{orgLabel[orgType] ?? 'Civic Portal'}</p>
-              <p className="text-xs text-muted-foreground">{user?.entity?.name ?? 'Organisation'}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              onClick={() => setShowForm(true)}
-              className="rounded-xl gap-2 bg-gradient-to-r from-primary to-accent text-primary-foreground text-xs font-semibold cursor-pointer h-9 px-3"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Publish</span>
-            </Button>
-            <Button
-              onClick={() => router.push('/civic/profile')}
-              variant="outline"
-              size="sm"
-              className="rounded-xl border-border/70 text-muted-foreground hover:bg-white/5 cursor-pointer gap-1.5 h-9"
-            >
-              <UserCog className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Profile</span>
-            </Button>
-            <Button
-              onClick={handleSignOut}
-              variant="outline"
-              size="sm"
-              className="rounded-xl border-border/70 text-danger-soft-foreground hover:bg-danger-soft cursor-pointer gap-1.5 h-9"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
+    <CivicLayout>
+      <PageHeader
+        eyebrow={user?.entity?.name ?? 'Organisation'}
+        title={orgLabel[orgType] ?? 'Civic portal'}
+        description="Publish alerts, announcements and notices to the public platform."
+        actions={
+          <Button onClick={() => setShowForm(true)}>
+            <Plus /> Publish
+          </Button>
+        }
+      />
+      <div className="space-y-6">
 
         {/* Verification pending banner */}
         {user?.entity?.status === 'PENDING_VERIFICATION' && (
@@ -246,15 +208,6 @@ export default function CivicDashboardPage() {
           </div>
         )}
 
-        {/* Welcome */}
-        <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-foreground">
-            {orgLabel[orgType] ?? 'Civic Dashboard'}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Publish alerts, announcements, and notices to the public platform.
-          </p>
-        </div>
 
         {/* Stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
@@ -447,7 +400,7 @@ export default function CivicDashboardPage() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </CivicLayout>
   );
 }
