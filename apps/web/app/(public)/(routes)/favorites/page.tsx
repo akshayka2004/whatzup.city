@@ -175,7 +175,7 @@ export default function FavoritesPage() {
             <span
               // key restarts the pop whenever the count changes
               key={favorites.length}
-              className="ui-pop inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-sm font-semibold tabular-nums text-primary"
+              className="ui-pop inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/20 bg-brand-soft px-3 py-1.5 text-sm font-semibold tabular-nums text-brand-soft-foreground"
             >
               <Heart className="h-4 w-4 fill-current" />
               {favorites.length} saved
@@ -201,7 +201,7 @@ export default function FavoritesPage() {
                       <div className="mb-1 flex flex-wrap items-center gap-1.5">
                         <h3 className="truncate text-lg font-semibold text-foreground">{fav.name}</h3>
                         {fav.isVerified && (
-                          <span className="inline-flex items-center gap-0.5 rounded-full border border-success/25 bg-success/12 px-1.5 py-0.5 text-xs font-semibold text-success">
+                          <span className="inline-flex items-center gap-0.5 rounded-full border border-success/25 bg-success-soft px-1.5 py-0.5 text-xs font-semibold text-success-soft-foreground">
                             <CheckCircle2 className="h-3 w-3" />
                             Verified
                           </span>

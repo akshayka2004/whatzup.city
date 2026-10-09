@@ -40,10 +40,10 @@ const ROLE_OPTIONS = [
 ];
 
 const roleColor = (role: string): string => {
-  if (role.includes('SUPER') || role.includes('MASTER')) return 'bg-destructive/15 text-destructive';
-  if (role.includes('GOVERNMENT')) return 'bg-warning/15 text-warning';
-  if (role.includes('BUSINESS')) return 'bg-info/15 text-info';
-  if (role.includes('NGO') || role.includes('COMMUNITY') || role.includes('NEWS')) return 'bg-success/15 text-success';
+  if (role.includes('SUPER') || role.includes('MASTER')) return 'bg-danger-soft text-danger-soft-foreground';
+  if (role.includes('GOVERNMENT')) return 'bg-warning-soft text-warning-soft-foreground';
+  if (role.includes('BUSINESS')) return 'bg-info-soft text-info-soft-foreground';
+  if (role.includes('NGO') || role.includes('COMMUNITY') || role.includes('NEWS')) return 'bg-success-soft text-success-soft-foreground';
   if (role === 'USER') return 'bg-muted text-foreground';
   return 'bg-primary/15 text-primary';
 };
@@ -269,11 +269,11 @@ export default function SuperAdminUsersPage() {
                       <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">{fmtDate(u.createdAt)}</td>
                       <td className="px-5 py-3 text-right">
                         {u.isActive ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 text-xs font-bold">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-soft text-success-soft-foreground border border-success/20 text-xs font-bold">
                             <ShieldCheck className="h-3 w-3" /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20 text-xs font-bold">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-danger-soft text-danger-soft-foreground border border-destructive/20 text-xs font-bold">
                             <ShieldX className="h-3 w-3" /> Inactive
                           </span>
                         )}

@@ -510,7 +510,7 @@ export default function ProfilePage() {
                       <p className="font-semibold text-foreground truncate">{t.title}</p>
                       {t.description && <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>}
                     </div>
-                    <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                    <span className="shrink-0 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-bold text-brand-soft-foreground">
                       {tierRewardText(t)}
                     </span>
                   </div>
@@ -635,11 +635,11 @@ export default function ProfilePage() {
         {/* Claimed Offers */}
         <Card className="p-6 rounded-2xl border-border bg-card">
           <div className="flex items-center gap-2 mb-5">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+            <div className="p-2 rounded-lg bg-brand-soft text-brand-soft-foreground border border-primary/20">
               <Sparkles className="h-4 w-4" />
             </div>
             <h3 className="text-base font-bold text-foreground">Claimed Offers</h3>
-            <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+            <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand-soft-foreground border border-primary/20">
               {claimedOffers.length}
             </span>
           </div>
@@ -651,7 +651,7 @@ export default function ProfilePage() {
             <div className="space-y-2">
               {claimedOffers.map((o) => (
                 <div key={o.id} className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border">
-                  <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                  <div className="h-8 w-8 rounded-lg bg-brand-soft border border-primary/20 flex items-center justify-center text-brand-soft-foreground shrink-0">
                     <Tag className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -670,11 +670,11 @@ export default function ProfilePage() {
         {/* Submitted Bills */}
         <Card className="p-6 rounded-2xl border-border bg-card">
           <div className="flex items-center gap-2 mb-5">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+            <div className="p-2 rounded-lg bg-brand-soft text-brand-soft-foreground border border-primary/20">
               <Receipt className="h-4 w-4" />
             </div>
             <h3 className="text-base font-bold text-foreground">Submitted Bills</h3>
-            <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+            <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand-soft-foreground border border-primary/20">
               {bills.length}
             </span>
           </div>
@@ -694,7 +694,7 @@ export default function ProfilePage() {
                 const status = (b.status || 'PENDING').toUpperCase();
                 return (
                   <div key={b.id} className="flex items-center gap-3 p-3 bg-secondary/60 rounded-xl border border-border">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                    <div className="h-8 w-8 rounded-lg bg-brand-soft border border-primary/20 flex items-center justify-center text-brand-soft-foreground shrink-0">
                       <Building2 className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">

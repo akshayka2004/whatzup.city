@@ -38,7 +38,7 @@ export function DesktopActions({ actions, className }: { actions: ProfileActions
         onClick={actions.toggleSave}
         aria-pressed={isSaved}
         title={isSaved ? 'Remove from favorites' : 'Save to favorites'}
-        className={cn('ui-press rounded-xl', isSaved && 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/15')}
+        className={cn('ui-press rounded-xl', isSaved && 'border-primary/40 bg-brand-soft text-brand-soft-foreground hover:bg-primary/15')}
       >
         <Heart className={cn(isSaved && 'fill-primary text-primary')} /> {isSaved ? 'Saved' : 'Save'}
       </Button>

@@ -169,7 +169,7 @@ export function MoviesManager() {
                           {Array.isArray(m.languages) && m.languages.length ? m.languages.join(', ') : '—'}
                         </td>
                         <td className="px-5 py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${m.status === 'NOW_SHOWING' ? 'bg-success/10 text-success' : m.status === 'ENDED' ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'}`}>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${m.status === 'NOW_SHOWING' ? 'bg-success-soft text-success-soft-foreground' : m.status === 'ENDED' ? 'bg-muted text-muted-foreground' : 'bg-brand-soft text-brand-soft-foreground'}`}>
                             {STATUSES.find((s) => s.value === m.status)?.label || m.status}
                           </span>
                         </td>

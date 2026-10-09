@@ -244,7 +244,7 @@ function AddOutletDialog({
           </div>
 
           {error && (
-            <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <p role="alert" className="rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2 text-xs text-danger-soft-foreground">
               {error}
             </p>
           )}
@@ -395,7 +395,7 @@ function OutletsContent() {
         </div>
         <Card className="rounded-2xl border-border bg-card p-5 space-y-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-soft-foreground">
               <Store className="h-5 w-5" />
             </div>
             <p className="text-sm text-muted-foreground">
@@ -442,13 +442,13 @@ function OutletsContent() {
       </div>
 
       {suspended && (
-        <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
+        <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2.5 text-sm text-danger-soft-foreground">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           This brand account is suspended, so new outlets cannot be added. Contact support for help.
         </div>
       )}
       {pageError && (
-        <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2 text-sm text-danger-soft-foreground">
           {pageError}
         </p>
       )}
@@ -465,7 +465,7 @@ function OutletsContent() {
                 {o.logo ? (
                   <ResponsiveImage src={o.logo} alt="" ratio="1" sizes="48px" className="h-12 w-12 shrink-0 rounded-xl" />
                 ) : (
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-soft-foreground">
                     <Store className="h-5 w-5" />
                   </div>
                 )}
@@ -474,7 +474,7 @@ function OutletsContent() {
                     <h2 className="truncate text-base font-semibold text-foreground">{outletDisplayName(o)}</h2>
                     <OutletStatusPill status={o.status} />
                     {o.isBrandHq && (
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">HQ</span>
+                      <span className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand-soft-foreground">HQ</span>
                     )}
                     {isActive && (
                       <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">

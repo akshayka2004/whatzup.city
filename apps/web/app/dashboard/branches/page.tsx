@@ -376,7 +376,7 @@ export default function BranchesPage() {
                       onClick={() => toggleStatus(branch.id)}
                       className={`px-2 py-0.5 rounded-full text-xs font-semibold cursor-pointer transition-opacity hover:opacity-75 ${
                         branch.status === 'Active'
-                          ? 'bg-success/10 text-success border border-success/20'
+                          ? 'bg-success-soft text-success-soft-foreground border border-success/20'
                           : 'bg-secondary text-muted-foreground border border-border'
                       }`}
                     >
@@ -465,7 +465,7 @@ export default function BranchesPage() {
                 </button>
               </div>
               {error && (
-                <p className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">{error}</p>
+                <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">{error}</p>
               )}
               <form onSubmit={handleAdd} className="space-y-4">
                 <BranchFormFields form={form} setField={setField} isEdit={false} />
@@ -489,7 +489,7 @@ export default function BranchesPage() {
                 </button>
               </div>
               {error && (
-                <p className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">{error}</p>
+                <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">{error}</p>
               )}
               <form onSubmit={handleEdit} className="space-y-4">
                 <BranchFormFields form={form} setField={setField} isEdit={true} />
@@ -506,7 +506,7 @@ export default function BranchesPage() {
         {/* Delete confirm */}
         {deletingBranch && (
           <ModalSurface onClose={() => setDeletingBranch(null)} label="Delete Branch?" className="sm:max-w-sm text-center" hideClose>
-              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-danger-soft flex items-center justify-center text-danger-soft-foreground mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="text-base font-bold text-foreground mb-2">Delete Branch?</h3>

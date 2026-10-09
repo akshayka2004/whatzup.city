@@ -250,7 +250,7 @@ export function StepProfile({ w }: { w: Wizard }) {
                       type="button"
                       key={t}
                       onClick={() => setTags(tags.filter((x) => x !== t))}
-                      className="px-3 py-1.5 rounded-full text-xs bg-primary/10 border border-primary/20 text-primary cursor-pointer"
+                      className="px-3 py-1.5 rounded-full text-xs bg-brand-soft border border-primary/20 text-brand-soft-foreground cursor-pointer"
                     >
                       {t} ✕
                     </button>

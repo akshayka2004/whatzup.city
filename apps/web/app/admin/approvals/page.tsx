@@ -86,9 +86,9 @@ export default function ApprovalsPage() {
 
   const docStatusClass = (status?: string): string => {
     switch (status) {
-      case 'APPROVED': return 'bg-success/10 text-success border-success/20';
-      case 'REJECTED': return 'bg-destructive/10 text-destructive border-destructive/20';
-      case 'REUPLOAD_REQUESTED': return 'bg-warning/10 text-warning border-warning/20';
+      case 'APPROVED': return 'bg-success-soft text-success-soft-foreground border-success/20';
+      case 'REJECTED': return 'bg-danger-soft text-danger-soft-foreground border-destructive/20';
+      case 'REUPLOAD_REQUESTED': return 'bg-warning-soft text-warning-soft-foreground border-warning/20';
       default: return 'bg-muted text-foreground border-border';
     }
   };
@@ -224,13 +224,13 @@ export default function ApprovalsPage() {
               Review, verify, and approve onboarding credentials for multi-entity profiles.
             </p>
           </div>
-          <div className="h-1 py-1 px-4 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary text-center">
+          <div className="h-1 py-1 px-4 rounded-full bg-brand-soft border border-primary/20 text-xs font-semibold text-brand-soft-foreground text-center">
             {displayApprovals.length} pending verification
           </div>
         </div>
 
         {error && (
-          <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
+          <div className="p-4 rounded-xl bg-danger-soft border border-destructive/20 text-danger-soft-foreground text-sm font-medium">
             {error}
           </div>
         )}
@@ -264,7 +264,7 @@ export default function ApprovalsPage() {
             </div>
           ) : displayApprovals.length === 0 ? (
             <Card className="p-12 text-center border border-dashed border-border bg-surface-sunken rounded-3xl">
-              <Check className="mx-auto h-12 w-12 text-success mb-4 bg-success/10 p-2 rounded-full" />
+              <Check className="mx-auto h-12 w-12 text-success-soft-foreground mb-4 bg-success-soft p-2 rounded-full" />
               <h3 className="text-lg font-bold text-foreground mb-1">Moderation Queue Clean</h3>
               <p className="text-xs text-muted-foreground">
                 No pending verifications for {tabsList.find((t) => t.val === activeTab)?.label.toLowerCase()}.
@@ -374,7 +374,7 @@ export default function ApprovalsPage() {
 
               <div className="border-b border-border pb-4 mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="p-1 px-2.5 rounded-lg bg-primary/10 border border-primary/20 text-xs font-bold text-primary uppercase tracking-widest">
+                  <span className="p-1 px-2.5 rounded-lg bg-brand-soft border border-primary/20 text-xs font-bold text-brand-soft-foreground uppercase tracking-widest">
                     {reviewingItem.entity?.type} VERIFICATION
                   </span>
                   <p className="text-xs text-muted-foreground font-mono">
@@ -433,7 +433,7 @@ export default function ApprovalsPage() {
                           const pay = reviewingItem.entity.business.payments?.[0];
                           if (!sub && !pay) {
                             return (
-                              <div className="mt-3 p-3 rounded-lg border border-warning/20 bg-warning/5 text-warning">
+                              <div className="mt-3 p-3 rounded-lg border border-warning/20 bg-warning-soft text-warning-soft-foreground">
                                 No plan selected and no payment submitted yet.
                               </div>
                             );
@@ -724,7 +724,7 @@ export default function ApprovalsPage() {
                               onClick={() => setSelectedDoc(doc)}
                               className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
                                 isSelected
-                                  ? 'bg-primary/10 border-primary/40 text-primary'
+                                  ? 'bg-brand-soft border-primary/40 text-brand-soft-foreground'
                                   : 'bg-secondary border-border text-muted-foreground hover:bg-foreground/[0.04]'
                               }`}
                             >
@@ -991,7 +991,7 @@ export default function ApprovalsPage() {
         {/* ── APPROVAL CONFIRMATION MODAL ──────────────────────────── */}
         {approvingItem && (
           <ModalSurface onClose={() => setApprovingItem(null)} label="Approve Verification" className="sm:max-w-sm text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-success/10 flex items-center justify-center text-success mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-success-soft flex items-center justify-center text-success-soft-foreground mb-4">
                 <CheckCircle className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-muted-foreground mb-2">Approve Verification</h3>

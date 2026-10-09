@@ -9,7 +9,7 @@ export function VerifiedBadge({ className, label = 'Verified' }: { className?: s
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full border border-success/25 bg-success/12 px-1.5 py-0.5 text-xs font-semibold text-success',
+        'inline-flex items-center gap-1 rounded-full border border-success/25 bg-success-soft px-1.5 py-0.5 text-xs font-semibold text-success-soft-foreground',
         className,
       )}
     >

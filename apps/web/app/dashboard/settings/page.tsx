@@ -554,7 +554,7 @@ export default function BusinessSettingsPage() {
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {tags.map((t) => (
-                  <span key={t} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-medium">
+                  <span key={t} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-soft text-brand-soft-foreground border border-primary/20 text-xs font-medium">
                     <Tag className="h-3 w-3" />{t}
                     {editing && (
                       <button type="button" onClick={() => removeTag(t)} className="ml-0.5 hover:text-primary/70 cursor-pointer"><X className="h-3 w-3" /></button>

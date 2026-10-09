@@ -275,7 +275,7 @@ function BusinessRow({
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-sm text-foreground truncate">{item.businessName}</span>
               {item.category && (
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-info/15 text-info">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-info-soft text-info-soft-foreground">
                   {item.category}
                 </span>
               )}

@@ -54,10 +54,10 @@ interface BrandDetail {
 }
 
 const OUTLET_STATUS: Record<string, string> = {
-  APPROVED: 'border-success/20 bg-success/10 text-success',
-  PENDING_VERIFICATION: 'border-warning/25 bg-warning/10 text-warning',
-  REJECTED: 'border-destructive/20 bg-destructive/10 text-destructive',
-  SUSPENDED: 'border-destructive/20 bg-destructive/10 text-destructive',
+  APPROVED: 'border-success/20 bg-success-soft text-success-soft-foreground',
+  PENDING_VERIFICATION: 'border-warning/25 bg-warning-soft text-warning-soft-foreground',
+  REJECTED: 'border-destructive/20 bg-danger-soft text-danger-soft-foreground',
+  SUSPENDED: 'border-destructive/20 bg-danger-soft text-danger-soft-foreground',
   DRAFT: 'border-border bg-secondary text-muted-foreground',
 };
 
@@ -157,7 +157,7 @@ export default function SuperAdminBrandDetailPage() {
         <Card className="ui-fade-up rounded-2xl border-border bg-card p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-start gap-3 min-w-0">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground">
                 <Store className="h-6 w-6" />
               </div>
               <div className="min-w-0">
@@ -193,7 +193,7 @@ export default function SuperAdminBrandDetailPage() {
             )}
           </div>
           {suspended && (
-            <p className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <p className="mt-4 flex items-start gap-2 rounded-xl border border-destructive/20 bg-danger-soft px-3 py-2 text-xs text-danger-soft-foreground">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               This brand is suspended. It cannot add new outlets until reactivated.
             </p>
@@ -292,7 +292,7 @@ export default function SuperAdminBrandDetailPage() {
                           )}
                         </div>
                         {o.launchOfferClaimedAt && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-success/20 bg-success/10 px-2 py-0.5 text-xs font-semibold text-success" title={fullDate(o.launchOfferClaimedAt)}>
+                          <span className="inline-flex items-center gap-1 rounded-full border border-success/20 bg-success-soft px-2 py-0.5 text-xs font-semibold text-success-soft-foreground" title={fullDate(o.launchOfferClaimedAt)}>
                             <Gift className="h-3 w-3" /> Launch offer claimed {shortDate(o.launchOfferClaimedAt)}
                           </span>
                         )}

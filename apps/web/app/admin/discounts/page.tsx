@@ -50,7 +50,7 @@ export default function AdminDiscountsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <div className="disc-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+            <div className="disc-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground shrink-0">
               <Percent className="h-5 w-5" />
             </div>
             <div>
@@ -67,7 +67,7 @@ export default function AdminDiscountsPage() {
         </div>
 
         {error && (
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-danger-soft border border-destructive/20 text-danger-soft-foreground text-sm">
             <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" /> <span className="break-words min-w-0">{error}</span>
           </div>
         )}
@@ -115,7 +115,7 @@ export default function AdminDiscountsPage() {
                       </td>
                       <td className="px-5 py-3 text-foreground">{d._count?.spins ?? 0}</td>
                       <td className="px-5 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${d.isActive ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground'}`}>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${d.isActive ? 'bg-success-soft text-success-soft-foreground' : 'bg-muted text-muted-foreground'}`}>
                           {d.isActive ? 'Active' : 'Retired'}
                         </span>
                       </td>

@@ -12,7 +12,7 @@ export default function NotFound() {
           aria-hidden
         />
         <p className="relative text-7xl font-black tracking-tighter text-primary/90 sm:text-8xl">404</p>
-        <div className="relative mx-auto -mt-1 mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className="relative mx-auto -mt-1 mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground">
           <Compass className="h-6 w-6" />
         </div>
         <h1 className="relative text-2xl font-bold tracking-tight text-foreground">We couldn&apos;t find that page</h1>

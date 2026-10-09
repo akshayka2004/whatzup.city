@@ -73,7 +73,7 @@ export default function AdminPaymentsPage() {
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0 ui-glow">
+          <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground shrink-0 ui-glow">
             <Receipt className="h-5 w-5" />
           </div>
           <div>

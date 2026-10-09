@@ -64,10 +64,10 @@ export default function InvoicePage() {
 
   const statusMeta =
     invoice?.status === 'SUCCESS'
-      ? { label: 'Paid & Verified', tone: 'bg-success/15 text-success', icon: CheckCircle2 }
+      ? { label: 'Paid & Verified', tone: 'bg-success-soft text-success-soft-foreground', icon: CheckCircle2 }
       : invoice?.status === 'FAILED'
-        ? { label: 'Rejected', tone: 'bg-destructive/15 text-destructive', icon: XCircle }
-        : { label: 'Pending Verification', tone: 'bg-warning/15 text-warning', icon: Clock };
+        ? { label: 'Rejected', tone: 'bg-danger-soft text-danger-soft-foreground', icon: XCircle }
+        : { label: 'Pending Verification', tone: 'bg-warning-soft text-warning-soft-foreground', icon: Clock };
   const StatusIcon = statusMeta.icon;
 
   return (

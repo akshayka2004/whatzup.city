@@ -96,7 +96,7 @@ export default function SuperAdminOffersPage() {
         {/* KPI */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card className="ui-fade-up p-5 rounded-2xl border-border bg-card flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-primary/10 text-primary"><Tag className="h-5 w-5" /></div>
+            <div className="p-3 rounded-xl bg-brand-soft text-brand-soft-foreground"><Tag className="h-5 w-5" /></div>
             <div>
               <p className="text-xs text-muted-foreground">Active Offers</p>
               <p className="text-2xl font-extrabold text-foreground">{loading ? '…' : (meta.total ?? offers.length)}</p>
@@ -105,7 +105,7 @@ export default function SuperAdminOffersPage() {
         </div>
 
         {error && (
-          <div className="px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+          <div className="px-4 py-3 rounded-xl bg-danger-soft border border-destructive/20 text-danger-soft-foreground text-sm">
             {error}
           </div>
         )}
@@ -156,7 +156,7 @@ export default function SuperAdminOffersPage() {
                         )}
                       </td>
                       <td className="px-5 py-3">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 text-xs font-bold">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-soft text-success-soft-foreground border border-success/20 text-xs font-bold">
                           <Percent className="h-3 w-3" /> {discountLabel(o)}
                         </span>
                       </td>
@@ -191,7 +191,7 @@ export default function SuperAdminOffersPage() {
       {confirm && (
         <ModalSurface onClose={() => setConfirm(null)} label="Delete offer?" className="sm:max-w-md">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-xl bg-destructive/10 text-destructive">
+              <div className="p-3 rounded-xl bg-danger-soft text-danger-soft-foreground">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <div>

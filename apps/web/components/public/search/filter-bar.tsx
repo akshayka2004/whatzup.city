@@ -31,7 +31,7 @@ const chipClass = (active: boolean) =>
   cn(
     'ui-press inline-flex h-11 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors md:h-9 md:px-3.5',
     active
-      ? 'border-primary/40 bg-primary/10 text-primary'
+      ? 'border-primary/40 bg-brand-soft text-brand-soft-foreground'
       : 'border-border bg-card text-foreground hover:bg-secondary',
   );
 
@@ -391,7 +391,7 @@ export function ActiveFilters({
           type="button"
           onClick={it.onRemove}
           aria-label={`Remove filter: ${it.label}`}
-          className="ui-pop ui-press relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 pl-3 pr-2 text-xs font-semibold text-primary after:absolute after:inset-x-0 after:-inset-y-1 after:content-['']"
+          className="ui-pop ui-press relative inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-primary/30 bg-brand-soft pl-3 pr-2 text-xs font-semibold text-brand-soft-foreground after:absolute after:inset-x-0 after:-inset-y-1 after:content-['']"
         >
           {it.label}
           <X className="h-3.5 w-3.5" />

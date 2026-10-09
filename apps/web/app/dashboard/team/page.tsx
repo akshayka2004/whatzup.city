@@ -281,8 +281,8 @@ export default function TeamManagementPage() {
                         <span className={cn(
                           'text-xs px-1.5 py-0.5 rounded-full font-medium shrink-0',
                           member.isActive
-                            ? 'bg-success/10 text-success'
-                            : 'bg-destructive/10 text-destructive',
+                            ? 'bg-success-soft text-success-soft-foreground'
+                            : 'bg-danger-soft text-danger-soft-foreground',
                         )}>
                           {member.isActive ? 'Active' : 'Disabled'}
                         </span>
@@ -373,7 +373,7 @@ export default function TeamManagementPage() {
                 Set up login credentials for your team member. Share the credentials after creation.
               </p>
               {createError && (
-                <p className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">{createError}</p>
+                <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">{createError}</p>
               )}
               <div className="space-y-4">
                 <div>
@@ -439,7 +439,7 @@ export default function TeamManagementPage() {
                 </button>
               </div>
               {editError && (
-                <p className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">{editError}</p>
+                <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">{editError}</p>
               )}
               <div className="space-y-4">
                 <div>
@@ -502,7 +502,7 @@ export default function TeamManagementPage() {
                 Their current sessions will be invalidated.
               </p>
               {resetError && (
-                <p className="mb-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">{resetError}</p>
+                <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">{resetError}</p>
               )}
               <div className="space-y-4">
                 <div>

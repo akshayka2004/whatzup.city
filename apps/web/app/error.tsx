@@ -18,7 +18,7 @@ export default function RouteError({ error, reset }: { error: Error & { digest?:
       <div className="ui-pop w-full max-w-md text-center">
         <div className="relative mx-auto mb-6 h-20 w-20">
           <span className="ui-glow absolute inset-0 rounded-3xl bg-destructive/20 blur-2xl" aria-hidden />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-destructive/10 text-destructive">
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-danger-soft text-danger-soft-foreground">
             <TriangleAlert className="h-9 w-9" />
           </div>
         </div>

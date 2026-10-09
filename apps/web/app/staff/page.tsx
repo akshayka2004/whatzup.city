@@ -41,7 +41,7 @@ export default function StaffOverviewPage() {
                 <Card
                   className="p-5 rounded-2xl border-border bg-card hover:border-primary/30 hover:bg-secondary/40 transition-all duration-200 ease-out cursor-pointer h-full hover:-translate-y-1 hover:shadow-xl active:scale-[0.98] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100"
                 >
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-3">
+                  <div className="h-10 w-10 rounded-xl bg-brand-soft flex items-center justify-center text-brand-soft-foreground mb-3">
                     <Icon className="h-5 w-5" />
                   </div>
                   <h3 className="font-semibold text-foreground">{l.label}</h3>

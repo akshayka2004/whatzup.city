@@ -96,7 +96,7 @@ export function EventCard({
           <span
             className={cn(
               'rounded-md px-2 py-0.5 text-xs font-semibold',
-              ev.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success',
+              ev.ticketType === 'PAID' ? 'bg-brand-soft text-brand-soft-foreground' : 'bg-success-soft text-success-soft-foreground',
             )}
           >
             {priceLabel(ev)}

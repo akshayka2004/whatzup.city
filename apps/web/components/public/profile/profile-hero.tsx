@@ -186,7 +186,7 @@ export function ProfileHero({
               fallback={<Store className="h-7 w-7 text-primary" />}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-primary/10 text-2xl font-black text-primary sm:text-3xl">
+            <div className="flex h-full w-full items-center justify-center bg-brand-soft text-2xl font-black text-brand-soft-foreground sm:text-3xl">
               {(biz.name || '?').trim().charAt(0).toUpperCase()}
             </div>
           )}

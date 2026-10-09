@@ -231,7 +231,7 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
               <div
                 // key restarts the pop each time the count changes
                 key={claimedIds.length}
-                className="ui-pop flex items-center gap-1.5 rounded-full border border-success/25 bg-success/12 px-3 py-2 text-xs font-semibold text-success"
+                className="ui-pop flex items-center gap-1.5 rounded-full border border-success/25 bg-success-soft px-3 py-2 text-xs font-semibold text-success-soft-foreground"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 {claimedIds.length} claimed
@@ -307,7 +307,7 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
         </Modal>
         <div className="mb-5 hidden gap-3 sm:flex sm:flex-wrap">
           <Select value={city || 'all'} onValueChange={handleCityChange}>
-            <SelectTrigger className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
+            <SelectTrigger aria-label="City" className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
               <SelectValue placeholder="Filter by city" />
             </SelectTrigger>
             <SelectContent>
@@ -319,7 +319,7 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
           </Select>
           {categories.length > 0 && (
             <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
+              <SelectTrigger aria-label="Category" className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
@@ -381,7 +381,7 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
                 <X className="h-5 w-5" />
               </button>
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-primary/10 text-primary rounded-xl">
+                <div className="p-3 bg-brand-soft text-brand-soft-foreground rounded-xl">
                   <Tag className="h-6 w-6" />
                 </div>
                 <div>
@@ -491,7 +491,7 @@ export default function OffersClient({ initialOffers = null, initialPlatformOffe
                   )}
                 </div>
               ) : isClaimed(viewingOffer.id) ? (
-                <div className="w-full flex items-center justify-center gap-2 rounded-xl bg-success/12 border border-success/25 text-success font-semibold py-3">
+                <div className="w-full flex items-center justify-center gap-2 rounded-xl bg-success-soft border border-success/25 text-success-soft-foreground font-semibold py-3">
                   <CheckCircle2 className="h-5 w-5" /> Already claimed
                 </div>
               ) : (

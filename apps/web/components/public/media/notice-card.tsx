@@ -35,7 +35,7 @@ export function SocialButtons({ links }: { links: SocialLink[] }) {
           href={l.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="ui-press inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/10 px-3 text-xs font-medium text-primary transition-colors hover:bg-primary/20 sm:min-h-9"
+          className="ui-press inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-primary/20 bg-brand-soft px-3 text-xs font-medium text-brand-soft-foreground transition-colors hover:bg-primary/20 sm:min-h-9"
         >
           <ExternalLink className="h-3 w-3" />
           {l.label}
@@ -179,7 +179,7 @@ export function NoticeCard({
                   href={withProtocol(notice.linkUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="ui-press inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/10 px-3 text-xs font-medium text-primary transition-colors hover:bg-primary/20 sm:min-h-9"
+                  className="ui-press inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-xl border border-primary/20 bg-brand-soft px-3 text-xs font-medium text-brand-soft-foreground transition-colors hover:bg-primary/20 sm:min-h-9"
                 >
                   <ExternalLink className="h-3 w-3" /> Open Link
                 </a>

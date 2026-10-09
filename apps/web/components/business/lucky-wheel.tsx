@@ -207,7 +207,7 @@ export function LuckyWheel({ businessId, enabled }: LuckyWheelProps) {
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-danger-soft border border-destructive/20 text-danger-soft-foreground text-sm">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" /> <span className="break-words min-w-0">{error}</span>
             </div>
           )}

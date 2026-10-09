@@ -189,7 +189,7 @@ export default function DashboardEventsPage() {
                           {EVENT_CATEGORIES.find((c) => c.value === ev.category)?.label || ev.category}
                         </span>
                       )}
-                      <span className={`px-1.5 py-0.5 rounded-md text-xs font-medium ${ev.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
+                      <span className={`px-1.5 py-0.5 rounded-md text-xs font-medium ${ev.ticketType === 'PAID' ? 'bg-brand-soft text-brand-soft-foreground' : 'bg-success-soft text-success-soft-foreground'}`}>
                         {ev.ticketType !== 'PAID'
                           ? 'Free'
                           : Array.isArray(ev.ticketTiers) && ev.ticketTiers.length

@@ -80,7 +80,7 @@ export function KpiCard({
                 tabIndex={0}
                 aria-label={`How "${label}" is measured`}
                 onClick={(e) => e.stopPropagation()}
-                className="-m-1 rounded-full p-1 text-subtle-foreground hover:text-foreground"
+                className="pointer-events-auto relative z-[1] -m-1 rounded-full p-1 text-subtle-foreground hover:text-foreground"
               >
                 <Info className="size-3.5" />
               </span>
@@ -125,11 +125,20 @@ export function KpiCard({
     className,
   );
 
+  // Interactive cards: a full-size toggle button sits underneath the content, so the info
+  // popover trigger stays a separate control instead of being nested inside a <button>.
   return interactive ? (
-    <button type="button" aria-pressed={selected} onClick={onSelect} className={base}>
+    <div className={base}>
+      <button
+        type="button"
+        aria-pressed={selected}
+        aria-label={`Show ${label} on the chart`}
+        onClick={onSelect}
+        className="absolute inset-0 rounded-card outline-none focus-visible:ring-[3px] focus-visible:ring-ring/45"
+      />
       {selected && <span className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-primary" aria-hidden />}
-      {body}
-    </button>
+      <div className="pointer-events-none relative">{body}</div>
+    </div>
   ) : (
     <div className={base}>{body}</div>
   );

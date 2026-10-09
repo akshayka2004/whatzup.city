@@ -72,8 +72,8 @@ export function BrandStatusPill({ status, className }: { status?: string; classN
       className={cn(
         'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-bold',
         suspended
-          ? 'border-destructive/20 bg-destructive/10 text-destructive'
-          : 'border-success/20 bg-success/10 text-success',
+          ? 'border-destructive/20 bg-danger-soft text-danger-soft-foreground'
+          : 'border-success/20 bg-success-soft text-success-soft-foreground',
         className,
       )}
     >

@@ -132,7 +132,7 @@ export default function AdminCategoriesPage() {
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground shrink-0">
               <Folder className="h-5 w-5" />
             </div>
             <div>
@@ -174,7 +174,7 @@ export default function AdminCategoriesPage() {
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
-                    <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                    <div className="p-2 bg-brand-soft text-brand-soft-foreground rounded-lg">
                       <Folder className="h-5 w-5" />
                     </div>
                     <div>
@@ -389,7 +389,7 @@ export default function AdminCategoriesPage() {
         {/* ── DELETE MODAL ─────────────────────────────────────────── */}
         {deletingCategory && (
           <ModalSurface onClose={() => setDeletingCategory(null)} label="Delete Directory Category" className="sm:max-w-sm text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-danger-soft flex items-center justify-center text-danger-soft-foreground mb-4">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Delete Directory Category</h3>

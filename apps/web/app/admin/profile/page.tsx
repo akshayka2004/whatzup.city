@@ -146,7 +146,7 @@ export default function AdminProfilePage() {
                   <h2 className="text-2xl font-extrabold text-foreground">
                     {profile.firstName} {profile.lastName}
                   </h2>
-                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-warning/10 text-warning border border-warning/20 uppercase tracking-wide">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-warning-soft text-warning-soft-foreground border border-warning/20 uppercase tracking-wide">
                     {(user as any).role || 'Admin'}
                   </span>
                 </div>
@@ -212,12 +212,12 @@ export default function AdminProfilePage() {
 
         {/* Save banners */}
         {saveMsg && (
-          <div className="p-3 rounded-xl bg-success/10 border border-success/20 text-success text-sm font-medium flex items-center gap-2 ui-pop">
+          <div className="p-3 rounded-xl bg-success-soft border border-success/20 text-success-soft-foreground text-sm font-medium flex items-center gap-2 ui-pop">
             <Check className="h-4 w-4" /> {saveMsg}
           </div>
         )}
         {saveErr && (
-          <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium flex items-center gap-2 ui-pop">
+          <div className="p-3 rounded-xl bg-danger-soft border border-destructive/20 text-danger-soft-foreground text-sm font-medium flex items-center gap-2 ui-pop">
             <X className="h-4 w-4" /> {saveErr}
           </div>
         )}

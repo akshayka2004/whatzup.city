@@ -137,7 +137,7 @@ export function BusinessNudges({ enabled }: { enabled: boolean }) {
     return (
       <div className="print:hidden container mx-auto px-4 pt-4 ui-fade-up">
         <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-3 sm:p-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-soft-foreground">
             <Clock className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">

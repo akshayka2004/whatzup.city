@@ -136,7 +136,7 @@ export default function AdminProfilePage() {
     <SuperAdminLayout>
       <div className="space-y-6 max-w-2xl mx-auto">
         <div className="flex items-center gap-3">
-          <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+          <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground shrink-0">
             <Shield className="h-5 w-5" />
           </div>
           <div>
@@ -172,14 +172,14 @@ export default function AdminProfilePage() {
             <div>
               <p className="text-lg font-bold text-foreground">{user?.name}</p>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
-              <span className="mt-1 inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+              <span className="mt-1 inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-soft border border-primary/20 text-brand-soft-foreground">
                 {roleLabel}
               </span>
             </div>
           </div>
 
           {avatarError && (
-            <p className="mb-4 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2">
+            <p className="mb-4 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-xl px-3 py-2">
               {avatarError}
             </p>
           )}

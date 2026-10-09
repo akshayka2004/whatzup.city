@@ -171,9 +171,9 @@ export default function BillsPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center ${
-                        bill.status === 'APPROVED' ? 'bg-success/10 text-success'
-                          : bill.status === 'REJECTED' ? 'bg-destructive/10 text-destructive'
-                          : 'bg-warning/10 text-warning'
+                        bill.status === 'APPROVED' ? 'bg-success-soft text-success-soft-foreground'
+                          : bill.status === 'REJECTED' ? 'bg-danger-soft text-danger-soft-foreground'
+                          : 'bg-warning-soft text-warning-soft-foreground'
                       }`}>
                         <FileText className="h-5 w-5" />
                       </div>
@@ -198,19 +198,19 @@ export default function BillsPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         {bill.status === 'APPROVED' ? (
-                          <span className="flex items-center gap-1 bg-success/10 text-success border border-success/20 px-3 py-1 rounded-full text-xs font-semibold">
+                          <span className="flex items-center gap-1 bg-success-soft text-success-soft-foreground border border-success/20 px-3 py-1 rounded-full text-xs font-semibold">
                             <CheckCircle2 className="h-3.5 w-3.5" /> Approved
                           </span>
                         ) : bill.status === 'REJECTED' ? (
-                          <span className="flex items-center gap-1 bg-destructive/10 text-destructive border border-destructive/20 px-3 py-1 rounded-full text-xs font-semibold">
+                          <span className="flex items-center gap-1 bg-danger-soft text-danger-soft-foreground border border-destructive/20 px-3 py-1 rounded-full text-xs font-semibold">
                             <AlertCircle className="h-3.5 w-3.5" /> Rejected
                           </span>
                         ) : bill.status === 'RE_UPLOAD_REQUESTED' ? (
-                          <span className="flex items-center gap-1 bg-info/10 text-info border border-info/20 px-3 py-1 rounded-full text-xs font-semibold">
+                          <span className="flex items-center gap-1 bg-info-soft text-info-soft-foreground border border-info/20 px-3 py-1 rounded-full text-xs font-semibold">
                             <AlertCircle className="h-3.5 w-3.5" /> Re-Upload
                           </span>
                         ) : (
-                          <span className="flex items-center gap-1 bg-warning/10 text-warning border border-warning/20 px-3 py-1 rounded-full text-xs font-semibold">
+                          <span className="flex items-center gap-1 bg-warning-soft text-warning-soft-foreground border border-warning/20 px-3 py-1 rounded-full text-xs font-semibold">
                             <AlertCircle className="h-3.5 w-3.5" /> Pending
                           </span>
                         )}
@@ -304,7 +304,7 @@ export default function BillsPage() {
                 </div>
 
                 {uploadError && (
-                  <div className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                  <div className="flex items-start gap-2 p-3 rounded-xl bg-danger-soft border border-destructive/20 text-danger-soft-foreground text-sm">
                     <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                     {uploadError}
                   </div>

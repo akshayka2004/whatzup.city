@@ -136,7 +136,7 @@ function ChipGroup({
             className={cn(
               'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
               on
-                ? 'border-primary bg-primary/10 text-primary'
+                ? 'border-primary bg-brand-soft text-brand-soft-foreground'
                 : 'border-border text-muted-foreground hover:text-foreground',
             )}
           >
@@ -353,7 +353,7 @@ export function PlatformOffersManager() {
                         className={cn(
                           'shrink-0 rounded-full px-2 py-0.5 text-xs font-bold border',
                           r.status === 'PUBLISHED'
-                            ? 'bg-success/10 text-success border-success/20'
+                            ? 'bg-success-soft text-success-soft-foreground border-success/20'
                             : 'bg-muted text-muted-foreground border-border',
                         )}
                       >
@@ -361,7 +361,7 @@ export function PlatformOffersManager() {
                       </span>
                     </div>
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-                      <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 font-medium">
+                      <span className="rounded-full bg-brand-soft text-brand-soft-foreground px-2 py-0.5 font-medium">
                         {categoryLabel(r.category)}
                       </span>
                       {r.subType && (
@@ -532,7 +532,7 @@ export function PlatformOffersManager() {
                               className={cn(
                                 'rounded-full border px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors',
                                 details.providerType === t
-                                  ? 'border-primary bg-primary/10 text-primary'
+                                  ? 'border-primary bg-brand-soft text-brand-soft-foreground'
                                   : 'border-border text-muted-foreground hover:text-foreground',
                               )}
                             >
@@ -613,7 +613,7 @@ export function PlatformOffersManager() {
                                     className={cn(
                                       'rounded-full border px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors',
                                       on
-                                        ? 'border-primary bg-primary/10 text-primary'
+                                        ? 'border-primary bg-brand-soft text-brand-soft-foreground'
                                         : 'border-border text-muted-foreground hover:text-foreground',
                                     )}
                                   >

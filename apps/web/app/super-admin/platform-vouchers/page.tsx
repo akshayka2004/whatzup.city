@@ -201,12 +201,12 @@ export default function SuperAdminPlatformVouchersPage() {
                   </div>
                   <span className={cn(
                     'shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold',
-                    t.status === 'ACTIVE' ? 'bg-success/12 text-success' : 'bg-muted text-muted-foreground',
+                    t.status === 'ACTIVE' ? 'bg-success-soft text-success-soft-foreground' : 'bg-muted text-muted-foreground',
                   )}>
                     {t.status}
                   </span>
                 </div>
-                <div className="mt-3 inline-flex rounded-xl bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+                <div className="mt-3 inline-flex rounded-xl bg-brand-soft px-3 py-1 text-sm font-bold text-brand-soft-foreground">
                   {rewardText(t)}
                 </div>
                 <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">

@@ -144,7 +144,7 @@ export default function SpinItPage() {
 
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="disc-glow relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <div className="disc-glow relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground">
                 <Sparkles className="h-6 w-6" />
               </div>
               <div>

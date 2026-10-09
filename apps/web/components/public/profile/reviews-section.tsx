@@ -129,7 +129,7 @@ export function ReviewsSection({
         {/* ── Submit Bill / write a verified review */}
         <div className="mb-5 rounded-2xl border border-primary/20 bg-primary/5 p-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-soft-foreground">
               <Receipt className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -214,7 +214,7 @@ export function ReviewsSection({
                         fallback={<span className="text-sm font-bold text-primary">{name.charAt(0).toUpperCase()}</span>}
                       />
                     ) : (
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-bold text-brand-soft-foreground">
                         {name.charAt(0).toUpperCase()}
                       </span>
                     )}

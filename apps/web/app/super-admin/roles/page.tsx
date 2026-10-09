@@ -46,9 +46,9 @@ function formatDate(d?: string) {
 }
 
 function roleLabel(role: string) {
-  if (role === 'SUPER_ADMIN') return { label: 'Super Admin', color: 'text-primary bg-primary/10 border-primary/20' };
-  if (role === 'MASTER_ADMIN') return { label: 'Portal Admin', color: 'text-info bg-info/10 border-info/20' };
-  if (role === 'PLATFORM_STAFF') return { label: 'Platform Staff', color: 'text-warning bg-warning/10 border-warning/20' };
+  if (role === 'SUPER_ADMIN') return { label: 'Super Admin', color: 'text-brand-soft-foreground bg-brand-soft border-primary/20' };
+  if (role === 'MASTER_ADMIN') return { label: 'Portal Admin', color: 'text-info-soft-foreground bg-info-soft border-info/20' };
+  if (role === 'PLATFORM_STAFF') return { label: 'Platform Staff', color: 'text-warning-soft-foreground bg-warning-soft border-warning/20' };
   return { label: role, color: 'text-muted-foreground bg-muted border-border' };
 }
 
@@ -108,7 +108,7 @@ export default function AdminManagementPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shrink-0">
+            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground shrink-0">
               <Shield className="h-5 w-5" />
             </div>
             <div>
@@ -128,7 +128,7 @@ export default function AdminManagementPage() {
         </div>
 
         {success && (
-          <div className="flex items-center gap-2 text-sm text-success bg-success/10 border border-success/20 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-success-soft-foreground bg-success-soft border border-success/20 rounded-xl px-4 py-3">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             {success}
           </div>
@@ -167,7 +167,7 @@ export default function AdminManagementPage() {
                             {label}
                           </span>
                           {!admin.isActive && (
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-destructive/20 bg-destructive/10 text-destructive">
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-destructive/20 bg-danger-soft text-danger-soft-foreground">
                               Inactive
                             </span>
                           )}
@@ -213,7 +213,7 @@ export default function AdminManagementPage() {
               </div>
 
               {error && (
-                <p className="mb-4 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2">
+                <p className="mb-4 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-xl px-3 py-2">
                   {error}
                 </p>
               )}

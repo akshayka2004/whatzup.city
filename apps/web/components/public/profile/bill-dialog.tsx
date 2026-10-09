@@ -134,7 +134,7 @@ export default function BillDialog({
   return (
     <ModalShell label="Submit your bill" onClose={onClose} className="sm:max-w-lg">
       <div className="mb-5 flex items-center gap-3 pr-10">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-soft-foreground">
           <Receipt className="h-5 w-5" />
         </div>
         <div className="min-w-0">
@@ -274,7 +274,7 @@ export default function BillDialog({
         </div>
 
         {error && (
-          <p role="alert" className="rounded-xl border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p role="alert" className="rounded-xl border border-destructive/25 bg-danger-soft px-3 py-2 text-sm text-danger-soft-foreground">
             {error}
           </p>
         )}

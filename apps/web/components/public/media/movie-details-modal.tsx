@@ -51,7 +51,7 @@ export function MovieDetailsModal({ movie, onClose }: { movie: Movie; onClose: (
                 <span
                   className={cn(
                     'rounded-full px-2 py-0.5 text-xs font-bold',
-                    movie.status === 'NOW_SHOWING' ? 'bg-success/15 text-success' : 'bg-primary/15 text-primary',
+                    movie.status === 'NOW_SHOWING' ? 'bg-success-soft text-success-soft-foreground' : 'bg-primary/15 text-primary',
                   )}
                 >
                   {STATUS_LABEL[movie.status] || movie.status}

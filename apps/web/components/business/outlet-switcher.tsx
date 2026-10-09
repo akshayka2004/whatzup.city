@@ -33,9 +33,9 @@ export function outletStatusMeta(status?: string | null): { label: string; tone:
 }
 
 const TONE_CLASS: Record<PillTone, string> = {
-  live: 'bg-success/10 text-success',
-  pending: 'bg-warning/10 text-warning',
-  rejected: 'bg-destructive/10 text-destructive',
+  live: 'bg-success-soft text-success-soft-foreground',
+  pending: 'bg-warning-soft text-warning-soft-foreground',
+  rejected: 'bg-danger-soft text-danger-soft-foreground',
   other: 'bg-muted text-muted-foreground',
 };
 

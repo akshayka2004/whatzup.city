@@ -32,7 +32,7 @@ const chip = (active: boolean) =>
   cn(
     'ui-press inline-flex h-11 shrink-0 cursor-pointer items-center whitespace-nowrap rounded-full border px-4 text-sm font-medium transition-colors md:h-9 md:px-3.5',
     active
-      ? 'border-primary/40 bg-primary/10 text-primary'
+      ? 'border-primary/40 bg-brand-soft text-brand-soft-foreground'
       : 'border-border bg-card text-foreground hover:bg-secondary',
   );
 

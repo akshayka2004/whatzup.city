@@ -63,7 +63,7 @@ function TagInput({
       {tags.map((tag) => (
         <span
           key={tag}
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20 text-xs font-medium"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning-soft text-warning-soft-foreground border border-warning/20 text-xs font-medium"
         >
           <Tag className="h-2.5 w-2.5" />
           {tag}
@@ -225,7 +225,7 @@ export function NoticesManager() {
                 <div
                   className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center shrink-0 ${
                     note.status === 'BROADCASTING'
-                      ? 'bg-warning/10 text-warning'
+                      ? 'bg-warning-soft text-warning-soft-foreground'
                       : 'bg-secondary text-muted-foreground'
                   }`}
                 >
@@ -242,7 +242,7 @@ export function NoticesManager() {
                       {note.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/20 text-warning text-xs font-medium"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-warning-soft border border-warning/20 text-warning-soft-foreground text-xs font-medium"
                         >
                           <Tag className="h-2.5 w-2.5" />
                           {tag}
@@ -256,7 +256,7 @@ export function NoticesManager() {
                 <span
                   className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                     note.status === 'BROADCASTING'
-                      ? 'bg-warning/10 text-warning border border-warning/20'
+                      ? 'bg-warning-soft text-warning-soft-foreground border border-warning/20'
                       : 'bg-secondary text-muted-foreground border border-border'
                   }`}
                 >
@@ -290,7 +290,7 @@ export function NoticesManager() {
       {viewingNotice && (
         <ModalSurface onClose={() => setViewingNotice(null)} label="Notice details" className="sm:max-w-md">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-warning/10 text-warning rounded-xl">
+              <div className="p-3 bg-warning-soft text-warning-soft-foreground rounded-xl">
                 <Bell className="h-6 w-6" />
               </div>
               <div>
@@ -310,7 +310,7 @@ export function NoticesManager() {
                   {viewingNotice.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/20 text-warning text-xs font-medium"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-warning-soft border border-warning/20 text-warning-soft-foreground text-xs font-medium"
                     >
                       <Tag className="h-2.5 w-2.5" />
                       {tag}
@@ -431,7 +431,7 @@ export function NoticesManager() {
       {/* DELETE MODAL */}
       {deletingNotice && (
         <ModalSurface onClose={() => setDeletingNotice(null)} label="Delete Notice" className="sm:max-w-sm text-center">
-            <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-danger-soft flex items-center justify-center text-danger-soft-foreground mb-4">
               <AlertTriangle className="h-6 w-6" />
             </div>
             <h3 className="text-lg font-bold text-foreground mb-2">Delete Notice</h3>

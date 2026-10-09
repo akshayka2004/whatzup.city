@@ -16,20 +16,20 @@
   --card-foreground: oklch(0.261 0.022 269);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.261 0.022 269);
-  --primary: oklch(0.615 0.103 43);
+  --primary: oklch(0.555 0.103 43);
   --primary-foreground: oklch(0.995 0 0);
   --secondary: oklch(0.960 0.008 78);
   --secondary-foreground: oklch(0.261 0.022 269);
   --muted: oklch(0.960 0.008 78);
   /* #667085 — clears 4.5:1 on --background and --card. Secondary text. */
-  --muted-foreground: oklch(0.544 0.035 265);
+  --muted-foreground: oklch(0.530 0.035 265);
   --accent: oklch(0.615 0.103 43);
   --accent-foreground: oklch(0.995 0 0);
   --destructive: oklch(0.651 0.176 23);
   --destructive-foreground: oklch(0.995 0 0);
   --border: oklch(0.924 0.011 77);
   --input: oklch(0.924 0.011 77);
-  --ring: oklch(0.615 0.103 43);
+  --ring: oklch(0.555 0.103 43);
   /*
    * Categorical data-viz palette — validated (CVD ΔE ≥ 8 adjacent, normal-vision
    * ≥ 15) against the white card surface. Assign in fixed order, never cycle.
@@ -63,12 +63,12 @@
   --radius-sheet-v: 1.75rem;
   --sidebar: oklch(0.985 0.003 85);
   --sidebar-foreground: oklch(0.261 0.022 269);
-  --sidebar-primary: oklch(0.615 0.103 43);
+  --sidebar-primary: oklch(0.555 0.103 43);
   --sidebar-primary-foreground: oklch(0.995 0 0);
   --sidebar-accent: oklch(0.960 0.008 78);
   --sidebar-accent-foreground: oklch(0.261 0.022 269);
   --sidebar-border: oklch(0.924 0.011 77);
-  --sidebar-ring: oklch(0.615 0.103 43);
+  --sidebar-ring: oklch(0.555 0.103 43);
 
   /* Status — always paired with an icon or label, never hue alone */
   --success: oklch(0.732 0.146 162);
@@ -81,7 +81,7 @@
   /* Surfaces + ink ramp (v3) */
   --surface-sunken: oklch(0.955 0.008 78);
   --border-strong: oklch(0.860 0.014 77);
-  --subtle-foreground: oklch(0.640 0.025 265);
+  --subtle-foreground: oklch(0.540 0.025 265);
   --brand-soft: oklch(0.615 0.103 43 / 0.10);
   --brand-soft-foreground: oklch(0.480 0.100 43);
   --success-soft: oklch(0.732 0.146 162 / 0.14);
@@ -115,7 +115,7 @@
   --card-foreground: oklch(0.960 0.004 78);
   --popover: oklch(0.270 0.009 285);
   --popover-foreground: oklch(0.960 0.004 78);
-  --primary: oklch(0.660 0.108 44);
+  --primary: oklch(0.700 0.108 44);
   --primary-foreground: oklch(0.180 0.020 40);
   --secondary: oklch(0.320 0.010 285);
   --secondary-foreground: oklch(0.960 0.004 78);
@@ -128,7 +128,7 @@
   --destructive-foreground: oklch(0.180 0.030 23);
   --border: oklch(0.340 0.010 285);
   --input: oklch(0.340 0.010 285);
-  --ring: oklch(0.660 0.108 44);
+  --ring: oklch(0.700 0.108 44);
   /* Same eight hues, stepped for the dark card surface (validated). */
   --chart-1: #3987e5;
   --chart-2: #d95926;
@@ -144,12 +144,12 @@
   --delta-down: oklch(0.740 0.150 25);
   --sidebar: oklch(0.250 0.008 285);
   --sidebar-foreground: oklch(0.960 0.004 78);
-  --sidebar-primary: oklch(0.660 0.108 44);
+  --sidebar-primary: oklch(0.700 0.108 44);
   --sidebar-primary-foreground: oklch(0.180 0.020 40);
   --sidebar-accent: oklch(0.320 0.010 285);
   --sidebar-accent-foreground: oklch(0.960 0.004 78);
   --sidebar-border: oklch(0.340 0.010 285);
-  --sidebar-ring: oklch(0.660 0.108 44);
+  --sidebar-ring: oklch(0.700 0.108 44);
 
   /* Status, lifted for dark surfaces (all ≥4.5:1 on --background/--card) */
   --success: oklch(0.760 0.140 162);
@@ -161,7 +161,7 @@
 
   --surface-sunken: oklch(0.195 0.008 285);
   --border-strong: oklch(0.420 0.012 285);
-  --subtle-foreground: oklch(0.640 0.018 270);
+  --subtle-foreground: oklch(0.680 0.018 270);
   --brand-soft: oklch(0.660 0.108 44 / 0.16);
   --brand-soft-foreground: oklch(0.800 0.090 45);
   --success-soft: oklch(0.760 0.140 162 / 0.16);

@@ -47,7 +47,7 @@ export function SectionNav({ sections, className }: { sections: SectionLink[]; c
             className={cn(
               'ui-press inline-flex min-h-10 shrink-0 items-center rounded-full border px-4 text-sm font-medium transition-colors',
               active === s.id
-                ? 'border-primary bg-primary/10 text-primary'
+                ? 'border-primary bg-brand-soft text-brand-soft-foreground'
                 : 'border-border bg-card text-muted-foreground hover:text-foreground',
             )}
           >

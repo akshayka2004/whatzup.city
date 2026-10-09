@@ -40,7 +40,7 @@ export function NoticeDetailsModal({
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5 pb-6 sm:p-6">
           <div className="mb-4 flex items-center gap-3 pr-10">
-            <div className="shrink-0 rounded-xl bg-primary/10 p-3 text-primary">
+            <div className="shrink-0 rounded-xl bg-brand-soft p-3 text-brand-soft-foreground">
               <Bell className="h-6 w-6" />
             </div>
             <div className="min-w-0">

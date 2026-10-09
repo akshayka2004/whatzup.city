@@ -133,7 +133,7 @@ export function EventsClient({ initialEvents = null }: { initialEvents?: unknown
 
         <div className="mb-6 grid grid-cols-2 gap-3 sm:flex">
           <Select value={city || 'all'} onValueChange={handleCityChange}>
-            <SelectTrigger className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
+            <SelectTrigger aria-label="City" className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
               <SelectValue placeholder="Filter by city" />
             </SelectTrigger>
             <SelectContent>
@@ -144,7 +144,7 @@ export function EventsClient({ initialEvents = null }: { initialEvents?: unknown
             </SelectContent>
           </Select>
           <Select value={category || 'all'} onValueChange={(v) => setCategory(v === 'all' ? '' : v)}>
-            <SelectTrigger className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
+            <SelectTrigger aria-label="Category" className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>

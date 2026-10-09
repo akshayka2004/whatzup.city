@@ -175,7 +175,7 @@ export default function BusinessSubscriptionsPage() {
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-bold text-primary">{p.name}</span>
                           {current && (
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand-soft-foreground">
                               Current
                             </span>
                           )}
@@ -210,7 +210,7 @@ export default function BusinessSubscriptionsPage() {
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-bold text-primary">{p.name}</span>
                           {current && (
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand-soft-foreground">
                               Current
                             </span>
                           )}

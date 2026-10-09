@@ -276,6 +276,29 @@ function SearchContent() {
     (suggestions.businesses.length > 0 || suggestions.categories.length > 0 || suggestions.subcategories.length > 0);
   const showRecents = focused && searchTerm.length === 0 && recents.length > 0;
 
+  // Combobox keyboard support: ↑/↓ move through the suggestions, Enter opens one, Esc closes.
+  const [activeSugg, setActiveSugg] = useState(-1);
+  const subs = suggestions.subcategories.filter(Boolean);
+  const suggCount = hasSuggestions ? suggestions.businesses.length + suggestions.categories.length + subs.length : 0;
+  useEffect(() => setActiveSugg(-1), [suggestions, showSuggestions]);
+  const optId = (i: number) => `search-sugg-${i}`;
+  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      setShowSuggestions(false);
+      return;
+    }
+    if (!suggCount) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const next = e.key === 'ArrowDown' ? (activeSugg + 1) % suggCount : (activeSugg - 1 + suggCount) % suggCount;
+      setActiveSugg(next);
+      document.getElementById(optId(next))?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter' && activeSugg >= 0) {
+      e.preventDefault();
+      document.getElementById(optId(activeSugg))?.click();
+    }
+  };
+
   // Ideas for the empty state — real category names when we have them.
   const cats = useCachedGet<any>('/v1/categories', { ttlMs: 5 * 60_000 });
   const ideas = useMemo(() => {
@@ -314,6 +337,12 @@ function SearchContent() {
               inputMode="search"
               enterKeyHint="search"
               aria-label="Search businesses"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={hasSuggestions}
+              aria-controls="search-suggestions"
+              aria-activedescendant={activeSugg >= 0 ? optId(activeSugg) : undefined}
+              onKeyDown={onSearchKeyDown}
               placeholder="Search by name, category, product, or offer…"
               value={searchTerm}
               onChange={(e) => {
@@ -377,19 +406,27 @@ function SearchContent() {
 
             {/* Suggestions dropdown */}
             {hasSuggestions && (
-              <div className="ui-pop absolute left-0 right-0 top-full z-50 mt-1 max-h-[60vh] overflow-y-auto overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+              <div
+                id="search-suggestions"
+                role="listbox"
+                aria-label="Suggestions"
+                className="ui-pop absolute left-0 right-0 top-full z-50 mt-1 max-h-[60vh] overflow-y-auto overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
+              >
                 {suggestions.businesses.length > 0 && (
                   <div>
                     <p className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Businesses</p>
-                    {suggestions.businesses.map((b) => (
+                    {suggestions.businesses.map((b, i) => (
                       <Link
                         key={b.id}
+                        id={optId(i)}
+                        role="option"
+                        aria-selected={activeSugg === i}
                         href={`/business/${b.id}`}
                         onClick={() => {
                           addRecent(searchTerm);
                           setShowSuggestions(false);
                         }}
-                        className="flex min-h-11 cursor-pointer items-center gap-3 px-4 py-2 transition-colors hover:bg-muted/40"
+                        className={`flex min-h-11 cursor-pointer items-center gap-3 px-4 py-2 transition-colors hover:bg-muted/40 ${activeSugg === i ? 'bg-muted/60' : ''}`}
                       >
                         <Building2 className="h-4 w-4 shrink-0 text-primary" />
                         <div className="min-w-0">
@@ -403,33 +440,45 @@ function SearchContent() {
                 {suggestions.categories.length > 0 && (
                   <div>
                     <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Categories</p>
-                    {suggestions.categories.map((cat) => (
+                    {suggestions.categories.map((cat, j) => {
+                      const i = suggestions.businesses.length + j;
+                      return (
                       <button
                         type="button"
                         key={cat}
+                        id={optId(i)}
+                        role="option"
+                        aria-selected={activeSugg === i}
                         onClick={() => commit(cat)}
-                        className="flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/40"
+                        className={`flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/40 ${activeSugg === i ? 'bg-muted/60' : ''}`}
                       >
                         <Tag className="h-4 w-4 shrink-0 text-muted-foreground" />
                         <span className="text-sm text-foreground">{cat}</span>
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
                 {suggestions.subcategories.filter(Boolean).length > 0 && (
                   <div>
                     <p className="px-4 pb-1 pt-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Subcategories</p>
-                    {suggestions.subcategories.filter(Boolean).map((sub) => (
+                    {subs.map((sub, j) => {
+                      const i = suggestions.businesses.length + suggestions.categories.length + j;
+                      return (
                       <button
                         type="button"
                         key={sub}
+                        id={optId(i)}
+                        role="option"
+                        aria-selected={activeSugg === i}
                         onClick={() => commit(sub)}
-                        className="flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/40"
+                        className={`flex min-h-11 w-full cursor-pointer items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/40 ${activeSugg === i ? 'bg-muted/60' : ''}`}
                       >
                         <Tag className="h-4 w-4 shrink-0 text-muted-foreground" />
                         <span className="text-sm text-foreground">{sub}</span>
                       </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
                 <div className="h-2" />

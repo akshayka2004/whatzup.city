@@ -158,7 +158,7 @@ export function BrandConvertForm({
       <BillSeriesQuestion mode={mode} prefix={prefix} onModeChange={setMode} onPrefixChange={setPrefix} />
 
       {error && (
-        <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+        <p role="alert" className="rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2 text-xs text-danger-soft-foreground">
           {error}
         </p>
       )}

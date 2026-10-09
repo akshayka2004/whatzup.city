@@ -49,11 +49,11 @@ export function HomeHero({
           <p className="truncate text-sm font-bold text-foreground">{featuredOffer.title || featuredOffer.name}</p>
         </div>
         {featuredOffer.code ? (
-          <span className="rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 font-mono text-xs font-extrabold text-primary">
+          <span className="rounded-lg border border-primary/20 bg-brand-soft px-2 py-1 font-mono text-xs font-extrabold text-brand-soft-foreground">
             {featuredOffer.code}
           </span>
         ) : discountText(featuredOffer) ? (
-          <span className="rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-xs font-extrabold text-primary">
+          <span className="rounded-lg border border-primary/20 bg-brand-soft px-2 py-1 text-xs font-extrabold text-brand-soft-foreground">
             {discountText(featuredOffer)}
           </span>
         ) : null}

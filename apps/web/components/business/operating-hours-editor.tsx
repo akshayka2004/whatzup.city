@@ -142,7 +142,7 @@ export function OperatingHoursEditor({
                   className={cn(
                     'ui-press inline-flex min-h-10 min-w-[5.5rem] items-center justify-center rounded-full border px-4 text-sm font-medium transition-colors',
                     open
-                      ? 'border-primary bg-primary/10 text-primary'
+                      ? 'border-primary bg-brand-soft text-brand-soft-foreground'
                       : 'border-border bg-muted text-muted-foreground',
                   )}
                 >
@@ -209,7 +209,7 @@ export function OperatingHoursEditor({
                           className={cn(
                             'ui-press inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors',
                             midnight
-                              ? 'border-primary bg-primary/10 text-primary'
+                              ? 'border-primary bg-brand-soft text-brand-soft-foreground'
                               : 'border-border text-muted-foreground hover:text-foreground',
                           )}
                         >

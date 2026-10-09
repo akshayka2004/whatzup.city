@@ -250,7 +250,7 @@ export function OffersSection({
                       Unlocks at ₹{v.thresholdAmount.toLocaleString('en-IN')} spend
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-lg bg-primary/10 px-2 py-1 text-sm font-bold text-primary">
+                  <span className="shrink-0 rounded-lg bg-brand-soft px-2 py-1 text-sm font-bold text-brand-soft-foreground">
                     {v.rewardType === 'PERCENT'
                       ? `${v.rewardValue}% off`
                       : v.rewardType === 'AMOUNT'
@@ -306,7 +306,7 @@ export function OffersSection({
       {/* ── CLAIM CONFIRMATION MODAL */}
       {claimingOffer && (
         <ModalShell label="Claim promotional offer" onClose={() => setClaimingOffer(null)} className="text-center sm:max-w-sm">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-brand-soft-foreground">
             <Ticket className="h-6 w-6" />
           </div>
           <h3 className="mb-2 text-lg font-bold text-foreground">Claim Promotional Offer</h3>
@@ -336,7 +336,7 @@ export function OffersSection({
       {/* ── CLAIM SUCCESS MODAL */}
       {claimedCode && (
         <ModalShell label="Offer claimed" onClose={() => setClaimedCode(null)} className="text-center sm:max-w-sm">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success/15 text-success">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success-soft text-success-soft-foreground">
             <Check className="ui-check h-6 w-6" />
           </div>
           <h3 className="mb-2 text-lg font-bold text-foreground">Offer Claimed!</h3>

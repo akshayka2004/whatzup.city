@@ -68,7 +68,7 @@ export function OtherOutlets({ brandId, currentBusinessId }: { brandId?: string 
                 fallback={<Store className="h-5 w-5" />}
               />
             ) : (
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-soft-foreground">
                 <Store className="h-5 w-5" />
               </div>
             )}

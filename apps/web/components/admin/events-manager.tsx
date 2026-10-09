@@ -190,7 +190,7 @@ export function EventsManager() {
                                   {EVENT_CATEGORIES.find((c) => c.value === e.category)?.label || e.category}
                                 </span>
                               )}
-                              <span className={`px-1.5 py-0.5 rounded-md text-xs font-medium ${e.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'}`}>
+                              <span className={`px-1.5 py-0.5 rounded-md text-xs font-medium ${e.ticketType === 'PAID' ? 'bg-brand-soft text-brand-soft-foreground' : 'bg-success-soft text-success-soft-foreground'}`}>
                                 {e.ticketType !== 'PAID'
                                   ? 'Free'
                                   : Array.isArray(e.ticketTiers) && e.ticketTiers.length
@@ -237,7 +237,7 @@ export function EventsManager() {
                         <p className="text-xs text-muted-foreground">{r.event?.business?.name || ''}</p>
                       </div>
                       <div className="text-right shrink-0 ml-3">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${r.type === 'TICKET' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'}`}>{r.type}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${r.type === 'TICKET' ? 'bg-success-soft text-success-soft-foreground' : 'bg-brand-soft text-brand-soft-foreground'}`}>{r.type}</span>
                         <p className="text-xs text-muted-foreground mt-0.5">{fmt(r.createdAt)}</p>
                       </div>
                     </div>

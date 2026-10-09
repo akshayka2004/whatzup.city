@@ -79,7 +79,7 @@ export function MovieCard({
 
         <div className="mt-2 flex flex-wrap items-center gap-1">
           {langs.slice(0, 3).map((l) => (
-            <span key={l} className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            <span key={l} className="rounded-full bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-soft-foreground">
               {l}
             </span>
           ))}

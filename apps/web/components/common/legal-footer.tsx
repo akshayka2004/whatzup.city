@@ -4,7 +4,7 @@ import { BrandLogo } from '@/components/common/brand-logo';
 export function LegalFooter() {
   const year = new Date().getFullYear();
   return (
-    <footer className="w-full border-t border-border bg-card/40 mt-auto">
+    <footer className="mt-auto w-full border-t border-border bg-card">
       <div className="w-full px-6 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
 

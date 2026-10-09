@@ -45,7 +45,7 @@ export function ResponsiveImage({
 
   if (!src || stage === 'failed') {
     return (
-      <div className={cn(box, 'flex items-center justify-center text-muted-foreground')} style={style} role="img" aria-label={alt}>
+      <div className={cn(box, 'flex items-center justify-center text-muted-foreground')} style={style} {...(alt ? { role: 'img', 'aria-label': alt } : { 'aria-hidden': true })}>
         {fallback ?? null}
       </div>
     );

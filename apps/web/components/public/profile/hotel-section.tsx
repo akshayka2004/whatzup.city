@@ -18,7 +18,7 @@ export default function HotelSection({ biz }: { biz: any }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-bold text-foreground sm:text-2xl">Hotel</h2>
         {biz.hotelStarRating && (
-          <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+          <span className="rounded-full border border-primary/20 bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-soft-foreground">
             {biz.hotelStarRating}★ classification
           </span>
         )}

@@ -51,7 +51,7 @@ export function BrandSettingsCard() {
     return (
       <Card className="rounded-2xl border-border bg-card p-5 space-y-4">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-soft-foreground">
             <Layers className="h-5 w-5" />
           </div>
           <div className="min-w-0">
@@ -125,7 +125,7 @@ export function BrandSettingsCard() {
   return (
     <Card className="rounded-2xl border-border bg-card p-5 space-y-5">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-soft-foreground">
           <Store className="h-5 w-5" />
         </div>
         <div className="min-w-0">
@@ -166,7 +166,7 @@ export function BrandSettingsCard() {
       </p>
 
       {error && (
-        <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+        <p role="alert" className="rounded-xl border border-destructive/30 bg-danger-soft px-3 py-2 text-xs text-danger-soft-foreground">
           {error}
         </p>
       )}

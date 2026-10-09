@@ -273,7 +273,7 @@ export function RegistrationDetailsForm({
                 className={cn(
                   'rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
                   prefs.includes(p)
-                    ? 'border-primary bg-primary/10 text-primary'
+                    ? 'border-primary bg-brand-soft text-brand-soft-foreground'
                     : 'border-border text-muted-foreground hover:text-foreground',
                 )}
               >
@@ -322,7 +322,7 @@ export function RegistrationDetailsForm({
                           onClick={() => setAttr(a.key, on ? arr.filter((x) => x !== o) : [...arr, o])}
                           className={cn(
                             'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-                            on ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:text-foreground',
+                            on ? 'border-primary bg-brand-soft text-brand-soft-foreground' : 'border-border text-muted-foreground hover:text-foreground',
                           )}
                         >
                           {o}

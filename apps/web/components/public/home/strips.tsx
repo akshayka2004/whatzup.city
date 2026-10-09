@@ -231,7 +231,7 @@ export function UpcomingEvents({ body, loading }: { body: unknown; loading: bool
                   <span
                     className={cn(
                       'shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold',
-                      ev.ticketType === 'PAID' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success-foreground dark:text-success',
+                      ev.ticketType === 'PAID' ? 'bg-brand-soft text-brand-soft-foreground' : 'bg-success/10 text-success-foreground dark:text-success',
                     )}
                   >
                     {price}

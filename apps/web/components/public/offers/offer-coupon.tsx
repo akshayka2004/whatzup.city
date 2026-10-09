@@ -144,7 +144,7 @@ export function OfferCoupon({
     primary = (
       <div
         className={cn(
-          'flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-success/25 bg-success/12 text-sm font-semibold text-success',
+          'flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-success/25 bg-success-soft text-sm font-semibold text-success-soft-foreground',
           justClaimed && 'ui-pop',
         )}
       >
@@ -204,7 +204,7 @@ export function OfferCoupon({
                   key={claimed ? 'claimed' : 'discount'}
                   className={cn(
                     'max-w-[45%] shrink-0 break-words rounded-xl px-3 py-1 text-right text-lg font-bold leading-tight',
-                    claimed ? 'bg-success/12 text-success' : 'bg-primary/10 text-primary',
+                    claimed ? 'bg-success-soft text-success-soft-foreground' : 'bg-brand-soft text-brand-soft-foreground',
                     justClaimed && 'ui-pop',
                   )}
                 >
@@ -224,12 +224,12 @@ export function OfferCoupon({
 
             <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
               {offer.businessType && (
-                <span className="inline-block rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                <span className="inline-block rounded-full border border-primary/20 bg-brand-soft px-2 py-0.5 text-xs font-medium text-brand-soft-foreground">
                   {offer.businessType}
                 </span>
               )}
               {offer.isPlatform && (
-                <span className="inline-block rounded-full border border-warning/25 bg-warning/10 px-2 py-0.5 text-xs font-semibold text-warning">
+                <span className="inline-block rounded-full border border-warning/25 bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning-soft-foreground">
                   Platform exclusive
                 </span>
               )}
