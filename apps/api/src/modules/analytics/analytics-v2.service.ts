@@ -115,13 +115,14 @@ export class AnalyticsV2Service {
       const g = groupOf(row.event);
       if (g) byGroup[g] += n(row.total);
     }
-    const distinct = await this.db.$queryRaw<{ viewers: bigint; actors: bigint }[]>(Prisma.sql`
+    const distinct = await this.db.$queryRaw<{ viewers: bigint; actors: bigint; seers: bigint }[]>(Prisma.sql`
       SELECT
         count(DISTINCT ${VID}) FILTER (WHERE event IN (${Prisma.join(eventsFor('profileView'))})) AS viewers,
-        count(DISTINCT ${VID}) FILTER (WHERE event IN (${Prisma.join(eventsFor(...ACTION_GROUPS))})) AS actors
+        count(DISTINCT ${VID}) FILTER (WHERE event IN (${Prisma.join(eventsFor(...ACTION_GROUPS))})) AS actors,
+        count(DISTINCT ${VID}) FILTER (WHERE event IN (${Prisma.join(eventsFor('impression'))})) AS seers
       FROM analytics_events
       WHERE ${where} created_at >= ${r.start} AND created_at < ${r.end} AND deleted_at IS NULL AND ${HUMAN} ${extra}`);
-    return { byGroup, viewers: n(distinct[0]?.viewers), actors: n(distinct[0]?.actors) };
+    return { byGroup, viewers: n(distinct[0]?.viewers), actors: n(distinct[0]?.actors), seers: n(distinct[0]?.seers) };
   }
 
   private async businessOutcomes(businessId: string, r: IstRange) {
@@ -205,6 +206,8 @@ export class AnalyticsV2Service {
       kpis,
       avgRatingInPeriod: out.avgRating,
       funnel: [
+        // Top of funnel only once list impressions are being recorded, so old ranges don't show 0 → N.
+        ...(cur.seers > 0 ? [{ stage: 'Saw it in a list', value: cur.seers }] : []),
         { stage: 'Unique visitors', value: cur.viewers },
         { stage: 'Took an action', value: cur.actors },
         { stage: 'Claimed an offer', value: out.claimers },

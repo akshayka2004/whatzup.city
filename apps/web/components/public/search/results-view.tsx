@@ -7,6 +7,7 @@ import { LayoutGrid, Map as MapIcon, Star, X } from 'lucide-react';
 import { ResultsGrid } from '@/components/public/search/results-grid';
 import { pointsFrom } from '@/components/public/map/points';
 import { track } from '@/lib/analytics/track';
+import { useImpression } from '@/lib/analytics/use-impression';
 import { cn } from '@/lib/utils';
 
 // MapLibre is ~250 KB; it only loads once someone opens the map.
@@ -50,9 +51,13 @@ function Row({ b, km, active, onHover, innerRef }: { b: any; km?: number | null;
   const rating = Number(b.avgRating ?? b.averageRating);
   const reviews = Number(b.reviewCount ?? b.totalReviews ?? 0) || 0;
   const cat = b.category?.name || b.categoryName || '';
+  const seenRef = useImpression<HTMLAnchorElement>(b.id);
   return (
     <Link
-      ref={innerRef}
+      ref={(el) => {
+        seenRef.current = el;
+        innerRef(el);
+      }}
       href={`/business/${b.id}`}
       onMouseEnter={() => onHover(b.id)}
       onMouseLeave={() => onHover(null)}

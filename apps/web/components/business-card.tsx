@@ -11,6 +11,7 @@ import { ResponsiveImage } from './common/responsive-image';
 import { formatDistance } from './public/search/geo';
 import { isFavorite, toggleFavorite, FAVORITES_EVENT } from '@/lib/favorites';
 import { track } from '@/lib/analytics/track';
+import { useImpression } from '@/lib/analytics/use-impression';
 import { cn } from '@/lib/utils';
 
 const SOURCE_BY_PATH: [RegExp, string][] = [
@@ -97,9 +98,11 @@ export function BusinessCard({
   const address = showLinks ? [business.address, business.city, business.state].filter(Boolean).join(', ') : '';
   const instagram: string | undefined = showLinks ? business.socialLinks?.instagram : undefined;
   const website: string | undefined = showLinks ? business.website : undefined;
+  const impressionRef = useImpression<HTMLElement>(business.id);
 
   return (
     <article
+      ref={impressionRef}
       className={cn(
         'group relative flex h-full flex-col overflow-hidden rounded-card border border-border/70 bg-card shadow-e1 transition-[box-shadow,border-color,transform] duration-200 ease-out-quint hover:border-border-strong hover:shadow-e2 focus-within:border-border-strong active:scale-[0.99] motion-reduce:active:scale-100',
         className,

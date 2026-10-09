@@ -68,3 +68,58 @@ export function track(
     })
     .catch(() => {});
 }
+
+/* ── Listing impressions ─────────────────────────────────────────────────────
+   A card counts as seen once ≥50% of it is on screen. Each business is counted once
+   per page per session, queued, and sent in batches of ≤25 (the batch endpoint's cap)
+   every few seconds or when the tab is hidden, so a long result list costs a handful
+   of requests rather than one per card. */
+const IMPRESSION_FLUSH_MS = 4000;
+const BATCH_MAX = 25;
+const seen = new Set<string>();
+let queue: { businessId: string; source: string }[] = [];
+let timer: ReturnType<typeof setTimeout> | null = null;
+let hideHooked = false;
+
+function flushImpressions(useBeacon = false) {
+  if (timer) {
+    clearTimeout(timer);
+    timer = null;
+  }
+  if (!queue.length || typeof window === 'undefined') return;
+  let visitorId: string | undefined;
+  try {
+    visitorId = getVisitorId();
+  } catch {
+    visitorId = undefined;
+  }
+  const sessionId = getSessionId();
+  while (queue.length) {
+    const chunk = queue.splice(0, BATCH_MAX);
+    const body = {
+      events: chunk.map((c) => ({ event: 'LISTING_IMPRESSION', businessId: c.businessId, source: c.source, visitorId, sessionId })),
+    };
+    if (useBeacon && typeof navigator !== 'undefined' && navigator.sendBeacon) {
+      navigator.sendBeacon('/api/v1/analytics/track/batch', new Blob([JSON.stringify(body)], { type: 'application/json' }));
+    } else {
+      apiService.post('/v1/analytics/track/batch', body).catch(() => {});
+    }
+  }
+}
+
+export function trackImpression(businessId: string, source?: string) {
+  if (typeof window === 'undefined' || !businessId) return;
+  const src = source ?? PATH_SOURCES.find(([re]) => re.test(window.location.pathname))?.[1] ?? 'other';
+  const key = `${window.location.pathname}|${businessId}`;
+  if (seen.has(key)) return;
+  seen.add(key);
+  queue.push({ businessId, source: src });
+  if (!hideHooked) {
+    hideHooked = true;
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushImpressions(true);
+    });
+  }
+  if (queue.length >= BATCH_MAX) flushImpressions();
+  else if (!timer) timer = setTimeout(() => flushImpressions(), IMPRESSION_FLUSH_MS);
+}
