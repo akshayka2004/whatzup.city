@@ -48,15 +48,22 @@ Build broken into phases. ✅ done · 🟡 in progress · ⬜ planned.
 - ✅ **UX-3 — Public pages:** BusinessCard v2, search-first hero, category bar,
   favorites fix, no fake claim codes, search/card/save/share/website tracking.
 - ✅ **Auth:** light AuthShell, `/reset-password`.
-- 🟡 **UX-4 — Business dashboard:** ✅ Today overview, analytics, sectioned settings,
-  accessible modals everywhere · ⬜ bill-queue split view + shortcuts, promotions
-  drawer with live preview, review replies, real support tickets.
-- 🟡 **UX-5 — Admin/super-admin:** ✅ platform overview on analytics v2, live system
-  health, real bill-escalation queue, fabricated screens removed · ⬜ merge admin /
-  super-admin duplicates, DataTable on all lists.
-- 🟡 **UX-6 — States & polish:** ✅ toasts/confirm dialog, 12px minimum text,
-  semantic colours app-wide, dark-mode logo · ⬜ dashboard `loading.tsx`, full a11y
-  audit, Malayalam for page bodies.
+- ✅ **UX-4 — Business dashboard:** Today overview, analytics, sectioned settings,
+  split-view bill queue (J/K/A/R/U/X shortcuts, bulk approve), one Promotions look for
+  offers/vouchers/spin wheel with live coupon preview and per-offer stats, review
+  replies, real support tickets, customer segments + server CSV export, products
+  table/grid, drag-to-reorder menu photos.
+- ✅ **UX-5 — Admin/super-admin:** platform overview with city/category filters, live
+  system health, real bill escalations, support inbox, DataTable on users, businesses,
+  brands, subscriptions (+transactions) and audit (server search/filter); tenants page
+  retired; civic and government portals moved into the shared shell.
+- ✅ **UX-6 — States & polish:** toasts/confirm everywhere, zero hand-built overlays
+  (strict design guard in CI), WCAG AA contrast in both themes (axe: 0 violations on
+  audited pages), search combobox, next/image for display images, Malayalam for the
+  home/search/listing/offer surfaces, 0 web type errors, Prettier pass, register
+  wizard split into hook + step components.
+- ✅ **Public:** map view on search/nearby (MapLibre + OpenFreeMap), server-side
+  open-now/halal/fulfilment filters, shareable event pages, URL-synced offer filters.
 
 ## Analytics v2 (October 2026)
 
@@ -65,7 +72,10 @@ Build broken into phases. ✅ done · 🟡 in progress · ⬜ planned.
 - ✅ Event allowlist, server-derived tenant/device/bot, hashed IPs, batch ingest.
 - ✅ Ownership checks on business analytics/customers/dashboard; trials stats role guard.
 - ✅ Claims idempotent + atomic; verified purchases counted on verification.
-- ⬜ Daily rollup tables + nightly job (only needed once event volume grows).
+- ✅ Daily rollups (`daily_business_stats`) + nightly 00:30 IST job; reports read rollups
+  for completed days and raw events for today.
+- ✅ Listing impressions (batched, deduped) as the funnel's top stage.
+- ✅ Weekly owner digest (in-app + push), opt-in via `WEEKLY_DIGEST=on`.
 
 ## Remaining / backlog
 

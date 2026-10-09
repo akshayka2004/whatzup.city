@@ -90,6 +90,10 @@ Type utilities: `text-display`, `text-title`, `text-heading`, `text-body`, `text
 | Feedback | `toast` from `components/ui/sonner`, `useConfirm()` — never `alert/confirm` |
 | Concept icons | `lib/icons.ts` (one lucide icon per product concept) |
 | Analytics | `components/analytics/*` (KpiCard, RangePicker, TimeSeriesChart, BarList, Funnel, Heatmap) |
+| Promotions (offer/voucher/wheel cards, code redeem box) | `components/promotions/promo-card.tsx`, `redeem-panel.tsx` |
+| Map of results (lazy MapLibre) | `components/public/map/business-map.tsx` via `components/public/search/results-view.tsx` |
+| Impressions | `useImpression()` from `lib/analytics/use-impression.ts` on any listing card |
+| Copy in Malayalam | `useI18n().t('key')`; strings in `lib/i18n/messages/*.ts` (en + ml) |
 | Business listing card | `components/business-card.tsx` (one card everywhere) |
 | Auth screens | `components/auth/auth-shell.tsx` (`AuthShell`, `AuthField`, `FormAlert`) |
 
@@ -103,8 +107,22 @@ Buttons: `primary` (one per view) · `tonal` · `secondary` · `outline` · `gho
 radius). Reveal already-visible content only. Everything respects
 `prefers-reduced-motion`. No decorative drifting blobs.
 
+## Accessibility
+
+- Text tokens meet 4.5:1 in both themes (`primary` L .555 light / .70 dark; muted and
+  subtle foregrounds darkened). Text on a tint uses the `*-soft` + `*-soft-foreground`
+  pair, never `bg-x/10 text-x`.
+- Selectable cards use a full-size underlying button so inner controls never nest.
+- Decorative images: `alt=""` (ResponsiveImage then hides the fallback from AT).
+- Run axe (`wcag2a/2aa/21aa`) on changed pages in light and dark before shipping.
+
+## Guard rails
+
+- `pnpm lint:design:strict` runs in CI: no raw palette, `[#hex]`, sub-12px text,
+  `fixed inset-0` overlays or `alert/confirm`. A deliberate full-screen layer may carry a
+  `design-lint-ignore: reason` comment within three lines above.
+
 ## Known debt
 
-- 13 legacy overlays remain (already have dialog roles or are full-screen states).
-- Register wizard is restyled on tokens but still one long component; split into
-  `register/(wizard)/[step]` with RHF+zod when the signup flow can be tested end-to-end.
+- Register wizard steps are split into components but still share one hook; moving each
+  step to RHF + zod is the next step once the signup flow can be tested end-to-end.

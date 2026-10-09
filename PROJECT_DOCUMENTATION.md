@@ -297,6 +297,11 @@ DIRECT_URL     # pooler :5432                   (migrations)
 # Redis
 REDIS_URL      # redis://localhost:6379
 
+# Analytics jobs (API)
+ANALYTICS_ROLLUPS=off   # disables the nightly 00:30 IST rollup job (default: on)
+WEEKLY_DIGEST=on        # enables the Monday 09:00 IST owner digest (default: OFF —
+                        # local dev shares the prod DB and must never notify owners)
+
 # Auth
 JWT_SECRET, JWT_REFRESH_SECRET, JWT_EXPIRES_IN, JWT_REFRESH_EXPIRES_IN
 
@@ -576,6 +581,22 @@ with *"One of the fields you entered is too long"* even though nothing looked lo
   text) is the reliable fallback. To find the column, check the PM2 log line.
 
 ---
+
+### 10.11 MapLibre's worker is served from `public/vendor/maplibre`
+
+MapLibre v6 starts its tile parser in a module worker that Turbopack/webpack cannot
+resolve, so `apps/web/scripts/sync-maplibre.mjs` copies `maplibre-gl-worker.mjs` and
+`maplibre-gl-shared.mjs` into `public/vendor/maplibre/` (it runs automatically before
+`next build`, and the copies are committed). After bumping `maplibre-gl`, run
+`node apps/web/scripts/sync-maplibre.mjs` and commit the result, or maps fail with
+"Worker failed to load".
+
+### 10.12 `pnpm install` can leave a stale Prisma client
+
+Changing dependencies (e.g. the `@types/react` override) re-links `@prisma/client`, and
+the API then fails at runtime with "Unknown argument …" even though nothing in the
+schema changed. Always run `pnpm --filter @saas/database db:generate` after an install,
+then restart the API (same rule as on the VPS deploy).
 
 ## 11. Region / infrastructure migration runbook
 
@@ -884,6 +905,24 @@ brand fields (outlet names already contain the brand name), promoting legacy
 
 ---
 
+### 12.x Redesign v3 additions (October 2026)
+
+Migration `20261009000000_redesign_support_replies_rollups` (additive): review owner
+replies, `support_tickets` / `support_messages`, `daily_business_stats`.
+
+| Endpoint | Who | Purpose |
+|---|---|---|
+| `PUT /v1/reviews/:id/reply` | owner/staff | Publish, edit or clear (empty) a public reply |
+| `/v1/support/tickets` (+ `/:id`, `/:id/messages`, `/:id/status`, `/admin/all`) | owner · staff/admins | Ticketing with in-app notifications |
+| `GET /v1/analytics/v2/business/:id/report` · `/offers` · `/digest` | owner | IST report, per-offer stats, weekly digest preview |
+| `GET /v1/analytics/v2/platform/report?city=&categoryId=` | master/super admin | Platform report, optionally scoped |
+| `POST /v1/analytics/v2/rollups/backfill?days=` | super admin | Recompute daily rollups |
+| `POST /v1/analytics/track/batch` | public | ≤25 events (used for listing impressions) |
+| `GET /v1/businesses/:id/customers?filter=new\|returning\|lapsed…` · `/export` | owner | Segments and server-side CSV |
+| `PUT /v1/media/menu/business/:id/order` | owner | Save menu-photo order |
+| `GET /v1/audit-logs?q=&category=&page=` | admins | Server-side audit search/filter |
+| `GET /v1/search/discover?open=1&halal=1&fulfilment=` | public | Server-side filters with exact totals |
+
 ## 13. Search, storage, realtime
 
 - **Search:** Typesense module indexes businesses; the API indexes on
@@ -998,6 +1037,10 @@ overnight).
 | Security hardening (PII encryption, lockout, upload verification) + tenant-scope triage | 2026-07-29 | `ec47df0`→`11dbefb` | 12 h 33 min |
 | Kerala Flood Relief Portal (independent workspace app) | 2026-08-04–05 | `4c80cfa`→`d994c9c` | 20 h 51 min |
 | Pricing: Whtzup entry tier, annual hotel billing | 2026-08-11 | `67e959a` | — |
+| Redesign v3: tokens, AppShell, public/auth/dashboard/admin rework | 2026-10-01–08 | `bb86358`→`b254c41` | 8 days |
+| Analytics v2: IST reports, rollups, impressions, weekly digest | 2026-10-03–09 | `ec0a65e`, `48a9963`, `9bf0d3a`, `634aa10` | 6 days |
+| Bill queue, promotions, map view, customers, catalog, admin DataTables | 2026-10-08–09 | `fe74093`→`6f1c9e0` | 2 days |
+| Civic shell, overlays → Dialog, register split, images, types, a11y, Malayalam, Prettier | 2026-10-09 | `30a0e33`→`15772a5` | 1 day |
 | Subscription/paywall/sidebar fixes | 2026-08-11 | `dd995ce`→`7aaa403` | 11 min |
 | Platform offers (Sadya/Clothing/Electronics/Staycation) + perf/security fixes | 2026-08-12 | `8cf5a71`→`a244b49` | 47 min |
 | Platform offers: Payasam category, itemized rates | 2026-08-12 | `fd35666` | — |
