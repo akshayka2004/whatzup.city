@@ -807,6 +807,7 @@ export default function ApprovalsPage() {
                             }
                             if (isImage) {
                               return (
+                                // eslint-disable-next-line @next/next/no-img-element -- KYC documents: unknown size, signed URL, shown whole
                                 <img
                                   src={selectedDoc.fileUrl}
                                   alt={selectedDoc.name}

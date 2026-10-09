@@ -1,5 +1,7 @@
 'use client';
 
+import { ResponsiveImage } from '@/components/common/responsive-image';
+
 import { PageHeader } from '@/components/system/page-header';
 import { SectionNav } from '@/components/common/section-nav';
 import { toast } from '@/components/ui/sonner';
@@ -427,7 +429,7 @@ export default function BusinessSettingsPage() {
           <div className="flex items-center gap-5 flex-wrap">
             <div className="h-20 w-20 rounded-2xl border border-border bg-secondary/60 overflow-hidden flex items-center justify-center shrink-0">
               {logoUrl ? (
-                <img src={logoUrl} alt="Business logo" className="h-full w-full object-contain" />
+                <ResponsiveImage src={logoUrl} alt="Business logo" ratio="1" sizes="128px" className="h-full w-full" imgClassName="object-contain" />
               ) : (
                 <Building2 className="h-8 w-8 text-muted-foreground" />
               )}

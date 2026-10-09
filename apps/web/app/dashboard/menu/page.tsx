@@ -1,5 +1,7 @@
 'use client';
 
+import { ResponsiveImage } from '@/components/common/responsive-image';
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, GripVertical, Image as ImageIcon, Maximize2, Trash2, Upload, UtensilsCrossed } from 'lucide-react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
@@ -299,8 +301,7 @@ export default function MenuPhotosPage() {
                     )}
                   >
                     <div className="relative aspect-[4/5] cursor-grab bg-surface-sunken active:cursor-grabbing">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- signed storage URLs */}
-                      <img src={p.publicUrl} alt={p.title || 'Menu photo'} loading="lazy" draggable={false} className="size-full object-cover" />
+                      <ResponsiveImage src={p.publicUrl} alt={p.title || 'Menu photo'} ratio="4 / 5" sizes="(max-width: 768px) 50vw, 25vw" className="size-full" />
                       <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-caption font-semibold shadow-e1">
                         <GripVertical className="size-3.5" aria-hidden /> {i + 1}
                       </span>

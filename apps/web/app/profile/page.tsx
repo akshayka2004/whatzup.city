@@ -1,5 +1,7 @@
 'use client';
 
+import { ResponsiveImage } from '@/components/common/responsive-image';
+
 import { useState, useEffect, useRef } from 'react';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
@@ -316,11 +318,7 @@ export default function ProfilePage() {
               {/* Avatar */}
               <div className="relative shrink-0">
                 {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt="Profile"
-                    className="w-24 h-24 rounded-2xl object-cover shadow-lg ring-4 ring-primary/15"
-                  />
+                  <ResponsiveImage src={avatarUrl} alt="Profile photo" ratio="1" sizes="96px" priority className="h-24 w-24 rounded-2xl shadow-e2 ring-4 ring-primary/15" />
                 ) : (
                   <div className="w-24 h-24 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center text-3xl font-extrabold shadow-lg shadow-primary/20 ring-4 ring-primary/15">
                     {initials}

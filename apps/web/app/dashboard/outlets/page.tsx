@@ -1,5 +1,7 @@
 'use client';
 
+import { ResponsiveImage } from '@/components/common/responsive-image';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -461,7 +463,7 @@ function OutletsContent() {
             <Card key={o.id} className="rounded-2xl border-border bg-card p-4 space-y-4 ui-fade-up">
               <div className="flex items-start gap-3">
                 {o.logo ? (
-                  <img src={o.logo} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+                  <ResponsiveImage src={o.logo} alt="" ratio="1" sizes="48px" className="h-12 w-12 shrink-0 rounded-xl" />
                 ) : (
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <Store className="h-5 w-5" />

@@ -1,5 +1,7 @@
 'use client';
 
+import { ResponsiveImage } from '@/components/common/responsive-image';
+
 import { CivicLayout } from '@/components/layouts/civic-layout';
 import { PageHeader } from '@/components/system/page-header';
 
@@ -198,7 +200,7 @@ export default function CivicProfilePage() {
           <div className="relative h-32 sm:h-40 bg-gradient-to-r from-primary/20 to-accent/20">
             {profile.bannerUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={profile.bannerUrl} alt="banner" className="absolute inset-0 h-full w-full object-cover" />
+              <ResponsiveImage src={profile.bannerUrl} alt="" ratio="auto" sizes="(max-width: 768px) 100vw, 768px" className="absolute inset-0 h-full w-full" />
             )}
             <button
               onClick={() => bannerInput.current?.click()}
@@ -221,7 +223,7 @@ export default function CivicProfilePage() {
                 <div className="h-20 w-20 rounded-2xl border-4 border-background bg-card overflow-hidden flex items-center justify-center">
                   {profile.logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={profile.logoUrl} alt="logo" className="h-full w-full object-cover" />
+                    <ResponsiveImage src={profile.logoUrl} alt="Organisation logo" ratio="1" sizes="96px" className="h-full w-full" />
                   ) : (
                     <Building2 className="h-8 w-8 text-muted-foreground" />
                   )}

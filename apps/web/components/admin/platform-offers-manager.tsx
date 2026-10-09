@@ -1,5 +1,7 @@
 'use client';
 
+import { ResponsiveImage } from '@/components/common/responsive-image';
+
 /**
  * Platform-exclusive offers — admin create/manage.
  *
@@ -335,11 +337,7 @@ export function PlatformOffersManager() {
               <Card key={r.id} className="p-4">
                 <div className="flex gap-4">
                   {r.imageSignedUrl ? (
-                    <img
-                      src={r.imageSignedUrl}
-                      alt=""
-                      className="h-20 w-20 shrink-0 rounded-xl object-cover border border-border"
-                    />
+                    <ResponsiveImage src={r.imageSignedUrl} alt="" ratio="1" sizes="80px" className="h-20 w-20 shrink-0 rounded-xl border border-border" />
                   ) : (
                     <div className="h-20 w-20 shrink-0 rounded-xl border border-dashed border-border flex items-center justify-center">
                       <ImageIcon className="h-5 w-5 text-muted-foreground" />
@@ -911,6 +909,7 @@ export function PlatformOffersManager() {
                       />
                     </label>
                     {existingImage && !poster && (
+                      // eslint-disable-next-line @next/next/no-img-element -- short-lived signed preview in the editor
                       <img
                         src={existingImage}
                         alt=""

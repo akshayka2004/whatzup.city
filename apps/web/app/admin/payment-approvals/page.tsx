@@ -131,6 +131,7 @@ export default function AdminPaymentApprovalsPage() {
                     <div>
                       {p.proofSignedUrl ? (
                         <a href={p.proofSignedUrl} target="_blank" rel="noopener noreferrer" className="block">
+                          {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed payment proof */}
                           <img
                             src={p.proofSignedUrl}
                             alt="Payment screenshot"

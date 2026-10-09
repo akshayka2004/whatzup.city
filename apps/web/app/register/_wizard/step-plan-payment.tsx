@@ -354,6 +354,7 @@ export function StepPlanPayment({ w }: { w: Wizard }) {
 
             <div className="rounded-2xl border border-border p-6 flex flex-col items-center gap-3">
               <h3 className="text-sm font-bold text-foreground">Scan to pay</h3>
+              {/* eslint-disable-next-line @next/next/no-img-element -- payment QR must stay pixel-exact, no lossy re-encode */}
               <img
                 src={PAYMENT_QR_SRC}
                 alt="UPI payment QR code"

@@ -1,5 +1,7 @@
 'use client';
 
+import { ResponsiveImage } from '@/components/common/responsive-image';
+
 import { useState, useEffect, useRef } from 'react';
 import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
@@ -149,7 +151,7 @@ export default function AdminProfilePage() {
             <div className="relative">
               <div className="h-16 w-16 rounded-2xl overflow-hidden bg-gradient-to-tr from-primary to-info flex items-center justify-center text-2xl font-extrabold text-white">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="avatar" className="h-full w-full object-cover" />
+                  <ResponsiveImage src={avatarUrl} alt="Avatar" ratio="1" sizes="96px" className="h-full w-full" />
                 ) : (
                   initials
                 )}

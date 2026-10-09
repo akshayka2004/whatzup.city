@@ -1,5 +1,7 @@
 'use client';
 
+import { ResponsiveImage } from '@/components/common/responsive-image';
+
 import { ModalSurface } from '@/components/system/modal-surface';
 import { useConfirm } from '@/components/common/confirm-dialog';
 import { useState, useEffect, useCallback } from 'react';
@@ -156,7 +158,7 @@ export function MoviesManager() {
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-3">
                             {m.posterImage ? (
-                              <img src={m.posterImage} alt={m.name} className="h-10 w-10 rounded-lg object-cover border border-border shrink-0" />
+                              <ResponsiveImage src={m.posterImage} alt={m.name} ratio="1" sizes="40px" className="h-10 w-10 shrink-0 rounded-lg border border-border" />
                             ) : (
                               <div className="h-10 w-10 rounded-lg bg-secondary flex items-center justify-center shrink-0"><Clapperboard className="h-4 w-4 text-muted-foreground" /></div>
                             )}
@@ -198,6 +200,7 @@ export function MoviesManager() {
                 <label className="text-xs text-muted-foreground">Poster</label>
                 <div className="flex items-center gap-3 mt-1">
                   {form.posterImage && (
+                    // eslint-disable-next-line @next/next/no-img-element -- local upload preview (blob URL)
                     <img src={form.posterImage} alt="Poster" className="h-16 w-16 rounded-lg object-cover border border-border shrink-0" />
                   )}
                   <label className="flex-1 h-10 px-3 flex items-center gap-2 bg-background border border-dashed border-input rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary/50">

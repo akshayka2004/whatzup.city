@@ -273,6 +273,7 @@ export function EventsManager() {
                 <label className="text-xs text-muted-foreground">Poster image</label>
                 <div className="flex items-center gap-3 mt-1">
                   {form.posterImage && (
+                    // eslint-disable-next-line @next/next/no-img-element -- local upload preview (blob URL)
                     <img src={form.posterImage} alt="Poster" className="h-14 w-14 rounded-lg object-cover border border-border shrink-0" />
                   )}
                   <label className="flex-1 h-10 px-3 flex items-center gap-2 bg-background border border-dashed border-input rounded-xl text-sm text-muted-foreground cursor-pointer hover:border-primary/50">

@@ -1,5 +1,7 @@
 'use client';
 
+import { ResponsiveImage } from '@/components/common/responsive-image';
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -70,8 +72,7 @@ function Row({ b, km, active, onHover, innerRef }: { b: any; km?: number | null;
     >
       <span className="relative size-16 shrink-0 overflow-hidden rounded-control bg-brand-soft">
         {b.logo ? (
-          // eslint-disable-next-line @next/next/no-img-element -- logos come from arbitrary storage hosts
-          <img src={b.logo} alt="" className="size-full object-cover" loading="lazy" />
+          <ResponsiveImage src={b.logo} alt="" ratio="1" sizes="64px" className="size-full" />
         ) : (
           <span className="flex size-full items-center justify-center text-heading font-bold text-brand-soft-foreground">{(b.name || 'B').charAt(0)}</span>
         )}

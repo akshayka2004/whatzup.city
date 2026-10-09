@@ -272,6 +272,7 @@ export function SubscriptionPaywall() {
 
             <div className="flex flex-col items-center gap-3 rounded-xl border border-border p-6">
               <h3 className="text-sm font-bold text-foreground">Scan to pay</h3>
+              {/* eslint-disable-next-line @next/next/no-img-element -- payment QR must stay pixel-exact, no lossy re-encode */}
               <img
                 src={PAYMENT_QR_SRC}
                 alt="UPI payment QR code"
