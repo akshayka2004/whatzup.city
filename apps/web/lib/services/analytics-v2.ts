@@ -86,9 +86,11 @@ export type PlatformReport = {
   searches: { query: string; total: number; zeroResults: number }[];
   planMix: { plan: string; revenue: number; count: number }[];
   generatedAt: string;
+  scope?: PlatformScope & { unscoped: string[] };
 };
 
 export type RangeParams = { from?: string; to?: string; days?: number; granularity?: Granularity };
+export type PlatformScope = { city?: string; categoryId?: string };
 
 const qs = (p: RangeParams) => {
   const s = new URLSearchParams();
@@ -99,5 +101,5 @@ const qs = (p: RangeParams) => {
 export const analyticsV2 = {
   business: (businessId: string, p: RangeParams) =>
     apiService.get<BusinessReport>(`/v1/analytics/v2/business/${businessId}/report?${qs(p)}`),
-  platform: (p: RangeParams) => apiService.get<PlatformReport>(`/v1/analytics/v2/platform/report?${qs(p)}`),
+  platform: (p: RangeParams & PlatformScope) => apiService.get<PlatformReport>(`/v1/analytics/v2/platform/report?${qs(p)}`),
 };

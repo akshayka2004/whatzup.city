@@ -8,7 +8,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AnalyticsV2Service, type Granularity } from './analytics-v2.service';
 import { AnalyticsRollupService } from './analytics-rollup.service';
 
-type RangeParams = { from?: string; to?: string; days?: string; granularity?: Granularity };
+type RangeParams = { from?: string; to?: string; days?: string; granularity?: Granularity; city?: string; categoryId?: string };
 
 const toQuery = (q: RangeParams) => ({
   from: q.from,
@@ -52,7 +52,7 @@ export class AnalyticsV2Controller {
   @Get('platform/report')
   @ApiOperation({ summary: 'Platform report across all tenants (admins only)' })
   platformReport(@Query() q: RangeParams) {
-    return this.v2.platformReport(toQuery(q));
+    return this.v2.platformReport(toQuery(q), { city: q.city, categoryId: q.categoryId });
   }
 
   @UseGuards(RolesGuard)

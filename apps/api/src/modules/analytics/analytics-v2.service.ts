@@ -9,6 +9,34 @@ import { ACTION_GROUPS, EVENT_GROUPS, eventsFor, groupOf, type EventGroup } from
 
 export type Granularity = 'day' | 'week' | 'month';
 export type RangeQuery = { from?: string; to?: string; days?: number; granularity?: Granularity };
+/** Optional platform slice: businesses in one city and/or one category. */
+export type PlatformScope = { city?: string; categoryId?: string };
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function cleanScope(s: PlatformScope = {}): PlatformScope {
+  const city = s.city?.trim().slice(0, 100) || undefined;
+  const categoryId = s.categoryId && UUID_RE.test(s.categoryId) ? s.categoryId : undefined;
+  return { city, categoryId };
+}
+
+const scoped = (s: PlatformScope) => !!(s.city || s.categoryId);
+
+/** Prisma `Business` where-fragment for a scope. */
+function bizWhere(s: PlatformScope) {
+  return {
+    ...(s.city ? { city: { equals: s.city, mode: 'insensitive' as const } } : {}),
+    ...(s.categoryId ? { categoryId: s.categoryId } : {}),
+  };
+}
+
+/** SQL `AND <col> IN (scoped businesses)`; empty when unscoped. */
+function bizIn(s: PlatformScope, col = 'business_id') {
+  if (!scoped(s)) return Prisma.empty;
+  const city = s.city ? Prisma.sql`AND lower(city) = lower(${s.city})` : Prisma.empty;
+  const cat = s.categoryId ? Prisma.sql`AND category_id = ${s.categoryId}::uuid` : Prisma.empty;
+  return Prisma.sql`AND ${Prisma.raw(col)} IN (SELECT id FROM businesses WHERE deleted_at IS NULL ${city} ${cat})`;
+}
 
 type Metric = { value: number; previous: number; change: number | null };
 
@@ -74,12 +102,12 @@ export class AnalyticsV2Service {
     }));
   }
 
-  private async eventTotals(businessId: string | null, r: IstRange) {
+  private async eventTotals(businessId: string | null, r: IstRange, extra: Prisma.Sql = Prisma.empty) {
     const where = businessId ? Prisma.sql`business_id = ${businessId}::uuid AND` : Prisma.empty;
     const rows = await this.db.$queryRaw<{ event: string; total: bigint; visitors: bigint }[]>(Prisma.sql`
       SELECT event, count(*) AS total, count(DISTINCT ${VID}) AS visitors
       FROM analytics_events
-      WHERE ${where} created_at >= ${r.start} AND created_at < ${r.end} AND deleted_at IS NULL AND ${HUMAN}
+      WHERE ${where} created_at >= ${r.start} AND created_at < ${r.end} AND deleted_at IS NULL AND ${HUMAN} ${extra}
       GROUP BY event`);
     const byGroup = {} as Record<EventGroup, number>;
     for (const g of Object.keys(EVENT_GROUPS) as EventGroup[]) byGroup[g] = 0;
@@ -92,7 +120,7 @@ export class AnalyticsV2Service {
         count(DISTINCT ${VID}) FILTER (WHERE event IN (${Prisma.join(eventsFor('profileView'))})) AS viewers,
         count(DISTINCT ${VID}) FILTER (WHERE event IN (${Prisma.join(eventsFor(...ACTION_GROUPS))})) AS actors
       FROM analytics_events
-      WHERE ${where} created_at >= ${r.start} AND created_at < ${r.end} AND deleted_at IS NULL AND ${HUMAN}`);
+      WHERE ${where} created_at >= ${r.start} AND created_at < ${r.end} AND deleted_at IS NULL AND ${HUMAN} ${extra}`);
     return { byGroup, viewers: n(distinct[0]?.viewers), actors: n(distinct[0]?.actors) };
   }
 
@@ -340,28 +368,31 @@ export class AnalyticsV2Service {
 
   // ── Platform ────────────────────────────────────────────────────────────
 
-  async platformReport(q: RangeQuery) {
+  async platformReport(q: RangeQuery, scope: PlatformScope = {}) {
     const { r, prev, g } = this.range(q);
-    return this.cached(`analytics:v2:platform:${r.from}:${r.to}:${g}`, 180, () => this.computePlatform(r, prev, g));
+    const sc = cleanScope(scope);
+    const key = `analytics:v2:platform:${r.from}:${r.to}:${g}:${(sc.city ?? '').toLowerCase()}:${sc.categoryId ?? ''}`;
+    return this.cached(key, 180, () => this.computePlatform(r, prev, g, sc));
   }
 
-  private async platformTotals(r: IstRange) {
+  private async platformTotals(r: IstRange, sc: PlatformScope = {}) {
+    const bw = bizWhere(sc);
     const [ev, users, businesses, revenue, gmv, claims] = await Promise.all([
-      this.eventTotals(null, r),
+      this.eventTotals(null, r, bizIn(sc)),
       this.db.user.count({ where: { deletedAt: null, role: 'USER', createdAt: { gte: r.start, lt: r.end } } }),
-      this.db.business.count({ where: { deletedAt: null, createdAt: { gte: r.start, lt: r.end } } }),
+      this.db.business.count({ where: { deletedAt: null, ...bw, createdAt: { gte: r.start, lt: r.end } } }),
       this.db.transaction.groupBy({
         by: ['cycle'],
-        where: { type: 'PAYMENT_VERIFIED', createdAt: { gte: r.start, lt: r.end } },
+        where: { type: 'PAYMENT_VERIFIED', createdAt: { gte: r.start, lt: r.end }, ...(scoped(sc) ? { business: bw } : {}) },
         _sum: { amountBase: true, amountTax: true },
         _count: { _all: true },
       }),
       this.db.bill.aggregate({
-        where: { deletedAt: null, status: 'VERIFIED', verifiedAt: { gte: r.start, lt: r.end } },
+        where: { deletedAt: null, status: 'VERIFIED', verifiedAt: { gte: r.start, lt: r.end }, ...(scoped(sc) ? { business: bw } : {}) },
         _sum: { amount: true },
         _count: { _all: true },
       }),
-      this.db.offerRedemption.count({ where: { deletedAt: null, createdAt: { gte: r.start, lt: r.end } } }),
+      this.db.offerRedemption.count({ where: { deletedAt: null, createdAt: { gte: r.start, lt: r.end }, ...(scoped(sc) ? { offer: { business: bw } } : {}) } }),
     ]);
     const rev = (cycle?: string) =>
       revenue.filter((x) => !cycle || x.cycle === cycle).reduce((s, x) => s + Number(x._sum.amountBase ?? 0), 0);
@@ -383,36 +414,40 @@ export class AnalyticsV2Service {
     };
   }
 
-  private async computePlatform(r: IstRange, prev: IstRange, g: Granularity) {
+  private async computePlatform(r: IstRange, prev: IstRange, g: Granularity, sc: PlatformScope = {}) {
     const now = new Date();
+    const bw = bizWhere(sc);
+    const viaBiz = scoped(sc) ? { business: bw } : {};
+    const bCity = sc.city ? Prisma.sql`AND lower(b.city) = lower(${sc.city})` : Prisma.empty;
+    const bCat = sc.categoryId ? Prisma.sql`AND b.category_id = ${sc.categoryId}::uuid` : Prisma.empty;
     const in7 = new Date(now.getTime() + 7 * 86400000);
     const [cur, before, snapshot, series, topBusinesses, topCategories, topCities, searches, planMix, statusMix] = await Promise.all([
-      this.platformTotals(r),
-      this.platformTotals(prev),
+      this.platformTotals(r, sc),
+      this.platformTotals(prev, sc),
       Promise.all([
-        this.db.business.count({ where: { deletedAt: null, status: 'APPROVED' } }),
-        this.db.business.count({ where: { deletedAt: null, status: { in: ['PENDING_VERIFICATION', 'UNDER_REVIEW'] } } }),
-        this.db.payment.count({ where: { deletedAt: null, status: 'PENDING' } }),
+        this.db.business.count({ where: { deletedAt: null, ...bw, status: 'APPROVED' } }),
+        this.db.business.count({ where: { deletedAt: null, ...bw, status: { in: ['PENDING_VERIFICATION', 'UNDER_REVIEW'] } } }),
+        this.db.payment.count({ where: { deletedAt: null, status: 'PENDING', ...viaBiz } }),
         this.db.moderationReport.count({ where: { deletedAt: null, status: 'PENDING' } }),
-        this.db.business.count({ where: { deletedAt: null, trialStatus: 'ACTIVE', trialEndDate: { gte: now, lt: in7 } } }),
-        this.db.subscription.count({ where: { deletedAt: null, status: 'ACTIVE', endDate: { gte: now, lt: new Date(now.getTime() + 30 * 86400000) } } }),
+        this.db.business.count({ where: { deletedAt: null, ...bw, trialStatus: 'ACTIVE', trialEndDate: { gte: now, lt: in7 } } }),
+        this.db.subscription.count({ where: { deletedAt: null, status: 'ACTIVE', endDate: { gte: now, lt: new Date(now.getTime() + 30 * 86400000) }, ...viaBiz } }),
       ]),
-      this.platformSeries(r, g),
+      this.platformSeries(r, g, sc),
       this.db.$queryRaw<{ id: string; name: string; city: string; visitors: bigint }[]>(Prisma.sql`
         SELECT b.id, b.name, b.city, count(DISTINCT ${Prisma.raw(`coalesce(e.metadata->>'visitorId', e.session_id, e.ip_address, e.id::text)`)}) AS visitors
         FROM analytics_events e JOIN businesses b ON b.id = e.business_id
         WHERE e.event IN (${Prisma.join(eventsFor('profileView'))}) AND e.created_at >= ${r.start} AND e.created_at < ${r.end}
-          AND e.deleted_at IS NULL AND coalesce((e.metadata->>'isBot')::boolean, false) = false
+          AND e.deleted_at IS NULL AND coalesce((e.metadata->>'isBot')::boolean, false) = false ${bCity} ${bCat}
         GROUP BY b.id, b.name, b.city ORDER BY visitors DESC LIMIT 10`),
       this.db.$queryRaw<{ name: string; visitors: bigint }[]>(Prisma.sql`
         SELECT c.name, count(DISTINCT ${Prisma.raw(`coalesce(e.metadata->>'visitorId', e.session_id, e.ip_address, e.id::text)`)}) AS visitors
         FROM analytics_events e JOIN businesses b ON b.id = e.business_id JOIN business_categories c ON c.id = b.category_id
         WHERE e.event IN (${Prisma.join(eventsFor('profileView'))}) AND e.created_at >= ${r.start} AND e.created_at < ${r.end}
-          AND e.deleted_at IS NULL AND coalesce((e.metadata->>'isBot')::boolean, false) = false
+          AND e.deleted_at IS NULL AND coalesce((e.metadata->>'isBot')::boolean, false) = false ${bCity} ${bCat}
         GROUP BY c.name ORDER BY visitors DESC LIMIT 8`),
       this.db.$queryRaw<{ city: string; businesses: bigint }[]>(Prisma.sql`
-        SELECT city, count(*) AS businesses FROM businesses
-        WHERE deleted_at IS NULL AND status = 'APPROVED' GROUP BY city ORDER BY businesses DESC LIMIT 8`),
+        SELECT city, count(*) AS businesses FROM businesses b
+        WHERE deleted_at IS NULL AND status = 'APPROVED' ${bCity} ${bCat} GROUP BY city ORDER BY businesses DESC LIMIT 8`),
       this.db.$queryRaw<{ q: string; total: bigint; zero: bigint }[]>(Prisma.sql`
         SELECT lower(trim(metadata->>'query')) AS q, count(*) AS total,
                count(*) FILTER (WHERE (metadata->>'resultCount')::int = 0 OR event = 'SEARCH_NO_RESULTS') AS zero
@@ -422,13 +457,13 @@ export class AnalyticsV2Service {
         GROUP BY q ORDER BY total DESC LIMIT 15`),
       this.db.transaction.groupBy({
         by: ['packageName'],
-        where: { type: 'PAYMENT_VERIFIED', createdAt: { gte: r.start, lt: r.end } },
+        where: { type: 'PAYMENT_VERIFIED', createdAt: { gte: r.start, lt: r.end }, ...viaBiz },
         _sum: { amountBase: true },
         _count: { _all: true },
       }),
       this.db.business.groupBy({
         by: ['status'],
-        where: { deletedAt: null, createdAt: { gte: r.start, lt: r.end } },
+        where: { deletedAt: null, ...bw, createdAt: { gte: r.start, lt: r.end } },
         _count: { _all: true },
       }),
     ]);
@@ -440,6 +475,8 @@ export class AnalyticsV2Service {
     return {
       range: { from: r.from, to: r.to, days: r.days, granularity: g, timezone: 'Asia/Kolkata' },
       previous: { from: prev.from, to: prev.to },
+      // New users and search terms aren't tied to a business, so they ignore the scope.
+      scope: { ...sc, unscoped: scoped(sc) ? ['newUsers', 'searches'] : [] },
       kpis: {
         visitors: k('visitors'),
         profileViews: k('profileViews'),
@@ -474,22 +511,22 @@ export class AnalyticsV2Service {
     };
   }
 
-  private async platformSeries(r: IstRange, g: Granularity) {
+  private async platformSeries(r: IstRange, g: Granularity, sc: PlatformScope = {}) {
     const [ev, users, biz, rev] = await Promise.all([
       this.db.$queryRaw<{ d: string; visitors: bigint }[]>(Prisma.sql`
         SELECT ${istDay('created_at')} AS d, count(DISTINCT ${VID}) AS visitors
         FROM analytics_events
-        WHERE created_at >= ${r.start} AND created_at < ${r.end} AND deleted_at IS NULL AND ${HUMAN}
+        WHERE created_at >= ${r.start} AND created_at < ${r.end} AND deleted_at IS NULL AND ${HUMAN} ${bizIn(sc)}
         GROUP BY d`),
       this.db.$queryRaw<{ d: string; c: bigint }[]>(Prisma.sql`
         SELECT ${istDay('created_at')} AS d, count(*) AS c FROM users
         WHERE deleted_at IS NULL AND role = 'USER' AND created_at >= ${r.start} AND created_at < ${r.end} GROUP BY d`),
       this.db.$queryRaw<{ d: string; c: bigint }[]>(Prisma.sql`
         SELECT ${istDay('created_at')} AS d, count(*) AS c FROM businesses
-        WHERE deleted_at IS NULL AND created_at >= ${r.start} AND created_at < ${r.end} GROUP BY d`),
+        WHERE deleted_at IS NULL AND created_at >= ${r.start} AND created_at < ${r.end} ${bizIn(sc, 'id')} GROUP BY d`),
       this.db.$queryRaw<{ d: string; amt: Prisma.Decimal }[]>(Prisma.sql`
         SELECT ${istDay('created_at')} AS d, sum(amount_base) AS amt FROM transactions
-        WHERE type = 'PAYMENT_VERIFIED' AND created_at >= ${r.start} AND created_at < ${r.end} GROUP BY d`),
+        WHERE type = 'PAYMENT_VERIFIED' AND created_at >= ${r.start} AND created_at < ${r.end} ${bizIn(sc)} GROUP BY d`),
     ]);
     const buckets = new Map<string, { date: string; visitors: number; newUsers: number; newBusinesses: number; revenue: number }>();
     for (const day of dayKeys(r)) {

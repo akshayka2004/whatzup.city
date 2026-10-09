@@ -31,6 +31,9 @@ import { KpiCard } from './kpi-card';
 import { BarList } from './bar-list';
 import { Funnel } from './funnel';
 import { RangePicker, useReportRange } from './range-picker';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { KERALA_CITIES } from '@/lib/constants';
 import { formatINR, formatNumber, formatRange, type ValueFormat } from './format';
 
 const TimeSeriesChart = dynamic(() => import('./time-series-chart').then((m) => m.TimeSeriesChart), {
@@ -52,8 +55,40 @@ const KPIS: { key: Key; label: string; icon: typeof Users; format: ValueFormat; 
 
 type AuditRow = { id: string; action?: string; resource?: string; createdAt?: string; user?: { name?: string; email?: string } | null };
 
+const ALL = '__all';
+
+/** City + category slice for the whole report, kept in the URL next to the date range. */
+function useScope() {
+  const sp = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const city = sp.get('city') ?? '';
+  const categoryId = sp.get('category') ?? '';
+  const set = (key: 'city' | 'category', value: string) => {
+    const next = new URLSearchParams(sp.toString());
+    if (value) next.set(key, value);
+    else next.delete(key);
+    router.replace(`${pathname}${next.toString() ? `?${next}` : ''}`, { scroll: false });
+  };
+  const clear = () => {
+    const next = new URLSearchParams(sp.toString());
+    next.delete('city');
+    next.delete('category');
+    router.replace(`${pathname}${next.toString() ? `?${next}` : ''}`, { scroll: false });
+  };
+  return { city, categoryId, set, clear };
+}
+
 export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
   const range = useReportRange();
+  const scope = useScope();
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  useEffect(() => {
+    apiService.get<any>('/v1/categories').then((res) => {
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+      setCategories(list.filter((c: any) => !c.parentId).map((c: any) => ({ id: c.id, name: c.name })));
+    });
+  }, []);
   const [report, setReport] = useState<PlatformReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,12 +96,12 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
   const [nonce, setNonce] = useState(0);
   const [audit, setAudit] = useState<AuditRow[]>([]);
 
-  const paramsKey = JSON.stringify(range.params);
+  const paramsKey = JSON.stringify([range.params, scope.city, scope.categoryId]);
   useEffect(() => {
     let alive = true;
     setLoading(true);
     setError(null);
-    analyticsV2.platform(range.params).then((res) => {
+    analyticsV2.platform({ ...range.params, city: scope.city || undefined, categoryId: scope.categoryId || undefined }).then((res) => {
       if (!alive) return;
       if (res.error || !res.data) setError(res.error || 'Could not load the report');
       else setReport(res.data);
@@ -139,6 +174,46 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
           </>
         }
       />
+
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        <Select value={scope.city || ALL} onValueChange={(v) => scope.set('city', v === ALL ? '' : v)}>
+          <SelectTrigger className="h-10 w-full rounded-full sm:w-48" aria-label="City">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All cities</SelectItem>
+            {KERALA_CITIES.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={scope.categoryId || ALL} onValueChange={(v) => scope.set('category', v === ALL ? '' : v)}>
+          <SelectTrigger className="h-10 w-full rounded-full sm:w-56" aria-label="Category">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All categories</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {(scope.city || scope.categoryId) && (
+          <>
+            <Button
+              variant="ghost"
+              onClick={scope.clear}
+            >
+              Clear
+            </Button>
+            <p className="w-full text-caption text-muted-foreground sm:w-auto">New customers and search terms aren’t tied to a business, so they show the whole platform.</p>
+          </>
+        )}
+      </div>
 
       {error && !report ? (
         <EmptyState icon={RefreshCw} title="The report didn't load" description={error} action={{ label: 'Try again', onClick: () => setNonce((x) => x + 1) }} />
