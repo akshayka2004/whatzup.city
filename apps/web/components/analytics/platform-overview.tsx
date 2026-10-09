@@ -176,7 +176,8 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
       })
       .then((res) => {
         if (!alive) return;
-        if (res.error || !res.data) setError(res.error || 'Could not load the report');
+        if (res.error || !res.data?.kpis || !res.data?.series)
+          setError(res.error || 'Could not load the report');
         else setReport(res.data);
         setLoading(false);
       });

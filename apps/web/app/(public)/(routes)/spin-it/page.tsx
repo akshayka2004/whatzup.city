@@ -108,11 +108,11 @@ export default function SpinItPage() {
 
   useEffect(() => {
     apiService.get<ActiveWheel[]>('/v1/discounts/active/all').then((res) => {
-      if (!res.error && res.data) setWheels(res.data);
+      if (!res.error && Array.isArray(res.data)) setWheels(res.data);
       setLoadingWheels(false);
     });
     apiService.get<MyTicket[]>('/v1/discounts/my').then((res) => {
-      if (!res.error && res.data) setTickets(res.data);
+      if (!res.error && Array.isArray(res.data)) setTickets(res.data);
       setLoadingTickets(false);
     });
   }, []);

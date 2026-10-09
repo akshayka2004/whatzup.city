@@ -197,7 +197,8 @@ function AnalyticsInner() {
     setError(null);
     analyticsV2.business(activeBusinessId, range.params).then((res) => {
       if (!alive) return;
-      if (res.error || !res.data) setError(res.error || 'Could not load analytics');
+      if (res.error || !res.data?.kpis || !res.data?.series)
+        setError(res.error || 'Could not load analytics');
       else setReport(res.data);
       setLoading(false);
     });

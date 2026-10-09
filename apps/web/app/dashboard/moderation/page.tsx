@@ -508,16 +508,17 @@ export default function BillModerationPage() {
     };
   }, []);
 
+  // Permissions follow the signed-in user (a stale localStorage copy once hid every action).
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
-      if (stored) {
-        const u = JSON.parse(stored);
-        const role = u?.rbacRole || (u?.role === 'business' ? 'BUSINESS_OWNER' : u?.role);
-        if (role) setUserRole(role);
-      }
-    } catch (_) {}
-  }, []);
+    if (!user) return;
+    const legacy: Record<string, string> = {
+      business: 'BUSINESS_OWNER',
+      'super-admin': 'SUPER_ADMIN',
+      admin: 'MASTER_ADMIN',
+    };
+    const role = user.rbacRole || legacy[user.role] || user.role;
+    if (role) setUserRole(role);
+  }, [user]);
 
   const fetchBills = async (status?: string, page = 1) => {
     if (!isBrandView && !businessId) return;

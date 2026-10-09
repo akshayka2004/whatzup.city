@@ -79,7 +79,8 @@ export function TicketThread({
   const load = useCallback(async () => {
     const res = await apiService.get<Ticket>(`/v1/support/tickets/${id}`);
     if (res.error) toast.error(res.error);
-    else setTicket(res.data);
+    else if (Array.isArray(res.data?.messages)) setTicket(res.data);
+    else toast.error('This ticket could not be loaded.');
   }, [id]);
 
   useEffect(() => {

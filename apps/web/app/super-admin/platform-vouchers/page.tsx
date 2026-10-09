@@ -57,7 +57,8 @@ export default function SuperAdminPlatformVouchersPage() {
   const load = useCallback(async () => {
     setLoading(true);
     const res = await apiService.get<Tier[]>('/v1/platform-vouchers/admin');
-    if (res.data && !res.error) setTiers(res.data);
+    if (res.data && !res.error)
+      setTiers(Array.isArray(res.data) ? res.data : ((res.data as any)?.data ?? []));
     setLoading(false);
   }, []);
 

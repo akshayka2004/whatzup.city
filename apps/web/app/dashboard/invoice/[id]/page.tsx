@@ -57,7 +57,7 @@ export default function InvoicePage() {
   useEffect(() => {
     if (!id) return;
     onboardingService.getPaymentInvoice(id).then((res) => {
-      if (res.error || !res.data) {
+      if (res.error || !res.data?.id) {
         setError(res.error || 'Invoice not found.');
       } else {
         setInvoice(res.data);

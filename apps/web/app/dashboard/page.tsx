@@ -99,7 +99,7 @@ export default function BusinessOverviewPage() {
         : Promise.resolve(null),
     ]).then(([rep, off, bills, comp]) => {
       if (!alive) return;
-      if (rep && !rep.error) setReport(rep.data);
+      if (rep && !rep.error && rep.data?.kpis && rep.data?.series) setReport(rep.data);
       setOffers(off.error ? [] : list(off.data));
       if (!bills.error) {
         const d = bills.data as any;
@@ -109,7 +109,8 @@ export default function BusinessOverviewPage() {
             : list(d).filter((b) => b.status === 'PENDING').length,
         );
       } else setPendingBills(0);
-      if (comp && !comp.error && comp.data) setCompleteness(comp.data as any);
+      if (comp && !comp.error && Array.isArray((comp.data as any)?.missing))
+        setCompleteness(comp.data as any);
     });
     return () => {
       alive = false;
