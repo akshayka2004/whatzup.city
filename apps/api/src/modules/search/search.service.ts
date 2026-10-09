@@ -290,7 +290,8 @@ export class SearchService implements OnApplicationBootstrap {
       where.OR = terms.flatMap((term) => [
         { name: { contains: term, mode: 'insensitive' } },
         { description: { contains: term, mode: 'insensitive' } },
-        { subcategory: { contains: term, mode: 'insensitive' } },
+        // Subcategories are stored as a JSON array of slugs (e.g. home_chefs), so match the slug form.
+        { subcategoryIds: { array_contains: [term.trim().toLowerCase().replace(/[\s-]+/g, '_')] } },
         { category: { is: { name: { contains: term, mode: 'insensitive' } } } },
         { branches: { some: { name: { contains: term, mode: 'insensitive' } } } },
         { offers: { some: { title: { contains: term, mode: 'insensitive' }, deletedAt: null } } },
@@ -542,7 +543,8 @@ export class SearchService implements OnApplicationBootstrap {
           OR: terms.flatMap((term) => [
             { name: { startsWith: term, mode: 'insensitive' } },
             { name: { contains: term, mode: 'insensitive' } },
-            { subcategory: { contains: term, mode: 'insensitive' } },
+            // Subcategories are stored as a JSON array of slugs (e.g. home_chefs), so match the slug form.
+        { subcategoryIds: { array_contains: [term.trim().toLowerCase().replace(/[\s-]+/g, '_')] } },
             { businessTags: { some: { tag: { contains: term, mode: 'insensitive' } } } },
           ]),
         },
