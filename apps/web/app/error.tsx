@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { startTransition, useEffect } from 'react';
 import { RefreshCw, Home, TriangleAlert } from 'lucide-react';
+import { isChunkError, reloadForChunkError } from '@/lib/chunk-error';
 
 /**
  * Catches render/runtime errors in any route segment (instead of Next's bare
@@ -15,9 +17,26 @@ export default function RouteError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const router = useRouter();
+  const chunk = isChunkError(error);
+
   useEffect(() => {
     console.error('[route error]', error);
-  }, [error]);
+    // Stale tab after a deploy: pick up the new build instead of showing an error.
+    if (chunk) reloadForChunkError();
+  }, [error, chunk]);
+
+  const retry = () => {
+    if (chunk) {
+      window.location.reload();
+      return;
+    }
+    // Re-fetch server data too, not just re-render the client segment.
+    startTransition(() => {
+      router.refresh();
+      reset();
+    });
+  };
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4 py-16">
@@ -47,7 +66,7 @@ export default function RouteError({
           </Link>
           <button
             type="button"
-            onClick={reset}
+            onClick={retry}
             className="ui-press inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
             <RefreshCw className="h-4 w-4" /> Try again

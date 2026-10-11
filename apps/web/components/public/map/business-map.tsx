@@ -188,7 +188,7 @@ export function BusinessMap({
         </div>
       )}
       {ready && points.length === 0 && (
-        <div className="pointer-events-none absolute inset-x-0 top-3 mx-auto w-fit rounded-full bg-card px-3 py-1.5 text-caption shadow-e2">
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 mx-auto w-fit rounded-full bg-card px-3 py-1.5 text-caption shadow-e2">
           None of these results have a map location yet
         </div>
       )}

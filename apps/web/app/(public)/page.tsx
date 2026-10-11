@@ -1,3 +1,4 @@
+import { MOVIES_ENABLED } from '@/lib/feature-flags';
 import { serverGet } from '@/lib/server-api';
 import { HomeClient } from './home-client';
 
@@ -17,7 +18,7 @@ export default async function HomePage() {
     serverGet('/v1/trending/offers?limit=8'),
     serverGet('/v1/trending/businesses?limit=8'),
     serverGet('/v1/events?limit=6'),
-    serverGet('/v1/movies?status=NOW_SHOWING&limit=6'),
+    MOVIES_ENABLED ? serverGet('/v1/movies?status=NOW_SHOWING&limit=6') : null,
     serverGet('/v1/announcements?limit=1'),
   ]);
 

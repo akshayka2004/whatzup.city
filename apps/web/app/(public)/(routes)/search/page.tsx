@@ -103,8 +103,14 @@ function SearchContent() {
 
   // The input is the raw text; `state.q` trails it by 300ms so we don't fire a request per keystroke.
   const [searchTerm, setSearchTerm] = useState(state.q);
+  // A term we just committed (picked, submitted, or arrived in the URL from the home
+  // search / back button): don't pop the suggestion dropdown open over its results.
+  const skipSuggest = useRef<string | null>(state.q.trim() || null);
   useEffect(() => {
-    if (externalVersion > 0) setSearchTerm(state.q);
+    if (externalVersion > 0) {
+      skipSuggest.current = state.q.trim() || null;
+      setSearchTerm(state.q);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalVersion]);
   useEffect(() => {
@@ -256,8 +262,6 @@ function SearchContent() {
   const [focused, setFocused] = useState(false);
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  /** A term we just committed (picked / submitted): don't pop the dropdown back open for it. */
-  const skipSuggest = useRef<string | null>(null);
 
   useEffect(() => {
     const handler = (e: PointerEvent) => {

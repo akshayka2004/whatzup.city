@@ -18,6 +18,7 @@ import { SpinPromo } from '@/components/public/home/spin-promo';
 import { HomeCta } from '@/components/public/home/home-cta';
 import { listOf, sumListings, type HomeCategory } from '@/components/public/home/home-data';
 import { useFeed } from '@/components/public/home/use-feed';
+import { MOVIES_ENABLED } from '@/lib/feature-flags';
 
 // Base (city-less) paths — exactly what page.tsx prefetches on the server.
 const CATEGORIES = '/v1/categories';
@@ -71,7 +72,7 @@ export function HomeClient({
   const offers = useFeed(OFFERS, OFFERS, initialOffers);
   const businesses = useFeed(BUSINESSES, BUSINESSES, initialBusinesses);
   const events = useFeed(`${EVENTS}${cityQ}`, EVENTS, initialEvents);
-  const movies = useFeed(`${MOVIES}${cityQ}`, MOVIES, initialMovies);
+  const movies = useFeed(MOVIES_ENABLED ? `${MOVIES}${cityQ}` : null, MOVIES, initialMovies);
   // Latest civic announcement — refetched when the viewer's city changes so the
   // hero notice reflects their location (empty targetCities = shown everywhere).
   const notice = useFeed(`${NOTICE}${cityQ}`, NOTICE, initialAnnouncement);
@@ -121,7 +122,7 @@ export function HomeClient({
       <TrendingBusinesses body={businesses.body} loading={businesses.loading} />
       <SpinPromo />
       <UpcomingEvents body={events.body} loading={events.loading} />
-      <NowShowing body={movies.body} loading={movies.loading} />
+      {MOVIES_ENABLED && <NowShowing body={movies.body} loading={movies.loading} />}
 
       <TrustStats stats={stats} />
       <HomeCta />

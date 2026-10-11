@@ -1,5 +1,3 @@
-'use client';
-
 import { notFound } from 'next/navigation';
 import { StaffLayout } from '@/components/layouts/staff-layout';
 import { MoviesManager } from '@/components/admin/movies-manager';

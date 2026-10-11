@@ -13,15 +13,17 @@ import { apiService } from '@/lib/services/api-service';
  *    (e.g. the viewer picked a city), it fetches in the browser exactly like the
  *    page always did.
  *  - A failed refetch keeps whatever was already on screen.
+ *  - `path` null = feed switched off (feature flag): nothing is requested.
  *
  * Deliberately not useCachedGet: its module-level store would be shared across
  * server renders and pin the first server-rendered HTML for the process lifetime.
  */
-export function useFeed(path: string, basePath: string, initial?: unknown) {
+export function useFeed(path: string | null, basePath: string, initial?: unknown) {
   const [body, setBody] = useState<unknown>(initial ?? null);
-  const [loading, setLoading] = useState(initial == null);
+  const [loading, setLoading] = useState(path != null && initial == null);
 
   useEffect(() => {
+    if (path == null) return;
     if (path === basePath && initial != null) {
       setBody(initial);
       setLoading(false);

@@ -1,16 +1,23 @@
 'use client';
 
+import { useEffect } from 'react';
+import { isChunkError, reloadForChunkError } from '@/lib/chunk-error';
+
 /**
  * Last-resort boundary: replaces the whole document, so it can't rely on the
  * app's providers or Tailwind tokens being mounted — inline styles only.
  */
 export default function GlobalError({
   error,
-  reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    if (isChunkError(error)) reloadForChunkError();
+  }, [error]);
+
+  // reset() re-renders the same broken tree; a reload fetches the current build.
   return (
     <html lang="en">
       <body
@@ -39,7 +46,7 @@ export default function GlobalError({
           )}
           <button
             type="button"
-            onClick={reset}
+            onClick={() => window.location.reload()}
             style={{
               marginTop: '.5rem',
               minHeight: 44,
