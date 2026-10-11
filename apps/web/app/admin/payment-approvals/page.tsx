@@ -270,7 +270,7 @@ export default function AdminPaymentApprovalsPage() {
                             </div>
                           </div>
                         ) : (
-                          <p className="text-xs text-warning">
+                          <p className="text-xs text-warning-soft-foreground">
                             No billing details on file — the business has not completed the invoice
                             step.
                           </p>

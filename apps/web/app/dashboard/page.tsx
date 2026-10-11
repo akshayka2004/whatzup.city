@@ -274,8 +274,8 @@ export default function BusinessOverviewPage() {
               </div>
             ) : tasks.length === 0 ? (
               <div className="flex items-center gap-3 px-6 pb-6 text-sm text-muted-foreground">
-                <CheckCircle2 className="size-5 text-success" aria-hidden /> Nothing pending. Nice
-                work.
+                <CheckCircle2 className="size-5 text-success-soft-foreground" aria-hidden /> Nothing
+                pending. Nice work.
               </div>
             ) : (
               <ul className="divide-y divide-border/60">

@@ -322,7 +322,7 @@ export default function BillsPage() {
                   className="border-2 border-dashed border-border rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
                 >
                   {selectedFile ? (
-                    <div className="flex items-center justify-center gap-2 text-success">
+                    <div className="flex items-center justify-center gap-2 text-success-soft-foreground">
                       <CheckCircle2 className="h-5 w-5" />
                       <span className="text-sm font-medium truncate max-w-xs">
                         {selectedFile.name}

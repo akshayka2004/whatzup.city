@@ -67,7 +67,7 @@ export function DiscountTicket({
           <p className="text-2xl font-mono font-extrabold tracking-wider text-foreground">{code}</p>
           <div className="mt-3 flex items-center justify-center gap-1.5 text-xs">
             {redeemed ? (
-              <span className="inline-flex items-center gap-1 font-semibold text-success">
+              <span className="inline-flex items-center gap-1 font-semibold text-success-soft-foreground">
                 <CheckCircle2 className="h-3.5 w-3.5" /> Redeemed
               </span>
             ) : (

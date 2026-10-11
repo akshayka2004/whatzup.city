@@ -324,7 +324,8 @@ export function EventsManager() {
                           </td>
                           <td className="px-5 py-3 text-right">
                             <span className="inline-flex items-center gap-1 text-foreground font-semibold">
-                              <Ticket className="h-3 w-3 text-success" /> {e.ticketClicks ?? 0}
+                              <Ticket className="h-3 w-3 text-success-soft-foreground" />{' '}
+                              {e.ticketClicks ?? 0}
                             </span>
                           </td>
                           <td className="px-5 py-3 text-right whitespace-nowrap">

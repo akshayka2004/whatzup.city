@@ -430,19 +430,19 @@ export default function BranchesPage() {
                     </span>
                     {branch.hours && (
                       <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5 text-warning shrink-0" />
+                        <Clock className="h-3.5 w-3.5 text-warning-soft-foreground shrink-0" />
                         {branch.hours}
                       </span>
                     )}
                     {branch.managerName && (
                       <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <User className="h-3.5 w-3.5 text-success shrink-0" />
+                        <User className="h-3.5 w-3.5 text-success-soft-foreground shrink-0" />
                         {branch.managerName}
                       </span>
                     )}
                     {branch.managerPhone && (
                       <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <Phone className="h-3.5 w-3.5 text-success shrink-0" />
+                        <Phone className="h-3.5 w-3.5 text-success-soft-foreground shrink-0" />
                         {branch.managerPhone}
                       </span>
                     )}

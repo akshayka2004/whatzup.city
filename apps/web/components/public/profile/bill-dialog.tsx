@@ -216,7 +216,7 @@ export default function BillDialog({
             className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-5 text-center transition-colors hover:border-primary/50"
           >
             {billImageName ? (
-              <div className="flex items-center gap-2 text-sm text-success">
+              <div className="flex items-center gap-2 text-sm text-success-soft-foreground">
                 <Check className="h-4 w-4" />
                 <span className="max-w-[220px] truncate">{billImageName}</span>
               </div>
@@ -264,7 +264,7 @@ export default function BillDialog({
                   className={cn(
                     'h-7 w-7 transition-colors',
                     (billRatingHover || billRating) >= star
-                      ? 'fill-warning text-warning'
+                      ? 'fill-warning text-warning-soft-foreground'
                       : 'text-muted-foreground/30',
                   )}
                 />

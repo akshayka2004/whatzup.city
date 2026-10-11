@@ -223,7 +223,7 @@ export default function FavoritesPage() {
                   </div>
                   {fav.rating && Number(fav.rating) > 0 ? (
                     <div className="mb-4 flex items-center gap-1 text-sm">
-                      <Star className="h-4 w-4 fill-warning text-warning" />
+                      <Star className="h-4 w-4 fill-warning text-warning-soft-foreground" />
                       <span className="font-medium">{fav.rating}</span>
                       {fav.reviews > 0 && (
                         <span className="text-muted-foreground">({fav.reviews})</span>

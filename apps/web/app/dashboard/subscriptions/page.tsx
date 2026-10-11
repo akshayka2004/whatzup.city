@@ -158,7 +158,9 @@ export default function BusinessSubscriptionsPage() {
                       <div
                         className={cn(
                           'text-xs mt-0.5',
-                          expiringSoon ? 'text-warning font-semibold' : 'text-muted-foreground',
+                          expiringSoon
+                            ? 'text-warning-soft-foreground font-semibold'
+                            : 'text-muted-foreground',
                         )}
                       >
                         {remaining} day{remaining === 1 ? '' : 's'} left
@@ -168,7 +170,7 @@ export default function BusinessSubscriptionsPage() {
                 </div>
               ) : (
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+                  <AlertCircle className="h-5 w-5 text-warning-soft-foreground shrink-0 mt-0.5" />
                   <div>
                     <div className="text-sm font-semibold text-foreground">No active paid plan</div>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -370,8 +372,10 @@ export default function BusinessSubscriptionsPage() {
                               <span className="inline-flex items-center gap-1.5 text-xs">
                                 {p.status === 'SUCCESS' ? (
                                   <>
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                                    <span className="text-success font-semibold">Verified</span>
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-success-soft-foreground" />
+                                    <span className="text-success-soft-foreground font-semibold">
+                                      Verified
+                                    </span>
                                   </>
                                 ) : p.status === 'FAILED' ? (
                                   <>
@@ -380,8 +384,8 @@ export default function BusinessSubscriptionsPage() {
                                   </>
                                 ) : (
                                   <>
-                                    <Clock className="h-3.5 w-3.5 text-warning" />
-                                    <span className="text-warning font-semibold">
+                                    <Clock className="h-3.5 w-3.5 text-warning-soft-foreground" />
+                                    <span className="text-warning-soft-foreground font-semibold">
                                       Awaiting verification
                                     </span>
                                   </>

@@ -177,7 +177,7 @@ export function BrandSettingsCard() {
         </p>
       )}
       {saved && !dirty && (
-        <p className="flex items-center gap-1.5 text-xs text-success">
+        <p className="flex items-center gap-1.5 text-xs text-success-soft-foreground">
           <CheckCircle2 className="h-4 w-4" /> Brand settings saved.
         </p>
       )}

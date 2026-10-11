@@ -114,7 +114,7 @@ export function ReviewsSection({
                   return (
                     <div key={star} className="ui-reveal flex items-center gap-2 text-xs">
                       <span className="w-3 text-right font-semibold text-foreground">{star}</span>
-                      <Star className="h-3 w-3 shrink-0 fill-warning text-warning" />
+                      <Star className="h-3 w-3 shrink-0 fill-warning text-warning-soft-foreground" />
                       <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                         <div
                           className="h-full rounded-full bg-warning"
@@ -154,11 +154,13 @@ export function ReviewsSection({
 
           {billSubmitted ? (
             <div className="ui-pop mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-success/25 bg-success/10 p-4">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success/20 text-success">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success/20 text-success-soft-foreground">
                 <Check className="ui-check h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-success">Bill Submitted Successfully!</p>
+                <p className="text-sm font-semibold text-success-soft-foreground">
+                  Bill Submitted Successfully!
+                </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Your receipt is under review. You&apos;ll be notified once verified.
                 </p>

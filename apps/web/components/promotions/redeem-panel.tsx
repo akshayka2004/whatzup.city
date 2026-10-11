@@ -87,7 +87,7 @@ export function RedeemPanel({
         <p
           className={cn(
             'mt-2 text-caption font-medium',
-            last.ok ? 'text-success' : 'text-destructive',
+            last.ok ? 'text-success-soft-foreground' : 'text-destructive',
           )}
           role="status"
         >

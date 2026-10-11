@@ -435,7 +435,7 @@ export default function MenuPhotosPage() {
             className="flex w-full flex-col items-center justify-center gap-1 rounded-card border-2 border-dashed border-border p-6 text-center transition-colors hover:border-primary/50"
           >
             {files.length > 0 ? (
-              <span className="flex items-center gap-2 text-sm font-medium text-success">
+              <span className="flex items-center gap-2 text-sm font-medium text-success-soft-foreground">
                 <CheckCircle2 className="size-5" aria-hidden /> {files.length} photo
                 {files.length === 1 ? '' : 's'} selected
               </span>

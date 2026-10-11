@@ -201,7 +201,7 @@ export default function AdminProfilePage() {
                         title="Copy referral code"
                       >
                         {referralCopied ? (
-                          <Check className="h-3.5 w-3.5 text-success" />
+                          <Check className="h-3.5 w-3.5 text-success-soft-foreground" />
                         ) : (
                           <Copy className="h-3.5 w-3.5" />
                         )}
@@ -209,11 +209,13 @@ export default function AdminProfilePage() {
                     </div>
                     {referralCount !== null && (
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 border border-success/20">
-                        <Users className="h-3.5 w-3.5 text-success" />
+                        <Users className="h-3.5 w-3.5 text-success-soft-foreground" />
                         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                           Referrals
                         </span>
-                        <span className="text-sm font-bold text-success">{referralCount}</span>
+                        <span className="text-sm font-bold text-success-soft-foreground">
+                          {referralCount}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -236,7 +238,7 @@ export default function AdminProfilePage() {
                   <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className="rounded-xl gap-2 bg-success hover:bg-success text-white cursor-pointer disabled:opacity-60"
+                    className="rounded-xl gap-2 bg-success hover:bg-success text-success-foreground cursor-pointer disabled:opacity-60"
                   >
                     {saving ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

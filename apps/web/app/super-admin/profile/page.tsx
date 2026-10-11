@@ -240,7 +240,7 @@ export default function AdminProfilePage() {
             </div>
 
             {saveMsg && (
-              <p className="text-xs text-success flex items-center gap-1">
+              <p className="text-xs text-success-soft-foreground flex items-center gap-1">
                 <Check className="h-3.5 w-3.5" /> {saveMsg}
               </p>
             )}
@@ -262,7 +262,7 @@ export default function AdminProfilePage() {
           style={{ animationDelay: '0.05s' }}
         >
           <h3 className="text-base font-bold text-foreground flex items-center gap-2 mb-5">
-            <KeyRound className="h-4 w-4 text-warning" />
+            <KeyRound className="h-4 w-4 text-warning-soft-foreground" />
             Change Password
           </h3>
 
@@ -327,7 +327,7 @@ export default function AdminProfilePage() {
             </div>
 
             {pwMsg && (
-              <p className="text-xs text-success flex items-center gap-1">
+              <p className="text-xs text-success-soft-foreground flex items-center gap-1">
                 <Check className="h-3.5 w-3.5" /> {pwMsg}
               </p>
             )}
@@ -336,7 +336,7 @@ export default function AdminProfilePage() {
             <Button
               type="submit"
               disabled={pwSaving}
-              className="ui-press w-full rounded-xl bg-warning hover:bg-warning text-white font-semibold cursor-pointer"
+              className="ui-press w-full rounded-xl bg-warning hover:bg-warning text-warning-foreground font-semibold cursor-pointer"
             >
               {pwSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update Password'}
             </Button>

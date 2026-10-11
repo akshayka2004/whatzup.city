@@ -129,7 +129,7 @@ export function MobileActionBar({ actions }: { actions: ProfileActions }) {
       </button>
       <button type="button" onClick={actions.share} className={cn(barBtn, 'cursor-pointer')}>
         {copied ? (
-          <Check className="ui-pop h-5 w-5 text-success" />
+          <Check className="ui-pop h-5 w-5 text-success-soft-foreground" />
         ) : (
           <Share2 className="h-5 w-5" />
         )}

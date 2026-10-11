@@ -493,7 +493,7 @@ export default function ProfilePage() {
                   <Button
                     onClick={handleSave}
                     disabled={saving}
-                    className="rounded-xl gap-2 bg-success hover:bg-success text-white cursor-pointer disabled:opacity-60"
+                    className="rounded-xl gap-2 bg-success hover:bg-success text-success-foreground cursor-pointer disabled:opacity-60"
                   >
                     {saving ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -620,7 +620,7 @@ export default function ProfilePage() {
                         : `${t.remainingToUnlock.toLocaleString('en-IN')} pts to go`}
                     </span>
                     {t.unlocked ? (
-                      <span className="inline-flex items-center gap-1 font-mono font-bold text-success">
+                      <span className="inline-flex items-center gap-1 font-mono font-bold text-success-soft-foreground">
                         <CheckCircle2 className="h-3.5 w-3.5" /> {t.code}
                       </span>
                     ) : t.qualified ? (

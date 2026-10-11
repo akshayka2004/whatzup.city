@@ -336,7 +336,9 @@ export default function SuperAdminUsersPage() {
                       <td className="px-5 py-3 text-muted-foreground">
                         <span className="inline-flex items-center gap-1.5">
                           {u.email}
-                          {u.emailVerified && <ShieldCheck className="h-3 w-3 text-success" />}
+                          {u.emailVerified && (
+                            <ShieldCheck className="h-3 w-3 text-success-soft-foreground" />
+                          )}
                         </span>
                       </td>
                       <td className="px-5 py-3">
@@ -365,7 +367,7 @@ export default function SuperAdminUsersPage() {
                           <Receipt className="h-3 w-3 text-info" /> {u.billCount ?? 0}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right font-semibold text-success whitespace-nowrap">
+                      <td className="px-5 py-3 text-right font-semibold text-success-soft-foreground whitespace-nowrap">
                         ₹{(u.totalSpent ?? 0).toLocaleString('en-IN')}
                       </td>
                       <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">

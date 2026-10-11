@@ -39,10 +39,15 @@ const ROLE_CONFIG: Record<
   OWNER: { label: 'Owner', color: 'text-primary', bg: 'bg-primary/10', icon: ShieldCheck },
   BUSINESS_OWNER: { label: 'Owner', color: 'text-primary', bg: 'bg-primary/10', icon: ShieldCheck },
   BUSINESS_ADMIN: { label: 'Owner', color: 'text-primary', bg: 'bg-primary/10', icon: ShieldCheck },
-  MODERATOR: { label: 'Moderator', color: 'text-warning', bg: 'bg-warning/10', icon: Shield },
+  MODERATOR: {
+    label: 'Moderator',
+    color: 'text-warning-soft-foreground',
+    bg: 'bg-warning/10',
+    icon: Shield,
+  },
   BUSINESS_MODERATOR: {
     label: 'Moderator',
-    color: 'text-warning',
+    color: 'text-warning-soft-foreground',
     bg: 'bg-warning/10',
     icon: Shield,
   },
@@ -784,7 +789,7 @@ export default function TeamManagementPage() {
             hideClose
           >
             <div className="flex items-center gap-2 mb-4">
-              <CheckCircle2 className="h-5 w-5 text-success" />
+              <CheckCircle2 className="h-5 w-5 text-success-soft-foreground" />
               <h3 className="text-base font-bold text-foreground">Credentials Ready</h3>
             </div>
             <p className="text-xs text-muted-foreground mb-4">

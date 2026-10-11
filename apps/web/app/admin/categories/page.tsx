@@ -229,7 +229,7 @@ export default function AdminCategoriesPage() {
                       <button
                         onClick={() => toggleActive(cat.id)}
                         className={`font-semibold mt-0.5 text-xs hover:opacity-80 transition-opacity ${
-                          cat.active ? 'text-success' : 'text-muted-foreground'
+                          cat.active ? 'text-success-soft-foreground' : 'text-muted-foreground'
                         }`}
                       >
                         {cat.active ? 'Active' : 'Inactive'}

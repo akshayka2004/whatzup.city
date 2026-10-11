@@ -222,7 +222,7 @@ export function BusinessCard({
           <span className="inline-flex items-center gap-1 text-sm">
             {ratingNum != null && Number.isFinite(ratingNum) && reviews > 0 ? (
               <>
-                <Star className="size-4 fill-warning text-warning" aria-hidden />
+                <Star className="size-4 fill-warning text-warning-soft-foreground" aria-hidden />
                 <span className="font-semibold tabular-nums text-foreground">
                   {ratingNum.toFixed(1)}
                 </span>

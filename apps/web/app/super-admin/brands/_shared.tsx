@@ -24,9 +24,17 @@ export interface EventMeta {
 }
 
 const tone = {
-  success: { color: 'text-success', bg: 'bg-success/10', border: 'border-success/20' },
+  success: {
+    color: 'text-success-soft-foreground',
+    bg: 'bg-success/10',
+    border: 'border-success/20',
+  },
   info: { color: 'text-info', bg: 'bg-info/10', border: 'border-info/20' },
-  warning: { color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/20' },
+  warning: {
+    color: 'text-warning-soft-foreground',
+    bg: 'bg-warning/10',
+    border: 'border-warning/20',
+  },
   danger: { color: 'text-destructive', bg: 'bg-destructive/10', border: 'border-destructive/20' },
   muted: { color: 'text-muted-foreground', bg: 'bg-secondary', border: 'border-border' },
 };

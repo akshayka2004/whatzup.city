@@ -124,7 +124,12 @@ export function FilterBar({
             onClick={() => onChange({ rating4: !filters.rating4 })}
             className={chipClass(filters.rating4)}
           >
-            <Star className={cn('h-4 w-4', filters.rating4 && 'fill-warning text-warning')} />
+            <Star
+              className={cn(
+                'h-4 w-4',
+                filters.rating4 && 'fill-warning text-warning-soft-foreground',
+              )}
+            />
             Rating 4+
           </button>
         )}

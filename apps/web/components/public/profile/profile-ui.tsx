@@ -46,7 +46,7 @@ export function Stars({ value, className }: { value: number; className?: string 
           key={i}
           className={cn(
             'h-4 w-4',
-            i < filled ? 'fill-warning text-warning' : 'text-muted-foreground/30',
+            i < filled ? 'fill-warning text-warning-soft-foreground' : 'text-muted-foreground/30',
           )}
         />
       ))}

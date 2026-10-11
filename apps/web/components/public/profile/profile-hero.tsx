@@ -253,7 +253,7 @@ export function ProfileHero({
             >
               {rating > 0 ? (
                 <>
-                  <Star className="h-5 w-5 fill-warning text-warning" />
+                  <Star className="h-5 w-5 fill-warning text-warning-soft-foreground" />
                   <span className="text-lg font-bold text-foreground">{rating.toFixed(1)}</span>
                   <span className="text-muted-foreground">({reviewCount} reviews)</span>
                 </>

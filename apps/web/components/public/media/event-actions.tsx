@@ -133,7 +133,7 @@ export function AddToCalendarButton({
       aria-label={`Add ${event.title} to calendar`}
     >
       {done ? (
-        <Check className="h-3.5 w-3.5 text-success" />
+        <Check className="h-3.5 w-3.5 text-success-soft-foreground" />
       ) : (
         <CalendarPlus className="h-3.5 w-3.5" />
       )}
@@ -184,7 +184,11 @@ export function ShareButton({
       className={cn(BTN, className)}
       aria-label={`Share ${title}`}
     >
-      {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Share2 className="h-3.5 w-3.5" />}
+      {copied ? (
+        <Check className="h-3.5 w-3.5 text-success-soft-foreground" />
+      ) : (
+        <Share2 className="h-3.5 w-3.5" />
+      )}
       <span aria-live="polite">{copied ? 'Link copied' : label}</span>
     </button>
   );

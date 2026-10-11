@@ -1,5 +1,6 @@
 import { common } from './messages/common';
 import { publicPages } from './messages/public';
+import { publicMore } from './messages/public-more';
 
 export type Locale = 'en' | 'ml';
 
@@ -19,7 +20,7 @@ type AreaMessages = { en: Record<string, string>; ml: Record<string, string> };
  * and listing it here. English is the source of truth: a key missing from `ml`
  * silently falls back to English, so a half-translated page never shows raw keys.
  */
-const AREAS: AreaMessages[] = [common as unknown as AreaMessages, publicPages];
+const AREAS: AreaMessages[] = [common as unknown as AreaMessages, publicPages, publicMore];
 
 export const MESSAGES: Record<Locale, Dict> = {
   en: Object.assign({}, ...AREAS.map((a) => a.en)),

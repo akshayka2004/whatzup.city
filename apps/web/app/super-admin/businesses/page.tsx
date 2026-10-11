@@ -330,7 +330,10 @@ export default function SuperAdminBusinessesPage() {
           <p className="flex items-center gap-1.5 font-medium">
             <span className="truncate">{b.name}</span>
             {b.isVerified && (
-              <BadgeCheck className="size-4 shrink-0 text-success" aria-label="Verified" />
+              <BadgeCheck
+                className="size-4 shrink-0 text-success-soft-foreground"
+                aria-label="Verified"
+              />
             )}
           </p>
           <p className="truncate text-caption text-muted-foreground">{b.email || b.phone || '—'}</p>
@@ -366,7 +369,7 @@ export default function SuperAdminBusinessesPage() {
       cell: (b) =>
         Number(b.averageRating) > 0 ? (
           <span className="inline-flex items-center gap-1">
-            <Star className="size-3.5 fill-current text-warning" aria-hidden />
+            <Star className="size-3.5 fill-current text-warning-soft-foreground" aria-hidden />
             {Number(b.averageRating).toFixed(1)}
           </span>
         ) : (

@@ -236,7 +236,7 @@ export default function SuperAdminBrandDetailPage() {
                 className={cn(
                   'ui-press h-11 w-full shrink-0 rounded-xl gap-2 cursor-pointer sm:w-auto',
                   suspended
-                    ? 'border-success/30 text-success hover:bg-success/10 hover:text-success'
+                    ? 'border-success/30 text-success-soft-foreground hover:bg-success/10 hover:text-success'
                     : 'border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive',
                 )}
               >
@@ -277,7 +277,7 @@ export default function SuperAdminBrandDetailPage() {
             <p
               className={cn(
                 'text-2xl font-bold',
-                pending.length > 0 ? 'text-warning' : 'text-foreground',
+                pending.length > 0 ? 'text-warning-soft-foreground' : 'text-foreground',
               )}
             >
               {pending.length}
@@ -319,7 +319,7 @@ export default function SuperAdminBrandDetailPage() {
         {pending.length > 0 && (
           <div className="flex flex-col gap-3 rounded-2xl border border-warning/30 bg-warning/10 p-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="flex items-start gap-2 text-sm text-foreground">
-              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-warning-soft-foreground" />
               <span>
                 <strong>{pending.length}</strong> outlet{pending.length === 1 ? '' : 's'} waiting
                 for verification
@@ -432,7 +432,7 @@ export default function SuperAdminBrandDetailPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="ui-press h-10 w-full rounded-xl border-warning/40 text-warning hover:bg-warning/10 hover:text-warning gap-1.5 cursor-pointer sm:w-auto"
+                            className="ui-press h-10 w-full rounded-xl border-warning/40 text-warning-soft-foreground hover:bg-warning/10 hover:text-warning gap-1.5 cursor-pointer sm:w-auto"
                           >
                             Review <ExternalLink className="h-3.5 w-3.5" />
                           </Button>
@@ -534,7 +534,7 @@ export default function SuperAdminBrandDetailPage() {
               )}
             >
               {suspended ? (
-                <RotateCcw className="h-5 w-5 text-success" />
+                <RotateCcw className="h-5 w-5 text-success-soft-foreground" />
               ) : (
                 <AlertTriangle className="h-5 w-5 text-destructive" />
               )}

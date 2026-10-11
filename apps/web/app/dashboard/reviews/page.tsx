@@ -32,7 +32,10 @@ function Stars({ value, size = 'size-4' }: { value: number; size?: string }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
-          className={cn(size, i <= value ? 'fill-warning text-warning' : 'text-border-strong')}
+          className={cn(
+            size,
+            i <= value ? 'fill-warning text-warning-soft-foreground' : 'text-border-strong',
+          )}
           aria-hidden
         />
       ))}
@@ -164,7 +167,10 @@ export default function ReviewsPage() {
                 {stats.dist.map((d) => (
                   <li key={d.star} className="flex items-center gap-2 text-sm">
                     <span className="w-3 tabular-nums text-muted-foreground">{d.star}</span>
-                    <Star className="size-3.5 fill-warning text-warning" aria-hidden />
+                    <Star
+                      className="size-3.5 fill-warning text-warning-soft-foreground"
+                      aria-hidden
+                    />
                     <span className="h-2 flex-1 overflow-hidden rounded-full bg-surface-sunken">
                       <span
                         className="block h-full rounded-full bg-warning"

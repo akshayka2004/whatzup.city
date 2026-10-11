@@ -197,11 +197,11 @@ export default function ApprovalsPage() {
       case 'INFLUENCER':
         return <Sparkles className="h-4 w-4 text-primary" />;
       case 'PROFESSIONAL':
-        return <Briefcase className="h-4 w-4 text-success" />;
+        return <Briefcase className="h-4 w-4 text-success-soft-foreground" />;
       case 'ORGANIZATION':
         return <Heart className="h-4 w-4 text-destructive" />;
       case 'GOVERNMENT':
-        return <ShieldAlert className="h-4 w-4 text-warning" />;
+        return <ShieldAlert className="h-4 w-4 text-warning-soft-foreground" />;
       case 'EVENT_ORGANIZER':
         return <Calendar className="h-4 w-4 text-primary" />;
       default:
@@ -344,7 +344,7 @@ export default function ApprovalsPage() {
                           onClick={() => setApprovingItem(req)}
                           size="sm"
                           variant="outline"
-                          className="rounded-xl text-success hover:text-success border-success/20 hover:bg-success/10 gap-1 cursor-pointer"
+                          className="rounded-xl text-success-soft-foreground hover:text-success border-success/20 hover:bg-success/10 gap-1 cursor-pointer"
                         >
                           <CheckCircle className="h-4 w-4" />
                           Approve
@@ -507,10 +507,10 @@ export default function ApprovalsPage() {
                                   <span
                                     className={`col-span-2 font-semibold ${
                                       pay.status === 'SUCCESS'
-                                        ? 'text-success'
+                                        ? 'text-success-soft-foreground'
                                         : pay.status === 'FAILED'
                                           ? 'text-destructive'
-                                          : 'text-warning'
+                                          : 'text-warning-soft-foreground'
                                     }`}
                                   >
                                     {pay.status}
@@ -527,7 +527,9 @@ export default function ApprovalsPage() {
                                 )}
                               </>
                             ) : (
-                              <div className="text-warning">No payment submitted yet.</div>
+                              <div className="text-warning-soft-foreground">
+                                No payment submitted yet.
+                              </div>
                             )}
                           </div>
                         );
@@ -645,7 +647,7 @@ export default function ApprovalsPage() {
                       <div className="space-y-2 text-xs">
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Practice Field</span>
-                          <span className="col-span-2 text-success font-semibold">
+                          <span className="col-span-2 text-success-soft-foreground font-semibold">
                             {reviewingItem.entity.professionalProfile.category}
                           </span>
                         </div>
@@ -756,7 +758,7 @@ export default function ApprovalsPage() {
                       <div className="space-y-2 text-xs">
                         <div className="grid grid-cols-3 py-1 border-b border-border">
                           <span className="text-muted-foreground">Dept Name</span>
-                          <span className="col-span-2 text-warning font-semibold">
+                          <span className="col-span-2 text-warning-soft-foreground font-semibold">
                             {reviewingItem.entity.governmentProfile.departmentName}
                           </span>
                         </div>
@@ -989,7 +991,7 @@ export default function ApprovalsPage() {
                                 VERIFICATION AUDIT ONLY
                               </div>
                               <div className="border-b-2 border-warning/20 pb-4 text-center">
-                                <h5 className="text-sm font-bold tracking-wider text-warning uppercase">
+                                <h5 className="text-sm font-bold tracking-wider text-warning-soft-foreground uppercase">
                                   State Registry Authority
                                 </h5>
                                 <p className="text-xs text-muted-foreground uppercase tracking-widest font-sans mt-1">
@@ -1035,7 +1037,7 @@ export default function ApprovalsPage() {
                                   <span className="text-muted-foreground font-semibold">
                                     Registry Status:
                                   </span>
-                                  <span className="col-span-2 text-success font-semibold flex items-center gap-1">
+                                  <span className="col-span-2 text-success-soft-foreground font-semibold flex items-center gap-1">
                                     <span className="h-1.5 w-1.5 rounded-full bg-success animate-ping"></span>
                                     ACTIVE & VALID
                                   </span>
@@ -1096,7 +1098,7 @@ export default function ApprovalsPage() {
                           onClick={() => reviewDocument(selectedDoc.id, 'APPROVE')}
                           disabled={docActionLoading}
                           size="sm"
-                          className="flex-1 rounded-lg bg-success hover:bg-success text-white text-xs gap-1 cursor-pointer"
+                          className="flex-1 rounded-lg bg-success hover:bg-success text-success-foreground text-xs gap-1 cursor-pointer"
                         >
                           <Check className="h-3.5 w-3.5" /> Approve
                         </Button>
@@ -1105,7 +1107,7 @@ export default function ApprovalsPage() {
                           disabled={docActionLoading}
                           size="sm"
                           variant="outline"
-                          className="flex-1 rounded-lg border-warning/30 text-warning hover:bg-warning/10 text-xs cursor-pointer"
+                          className="flex-1 rounded-lg border-warning/30 text-warning-soft-foreground hover:bg-warning/10 text-xs cursor-pointer"
                         >
                           Reupload
                         </Button>
@@ -1151,7 +1153,7 @@ export default function ApprovalsPage() {
                   setApprovingItem(reviewingItem);
                   setReviewingItem(null);
                 }}
-                className="rounded-xl bg-success hover:bg-success text-white font-semibold cursor-pointer"
+                className="rounded-xl bg-success hover:bg-success text-success-foreground font-semibold cursor-pointer"
               >
                 Approve Application
               </Button>
@@ -1212,7 +1214,7 @@ export default function ApprovalsPage() {
                             className={`rounded-lg px-5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                               paymentApproved === o.v
                                 ? o.v
-                                  ? 'bg-success text-white'
+                                  ? 'bg-success text-success-foreground'
                                   : 'bg-destructive text-destructive-foreground'
                                 : 'text-muted-foreground hover:text-foreground'
                             }`}
@@ -1230,7 +1232,7 @@ export default function ApprovalsPage() {
                       </p>
                     </>
                   ) : (
-                    <p className="text-xs text-warning">
+                    <p className="text-xs text-warning-soft-foreground">
                       No payment submitted by this business yet.
                     </p>
                   )}
@@ -1261,7 +1263,7 @@ export default function ApprovalsPage() {
               <Button
                 onClick={handleApprove}
                 disabled={actionLoading}
-                className="rounded-xl bg-success hover:bg-success text-white px-4 cursor-pointer flex items-center gap-1.5"
+                className="rounded-xl bg-success hover:bg-success text-success-foreground px-4 cursor-pointer flex items-center gap-1.5"
               >
                 {actionLoading && <Loader2 className="h-3 w-3 animate-spin" />}
                 Confirm Approval

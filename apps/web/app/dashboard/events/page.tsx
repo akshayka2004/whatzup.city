@@ -313,8 +313,8 @@ export default function DashboardEventsPage() {
                     {ev.registrationClicks ?? 0} registrations
                   </span>
                   <span className="inline-flex items-center gap-1 text-xs text-foreground">
-                    <Ticket className="h-3.5 w-3.5 text-success" /> {ev.ticketClicks ?? 0} ticket
-                    clicks
+                    <Ticket className="h-3.5 w-3.5 text-success-soft-foreground" />{' '}
+                    {ev.ticketClicks ?? 0} ticket clicks
                   </span>
                 </div>
               </Card>

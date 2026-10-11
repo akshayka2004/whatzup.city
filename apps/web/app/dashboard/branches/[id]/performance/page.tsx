@@ -93,21 +93,21 @@ export default function BranchPerformancePage() {
       label: 'Verified Purchases',
       value: purchases.toLocaleString(),
       icon: Receipt,
-      color: 'text-success',
+      color: 'text-success-soft-foreground',
       bg: 'bg-success/10',
     },
     {
       label: 'Offer Redemptions',
       value: claims.toLocaleString(),
       icon: Tag,
-      color: 'text-warning',
+      color: 'text-warning-soft-foreground',
       bg: 'bg-warning/10',
     },
     {
       label: 'Reviews',
       value: reviews.toLocaleString(),
       icon: Star,
-      color: 'text-warning',
+      color: 'text-warning-soft-foreground',
       bg: 'bg-warning/10',
     },
   ];
@@ -241,7 +241,7 @@ export default function BranchPerformancePage() {
             </Card>
 
             <Card className="p-5 rounded-2xl border-warning/10 bg-warning/5">
-              <p className="text-xs text-warning flex items-center gap-2">
+              <p className="text-xs text-warning-soft-foreground flex items-center gap-2">
                 <TrendingUp className="h-3.5 w-3.5" />
                 Analytics events are scoped to the parent business in the current schema. Per-branch
                 attribution will arrive in a future release.

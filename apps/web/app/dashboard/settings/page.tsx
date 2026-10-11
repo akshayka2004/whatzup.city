@@ -102,7 +102,7 @@ const PLATFORM_OPTIONS = [
     id: 'whatsapp',
     label: 'WhatsApp',
     icon: Phone,
-    color: 'text-success',
+    color: 'text-success-soft-foreground',
     placeholder: '+91 98765 43210',
   },
   {
@@ -598,7 +598,7 @@ export default function BusinessSettingsPage() {
                   onClick={handleSaveProfile}
                   disabled={saving}
                   size="sm"
-                  className="h-10 rounded-xl bg-success hover:bg-success text-white gap-1.5 cursor-pointer disabled:opacity-60"
+                  className="h-10 rounded-xl bg-success hover:bg-success text-success-foreground gap-1.5 cursor-pointer disabled:opacity-60"
                 >
                   {saving ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -754,7 +754,7 @@ export default function BusinessSettingsPage() {
                         type="button"
                         key={o.l}
                         onClick={() => setHalalStatus(o.v)}
-                        className={`h-10 rounded-xl border text-xs font-medium cursor-pointer transition ${halalStatus === o.v ? 'bg-success/20 border-success text-success' : 'bg-secondary/60 border-border text-muted-foreground hover:bg-secondary'}`}
+                        className={`h-10 rounded-xl border text-xs font-medium cursor-pointer transition ${halalStatus === o.v ? 'bg-success/20 border-success text-success-soft-foreground' : 'bg-secondary/60 border-border text-muted-foreground hover:bg-secondary'}`}
                       >
                         {o.l}
                       </button>
@@ -924,7 +924,7 @@ export default function BusinessSettingsPage() {
                 <span
                   className={cn(
                     'text-xs font-medium',
-                    /saved/i.test(regMsg) ? 'text-success' : 'text-destructive',
+                    /saved/i.test(regMsg) ? 'text-success-soft-foreground' : 'text-destructive',
                   )}
                 >
                   {regMsg}
@@ -967,7 +967,7 @@ export default function BusinessSettingsPage() {
                   <span
                     className={cn(
                       'text-xs font-medium max-w-xs text-right',
-                      /saved/i.test(hotelMsg) ? 'text-success' : 'text-destructive',
+                      /saved/i.test(hotelMsg) ? 'text-success-soft-foreground' : 'text-destructive',
                     )}
                   >
                     {hotelMsg}

@@ -67,7 +67,7 @@ export function PromoCard({
         <span className="text-heading font-bold leading-tight tabular-nums break-words">
           {value}
         </span>
-        {valueCaption && <span className="text-caption opacity-80">{valueCaption}</span>}
+        {valueCaption && <span className="text-caption">{valueCaption}</span>}
         <span
           className="absolute -right-2 -top-2 size-4 rounded-full border border-border bg-background"
           aria-hidden

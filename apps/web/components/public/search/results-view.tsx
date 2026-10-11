@@ -122,7 +122,7 @@ function Row({
         <span className="mt-1 flex items-center gap-2 text-caption">
           {rating > 0 && (
             <span className="inline-flex items-center gap-0.5 font-semibold">
-              <Star className="size-3.5 fill-current text-warning" aria-hidden />
+              <Star className="size-3.5 fill-current text-warning-soft-foreground" aria-hidden />
               {rating.toFixed(1)}
               {reviews > 0 && (
                 <span className="font-normal text-muted-foreground">({reviews})</span>

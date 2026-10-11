@@ -80,7 +80,7 @@ export function RelatedStrip({
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     {rating > 0 && (
                       <span className="inline-flex items-center gap-1 font-semibold text-foreground">
-                        <Star className="h-3.5 w-3.5 fill-warning text-warning" />
+                        <Star className="h-3.5 w-3.5 fill-warning text-warning-soft-foreground" />
                         {rating.toFixed(1)}
                       </span>
                     )}

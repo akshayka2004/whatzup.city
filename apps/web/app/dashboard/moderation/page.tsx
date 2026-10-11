@@ -360,9 +360,9 @@ function BillPreview({
                 className={cn(
                   'font-semibold',
                   bill.ocrConfidence >= 80
-                    ? 'text-success'
+                    ? 'text-success-soft-foreground'
                     : bill.ocrConfidence >= 60
-                      ? 'text-warning'
+                      ? 'text-warning-soft-foreground'
                       : 'text-destructive',
                 )}
               >
@@ -416,7 +416,7 @@ function BillPreview({
             <>
               <Button
                 onClick={() => onAction('approve')}
-                className="bg-success text-white hover:bg-success/90"
+                className="bg-success text-success-foreground hover:bg-success/90"
               >
                 <Check /> Approve{' '}
                 <kbd className="ml-1 hidden rounded bg-white/20 px-1 text-caption lg:inline">A</kbd>
@@ -887,7 +887,7 @@ export default function BillModerationPage() {
                       size="sm"
                       loading={bulkBusy}
                       onClick={bulkApprove}
-                      className="bg-success text-white hover:bg-success/90"
+                      className="bg-success text-success-foreground hover:bg-success/90"
                     >
                       <Check /> Approve {checkedCount}
                     </Button>
@@ -963,7 +963,10 @@ export default function BillModerationPage() {
                                 label={`${Math.round(bill.fraudScore * 100)}% risk`}
                               />
                             ) : (
-                              <ShieldCheck className="size-4 text-success" aria-label="Low risk" />
+                              <ShieldCheck
+                                className="size-4 text-success-soft-foreground"
+                                aria-label="Low risk"
+                              />
                             )
                           ) : (
                             <StatusPill tone={pill.tone} label={pill.label} />
@@ -1102,7 +1105,7 @@ export default function BillModerationPage() {
                 variant={meta?.button === 'destructive' ? 'destructive' : 'default'}
                 className={
                   actionModal === 'approve' || actionModal === 'override'
-                    ? 'bg-success text-white hover:bg-success/90'
+                    ? 'bg-success text-success-foreground hover:bg-success/90'
                     : undefined
                 }
                 onClick={handleAction}

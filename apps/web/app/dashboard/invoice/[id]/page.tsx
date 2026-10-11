@@ -236,7 +236,7 @@ export default function InvoicePage() {
             {/* Status footnote */}
             <div className="pt-6">
               {invoice.status === 'SUCCESS' && (
-                <p className="text-xs text-success">
+                <p className="text-xs text-success-soft-foreground">
                   Payment verified on {fmtDate(invoice.verifiedAt)}.
                 </p>
               )}

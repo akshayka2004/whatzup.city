@@ -182,11 +182,11 @@ export default function AdminSubscriptionsPage() {
         r.latestPayment ? (
           <span className="inline-flex items-center gap-1.5">
             {r.latestPayment.status === 'SUCCESS' ? (
-              <CheckCircle2 className="size-4 text-success" aria-label="Paid" />
+              <CheckCircle2 className="size-4 text-success-soft-foreground" aria-label="Paid" />
             ) : r.latestPayment.status === 'FAILED' ? (
               <XCircle className="size-4 text-destructive" aria-label="Failed" />
             ) : (
-              <Clock className="size-4 text-warning" aria-label="Pending" />
+              <Clock className="size-4 text-warning-soft-foreground" aria-label="Pending" />
             )}
             <span className="text-caption">
               {formatINR(Number(r.latestPayment.amount))} · {r.latestPayment.method}
