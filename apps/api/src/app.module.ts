@@ -4,7 +4,8 @@
 
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { ClientThrottlerGuard } from './common/guards/client-throttler.guard';
 import { BullModule } from '@nestjs/bullmq';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { validateEnv } from './common/config/env.validation';
@@ -92,21 +93,23 @@ import { TrialsModule } from './modules/trials/trials.module';
     }),
 
     // ── Rate Limiting ───────────────────────────────────────
+    // Per visitor IP (see ClientThrottlerGuard). One page load fans out to ~10
+    // API calls, so the burst window has to allow a full page plus navigation.
     ThrottlerModule.forRoot([
       {
         name: 'short',
         ttl: 1000,
-        limit: 3,
+        limit: 25,
       },
       {
         name: 'medium',
         ttl: 10000,
-        limit: 20,
+        limit: 120,
       },
       {
         name: 'long',
         ttl: 60000,
-        limit: 100,
+        limit: 400,
       },
     ]),
 
@@ -201,7 +204,7 @@ import { TrialsModule } from './modules/trials/trials.module';
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: ClientThrottlerGuard,
     },
     {
       provide: APP_FILTER,

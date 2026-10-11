@@ -11,10 +11,10 @@ import { Public } from '../../common/decorators/public.decorator';
 import { UserRole } from '@saas/types';
 import { TrackBatchDto, TrackEventDto } from './dto/track-event.dto';
 import type { Request } from 'express';
+import { clientIp } from '../../common/utils/client-ip';
 
 function requestContext(req: Request) {
-  const fwd = req.headers['x-forwarded-for'];
-  const ip = (Array.isArray(fwd) ? fwd[0] : fwd)?.split(',')[0]?.trim() || req.ip || undefined;
+  const ip = clientIp(req);
   const user = (req as any).user as { id?: string; userId?: string; sub?: string } | undefined;
   return {
     ip,
@@ -33,7 +33,7 @@ export class AnalyticsController {
 
   // Unauthenticated ingest — capped per IP so it can't be used to flood the
   // analytics table.
-  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  @Throttle({ long: { limit: 60, ttl: 60000 } })
   @Public()
   @Post('track')
   @ApiOperation({ summary: 'Ingest analytics event' })
@@ -43,7 +43,7 @@ export class AnalyticsController {
 
   // Batched ingest (sendBeacon on page hide). Each event still counts against nothing
   // extra server-side, so the batch is capped at 25 and throttled like single events.
-  @Throttle({ default: { limit: 30, ttl: 60000 } })
+  @Throttle({ long: { limit: 30, ttl: 60000 } })
   @Public()
   @Post('track/batch')
   @ApiOperation({ summary: 'Ingest up to 25 analytics events' })

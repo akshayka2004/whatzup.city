@@ -33,6 +33,7 @@ import { CivicSignupDto } from './dto/civic-signup.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
 import { SetActiveBusinessDto } from './dto/set-active-business.dto';
 import { ConfigService } from '@nestjs/config';
+import { clientIp } from '../../common/utils/client-ip';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -70,7 +71,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 3600000 } })
+  @Throttle({ long: { limit: 5, ttl: 3600000 } })
   @Post('signup')
   @ApiOperation({ summary: 'Register a new user account' })
   async signup(@Body() dto: SignupDto, @Res({ passthrough: true }) res: Response) {
@@ -83,7 +84,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 3600000 } })
+  @Throttle({ long: { limit: 5, ttl: 3600000 } })
   @Post('business/signup')
   @ApiOperation({ summary: 'Register a new business tenant and owner account' })
   async businessSignup(
@@ -111,7 +112,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 900000 } })
+  @Throttle({ long: { limit: 5, ttl: 900000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login with email and password' })
@@ -120,7 +121,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const ip = req.ip || req.socket.remoteAddress;
+    const ip = clientIp(req);
     const userAgent = req.headers['user-agent'];
 
     const result = await this.authService.login(dto, ip, userAgent);
@@ -150,7 +151,7 @@ export class AuthController {
       throw new UnauthorizedException('Refresh token missing');
     }
 
-    const ip = req.ip || req.socket.remoteAddress;
+    const ip = clientIp(req);
     const userAgent = req.headers['user-agent'];
 
     const result = await this.authService.refreshTokens(refreshToken, ip, userAgent);
@@ -193,7 +194,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 3, ttl: 900000 } })
+  @Throttle({ long: { limit: 3, ttl: 900000 } })
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset email' })
@@ -202,7 +203,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 900000 } })
+  @Throttle({ long: { limit: 5, ttl: 900000 } })
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset password with reset token' })
@@ -211,7 +212,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 10, ttl: 900000 } })
+  @Throttle({ long: { limit: 10, ttl: 900000 } })
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify email address with verification token' })
