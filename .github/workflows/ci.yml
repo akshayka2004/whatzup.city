@@ -9,10 +9,12 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  # Docker image build + container deploys are legacy (production runs bare-metal PM2, see
+  # PROJECT_DOCUMENTATION §9). They only run when started by hand from the Actions tab.
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '22'
-  PNPM_VERSION: '9'
   REGISTRY: ghcr.io
   IMAGE_NAME_PREFIX: akshayka2004/v0-saas-platform-foundation
 
@@ -22,9 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Version comes from package.json "packageManager"; passing it here too makes the action fail.
       - uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - uses: actions/setup-node@v4
         with:
@@ -48,6 +49,7 @@ jobs:
 
   build-and-push:
     needs: lint-and-test
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -126,7 +128,7 @@ jobs:
   deploy-staging:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/develop'
     steps:
       - name: Deploy to Staging VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -143,7 +145,7 @@ jobs:
   deploy-production:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     steps:
       - name: Deploy to Production VPS via SSH
         uses: appleboy/ssh-action@v1.0.3

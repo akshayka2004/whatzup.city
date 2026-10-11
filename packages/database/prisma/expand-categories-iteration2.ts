@@ -93,12 +93,7 @@ const report = {
 };
 
 // Case-insensitive lookup by name OR slug within a tenant (excludes soft-deleted).
-async function findCategory(
-  tenantId: string,
-  name: string,
-  slug: string,
-  parentId: string | null,
-) {
+async function findCategory(tenantId: string, name: string, slug: string, parentId: string | null) {
   return prisma.category.findFirst({
     where: {
       tenantId,

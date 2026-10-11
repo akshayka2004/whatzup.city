@@ -22,7 +22,15 @@ async function main() {
   // 1. Businesses with no entityId — create Entity first
   const orphans = await prisma.business.findMany({
     where: { entityId: null, deletedAt: null },
-    select: { id: true, tenantId: true, ownerId: true, name: true, email: true, phone: true, status: true },
+    select: {
+      id: true,
+      tenantId: true,
+      ownerId: true,
+      name: true,
+      email: true,
+      phone: true,
+      status: true,
+    },
   });
   console.log(`Found ${orphans.length} businesses with no Entity link.`);
 

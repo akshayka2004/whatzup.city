@@ -186,18 +186,10 @@ async function main() {
       'business.team.manage',
       'business.bills.override',
     ],
-    BUSINESS_MODERATOR: [
-      'read:listings',
-      'business.bills.verify',
-    ],
+    BUSINESS_MODERATOR: ['read:listings', 'business.bills.verify'],
     BUSINESS_STAFF: ['read:listings'],
     GOVERNMENT_ADMIN: ['read:listings', 'write:announcements'],
-    MASTER_ADMIN: [
-      'read:listings',
-      'write:listings',
-      'verify:listings',
-      'verify:bills',
-    ],
+    MASTER_ADMIN: ['read:listings', 'write:listings', 'verify:listings', 'verify:bills'],
     SUPER_ADMIN: [
       'read:listings',
       'write:listings',
@@ -243,7 +235,7 @@ async function main() {
       code: 'BUSINESS_BASIC',
       description: 'Basic business listing plan',
       entityType: 'BUSINESS',
-      price: 4999.00,
+      price: 4999.0,
       billingCycle: 'YEARLY',
       features: { listing: true, branches: 1, reviews: true, support: 'standard' },
       limits: { branches: 1, campaigns: 0, offers: 0, analytics: 'basic' },
@@ -253,9 +245,16 @@ async function main() {
       code: 'BUSINESS_STANDARD',
       description: 'Standard business listing plan with promotions',
       entityType: 'BUSINESS',
-      price: 7999.00,
+      price: 7999.0,
       billingCycle: 'YEARLY',
-      features: { listing: true, branches: 3, reviews: true, support: 'standard', offers: true, highlights: true },
+      features: {
+        listing: true,
+        branches: 3,
+        reviews: true,
+        support: 'standard',
+        offers: true,
+        highlights: true,
+      },
       limits: { branches: 3, campaigns: 3, offers: 5, analytics: 'standard' },
     },
     {
@@ -263,9 +262,19 @@ async function main() {
       code: 'BUSINESS_PREMIUM',
       description: 'Premium business listing plan with advanced features',
       entityType: 'BUSINESS',
-      price: 14999.00,
+      price: 14999.0,
       billingCycle: 'YEARLY',
-      features: { listing: true, branches: 9999, reviews: true, support: 'priority', offers: true, highlights: true, campaigns: true, videoCampaigns: true, apiAccess: true },
+      features: {
+        listing: true,
+        branches: 9999,
+        reviews: true,
+        support: 'priority',
+        offers: true,
+        highlights: true,
+        campaigns: true,
+        videoCampaigns: true,
+        apiAccess: true,
+      },
       limits: { branches: 9999, campaigns: 9999, offers: 9999, analytics: 'premium' },
     },
     {
@@ -273,7 +282,7 @@ async function main() {
       code: 'INFLUENCER_FREE',
       description: 'Free influencer profile',
       entityType: 'INFLUENCER',
-      price: 0.00,
+      price: 0.0,
       billingCycle: 'FREE',
       features: { profile: true, campaigns: true },
       limits: { campaigns: 2 },
@@ -283,7 +292,7 @@ async function main() {
       code: 'INFLUENCER_PRO',
       description: 'Pro influencer profile with verification badge',
       entityType: 'INFLUENCER',
-      price: 2999.00,
+      price: 2999.0,
       billingCycle: 'YEARLY',
       features: { profile: true, campaigns: true, verificationBadge: true },
       limits: { campaigns: 9999 },
@@ -293,7 +302,7 @@ async function main() {
       code: 'NGO_FREE',
       description: 'Free NGO / Community profile',
       entityType: 'ORGANIZATION',
-      price: 0.00,
+      price: 0.0,
       billingCycle: 'FREE',
       features: { profile: true, volunteers: true, donations: true },
       limits: { campaigns: 9999 },
@@ -303,7 +312,7 @@ async function main() {
       code: 'GOVT_FREE',
       description: 'Official Government notification portal',
       entityType: 'GOVERNMENT',
-      price: 0.00,
+      price: 0.0,
       billingCycle: 'FREE',
       features: { alerts: true, emergencyBroadcasts: true },
       limits: { campaigns: 9999 },
@@ -341,7 +350,11 @@ async function main() {
   const coreUsers = [
     { email: 'user@platform.com', name: 'John Public', role: UserRoleEnum.USER },
     { email: 'business@platform.com', name: 'Jane Business', role: UserRoleEnum.BUSINESS_OWNER },
-    { email: 'moderator@platform.com', name: 'Joe Moderator', role: UserRoleEnum.BUSINESS_MODERATOR },
+    {
+      email: 'moderator@platform.com',
+      name: 'Joe Moderator',
+      role: UserRoleEnum.BUSINESS_MODERATOR,
+    },
     { email: 'gov@platform.com', name: 'Gov Agency', role: UserRoleEnum.GOVERNMENT_ADMIN },
     { email: 'admin@platform.com', name: 'Admin User', role: UserRoleEnum.MASTER_ADMIN },
     { email: 'superadmin@platform.com', name: 'Super Admin', role: UserRoleEnum.SUPER_ADMIN },
@@ -350,7 +363,12 @@ async function main() {
   const seededUsers: any[] = [];
   for (const u of coreUsers) {
     // Generate a deterministic referral code from the email prefix so re-runs are idempotent
-    const seedCode = u.email.split('@')[0].replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 8).padEnd(8, '0');
+    const seedCode = u.email
+      .split('@')[0]
+      .replace(/[^a-z0-9]/gi, '')
+      .toUpperCase()
+      .slice(0, 8)
+      .padEnd(8, '0');
     const user = await prisma.user.upsert({
       where: { tenantId_email: { tenantId: tenant.id, email: u.email } },
       update: {},
@@ -367,10 +385,14 @@ async function main() {
     });
     // Backfill code if the user already existed but had none
     if (!user.referralCode) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { referralCode: seedCode },
-      }).catch(() => { /* ignore collision — another user already holds this code */ });
+      await prisma.user
+        .update({
+          where: { id: user.id },
+          data: { referralCode: seedCode },
+        })
+        .catch(() => {
+          /* ignore collision — another user already holds this code */
+        });
     }
 
     // Map to dynamic RBAC Role table

@@ -70,7 +70,8 @@ function isRealDate(value: string): boolean {
 /** A fresh schedule for the editor: every day open 09:00-18:00. */
 export function defaultOperatingHours(): OperatingHours {
   const weekly = {} as Record<DayKey, DaySchedule>;
-  for (const day of DAY_KEYS) weekly[day] = { closed: false, shifts: [{ open: '09:00', close: '18:00' }] };
+  for (const day of DAY_KEYS)
+    weekly[day] = { closed: false, shifts: [{ open: '09:00', close: '18:00' }] };
   return { version: 1, weekly, closures: [] };
 }
 
@@ -132,7 +133,9 @@ export function validateOperatingHours(input: unknown): OperatingHoursResult {
     shifts.sort((a, b) => (a.open < b.open ? -1 : a.open > b.open ? 1 : 0));
     for (let i = 1; i < shifts.length; i++) {
       if (shifts[i].open < shifts[i - 1].close) {
-        errors.push(`${label}: shifts overlap (${shifts[i - 1].open}-${shifts[i - 1].close} and ${shifts[i].open}-${shifts[i].close}).`);
+        errors.push(
+          `${label}: shifts overlap (${shifts[i - 1].open}-${shifts[i - 1].close} and ${shifts[i].open}-${shifts[i].close}).`,
+        );
         break;
       }
     }
@@ -159,7 +162,8 @@ export function validateOperatingHours(input: unknown): OperatingHoursResult {
       errors.push(`Closure ${n}: the reason is too long (${MAX_CLOSURE_REASON} characters max).`);
       return;
     }
-    const id = typeof c?.id === 'string' && c.id.length > 0 && c.id.length <= 40 ? c.id : `c${n}-${from}`;
+    const id =
+      typeof c?.id === 'string' && c.id.length > 0 && c.id.length <= 40 ? c.id : `c${n}-${from}`;
     closures.push({ id, from, to, reason });
   });
 
@@ -201,10 +205,20 @@ export function istParts(now: Date): { date: string; day: DayKey; time: string }
   const p: Record<string, string> = {};
   for (const part of fmt.formatToParts(now)) p[part.type] = part.value;
   const dayMap: Record<string, DayKey> = {
-    Mon: 'mon', Tue: 'tue', Wed: 'wed', Thu: 'thu', Fri: 'fri', Sat: 'sat', Sun: 'sun',
+    Mon: 'mon',
+    Tue: 'tue',
+    Wed: 'wed',
+    Thu: 'thu',
+    Fri: 'fri',
+    Sat: 'sat',
+    Sun: 'sun',
   };
   const hour = p.hour === '24' ? '00' : p.hour;
-  return { date: `${p.year}-${p.month}-${p.day}`, day: dayMap[p.weekday], time: `${hour}:${p.minute}` };
+  return {
+    date: `${p.year}-${p.month}-${p.day}`,
+    day: dayMap[p.weekday],
+    time: `${hour}:${p.minute}`,
+  };
 }
 
 export interface OpenStatus {
@@ -226,7 +240,13 @@ function addDays(date: string, n: number): string {
 }
 
 const SHORT_DAY: Record<DayKey, string> = {
-  mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
+  mon: 'Mon',
+  tue: 'Tue',
+  wed: 'Wed',
+  thu: 'Thu',
+  fri: 'Fri',
+  sat: 'Sat',
+  sun: 'Sun',
 };
 
 /** Whether the business is open at `now`, plus a human label for the next change. Pure; IST. */

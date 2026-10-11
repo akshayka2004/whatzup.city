@@ -201,6 +201,6 @@ export type ScopedPermission =
 
 export enum FraudEscalationLevel {
   NONE = 'NONE',
-  BUSINESS = 'BUSINESS',   // Escalated to BUSINESS_OWNER
-  PLATFORM = 'PLATFORM',   // Escalated to MASTER_ADMIN
+  BUSINESS = 'BUSINESS', // Escalated to BUSINESS_OWNER
+  PLATFORM = 'PLATFORM', // Escalated to MASTER_ADMIN
 }

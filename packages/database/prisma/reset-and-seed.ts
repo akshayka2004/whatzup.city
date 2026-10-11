@@ -95,17 +95,49 @@ async function main() {
 
   // ── RBAC Roles ───────────────────────────────────────────────
   const roleCodes = [
-    { code: 'USER',                name: 'Public User',          description: 'Standard platform visitor' },
-    { code: 'BUSINESS_OWNER',      name: 'Business Owner',       description: 'Business listings owner' },
-    { code: 'BUSINESS_MODERATOR',  name: 'Business Moderator',   description: 'Business staff with moderating capabilities' },
-    { code: 'BUSINESS_STAFF',      name: 'Business Staff',       description: 'Business branch or operational staff' },
-    { code: 'GOVERNMENT_ADMIN',    name: 'Government Admin',     description: 'Government official publishing public notifications' },
-    { code: 'MASTER_ADMIN',        name: 'Master Admin',         description: 'Operations admin with full data access' },
-    { code: 'SUPER_ADMIN',         name: 'Super Admin',          description: 'Platform super-user' },
-    { code: 'INFLUENCER',          name: 'Influencer',           description: 'Content creator / Influencer profile owner' },
-    { code: 'PROFESSIONAL',        name: 'Professional Service', description: 'Freelancer / Professional service provider' },
-    { code: 'EVENT_ORGANIZER',     name: 'Event Organizer',      description: 'Event organizer publishing events' },
-    { code: 'ORGANIZATION_ADMIN',  name: 'NGO Admin',            description: 'NGO or community organization admin' },
+    { code: 'USER', name: 'Public User', description: 'Standard platform visitor' },
+    { code: 'BUSINESS_OWNER', name: 'Business Owner', description: 'Business listings owner' },
+    {
+      code: 'BUSINESS_MODERATOR',
+      name: 'Business Moderator',
+      description: 'Business staff with moderating capabilities',
+    },
+    {
+      code: 'BUSINESS_STAFF',
+      name: 'Business Staff',
+      description: 'Business branch or operational staff',
+    },
+    {
+      code: 'GOVERNMENT_ADMIN',
+      name: 'Government Admin',
+      description: 'Government official publishing public notifications',
+    },
+    {
+      code: 'MASTER_ADMIN',
+      name: 'Master Admin',
+      description: 'Operations admin with full data access',
+    },
+    { code: 'SUPER_ADMIN', name: 'Super Admin', description: 'Platform super-user' },
+    {
+      code: 'INFLUENCER',
+      name: 'Influencer',
+      description: 'Content creator / Influencer profile owner',
+    },
+    {
+      code: 'PROFESSIONAL',
+      name: 'Professional Service',
+      description: 'Freelancer / Professional service provider',
+    },
+    {
+      code: 'EVENT_ORGANIZER',
+      name: 'Event Organizer',
+      description: 'Event organizer publishing events',
+    },
+    {
+      code: 'ORGANIZATION_ADMIN',
+      name: 'NGO Admin',
+      description: 'NGO or community organization admin',
+    },
   ];
 
   const rolesMap: Record<string, { id: string }> = {};
@@ -119,16 +151,66 @@ async function main() {
 
   // ── Permissions ──────────────────────────────────────────────
   const permissionsData = [
-    { name: 'read:listings',           resource: 'listings',       action: 'read',     description: 'Read business listings' },
-    { name: 'write:listings',          resource: 'listings',       action: 'write',    description: 'Create and update business listings' },
-    { name: 'verify:listings',         resource: 'listings',       action: 'verify',   description: 'Verify businesses' },
-    { name: 'write:announcements',     resource: 'announcements',  action: 'write',    description: 'Write civic alerts' },
-    { name: 'verify:bills',            resource: 'bills',          action: 'verify',   description: 'Verify transaction bills' },
-    { name: 'manage:users',            resource: 'users',          action: 'manage',   description: 'Manage users platform-wide' },
-    { name: 'business.analytics.view', resource: 'analytics',      action: 'read',     description: 'View business analytics' },
-    { name: 'business.bills.verify',   resource: 'business-bills', action: 'verify',   description: 'Verify business bills' },
-    { name: 'business.team.manage',    resource: 'team',           action: 'manage',   description: 'Manage business team members' },
-    { name: 'business.bills.override', resource: 'bills',          action: 'override', description: 'Override bill verification decisions' },
+    {
+      name: 'read:listings',
+      resource: 'listings',
+      action: 'read',
+      description: 'Read business listings',
+    },
+    {
+      name: 'write:listings',
+      resource: 'listings',
+      action: 'write',
+      description: 'Create and update business listings',
+    },
+    {
+      name: 'verify:listings',
+      resource: 'listings',
+      action: 'verify',
+      description: 'Verify businesses',
+    },
+    {
+      name: 'write:announcements',
+      resource: 'announcements',
+      action: 'write',
+      description: 'Write civic alerts',
+    },
+    {
+      name: 'verify:bills',
+      resource: 'bills',
+      action: 'verify',
+      description: 'Verify transaction bills',
+    },
+    {
+      name: 'manage:users',
+      resource: 'users',
+      action: 'manage',
+      description: 'Manage users platform-wide',
+    },
+    {
+      name: 'business.analytics.view',
+      resource: 'analytics',
+      action: 'read',
+      description: 'View business analytics',
+    },
+    {
+      name: 'business.bills.verify',
+      resource: 'business-bills',
+      action: 'verify',
+      description: 'Verify business bills',
+    },
+    {
+      name: 'business.team.manage',
+      resource: 'team',
+      action: 'manage',
+      description: 'Manage business team members',
+    },
+    {
+      name: 'business.bills.override',
+      resource: 'bills',
+      action: 'override',
+      description: 'Override bill verification decisions',
+    },
   ];
 
   const permissionsMap: Record<string, { id: string }> = {};
@@ -142,16 +224,34 @@ async function main() {
 
   // ── Role → Permission Mappings ───────────────────────────────
   const rolePermissionsMap: Record<string, string[]> = {
-    USER:               ['read:listings'],
-    BUSINESS_OWNER:     ['read:listings', 'write:listings', 'business.analytics.view', 'business.bills.verify', 'business.team.manage', 'business.bills.override'],
+    USER: ['read:listings'],
+    BUSINESS_OWNER: [
+      'read:listings',
+      'write:listings',
+      'business.analytics.view',
+      'business.bills.verify',
+      'business.team.manage',
+      'business.bills.override',
+    ],
     BUSINESS_MODERATOR: ['read:listings', 'business.bills.verify'],
-    BUSINESS_STAFF:     ['read:listings'],
-    GOVERNMENT_ADMIN:   ['read:listings', 'write:announcements'],
-    MASTER_ADMIN:       ['read:listings', 'write:listings', 'verify:listings', 'verify:bills'],
-    SUPER_ADMIN:        ['read:listings', 'write:listings', 'verify:listings', 'write:announcements', 'verify:bills', 'manage:users', 'business.analytics.view', 'business.bills.verify', 'business.team.manage', 'business.bills.override'],
-    INFLUENCER:         ['read:listings'],
-    PROFESSIONAL:       ['read:listings'],
-    EVENT_ORGANIZER:    ['read:listings'],
+    BUSINESS_STAFF: ['read:listings'],
+    GOVERNMENT_ADMIN: ['read:listings', 'write:announcements'],
+    MASTER_ADMIN: ['read:listings', 'write:listings', 'verify:listings', 'verify:bills'],
+    SUPER_ADMIN: [
+      'read:listings',
+      'write:listings',
+      'verify:listings',
+      'write:announcements',
+      'verify:bills',
+      'manage:users',
+      'business.analytics.view',
+      'business.bills.verify',
+      'business.team.manage',
+      'business.bills.override',
+    ],
+    INFLUENCER: ['read:listings'],
+    PROFESSIONAL: ['read:listings'],
+    EVENT_ORGANIZER: ['read:listings'],
     ORGANIZATION_ADMIN: ['read:listings'],
   };
 
@@ -172,49 +272,91 @@ async function main() {
   // ── Plans ────────────────────────────────────────────────────
   const plansData = [
     {
-      name: 'Business Basic',    code: 'BUSINESS_BASIC',
+      name: 'Business Basic',
+      code: 'BUSINESS_BASIC',
       description: 'Basic business listing plan',
-      entityType: 'BUSINESS' as const, price: 4999.00, billingCycle: 'YEARLY',
+      entityType: 'BUSINESS' as const,
+      price: 4999.0,
+      billingCycle: 'YEARLY',
       features: { listing: true, branches: 1, reviews: true, support: 'standard' },
       limits: { branches: 1, campaigns: 0, offers: 0, analytics: 'basic' },
     },
     {
-      name: 'Business Standard', code: 'BUSINESS_STANDARD',
+      name: 'Business Standard',
+      code: 'BUSINESS_STANDARD',
       description: 'Standard business listing plan with promotions',
-      entityType: 'BUSINESS' as const, price: 7999.00, billingCycle: 'YEARLY',
-      features: { listing: true, branches: 3, reviews: true, support: 'standard', offers: true, highlights: true },
+      entityType: 'BUSINESS' as const,
+      price: 7999.0,
+      billingCycle: 'YEARLY',
+      features: {
+        listing: true,
+        branches: 3,
+        reviews: true,
+        support: 'standard',
+        offers: true,
+        highlights: true,
+      },
       limits: { branches: 3, campaigns: 3, offers: 5, analytics: 'standard' },
     },
     {
-      name: 'Business Premium',  code: 'BUSINESS_PREMIUM',
+      name: 'Business Premium',
+      code: 'BUSINESS_PREMIUM',
       description: 'Premium business listing plan with advanced features',
-      entityType: 'BUSINESS' as const, price: 14999.00, billingCycle: 'YEARLY',
-      features: { listing: true, branches: 9999, reviews: true, support: 'priority', offers: true, highlights: true, campaigns: true, videoCampaigns: true, apiAccess: true },
+      entityType: 'BUSINESS' as const,
+      price: 14999.0,
+      billingCycle: 'YEARLY',
+      features: {
+        listing: true,
+        branches: 9999,
+        reviews: true,
+        support: 'priority',
+        offers: true,
+        highlights: true,
+        campaigns: true,
+        videoCampaigns: true,
+        apiAccess: true,
+      },
       limits: { branches: 9999, campaigns: 9999, offers: 9999, analytics: 'premium' },
     },
     {
-      name: 'Influencer Free',   code: 'INFLUENCER_FREE',
+      name: 'Influencer Free',
+      code: 'INFLUENCER_FREE',
       description: 'Free influencer profile',
-      entityType: 'INFLUENCER' as const, price: 0.00, billingCycle: 'FREE',
-      features: { profile: true, campaigns: true }, limits: { campaigns: 2 },
+      entityType: 'INFLUENCER' as const,
+      price: 0.0,
+      billingCycle: 'FREE',
+      features: { profile: true, campaigns: true },
+      limits: { campaigns: 2 },
     },
     {
-      name: 'Influencer Pro',    code: 'INFLUENCER_PRO',
+      name: 'Influencer Pro',
+      code: 'INFLUENCER_PRO',
       description: 'Pro influencer profile with verification badge',
-      entityType: 'INFLUENCER' as const, price: 2999.00, billingCycle: 'YEARLY',
-      features: { profile: true, campaigns: true, verificationBadge: true }, limits: { campaigns: 9999 },
+      entityType: 'INFLUENCER' as const,
+      price: 2999.0,
+      billingCycle: 'YEARLY',
+      features: { profile: true, campaigns: true, verificationBadge: true },
+      limits: { campaigns: 9999 },
     },
     {
-      name: 'NGO Free',          code: 'NGO_FREE',
+      name: 'NGO Free',
+      code: 'NGO_FREE',
       description: 'Free NGO / Community profile',
-      entityType: 'ORGANIZATION' as const, price: 0.00, billingCycle: 'FREE',
-      features: { profile: true, volunteers: true, donations: true }, limits: { campaigns: 9999 },
+      entityType: 'ORGANIZATION' as const,
+      price: 0.0,
+      billingCycle: 'FREE',
+      features: { profile: true, volunteers: true, donations: true },
+      limits: { campaigns: 9999 },
     },
     {
-      name: 'Gov Portal',        code: 'GOVT_FREE',
+      name: 'Gov Portal',
+      code: 'GOVT_FREE',
       description: 'Official Government notification portal',
-      entityType: 'GOVERNMENT' as const, price: 0.00, billingCycle: 'FREE',
-      features: { alerts: true, emergencyBroadcasts: true }, limits: { campaigns: 9999 },
+      entityType: 'GOVERNMENT' as const,
+      price: 0.0,
+      billingCycle: 'FREE',
+      features: { alerts: true, emergencyBroadcasts: true },
+      limits: { campaigns: 9999 },
     },
   ];
 
@@ -225,14 +367,62 @@ async function main() {
 
   // ── Business Categories ──────────────────────────────────────
   const categoriesData = [
-    { name: 'Restaurants',   slug: 'restaurants',   description: 'Dining & Food Services',          icon: 'UtensilsCrossed', sortOrder: 1 },
-    { name: 'Healthcare',    slug: 'healthcare',    description: 'Medical & Health Services',        icon: 'Heart',           sortOrder: 2 },
-    { name: 'Retail',        slug: 'retail',        description: 'Shopping & Retail Stores',         icon: 'ShoppingBag',     sortOrder: 3 },
-    { name: 'Services',      slug: 'services',      description: 'Professional & Personal Services', icon: 'Wrench',          sortOrder: 4 },
-    { name: 'Technology',    slug: 'technology',    description: 'Tech Companies & Startups',        icon: 'Cpu',             sortOrder: 5 },
-    { name: 'Education',     slug: 'education',     description: 'Schools, Training & Tutoring',     icon: 'GraduationCap',   sortOrder: 6 },
-    { name: 'Entertainment', slug: 'entertainment', description: 'Entertainment & Recreation',       icon: 'Music',           sortOrder: 7 },
-    { name: 'Finance',       slug: 'finance',       description: 'Banking & Financial Services',     icon: 'Landmark',        sortOrder: 8 },
+    {
+      name: 'Restaurants',
+      slug: 'restaurants',
+      description: 'Dining & Food Services',
+      icon: 'UtensilsCrossed',
+      sortOrder: 1,
+    },
+    {
+      name: 'Healthcare',
+      slug: 'healthcare',
+      description: 'Medical & Health Services',
+      icon: 'Heart',
+      sortOrder: 2,
+    },
+    {
+      name: 'Retail',
+      slug: 'retail',
+      description: 'Shopping & Retail Stores',
+      icon: 'ShoppingBag',
+      sortOrder: 3,
+    },
+    {
+      name: 'Services',
+      slug: 'services',
+      description: 'Professional & Personal Services',
+      icon: 'Wrench',
+      sortOrder: 4,
+    },
+    {
+      name: 'Technology',
+      slug: 'technology',
+      description: 'Tech Companies & Startups',
+      icon: 'Cpu',
+      sortOrder: 5,
+    },
+    {
+      name: 'Education',
+      slug: 'education',
+      description: 'Schools, Training & Tutoring',
+      icon: 'GraduationCap',
+      sortOrder: 6,
+    },
+    {
+      name: 'Entertainment',
+      slug: 'entertainment',
+      description: 'Entertainment & Recreation',
+      icon: 'Music',
+      sortOrder: 7,
+    },
+    {
+      name: 'Finance',
+      slug: 'finance',
+      description: 'Banking & Financial Services',
+      icon: 'Landmark',
+      sortOrder: 8,
+    },
   ];
 
   const createdCategories: Record<string, any> = {};
@@ -247,17 +437,21 @@ async function main() {
   const passwordHash = await bcrypt.hash('Admin@1234', 12);
 
   const roleUsers: Array<{ email: string; name: string; role: UserRoleEnum }> = [
-    { email: 'user@platform.com',          name: 'John Public',       role: UserRoleEnum.USER },
-    { email: 'business@platform.com',      name: 'Jane Business',     role: UserRoleEnum.BUSINESS_OWNER },
-    { email: 'moderator@platform.com',     name: 'Joe Moderator',     role: UserRoleEnum.BUSINESS_MODERATOR },
-    { email: 'staff@platform.com',         name: 'Sam Staff',         role: UserRoleEnum.BUSINESS_STAFF },
-    { email: 'admin@platform.com',         name: 'Admin User',        role: UserRoleEnum.MASTER_ADMIN },
-    { email: 'superadmin@platform.com',    name: 'Super Admin',       role: UserRoleEnum.SUPER_ADMIN },
-    { email: 'gov@platform.com',           name: 'Gov Agency',        role: UserRoleEnum.GOVERNMENT_ADMIN },
-    { email: 'influencer@platform.com',    name: 'Insta Influencer',  role: UserRoleEnum.INFLUENCER },
-    { email: 'professional@platform.com',  name: 'Pro Service',       role: UserRoleEnum.PROFESSIONAL },
-    { email: 'eventorg@platform.com',      name: 'Event Organizer',   role: UserRoleEnum.EVENT_ORGANIZER },
-    { email: 'orgadmin@platform.com',      name: 'NGO Admin',         role: UserRoleEnum.ORGANIZATION_ADMIN },
+    { email: 'user@platform.com', name: 'John Public', role: UserRoleEnum.USER },
+    { email: 'business@platform.com', name: 'Jane Business', role: UserRoleEnum.BUSINESS_OWNER },
+    {
+      email: 'moderator@platform.com',
+      name: 'Joe Moderator',
+      role: UserRoleEnum.BUSINESS_MODERATOR,
+    },
+    { email: 'staff@platform.com', name: 'Sam Staff', role: UserRoleEnum.BUSINESS_STAFF },
+    { email: 'admin@platform.com', name: 'Admin User', role: UserRoleEnum.MASTER_ADMIN },
+    { email: 'superadmin@platform.com', name: 'Super Admin', role: UserRoleEnum.SUPER_ADMIN },
+    { email: 'gov@platform.com', name: 'Gov Agency', role: UserRoleEnum.GOVERNMENT_ADMIN },
+    { email: 'influencer@platform.com', name: 'Insta Influencer', role: UserRoleEnum.INFLUENCER },
+    { email: 'professional@platform.com', name: 'Pro Service', role: UserRoleEnum.PROFESSIONAL },
+    { email: 'eventorg@platform.com', name: 'Event Organizer', role: UserRoleEnum.EVENT_ORGANIZER },
+    { email: 'orgadmin@platform.com', name: 'NGO Admin', role: UserRoleEnum.ORGANIZATION_ADMIN },
   ];
 
   const createdUsers: Record<string, any> = {};
@@ -356,10 +550,30 @@ async function main() {
 
   // ── Feature Flags (global — no tenantId) ────────────────────
   const flags = [
-    { key: 'enable_bill_upload',         name: 'Bill Upload',          description: 'Allow users to upload bills for verification',   isEnabled: true },
-    { key: 'enable_nearby_search',       name: 'Nearby Search',        description: 'Enable geo-based nearby business search',        isEnabled: true },
-    { key: 'enable_push_notifications',  name: 'Push Notifications',   description: 'Enable FCM push notifications',                  isEnabled: false },
-    { key: 'enable_ai_fraud_detection',  name: 'AI Fraud Detection',   description: 'Enable AI-powered fraud detection on reviews',   isEnabled: false },
+    {
+      key: 'enable_bill_upload',
+      name: 'Bill Upload',
+      description: 'Allow users to upload bills for verification',
+      isEnabled: true,
+    },
+    {
+      key: 'enable_nearby_search',
+      name: 'Nearby Search',
+      description: 'Enable geo-based nearby business search',
+      isEnabled: true,
+    },
+    {
+      key: 'enable_push_notifications',
+      name: 'Push Notifications',
+      description: 'Enable FCM push notifications',
+      isEnabled: false,
+    },
+    {
+      key: 'enable_ai_fraud_detection',
+      name: 'AI Fraud Detection',
+      description: 'Enable AI-powered fraud detection on reviews',
+      isEnabled: false,
+    },
   ];
 
   for (const flag of flags) {

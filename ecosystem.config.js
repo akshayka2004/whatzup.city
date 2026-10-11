@@ -13,7 +13,7 @@ module.exports = {
         // HTTP bare-metal deployment — cookies must NOT require HTTPS
         COOKIE_SECURE: 'false',
         ENFORCE_EMAIL_VERIFICATION: 'false',
-      }
+      },
     },
     {
       name: 'saas-worker',
@@ -25,7 +25,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         COOKIE_SECURE: 'false',
-      }
+      },
     },
     {
       name: 'saas-web',
@@ -43,7 +43,7 @@ module.exports = {
         HOSTNAME: '0.0.0.0',
         // Proxy target for /api/* rewrites — bare-metal API on port 4001
         API_URL: 'http://localhost:4001',
-      }
+      },
     },
     {
       name: 'saas-launch-page',
@@ -57,7 +57,7 @@ module.exports = {
         PORT: 6001,
         FLOOD_RELIEF_URL: 'https://floodrelief.whtzup.city',
         MARKETPLACE_URL: 'https://platform.whtzup.city',
-      }
+      },
     },
     {
       name: 'saas-flood-relief-api',
@@ -71,9 +71,9 @@ module.exports = {
         PORT: 4002,
         // Own dedicated Postgres + JWT secret — see apps/flood-relief-api/.env.example.
         // Loaded from apps/flood-relief-api/.env by dotenv at startup (not from this file).
-      }
-    }
+      },
+    },
     // flood-relief-web has no PM2 entry — its production build (apps/flood-relief-web/dist)
     // is served directly by nginx as static files (see docker/nginx/default.conf).
-  ]
+  ],
 };
