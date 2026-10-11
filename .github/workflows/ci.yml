@@ -38,6 +38,10 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter @saas/database db:generate
 
+      # Workspace packages resolve to dist/ (gitignored), so build them before tests.
+      - name: Build workspace packages
+        run: pnpm --filter @saas/database --filter @saas/types build
+
       - name: Lint
         run: pnpm lint
 
