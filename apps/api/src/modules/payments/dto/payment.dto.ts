@@ -7,7 +7,16 @@ import {
   IsBoolean,
   IsEmail,
   MaxLength,
+  IsInt,
+  Min,
+  Max,
+  IsIn,
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum PaymentMethodEnum {
@@ -113,4 +122,47 @@ export class RejectPaymentDto {
   @IsString()
   @IsNotEmpty()
   reason!: string;
+}
+
+export class CartLineDto {
+  @ApiProperty({ example: 'ADDON_OV' })
+  @IsString()
+  @MaxLength(40)
+  code!: string;
+
+  @ApiProperty({ example: 2, description: 'Units wanted (bundles are always 1)' })
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  quantity!: number;
+}
+
+/** Buy a bundle and/or add-on units for one billing cycle. The server prices the cart itself. */
+export class PurchaseCartDto {
+  @ApiProperty({ enum: ['MONTHLY', 'YEARLY'], example: 'MONTHLY' })
+  @IsIn(['MONTHLY', 'YEARLY'])
+  cycle!: 'MONTHLY' | 'YEARLY';
+
+  @ApiProperty({ type: [CartLineDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(6)
+  @ValidateNested({ each: true })
+  @Type(() => CartLineDto)
+  lines!: CartLineDto[];
+
+  @ApiProperty({ enum: PaymentMethodEnum, example: 'UPI_QR' })
+  @IsEnum(PaymentMethodEnum)
+  method!: PaymentMethodEnum;
+
+  @ApiProperty({ example: 'UPI-REF-123', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  transactionRef?: string;
+
+  @ApiProperty({ required: false, description: 'Uploaded payment screenshot for admin review' })
+  @IsOptional()
+  @IsString()
+  proofUrl?: string;
 }

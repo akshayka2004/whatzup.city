@@ -4,9 +4,10 @@ import { OffersController } from './offers.controller';
 import { AuditModule } from '../audit/audit.module';
 import { CustomersModule } from '../customers/customers.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
 @Module({
-  imports: [AuditModule, CustomersModule, AnalyticsModule],
+  imports: [AuditModule, CustomersModule, AnalyticsModule, SubscriptionsModule],
   controllers: [OffersController],
   providers: [OffersService],
   exports: [OffersService],

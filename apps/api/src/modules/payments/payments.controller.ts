@@ -1,7 +1,12 @@
 import { Controller, Get, Post, Body, Param, Query, Headers, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
-import { CreatePaymentDto, RejectPaymentDto, BillingProfileDto } from './dto/payment.dto';
+import {
+  CreatePaymentDto,
+  RejectPaymentDto,
+  BillingProfileDto,
+  PurchaseCartDto,
+} from './dto/payment.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -163,6 +168,21 @@ export class BusinessPaymentsController {
     @Body() dto: CreatePaymentDto,
   ) {
     return this.paymentsService.createPayment(userId, tenantId, businessId, dto);
+  }
+
+  @Post(':id/purchase')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Buy a bundle and/or add-on units (priced server-side, activates on payment verification)',
+  })
+  async purchase(
+    @CurrentUser('id') userId: string,
+    @Param('id') businessId: string,
+    @Body() dto: PurchaseCartDto,
+  ) {
+    return this.paymentsService.purchaseCart(userId, businessId, dto);
   }
 
   @Get(':id/payments')

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { DatabaseService } from '../../common/database/database.service';
+import { EntitlementsService } from '../subscriptions/entitlements.service';
 
 /**
  * Spend-gated vouchers. A business publishes a Voucher with a spend threshold;
@@ -19,7 +20,10 @@ import { DatabaseService } from '../../common/database/database.service';
  */
 @Injectable()
 export class VouchersService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly entitlements: EntitlementsService,
+  ) {}
 
   // ── helpers ──────────────────────────────────────────────────────────────
 
@@ -62,6 +66,10 @@ export class VouchersService {
     if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
     if (Number(dto.thresholdAmount) <= 0) {
       throw new BadRequestException('thresholdAmount must be greater than 0');
+    }
+    const endsAt = new Date(dto.endDate);
+    if ((dto.status ?? 'ACTIVE') === 'ACTIVE' && endsAt.getTime() >= Date.now()) {
+      await this.entitlements.assertCanGoLive(business.id, 'voucher');
     }
     return this.db.voucher.create({
       data: {
@@ -118,7 +126,7 @@ export class VouchersService {
   }
 
   async update(userId: string, voucherId: string, dto: any) {
-    await this.ownedVoucher(userId, voucherId);
+    const existing = await this.ownedVoucher(userId, voucherId);
     const data: any = {};
     for (const k of [
       'title',
@@ -137,6 +145,14 @@ export class VouchersService {
     if (dto.startDate !== undefined) data.startDate = new Date(dto.startDate);
     if (dto.endDate !== undefined) data.endDate = new Date(dto.endDate);
     data.updatedBy = userId;
+    // Plan limit: only when this edit turns a non-live voucher live (resume / extend an expired one).
+    const live = (status: string, end: Date) =>
+      status === 'ACTIVE' && new Date(end).getTime() >= Date.now();
+    const wasLive = live(existing.status, existing.endDate);
+    const willBeLive = live(data.status ?? existing.status, data.endDate ?? existing.endDate);
+    if (willBeLive && !wasLive) {
+      await this.entitlements.assertCanGoLive(existing.businessId, 'voucher', voucherId);
+    }
     return this.db.voucher.update({ where: { id: voucherId }, data });
   }
 

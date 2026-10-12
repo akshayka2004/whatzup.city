@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
+import { EntitlementsService } from './entitlements.service';
+import { CATALOGUE, GST_PERCENT } from '@saas/types';
 import {
   AssignPackageDto,
   AssignHotelPackageDto,
@@ -16,7 +18,28 @@ import { UserRole } from '@saas/types';
 @ApiTags('Subscriptions')
 @Controller('subscriptions')
 export class SubscriptionsController {
-  constructor(private readonly subscriptionsService: SubscriptionsService) {}
+  constructor(
+    private readonly subscriptionsService: SubscriptionsService,
+    private readonly entitlements: EntitlementsService,
+  ) {}
+
+  @Public()
+  @Get('catalogue')
+  @ApiOperation({ summary: 'Current plans and add-ons with prices (ex-GST)' })
+  catalogue() {
+    return { gstPercent: GST_PERCENT, items: CATALOGUE };
+  }
+
+  @Get('businesses/:businessId/entitlements')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'What this business may have live right now, with usage' })
+  async myEntitlements(
+    @CurrentUser() user: { id: string; role?: string },
+    @Param('businessId') businessId: string,
+  ) {
+    return this.entitlements.forUser(businessId, user);
+  }
 
   @Get('packages')
   @ApiOperation({ summary: 'List all subscription package tiers' })

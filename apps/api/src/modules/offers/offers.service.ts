@@ -9,6 +9,7 @@ import { PaginatedResult } from '../../common/database/pagination';
 import { BusinessCustomerService } from '../customers/business-customer.service';
 import { AnalyticsSummaryService } from '../analytics/analytics-summary.service';
 import { recordOfferClick } from '../../common/utils/offer-click.util';
+import { EntitlementsService } from '../subscriptions/entitlements.service';
 
 @Injectable()
 export class OffersService {
@@ -20,6 +21,7 @@ export class OffersService {
     private readonly db: DatabaseService,
     private readonly businessCustomerService: BusinessCustomerService,
     private readonly analyticsSummary: AnalyticsSummaryService,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   /**
@@ -68,6 +70,11 @@ export class OffersService {
     if (data.terms !== undefined) payload.terms = data.terms;
     payload.targetCities = Array.isArray(data.targetCities) ? data.targetCities : [];
     if (data.fulfilment !== undefined) payload.fulfilment = data.fulfilment;
+
+    // Plan limit: only offers that would be live right now count (drafts and past-dated ones don't).
+    if (status === 'ACTIVE' && payload.endDate.getTime() >= Date.now()) {
+      await this.entitlements.assertCanGoLive(actualBusinessId, 'offer');
+    }
 
     const offer = await this.offerRepo.create(tenantId, {
       businessId: actualBusinessId,
@@ -221,6 +228,16 @@ export class OffersService {
     if (data.targetCities !== undefined)
       payload.targetCities = Array.isArray(data.targetCities) ? data.targetCities : [];
     if (data.fulfilment !== undefined) payload.fulfilment = data.fulfilment;
+
+    // Plan limit: re-checked only when this edit turns a non-live offer live (resume / re-activate /
+    // extend an expired one). Editing an offer that is already live never blocks.
+    const live = (status: string, end: Date) =>
+      status === 'ACTIVE' && new Date(end).getTime() >= Date.now();
+    const wasLive = live(existing.status, existing.endDate);
+    const willBeLive = live(payload.status ?? existing.status, payload.endDate ?? existing.endDate);
+    if (willBeLive && !wasLive) {
+      await this.entitlements.assertCanGoLive(existing.businessId, 'offer', id);
+    }
 
     const offer = await this.offerRepo.update(tenantId, id, payload);
     await this.redis.delPattern(`offers:${tenantId}:*`);

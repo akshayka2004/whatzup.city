@@ -4,6 +4,7 @@ import { RedisService } from '../../common/redis/redis.service';
 import { assertBusinessAccess, type AccessUser } from '../../common/utils/business-access';
 import { addDaysKey, DAY_MS, istDateKey, istDayStart } from '../../common/utils/ist';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EntitlementsService } from '../subscriptions/entitlements.service';
 
 export type DigestNumbers = {
   views: number;
@@ -63,6 +64,7 @@ export class WeeklyDigestService implements OnApplicationBootstrap, OnModuleDest
     private readonly db: DatabaseService,
     private readonly redis: RedisService,
     private readonly notifications: NotificationsService,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   onApplicationBootstrap() {
@@ -124,7 +126,10 @@ export class WeeklyDigestService implements OnApplicationBootstrap, OnModuleDest
 
   /** What an owner would receive for last week, without sending anything. */
   async preview(businessId: string, user: AccessUser) {
-    await assertBusinessAccess(this.db, businessId, user);
+    const access = await assertBusinessAccess(this.db, businessId, user);
+    if (user.role !== 'SUPER_ADMIN' && user.role !== 'MASTER_ADMIN') {
+      await this.entitlements.assertFeature(access.id, 'analytics');
+    }
     const w = this.window();
     const [cur, prev, biz] = await Promise.all([
       this.totals(w.from, w.to, businessId),
@@ -165,6 +170,8 @@ export class WeeklyDigestService implements OnApplicationBootstrap, OnModuleDest
       const c = cur.get(b.id) ?? ZERO;
       const p = prev.get(b.id) ?? ZERO;
       if (!c.views && !c.actions && !c.claims && !c.verifiedBills) continue; // nothing new to say
+      // The digest is part of the analytics plan.
+      if (!(await this.entitlements.forBusiness(b.id)).analytics) continue;
       const { title, body } = digestText(b.name, c, p);
       try {
         await this.notifications.send({

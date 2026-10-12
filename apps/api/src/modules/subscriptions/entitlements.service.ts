@@ -10,6 +10,7 @@ import {
   type Entitlements,
 } from '@saas/types';
 import { DatabaseService } from '../../common/database/database.service';
+import { assertBusinessAccess, type AccessUser } from '../../common/utils/business-access';
 import { RedisService } from '../../common/redis/redis.service';
 
 export type EntitlementSource = 'FREE' | 'PLAN' | 'LEGACY';
@@ -112,7 +113,9 @@ export class EntitlementsService {
       const e = entitlementsOf(b.packageName);
       if (!e) continue;
       const better =
-        source === 'FREE' || e.offers + e.vouchers + (e.analytics ? 1 : 0) > base.offers + base.vouchers + (base.analytics ? 1 : 0);
+        source === 'FREE' ||
+        e.offers + e.vouchers + (e.analytics ? 1 : 0) >
+          base.offers + base.vouchers + (base.analytics ? 1 : 0);
       if (better) {
         base = e;
         plan = b.packageName;
@@ -143,6 +146,20 @@ export class EntitlementsService {
         quantity: Math.max(1, a.quantity),
         expiresAt: a.endDate.toISOString(),
       })),
+    };
+  }
+
+  /** What the dashboard shows: entitlements, live usage, and how far over the limit (after a downgrade). */
+  async forUser(businessId: string, user: AccessUser) {
+    const biz = await assertBusinessAccess(this.db, businessId, user);
+    const e = await this.withUsage(biz.id);
+    return {
+      ...e,
+      businessId: biz.id,
+      overLimit: {
+        offers: Math.max(0, e.usage.offers - e.offers),
+        vouchers: Math.max(0, e.usage.vouchers - e.vouchers),
+      },
     };
   }
 
@@ -180,7 +197,9 @@ export class EntitlementsService {
     };
     // tenant-scope-ok: counted per business id
     const used =
-      resource === 'offer' ? await this.db.offer.count({ where }) : await this.db.voucher.count({ where });
+      resource === 'offer'
+        ? await this.db.offer.count({ where })
+        : await this.db.voucher.count({ where });
     if (used < limit) return;
 
     const noun = resource === 'offer' ? 'offer' : 'voucher';

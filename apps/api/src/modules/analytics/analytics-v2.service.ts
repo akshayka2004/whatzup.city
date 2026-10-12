@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { assertBusinessAccess, type AccessUser } from '../../common/utils/business-access';
+import { EntitlementsService } from '../subscriptions/entitlements.service';
 import {
   addDaysKey,
   bucketKey,
@@ -80,7 +81,14 @@ export class AnalyticsV2Service {
     private readonly db: DatabaseService,
     private readonly redis: RedisService,
     private readonly rollups: AnalyticsRollupService,
+    private readonly entitlements: EntitlementsService,
   ) {}
+
+  /** Business analytics are a paid feature; platform admins looking at a business are exempt. */
+  private async assertAnalytics(business: { id: string }, user: AccessUser) {
+    if (user.role === 'SUPER_ADMIN' || user.role === 'MASTER_ADMIN') return;
+    await this.entitlements.assertFeature(business.id, 'analytics');
+  }
 
   private range(q: RangeQuery) {
     const r = istRange({
@@ -109,7 +117,8 @@ export class AnalyticsV2Service {
   // ── Business ────────────────────────────────────────────────────────────
 
   async businessReport(businessId: string, user: AccessUser, q: RangeQuery) {
-    await assertBusinessAccess(this.db, businessId, user);
+    const biz = await assertBusinessAccess(this.db, businessId, user);
+    await this.assertAnalytics(biz, user);
     const { r, prev, g } = this.range(q);
     const key = `analytics:v2:biz:${businessId}:${r.from}:${r.to}:${g}`;
     return this.cached(key, 120, () => this.computeBusiness(businessId, r, prev, g));
@@ -117,7 +126,8 @@ export class AnalyticsV2Service {
 
   /** Per-offer viewers and claims for the promotions page (default last 30 IST days). */
   async offerStats(businessId: string, user: AccessUser, q: RangeQuery) {
-    await assertBusinessAccess(this.db, businessId, user);
+    const biz = await assertBusinessAccess(this.db, businessId, user);
+    await this.assertAnalytics(biz, user);
     const { r } = this.range(q);
     return this.cached(`analytics:v2:offers:${businessId}:${r.from}:${r.to}`, 120, async () => ({
       from: r.from,

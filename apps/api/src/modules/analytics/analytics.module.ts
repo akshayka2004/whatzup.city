@@ -7,9 +7,10 @@ import { AnalyticsV2Controller } from './analytics-v2.controller';
 import { AnalyticsRollupService } from './analytics-rollup.service';
 import { WeeklyDigestService } from './weekly-digest.service';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
 @Module({
-  imports: [NotificationsModule],
+  imports: [NotificationsModule, SubscriptionsModule],
   controllers: [AnalyticsController, AnalyticsV2Controller],
   providers: [
     AnalyticsService,

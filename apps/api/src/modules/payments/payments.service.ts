@@ -9,7 +9,9 @@ import { DatabaseService } from '../../common/database/database.service';
 import { AuditService } from '../audit/audit.service';
 import { StorageService } from '../../common/storage/storage.service';
 import { CryptoService } from '../../common/crypto/crypto.service';
-import { CreatePaymentDto } from './dto/payment.dto';
+import { CreatePaymentDto, PurchaseCartDto } from './dto/payment.dto';
+import { EntitlementsService } from '../subscriptions/entitlements.service';
+import { catalogueItem, cycleDays, priceCart, type BillingCycle } from '@saas/types';
 import { mapWithConcurrency } from '../../common/utils/concurrency';
 
 /** Mirrors the web pricing helper — plan prices are GST-exclusive. */
@@ -35,6 +37,7 @@ export class PaymentsService {
     private readonly audit: AuditService,
     private readonly storage: StorageService,
     private readonly crypto: CryptoService,
+    private readonly entitlements: EntitlementsService,
   ) {}
 
   async createPayment(userId: string, tenantId: string, businessId: string, dto: CreatePaymentDto) {
@@ -118,6 +121,217 @@ export class PaymentsService {
     return payment;
   }
 
+  /**
+   * Buy a bundle and/or add-on units. The server prices the cart (never trusts a client amount),
+   * queues one PENDING_PAYMENT subscription row per line and one payment for the GST-inclusive
+   * total; nothing counts as an entitlement until an admin verifies the payment.
+   */
+  async purchaseCart(userId: string, businessId: string, dto: PurchaseCartDto) {
+    const business = await this.db.business.findFirst({
+      where: { id: businessId, deletedAt: null },
+    });
+    if (!business) throw new NotFoundException('Business not found');
+    if (business.ownerId !== userId) throw new ForbiddenException('Not authorized');
+
+    const priced = priceCart(
+      dto.lines.map((l) => ({ code: l.code, quantity: l.quantity })),
+      dto.cycle,
+    );
+    if (!priced.ok) throw new BadRequestException(priced.error);
+    const { cart } = priced;
+
+    // Brand outlets pay the per-outlet MULTI price; standalone businesses the SINGLE price.
+    for (const l of cart.lines) {
+      const item = catalogueItem(l.code);
+      if (item?.kind !== 'BASE') continue;
+      if (item.outlets === 'MULTI' && !business.brandId) {
+        throw new BadRequestException('The multi-outlet plan is for outlets of a brand account.');
+      }
+      if (item.outlets === 'SINGLE' && business.brandId) {
+        throw new BadRequestException('Outlets of a brand account use the multi-outlet plan.');
+      }
+    }
+
+    if (dto.proofUrl) await this.checkProof(dto.proofUrl);
+
+    const cycle = await this.resolveCycle(businessId);
+    const days = cycleDays(dto.cycle as BillingCycle);
+    const now = new Date();
+    const end = new Date(now.getTime() + days * 86_400_000);
+    const { base, tax, total } = cart.totals;
+
+    const { payment, subscriptionIds } = await this.db.$transaction(async (tx) => {
+      // A fresh checkout replaces any earlier unpaid one.
+      await tx.subscription.updateMany({
+        where: { businessId, status: 'PENDING_PAYMENT', deletedAt: null },
+        data: { status: 'EXPIRED' },
+      });
+
+      const ids: string[] = [];
+      for (const l of cart.lines) {
+        const item = catalogueItem(l.code)!;
+        const sub = await tx.subscription.create({
+          data: {
+            tenantId: business.tenantId,
+            businessId,
+            packageName: l.code,
+            pricing: l.amount,
+            duration: days,
+            kind: item.kind,
+            billingCycle: dto.cycle,
+            quantity: l.quantity,
+            featureFlags: {
+              offers: item.offers * l.quantity,
+              vouchers: item.vouchers * l.quantity,
+              analytics: item.analytics,
+              pricingV2: true,
+            },
+            postingLimits: item.offers * l.quantity,
+            categoryLimits: 1,
+            status: 'PENDING_PAYMENT',
+            startDate: now,
+            endDate: end,
+            createdBy: userId,
+          },
+        });
+        ids.push(sub.id);
+      }
+
+      const pay = await tx.payment.create({
+        data: {
+          tenantId: business.tenantId,
+          businessId,
+          subscriptionId: ids[0],
+          amount: total,
+          method: dto.method,
+          status: 'PENDING',
+          transactionRef: dto.transactionRef || null,
+          proofUrl: dto.proofUrl || null,
+          invoiceMetadata: {
+            generatedBy: userId,
+            billingEmail: business.email,
+            packageName: cart.lines
+              .map((l) => (l.quantity > 1 ? `${l.code} x${l.quantity}` : l.code))
+              .join(' + '),
+            cycle,
+            billingCycle: dto.cycle,
+            amountBase: base,
+            amountTax: tax,
+            taxPercent: TAX_PERCENT,
+            cart: {
+              cycle: dto.cycle,
+              lines: cart.lines.map((l) => ({
+                code: l.code,
+                quantity: l.quantity,
+                unit: l.unit,
+                amount: l.amount,
+              })),
+            },
+            subscriptionIds: ids,
+          },
+        },
+      });
+      return { payment: pay, subscriptionIds: ids };
+    });
+
+    await this.recordTransaction({
+      tenantId: business.tenantId,
+      businessId,
+      paymentId: payment.id,
+      subscriptionId: subscriptionIds[0],
+      type: 'PAYMENT_SUBMITTED',
+      cycle,
+      packageName: cart.lines.map((l) => l.code).join(' + '),
+      base,
+      tax,
+      total,
+      method: dto.method,
+      reference: dto.transactionRef || null,
+      status: 'PENDING',
+      createdBy: userId,
+    });
+    await this.audit.log({
+      tenantId: business.tenantId,
+      userId,
+      action: 'PURCHASE_SUBMITTED',
+      resource: 'PAYMENT',
+      resourceId: payment.id,
+      metadata: { cycle: dto.cycle, lines: cart.lines, total },
+    });
+
+    return { payment, cart };
+  }
+
+  /** Same content check createPayment runs on an uploaded QR/UPI screenshot. */
+  private async checkProof(proofUrl: string) {
+    try {
+      const parsed = JSON.parse(proofUrl);
+      await this.storage.verifyStoredFile(parsed.bucket, parsed.path, [
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'application/pdf',
+      ]);
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      this.logger.warn(`Could not verify payment proof: ${(err as Error).message}`);
+    }
+  }
+
+  /**
+   * Turn a verified cart payment into live entitlements. Each line replaces what it supersedes:
+   * a bundle replaces every live bundle (new or legacy, no pro-rata credit); an add-on replaces
+   * live rows of the same code. Same code + same cycle = a renewal, so the paid time carries over.
+   */
+  private async activateCart(payment: { businessId: string; invoiceMetadata: any }) {
+    const ids: string[] = Array.isArray(payment.invoiceMetadata?.subscriptionIds)
+      ? payment.invoiceMetadata.subscriptionIds
+      : [];
+    if (!ids.length) return;
+    const now = new Date();
+    await this.db.$transaction(async (tx) => {
+      const subs = await tx.subscription.findMany({
+        where: { id: { in: ids }, businessId: payment.businessId, deletedAt: null },
+      });
+      for (const sub of subs) {
+        const item = catalogueItem(sub.packageName);
+        if (!item) continue;
+        const live = await tx.subscription.findMany({
+          where: {
+            businessId: payment.businessId,
+            status: 'ACTIVE',
+            deletedAt: null,
+            endDate: { gte: now },
+            id: { notIn: ids },
+          },
+        });
+        const isAddon = (r: { kind: string; packageName: string }) =>
+          r.kind === 'ADDON' || r.packageName.startsWith('ADDON_');
+        const replaced = live.filter((r) =>
+          item.kind === 'BASE' ? !isAddon(r) : r.packageName === sub.packageName,
+        );
+        const carryFrom = replaced
+          .filter((r) => r.packageName === sub.packageName && r.billingCycle === sub.billingCycle)
+          .reduce((m, r) => Math.max(m, r.endDate.getTime()), now.getTime());
+        if (replaced.length) {
+          await tx.subscription.updateMany({
+            where: { id: { in: replaced.map((r) => r.id) } },
+            data: { status: 'EXPIRED' },
+          });
+        }
+        const days = cycleDays(sub.billingCycle as BillingCycle);
+        await tx.subscription.update({
+          where: { id: sub.id },
+          data: {
+            status: 'ACTIVE',
+            startDate: now,
+            endDate: new Date(carryFrom + days * 86_400_000),
+          },
+        });
+      }
+    });
+  }
+
   /** NEW until the business has one verified payment; RENEWAL from then on. */
   private async resolveCycle(businessId: string): Promise<'NEW' | 'RENEWAL'> {
     const verified = await this.db.payment.count({
@@ -177,6 +391,9 @@ export class PaymentsService {
       where: { id: paymentId, deletedAt: null },
     });
     if (!payment) throw new NotFoundException('Payment not found');
+    const isCart = Array.isArray((payment.invoiceMetadata as any)?.subscriptionIds);
+    // Re-verifying a cart payment would extend the term twice.
+    if (isCart && payment.status === 'SUCCESS') return payment;
 
     const updated = await this.db.payment.update({
       where: { id: paymentId },
@@ -188,13 +405,16 @@ export class PaymentsService {
       },
     });
 
-    // If subscription is linked, activate the subscription
-    if (payment.subscriptionId) {
+    if (isCart) {
+      await this.activateCart(payment);
+    } else if (payment.subscriptionId) {
+      // If subscription is linked, activate the subscription
       await this.db.subscription.update({
         where: { id: payment.subscriptionId },
         data: { status: 'ACTIVE' },
       });
     }
+    await this.entitlements.invalidate(payment.businessId);
 
     const meta: any = payment.invoiceMetadata || {};
     const split = splitTax(Number(payment.amount));
