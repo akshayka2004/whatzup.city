@@ -1,14 +1,13 @@
-'use client';
-
-import Image from 'next/image';
-import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * The Whtzup.city mark. The source PNG is 1024px (46 KB) but is shown at 20–36px,
- * so route it through the image optimiser at the size actually used (~5 KB).
- * If the optimiser is ever unavailable it falls back to the original file, so
- * the logo can never disappear. The mark is black on transparent, so dark mode inverts it.
+ * The Whtzup.city mark. `logo.png` is 1024px (46 KB) but is shown at 20-36px, so the page loads
+ * two pre-sized copies instead (96px ≈ 2 KB, 192px ≈ 4 KB for 2x screens).
+ *
+ * Deliberately NOT next/image: the optimiser fetches the file back from this same server, and when
+ * that internal fetch failed in production it logged "isn't a valid image for /logo.png" on every
+ * request. Static files have no moving parts. The mark is black on transparent, so dark mode
+ * inverts it.
  */
 export function BrandLogo({
   alt = 'Whtzup.city',
@@ -17,20 +16,16 @@ export function BrandLogo({
   alt?: string;
   className?: string;
 }) {
-  const [raw, setRaw] = useState(false);
-  if (raw) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src="/logo.png" alt={alt} className={cn('dark:invert', className)} />;
-  }
   return (
-    <Image
-      src="/logo.png"
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/logo-96.png"
+      srcSet="/logo-96.png 1x, /logo-192.png 2x"
       alt={alt}
       width={96}
       height={96}
-      priority
+      decoding="async"
       className={cn('dark:invert', className)}
-      onError={() => setRaw(true)}
     />
   );
 }
