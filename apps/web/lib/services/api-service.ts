@@ -7,6 +7,10 @@ export interface ApiResponse<T> {
   data: T;
   error: string | null;
   status: number;
+  /** Machine-readable reason when the API sends one, e.g. 'PLAN_LIMIT' or 'PLAN_FEATURE'. */
+  code?: string;
+  /** Extra context for `code` (limit, used, upgradeUrl …). */
+  details?: Record<string, any>;
 }
 
 export interface PaginatedResponse<T> {
@@ -58,12 +62,18 @@ function statusMessage(status: number): string {
 const GENERIC_MESSAGE =
   /^(unauthorized|forbidden( resource)?|not found|bad request|internal server error|too many requests|conflict|service unavailable|bad gateway|gateway timeout|throttlerexception.*|http \d+)$/i;
 
-/** Turns an error response body into one readable sentence. */
-async function readError(response: Response): Promise<string> {
+/** Turns an error response body into one readable sentence (plus the API's optional code/details). */
+async function readErrorInfo(
+  response: Response,
+): Promise<{ message: string; code?: string; details?: Record<string, any> }> {
   let raw: unknown;
+  let code: string | undefined;
+  let details: Record<string, any> | undefined;
   try {
     const body = await response.json();
     raw = body?.message ?? body?.error;
+    if (typeof body?.code === 'string') code = body.code;
+    if (body?.details && typeof body.details === 'object') details = body.details;
   } catch {
     // Non-JSON body (e.g. a proxy's HTML error page) — fall through to the status text.
   }
@@ -76,9 +86,9 @@ async function readError(response: Response): Promise<string> {
       .join('. ');
   }
   if (typeof raw !== 'string' || !raw.trim() || GENERIC_MESSAGE.test(raw.trim())) {
-    return statusMessage(response.status);
+    return { message: statusMessage(response.status), code, details };
   }
-  return raw;
+  return { message: raw, code, details };
 }
 
 function networkError(error: unknown): string {
@@ -164,10 +174,13 @@ class ApiService {
       }
 
       if (!response.ok) {
+        const info = await readErrorInfo(response);
         return {
           data: null as unknown as T,
-          error: await readError(response),
+          error: info.message,
           status: response.status,
+          code: info.code,
+          details: info.details,
         };
       }
 
@@ -231,10 +244,13 @@ class ApiService {
       }
 
       if (!response.ok) {
+        const info = await readErrorInfo(response);
         return {
           data: null as unknown as T,
-          error: await readError(response),
+          error: info.message,
           status: response.status,
+          code: info.code,
+          details: info.details,
         };
       }
 

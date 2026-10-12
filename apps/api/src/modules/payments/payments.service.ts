@@ -711,6 +711,17 @@ export class PaymentsService {
       rejectionReason: payment.rejectionReason,
       packageName: meta.packageName || payment.subscription?.packageName || null,
       cycle: meta.cycle || 'NEW',
+      billingCycle: meta.billingCycle || null,
+      // Itemised lines for cart purchases (bundle + add-on units); null for legacy single-plan payments.
+      lines: Array.isArray(meta.cart?.lines)
+        ? meta.cart.lines.map((l: any) => ({
+            code: l.code,
+            name: catalogueItem(l.code)?.name ?? l.code,
+            quantity: l.quantity,
+            unit: l.unit,
+            amount: l.amount,
+          }))
+        : null,
       createdAt: payment.createdAt,
       verifiedAt: payment.verifiedAt,
       business: { name: payment.business.name, city: payment.business.city },
