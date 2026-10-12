@@ -2193,6 +2193,10 @@ model Subscription {
   featureFlags   Json      @default("{}")
   postingLimits  Int       @default(0)
   categoryLimits Int       @default(0)
+  // Pricing v2: BASE = the bundle (one live per business), ADDON = stackable units.
+  kind           String    @default("BASE") @db.VarChar(10)
+  billingCycle   String    @default("QUARTERLY") @map("billing_cycle") @db.VarChar(12)
+  quantity       Int       @default(1)
   status         String    @default("ACTIVE") @db.VarChar(20)
   startDate      DateTime  @default(now()) @map("start_date")
   endDate        DateTime  @map("end_date")
@@ -2214,6 +2218,7 @@ model Subscription {
 
   @@index([tenantId])
   @@index([businessId])
+  @@index([businessId, status, endDate])
   @@index([status, endDate])
   @@index([status])
   @@index([deletedAt])

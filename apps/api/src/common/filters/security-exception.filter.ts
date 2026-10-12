@@ -13,6 +13,8 @@ export class SecurityExceptionFilter implements ExceptionFilter {
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: any = 'The server could not complete this request.';
+    // Machine-readable extras (e.g. plan limits) an exception opts into with a `code`; nothing else leaks.
+    let extra: Record<string, unknown> = {};
 
     // 1. Handle HTTP Exceptions (NestJS standard exceptions)
     if (exception instanceof HttpException) {
@@ -22,6 +24,10 @@ export class SecurityExceptionFilter implements ExceptionFilter {
         typeof resObj === 'object' && resObj !== null && 'message' in resObj
           ? (resObj as any).message
           : exception.message;
+      if (typeof resObj === 'object' && resObj !== null && typeof (resObj as any).code === 'string') {
+        const r = resObj as any;
+        extra = { code: r.code, ...(r.details && typeof r.details === 'object' ? { details: r.details } : {}) };
+      }
     }
     // 2. Handle Prisma Database Engine Exceptions
     else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
@@ -165,6 +171,7 @@ export class SecurityExceptionFilter implements ExceptionFilter {
     response.status(status).json({
       statusCode: status,
       message,
+      ...extra,
       timestamp: new Date().toISOString(),
     });
   }
