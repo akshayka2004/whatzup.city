@@ -8,7 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/hooks/use-auth';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
-import { SubscriptionPaywall } from '@/components/business/subscription-paywall';
+import { SubscriptionPaywall, RenewalReminder } from '@/components/business/subscription-paywall';
 import { BusinessNudges } from '@/components/business/business-nudges';
 import { OutletSwitcher } from '@/components/business/outlet-switcher';
 import { OnboardingTour } from '@/components/onboarding/platform-tour';
@@ -17,14 +17,6 @@ import { apiService } from '@/lib/services/api-service';
 import { AlertTriangle, FileClock, XCircle, ArrowRight, Clock, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Paths allowed even when trial has expired
-// /dashboard/outlets stays reachable so a brand owner stuck on one outlet can switch to another.
-const TRIAL_ALLOWED_PATHS = [
-  '/dashboard/profile',
-  '/dashboard/support',
-  '/dashboard/subscriptions',
-  '/dashboard/outlets',
-];
 // The invoice for a just-submitted payment must stay reachable even though the
 // business itself is still PENDING_VERIFICATION at that point.
 const VERIFICATION_ALLOWED_PATHS = ['/dashboard/invoice', '/dashboard/outlets'];
@@ -169,10 +161,8 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   const isVerificationAllowedPath = VERIFICATION_ALLOWED_PATHS.some((p) => pathname.startsWith(p));
   const isGated = GATE_STATUSES.includes(verificationStatus) && !isVerificationAllowedPath;
 
-  // Trial expiry: block all paths except the allowed list when trial is EXPIRED
+  // An ended trial no longer blocks anything: the business simply continues on the Free listing.
   const trialExpired = trialStatus === 'EXPIRED';
-  const isTrialAllowedPath = TRIAL_ALLOWED_PATHS.some((p) => pathname.startsWith(p));
-  const showTrialModal = trialExpired && !isTrialAllowedPath && verificationStatus === 'APPROVED';
 
   if (loading) return <AppShellSkeleton />;
 
@@ -234,10 +224,36 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   const isAdminViewer =
     ['admin', 'super-admin'].includes(user?.role || '') ||
     ['MASTER_ADMIN', 'SUPER_ADMIN'].includes((user as any)?.rbacRole || '');
-  const showTour = mounted && !isAdminViewer && !showTrialModal;
+  const showTour = mounted && !isAdminViewer;
+  // Plan prompts are for owners; moderators and staff can't manage billing.
+  const canSeePlanPrompts =
+    verificationStatus === 'APPROVED' &&
+    !isAdminViewer &&
+    !['business_moderator', 'business_staff'].includes(user?.role || '') &&
+    !['BUSINESS_MODERATOR', 'BUSINESS_STAFF'].includes(user?.rbacRole || '');
 
   const trialBanner =
-    trialStatus === 'ACTIVE' && trialDaysRemaining <= 5 ? (
+    trialExpired && verificationStatus === 'APPROVED' && canSeePlanPrompts ? (
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-surface-sunken px-4 py-2.5 text-sm text-foreground sm:px-6 lg:px-8">
+        <div className="flex min-w-0 items-center gap-2">
+          <CreditCard className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="min-w-0">
+            <strong className="font-semibold">Your free trial has ended.</strong>{' '}
+            <span className="hidden sm:inline">
+              You are on the Free listing. Your data is safe; pick a plan to add more.
+            </span>
+          </span>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="shrink-0"
+          onClick={() => router.push('/dashboard/subscriptions')}
+        >
+          View plans <ArrowRight />
+        </Button>
+      </div>
+    ) : trialStatus === 'ACTIVE' && trialDaysRemaining <= 5 ? (
       <div className="flex items-center justify-between gap-3 border-b border-warning/25 bg-warning-soft px-4 py-2.5 text-sm text-warning-soft-foreground sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-2">
           <Clock className="size-4 shrink-0" aria-hidden />
@@ -259,10 +275,13 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
       </div>
     ) : null;
 
+  // A trial countdown outranks the renewal reminder; they are never shown together.
+  const topBanner = trialBanner ?? (canSeePlanPrompts ? <RenewalReminder /> : null);
+
   return (
     <AppShell
       area="business"
-      banner={trialBanner}
+      banner={topBanner}
       before={
         showTour &&
         (isMobile ? (
@@ -275,38 +294,14 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
         ))
       }
     >
-      {/* Trial expired: non-dismissible, everything except the allowed paths is blocked. */}
-      {showTrialModal && (
-        <StatusScreen
-          overlay
-          icon={CreditCard}
-          tone="danger"
-          title="Your free trial has ended"
-          body="Choose a subscription plan to keep using your dashboard. Your listing and data are safe."
-        >
-          <div className="flex justify-center empty:hidden">
-            <OutletSwitcher />
-          </div>
-          <Button
-            size="lg"
-            className="w-full"
-            onClick={() => router.push('/dashboard/subscriptions')}
-          >
-            Choose a plan
-          </Button>
-        </StatusScreen>
-      )}
-
-      {/* Payment is mandatory: approved workspaces without an active paid
-          plan get a blocking prompt; those nearing expiry get a reminder.
-          Skipped while the trial modal is up so overlays never stack. */}
-      {!showTrialModal && verificationStatus === 'APPROVED' && <SubscriptionPaywall />}
+      {/* No plan = the permanent Free listing, never a blocked dashboard. This is only a small,
+          dismissible upsell card (renewal reminders live in the top banner). */}
+      {canSeePlanPrompts && <SubscriptionPaywall />}
 
       {/* One dismissible nudge per session (menu photos > opening hours > brand account),
           never stacked. Owners only — moderators and staff can't manage these. */}
       <BusinessNudges
         enabled={
-          !showTrialModal &&
           verificationStatus === 'APPROVED' &&
           !isAdminViewer &&
           !['business_moderator', 'business_staff'].includes(user?.role || '') &&

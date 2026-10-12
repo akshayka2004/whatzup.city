@@ -6,7 +6,7 @@ import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { onboardingService } from '@/lib/services/onboarding-service';
-import { formatINR, planLabel } from '@/lib/subscription-plans';
+import { billingCycleLabel, formatINR, planLabel } from '@/lib/subscription-plans';
 import { ArrowLeft, Download, Loader2, CheckCircle2, Clock, XCircle, FileText } from 'lucide-react';
 
 type Invoice = {
@@ -21,6 +21,8 @@ type Invoice = {
   rejectionReason?: string | null;
   packageName?: string | null;
   cycle: string;
+  billingCycle?: string | null;
+  lines?: { code: string; name: string; quantity: number; unit: number; amount: number }[] | null;
   createdAt: string;
   verifiedAt?: string | null;
   business: { name?: string; city?: string | null };
@@ -81,6 +83,7 @@ export default function InvoicePage() {
             icon: Clock,
           };
   const StatusIcon = statusMeta.icon;
+  const hasLines = (invoice?.lines?.length ?? 0) > 0;
 
   return (
     <BusinessLayout>
@@ -188,25 +191,53 @@ export default function InvoicePage() {
 
             {/* Line items */}
             <div className="py-6 border-b border-border overflow-x-auto">
+              {hasLines && (
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Billing cycle:{' '}
+                  <span className="font-semibold text-foreground">
+                    {billingCycleLabel(invoice.billingCycle)}
+                  </span>{' '}
+                  · {invoice.cycle === 'RENEWAL' ? 'Renewal' : 'New subscription'}
+                </p>
+              )}
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     <th className="pb-2">Description</th>
+                    {hasLines && <th className="pb-2 text-right">Qty</th>}
+                    {hasLines && <th className="pb-2 text-right">Unit</th>}
                     <th className="pb-2 text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {hasLines ? (
+                    invoice.lines!.map((l, i) => (
+                      <tr key={`${l.code}-${i}`} className="border-t border-border">
+                        <td className="py-2.5 text-foreground break-words">{l.name}</td>
+                        <td className="py-2.5 text-right text-foreground whitespace-nowrap">
+                          × {l.quantity}
+                        </td>
+                        <td className="py-2.5 text-right text-muted-foreground whitespace-nowrap">
+                          {formatINR(Number(l.unit))}
+                        </td>
+                        <td className="py-2.5 text-right text-foreground whitespace-nowrap">
+                          {formatINR(Number(l.amount))}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr className="border-t border-border">
+                      <td className="py-2.5 text-foreground break-words">
+                        {planLabel(invoice.packageName)} —{' '}
+                        {invoice.cycle === 'RENEWAL' ? 'Renewal' : 'New subscription'}
+                      </td>
+                      <td className="py-2.5 text-right text-foreground whitespace-nowrap">
+                        {formatINR(Number(invoice.amountBase))}
+                      </td>
+                    </tr>
+                  )}
                   <tr className="border-t border-border">
-                    <td className="py-2.5 text-foreground break-words">
-                      {planLabel(invoice.packageName)} —{' '}
-                      {invoice.cycle === 'RENEWAL' ? 'Renewal' : 'New subscription'}
-                    </td>
-                    <td className="py-2.5 text-right text-foreground whitespace-nowrap">
-                      {formatINR(Number(invoice.amountBase))}
-                    </td>
-                  </tr>
-                  <tr className="border-t border-border">
-                    <td className="py-2.5 text-muted-foreground">
+                    <td className="py-2.5 text-muted-foreground" colSpan={hasLines ? 3 : 1}>
                       GST ({Number(invoice.taxPercent)}%)
                     </td>
                     <td className="py-2.5 text-right text-muted-foreground whitespace-nowrap">
@@ -214,7 +245,9 @@ export default function InvoicePage() {
                     </td>
                   </tr>
                   <tr className="border-t border-border">
-                    <td className="py-2.5 font-bold text-foreground">Total</td>
+                    <td className="py-2.5 font-bold text-foreground" colSpan={hasLines ? 3 : 1}>
+                      Total
+                    </td>
                     <td className="py-2.5 text-right font-extrabold text-foreground text-base whitespace-nowrap">
                       {formatINR(Number(invoice.amount))}
                     </td>

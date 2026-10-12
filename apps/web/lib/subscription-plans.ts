@@ -8,6 +8,8 @@
  * Keep in sync with the mirror in apps/api/src/modules/subscriptions/subscriptions.service.ts.
  */
 
+import { catalogueItem } from '@saas/types';
+
 /** Standard plans are billed per quarter. */
 export const PLAN_DURATION_DAYS = 90;
 /**
@@ -128,10 +130,16 @@ export function withTax(base: number): Totals {
  * plans, hotel classifications (HOTEL_4STAR) and the retired package codes
  * that older rows still carry.
  */
-export function planLabel(packageName?: string | null) {
+export function planLabel(packageName?: string | null, quantity?: number | null) {
   if (!packageName) return '—';
   const p = SUBSCRIPTION_PLANS.find((x) => x.code === packageName);
   if (p) return p.name;
+  // Current catalogue (SINGLE, MULTI_AN, ADDON_OV…); add-ons show their unit count.
+  const c = catalogueItem(packageName);
+  if (c) {
+    const qty = Number(quantity ?? 1);
+    return c.kind === 'ADDON' && qty > 1 ? `${c.name} × ${qty}` : c.name;
+  }
   if (packageName.startsWith('HOTEL_')) {
     return `Hotel ${packageName.replace('HOTEL_', '').replace('STAR', '')}★`;
   }
@@ -145,4 +153,59 @@ export function planLabel(packageName?: string | null) {
     .split('_')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ');
+}
+
+/** "Monthly" / "Yearly" for a stored `billingCycle`; QUARTERLY only exists on legacy rows. */
+export function billingCycleLabel(cycle?: string | null) {
+  if (cycle === 'MONTHLY') return 'Monthly';
+  if (cycle === 'YEARLY') return 'Yearly';
+  if (cycle === 'QUARTERLY') return 'Quarterly (legacy)';
+  return '—';
+}
+
+/** Months one payment of this cycle covers. Legacy rows fall back to their stored duration. */
+export function cycleMonths(cycle?: string | null, durationDays?: number | null) {
+  if (cycle === 'YEARLY') return 12;
+  if (cycle === 'MONTHLY') return 1;
+  if (cycle === 'QUARTERLY' && !durationDays) return 3;
+  return Math.max(1, Math.round(Number(durationDays || 90) / 30));
+}
+
+/**
+ * Monthly recurring revenue (ex-GST) of one subscription row: yearly ÷ 12, monthly as is, legacy
+ * quarterly ÷ 3. `pricing` already holds the line total (unit × quantity).
+ */
+export function monthlyRecurring(row: {
+  pricing?: string | number | null;
+  billingCycle?: string | null;
+  duration?: number | null;
+}) {
+  return Number(row.pricing || 0) / cycleMonths(row.billingCycle, row.duration);
+}
+
+export type CartLineView = {
+  code: string;
+  name: string;
+  quantity: number;
+  unit: number;
+  amount: number;
+};
+
+/**
+ * Itemised lines of a cart payment from its `invoiceMetadata`, or null for legacy single-plan
+ * payments (so callers keep their old layout).
+ */
+export function cartLinesOf(meta?: any): CartLineView[] | null {
+  const lines = meta?.cart?.lines;
+  if (!Array.isArray(lines) || !lines.length) return null;
+  return lines.map((l: any) => {
+    const quantity = Math.max(1, Number(l.quantity || 1));
+    return {
+      code: String(l.code),
+      name: planLabel(String(l.code)),
+      quantity,
+      unit: Number(l.unit || 0),
+      amount: Number(l.amount || 0),
+    };
+  });
 }

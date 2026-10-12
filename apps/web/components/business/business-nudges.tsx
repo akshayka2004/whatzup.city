@@ -3,22 +3,28 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Clock, X } from 'lucide-react';
+import { AlertTriangle, Clock, X } from 'lucide-react';
 import { hasOperatingHours } from '@saas/types';
 import { Button } from '@/components/ui/button';
 import { apiService } from '@/lib/services/api-service';
-import { RENEWAL_REMINDER_DAYS } from '@/lib/subscription-plans';
 import { useOwnerBusiness, type OwnerBusiness } from '@/hooks/use-owner-business';
+import { useEntitlements } from '@/hooks/use-entitlements';
 import { MenuPhotoPrompt } from '@/components/business/menu-photo-prompt';
 import { BrandConversionPrompt } from '@/components/business/brand-conversion-prompt';
+import { daysUntilRenewal, renewalDismissKey } from '@/components/business/subscription-paywall';
 
-type NudgeKey = 'menu' | 'hours' | 'brand';
+type NudgeKey = 'limit' | 'renewal' | 'menu' | 'hours' | 'brand';
 
 const SNOOZE_DAYS = 7;
 const choiceKey = (id: string) => `biz_nudge_choice_${id}`;
 // The menu prompt owns and writes its own dismiss key — keep it in sync with menu-photo-prompt.tsx.
+// The renewal key is shared with the top renewal banner (RenewalReminder).
 const dismissKey = (k: NudgeKey, id: string) =>
-  k === 'menu' ? `menu_prompt_dismissed_${id}` : `${k}_nudge_dismissed_${id}`;
+  k === 'menu'
+    ? `menu_prompt_dismissed_${id}`
+    : k === 'renewal'
+      ? renewalDismissKey(id)
+      : `${k}_nudge_dismissed_${id}`;
 
 function readSession(key: string): string | null {
   try {
@@ -35,24 +41,6 @@ function writeSession(key: string, value: string) {
   }
 }
 
-// SubscriptionPaywall decides its own visibility and sits above everything, so mirror its rule:
-// any nudge waits until there is a paid, not-about-to-expire plan. Only a "clear" answer is cached.
-const paywallClearCache = new Map<string, true>();
-async function paywallIsClear(businessId: string): Promise<boolean> {
-  if (paywallClearCache.has(businessId)) return true;
-  const subRes = await apiService.get<any>(`/v1/subscriptions/businesses/${businessId}/active`);
-  const sub = !subRes.error ? subRes.data : null;
-  const hasPaidActive = !!sub && sub.status === 'ACTIVE' && Number(sub.pricing ?? 0) > 0;
-  let expiringSoon = false;
-  if (hasPaidActive && sub.endDate) {
-    const remaining = Math.ceil((new Date(sub.endDate).getTime() - Date.now()) / 86_400_000);
-    expiringSoon = remaining <= RENEWAL_REMINDER_DAYS && remaining >= 0;
-  }
-  const clear = hasPaidActive && !expiringSoon;
-  if (clear) paywallClearCache.set(businessId, true);
-  return clear;
-}
-
 function brandPromptDue(b: OwnerBusiness): boolean {
   if (b.brandId || b.status !== 'APPROVED') return false;
   if (b.brandPromptStatus === 'DECLINED') return false;
@@ -65,13 +53,14 @@ function brandPromptDue(b: OwnerBusiness): boolean {
 
 /**
  * Shows at most one dismissible prompt per browser session, in priority order:
- * (paywall, which renders itself and blocks all of these) > menu photos > opening hours > brand conversion.
+ * items over the plan limit > renewal due > menu photos > opening hours > brand conversion.
  * The pick is remembered in sessionStorage so navigating to another page never surfaces a second prompt.
+ * "Renewal due" is drawn by the layout's top banner; here it only holds the single slot so nothing stacks on it.
  */
 export function BusinessNudges({ enabled }: { enabled: boolean }) {
   const pathname = usePathname();
   const { business, isFood } = useOwnerBusiness(enabled);
-  const [paywallClear, setPaywallClear] = useState<boolean | null>(null);
+  const { ent, loading: entLoading } = useEntitlements();
   const [menuEmpty, setMenuEmpty] = useState<boolean | null>(null);
   const [choice, setChoice] = useState<NudgeKey | null>(null);
   const [closed, setClosed] = useState(false);
@@ -79,20 +68,12 @@ export function BusinessNudges({ enabled }: { enabled: boolean }) {
   const biz = enabled ? business : null;
   const bizId = biz?.id;
   const approved = biz?.status === 'APPROVED';
-
-  useEffect(() => {
-    if (!bizId || !approved) return;
-    let alive = true;
-    paywallIsClear(bizId).then((c) => alive && setPaywallClear(c));
-    return () => {
-      alive = false;
-    };
-  }, [bizId, approved]);
+  // Plan numbers decide the top two slots, so wait for them (a failed read just means "no plan nudge").
+  const entReady = !entLoading;
 
   // Same eligibility test the menu prompt runs (it fetches again itself once chosen).
   useEffect(() => {
-    if (!bizId || !isFood || paywallClear !== true || readSession(dismissKey('menu', bizId)))
-      return;
+    if (!bizId || !isFood || !entReady || readSession(dismissKey('menu', bizId))) return;
     let alive = true;
     apiService.get<any[]>(`/v1/media/menu/business/${bizId}`).then((res) => {
       if (alive) setMenuEmpty(!res.error && Array.isArray(res.data) && res.data.length === 0);
@@ -100,14 +81,21 @@ export function BusinessNudges({ enabled }: { enabled: boolean }) {
     return () => {
       alive = false;
     };
-  }, [bizId, isFood, paywallClear]);
+  }, [bizId, isFood, entReady]);
+
+  const overOffers = ent?.overLimit?.offers ?? 0;
+  const overVouchers = ent?.overLimit?.vouchers ?? 0;
+  const renewal = daysUntilRenewal(ent);
+  const renewalDue = !!renewal && renewal.days <= renewal.threshold;
 
   useEffect(() => {
-    if (!biz || !approved || paywallClear !== true) return;
+    if (!biz || !approved || !entReady) return;
     const menuDismissed = !!readSession(dismissKey('menu', biz.id));
     if (isFood && !menuDismissed && menuEmpty === null) return; // still checking photos
 
     const eligible: Record<NudgeKey, boolean> = {
+      limit: overOffers + overVouchers > 0 && !readSession(dismissKey('limit', biz.id)),
+      renewal: renewalDue && !readSession(dismissKey('renewal', biz.id)),
       menu: isFood && !menuDismissed && menuEmpty === true,
       hours: !hasOperatingHours(biz.operatingHours) && !readSession(dismissKey('hours', biz.id)),
       brand: brandPromptDue(biz) && !readSession(dismissKey('brand', biz.id)),
@@ -118,11 +106,12 @@ export function BusinessNudges({ enabled }: { enabled: boolean }) {
     if (stored) {
       next = eligible[stored] ? stored : null;
     } else {
-      next = (['menu', 'hours', 'brand'] as const).find((k) => eligible[k]) ?? null;
+      next =
+        (['limit', 'renewal', 'menu', 'hours', 'brand'] as const).find((k) => eligible[k]) ?? null;
       if (next) writeSession(choiceKey(biz.id), next);
     }
     setChoice(next);
-  }, [biz, approved, paywallClear, isFood, menuEmpty]);
+  }, [biz, approved, entReady, isFood, menuEmpty, overOffers, overVouchers, renewalDue]);
 
   if (!biz || !choice || closed) return null;
 
@@ -130,6 +119,52 @@ export function BusinessNudges({ enabled }: { enabled: boolean }) {
     writeSession(dismissKey(k, biz.id), '1');
     setClosed(true);
   };
+
+  // The top banner is the renewal reminder; this choice just keeps other prompts from stacking on it.
+  if (choice === 'renewal') return null;
+
+  if (choice === 'limit') {
+    if (pathname.startsWith('/dashboard/subscriptions')) return null;
+    const parts: string[] = [];
+    if (overOffers > 0) parts.push(`${overOffers} offer${overOffers === 1 ? '' : 's'}`);
+    if (overVouchers > 0) parts.push(`${overVouchers} voucher${overVouchers === 1 ? '' : 's'}`);
+    return (
+      <div className="print:hidden container mx-auto px-4 pt-4 ui-fade-up">
+        <div className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-warning-soft p-3 sm:p-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card text-warning-soft-foreground">
+            <AlertTriangle className="h-4 w-4" aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-warning-soft-foreground">
+              {parts.join(' and ')} over your plan limit
+            </p>
+            <p className="mt-0.5 text-xs text-warning-soft-foreground/80">
+              Your plan keeps {ent?.offers ?? 0} offer{ent?.offers === 1 ? '' : 's'} and{' '}
+              {ent?.vouchers ?? 0} voucher{ent?.vouchers === 1 ? '' : 's'} live. The newest extras
+              are paused automatically. Add more to keep them live.
+            </p>
+            <Button
+              asChild
+              size="sm"
+              className="mt-2.5 h-10 rounded-xl px-4 cursor-pointer ui-press"
+            >
+              <Link href="/dashboard/subscriptions" onClick={() => dismiss('limit')}>
+                See plans &amp; add-ons
+              </Link>
+            </Button>
+          </div>
+          <button
+            type="button"
+            onClick={() => dismiss('limit')}
+            aria-label="Dismiss"
+            className="-mr-1 -mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-warning-soft-foreground hover:bg-warning/10 cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (choice === 'menu') return <MenuPhotoPrompt enabled />;
 

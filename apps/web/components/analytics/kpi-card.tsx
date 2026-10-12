@@ -1,7 +1,8 @@
 'use client';
 
 import type { ComponentType } from 'react';
-import { ArrowDownRight, ArrowUpRight, Info, Minus } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowDownRight, ArrowUpRight, Info, Lock, Minus } from 'lucide-react';
 import { Sparkline } from '@/components/common/sparkline';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -58,6 +59,8 @@ export function KpiCard({
   onSelect,
   loading = false,
   compact = false,
+  locked = false,
+  lockedHref = '/dashboard/subscriptions',
   className,
 }: {
   label: string;
@@ -72,8 +75,36 @@ export function KpiCard({
   onSelect?: () => void;
   loading?: boolean;
   compact?: boolean;
+  /** The plan does not include analytics: show a calm locked tile instead of numbers. */
+  locked?: boolean;
+  lockedHref?: string;
   className?: string;
 }) {
+  if (locked) {
+    return (
+      <div
+        className={cn(
+          'relative block w-full rounded-card border border-border/70 bg-surface-sunken p-4 text-left sm:p-5',
+          className,
+        )}
+      >
+        <span className="flex min-w-0 items-center gap-1.5 text-label text-muted-foreground">
+          {Icon && <Icon className="size-4 shrink-0" aria-hidden />}
+          <span className="truncate">{label}</span>
+        </span>
+        <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-foreground">
+          <Lock className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          Not in your plan
+        </p>
+        <Link
+          href={lockedHref}
+          className="mt-1 inline-block text-caption font-medium text-primary hover:underline"
+        >
+          Add analytics
+        </Link>
+      </div>
+    );
+  }
   const interactive = !!onSelect;
   const body = (
     <>

@@ -30,6 +30,7 @@ import { KpiCard } from '@/components/analytics/kpi-card';
 import { useAuth } from '@/hooks/use-auth';
 import { useActiveBusiness } from '@/hooks/use-active-business';
 import { useOwnerBusiness } from '@/hooks/use-owner-business';
+import { useEntitlements, type PlanEntitlements } from '@/hooks/use-entitlements';
 import { apiService } from '@/lib/services/api-service';
 import { analyticsV2, type BusinessReport } from '@/lib/services/analytics-v2';
 import { cn } from '@/lib/utils';
@@ -59,6 +60,18 @@ function greeting() {
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
+/** "SINGLE_AN" -> "Single + Analytics", "FREE" -> "Free", legacy codes get a "(legacy)" tag. */
+function planName(ent: PlanEntitlements): string {
+  const analytics = /_AN$/.test(ent.plan);
+  const base = ent.plan
+    .replace(/_AN$/, '')
+    .split('_')
+    .filter(Boolean)
+    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
+    .join(' ');
+  return `${base || 'Free'}${analytics ? ' + Analytics' : ''}${ent.source === 'LEGACY' ? ' (legacy)' : ''}`;
+}
+
 type Task = {
   key: string;
   icon: typeof Clock;
@@ -80,7 +93,17 @@ export default function BusinessOverviewPage() {
 
   const { activeBusinessId, activeBusiness } = useActiveBusiness();
   const { isFood } = useOwnerBusiness(!isModerator);
+  const {
+    ent,
+    loading: entLoading,
+    hasAnalytics,
+    isFree,
+  } = useEntitlements(activeBusinessId || undefined);
   const [report, setReport] = useState<BusinessReport | null>(null);
+  // The API refused the report because the plan has no analytics.
+  const [reportLocked, setReportLocked] = useState(false);
+  // True once the report call has answered (even with an error), so tiles never skeleton forever.
+  const [reportSettled, setReportSettled] = useState(false);
   const [offers, setOffers] = useState<any[] | null>(null);
   const [pendingBills, setPendingBills] = useState<number | null>(null);
   const [completeness, setCompleteness] = useState<{ score: number; missing: string[] } | null>(
@@ -91,15 +114,13 @@ export default function BusinessOverviewPage() {
     if (!activeBusinessId) return;
     let alive = true;
     Promise.all([
-      canSeeNumbers ? analyticsV2.business(activeBusinessId, { days: 7 }) : Promise.resolve(null),
       apiService.get<any>(`/v1/offers/my/${activeBusinessId}`),
       apiService.get<any>(`/v1/businesses/${activeBusinessId}/bill-verifications?status=PENDING`),
       canSeeNumbers
         ? apiService.get<any>(`/v1/dashboard/${activeBusinessId}/completeness`)
         : Promise.resolve(null),
-    ]).then(([rep, off, bills, comp]) => {
+    ]).then(([off, bills, comp]) => {
       if (!alive) return;
-      if (rep && !rep.error && rep.data?.kpis && rep.data?.series) setReport(rep.data);
       setOffers(off.error ? [] : list(off.data));
       if (!bills.error) {
         const d = bills.data as any;
@@ -116,6 +137,31 @@ export default function BusinessOverviewPage() {
       alive = false;
     };
   }, [activeBusinessId, canSeeNumbers]);
+
+  // Analytics report: only asked for once the plan is known, and never when the plan has none.
+  useEffect(() => {
+    if (!activeBusinessId || !canSeeNumbers || entLoading) return;
+    if (!hasAnalytics) {
+      setReport(null);
+      return;
+    }
+    let alive = true;
+    setReportLocked(false);
+    setReportSettled(false);
+    analyticsV2.business(activeBusinessId, { days: 7 }).then((rep) => {
+      if (!alive) return;
+      if (rep.code === 'PLAN_FEATURE') {
+        setReportLocked(true);
+        setReport(null);
+      } else if (!rep.error && rep.data?.kpis && rep.data?.series) setReport(rep.data);
+      setReportSettled(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [activeBusinessId, canSeeNumbers, entLoading, hasAnalytics]);
+
+  const analyticsLocked = canSeeNumbers && ((!entLoading && !hasAnalytics) || reportLocked);
 
   const now = Date.now();
   const activeOffers = useMemo(
@@ -214,6 +260,53 @@ export default function BusinessOverviewPage() {
       />
 
       <div className="space-y-6">
+        {canSeeNumbers &&
+          (ent ? (
+            <section
+              aria-label="Your plan"
+              className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-card border border-border/70 bg-card px-4 py-3 shadow-e1 sm:px-5"
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="text-label text-muted-foreground">Your plan</span>
+                <span className="truncate rounded-full bg-brand-soft px-2.5 py-0.5 text-caption font-semibold text-brand-soft-foreground">
+                  {planName(ent)}
+                </span>
+              </div>
+              <dl className="flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums">
+                <div className="flex items-baseline gap-1.5">
+                  <dt className="text-muted-foreground">Offers</dt>
+                  <dd
+                    className={cn(
+                      'font-semibold',
+                      ent.overLimit.offers > 0 && 'text-warning-soft-foreground',
+                    )}
+                  >
+                    {ent.usage.offers}/{ent.offers}
+                  </dd>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <dt className="text-muted-foreground">Vouchers</dt>
+                  <dd
+                    className={cn(
+                      'font-semibold',
+                      ent.overLimit.vouchers > 0 && 'text-warning-soft-foreground',
+                    )}
+                  >
+                    {ent.vouchers > 0 ? `${ent.usage.vouchers}/${ent.vouchers}` : 'Not included'}
+                  </dd>
+                </div>
+              </dl>
+              <Link
+                href="/dashboard/subscriptions"
+                className="ml-auto inline-flex min-h-10 items-center gap-1 text-label text-primary hover:underline"
+              >
+                {isFree ? 'Upgrade' : 'Add more'} <ArrowRight className="size-4" />
+              </Link>
+            </section>
+          ) : entLoading ? (
+            <div className="ui-skeleton h-14 rounded-card" />
+          ) : null)}
+
         {canSeeNumbers && (
           <section aria-labelledby="week-heading">
             <div className="mb-3 flex items-end justify-between">
@@ -232,21 +325,24 @@ export default function BusinessOverviewPage() {
                 label="Visitors"
                 icon={Users}
                 metric={report?.kpis.visitors}
-                loading={!report}
+                locked={analyticsLocked}
+                loading={!report && !reportSettled}
                 spark={report?.series.points.map((p) => p.visitors)}
               />
               <KpiCard
                 label="Customer actions"
                 icon={MousePointerClick}
                 metric={report?.kpis.actions}
-                loading={!report}
+                locked={analyticsLocked}
+                loading={!report && !reportSettled}
                 spark={report?.series.points.map((p) => p.actions)}
               />
               <KpiCard
                 label="Offer claims"
                 icon={TicketPercent}
                 metric={report?.kpis.offerClaims}
-                loading={!report}
+                locked={analyticsLocked}
+                loading={!report && !reportSettled}
                 spark={report?.series.points.map((p) => p.claims)}
               />
               <KpiCard
@@ -254,7 +350,8 @@ export default function BusinessOverviewPage() {
                 icon={BadgeIndianRupee}
                 format="inr"
                 metric={report?.kpis.verifiedSpend}
-                loading={!report}
+                locked={analyticsLocked}
+                loading={!report && !reportSettled}
                 spark={report?.series.points.map((p) => p.spend)}
               />
             </div>

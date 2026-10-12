@@ -1,78 +1,25 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { BrandLogo } from '@/components/common/brand-logo';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-// mock-db removed — all registration flows through real API
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
-import { KERALA_CITIES } from '@/lib/constants';
-import { LegalFooter } from '@/components/common/legal-footer';
 import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
 import { authService } from '@/lib/services/auth-service';
-import {
-  RegistrationDetailsForm,
-  type RegistrationDetails,
-} from '@/components/business/registration-details';
-import {
-  STAR_OPTIONS,
-  HOTEL_AMENITIES,
-  computeHotelCharge,
-  type HotelAmenities,
-} from '@/lib/hotel-pricing';
-import {
-  AmenityDetailsEditor,
-  type AmenityItem,
-} from '@/components/business/amenity-details-editor';
-import { HOME_CHEF_PLANS, HOME_CHEF_DURATION_DAYS, getHomeChefPlan } from '@/lib/home-chef-pricing';
+import type { RegistrationDetails } from '@/components/business/registration-details';
+import type { HotelAmenities } from '@/lib/hotel-pricing';
+import type { AmenityItem } from '@/components/business/amenity-details-editor';
 import { useLaunchOffer } from '@/hooks/use-launch-offer';
 import { invalidateActiveBusinessCache } from '@/hooks/use-active-business';
+import type { BillSeriesMode } from '@/components/business/brand-conversion-prompt';
 import {
-  BillSeriesQuestion,
-  type BillSeriesMode,
-} from '@/components/business/brand-conversion-prompt';
-import { LaunchOfferBanner } from '@/components/business/launch-offer-banner';
-import {
-  SUBSCRIPTION_PLANS,
-  PLAN_DURATION_DAYS,
-  HOTEL_DURATION_DAYS,
-  getPlan,
-  formatINR,
+  ADDONS,
+  priceCart,
+  unitPrice,
   withTax,
-  TAX_PERCENT,
-  PAYMENT_QR_SRC,
-  PAYMENT_UPI_ID,
-  PAYMENT_PAYEE_NAME,
-} from '@/lib/subscription-plans';
-import {
-  User as UserIcon,
-  Building2,
-  ShieldAlert,
-  Mail,
-  Phone,
-  Key,
-  Eye,
-  EyeOff,
-  Loader2,
-  Sparkles,
-  UploadCloud,
-  CheckCircle,
-  ArrowRight,
-  ArrowLeft,
-  AlertCircle,
-  FileCheck,
-  MapPin,
-  Layers,
-  Heart,
-  Users,
-  Newspaper,
-  Store,
-} from 'lucide-react';
+  type BillingCycle,
+  type CartLine,
+} from '@saas/types';
 import { RegisterRole, CivicOrgType, CATEGORIES } from './shared';
 
 /** All registration wizard state and handlers; the page and each step read from it. */
@@ -124,11 +71,13 @@ export function useRegisterWizard() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
 
-  // ── Step 4: plan / hotel classification / Home Chef tier, then payment ──
+  // ── Step 4: choose how to start (Free, or upgrade now), then payment ──
   const isHotel = categorySlug === 'hotel';
   const isHomeChef = subcategorySlug === 'home_chefs';
+  // Retired plan pickers. Kept (always empty) so existing consumers of the wizard keep compiling.
   const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [homeChefTier, setHomeChefTier] = useState<string>('');
+  // Hotel classification and amenities are listing profile data: collected here, never priced.
   const [hotelStarRating, setHotelStarRating] = useState<number | null>(null);
   const [hotelAmenities, setHotelAmenities] = useState<HotelAmenities>({});
   const [amenityDetails, setAmenityDetails] = useState<Record<string, AmenityItem[]>>({});
@@ -142,7 +91,57 @@ export function useRegisterWizard() {
   useEffect(() => {
     if (claimLaunch && !launchOffer.loading && !canClaimLaunch) setClaimLaunch(false);
   }, [claimLaunch, canClaimLaunch, launchOffer.loading]);
-  /** Price stays hidden until the payer explicitly proceeds. */
+  // ── Optional upgrade cart: one bundle (SINGLE* / MULTI*) + stackable add-ons ──
+  /** Outlets of a brand buy the per-outlet MULTI bundle; everyone else the SINGLE one. */
+  const isBrandOutlet = !!brandCtx || accountType === 'BRAND';
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>('MONTHLY');
+  const [wantAnalytics, setWantAnalyticsState] = useState(false);
+  const [includeBundle, setIncludeBundle] = useState(true);
+  const [addonQty, setAddonQty] = useState<Record<string, number>>({});
+  const bundleCode = `${isBrandOutlet ? 'MULTI' : 'SINGLE'}${wantAnalytics ? '_AN' : ''}`;
+  /** The offer + voucher add-on comes in a plain and an analytics flavour; show the matching one. */
+  const visibleAddons = useMemo(
+    () =>
+      ADDONS.filter((a) =>
+        a.code === 'ADDON_OV' ? !wantAnalytics : a.code === 'ADDON_OV_AN' ? wantAnalytics : true,
+      ),
+    [wantAnalytics],
+  );
+  /** Flip analytics and carry any offer + voucher add-on units over to the matching flavour. */
+  const setWantAnalytics = (on: boolean) => {
+    setWantAnalyticsState(on);
+    setAddonQty((q) => {
+      const from = on ? 'ADDON_OV' : 'ADDON_OV_AN';
+      const to = on ? 'ADDON_OV_AN' : 'ADDON_OV';
+      if (!q[from]) return q;
+      const { [from]: moved, ...rest } = q;
+      return { ...rest, [to]: Math.min(50, (rest[to] || 0) + moved) };
+    });
+  };
+  const setAddonUnits = (code: string, qty: number) =>
+    setAddonQty((q) => ({ ...q, [code]: Math.max(0, Math.min(10, qty)) }));
+  const cartLines = useMemo(() => {
+    const lines: CartLine[] = [];
+    if (includeBundle) lines.push({ code: bundleCode, quantity: 1 });
+    for (const a of visibleAddons) {
+      const qty = addonQty[a.code] || 0;
+      // Not every add-on is sold yearly; those are simply left out of a yearly cart.
+      if (qty > 0 && unitPrice(a.code, billingCycle) != null) {
+        lines.push({ code: a.code, quantity: qty });
+      }
+    }
+    return lines;
+  }, [includeBundle, bundleCode, visibleAddons, addonQty, billingCycle]);
+  /** Priced client-side for display only; the API prices the same lines again. */
+  const pricedCart = useMemo(() => priceCart(cartLines, billingCycle), [cartLines, billingCycle]);
+  const cartTotals = pricedCart.ok ? pricedCart.cart.totals : null;
+  /** What the payer owes right now: the launch-offer price when claimed, otherwise the cart. */
+  const launchTotals = withTax(launchOffer.status?.price ?? 2500);
+  const payableTotals = claimLaunch ? launchTotals : cartTotals;
+  /** Hotels must say how many stars they are before listing. It is profile data, not a price. */
+  const hotelProfileReady = !isHotel || !!hotelStarRating;
+
+  /** Paying path (QR + proof) is only shown once the owner chooses to upgrade. */
   const [showPayment, setShowPayment] = useState(false);
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [payerRef, setPayerRef] = useState('');
@@ -308,7 +307,7 @@ export function useRegisterWizard() {
   // Businesses register and pay in one flow, so they get an extra step.
   const STEP_TITLES =
     role === 'BUSINESS'
-      ? ['Account Type', 'Credentials', 'Business Profile', 'Plan & Payment']
+      ? ['Account Type', 'Credentials', 'Business Profile', 'Get Started']
       : ['Account Type', 'Credentials', 'Profile Setup'];
   const TOTAL_STEPS = STEP_TITLES.length;
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -580,11 +579,68 @@ export function useRegisterWizard() {
     return { fileUrl: finalUrl, fileKey };
   };
 
-  // Step 4 Submission ( केरल entity profile details & document upload )
+  // Final business step.
+  /** Saves the hotel's star rating, amenities and details onto the listing. Profile data, no pricing. */
+  const saveHotelProfile = async () => {
+    if (!isHotel || !hotelStarRating) return;
+    const res = await apiService.patch<any>(`/v1/businesses/${businessId}`, {
+      hotelStarRating,
+      hotelAmenities,
+      amenityDetails,
+    });
+    if (res.error) throw new Error(res.error);
+  };
+
+  /** Mirror the new status into the cached session so the dashboard doesn't flash "draft". */
+  const markSubmittedLocally = () => {
+    if (typeof window === 'undefined') return;
+    const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
+    if (!stored) return;
+    try {
+      const u = JSON.parse(stored);
+      if (u.entity && u.entity.id === businessId) {
+        u.entity.status = 'PENDING_VERIFICATION';
+        localStorage.setItem('user_session', JSON.stringify(u));
+        localStorage.setItem('user', JSON.stringify(u));
+      }
+    } catch (_) {}
+  };
+
   /**
-   * Final business step: lock in the plan (or hotel classification), record the
-   * QR payment with its proof, then submit for verification. The price is only
-   * ever computed here — the server recomputes it, so this is display-only.
+   * Free path: every listing starts free, so nothing is paid or priced here. Save the hotel
+   * profile (if any), then submit for admin verification and head to the dashboard.
+   */
+  const handleContinueFree = async () => {
+    if (!businessId) {
+      setError('Session lost — please sign in again to finish registration.');
+      return;
+    }
+    if (!hotelProfileReady) {
+      setError('Please choose your hotel star classification first.');
+      return;
+    }
+    setError('');
+    setSuccess('');
+    setLoading(true);
+    try {
+      await saveHotelProfile();
+      const submitRes = await onboardingService.submitForVerification(businessId);
+      if (submitRes.error) throw new Error(submitRes.error);
+      markSubmittedLocally();
+      setSuccess('Application submitted for verification! Redirecting to your dashboard...');
+      setTimeout(() => router.push('/dashboard'), 2000);
+    } catch (err: any) {
+      setError(err.message || 'Could not complete registration.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Paid path (optional upgrade): invoice details, payment screenshot, then either the
+   * cart purchase (priced by the server) or — while the launch offer is enabled — the
+   * launch-offer claim. Verification is submitted last; the purchased rows go live when an
+   * office admin verifies the payment.
    */
   const handleBusinessFinalSubmit = async () => {
     if (!businessId) {
@@ -595,52 +651,34 @@ export function useRegisterWizard() {
       setError('Please upload your payment screenshot before submitting.');
       return;
     }
+    if (!claimLaunch && !pricedCart.ok) {
+      setError(pricedCart.ok ? '' : pricedCart.error);
+      return;
+    }
+    if (!hotelProfileReady) {
+      setError('Please choose your hotel star classification first.');
+      return;
+    }
     setError('');
     setSuccess('');
     setLoading(true);
 
     try {
-      // 1. Create the subscription for the chosen plan / classification / tier
-      //    — or, for a launch-offer claim, reserve the slot (still needs payment below).
+      // 1. Hotel classification and amenities are profile data on the listing.
+      await saveHotelProfile();
+
+      // 2. Launch-offer claim only: reserve the slot (the payment below still verifies it).
       let subscriptionId: string | undefined;
       if (claimLaunch) {
-        if (isHotel) {
-          // Saves the star rating and amenities onto the listing; pricing comes
-          // from the launch-offer claim, not from the hotel charge below.
-          const hotelRes = await onboardingService.assignHotelSubscription(
-            businessId,
-            hotelStarRating || 0,
-            hotelAmenities,
-            amenityDetails,
-          );
-          if (hotelRes.error) throw new Error(hotelRes.error);
-        }
         const claimRes = await onboardingService.claimLaunchOffer(businessId);
         if (claimRes.error) {
           await launchOffer.refresh(); // slots may have just run out
           throw new Error(claimRes.error);
         }
         subscriptionId = (claimRes.data as any)?.id;
-      } else {
-        const assignRes = isHotel
-          ? await onboardingService.assignHotelSubscription(
-              businessId,
-              hotelStarRating || 0,
-              hotelAmenities,
-              amenityDetails,
-            )
-          : isHomeChef
-            ? await onboardingService.assignHomeChefSubscription(businessId, homeChefTier)
-            : await onboardingService.assignSubscription(
-                businessId,
-                selectedPlan,
-                PLAN_DURATION_DAYS,
-              );
-        if (assignRes.error) throw new Error(assignRes.error);
-        subscriptionId = (assignRes.data as any)?.id;
       }
 
-      // 2. Upload the payment screenshot for admin verification.
+      // 3. Upload the payment screenshot for admin verification.
       setUploadProgress(20);
       const signed = await onboardingService.getSignedUrl(
         businessId,
@@ -654,25 +692,13 @@ export function useRegisterWizard() {
       const uploaded = await onboardingService.uploadFile(signed.data.uploadUrl, paymentProof);
       if (!uploaded) throw new Error('Failed to upload the payment screenshot.');
       setUploadProgress(70);
+      const proofUrl = JSON.stringify({
+        bucket: 'verification-documents',
+        path: signed.data.fileKey,
+      });
 
-      // 3. Record the payment.
-      const charge = computeHotelCharge(hotelStarRating, hotelAmenities);
-      const plan = getPlan(selectedPlan);
-      const homeChefPlan = getHomeChefPlan(homeChefTier);
-      const launchPrice = launchOffer.status?.price ?? 2500;
-      // Amount charged is GST-inclusive; the server recomputes and splits it.
-      const amount = withTax(
-        claimLaunch
-          ? launchPrice
-          : isHotel
-            ? charge.total
-            : isHomeChef
-              ? homeChefPlan?.price || 0
-              : plan?.offerPrice || 0,
-      ).total;
-
-      // Invoice details first — if this fails the payment isn't recorded, so the
-      // office never ends up with a payment it can't raise an invoice for.
+      // 4. Invoice details first — if this fails the payment isn't recorded, so the
+      //    office never ends up with a payment it can't raise an invoice for.
       const billRes = await onboardingService.saveBillingProfile(businessId, {
         billingName: billingName.trim(),
         hasGst: !!billingHasGst,
@@ -686,42 +712,39 @@ export function useRegisterWizard() {
       });
       if (billRes.error) throw new Error(billRes.error);
 
-      const payRes = await onboardingService.submitPayment(businessId, {
-        amount,
-        method: 'UPI_QR',
-        proofUrl: JSON.stringify({ bucket: 'verification-documents', path: signed.data.fileKey }),
-        transactionRef: payerRef || undefined,
-        subscriptionId,
-        packageName: claimLaunch
-          ? 'LAUNCH_SPECIAL'
-          : isHotel
-            ? `HOTEL_${hotelStarRating}STAR`
-            : isHomeChef
-              ? `HOMECHEF_${homeChefTier}`
-              : selectedPlan,
-      });
-      if (payRes.error) throw new Error(payRes.error);
+      // 5. Record the payment.
+      let submittedPaymentId: string | undefined;
+      if (claimLaunch) {
+        const payRes = await onboardingService.submitPayment(businessId, {
+          // GST-inclusive; the server recomputes and splits it.
+          amount: launchTotals.total,
+          method: 'UPI_QR',
+          proofUrl,
+          transactionRef: payerRef || undefined,
+          subscriptionId,
+          packageName: 'LAUNCH_SPECIAL',
+        });
+        if (payRes.error) throw new Error(payRes.error);
+        submittedPaymentId = (payRes.data as any)?.id;
+      } else {
+        const buyRes = await apiService.post<any>(`/v1/businesses/${businessId}/purchase`, {
+          cycle: billingCycle,
+          lines: cartLines,
+          method: 'UPI_QR',
+          transactionRef: payerRef || undefined,
+          proofUrl,
+        });
+        if (buyRes.error) throw new Error(buyRes.error);
+        const body = buyRes.data?.payment ? buyRes.data : buyRes.data?.data;
+        submittedPaymentId = body?.payment?.id;
+      }
       setUploadProgress(100);
 
-      // 4. Submit for verification.
+      // 6. Submit for verification (independent of the payment).
       const submitRes = await onboardingService.submitForVerification(businessId);
       if (submitRes.error) throw new Error(submitRes.error);
 
-      if (typeof window !== 'undefined') {
-        const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
-        if (stored) {
-          try {
-            const u = JSON.parse(stored);
-            if (u.entity && u.entity.id === businessId) {
-              u.entity.status = 'PENDING_VERIFICATION';
-              localStorage.setItem('user_session', JSON.stringify(u));
-              localStorage.setItem('user', JSON.stringify(u));
-            }
-          } catch (_) {}
-        }
-      }
-
-      const submittedPaymentId = (payRes.data as any)?.id;
+      markSubmittedLocally();
       setSuccess('Payment submitted for verification! Redirecting to your invoice...');
       setTimeout(
         () =>
@@ -984,6 +1007,24 @@ export function useRegisterWizard() {
     categoryLabel,
     claimLaunch,
     setClaimLaunch,
+    isBrandOutlet,
+    billingCycle,
+    setBillingCycle,
+    wantAnalytics,
+    setWantAnalytics,
+    includeBundle,
+    setIncludeBundle,
+    addonQty,
+    setAddonUnits,
+    bundleCode,
+    visibleAddons,
+    cartLines,
+    pricedCart,
+    cartTotals,
+    launchTotals,
+    payableTotals,
+    hotelProfileReady,
+    handleContinueFree,
     showPayment,
     setShowPayment,
     paymentProof,

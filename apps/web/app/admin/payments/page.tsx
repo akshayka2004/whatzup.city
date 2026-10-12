@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { apiService } from '@/lib/services/api-service';
-import { formatINR } from '@/lib/subscription-plans';
+import { billingCycleLabel, cartLinesOf, formatINR, planLabel } from '@/lib/subscription-plans';
 import { cn } from '@/lib/utils';
 import { Loader2, CheckCircle2, XCircle, Receipt, Building2, ExternalLink } from 'lucide-react';
 
@@ -110,135 +110,182 @@ export default function AdminPaymentsPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {rows.map((p, i) => (
-              <Card
-                key={p.id}
-                className="p-5 ui-fade-up"
-                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-              >
-                <div className="grid md:grid-cols-[220px_1fr] gap-5">
-                  {/* Proof */}
-                  <div>
-                    {p.proofSignedUrl ? (
-                      <a
-                        href={p.proofSignedUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block group"
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed payment proof */}
-                        <img
-                          src={p.proofSignedUrl}
-                          alt="Payment screenshot"
-                          className="w-full h-48 object-cover rounded-xl border border-border"
-                        />
-                        <span className="text-xs text-primary flex items-center gap-1 mt-1.5">
-                          Open full size <ExternalLink className="h-3 w-3" />
+            {rows.map((p, i) => {
+              const lines = cartLinesOf(p.invoiceMetadata);
+              const cycleCode = p.invoiceMetadata?.billingCycle ?? p.invoiceMetadata?.cart?.cycle;
+              const itemCount: number =
+                p.invoiceMetadata?.subscriptionIds?.length ?? lines?.length ?? 1;
+              return (
+                <Card
+                  key={p.id}
+                  className="p-5 ui-fade-up"
+                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+                >
+                  {lines && (
+                    <div className="mb-4 rounded-xl border border-border bg-muted/30 p-4">
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="text-xs font-bold text-foreground">
+                          Order · {billingCycleLabel(cycleCode)}
+                        </h4>
+                        <span className="text-xs font-medium text-primary">
+                          Activates {itemCount} item{itemCount === 1 ? '' : 's'} on verification
                         </span>
-                      </a>
-                    ) : (
-                      <div className="w-full h-48 rounded-xl border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground">
-                        No screenshot
                       </div>
-                    )}
-                  </div>
-
-                  {/* Details */}
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div>
-                        <h3 className="text-base font-bold text-foreground flex items-center gap-1.5">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          {p.business?.name || 'Unknown business'}
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {p.business?.city} · submitted{' '}
-                          {new Date(p.createdAt).toLocaleString('en-IN')}
+                      <ul className="divide-y divide-border text-sm">
+                        {lines.map((l, li) => (
+                          <li
+                            key={`${l.code}-${li}`}
+                            className="flex items-start justify-between gap-3 py-1.5"
+                          >
+                            <span className="min-w-0 break-words text-foreground">
+                              {l.name}{' '}
+                              <span className="text-xs text-muted-foreground">
+                                × {l.quantity} @ {formatINR(l.unit)}
+                              </span>
+                            </span>
+                            <span className="shrink-0 font-medium tabular-nums text-foreground">
+                              {formatINR(l.amount)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                      {p.invoiceMetadata?.amountBase != null && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {formatINR(Number(p.invoiceMetadata.amountBase))} +{' '}
+                          {formatINR(Number(p.invoiceMetadata.amountTax ?? 0))} GST
                         </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xl font-extrabold text-foreground">
-                          {formatINR(Number(p.amount))}
+                      )}
+                    </div>
+                  )}
+                  <div className="grid md:grid-cols-[220px_1fr] gap-5">
+                    {/* Proof */}
+                    <div>
+                      {p.proofSignedUrl ? (
+                        <a
+                          href={p.proofSignedUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block group"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed payment proof */}
+                          <img
+                            src={p.proofSignedUrl}
+                            alt="Payment screenshot"
+                            className="w-full h-48 object-cover rounded-xl border border-border"
+                          />
+                          <span className="text-xs text-primary flex items-center gap-1 mt-1.5">
+                            Open full size <ExternalLink className="h-3 w-3" />
+                          </span>
+                        </a>
+                      ) : (
+                        <div className="w-full h-48 rounded-xl border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground">
+                          No screenshot
                         </div>
-                        <div className="text-xs text-muted-foreground">{p.method}</div>
-                      </div>
+                      )}
                     </div>
 
-                    <div className="grid sm:grid-cols-2 gap-2 text-xs">
-                      <div className="text-muted-foreground">
-                        Plan:{' '}
-                        <span className="text-foreground font-medium">
-                          {p.subscription?.packageName || p.invoiceMetadata?.packageName || '—'}
-                        </span>
+                    {/* Details */}
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div>
+                          <h3 className="text-base font-bold text-foreground flex items-center gap-1.5">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            {p.business?.name || 'Unknown business'}
+                          </h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {p.business?.city} · submitted{' '}
+                            {new Date(p.createdAt).toLocaleString('en-IN')}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xl font-extrabold text-foreground">
+                            {formatINR(Number(p.amount))}
+                          </div>
+                          <div className="text-xs text-muted-foreground">{p.method}</div>
+                        </div>
                       </div>
-                      <div className="text-muted-foreground">
-                        UPI ref:{' '}
-                        <span className="text-foreground font-medium">
-                          {p.transactionRef || '—'}
-                        </span>
-                      </div>
-                    </div>
 
-                    {rejectingId === p.id ? (
-                      <div className="space-y-2 ui-pop">
-                        <Input
-                          value={reason}
-                          onChange={(e) => setReason(e.target.value)}
-                          placeholder="Reason for rejection (shown to the business)"
-                          className="h-10 rounded-xl"
-                        />
-                        <div className="flex gap-2">
+                      <div className="grid sm:grid-cols-2 gap-2 text-xs">
+                        <div className="text-muted-foreground">
+                          Plan:{' '}
+                          <span className="text-foreground font-medium">
+                            {lines
+                              ? `${lines.length} item${lines.length === 1 ? '' : 's'}`
+                              : p.subscription?.packageName
+                                ? planLabel(p.subscription.packageName)
+                                : p.invoiceMetadata?.packageName || '—'}
+                            {!lines && cycleCode ? ` · ${billingCycleLabel(cycleCode)}` : ''}
+                          </span>
+                        </div>
+                        <div className="text-muted-foreground">
+                          UPI ref:{' '}
+                          <span className="text-foreground font-medium">
+                            {p.transactionRef || '—'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {rejectingId === p.id ? (
+                        <div className="space-y-2 ui-pop">
+                          <Input
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            placeholder="Reason for rejection (shown to the business)"
+                            className="h-10 rounded-xl"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => reject(p.id)}
+                              disabled={busyId === p.id || !reason.trim()}
+                              className="h-10 rounded-xl bg-destructive text-destructive-foreground cursor-pointer"
+                            >
+                              {busyId === p.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Confirm rejection'
+                              )}
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setRejectingId(null);
+                                setReason('');
+                              }}
+                              className="h-10 rounded-xl bg-muted text-foreground cursor-pointer"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2 flex-wrap">
                           <Button
-                            onClick={() => reject(p.id)}
-                            disabled={busyId === p.id || !reason.trim()}
-                            className="h-10 rounded-xl bg-destructive text-destructive-foreground cursor-pointer"
+                            onClick={() => verify(p.id)}
+                            disabled={busyId === p.id}
+                            className="h-10 rounded-xl gap-1.5 cursor-pointer"
                           >
                             {busyId === p.id ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
                             ) : (
-                              'Confirm rejection'
+                              <CheckCircle2 className="h-4 w-4" />
                             )}
+                            Verify & activate
                           </Button>
                           <Button
-                            onClick={() => {
-                              setRejectingId(null);
-                              setReason('');
-                            }}
-                            className="h-10 rounded-xl bg-muted text-foreground cursor-pointer"
+                            onClick={() => setRejectingId(p.id)}
+                            className={cn(
+                              'h-10 rounded-xl gap-1.5 bg-background border border-input text-muted-foreground cursor-pointer',
+                            )}
                           >
-                            Cancel
+                            <XCircle className="h-4 w-4" />
+                            Reject
                           </Button>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          onClick={() => verify(p.id)}
-                          disabled={busyId === p.id}
-                          className="h-10 rounded-xl gap-1.5 cursor-pointer"
-                        >
-                          {busyId === p.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="h-4 w-4" />
-                          )}
-                          Verify & activate
-                        </Button>
-                        <Button
-                          onClick={() => setRejectingId(p.id)}
-                          className={cn(
-                            'h-10 rounded-xl gap-1.5 bg-background border border-input text-muted-foreground cursor-pointer',
-                          )}
-                        >
-                          <XCircle className="h-4 w-4" />
-                          Reject
-                        </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

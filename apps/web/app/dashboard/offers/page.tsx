@@ -32,6 +32,12 @@ import { toast } from '@/components/ui/sonner';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
 import { useOwnerBusiness } from '@/hooks/use-owner-business';
+import { useEntitlements, invalidateEntitlements } from '@/hooks/use-entitlements';
+import {
+  UpgradeDialog,
+  isPlanError,
+  type PlanErrorInfo,
+} from '@/components/business/upgrade-dialog';
 import { KERALA_CITIES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
@@ -195,13 +201,40 @@ export default function OffersPage() {
   const [saving, setSaving] = useState(false);
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
+  const {
+    ent,
+    loading: entLoading,
+    canAddOffer,
+    hasAnalytics,
+  } = useEntitlements(businessId || undefined);
+  const [upgrade, setUpgrade] = useState<PlanErrorInfo | null>(null);
+  const [statsNonce, setStatsNonce] = useState(0);
+  const [statsHidden, setStatsHidden] = useState(false);
+
+  // Same message the API sends, built locally so the guard needs no round trip.
+  const limitInfo = (): PlanErrorInfo => ({
+    code: 'PLAN_LIMIT',
+    error: `Your plan allows ${ent?.offers ?? 0} live offer${ent?.offers === 1 ? '' : 's'} at a time. Pause one, or add more offers to your plan.`,
+    details: {
+      resource: 'offer',
+      limit: ent?.offers ?? 0,
+      used: ent?.usage.offers ?? 0,
+      upgradeUrl: '/dashboard/subscriptions',
+    },
+  });
+
+  /** Opens the upgrade dialog when the API refused because of the plan. Returns true if it did. */
+  const handlePlanError = (res: PlanErrorInfo) => {
+    if (!isPlanError(res)) return false;
+    setUpgrade({ code: res.code, error: res.error, details: res.details });
+    invalidateEntitlements(businessId || undefined);
+    return true;
+  };
+
   const fetchOffers = useCallback(async () => {
     if (!businessId) return;
     setLoading(true);
-    const [res, st] = await Promise.all([
-      apiService.get<any>(`/v1/offers/my/${businessId}`),
-      apiService.get<any>(`/v1/analytics/v2/business/${businessId}/offers?days=30`),
-    ]);
+    const res = await apiService.get<any>(`/v1/offers/my/${businessId}`);
     if (res.data && !res.error) {
       const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? res.data?.items ?? []);
       setOffers(
@@ -222,21 +255,47 @@ export default function OffersPage() {
         })),
       );
     }
-    const rows = Array.isArray(st.data?.offers) ? st.data.offers : [];
-    setStats(
-      Object.fromEntries(
-        rows.map((r: any) => [
-          r.id,
-          { viewers: r.viewers ?? 0, claims: r.claims ?? 0, conversion: r.conversion ?? null },
-        ]),
-      ),
-    );
     setLoading(false);
   }, [businessId]);
 
   useEffect(() => {
     fetchOffers();
   }, [fetchOffers]);
+
+  // Per-offer stats are an analytics feature: skipped on plans without it, and a PLAN_FEATURE
+  // answer just hides the stats row (no error, no toast).
+  useEffect(() => {
+    if (!businessId || entLoading) return;
+    if (!hasAnalytics) {
+      setStats({});
+      return;
+    }
+    let alive = true;
+    apiService.get<any>(`/v1/analytics/v2/business/${businessId}/offers?days=30`).then((st) => {
+      if (!alive) return;
+      setStatsHidden(st.code === 'PLAN_FEATURE');
+      const rows = !st.error && Array.isArray(st.data?.offers) ? st.data.offers : [];
+      setStats(
+        Object.fromEntries(
+          rows.map((r: any) => [
+            r.id,
+            { viewers: r.viewers ?? 0, claims: r.claims ?? 0, conversion: r.conversion ?? null },
+          ]),
+        ),
+      );
+    });
+    return () => {
+      alive = false;
+    };
+  }, [businessId, entLoading, hasAnalytics, statsNonce]);
+
+  const showStats = !entLoading && hasAnalytics && !statsHidden;
+
+  const refreshAll = () => {
+    invalidateEntitlements(businessId || undefined);
+    fetchOffers();
+    setStatsNonce((n) => n + 1);
+  };
 
   const counts = useMemo(() => {
     const c = { current: 0, live: 0, scheduled: 0, paused: 0, ended: 0 };
@@ -254,6 +313,11 @@ export default function OffersPage() {
   });
 
   const openCreate = () => {
+    // At the live limit a new offer cannot go live: explain the plan instead of a dead-end form.
+    if (ent && !canAddOffer) {
+      setUpgrade(limitInfo());
+      return;
+    }
     setForm(EMPTY);
     setEditor({ mode: 'create' });
   };
@@ -265,7 +329,8 @@ export default function OffersPage() {
       discountType: amount ? 'AMOUNT' : 'PERCENT',
       discount: o.discount ? String(o.discount) : '',
       discountAmount: o.discountAmount ? String(o.discountAmount) : '',
-      active: duplicate ? true : o.active,
+      // A copy goes live right away unless the plan has no free live slot: then it starts paused.
+      active: duplicate ? canAddOffer : o.active,
       tags: [...o.tags],
       startsAt: duplicate ? '' : dateOnly(o.startsAt),
       expiresAt: duplicate ? '' : dateOnly(o.expiresAt),
@@ -313,10 +378,14 @@ export default function OffersPage() {
       res = await apiService.patch<any>(`/v1/offers/${editor.id}`, body);
     }
     setSaving(false);
-    if (res.error) return toast.error(res.error);
+    if (res.error) {
+      // Over the plan's live limit: keep the form open so nothing typed is lost.
+      if (handlePlanError(res)) return;
+      return toast.error(res.error);
+    }
     toast.success(editor.mode === 'create' ? 'Offer published' : 'Offer updated');
     setEditor(null);
-    fetchOffers();
+    refreshAll();
   };
 
   const toggleActive = async (o: Offer) => {
@@ -327,8 +396,11 @@ export default function OffersPage() {
     });
     if (res.error) {
       setOffers((list) => list.map((x) => (x.id === o.id ? { ...x, active: o.active } : x)));
-      toast.error(res.error);
-    } else toast.success(next ? 'Offer is live again' : 'Offer paused');
+      if (!handlePlanError(res)) toast.error(res.error);
+    } else {
+      toast.success(next ? 'Offer is live again' : 'Offer paused');
+      invalidateEntitlements(businessId || undefined);
+    }
   };
 
   const remove = async (o: Offer) => {
@@ -343,6 +415,7 @@ export default function OffersPage() {
     if (res.error) return toast.error(res.error);
     setOffers((list) => list.filter((x) => x.id !== o.id));
     toast.success('Offer deleted');
+    invalidateEntitlements(businessId || undefined);
   };
 
   // What customers will see, rendered with the real public coupon.
@@ -367,7 +440,26 @@ export default function OffersPage() {
     <BusinessLayout>
       <PageHeader
         title="Offers"
-        description="Deals customers claim from your profile and the Offers page. Stats cover the last 30 days."
+        description={
+          showStats
+            ? 'Deals customers claim from your profile and the Offers page. Stats cover the last 30 days.'
+            : 'Deals customers claim from your profile and the Offers page.'
+        }
+        meta={
+          ent && (
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full px-2.5 py-0.5 text-caption font-semibold tabular-nums',
+                canAddOffer
+                  ? 'bg-surface-sunken text-muted-foreground'
+                  : 'bg-warning-soft text-warning-soft-foreground',
+              )}
+              title="Offers that are live right now, out of what your plan allows"
+            >
+              {ent.usage.offers} of {ent.offers} live
+            </span>
+          )
+        }
         actions={
           <Button onClick={openCreate}>
             <Plus /> New offer
@@ -445,19 +537,27 @@ export default function OffersPage() {
                 chips={chips}
                 muted={b === 'ended'}
                 onOpen={() => openEdit(o)}
-                stats={[
-                  {
-                    label: 'Viewers',
-                    value: st?.viewers ?? 0,
-                    hint: 'People who opened this offer in the last 30 days',
-                  },
-                  { label: 'Claims', value: st?.claims ?? 0, hint: 'Claims in the last 30 days' },
-                  {
-                    label: 'Conversion',
-                    value: st?.conversion != null ? `${st.conversion}%` : '—',
-                    hint: 'Claims ÷ viewers',
-                  },
-                ]}
+                stats={
+                  showStats
+                    ? [
+                        {
+                          label: 'Viewers',
+                          value: st?.viewers ?? 0,
+                          hint: 'People who opened this offer in the last 30 days',
+                        },
+                        {
+                          label: 'Claims',
+                          value: st?.claims ?? 0,
+                          hint: 'Claims in the last 30 days',
+                        },
+                        {
+                          label: 'Conversion',
+                          value: st?.conversion != null ? `${st.conversion}%` : '—',
+                          hint: 'Claims ÷ viewers',
+                        },
+                      ]
+                    : undefined
+                }
                 primary={
                   b !== 'ended' ? (
                     <Button size="sm" variant="outline" onClick={() => toggleActive(o)}>
@@ -687,6 +787,8 @@ export default function OffersPage() {
           </aside>
         </div>
       </Modal>
+
+      <UpgradeDialog open={!!upgrade} onOpenChange={(o) => !o && setUpgrade(null)} info={upgrade} />
     </BusinessLayout>
   );
 }

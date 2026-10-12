@@ -923,6 +923,63 @@ replies, `support_tickets` / `support_messages`, `daily_business_stats`.
 | `GET /v1/audit-logs?q=&category=&page=` | admins | Server-side audit search/filter |
 | `GET /v1/search/discover?open=1&halal=1&fulfilment=` | public | Server-side filters with exact totals |
 
+### 12.13 Pricing v2: Free listing, bundles and add-ons
+
+Replaces the quarterly plan ladder (Whtzup ₹1,500 … LUXE ₹10,000), hotel star slabs, Home Chef
+tiers and the ₹2,500 Launch Offer for **new** purchases. One catalogue lives in
+`packages/types/src/pricing.ts` and is used by the API (what a payment must cost, what a
+business is entitled to) and the web (picker, cart, labels).
+
+| Code | What | Monthly | Yearly |
+|---|---|---|---|
+| Free | listing, 1 live offer, 0 vouchers, no analytics | 0 | – |
+| `ADDON_OFFER` | +1 offer | ₹99 | not sold |
+| `ADDON_OV` | +1 offer & +1 voucher | ₹149 | ₹949 |
+| `ADDON_OV_AN` | +1 offer & +1 voucher, unlocks analytics | ₹199 | ₹999 |
+| `SINGLE` / `SINGLE_AN` | one outlet, 3 offers + 3 vouchers (without / with analytics) | ₹349 / ₹399 | ₹3,499 / ₹3,999 |
+| `MULTI` / `MULTI_AN` | per outlet of a brand, 3 + 3 (without / with analytics) | ₹319 / ₹339 | ₹3,199 / ₹3,399 |
+
+Prices are ex-GST (+18% on top, rounded to the rupee, as before). Open item for the boss: every
+other yearly price is 10× monthly; ₹949 and ₹999 are not (10× would be ₹1,490 / ₹1,990). It is one
+line in `pricing.ts`.
+
+**Rules**
+- "Live" = `status ACTIVE` and not past its end date. Limits are live-at-once, not per month.
+- Add-ons are stackable units on Free or any bundle. Brand outlets can only buy `MULTI*`,
+  standalone businesses only `SINGLE*` (enforced in `PaymentsService.purchaseCart`).
+- Entitlements = Free floor, replaced by the live bundle, plus every live add-on × quantity
+  (`EntitlementsService`, cached 60 s in Redis as `entitlements:{businessId}`, busted on payment
+  verification). Expiry is lazy (`endDate >= now`); a lapsed plan drops to Free and the dashboard
+  stays open (no more full-dashboard paywall).
+- Grandfathering: legacy rows (`WHTZUP…LUXE`, `HOTEL_*`, `HOMECHEF_*`, `LAUNCH_SPECIAL`) keep
+  working until their end date with the numbers they were sold with and analytics on; they are
+  never auto-paused. They are no longer purchasable.
+- Analytics lock = `GET /v1/analytics/v2/business/:id/{report,offers,digest}` and the weekly digest.
+  The v1 summary endpoints behind the dashboard home basics are not gated. Platform admins are exempt.
+
+**Enforcement (API)**
+- Offer/voucher create, resume or extend-an-expired one → `403 {code:'PLAN_LIMIT', details:{resource,limit,used,upgradeUrl}}`.
+  Editing an already-live item or pausing never blocks. Analytics → `403 {code:'PLAN_FEATURE'}`.
+  The exception filter passes an opt-in `code` + `details` through; web `ApiResponse` exposes them.
+- `PlanEnforcementService` (nightly 03:30 IST, **only when `PLAN_AUTOPAUSE=on`**, VPS only) pauses
+  the newest over-limit offers/vouchers and notifies the owner once.
+
+**Purchase flow**
+- `POST /v1/businesses/:id/purchase {cycle, lines:[{code,quantity}], method, transactionRef?, proofUrl?}`
+  prices the cart server-side, creates one `PENDING_PAYMENT` subscription row per line
+  (`kind`, `billingCycle`, `quantity`) and one payment; the proof is the same QR/UPI screenshot
+  flow. `verifyPayment` activates the rows: a bundle replaces live bundles (legacy included, no
+  pro-rata credit), an add-on replaces the same add-on; same code + same cycle carries the
+  remaining time (renewal). Re-verifying is idempotent.
+- `GET /v1/subscriptions/catalogue` (public), `GET /v1/subscriptions/businesses/:id/entitlements`
+  (limits, live usage, `overLimit`).
+- Schema: `Subscription.kind|billingCycle|quantity` (migration `20261012000000_pricing_v2_subscription_kind`,
+  additive, legacy rows read as quarterly BASE).
+
+**Deploy notes**: run the migration, `db:generate`, build, restart. Set `LAUNCH_OFFER_ENABLED=false`
+at cut-over so no new launch-offer slots are claimed, and `PLAN_AUTOPAUSE=on` on the VPS only (this
+will pause extras on businesses already past their plan, so announce it first).
+
 ## 13. Search, storage, realtime
 
 - **Search:** Typesense module indexes businesses; the API indexes on

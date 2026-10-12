@@ -15,7 +15,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/hooks/use-auth';
+import { useEntitlements, invalidateEntitlements } from '@/hooks/use-entitlements';
+import {
+  UpgradeDialog,
+  isPlanError,
+  type PlanErrorInfo,
+} from '@/components/business/upgrade-dialog';
 import { apiService } from '@/lib/services/api-service';
+import { cn } from '@/lib/utils';
 
 type Voucher = {
   id: string;
@@ -103,6 +110,41 @@ export default function VouchersPage() {
   const [form, setForm] = useState<Form>(EMPTY);
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
+  const { ent, canAddVoucher } = useEntitlements(businessId || undefined);
+  const [upgrade, setUpgrade] = useState<PlanErrorInfo | null>(null);
+  const notInPlan = !!ent && ent.vouchers === 0;
+
+  // Built locally so the guard needs no round trip; same shape the API answers with.
+  const limitInfo = (): PlanErrorInfo => ({
+    code: 'PLAN_LIMIT',
+    error: notInPlan
+      ? 'Vouchers are not part of the Free listing. Choose a plan or add vouchers to reward customers who spend.'
+      : `Your plan allows ${ent?.vouchers ?? 0} live voucher${ent?.vouchers === 1 ? '' : 's'} at a time. Pause one, or add more vouchers to your plan.`,
+    details: {
+      resource: 'voucher',
+      limit: ent?.vouchers ?? 0,
+      used: ent?.usage.vouchers ?? 0,
+      upgradeUrl: '/dashboard/subscriptions',
+    },
+  });
+
+  /** Opens the upgrade dialog when the API refused because of the plan. Returns true if it did. */
+  const handlePlanError = (res: PlanErrorInfo) => {
+    if (!isPlanError(res)) return false;
+    setUpgrade({ code: res.code, error: res.error, details: res.details });
+    invalidateEntitlements(businessId || undefined);
+    return true;
+  };
+
+  const openCreate = () => {
+    if (ent && !canAddVoucher) {
+      setUpgrade(limitInfo());
+      return;
+    }
+    setForm(EMPTY);
+    setOpen(true);
+  };
+
   const [platformRedemptions, setPlatformRedemptions] = useState<PlatformRedemption[]>([]);
   const [platformTotalReward, setPlatformTotalReward] = useState(0);
   const [redemptionsLoading, setRedemptionsLoading] = useState(true);
@@ -153,10 +195,15 @@ export default function VouchersPage() {
       maxRedemptions: form.maxRedemptions ? Number(form.maxRedemptions) : undefined,
     });
     setSaving(false);
-    if (res.error) return toast.error(res.error);
+    if (res.error) {
+      // Over the plan's live limit: keep the form open so nothing typed is lost.
+      if (handlePlanError(res)) return;
+      return toast.error(res.error);
+    }
     toast.success('Voucher published');
     setOpen(false);
     setForm(EMPTY);
+    invalidateEntitlements(businessId || undefined);
     load();
   };
 
@@ -172,14 +219,19 @@ export default function VouchersPage() {
     if (res.error) return toast.error(res.error);
     setVouchers((list) => list.filter((x) => x.id !== v.id));
     toast.success('Voucher deleted');
+    invalidateEntitlements(businessId || undefined);
   };
 
   const toggleStatus = async (v: Voucher) => {
     const next = v.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
     const res = await apiService.patch(`/v1/vouchers/${v.id}`, { status: next });
-    if (res.error) return toast.error(res.error);
+    if (res.error) {
+      if (handlePlanError(res)) return;
+      return toast.error(res.error);
+    }
     setVouchers((list) => list.map((x) => (x.id === v.id ? { ...x, status: next } : x)));
     toast.success(next === 'ACTIVE' ? 'Voucher is live again' : 'Voucher paused');
+    invalidateEntitlements(businessId || undefined);
   };
 
   const redeem = (path: string, extra: Record<string, unknown>) => async (code: string) => {
@@ -195,13 +247,23 @@ export default function VouchersPage() {
       <PageHeader
         title="Vouchers"
         description="Reward customers whose verified spend crosses a threshold. The code unlocks for them only then — they show it in-store."
+        meta={
+          ent && (
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full px-2.5 py-0.5 text-caption font-semibold tabular-nums',
+                notInPlan || !canAddVoucher
+                  ? 'bg-warning-soft text-warning-soft-foreground'
+                  : 'bg-surface-sunken text-muted-foreground',
+              )}
+              title="Vouchers that are live right now, out of what your plan allows"
+            >
+              {notInPlan ? 'Not in your plan' : `${ent.usage.vouchers} of ${ent.vouchers} live`}
+            </span>
+          )
+        }
         actions={
-          <Button
-            onClick={() => {
-              setForm(EMPTY);
-              setOpen(true);
-            }}
-          >
+          <Button onClick={openCreate}>
             <Plus /> New voucher
           </Button>
         }
@@ -234,9 +296,17 @@ export default function VouchersPage() {
       ) : vouchers.length === 0 ? (
         <EmptyState
           icon={Ticket}
-          title="No vouchers yet"
-          description="Create a spend-gated voucher to reward loyal customers."
-          action={{ label: 'New voucher', onClick: () => setOpen(true) }}
+          title={notInPlan ? 'Vouchers are not in your plan' : 'No vouchers yet'}
+          description={
+            notInPlan
+              ? 'Add a plan or voucher add-on to reward customers whose spend crosses a threshold.'
+              : 'Create a spend-gated voucher to reward loyal customers.'
+          }
+          action={
+            notInPlan
+              ? { label: 'See plans & add-ons', href: '/dashboard/subscriptions' }
+              : { label: 'New voucher', onClick: openCreate }
+          }
         />
       ) : (
         <PromoGrid>
@@ -473,6 +543,8 @@ export default function VouchersPage() {
           <button type="submit" hidden />
         </form>
       </Modal>
+
+      <UpgradeDialog open={!!upgrade} onOpenChange={(o) => !o && setUpgrade(null)} info={upgrade} />
     </BusinessLayout>
   );
 }

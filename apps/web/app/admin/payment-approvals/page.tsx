@@ -15,7 +15,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { apiService } from '@/lib/services/api-service';
-import { formatINR, planLabel, TAX_PERCENT } from '@/lib/subscription-plans';
+import {
+  billingCycleLabel,
+  cartLinesOf,
+  formatINR,
+  planLabel,
+  TAX_PERCENT,
+} from '@/lib/subscription-plans';
 import { cn } from '@/lib/utils';
 import {
   Receipt,
@@ -157,14 +163,48 @@ export default function AdminPaymentApprovalsPage() {
           <div className="space-y-4">
             {rows.map((p, i) => {
               const bp = p.business?.billingProfile;
-              const base = p.amountBase ?? 0;
-              const tax = p.amountTax ?? 0;
+              const base = p.amountBase ?? Number(p.invoiceMetadata?.amountBase ?? 0);
+              const tax = p.amountTax ?? Number(p.invoiceMetadata?.amountTax ?? 0);
+              const lines = cartLinesOf(p.invoiceMetadata);
+              const cycleCode = p.invoiceMetadata?.billingCycle ?? p.invoiceMetadata?.cart?.cycle;
+              const itemCount: number =
+                p.invoiceMetadata?.subscriptionIds?.length ?? lines?.length ?? 1;
               return (
                 <Card
                   key={p.id}
                   className="p-5 ui-fade-up"
                   style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
                 >
+                  {lines && (
+                    <div className="mb-4 rounded-xl border border-border bg-muted/30 p-4">
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="text-xs font-bold text-foreground">
+                          Order · {billingCycleLabel(cycleCode)}
+                        </h4>
+                        <span className="text-xs font-medium text-primary">
+                          Activates {itemCount} item{itemCount === 1 ? '' : 's'} on verification
+                        </span>
+                      </div>
+                      <ul className="divide-y divide-border text-sm">
+                        {lines.map((l, li) => (
+                          <li
+                            key={`${l.code}-${li}`}
+                            className="flex items-start justify-between gap-3 py-1.5"
+                          >
+                            <span className="min-w-0 break-words text-foreground">
+                              {l.name}{' '}
+                              <span className="text-xs text-muted-foreground">
+                                × {l.quantity} @ {formatINR(l.unit)}
+                              </span>
+                            </span>
+                            <span className="shrink-0 font-medium tabular-nums text-foreground">
+                              {formatINR(l.amount)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <div className="grid lg:grid-cols-[220px_1fr] gap-5">
                     {/* Proof */}
                     <div>
@@ -217,9 +257,12 @@ export default function AdminPaymentApprovalsPage() {
                         <div className="text-muted-foreground">
                           Plan:{' '}
                           <span className="text-foreground font-medium">
-                            {planLabel(
-                              p.subscription?.packageName || p.invoiceMetadata?.packageName,
-                            )}
+                            {lines
+                              ? `${lines.length} item${lines.length === 1 ? '' : 's'}`
+                              : planLabel(
+                                  p.subscription?.packageName || p.invoiceMetadata?.packageName,
+                                )}
+                            {!lines && cycleCode ? ` · ${billingCycleLabel(cycleCode)}` : ''}
                           </span>
                         </div>
                         <div className="text-muted-foreground">

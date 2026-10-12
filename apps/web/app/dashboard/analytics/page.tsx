@@ -40,6 +40,8 @@ import {
 } from '@/components/analytics/format';
 import { analyticsV2, type BusinessReport } from '@/lib/services/analytics-v2';
 import { useActiveBusiness } from '@/hooks/use-active-business';
+import { useEntitlements } from '@/hooks/use-entitlements';
+import { LockedFeature } from '@/components/business/locked-feature';
 
 const TimeSeriesChart = dynamic(
   () => import('@/components/analytics/time-series-chart').then((m) => m.TimeSeriesChart),
@@ -188,16 +190,23 @@ function AnalyticsInner() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<MainKey>('visitors');
   const [nonce, setNonce] = useState(0);
+  const { loading: entLoading, hasAnalytics } = useEntitlements(activeBusinessId || undefined);
+  // True when the plan has no analytics (known from entitlements, or from a PLAN_FEATURE answer).
+  const [serverLocked, setServerLocked] = useState(false);
+  const locked = (!entLoading && !hasAnalytics) || serverLocked;
 
   const paramsKey = JSON.stringify(range.params);
   useEffect(() => {
-    if (!activeBusinessId) return;
+    // Wait for the plan, and never ask for numbers the plan does not include.
+    if (!activeBusinessId || entLoading || !hasAnalytics) return;
     let alive = true;
     setLoading(true);
     setError(null);
+    setServerLocked(false);
     analyticsV2.business(activeBusinessId, range.params).then((res) => {
       if (!alive) return;
-      if (res.error || !res.data?.kpis || !res.data?.series)
+      if (res.code === 'PLAN_FEATURE') setServerLocked(true);
+      else if (res.error || !res.data?.kpis || !res.data?.series)
         setError(res.error || 'Could not load analytics');
       else setReport(res.data);
       setLoading(false);
@@ -206,7 +215,7 @@ function AnalyticsInner() {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeBusinessId, paramsKey, nonce]);
+  }, [activeBusinessId, paramsKey, nonce, entLoading, hasAnalytics]);
 
   const sel = MAIN.find((m) => m.key === selected)!;
   const points = report?.series.points ?? [];
@@ -267,25 +276,29 @@ function AnalyticsInner() {
           )
         }
         actions={
-          <>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Refresh"
-              onClick={() => setNonce((x) => x + 1)}
-              disabled={loading}
-            >
-              <RefreshCw className={loading ? 'animate-spin' : ''} />
-            </Button>
-            <Button variant="outline" onClick={exportCsv} disabled={!report}>
-              <Download /> Export
-            </Button>
-            <RangePicker range={range} />
-          </>
+          locked ? undefined : (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Refresh"
+                onClick={() => setNonce((x) => x + 1)}
+                disabled={loading}
+              >
+                <RefreshCw className={loading ? 'animate-spin' : ''} />
+              </Button>
+              <Button variant="outline" onClick={exportCsv} disabled={!report}>
+                <Download /> Export
+              </Button>
+              <RangePicker range={range} />
+            </>
+          )
         }
       />
 
-      {noBusiness ? (
+      {locked ? (
+        <LockedFeature className="w-full" />
+      ) : noBusiness ? (
         <EmptyState
           icon={Users}
           title="No business found"

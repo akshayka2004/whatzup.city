@@ -19,12 +19,7 @@ import {
   RegistrationDetailsForm,
   type RegistrationDetails,
 } from '@/components/business/registration-details';
-import {
-  STAR_OPTIONS,
-  HOTEL_AMENITIES,
-  computeHotelCharge,
-  type HotelAmenities,
-} from '@/lib/hotel-pricing';
+import { STAR_OPTIONS, HOTEL_AMENITIES, type HotelAmenities } from '@/lib/hotel-pricing';
 import {
   AmenityDetailsEditor,
   type AmenityItem,
@@ -37,13 +32,13 @@ import {
   type BillSeriesMode,
 } from '@/components/business/brand-conversion-prompt';
 import { LaunchOfferBanner } from '@/components/business/launch-offer-banner';
+import { CATALOGUE } from '@saas/types';
+
+const cheapestMonthly = Math.min(
+  ...CATALOGUE.filter((c) => c.kind === 'BASE').map((c) => c.monthly),
+);
 import {
-  SUBSCRIPTION_PLANS,
-  PLAN_DURATION_DAYS,
-  HOTEL_DURATION_DAYS,
-  getPlan,
   formatINR,
-  withTax,
   TAX_PERCENT,
   PAYMENT_QR_SRC,
   PAYMENT_UPI_ID,
@@ -189,28 +184,9 @@ export default function UnifiedRegisterPage() {
                     Launch Offer · {formatINR(launchOffer.status?.price ?? 2500)} ·{' '}
                     {launchOffer.status?.durationDays ?? 180} days
                   </span>
-                ) : isHotel ? (
-                  hotelStarRating ? (
-                    <span className="font-semibold text-foreground">
-                      {formatINR(
-                        withTax(computeHotelCharge(hotelStarRating, hotelAmenities).total).total,
-                      )}{' '}
-                      · {HOTEL_DURATION_DAYS} days
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      Price depends on star rating &amp; amenities — set in the final step
-                    </span>
-                  )
-                ) : selectedPlan ? (
-                  <span className="font-semibold text-foreground">
-                    {getPlan(selectedPlan)?.name} ·{' '}
-                    {formatINR(getPlan(selectedPlan)?.offerPrice || 0)} · {PLAN_DURATION_DAYS} days
-                  </span>
                 ) : (
-                  <span className="text-muted-foreground">
-                    Plans from {formatINR(Math.min(...SUBSCRIPTION_PLANS.map((p) => p.offerPrice)))}{' '}
-                    · {PLAN_DURATION_DAYS} days — pick one in the final step
+                  <span className="font-semibold text-foreground">
+                    Free to list · paid plans from {formatINR(cheapestMonthly)}/mo
                   </span>
                 )}
               </div>

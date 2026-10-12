@@ -1,394 +1,160 @@
 'use client';
 
 /**
- * Blocking paywall + renewal reminder for business owners.
+ * Plan prompts for business owners. Nothing here blocks the dashboard any more.
  *
- * - No ACTIVE subscription  -> blocking modal, must choose a plan and pay.
- * - Expires within RENEWAL_REMINDER_DAYS -> dismissible renewal reminder.
- * - Payment already submitted (PENDING) -> non-blocking "awaiting verification".
- *
- * Hotels don't choose a plan: their amount comes from star classification +
- * priced amenities, matching the onboarding wizard.
+ * - SubscriptionPaywall: a small, dismissible upsell card shown while the business is on the
+ *   permanent Free listing.
+ * - RenewalReminder: a slim banner shown when a paid plan is about to end
+ *   (3 days for monthly, 5 days for yearly and everything else).
  */
 
-import { ModalSurface } from '@/components/system/modal-surface';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { apiService } from '@/lib/services/api-service';
-import { onboardingService } from '@/lib/services/onboarding-service';
+import { ArrowRight, Clock, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
-import {
-  SUBSCRIPTION_PLANS,
-  PLAN_DURATION_DAYS,
-  HOTEL_DURATION_DAYS,
-  RENEWAL_REMINDER_DAYS,
-  getPlan,
-  formatINR,
-  withTax,
-  TAX_PERCENT,
-  PAYMENT_QR_SRC,
-  PAYMENT_UPI_ID,
-  PAYMENT_PAYEE_NAME,
-} from '@/lib/subscription-plans';
-import { computeHotelCharge, type HotelAmenities } from '@/lib/hotel-pricing';
-import { HOME_CHEF_PLANS, HOME_CHEF_DURATION_DAYS, getHomeChefPlan } from '@/lib/home-chef-pricing';
-import { Loader2, UploadCloud, X, ShieldCheck } from 'lucide-react';
+import { useEntitlements } from '@/hooks/use-entitlements';
 
-type Biz = {
-  id: string;
-  category?: { slug?: string } | null;
-  subcategoryIds?: string[] | null;
-  hotelStarRating?: number | null;
-  hotelAmenities?: HotelAmenities | null;
-};
-
-function daysUntil(iso?: string | null) {
-  if (!iso) return null;
-  const ms = new Date(iso).getTime() - Date.now();
-  return Math.ceil(ms / (1000 * 60 * 60 * 24));
-}
-
-// Pages an unpaid business must still reach: ask for help, see plans/invoices, switch outlet.
-const PAYWALL_EXEMPT = [
+// Pages that already carry their own plan messaging (or are the plan pages themselves).
+const UPSELL_HIDDEN_ON = [
   '/dashboard/support',
   '/dashboard/subscriptions',
   '/dashboard/invoice',
   '/dashboard/outlets',
+  '/dashboard/offers',
+  '/dashboard/vouchers',
+  '/dashboard/analytics',
 ];
+
+const upsellKey = (id: string) => `plan_upsell_dismissed_${id}`;
+/** Shared with BusinessNudges so a dismissed reminder frees the "one prompt" slot. */
+export const renewalDismissKey = (id: string) => `renewal_nudge_dismissed_${id}`;
+
+function readSession(key: string): boolean {
+  try {
+    return !!sessionStorage.getItem(key);
+  } catch {
+    return false;
+  }
+}
+function writeSession(key: string) {
+  try {
+    sessionStorage.setItem(key, '1');
+  } catch {
+    // storage blocked: dismissal lasts until the next render only
+  }
+}
+
+/** Whole days until the soonest paid row ends; null when there is nothing to renew. */
+export function daysUntilRenewal(
+  ent: { source: string; expiresAt: string | null; cycle?: string | null } | null,
+): { days: number; threshold: number } | null {
+  if (!ent || ent.source === 'FREE' || !ent.expiresAt) return null;
+  const days = Math.ceil((new Date(ent.expiresAt).getTime() - Date.now()) / 86_400_000);
+  if (Number.isNaN(days)) return null;
+  const threshold = ent.cycle === 'MONTHLY' ? 3 : 5;
+  return { days, threshold };
+}
 
 export function SubscriptionPaywall() {
   const pathname = usePathname();
-  const [biz, setBiz] = useState<Biz | null>(null);
-  const [sub, setSub] = useState<any>(null);
-  const [pendingPayment, setPendingPayment] = useState(false);
-  const [ready, setReady] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
-
-  const [selectedPlan, setSelectedPlan] = useState<string>('');
-  const [homeChefTier, setHomeChefTier] = useState<string>('');
-  const [proof, setProof] = useState<File | null>(null);
-  const [payerRef, setPayerRef] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [done, setDone] = useState(false);
+  const { ent, loading } = useEntitlements();
+  const id = ent?.businessId;
+  // Start hidden so a previously dismissed card never flashes.
+  const [hidden, setHidden] = useState(true);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const res = await apiService.get<any>('/v1/businesses/owner/mine');
-      const list = res.data?.data || (Array.isArray(res.data) ? res.data : []);
-      const b: Biz | null = list.length ? list[0] : null;
-      if (cancelled) return;
-      setBiz(b);
+    if (id) setHidden(readSession(upsellKey(id)));
+  }, [id]);
 
-      if (b?.id) {
-        const [subRes, payRes] = await Promise.allSettled([
-          apiService.get<any>(`/v1/subscriptions/businesses/${b.id}/active`),
-          apiService.get<any>(`/v1/payments/businesses/${b.id}`),
-        ]);
-        if (cancelled) return;
-        if (subRes.status === 'fulfilled' && !subRes.value.error) setSub(subRes.value.data);
-        if (payRes.status === 'fulfilled' && !payRes.value.error) {
-          const pays = Array.isArray(payRes.value.data)
-            ? payRes.value.data
-            : (payRes.value.data?.data ?? []);
-          setPendingPayment(pays.some((p: any) => p.status === 'PENDING'));
-        }
-      }
-      setReady(true);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const isHotel = biz?.category?.slug === 'hotel';
-  const isHomeChef =
-    Array.isArray(biz?.subcategoryIds) && biz.subcategoryIds.includes('home_chefs');
-  const hotelCharge = computeHotelCharge(biz?.hotelStarRating, biz?.hotelAmenities);
-  const plan = getPlan(selectedPlan);
-  const homeChefPlan = getHomeChefPlan(homeChefTier);
-  // Prices are GST-exclusive; tax is added on top, same as registration.
-  const totals = withTax(
-    isHotel ? hotelCharge.total : isHomeChef ? homeChefPlan?.price || 0 : plan?.offerPrice || 0,
-  );
-  const amount = totals.total;
-
-  // `getActive` returns a synthetic FREE tier when nothing is active.
-  const hasPaidActive = !!sub && sub.status === 'ACTIVE' && Number(sub.pricing ?? 0) > 0;
-  const remaining = daysUntil(sub?.endDate);
-  const expiringSoon =
-    hasPaidActive && remaining !== null && remaining <= RENEWAL_REMINDER_DAYS && remaining >= 0;
-
-  const mustPay = ready && !!biz && !hasPaidActive && !pendingPayment;
-  const show =
-    ready &&
-    !!biz &&
-    !done &&
-    !dismissed &&
-    (mustPay || expiringSoon || (pendingPayment && !hasPaidActive));
-
-  if (!show || PAYWALL_EXEMPT.some((p) => pathname?.startsWith(p))) return null;
-
-  const awaiting = pendingPayment && !hasPaidActive;
-
-  const submit = async () => {
-    if (!biz?.id || !proof) return;
-    setSubmitting(true);
-    setError('');
-    try {
-      // Create (or renew) the Subscription row first — the payment must carry
-      // its id, or verifyPayment has nothing to activate and the paid amount
-      // never reflects on the business account. Matches the registration flow.
-      const assignRes = isHotel
-        ? await onboardingService.assignHotelSubscription(
-            biz.id,
-            biz.hotelStarRating || 0,
-            biz.hotelAmenities || {},
-          )
-        : isHomeChef
-          ? await onboardingService.assignHomeChefSubscription(biz.id, homeChefTier)
-          : await onboardingService.assignSubscription(biz.id, selectedPlan);
-      if (assignRes.error) throw new Error(assignRes.error);
-      const subscriptionId = (assignRes.data as any)?.id;
-
-      const signed = await onboardingService.getSignedUrl(
-        biz.id,
-        proof.name,
-        proof.type,
-        'payment',
-      );
-      if (!signed.data || signed.error)
-        throw new Error(signed.error || 'Failed to get upload URL.');
-      const ok = await onboardingService.uploadFile(signed.data.uploadUrl, proof);
-      if (!ok) throw new Error('Failed to upload the screenshot.');
-
-      const res = await onboardingService.submitPayment(biz.id, {
-        amount,
-        method: 'UPI_QR',
-        proofUrl: JSON.stringify({ bucket: 'verification-documents', path: signed.data.fileKey }),
-        transactionRef: payerRef || undefined,
-        subscriptionId,
-        packageName: isHotel
-          ? `HOTEL_${biz.hotelStarRating}STAR`
-          : isHomeChef
-            ? `HOMECHEF_${homeChefTier}`
-            : selectedPlan,
-      });
-      if (res.error) throw new Error(res.error);
-      setDone(true);
-    } catch (e: any) {
-      setError(e.message || 'Could not submit the payment.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  if (loading || !ent || !id || hidden || ent.source !== 'FREE') return null;
+  if (UPSELL_HIDDEN_ON.some((p) => pathname?.startsWith(p)) || pathname === '/dashboard') {
+    return null;
+  }
 
   return (
-    <ModalSurface
-      // Only the reminder states can be dismissed; "choose a plan" is mandatory.
-      onClose={() => (expiringSoon || awaiting) && setDismissed(true)}
-      label={
-        awaiting
-          ? 'Payment awaiting verification'
-          : expiringSoon
-            ? 'Your plan is expiring soon'
-            : 'Choose a plan to continue'
-      }
-      className="p-0 sm:max-w-3xl"
-      hideClose
-    >
-      <div className="flex items-start justify-between gap-4 p-6 border-b border-border">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">
-            {awaiting
-              ? 'Payment awaiting verification'
-              : expiringSoon
-                ? 'Your plan is expiring soon'
-                : 'Choose a plan to continue'}
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {awaiting
-              ? 'We have your payment screenshot. Our team will verify it and activate your listing shortly.'
-              : expiringSoon
-                ? `Your plan expires in ${remaining} day${remaining === 1 ? '' : 's'}. Renew now to stay listed.`
-                : 'An active plan is required to keep your business listed on Whtzup.city.'}
-          </p>
+    <div className="print:hidden container mx-auto px-4 pt-4 ui-fade-up">
+      <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-3 sm:p-4">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand-soft-foreground">
+          <Sparkles className="h-4 w-4" aria-hidden />
         </div>
-        {(expiringSoon || awaiting) && (
-          <button
-            type="button"
-            onClick={() => setDismissed(true)}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
-            aria-label="Dismiss"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        )}
-      </div>
-
-      {awaiting ? (
-        <div className="p-6 flex items-center gap-3 text-sm text-muted-foreground">
-          <ShieldCheck className="h-5 w-5 text-success-soft-foreground shrink-0" />
-          Nothing more to do right now — you'll be notified once it's approved.
-        </div>
-      ) : (
-        <div className="p-6 space-y-6">
-          {/* Plan choice — hotels are priced by classification, Home Chefs by tier */}
-          {isHotel ? (
-            <div className="rounded-xl border border-border p-4 space-y-1.5 text-sm">
-              <h3 className="text-sm font-bold text-foreground mb-2">Your hotel listing</h3>
-              <div className="flex justify-between text-muted-foreground">
-                <span>{biz?.hotelStarRating}★ classification</span>
-                <span>{formatINR(hotelCharge.base)}</span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>
-                  {hotelCharge.selectedCount} service{hotelCharge.selectedCount === 1 ? '' : 's'}
-                </span>
-                <span>{formatINR(hotelCharge.addons)}</span>
-              </div>
-            </div>
-          ) : isHomeChef ? (
-            <div className="grid sm:grid-cols-3 gap-3">
-              {HOME_CHEF_PLANS.map((p) => (
-                <button
-                  key={p.code}
-                  type="button"
-                  onClick={() => setHomeChefTier(p.code)}
-                  className={cn(
-                    'p-4 rounded-xl border text-left transition cursor-pointer',
-                    homeChefTier === p.code
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-border',
-                  )}
-                >
-                  <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
-                  <div className="text-lg font-extrabold text-foreground">{formatINR(p.price)}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {p.offers} offers · {p.vouchers} vouchers
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {SUBSCRIPTION_PLANS.map((p) => (
-                <button
-                  key={p.code}
-                  type="button"
-                  onClick={() => setSelectedPlan(p.code)}
-                  className={cn(
-                    'p-4 rounded-xl border text-left transition cursor-pointer',
-                    selectedPlan === p.code
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-border',
-                  )}
-                >
-                  <div className="text-xs font-bold text-primary mb-1">{p.name}</div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-lg font-extrabold text-foreground">
-                      {formatINR(p.offerPrice)}
-                    </span>
-                    <span className="text-xs text-muted-foreground line-through">
-                      {formatINR(p.mrp)}
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {p.offers} offers · {p.vouchers} vouchers
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="flex justify-between items-baseline rounded-xl border border-border p-4">
-            <div>
-              <span className="text-sm font-bold text-foreground">Amount payable</span>
-              <div className="text-xs text-muted-foreground">
-                {formatINR(totals.base)} + {formatINR(totals.tax)} GST ({TAX_PERCENT}%)
-              </div>
-            </div>
-            <span className="text-2xl font-extrabold text-foreground">{formatINR(amount)}</span>
-          </div>
-          <p className="text-xs text-muted-foreground -mt-4">
-            Valid for{' '}
-            {isHotel
-              ? HOTEL_DURATION_DAYS
-              : isHomeChef
-                ? HOME_CHEF_DURATION_DAYS
-                : PLAN_DURATION_DAYS}{' '}
-            days from activation.
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-foreground">You are on the Free listing</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Free keeps 1 offer live. Paid plans add more offers, vouchers and analytics.
           </p>
-
-          <div className="flex flex-col items-center gap-3 rounded-xl border border-border p-6">
-            <h3 className="text-sm font-bold text-foreground">Scan to pay</h3>
-            {/* eslint-disable-next-line @next/next/no-img-element -- payment QR must stay pixel-exact, no lossy re-encode */}
-            <img
-              src={PAYMENT_QR_SRC}
-              alt="UPI payment QR code"
-              width={320}
-              height={320}
-              className="w-full max-w-[320px] aspect-square object-contain rounded-xl bg-white p-4"
-            />
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Or pay to UPI ID</p>
-              <p className="text-sm font-bold text-foreground tracking-wide select-all">
-                {PAYMENT_UPI_ID}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {PAYMENT_PAYEE_NAME} · pay the exact amount shown above
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-muted-foreground">
-              Payment screenshot <span className="text-destructive">*</span>
-            </label>
-            <label className="flex flex-col items-center justify-center gap-2 p-5 rounded-xl border border-dashed border-input cursor-pointer hover:bg-muted/40 transition">
-              <UploadCloud className="h-5 w-5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                {proof ? proof.name : 'Click to upload your payment screenshot'}
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => setProof(e.target.files?.[0] || null)}
-              />
-            </label>
-            <Input
-              value={payerRef}
-              onChange={(e) => setPayerRef(e.target.value)}
-              placeholder="UPI transaction reference (optional)"
-              className="h-11 rounded-xl"
-            />
-          </div>
-
-          {error && <p className="text-xs text-destructive">{error}</p>}
-
-          <Button
-            type="button"
-            onClick={submit}
-            disabled={
-              submitting ||
-              !proof ||
-              (!isHotel && !isHomeChef && !selectedPlan) ||
-              (isHomeChef && !homeChefTier)
-            }
-            className="w-full h-11 rounded-xl font-semibold cursor-pointer"
-          >
-            {submitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              'Submit payment for verification'
-            )}
+          <Button asChild size="sm" className="mt-2.5 h-10 rounded-xl px-4 cursor-pointer ui-press">
+            <Link href="/dashboard/subscriptions">
+              See plans <ArrowRight />
+            </Link>
           </Button>
         </div>
-      )}
-    </ModalSurface>
+        <button
+          type="button"
+          onClick={() => {
+            writeSession(upsellKey(id));
+            setHidden(true);
+          }}
+          aria-label="Dismiss"
+          className="-mr-1 -mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Slim banner for the top of the app shell. Renders nothing unless a paid plan ends soon. */
+export function RenewalReminder() {
+  const { ent } = useEntitlements();
+  const id = ent?.businessId;
+  const [hidden, setHidden] = useState(true);
+
+  useEffect(() => {
+    if (id) setHidden(readSession(renewalDismissKey(id)));
+  }, [id]);
+
+  const due = daysUntilRenewal(ent);
+  if (!ent || !id || hidden || !due || due.days > due.threshold) return null;
+
+  const text =
+    due.days < 0
+      ? 'Your plan has ended.'
+      : due.days === 0
+        ? 'Your plan ends today.'
+        : `Your plan ends in ${due.days} day${due.days === 1 ? '' : 's'}.`;
+
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-warning/25 bg-warning-soft px-4 py-2.5 text-sm text-warning-soft-foreground sm:px-6 lg:px-8">
+      <div className="flex min-w-0 items-center gap-2">
+        <Clock className="size-4 shrink-0" aria-hidden />
+        <span className="min-w-0">
+          <strong className="font-semibold">{text}</strong>{' '}
+          <span className="hidden sm:inline">
+            Renew to keep your offers and vouchers live; otherwise extras are paused.
+          </span>
+        </span>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <Button asChild size="sm" variant="outline">
+          <Link href="/dashboard/subscriptions">
+            Renew <ArrowRight />
+          </Link>
+        </Button>
+        <button
+          type="button"
+          onClick={() => {
+            writeSession(renewalDismissKey(id));
+            setHidden(true);
+          }}
+          aria-label="Dismiss reminder"
+          className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-warning/10 cursor-pointer"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+    </div>
   );
 }
