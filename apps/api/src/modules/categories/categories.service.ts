@@ -195,8 +195,8 @@ export class CategoriesService {
       return { status: 'MERGED' as const, target: cat.mergedInto };
     }
     if (cat.deletedAt) return { status: 'GONE' as const };
-    if (!cat.isActive) return { status: 'ARCHIVED' as const, name: cat.name };
-    return { status: 'ACTIVE' as const, slug: cat.slug, name: cat.name };
+    if (!cat.isActive) return { status: 'ARCHIVED' as const, id: cat.id, name: cat.name };
+    return { status: 'ACTIVE' as const, id: cat.id, slug: cat.slug, name: cat.name };
   }
 
   // ── admin read ────────────────────────────────────────────────────────
@@ -308,6 +308,7 @@ export class CategoriesService {
         template,
         sortOrder: dto.sortOrder ?? (max._max.sortOrder ?? 0) + 10,
         isActive: dto.isActive ?? true,
+        showInSignup: dto.showInSignup ?? true,
         isSystem: false,
         createdBy: actor.id,
       },
@@ -354,6 +355,10 @@ export class CategoriesService {
     }
     if (dto.sortOrder !== undefined && dto.sortOrder !== cat.sortOrder)
       note('sortOrder', dto.sortOrder);
+
+    if (dto.showInSignup !== undefined && dto.showInSignup !== cat.showInSignup) {
+      note('showInSignup', dto.showInSignup);
+    }
 
     if (dto.isActive !== undefined && dto.isActive !== cat.isActive) {
       if (!dto.isActive && cat.isSystem) {

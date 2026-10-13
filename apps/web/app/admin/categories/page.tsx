@@ -1,498 +1,375 @@
 'use client';
 
-import { ModalSurface } from '@/components/system/modal-surface';
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ArchiveRestore,
+  Archive,
+  ArrowDown,
+  ArrowUp,
+  CornerDownRight,
+  Folder,
+  GitMerge,
+  History,
+  Loader2,
+  MoreVertical,
+  Pencil,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import { AdminLayout } from '@/components/layouts/admin-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
-  Plus,
-  Folder,
-  Edit,
-  Trash2,
-  X,
-  AlertTriangle,
-  Loader2,
-  CornerDownRight,
-} from 'lucide-react';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { toast } from '@/components/ui/sonner';
+import { useAuth } from '@/hooks/use-auth';
+import { useConfirm } from '@/components/common/confirm-dialog';
 import { apiService } from '@/lib/services/api-service';
+import { categoryIconByName } from '@/lib/category-icons';
+import { cn } from '@/lib/utils';
+import { CATEGORY_TEMPLATES, type CategoryTemplateKey } from '@saas/types';
+import { CategoryForm } from './_components/category-form';
+import { ImpactDialog } from './_components/impact-dialog';
+import { HistoryDialog } from './_components/history-dialog';
+import type { AdminCategory, CategoryAction } from './_components/types';
+
+type Dialog =
+  | { kind: 'form'; category: AdminCategory | null }
+  | { kind: 'impact'; action: CategoryAction; category: AdminCategory }
+  | { kind: 'history'; category: AdminCategory };
+
+function Chip({
+  tone,
+  children,
+}: {
+  tone: 'muted' | 'warning' | 'info';
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
+        tone === 'muted' && 'bg-secondary text-muted-foreground',
+        tone === 'warning' && 'bg-warning-soft text-warning-soft-foreground',
+        tone === 'info' && 'bg-info-soft text-info-soft-foreground',
+      )}
+    >
+      {children}
+    </span>
+  );
+}
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<any[]>([]);
+  const { user } = useAuth();
+  // Master admins can look; only a super admin may change the list.
+  const canWrite = user?.rbacRole === 'SUPER_ADMIN' || user?.role === 'super-admin';
+  const confirm = useConfirm();
+
+  const [rows, setRows] = useState<AdminCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<Dialog | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const loadCategories = () => {
-    setLoading(true);
-    apiService
-      .get<any[]>('/v1/categories?tenantId=default')
-      .then((res) => {
-        if (res.data && !res.error) {
-          const list = Array.isArray(res.data) ? res.data : ((res.data as any)?.data ?? []);
-          // Flatten parent → children so every node is sortable/editable, but
-          // keep the parent relationship for display + the parent picker.
-          const flat: any[] = [];
-          const walk = (nodes: any[], parent?: any) => {
-            (nodes || [])
-              .slice()
-              .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-              .forEach((c: any) => {
-                flat.push({
-                  id: c.id,
-                  name: c.name || '',
-                  slug: c.slug || '',
-                  listingsCount: c.listingsCount ?? c._count?.businesses ?? 0,
-                  active: c.isActive !== false,
-                  sortOrder: c.sortOrder ?? 0,
-                  parentId: c.parentId ?? parent?.id ?? '',
-                  parentName: parent?.name ?? '',
-                  isChild: !!parent,
-                });
-                if (Array.isArray(c.children) && c.children.length) walk(c.children, c);
-              });
-          };
-          walk(list);
-          setCategories(flat);
-        }
-      })
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    loadCategories();
+  const load = useCallback(async () => {
+    const res = await apiService.get<any>('/v1/categories/admin/list');
+    setLoading(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    setError(null);
+    const body = res.data;
+    setRows(Array.isArray(body) ? body : (body?.data ?? []));
   }, []);
 
-  const parentOptions = categories.filter((c) => !c.isChild);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<any>(null);
-  const [deletingCategory, setDeletingCategory] = useState<any>(null);
-
-  // Form states
-  const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
-  const [active, setActive] = useState(true);
-  const [sortOrder, setSortOrder] = useState(0);
-  const [parentId, setParentId] = useState('');
-
-  const handleOpenAdd = () => {
-    setName('');
-    setSlug('');
-    setActive(true);
-    setSortOrder(0);
-    setParentId('');
-    setIsAddOpen(true);
-  };
-
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name) return;
-    const finalSlug =
-      slug ||
-      name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-    const res = await apiService.post<any>('/v1/categories', {
-      name,
-      slug: finalSlug,
-      sortOrder,
-      isActive: active,
-      parentId: parentId || undefined,
-    });
-    if (res.data && !res.error) loadCategories();
-    setIsAddOpen(false);
-  };
-
-  const handleOpenEdit = (cat: any) => {
-    setEditingCategory(cat);
-    setName(cat.name);
-    setSlug(cat.slug);
-    setActive(cat.active);
-    setSortOrder(cat.sortOrder ?? 0);
-    setParentId(cat.parentId ?? '');
-  };
-
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !editingCategory) return;
-    const finalSlug =
-      slug ||
-      name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-    const res = await apiService.patch<any>(`/v1/categories/${editingCategory.id}`, {
-      name,
-      slug: finalSlug,
-      isActive: active,
-      sortOrder,
-      parentId: parentId || null,
-    });
-    if (res.data && !res.error) loadCategories();
-    setEditingCategory(null);
-  };
-
-  const handleDelete = async () => {
-    if (!deletingCategory) return;
-    await apiService.delete<any>(`/v1/categories/${deletingCategory.id}`);
-    setCategories(categories.filter((c) => c.id !== deletingCategory.id));
-    setDeletingCategory(null);
-  };
-
-  const toggleActive = async (id: string | number) => {
-    const cat = categories.find((c) => c.id === id);
-    if (!cat) return;
-    const newActive = !cat.active;
-    setCategories(categories.map((c) => (c.id === id ? { ...c, active: newActive } : c)));
-    const res = await apiService.patch<any>(`/v1/categories/${id}`, { isActive: newActive });
-    if (res.error) {
-      setCategories(categories.map((c) => (c.id === id ? { ...c, active: !newActive } : c)));
+  const roots = useMemo(() => rows.filter((r) => !r.parentId), [rows]);
+  const childrenOf = useMemo(() => {
+    const m = new Map<string, AdminCategory[]>();
+    for (const r of rows) {
+      if (!r.parentId) continue;
+      const list = m.get(r.parentId) ?? [];
+      list.push(r);
+      m.set(r.parentId, list);
     }
+    return m;
+  }, [rows]);
+  const parents = useMemo(() => roots.filter((r) => r.isActive), [roots]);
+
+  const done = (message: string) => {
+    setDialog(null);
+    toast.success(message);
+    load();
+  };
+
+  const move = async (siblings: AdminCategory[], index: number, dir: -1 | 1) => {
+    const next = siblings.slice();
+    const j = index + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[index], next[j]] = [next[j], next[index]];
+    // Optimistic: renumber locally, roll back by reloading on failure.
+    setRows((prev) =>
+      prev.map((r) => {
+        const at = next.findIndex((s) => s.id === r.id);
+        return at === -1 ? r : { ...r, sortOrder: (at + 1) * 10 };
+      }),
+    );
+    const res = await apiService.post<any>('/v1/categories/reorder', {
+      ids: next.map((c) => c.id),
+    });
+    if (res.error) {
+      toast.error(res.error);
+      load();
+    }
+  };
+
+  const restore = async (c: AdminCategory) => {
+    const ok = await confirm({
+      title: `Restore ${c.name}?`,
+      description: 'It will appear again on the registration form and in the category list.',
+      confirmLabel: 'Restore',
+    });
+    if (!ok) return;
+    setBusyId(c.id);
+    const res = await apiService.patch<any>(`/v1/categories/${c.id}`, { isActive: true });
+    setBusyId(null);
+    if (res.error) toast.error(res.error);
+    else done(`${c.name} restored.`);
+  };
+
+  const renderRow = (
+    c: AdminCategory,
+    siblings: AdminCategory[],
+    index: number,
+    isChild: boolean,
+  ) => {
+    const Icon = categoryIconByName(c.icon) ?? Folder;
+    const tpl = CATEGORY_TEMPLATES[(c.template as CategoryTemplateKey) ?? 'GENERIC'];
+    return (
+      <Card
+        key={c.id}
+        className={cn(
+          'rounded-2xl border-border p-3 sm:p-4',
+          isChild && 'ml-5 sm:ml-8',
+          !c.isActive && 'opacity-75',
+        )}
+      >
+        <div className="flex items-start gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-soft-foreground">
+            <Icon className="size-5" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-foreground">
+              {isChild && (
+                <CornerDownRight className="size-3.5 text-muted-foreground" aria-hidden />
+              )}
+              <span className="break-words">{c.name}</span>
+              {c.nameMl && (
+                <span lang="ml" className="text-sm font-normal text-muted-foreground">
+                  {c.nameMl}
+                </span>
+              )}
+            </p>
+            <p className="mt-0.5 break-all text-xs text-muted-foreground">
+              /{c.slug} · {c.listingsCount} {c.listingsCount === 1 ? 'listing' : 'listings'}
+              {c.childCount > 0 && ` · ${c.childCount} sub`}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {c.isSystem && <Chip tone="info">Built-in</Chip>}
+              {!c.isActive && <Chip tone="warning">Archived</Chip>}
+              {c.isActive && !c.showInSignup && <Chip tone="muted">Not on sign-up</Chip>}
+              <Chip tone="muted">{tpl.label}</Chip>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1">
+            {canWrite && (
+              <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-11 sm:size-9"
+                  aria-label={`Move ${c.name} up`}
+                  disabled={index === 0}
+                  onClick={() => move(siblings, index, -1)}
+                >
+                  <ArrowUp className="size-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-11 sm:size-9"
+                  aria-label={`Move ${c.name} down`}
+                  disabled={index === siblings.length - 1}
+                  onClick={() => move(siblings, index, 1)}
+                >
+                  <ArrowDown className="size-4" />
+                </Button>
+              </>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-11 sm:size-9"
+                  aria-label={`Actions for ${c.name}`}
+                  disabled={busyId === c.id}
+                >
+                  {busyId === c.id ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <MoreVertical className="size-4" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onSelect={() => setDialog({ kind: 'history', category: c })}>
+                  <History className="mr-2 size-4" /> History
+                </DropdownMenuItem>
+                {canWrite && (
+                  <>
+                    <DropdownMenuItem onSelect={() => setDialog({ kind: 'form', category: c })}>
+                      <Pencil className="mr-2 size-4" /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {c.isActive ? (
+                      !c.isSystem && (
+                        <DropdownMenuItem
+                          onSelect={() =>
+                            setDialog({ kind: 'impact', action: 'archive', category: c })
+                          }
+                        >
+                          <Archive className="mr-2 size-4" /> Archive
+                        </DropdownMenuItem>
+                      )
+                    ) : (
+                      <DropdownMenuItem onSelect={() => restore(c)}>
+                        <ArchiveRestore className="mr-2 size-4" /> Restore
+                      </DropdownMenuItem>
+                    )}
+                    {!c.isSystem && (
+                      <DropdownMenuItem
+                        onSelect={() => setDialog({ kind: 'impact', action: 'merge', category: c })}
+                      >
+                        <GitMerge className="mr-2 size-4" /> Merge into…
+                      </DropdownMenuItem>
+                    )}
+                    {!c.isSystem && (
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onSelect={() =>
+                          setDialog({ kind: 'impact', action: 'delete', category: c })
+                        }
+                      >
+                        <Trash2 className="mr-2 size-4" /> Delete
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </Card>
+    );
   };
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground shrink-0">
-              <Folder className="h-5 w-5" />
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground">
+              <Folder className="size-5" aria-hidden />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Category Taxonomy</h1>
-              <p className="text-muted-foreground">
-                Manage directory category branches, metadata, and listing mappings
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Categories</h1>
+              <p className="text-sm text-muted-foreground">
+                One list for the whole platform. Changes show up on sign-up and in search straight
+                away.
               </p>
             </div>
           </div>
-          <Button
-            onClick={handleOpenAdd}
-            className="rounded-xl gap-2 font-medium bg-gradient-to-r from-primary to-accent text-primary-foreground shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            Add Category
-          </Button>
+          {canWrite && (
+            <Button
+              className="min-h-11 shrink-0 gap-2 rounded-xl"
+              onClick={() => setDialog({ kind: 'form', category: null })}
+            >
+              <Plus className="size-4" aria-hidden /> Add category
+            </Button>
+          )}
         </div>
+
+        {!canWrite && !loading && (
+          <p className="rounded-xl bg-info-soft px-3 py-2 text-sm text-info-soft-foreground">
+            You can view categories and their history. Only a super admin can change them.
+          </p>
+        )}
 
         {loading ? (
-          <div className="flex items-center justify-center h-40">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="flex h-40 items-center justify-center">
+            <Loader2 className="size-6 animate-spin text-muted-foreground" aria-label="Loading" />
           </div>
-        ) : categories.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary/20 text-center">
-            <Folder className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
-            <p className="text-foreground font-semibold mb-1">No categories yet</p>
-            <p className="text-sm text-muted-foreground">
-              Add your first category to organize listings.
-            </p>
+        ) : error ? (
+          <Card className="rounded-2xl p-6 text-center">
+            <p className="text-sm text-danger-soft-foreground">{error}</p>
+            <Button variant="outline" className="mt-3 min-h-11" onClick={() => load()}>
+              Try again
+            </Button>
           </Card>
-        ) : null}
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {categories.map((cat, i) => (
-            <Card
-              key={cat.id}
-              className="ui-fade-up p-6 rounded-2xl hover:shadow-md transition-all duration-300 border-border bg-card/40 backdrop-blur-xl relative overflow-hidden group"
-              style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <div className="p-2 bg-brand-soft text-brand-soft-foreground rounded-lg">
-                      <Folder className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-foreground text-base flex items-center gap-1.5">
-                        {cat.isChild && (
-                          <CornerDownRight className="h-3.5 w-3.5 text-muted-foreground" />
-                        )}
-                        {cat.name}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        /{cat.slug}
-                        {cat.isChild && cat.parentName ? ` · under ${cat.parentName}` : ''} · order{' '}
-                        {cat.sortOrder}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6 text-xs mt-4">
-                    <div>
-                      <p className="text-muted-foreground">Active Listings</p>
-                      <p className="font-bold text-foreground text-sm mt-0.5">
-                        {cat.listingsCount}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Status</p>
-                      <button
-                        onClick={() => toggleActive(cat.id)}
-                        className={`font-semibold mt-0.5 text-xs hover:opacity-80 transition-opacity ${
-                          cat.active ? 'text-success-soft-foreground' : 'text-muted-foreground'
-                        }`}
-                      >
-                        {cat.active ? 'Active' : 'Inactive'}
-                      </button>
-                    </div>
-                  </div>
+        ) : roots.length === 0 ? (
+          <Card className="rounded-2xl border-dashed p-10 text-center">
+            <Folder className="mx-auto mb-3 size-10 text-muted-foreground opacity-40" aria-hidden />
+            <p className="font-semibold text-foreground">No categories yet</p>
+            {canWrite && (
+              <p className="text-sm text-muted-foreground">Add the first one to get started.</p>
+            )}
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {roots.map((root, i) => {
+              const kids = childrenOf.get(root.id) ?? [];
+              return (
+                <div key={root.id} className="space-y-2">
+                  {renderRow(root, roots, i, false)}
+                  {kids.map((k, j) => renderRow(k, kids, j, true))}
                 </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleOpenEdit(cat)}
-                    size="icon"
-                    variant="outline"
-                    className="h-9 w-9 rounded-xl border-border text-foreground hover:bg-muted"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => setDeletingCategory(cat)}
-                    size="icon"
-                    variant="outline"
-                    className="h-9 w-9 rounded-xl border-destructive/20 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* ── ADD MODAL ────────────────────────────────────────────── */}
-        {isAddOpen && (
-          <ModalSurface
-            onClose={() => setIsAddOpen(false)}
-            label="Add Directory Category"
-            className="sm:max-w-md"
-          >
-            <h3 className="text-xl font-bold text-foreground mb-4">Add Directory Category</h3>
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground block mb-2">
-                  Category Name
-                </label>
-                <Input
-                  placeholder="e.g. Food & Dining"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    // Auto-fill slug
-                    setSlug(
-                      e.target.value
-                        .toLowerCase()
-                        .replace(/[^a-z0-9]+/g, '-')
-                        .replace(/(^-|-$)/g, ''),
-                    );
-                  }}
-                  required
-                  className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground block mb-2">
-                  Slug URL Path
-                </label>
-                <Input
-                  placeholder="e.g. food-dining"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  required
-                  className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Sort Order
-                  </label>
-                  <Input
-                    type="number"
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(Number(e.target.value) || 0)}
-                    className="rounded-xl border-input bg-background text-foreground"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Parent Category
-                  </label>
-                  <select
-                    value={parentId}
-                    onChange={(e) => setParentId(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-input bg-background text-foreground text-sm cursor-pointer"
-                  >
-                    <option value="">None (top-level)</option>
-                    {parentOptions.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="cat-active-chk"
-                  checked={active}
-                  onChange={(e) => setActive(e.target.checked)}
-                  className="rounded bg-background border-input text-primary focus:ring-primary h-4 w-4"
-                />
-                <label htmlFor="cat-active-chk" className="text-sm text-muted-foreground">
-                  Enable category status immediately
-                </label>
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsAddOpen(false)}
-                  className="rounded-xl border-border hover:bg-muted text-foreground"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold"
-                >
-                  Add Category
-                </Button>
-              </div>
-            </form>
-          </ModalSurface>
-        )}
-
-        {/* ── EDIT MODAL ───────────────────────────────────────────── */}
-        {editingCategory && (
-          <ModalSurface
-            onClose={() => setEditingCategory(null)}
-            label="Edit Category Branch"
-            className="sm:max-w-md"
-          >
-            <h3 className="text-xl font-bold text-foreground mb-4">Edit Category Branch</h3>
-            <form onSubmit={handleEdit} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground block mb-2">
-                  Category Name
-                </label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground block mb-2">
-                  Slug URL Path
-                </label>
-                <Input
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  required
-                  className="rounded-xl border-input bg-background focus:border-primary text-foreground"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Sort Order
-                  </label>
-                  <Input
-                    type="number"
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(Number(e.target.value) || 0)}
-                    className="rounded-xl border-input bg-background text-foreground"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground block mb-2">
-                    Parent Category
-                  </label>
-                  <select
-                    value={parentId}
-                    onChange={(e) => setParentId(e.target.value)}
-                    className="w-full h-10 px-3 rounded-xl border border-input bg-background text-foreground text-sm cursor-pointer"
-                  >
-                    <option value="">None (top-level)</option>
-                    {parentOptions
-                      .filter((p) => p.id !== editingCategory?.id)
-                      .map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="edit-cat-active-chk"
-                  checked={active}
-                  onChange={(e) => setActive(e.target.checked)}
-                  className="rounded bg-background border-input text-primary focus:ring-primary h-4 w-4"
-                />
-                <label htmlFor="edit-cat-active-chk" className="text-sm text-muted-foreground">
-                  Category active status
-                </label>
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditingCategory(null)}
-                  className="rounded-xl border-border hover:bg-muted text-foreground"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold"
-                >
-                  Save Changes
-                </Button>
-              </div>
-            </form>
-          </ModalSurface>
-        )}
-
-        {/* ── DELETE MODAL ─────────────────────────────────────────── */}
-        {deletingCategory && (
-          <ModalSurface
-            onClose={() => setDeletingCategory(null)}
-            label="Delete Directory Category"
-            className="sm:max-w-sm text-center"
-          >
-            <div className="mx-auto w-12 h-12 rounded-full bg-danger-soft flex items-center justify-center text-danger-soft-foreground mb-4">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <h3 className="text-lg font-bold text-foreground mb-2">Delete Directory Category</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Are you sure you want to delete{' '}
-              <span className="font-semibold text-foreground">"{deletingCategory.name}"</span>? This
-              will detach all mapped listings.
-            </p>
-            <div className="flex justify-center gap-3">
-              <Button
-                onClick={() => setDeletingCategory(null)}
-                variant="outline"
-                className="rounded-xl border-border hover:bg-muted text-foreground px-4"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleDelete}
-                className="rounded-xl bg-destructive hover:bg-destructive text-white px-4"
-              >
-                Delete
-              </Button>
-            </div>
-          </ModalSurface>
+              );
+            })}
+          </div>
         )}
       </div>
+
+      {dialog?.kind === 'form' && (
+        <CategoryForm
+          category={dialog.category}
+          parents={parents}
+          onClose={() => setDialog(null)}
+          onSaved={() => done(dialog.category ? 'Category saved.' : 'Category added.')}
+        />
+      )}
+      {dialog?.kind === 'impact' && (
+        <ImpactDialog
+          action={dialog.action}
+          category={dialog.category}
+          all={rows}
+          onClose={() => setDialog(null)}
+          onDone={done}
+        />
+      )}
+      {dialog?.kind === 'history' && (
+        <HistoryDialog category={dialog.category} onClose={() => setDialog(null)} />
+      )}
     </AdminLayout>
   );
 }

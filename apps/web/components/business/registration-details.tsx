@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/select';
 import { COMPANY_TYPES, CONTACT_PREFERENCES } from '@/lib/constants';
 import { getCategoryAttributes } from '@/lib/category-attributes';
+import { useMasterCategories } from '@/hooks/use-categories';
 import { cn } from '@/lib/utils';
 import type { OperatingHours } from '@saas/types';
 import { OperatingHoursEditor } from '@/components/business/operating-hours-editor';
@@ -167,7 +168,8 @@ export function RegistrationDetailsForm({
       },
     });
 
-  const attrs = getCategoryAttributes(categorySlug);
+  const { find: findCategory } = useMasterCategories();
+  const attrs = getCategoryAttributes(categorySlug, findCategory(categorySlug)?.template);
   const attrVals = v.categoryAttributes || {};
   const setAttr = (k: string, val: any) => merge({ categoryAttributes: { ...attrVals, [k]: val } });
 

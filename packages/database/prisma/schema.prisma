@@ -488,6 +488,8 @@ model Category {
   // Built-in slug that application code depends on: not deletable, slug locked.
   isSystem    Boolean   @default(false) @map("is_system")
   nameMl      String?   @map("name_ml") @db.VarChar(150)
+  // false = still listed and browsable, but not offered on the registration form.
+  showInSignup Boolean  @default(true) @map("show_in_signup")
   // Set when this category was merged into another; old links redirect to the target.
   mergedIntoId String?  @map("merged_into_id") @db.Uuid
   

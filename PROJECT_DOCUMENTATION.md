@@ -980,6 +980,60 @@ line in `pricing.ts`.
 at cut-over so no new launch-offer slots are claimed, and `PLAN_AUTOPAUSE=on` on the VPS only (this
 will pause extras on businesses already past their plan, so announce it first).
 
+### 12.14 Category management (super admin)
+
+A super admin adds, edits, archives, merges and deletes categories from `/admin/categories`
+(`/super-admin/categories` redirects). Master admins see the list and its history read-only.
+
+**One master list.** Categories live in the default tenant. Signup, onboarding, brands and
+discovery resolve a slug from it (`common/utils/master-category.ts`); nothing is cloned per tenant
+any more. An unknown or archived slug is a `400 "That category is no longer available"`: there is
+no silent "first category" fallback. A slug that was merged resolves to its target, so old drafts
+and links keep working. Legacy per-tenant copies are retired by
+`pnpm --filter @saas/database db:consolidate-categories` (dry run by default; `-- --apply` runs
+one transaction with verification and writes a copy→master CSV used as the rollback).
+
+**Rules** (`modules/categories/categories.service.ts`, `category-rules.ts`)
+- Create: slug `^[a-z0-9]+(_[a-z0-9]+)*$` unique in the master list (archived and merged slugs stay
+  reserved), max depth 2, parent must be top level, icon from the allow-list
+  (`CATEGORY_ICONS`; web mirror `lib/category-icons.ts`), name unique among siblings, template.
+- Edit: name, Malayalam name, icon, description, order, template, "show on registration form" are
+  always editable. The **slug is locked** once any business uses the category and always for
+  built-ins (`isSystem`: food, restaurants, home_chefs, hotel, staycation, buffet).
+- Archive (`isActive=false`): hidden from new sign-ups and the category list; existing businesses
+  keep it and stay listed. Built-ins cannot be archived.
+- Merge (`POST /categories/:id/merge {targetId}`, same level, target active): repoints
+  `businesses.category_id` for the master row and every legacy copy, rewrites
+  `businesses.subcategory_ids` (JSON, no FK), moves children, retires the source with
+  `mergedIntoId`, reindexes search, clears caches, notifies owners.
+- Delete: only when nothing references it (hard delete, frees the slug); otherwise
+  `409 {code:'CATEGORY_IN_USE', details: impact}`. `GET /categories/:id/impact` feeds the dialogs.
+- Every write is audited (`CATEGORY_CREATED|UPDATED|ARCHIVED|MERGED|DELETED|REORDERED`, with
+  before/after) and clears `categories:*`, `discovery:categories:*`, `trending:categories:*`.
+  History per category: `GET /audit-logs?resource=CATEGORY&resourceId=…`.
+
+**Templates** (`packages/types/src/category-templates.ts`). A category "behaves like" one of
+RESTAURANT, RETAIL, HEALTHCARE, SERVICES, FITNESS, EDUCATION, AUTOMOTIVE, GENERIC; it brings the
+status fields (web `getCategoryAttributes(slug, template)`), the KYC document
+(`getRequirementsForCategory(slug, template)`) and food behaviour (`isFoodCategory`). Built-in slugs
+keep their old tables (backfilled in the migration, so nothing changed on day one); the template
+decides only for categories a super admin creates. A subcategory without its own template uses its
+parent's.
+
+**Registration form.** `GET /v1/categories` feeds the wizard (`hooks/use-categories.ts`,
+`lib/registration-categories.ts`). The hard-coded `CATEGORIES` in `register/_wizard/shared.tsx` is
+the offline fallback and supplies labels for subcategories that were never created in the database.
+`show_in_signup=false` keeps a category listed and browsable but off the form (backfilled for the
+legacy top-level restaurants/retail/services/technology/education/entertainment/finance, which the
+form never offered). `/category?type=<slug>` follows a merge to the target and keeps showing an
+archived category's businesses (`GET /categories/resolve/:slug`).
+
+**Deploy notes**: run both migrations (`20261013000000_category_management`,
+`20261013120000_category_signup_flag`), `db:generate`, build, restart. Run the consolidation dry
+run, review the CSV, then `--apply`, then reindex search. Don't re-run `db:seed` /
+`db:expand-categories` after deleting built-in categories: they are create-if-missing and will
+recreate them.
+
 ## 13. Search, storage, realtime
 
 - **Search:** Typesense module indexes businesses; the API indexes on
@@ -1098,6 +1152,7 @@ overnight).
 | Analytics v2: IST reports, rollups, impressions, weekly digest | 2026-10-03–09 | `ec0a65e`, `48a9963`, `9bf0d3a`, `634aa10` | 6 days |
 | Bill queue, promotions, map view, customers, catalog, admin DataTables | 2026-10-08–09 | `fe74093`→`6f1c9e0` | 2 days |
 | Civic shell, overlays → Dialog, register split, images, types, a11y, Malayalam, Prettier | 2026-10-09 | `30a0e33`→`15772a5` | 1 day |
+| Category management: master list, super-admin add/edit/archive/merge/delete, templates | 2026-10-13 | `7f1e08c`→ | — |
 | Subscription/paywall/sidebar fixes | 2026-08-11 | `dd995ce`→`7aaa403` | 11 min |
 | Platform offers (Sadya/Clothing/Electronics/Staycation) + perf/security fixes | 2026-08-12 | `8cf5a71`→`a244b49` | 47 min |
 | Platform offers: Payasam category, itemized rates | 2026-08-12 | `fd35666` | — |

@@ -73,7 +73,6 @@ import {
   Newspaper,
   Store,
 } from 'lucide-react';
-import { CATEGORIES } from './shared';
 import type { Wizard } from './use-register-wizard';
 
 export function StepCredentials({ w }: { w: Wizard }) {
@@ -94,6 +93,7 @@ export function StepCredentials({ w }: { w: Wizard }) {
     setCompanyName,
     categorySlug,
     setCategorySlug,
+    registrationCategories,
     subcategorySlug,
     setSubcategorySlug,
     halalStatus,
@@ -422,12 +422,12 @@ export function StepCredentials({ w }: { w: Wizard }) {
                     value={categorySlug}
                     onChange={(e) => {
                       setCategorySlug(e.target.value);
-                      const cat = CATEGORIES.find((c) => c.slug === e.target.value);
+                      const cat = registrationCategories.find((c) => c.slug === e.target.value);
                       setSubcategorySlug(cat?.subcategories?.[0]?.slug || '');
                     }}
                     className="w-full h-11 pl-10 pr-4 border border-input text-muted-foreground rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer"
                   >
-                    {CATEGORIES.map((cat) => (
+                    {registrationCategories.map((cat) => (
                       <option key={cat.slug} value={cat.slug}>
                         {cat.label}
                       </option>
@@ -445,13 +445,14 @@ export function StepCredentials({ w }: { w: Wizard }) {
                     onChange={(e) => setSubcategorySlug(e.target.value)}
                     className="w-full h-11 pl-10 pr-4 border border-input text-muted-foreground rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer"
                   >
-                    {(CATEGORIES.find((c) => c.slug === categorySlug)?.subcategories || []).map(
-                      (sub) => (
-                        <option key={sub.slug} value={sub.slug}>
-                          {sub.label}
-                        </option>
-                      ),
-                    )}
+                    {(
+                      registrationCategories.find((c) => c.slug === categorySlug)?.subcategories ||
+                      []
+                    ).map((sub) => (
+                      <option key={sub.slug} value={sub.slug}>
+                        {sub.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

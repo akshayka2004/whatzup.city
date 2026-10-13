@@ -2,13 +2,14 @@
 
 import { Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Building2, MapPin } from 'lucide-react';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Button } from '@/components/ui/button';
 import { GridSkeleton } from '@/components/common/skeletons';
 import { EmptyState } from '@/components/common/empty-state';
 import { useCachedGet } from '@/lib/use-cached-get';
+import { apiService } from '@/lib/services/api-service';
 import { getViewerCity, setViewerCity } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { categoryIconFor } from '@/components/public/search/category-icon';
@@ -87,7 +88,36 @@ function CategoryContent() {
     () => (Array.isArray(match?.children) ? match.children.filter((c: any) => c?.name) : []),
     [match],
   );
-  const catsReady = rawType === 'all' || !cats.loading;
+  // An old link to a category that was archived (businesses keep it) or merged into another one.
+  const router = useRouter();
+  const [resolved, setResolved] = useState<{ slug: string; id?: string; name?: string } | null>(
+    null,
+  );
+  const [resolveDone, setResolveDone] = useState(false);
+  useEffect(() => {
+    setResolveDone(false);
+    setResolved(null);
+    if (rawType === 'all' || cats.loading || match) return;
+    let live = true;
+    apiService.get<any>(`/v1/categories/resolve/${encodeURIComponent(rawType)}`).then((r) => {
+      if (!live) return;
+      const body = r.error ? null : (r.data?.data ?? r.data);
+      if (body?.status === 'MERGED' && body.target?.slug) {
+        router.replace(`/category?type=${encodeURIComponent(body.target.slug)}`);
+        return;
+      }
+      if (body?.status === 'ARCHIVED' && body.id) {
+        setResolved({ slug: rawType, id: body.id, name: body.name });
+      }
+      setResolveDone(true);
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawType, cats.loading, match?.id]);
+  const catId: string | undefined = match?.id ?? resolved?.id;
+  const catsReady = rawType === 'all' || (!cats.loading && (!!match || resolveDone));
 
   /* ── Businesses ── */
   // The window resets whenever the category / city / subcategory changes (derived, so no wasted request).
@@ -104,8 +134,8 @@ function CategoryContent() {
   const key = useMemo(() => {
     if (filtering) {
       const p = new URLSearchParams();
-      if (match?.id) p.set('categoryId', match.id);
-      const text = filters.sub || (!match?.id && rawType !== 'all' ? rawType : '');
+      if (catId) p.set('categoryId', catId);
+      const text = filters.sub || (!catId && rawType !== 'all' ? rawType : '');
       if (text) p.set('q', text);
       if (filters.city) p.set('city', filters.city);
       if (filters.rating4) p.set('minRating', '4');
@@ -116,16 +146,15 @@ function CategoryContent() {
       return `/v1/search/discover?${p.toString()}`;
     }
     const params = new URLSearchParams();
-    if (match?.id) params.set('categoryId', match.id);
+    if (catId) params.set('categoryId', catId);
     else if (rawType && rawType !== 'all') params.set('search', rawType);
     // A subcategory is a text search inside the category (matches subcategory names server-side).
     if (filters.sub) params.set('search', filters.sub);
     if (filters.city) params.set('city', filters.city);
     params.set('limit', String(limit));
     return `/v1/businesses?${params.toString()}`;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    match?.id,
+    catId,
     rawType,
     filters.sub,
     filters.city,
@@ -189,7 +218,7 @@ function CategoryContent() {
   const clearFilters = () => update({ ...DEFAULT_FILTERS, city: filters.city });
 
   /* ── Hero + chips ── */
-  const heroName: string = match?.name || categoryTitle;
+  const heroName: string = match?.name || resolved?.name || categoryTitle;
   const Icon = categoryIconFor(match?.slug || match?.name || rawType);
   const clientOnly = false;
   const shown = clientOnly ? results.length : (total ?? results.length);

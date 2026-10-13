@@ -58,6 +58,7 @@ export class AuditService {
       userId?: string;
       action?: string;
       resource?: string;
+      resourceId?: string;
       q?: string;
       category?: string;
     },
@@ -70,6 +71,7 @@ export class AuditService {
     if (filters?.userId) where.userId = filters.userId;
     if (filters?.action) where.action = filters.action;
     if (filters?.resource) where.resource = filters.resource;
+    if (filters?.resourceId) where.resourceId = filters.resourceId;
     const and: any[] = [];
     const q = filters?.q?.trim().slice(0, 100);
     if (q) {

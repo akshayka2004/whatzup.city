@@ -23,6 +23,7 @@ export class AuditController {
     @Query('userId') userId?: string,
     @Query('action') action?: string,
     @Query('resource') resource?: string,
+    @Query('resourceId') resourceId?: string,
     @Query('q') q?: string,
     @Query('category') category?: string,
   ): Promise<any> {
@@ -30,7 +31,7 @@ export class AuditController {
       tenantId,
       page,
       50,
-      { userId, action, resource, q, category },
+      { userId, action, resource, resourceId, q, category },
       actorRole,
     );
   }

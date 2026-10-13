@@ -21,6 +21,9 @@ import {
   type CartLine,
 } from '@saas/types';
 import { RegisterRole, CivicOrgType, CATEGORIES } from './shared';
+import { useMasterCategories } from '@/hooks/use-categories';
+import { useI18n } from '@/lib/i18n/provider';
+import { buildRegistrationCategories } from '@/lib/registration-categories';
 
 /** All registration wizard state and handlers; the page and each step read from it. */
 export function useRegisterWizard() {
@@ -85,7 +88,24 @@ export function useRegisterWizard() {
   const launchOffer = useLaunchOffer();
   const launchSlotsLeft = launchOffer.slotsLeft(categorySlug);
   const canClaimLaunch = launchOffer.enabled && launchSlotsLeft > 0 && !brandLaunchUsed;
-  const categoryLabel = CATEGORIES.find((c) => c.slug === categorySlug)?.label || categorySlug;
+  // The category list comes from the master list a super admin manages; the hard-coded one is only
+  // the offline fallback.
+  const { tree: categoryTree } = useMasterCategories();
+  const { locale } = useI18n();
+  const registrationCategories = useMemo(
+    () => buildRegistrationCategories(categoryTree, CATEGORIES, locale),
+    [categoryTree, locale],
+  );
+  const categoryLabel =
+    registrationCategories.find((c) => c.slug === categorySlug)?.label || categorySlug;
+  // A category that was archived or hidden while the form was open: move to the first available one.
+  useEffect(() => {
+    if (registrationCategories.some((c) => c.slug === categorySlug)) return;
+    const first = registrationCategories[0];
+    if (!first) return;
+    setCategorySlug(first.slug);
+    setSubcategorySlug(first.subcategories[0]?.slug || '');
+  }, [registrationCategories, categorySlug]);
   const [claimLaunch, setClaimLaunch] = useState(false);
   // The last slot can go while someone is deciding — fall back to the regular plans.
   useEffect(() => {
@@ -1005,6 +1025,7 @@ export function useRegisterWizard() {
     launchSlotsLeft,
     canClaimLaunch,
     categoryLabel,
+    registrationCategories,
     claimLaunch,
     setClaimLaunch,
     isBrandOutlet,

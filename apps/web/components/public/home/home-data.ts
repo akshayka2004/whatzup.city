@@ -27,6 +27,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import { categoryIconByName } from '@/lib/category-icons';
+
 /**
  * The API wraps lists inconsistently ({success,data:[…]}, {success,data:{data:[…],meta}},
  * {items}, bare array). One tolerant unwrapper so every strip reads the same way.
@@ -86,6 +88,8 @@ export function iconForCategory(c: {
   name?: string;
   icon?: string | null;
 }): LucideIcon {
+  const chosen = categoryIconByName(c.icon);
+  if (chosen) return chosen;
   const hay = `${c.slug ?? ''} ${c.name ?? ''} ${c.icon ?? ''}`
     .toLowerCase()
     .replace(/[_-]+/g, ' ');
