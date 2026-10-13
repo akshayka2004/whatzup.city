@@ -7,3 +7,5 @@ export * from './dto';
 export * from './constants';
 export * from './operating-hours';
 export * from './pricing';
+export * from './category-templates';
+export * from './category-consolidation';

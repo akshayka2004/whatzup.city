@@ -7,6 +7,8 @@
 // right requirement) and the admin verification center.
 // =============================================================
 
+import { CATEGORY_TEMPLATES, SLUG_TEMPLATE, isTemplateKey } from '@saas/types';
+
 export interface DocRequirement {
   /** Stable subtype code stored in business_documents.document_subtype */
   code: string;
@@ -95,18 +97,35 @@ export const CATEGORY_DOCUMENTS: Record<string, DocRequirement> = {
   },
 };
 
+const TRADE_LICENSE: DocRequirement = {
+  code: 'TRADE_LICENSE',
+  label: 'Trade License',
+  mandatory: true,
+};
+
 /**
  * Returns the full requirement set for a category slug: the universal proof plus
- * the category-specific document (if any). Unknown categories get the universal
- * proof + a generic Trade License so nothing breaks.
+ * the category-specific document (if any).
+ *
+ * Order: the slug table above (built-in categories, unchanged) → a built-in slug without an entry
+ * keeps the Trade License it always had → a category a super admin created uses its template's
+ * document → Trade License.
  */
-export function getRequirementsForCategory(categorySlug?: string): {
+export function getRequirementsForCategory(
+  categorySlug?: string,
+  templateKey?: string | null,
+): {
   universal: DocRequirement;
   categorySpecific: DocRequirement | null;
 } {
   const slug = (categorySlug || '').toLowerCase();
-  const categorySpecific =
-    CATEGORY_DOCUMENTS[slug] ||
-    (slug ? { code: 'TRADE_LICENSE', label: 'Trade License', mandatory: true } : null);
+  let categorySpecific: DocRequirement | null = null;
+  if (slug) {
+    if (CATEGORY_DOCUMENTS[slug]) categorySpecific = CATEGORY_DOCUMENTS[slug];
+    else if (slug in SLUG_TEMPLATE) categorySpecific = TRADE_LICENSE;
+    else if (isTemplateKey(templateKey))
+      categorySpecific = CATEGORY_TEMPLATES[templateKey].document;
+    else categorySpecific = TRADE_LICENSE;
+  }
   return { universal: UNIVERSAL_DOCUMENT, categorySpecific };
 }

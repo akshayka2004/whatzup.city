@@ -137,7 +137,11 @@ export function categoryNameOf(b: any): string {
 }
 
 export function isFoodBusiness(b: any): boolean {
-  return isFoodCategory({ slug: b?.category?.slug, name: categoryNameOf(b) });
+  return isFoodCategory({
+    slug: b?.category?.slug,
+    name: categoryNameOf(b),
+    template: b?.category?.template,
+  });
 }
 
 export function isOpenNow(b: any, now: Date): boolean {

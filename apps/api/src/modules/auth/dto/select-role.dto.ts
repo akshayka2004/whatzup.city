@@ -21,4 +21,14 @@ export class SelectRoleDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @ApiProperty({
+    example: 'restaurants',
+    required: false,
+    description: 'Master category slug (BUSINESS only)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  categorySlug?: string;
 }

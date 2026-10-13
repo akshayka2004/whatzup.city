@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
+import { masterTenantId } from '../../common/utils/master-category';
 
 @Injectable()
 export class DiscoveryService {
@@ -13,13 +14,15 @@ export class DiscoveryService {
 
   // ── Category Discovery ────────────────────────────────────
 
-  async getCategories(tenantId: string) {
-    const cacheKey = `discovery:categories:${tenantId}`;
+  async getCategories(_tenantId: string) {
+    // Categories are one master list shared by every tenant.
+    const master = await masterTenantId(this.db);
+    const cacheKey = `discovery:categories:${master}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) return cached;
 
     const categories = await this.db.category.findMany({
-      where: { tenantId, deletedAt: null, isActive: true },
+      where: { tenantId: master, deletedAt: null, isActive: true },
       orderBy: { sortOrder: 'asc' },
       include: {
         _count: {
@@ -34,7 +37,7 @@ export class DiscoveryService {
 
   async getCategoryWithBusinesses(tenantId: string, categoryId: string, page = 1, limit = 20) {
     const category = await this.db.category.findFirst({
-      where: { id: categoryId, tenantId, deletedAt: null },
+      where: { id: categoryId, tenantId: await masterTenantId(this.db), deletedAt: null },
     });
 
     const [businesses, total] = await Promise.all([
@@ -131,6 +134,7 @@ export class DiscoveryService {
     const cacheKey = `discovery:homepage:${tenantId}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) return cached;
+    const master = await masterTenantId(this.db);
 
     const [topRated, newBusinesses, featuredOffers, categories] = await Promise.all([
       this.db.business.findMany({
@@ -175,7 +179,7 @@ export class DiscoveryService {
         },
       }),
       this.db.category.findMany({
-        where: { tenantId, isActive: true, deletedAt: null, parentId: null },
+        where: { tenantId: master, isActive: true, deletedAt: null, parentId: null },
         orderBy: { sortOrder: 'asc' },
         take: 12,
         select: { id: true, name: true, slug: true, icon: true },

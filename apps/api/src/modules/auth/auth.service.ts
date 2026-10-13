@@ -30,6 +30,11 @@ import { BusinessSignupDto } from './dto/business-signup.dto';
 import { CivicSignupDto } from './dto/civic-signup.dto';
 import { UserRoleEnum } from '@prisma/client';
 import { SelectRoleDto } from './dto/select-role.dto';
+import {
+  masterTenantId,
+  resolveMasterCategory,
+  resolveMasterSubcategories,
+} from '../../common/utils/master-category';
 
 export interface JwtPayload {
   sub: string;
@@ -1075,19 +1080,9 @@ export class AuthService {
       throw new NotFoundException('Default tenant configuration not found');
     }
 
-    // Resolve category — fall back to first available if slug not found
-    let defaultCategory = await this.db.category.findFirst({
-      where: { tenantId: defaultTenant.id, slug: dto.categorySlug, deletedAt: null },
-    });
-    if (!defaultCategory) {
-      defaultCategory = await this.db.category.findFirst({
-        where: { tenantId: defaultTenant.id, deletedAt: null },
-        orderBy: { sortOrder: 'asc' },
-      });
-    }
-    if (!defaultCategory) {
-      throw new NotFoundException('No categories configured. Please contact support.');
-    }
+    // Resolve the category from the one master list. An unknown/archived slug is refused rather
+    // than silently filed under the first category.
+    const defaultCategory = await resolveMasterCategory(this.db, dto.categorySlug);
 
     // Generate unique tenant slug
     const tenantSlug =
@@ -1177,27 +1172,7 @@ export class AuthService {
           });
         }
 
-        // 4. Clone categories using createManyAndReturn
-        const categories = await tx.category.findMany({
-          where: { tenantId: defaultTenant.id, deletedAt: null },
-        });
-        const newCategories = await tx.category.createManyAndReturn({
-          data: categories.map((cat) => ({
-            tenantId: tenant.id,
-            name: cat.name,
-            slug: cat.slug,
-            description: cat.description,
-            icon: cat.icon,
-            sortOrder: cat.sortOrder,
-            isActive: cat.isActive,
-          })),
-        });
-        let activeCategoryId = '';
-        for (const newCat of newCategories) {
-          if (newCat.slug === dto.categorySlug) {
-            activeCategoryId = newCat.id;
-          }
-        }
+        // 4. Categories are NOT cloned: the business points at the master category.
 
         // 5. Create the User
         const passwordHash = await this.passwordService.hash(dto.password);
@@ -1246,16 +1221,7 @@ export class AuthService {
         }
 
         // 7. Resolve subcategories
-        const subcategories = dto.subcategorySlugs?.length
-          ? await tx.category.findMany({
-              where: {
-                tenantId: tenant.id,
-                slug: { in: dto.subcategorySlugs },
-                deletedAt: null,
-              },
-              select: { id: true, slug: true },
-            })
-          : [];
+        const subcategories = await resolveMasterSubcategories(this.db, dto.subcategorySlugs);
 
         // 6b. Create the Entity — immediately PENDING_VERIFICATION so it
         // lands in admin moderation queue (not verified until admin acts).
@@ -1284,7 +1250,7 @@ export class AuthService {
           data: {
             tenantId: tenant.id,
             ownerId: userRecord.id,
-            categoryId: activeCategoryId || defaultCategory.id,
+            categoryId: defaultCategory.id,
             name: dto.businessName,
             slug: businessSlug,
             description: '',
@@ -1465,9 +1431,20 @@ export class AuthService {
         throw new NotFoundException('Default tenant configuration not found');
       }
 
-      const defaultCategory = await this.db.category.findFirst({
-        where: { tenantId: defaultTenant.id, deletedAt: null },
-      });
+      // The chosen category when the client sent one; otherwise the first active top-level master
+      // category as an explicit placeholder: the owner picks the real one in business onboarding.
+      const defaultCategory = dto.categorySlug
+        ? await resolveMasterCategory(this.db, dto.categorySlug)
+        : await this.db.category.findFirst({
+            where: {
+              tenantId: await masterTenantId(this.db),
+              parentId: null,
+              isActive: true,
+              deletedAt: null,
+            },
+            orderBy: { sortOrder: 'asc' },
+            select: { id: true, name: true, slug: true, template: true },
+          });
       if (!defaultCategory) {
         throw new NotFoundException('Default categories not found');
       }
@@ -1564,27 +1541,7 @@ export class AuthService {
             });
           }
 
-          // 4. Clone categories using createManyAndReturn
-          const categories = await tx.category.findMany({
-            where: { tenantId: defaultTenant.id, deletedAt: null },
-          });
-          const newCategories = await tx.category.createManyAndReturn({
-            data: categories.map((cat) => ({
-              tenantId: tenant.id,
-              name: cat.name,
-              slug: cat.slug,
-              description: cat.description,
-              icon: cat.icon,
-              sortOrder: cat.sortOrder,
-              isActive: cat.isActive,
-            })),
-          });
-          let activeCategoryId = '';
-          for (const newCat of newCategories) {
-            if (newCat.slug === defaultCategory.slug) {
-              activeCategoryId = newCat.id;
-            }
-          }
+          // 4. Categories are NOT cloned: the business points at the master category.
 
           // 5. Update User tenant and role
           const updatedUser = await tx.user.update({
@@ -1632,7 +1589,7 @@ export class AuthService {
             data: {
               tenantId: tenant.id,
               ownerId: user.id,
-              categoryId: activeCategoryId || defaultCategory.id,
+              categoryId: defaultCategory.id,
               name: businessName,
               slug: businessSlug,
               description: '',

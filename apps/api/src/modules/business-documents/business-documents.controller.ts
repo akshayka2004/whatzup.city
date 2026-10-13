@@ -7,7 +7,6 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@saas/types';
-import { getRequirementsForCategory } from './document-requirements';
 
 @ApiTags('Business Documents')
 @ApiBearerAuth()
@@ -19,7 +18,7 @@ export class BusinessDocumentsController {
   @Get('documents/requirements')
   @ApiOperation({ summary: 'Category-aware document requirements (universal + category-specific)' })
   async documentRequirements(@Query('category') category?: string) {
-    return getRequirementsForCategory(category);
+    return this.documentsService.requirementsForCategory(category);
   }
 
   // ── Admin: per-document review (approve / reject / request re-upload) ──

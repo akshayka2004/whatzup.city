@@ -1,7 +1,6 @@
 import {
   Injectable,
   ConflictException,
-  BadRequestException,
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
@@ -16,6 +15,10 @@ import {
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { operatingHoursForDb } from '../../common/utils/operating-hours.validator';
+import {
+  resolveMasterCategory,
+  resolveMasterSubcategories,
+} from '../../common/utils/master-category';
 
 @Injectable()
 export class BusinessOnboardingService {
@@ -41,19 +44,9 @@ export class BusinessOnboardingService {
   async startOnboarding(userId: string, tenantId: string, dto: StartBusinessOnboardingDto) {
     const slug = this.generateSlug(dto.businessName);
 
-    // Resolve category — fall back to first available if slug not found
-    let category = await this.db.category.findFirst({
-      where: { tenantId, slug: dto.categorySlug, deletedAt: null },
-    });
-    if (!category) {
-      category = await this.db.category.findFirst({
-        where: { tenantId, deletedAt: null },
-        orderBy: { sortOrder: 'asc' },
-      });
-    }
-    if (!category) {
-      throw new NotFoundException('No categories configured. Please contact support.');
-    }
+    // Categories are one master list. An unknown/archived slug is refused (400), never silently
+    // swapped for the first category.
+    const category = await resolveMasterCategory(this.db, dto.categorySlug);
 
     const duplicateName = await this.db.business.findFirst({
       where: {
@@ -80,16 +73,7 @@ export class BusinessOnboardingService {
       throw new ConflictException('A company with this name is already registered');
     }
 
-    const subcategories = dto.subcategorySlugs?.length
-      ? await this.db.category.findMany({
-          where: {
-            tenantId,
-            slug: { in: dto.subcategorySlugs },
-            deletedAt: null,
-          },
-          select: { id: true, slug: true },
-        })
-      : [];
+    const subcategories = await resolveMasterSubcategories(this.db, dto.subcategorySlugs);
 
     // Create Entity first so VerificationRequest can attach immediately.
     const entity = await this.db.entity.create({
@@ -258,10 +242,7 @@ export class BusinessOnboardingService {
 
     let subcategories: Array<{ id: string; slug: string }> | undefined;
     if (dto.subcategorySlugs?.length) {
-      subcategories = await this.db.category.findMany({
-        where: { tenantId, slug: { in: dto.subcategorySlugs }, deletedAt: null },
-        select: { id: true, slug: true },
-      });
+      subcategories = await resolveMasterSubcategories(this.db, dto.subcategorySlugs);
       updateData.subcategoryIds = subcategories.map((category) => category.id);
     }
 

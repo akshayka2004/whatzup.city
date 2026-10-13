@@ -483,6 +483,13 @@ model Category {
   parentId    String?   @map("parent_id") @db.Uuid
   sortOrder   Int       @default(0) @map("sort_order")
   isActive    Boolean   @default(true) @map("is_active")
+  // What this category behaves like (status fields, documents, food) — see @saas/types category-templates.
+  template    String?   @db.VarChar(30)
+  // Built-in slug that application code depends on: not deletable, slug locked.
+  isSystem    Boolean   @default(false) @map("is_system")
+  nameMl      String?   @map("name_ml") @db.VarChar(150)
+  // Set when this category was merged into another; old links redirect to the target.
+  mergedIntoId String?  @map("merged_into_id") @db.Uuid
   
   // Core Audit Fields
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -495,6 +502,8 @@ model Category {
   tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   parent     Category?  @relation("CategoryTree", fields: [parentId], references: [id])
   children   Category[] @relation("CategoryTree")
+  mergedInto Category?  @relation("CategoryMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedFrom Category[] @relation("CategoryMerge")
   businesses Business[]
 
   @@unique([tenantId, slug])

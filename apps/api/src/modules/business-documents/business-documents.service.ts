@@ -9,6 +9,9 @@ import { DatabaseService } from '../../common/database/database.service';
 import { StorageService } from '../../common/storage/storage.service';
 import { AuditService } from '../audit/audit.service';
 import { UploadDocumentDto } from './dto/upload-document.dto';
+import { getRequirementsForCategory } from './document-requirements';
+import { resolveTemplate } from '@saas/types';
+import { masterTenantId } from '../../common/utils/master-category';
 
 @Injectable()
 export class BusinessDocumentsService {
@@ -19,6 +22,19 @@ export class BusinessDocumentsService {
     private readonly storageService: StorageService,
     private readonly audit: AuditService,
   ) {}
+
+  /** Requirements for a master category slug; its template decides for admin-created categories. */
+  async requirementsForCategory(categorySlug?: string) {
+    const slug = (categorySlug || '').toLowerCase();
+    if (!slug) return getRequirementsForCategory(slug);
+    // tenant-scope-ok: categories are one master list
+    const category = await this.db.category.findFirst({
+      where: { tenantId: await masterTenantId(this.db), slug, deletedAt: null },
+      select: { slug: true, template: true, parent: { select: { slug: true, template: true } } },
+    });
+    const template = category ? resolveTemplate(category, category.parent).key : null;
+    return getRequirementsForCategory(slug, template);
+  }
 
   async createUploadUrl(
     userId: string,

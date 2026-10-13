@@ -29,7 +29,7 @@ export class MenuPhotosService {
     await this.media.validateBusinessAccess(tenantId, businessId, ctx.userId, ctx.role);
     const business = await this.db.business.findUnique({
       where: { id: businessId },
-      select: { category: { select: { slug: true, name: true } } },
+      select: { category: { select: { slug: true, name: true, template: true } } },
     });
     if (!business || !isFoodCategory(business.category)) {
       throw new BadRequestException('Menu photos are only available for food-related businesses.');

@@ -11,6 +11,7 @@ import { CryptoService } from '../../common/crypto/crypto.service';
 import { AuditService } from '../audit/audit.service';
 import { SearchService } from '../search/search.service';
 import { AddOutletDto, ConvertBrandDto, UpdateBrandDto, UpdateOutletDto } from './dto/brand.dto';
+import { resolveMasterCategory } from '../../common/utils/master-category';
 
 const SNOOZE_DAYS = 7;
 
@@ -452,11 +453,7 @@ export class BrandsService {
 
     let categoryId = hq.categoryId;
     if (dto.categorySlug && dto.categorySlug !== hq.category.slug) {
-      const category = await this.db.category.findFirst({
-        where: { tenantId: brand.tenantId, slug: dto.categorySlug, deletedAt: null },
-        select: { id: true },
-      });
-      if (!category) throw new BadRequestException('That category is not available.');
+      const category = await resolveMasterCategory(this.db, dto.categorySlug);
       categoryId = category.id;
     }
 
