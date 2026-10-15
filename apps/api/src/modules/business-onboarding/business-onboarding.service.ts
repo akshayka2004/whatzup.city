@@ -19,6 +19,8 @@ import {
   resolveMasterCategory,
   resolveMasterSubcategories,
 } from '../../common/utils/master-category';
+import { CryptoService } from '../../common/crypto/crypto.service';
+import { encryptCompliance } from '../../common/crypto/compliance-fields';
 
 @Injectable()
 export class BusinessOnboardingService {
@@ -28,6 +30,7 @@ export class BusinessOnboardingService {
     private readonly audit: AuditService,
     private readonly searchService: SearchService,
     @InjectQueue('onboarding-queue') private readonly onboardingQueue: Queue,
+    private readonly crypto: CryptoService,
   ) {}
 
   private generateSlug(name: string): string {
@@ -213,7 +216,8 @@ export class BusinessOnboardingService {
     if (dto.brandName !== undefined) updateData.brandName = dto.brandName;
     if (dto.companyName !== undefined) updateData.companyName = dto.companyName;
     if (dto.companyType !== undefined) updateData.companyType = dto.companyType;
-    if (dto.compliance !== undefined) updateData.compliance = dto.compliance;
+    if (dto.compliance !== undefined)
+      updateData.compliance = encryptCompliance(dto.compliance, this.crypto);
     if (dto.ownerContact !== undefined) updateData.ownerContact = dto.ownerContact;
     if (dto.billingContact !== undefined) updateData.billingContact = dto.billingContact;
     if (dto.supportContact !== undefined) updateData.supportContact = dto.supportContact;

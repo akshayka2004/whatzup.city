@@ -10,6 +10,8 @@ import { operatingHoursForDb } from '../../common/utils/operating-hours.validato
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 import { PaginatedResult } from '../../common/database/pagination';
 import { toPublicBusiness } from '../../common/utils/public-business';
+import { CryptoService } from '../../common/crypto/crypto.service';
+import { encryptCompliance } from '../../common/crypto/compliance-fields';
 
 @Injectable()
 export class BusinessesService {
@@ -20,6 +22,7 @@ export class BusinessesService {
     private readonly searchService: SearchService,
     private readonly auditService: AuditService,
     private readonly tenantResolver: TenantResolverService,
+    private readonly crypto: CryptoService,
   ) {}
 
   async create(tenantId: string, ownerId: string, data: any) {
@@ -229,6 +232,8 @@ export class BusinessesService {
     ];
     const payload: any = {};
     for (const k of ALLOWED) if (data[k] !== undefined) payload[k] = data[k];
+    if (payload.compliance !== undefined)
+      payload.compliance = encryptCompliance(payload.compliance, this.crypto);
     if (payload.operatingHours !== undefined)
       payload.operatingHours = operatingHoursForDb(payload.operatingHours);
     if (payload.billSeriesPrefix !== undefined)
@@ -408,6 +413,8 @@ export class BusinessesService {
     ];
     const payload: any = {};
     for (const k of ALLOWED) if (data[k] !== undefined) payload[k] = data[k];
+    if (payload.compliance !== undefined)
+      payload.compliance = encryptCompliance(payload.compliance, this.crypto);
     if (payload.operatingHours !== undefined)
       payload.operatingHours = operatingHoursForDb(payload.operatingHours);
     if (payload.billSeriesPrefix !== undefined)

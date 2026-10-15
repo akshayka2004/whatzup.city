@@ -79,6 +79,7 @@ import { BranchesModule } from './modules/branches/branches.module';
 import { TeamModule } from './modules/team/team.module';
 import { LaunchInterestsModule } from './modules/launch-interests/launch-interests.module';
 import { TrialsModule } from './modules/trials/trials.module';
+import { ComplianceDecryptInterceptor } from './common/crypto/compliance-decrypt.interceptor';
 
 @Module({
   imports: [
@@ -213,6 +214,10 @@ import { TrialsModule } from './modules/trials/trials.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: StorageSerializerInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ComplianceDecryptInterceptor,
     },
   ],
 })
