@@ -291,11 +291,15 @@
     transform: translate3d(14px, -18px, 0) scale(1.06);
   }
 }
-.ui-drift {
-  animation: uiDrift 9s ease-in-out infinite;
-}
-.ui-drift-slow {
-  animation: uiDrift 16s ease-in-out infinite reverse;
+/* Desktop only: on phones these blurred blobs stay put, so the GPU isn't
+   repainting large blurred layers for the whole visit (battery, low-end Android). */
+@media (hover: hover) and (pointer: fine) {
+  .ui-drift {
+    animation: uiDrift 9s ease-in-out infinite;
+  }
+  .ui-drift-slow {
+    animation: uiDrift 16s ease-in-out infinite reverse;
+  }
 }
 
 /* ── Marquee: a slow, pausable strip (duplicate the track content once) ─ */
