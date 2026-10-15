@@ -43,7 +43,55 @@ const SEARCH_SYNONYM_GROUPS: string[][] = [
   ['sadya', 'sadhya', 'sadhya feast', 'onam sadya', 'onam sadhya'],
   ['payasam', 'payasam sweet', 'payasam dessert'],
   ['staycation', 'stay cation', 'day-out', 'day out', 'dayout'],
+  ['cafe', 'café', 'cafes', 'coffee', 'coffee shop', 'tea shop', 'chai'],
+  ['bakery', 'bakeries', 'cake shop', 'cakes', 'patisserie'],
+  ['juice', 'juice shop', 'juice bar', 'shakes'],
+  ['restaurant', 'restaurants', 'eatery', 'dining', 'family restaurant'],
+  ['pharmacy', 'pharmacies', 'medical store', 'medical shop', 'chemist'],
+  ['clinic', 'clinics', 'doctor', 'doctors'],
+  ['dental', 'dentist', 'dental clinic', 'dentists'],
+  ['gym', 'gyms', 'fitness', 'fitness centre', 'fitness center'],
+  ['supermarket', 'supermarkets', 'grocery', 'groceries', 'hypermarket'],
+  ['mobile shop', 'mobile store', 'phone shop', 'mobiles'],
+  ['tailor', 'tailors', 'tailoring', 'stitching'],
+  ['boutique', 'boutiques', 'ladies wear', 'designer wear'],
+  ['spa', 'spas', 'massage', 'ayurveda massage'],
 ];
+
+/**
+ * Relevance for the Postgres fallback (Typesense ranks on its own): a name hit
+ * beats a category hit beats a tag/subcategory hit beats a description/offer hit.
+ * Synonym hits count a little less than the words the visitor typed.
+ */
+export function relevance(b: any, query: string, synonyms: string[]): number {
+  const name = String(b.name || '').toLowerCase();
+  const cat = String(b.category?.name || '').toLowerCase();
+  const subs: string[] = Array.isArray(b.subcategoryIds)
+    ? b.subcategoryIds.map((x: unknown) => String(x).replace(/_/g, ' ').toLowerCase())
+    : [];
+  const tags: string[] = Array.isArray(b.businessTags)
+    ? b.businessTags.map((t: any) => String(t?.tag || '').toLowerCase())
+    : [];
+  const desc = String(b.description || '').toLowerCase();
+  const score = (term: string) => {
+    const t = term.trim().toLowerCase();
+    if (!t) return 0;
+    const word = new RegExp(`(^|\\W)${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+    if (name === t) return 100;
+    if (name.startsWith(t)) return 70;
+    if (word.test(name)) return 55;
+    if (name.includes(t)) return 35;
+    if (cat.includes(t)) return 30;
+    if (subs.some((x) => x.includes(t))) return 25;
+    if (tags.some((x) => x.includes(t))) return 20;
+    if (word.test(desc)) return 8;
+    return 3; // matched only via offers, branches or a partial description hit
+  };
+  let best = score(query);
+  for (const syn of synonyms) best = Math.max(best, score(syn) * 0.8);
+  const rating = Number(b.averageRating) || 0;
+  return best + rating * 2 + (b.isVerified ? 3 : 0) + (b.logo || b.coverImage ? 2 : 0);
+}
 
 @Injectable()
 export class SearchService implements OnApplicationBootstrap {
@@ -339,6 +387,12 @@ export class SearchService implements OnApplicationBootstrap {
             (b: any) => getOpenStatus(b.operatingHours as any, now)?.isOpen === true,
           )
         : candidates;
+      if (query && query !== '*') {
+        pool = pool
+          .map((b: any) => ({ b, s: relevance(b, query, synonymExtras) }))
+          .sort((x, y) => y.s - x.s)
+          .map((x) => x.b);
+      }
       pool = pool.map((b: any) => (isPublic ? toPublicBusiness(b) : b));
       if (filters?.fulfilment) {
         const withOffers = await this.attachOfferSummary(pool);
@@ -365,21 +419,49 @@ export class SearchService implements OnApplicationBootstrap {
       return response;
     }
 
-    const [data, total] = await Promise.all([
+    const hasQuery = !!query && query !== '*';
+    let data: any[];
+    let total: number;
+    if (hasQuery) {
+      // Rank by relevance, not rating: fetch the matching candidates (capped),
+      // score them, then page in memory.
       // tenant-scope-ok: public business search across all listings
-      this.db.business.findMany({
+      const candidates = await this.db.business.findMany({
         where,
-        skip: (page - 1) * limit,
-        take: limit,
+        take: 500,
         orderBy: { averageRating: 'desc' },
         include: {
           category: { select: { id: true, name: true, slug: true } },
           brand: { select: { id: true, name: true, slug: true } },
+          businessTags: { select: { tag: true } },
         },
-      }),
-      // tenant-scope-ok: public business search across all listings
-      this.db.business.count({ where }),
-    ]);
+      });
+      const ranked = candidates
+        .map((b: any) => ({ b, s: relevance(b, query, synonymExtras) }))
+        .sort((x, y) => y.s - x.s)
+        .map((x) => x.b);
+      total = ranked.length;
+      data = ranked.slice((page - 1) * limit, page * limit).map((b: any) => {
+        const { businessTags: _tags, ...rest } = b;
+        return rest;
+      });
+    } else {
+      [data, total] = await Promise.all([
+        // tenant-scope-ok: public business search across all listings
+        this.db.business.findMany({
+          where,
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: { averageRating: 'desc' },
+          include: {
+            category: { select: { id: true, name: true, slug: true } },
+            brand: { select: { id: true, name: true, slug: true } },
+          },
+        }),
+        // tenant-scope-ok: public business search across all listings
+        this.db.business.count({ where }),
+      ]);
+    }
 
     const strippedData = data.map((biz: any) => (isPublic ? toPublicBusiness(biz) : biz));
 
