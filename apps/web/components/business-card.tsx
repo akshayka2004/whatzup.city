@@ -70,7 +70,9 @@ export function BusinessCard({
   const reviews = Number(business.reviewCount ?? business.totalReviews ?? 0) || 0;
   const logo: string | undefined = business.logo || undefined;
   const cover: string | undefined =
-    typeof business.coverImage === 'string' && business.coverImage ? business.coverImage : undefined;
+    typeof business.coverImage === 'string' && business.coverImage
+      ? business.coverImage
+      : undefined;
   const categoryName: string = business.category?.name || business.categoryName || '';
   const offerCount = Number(business.activeOfferCount ?? business.offerCount ?? 0) || 0;
   const brandName: string = business.brand?.name || '';

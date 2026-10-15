@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, Logger, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+  Optional,
+} from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { SearchService } from '../search/search.service';
 import { AuditService } from '../audit/audit.service';

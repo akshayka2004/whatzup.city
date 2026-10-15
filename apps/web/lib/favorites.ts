@@ -76,7 +76,10 @@ export function toggleFavorite(biz: FavBusiness): boolean {
   if (saved && next.length === 3 && !hasSessionHint()) {
     toast('Saved places stay on this device', {
       description: 'Sign in to keep them on your phone and computer.',
-      action: { label: 'Sign in', onClick: () => window.location.assign('/login?redirect=/favorites') },
+      action: {
+        label: 'Sign in',
+        onClick: () => window.location.assign('/login?redirect=/favorites'),
+      },
     });
   }
   return saved;

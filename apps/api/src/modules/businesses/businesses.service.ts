@@ -127,7 +127,8 @@ export class BusinessesService {
     const cached = await this.redis.get(`business:${id}`);
     if (cached) {
       if (isPublic) {
-        if ((cached as any).status !== 'APPROVED') throw new NotFoundException('Business not found');
+        if ((cached as any).status !== 'APPROVED')
+          throw new NotFoundException('Business not found');
         return toPublicBusiness(cached as any);
       }
       return cached;

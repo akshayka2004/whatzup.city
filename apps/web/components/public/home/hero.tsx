@@ -3,7 +3,17 @@
 import { useI18n } from '@/lib/i18n/provider';
 
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2, Map as MapIcon, MapPin, Search, Sparkles, Star, Store, Tag } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle2,
+  Map as MapIcon,
+  MapPin,
+  Search,
+  Sparkles,
+  Star,
+  Store,
+  Tag,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
