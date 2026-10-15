@@ -80,6 +80,7 @@ import { TeamModule } from './modules/team/team.module';
 import { LaunchInterestsModule } from './modules/launch-interests/launch-interests.module';
 import { TrialsModule } from './modules/trials/trials.module';
 import { ComplianceDecryptInterceptor } from './common/crypto/compliance-decrypt.interceptor';
+import { GeoModule } from './common/geo/geo.module';
 
 @Module({
   imports: [
@@ -119,6 +120,7 @@ import { ComplianceDecryptInterceptor } from './common/crypto/compliance-decrypt
     RedisModule,
     StorageModule,
     CryptoModule,
+    GeoModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({

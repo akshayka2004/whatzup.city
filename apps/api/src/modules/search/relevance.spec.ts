@@ -17,7 +17,9 @@ describe('search relevance', () => {
   it('counts synonym hits, a little below typed words', () => {
     const viaSynonym = relevance(coffee, 'cafe', ['coffee']);
     expect(viaSynonym).toBeGreaterThan(relevance(salon, 'cafe', ['coffee']));
-    expect(viaSynonym).toBeLessThan(relevance({ ...coffee, name: 'Cafe Kochi' }, 'cafe', ['coffee']));
+    expect(viaSynonym).toBeLessThan(
+      relevance({ ...coffee, name: 'Cafe Kochi' }, 'cafe', ['coffee']),
+    );
   });
 
   it('treats special characters in the query literally', () => {

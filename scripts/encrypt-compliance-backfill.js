@@ -28,7 +28,12 @@ function encrypt(plain) {
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   const enc = Buffer.concat([cipher.update(String(plain), 'utf8'), cipher.final()]);
-  return ['v1', iv.toString('base64'), cipher.getAuthTag().toString('base64'), enc.toString('base64')].join(':');
+  return [
+    'v1',
+    iv.toString('base64'),
+    cipher.getAuthTag().toString('base64'),
+    enc.toString('base64'),
+  ].join(':');
 }
 
 const PATHS = [
@@ -56,7 +61,9 @@ const PATHS = [
     changed++;
     if (apply) await db.business.update({ where: { id: row.id }, data: { compliance: next } });
   }
-  console.log(`${rows.length} businesses scanned, ${changed} ${apply ? 'encrypted' : 'would be encrypted (dry run)'}.`);
+  console.log(
+    `${rows.length} businesses scanned, ${changed} ${apply ? 'encrypted' : 'would be encrypted (dry run)'}.`,
+  );
   await db.$disconnect();
 })().catch((e) => {
   console.error(e);

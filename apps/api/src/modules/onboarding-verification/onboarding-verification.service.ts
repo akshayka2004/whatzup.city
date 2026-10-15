@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger, Optional } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { SearchService } from '../search/search.service';
 import { AuditService } from '../audit/audit.service';
@@ -6,6 +6,7 @@ import { NotificationsService, NotificationPriority } from '../notifications/not
 import { StorageService } from '../../common/storage/storage.service';
 import { ApproveOnboardingDto, RejectOnboardingDto } from './dto/verification-action.dto';
 import { EntityType } from '@prisma/client';
+import { GeocodingService } from '../../common/geo/geocoding.service';
 
 @Injectable()
 export class OnboardingVerificationService {
@@ -17,6 +18,7 @@ export class OnboardingVerificationService {
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
+    @Optional() private readonly geocoding?: GeocodingService,
   ) {}
 
   /** Brand activity feed entry for a brand outlet's approval decision; no-op for single businesses. */
@@ -296,6 +298,9 @@ export class OnboardingVerificationService {
             notes: dto.notes,
           },
         );
+
+        // Fill in map coordinates in the background if the listing has none.
+        this.geocoding?.geocodeBusinessInBackground(business.id);
 
         // Sync to Search index
         try {
