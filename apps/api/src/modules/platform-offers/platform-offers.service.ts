@@ -11,6 +11,14 @@ import {
   PlatformOfferStatusEnum,
 } from './dto/platform-offer.dto';
 
+/** "2026-10-31" means shown through the end of that day in India (UTC+05:30). */
+function endOfDay(value?: string | null): Date | null {
+  if (!value) return null;
+  const day = value.slice(0, 10);
+  const d = new Date(`${day}T23:59:59.999+05:30`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 /**
  * Platform-curated offers. Unlike Offer, these carry no businessId — the vendor
  * need not be registered on the platform, so vendor details are stored on the
@@ -48,6 +56,7 @@ export class PlatformOffersService {
         description: dto.description || null,
         details: dto.details || {},
         status: dto.status ?? PlatformOfferStatusEnum.UNPUBLISHED,
+        endsAt: endOfDay(dto.endsAt),
         createdBy: userId,
       },
     });
@@ -89,6 +98,7 @@ export class PlatformOffersService {
         ...(dto.description !== undefined ? { description: dto.description || null } : {}),
         ...(dto.details !== undefined ? { details: dto.details } : {}),
         ...(dto.status !== undefined ? { status: dto.status } : {}),
+        ...(dto.endsAt !== undefined ? { endsAt: endOfDay(dto.endsAt) } : {}),
         updatedBy: userId,
       },
     });
@@ -180,6 +190,8 @@ export class PlatformOffersService {
         tenantId: resolvedTenant,
         deletedAt: null,
         status: 'PUBLISHED',
+        // Expired offers drop off on their own; no end date = still shown.
+        OR: [{ endsAt: null }, { endsAt: { gte: new Date() } }],
         ...(category ? { category: category as any } : {}),
       },
       orderBy: { createdAt: 'desc' },

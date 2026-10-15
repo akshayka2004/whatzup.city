@@ -136,8 +136,14 @@ type Row = {
   status: 'PUBLISHED' | 'UNPUBLISHED';
   clickCount?: number;
   imageSignedUrl?: string | null;
+  endsAt?: string | null;
   createdAt: string;
 };
+
+/** yyyy-mm-dd in India time, for <input type="date">. */
+const toDateInput = (iso?: string | null) =>
+  iso ? new Date(new Date(iso).getTime() + 330 * 60_000).toISOString().slice(0, 10) : '';
+const isExpired = (iso?: string | null) => !!iso && new Date(iso).getTime() < Date.now();
 
 /** Multi-select chip group — used for the several "pick any" fields. */
 function ChipGroup({
@@ -207,6 +213,7 @@ export function PlatformOffersManager() {
   const [price, setPrice] = useState('');
   const [phone, setPhone] = useState('');
   const [description, setDescription] = useState('');
+  const [endsAt, setEndsAt] = useState('');
   const [details, setDetails] = useState<PlatformOfferDetails>({});
   const [poster, setPoster] = useState<File | null>(null);
   const [existingImage, setExistingImage] = useState<string | null>(null);
@@ -234,6 +241,7 @@ export function PlatformOffersManager() {
     setPrice('');
     setPhone('');
     setDescription('');
+    setEndsAt('');
     setDetails({});
     setPoster(null);
     setExistingImage(null);
@@ -254,6 +262,7 @@ export function PlatformOffersManager() {
     setPrice(r.price || '');
     setPhone(r.phone || '');
     setDescription(r.description || '');
+    setEndsAt(toDateInput(r.endsAt));
     setDetails(r.details || {});
     setPoster(null);
     setExistingImage(r.imageSignedUrl || null);
@@ -304,6 +313,7 @@ export function PlatformOffersManager() {
         price: price.trim() || undefined,
         phone: phone.trim() || undefined,
         description: description.trim() || undefined,
+        endsAt: endsAt || null,
         details,
         status: publish ? 'PUBLISHED' : 'UNPUBLISHED',
         ...(imageUrl ? { imageUrl } : {}),
@@ -426,6 +436,19 @@ export function PlatformOffersManager() {
                         </span>
                       )}
                       {r.price && <span className="text-foreground font-semibold">{r.price}</span>}
+                      {isExpired(r.endsAt) ? (
+                        <span className="rounded-full bg-danger-soft px-2 py-0.5 font-medium text-danger-soft-foreground">
+                          Expired {toDateInput(r.endsAt)} · hidden
+                        </span>
+                      ) : r.endsAt ? (
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+                          Until {toDateInput(r.endsAt)}
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-warning-soft px-2 py-0.5 font-medium text-warning-soft-foreground">
+                          No end date
+                        </span>
+                      )}
                       {rateLines(r.category, r.subType, r.details).map((rl, i) => (
                         <span key={i} className="rounded-full bg-muted px-2 py-0.5 text-foreground">
                           {rl.label}: <span className="font-semibold">{rl.rate}</span>
@@ -595,6 +618,17 @@ export function PlatformOffersManager() {
                     <Input
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
+                      className="h-11 rounded-xl"
+                    />
+                  </Field>
+                  <Field
+                    label="Show until"
+                    hint="Hidden from the public Offers page after this day. Leave empty only for year-round offers."
+                  >
+                    <Input
+                      type="date"
+                      value={endsAt}
+                      onChange={(e) => setEndsAt(e.target.value)}
                       className="h-11 rounded-xl"
                     />
                   </Field>

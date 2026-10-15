@@ -1,4 +1,13 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsObject, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsObject,
+  MaxLength,
+  IsDateString,
+  ValidateIf,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum PlatformOfferCategoryEnum {
@@ -73,6 +82,12 @@ export class CreatePlatformOfferDto {
   @IsOptional()
   @IsEnum(PlatformOfferStatusEnum)
   status?: PlatformOfferStatusEnum;
+
+  /** Last day shown publicly (ISO date). null clears it. */
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsDateString()
+  endsAt?: string | null;
 }
 
 export class UpdatePlatformOfferDto extends CreatePlatformOfferDto {

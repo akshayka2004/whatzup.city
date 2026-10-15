@@ -91,7 +91,9 @@ export function mapPlatformOffer(o: any, fromServer = false): Offer {
     // Empty (not "View") when the admin hasn't entered a price or any rate —
     // the rate badge/box is hidden entirely rather than showing a placeholder.
     discountLabel: o.price || rates[0]?.rate || '',
-    expiresIn: undefined,
+    expiresIn: o.endsAt
+      ? Math.max(0, Math.ceil((new Date(o.endsAt).getTime() - Date.now()) / 86_400_000))
+      : undefined,
     terms: '',
     isPlatform: true,
     imageUrl: fromServer ? null : o.imageSignedUrl || null,

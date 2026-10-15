@@ -1072,6 +1072,8 @@ model PlatformOffer {
   details     Json                @default("{}")
 
   status      PlatformOfferStatus @default(UNPUBLISHED)
+  /// Last day the offer is shown publicly. Null = no end (admins are nudged to set one).
+  endsAt      DateTime?           @map("ends_at")
 
   createdAt   DateTime            @default(now()) @map("created_at")
   updatedAt   DateTime            @updatedAt @map("updated_at")
@@ -1088,6 +1090,7 @@ model PlatformOffer {
   @@index([status])
   @@index([deletedAt])
   @@index([tenantId, deletedAt, status, category])
+  @@index([endsAt])
   @@map("platform_offers")
 }
 
