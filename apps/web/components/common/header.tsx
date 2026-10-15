@@ -104,8 +104,9 @@ export function Header() {
 
   return (
     <header className="flex h-16 items-center justify-between gap-3 border-b border-border/80 bg-card/85 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-card/70 sm:px-6 lg:px-8">
-      <Link href="/" className="flex items-center md:hidden" aria-label="Whtzup.city home">
-        <BrandLogo alt="Whtzup.city" className="h-8 w-auto object-contain" />
+      <Link href="/" className="flex items-center gap-2 md:hidden" aria-label="Whtzup.city home">
+        <BrandLogo alt="" className="h-8 w-auto" />
+        <span className="text-base font-bold tracking-tight text-foreground">whtzup.city</span>
       </Link>
 
       {/* ⌘K command palette trigger */}
