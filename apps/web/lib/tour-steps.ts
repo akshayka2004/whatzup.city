@@ -90,14 +90,14 @@ export const CUSTOMER_MOBILE_TOUR_STEPS: TourStep[] = [
     description: 'Look up a specific business, offer, or event by name.',
   },
   {
-    selector: '[data-tour="mnav-saved"]',
-    title: 'Saved',
-    description: 'Businesses you favorite show up here for quick access.',
+    selector: '[data-tour="mnav-events"]',
+    title: 'Events',
+    description: 'What is on near you: shows, festivals and meetups.',
   },
   {
     selector: '[data-tour="mnav-menu"]',
-    title: 'Menu',
-    description: 'Browse, Offers, Events, Announcements, and your Profile — all here.',
+    title: 'More',
+    description: 'Saved places, Browse, Nearby, Announcements and your profile.',
   },
 ];
 

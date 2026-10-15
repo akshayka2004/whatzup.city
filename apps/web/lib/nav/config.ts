@@ -119,7 +119,13 @@ function publicNav(ctx: NavContext): NavSpec {
           },
           { label: 'Offers', href: '/offers', icon: TicketPercent, tour: 'nav-offers' },
           { label: 'Spin it', href: '/spin-it', icon: Sparkles },
-          { label: 'Events', href: '/events', icon: CalendarDays, tour: 'nav-events' },
+          {
+            label: 'Events',
+            href: '/events',
+            icon: CalendarDays,
+            tour: 'nav-events',
+            mobileTour: 'mnav-events',
+          },
           ...movies({ label: 'Movies', href: '/movies', icon: Clapperboard }),
           { label: 'Announcements', href: '/government', icon: Megaphone },
         ],
@@ -150,7 +156,9 @@ function publicNav(ctx: NavContext): NavSpec {
         : { label: 'Sign In / Register', href: '/login', icon: UserPlus },
       { label: 'Help & Support', href: '/support', icon: LifeBuoy },
     ],
-    mobileTabs: ['/', '/search', '/offers', '/favorites'],
+    // Events gets a tab so people on the Events page don't see "More" lit up;
+    // Saved lives in More with the rest of "You".
+    mobileTabs: ['/', '/search', '/offers', '/events'],
     mobileLabels: { '/favorites': 'Saved' },
   };
 }

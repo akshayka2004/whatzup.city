@@ -4,7 +4,7 @@ import './globals.css';
 import './foundation.css';
 import { ThemeProviderClient } from '@/components/theme-provider-client';
 import { AuthProvider } from '@/hooks/use-auth';
-import { CommandPalette } from '@/components/common/command-palette';
+import { CommandPaletteLoader } from '@/components/common/command-palette-loader';
 import { ConfirmProvider } from '@/components/common/confirm-dialog';
 import { Toaster } from '@/components/ui/sonner';
 import { I18nProvider } from '@/lib/i18n/provider';
@@ -76,7 +76,7 @@ export default function RootLayout({
                 <a href="#main-content" className="ui-skip-link">
                   Skip to content
                 </a>
-                <CommandPalette />
+                <CommandPaletteLoader />
                 {children}
                 <Toaster position="top-center" richColors closeButton />
               </ConfirmProvider>

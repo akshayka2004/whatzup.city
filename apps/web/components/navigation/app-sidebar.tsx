@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ArrowRight, LogOut, PanelLeftClose, PanelLeftOpen, Store, X } from 'lucide-react';
 import { BrandLogo } from '@/components/common/brand-logo';
 import { useAuth } from '@/hooks/use-auth';
@@ -25,9 +25,16 @@ function NavRow({
   label: string;
 }) {
   const Icon = item.icon;
+  const router = useRouter();
+  const warm = () => router.prefetch(item.href);
   return (
     <Link
       href={item.href}
+      // ~20 always-visible links each prefetched their route on load (117-142
+      // requests per desktop page). Prefetch on intent instead: hover or focus.
+      prefetch={false}
+      onMouseEnter={warm}
+      onFocus={warm}
       aria-current={active ? 'page' : undefined}
       data-tour={item.tour}
       title={collapsed ? label : undefined}

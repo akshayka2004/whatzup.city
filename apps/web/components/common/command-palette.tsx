@@ -58,9 +58,10 @@ const CATEGORIES = [
   { label: 'Education', icon: GraduationCap },
 ];
 
-export function CommandPalette() {
+export function CommandPalette({ autoOpen = false }: { autoOpen?: boolean } = {}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  // autoOpen: mounted by CommandPaletteLoader in response to the first open request.
+  const [open, setOpen] = useState(autoOpen);
   const [query, setQuery] = useState('');
   const [recents, setRecents] = useState<string[]>([]);
   const [suggestions, setSuggestions] = useState<{ id?: string; label: string }[]>([]);
