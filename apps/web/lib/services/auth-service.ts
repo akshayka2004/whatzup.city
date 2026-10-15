@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────────────────────────────────
 
 import { apiService } from './api-service';
+import { invalidateCachedGet } from '../use-cached-get';
 
 export type UserRole = 'user' | 'business' | 'admin' | 'super-admin' | 'government';
 
@@ -58,6 +59,9 @@ class AuthService {
     try {
       await apiService.post('/v1/auth/logout');
     } catch (_) {}
+    // Nothing fetched as this user may be shown to the next one.
+    apiService.clearCache();
+    invalidateCachedGet();
     if (typeof window !== 'undefined') {
       localStorage.removeItem('user_session');
       localStorage.removeItem('user');

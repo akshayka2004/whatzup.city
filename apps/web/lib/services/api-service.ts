@@ -204,23 +204,78 @@ class ApiService {
     }
   }
 
-  async get<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>('GET', endpoint);
+  // ── Short-lived GET cache ────────────────────────────────────────────
+  // Most screens fetch on mount, so hopping between dashboard tabs refetched
+  // everything behind a spinner. Successful GETs are reused for 20s, concurrent
+  // identical GETs share one request, and ANY write (or sign-in/out) clears the
+  // whole cache so nobody sees data older than their own last change.
+  private static readonly GET_TTL_MS = 20_000;
+  private static readonly GET_MAX_ENTRIES = 200;
+  private getCache = new Map<string, { at: number; res: ApiResponse<unknown> }>();
+  private getInflight = new Map<string, Promise<ApiResponse<unknown>>>();
+
+  /** Drop every cached GET (called on writes, sign-in and sign-out). */
+  clearCache(): void {
+    this.getCache.clear();
+  }
+
+  private cacheable(endpoint: string): boolean {
+    return !endpoint.includes('/auth/');
+  }
+
+  /** Writes that change no data anyone reads back (analytics beacons, click counters). */
+  private invalidates(endpoint: string): boolean {
+    return !/\/analytics\/track|\/click$/.test(endpoint);
+  }
+
+  async get<T>(endpoint: string, opts: { fresh?: boolean } = {}): Promise<ApiResponse<T>> {
+    const useCache = typeof window !== 'undefined' && this.cacheable(endpoint);
+    if (useCache && !opts.fresh) {
+      const hit = this.getCache.get(endpoint);
+      if (hit && Date.now() - hit.at < ApiService.GET_TTL_MS) {
+        // Copy so a caller sorting/mutating its result can't corrupt the cache.
+        return { ...hit.res, data: structuredClone(hit.res.data) } as ApiResponse<T>;
+      }
+      const running = this.getInflight.get(endpoint);
+      if (running) {
+        const res = await running;
+        return { ...res, data: structuredClone(res.data) } as ApiResponse<T>;
+      }
+    }
+    const p = this.request<T>('GET', endpoint).then((res) => {
+      if (useCache && !res.error && res.status >= 200 && res.status < 300) {
+        if (this.getCache.size >= ApiService.GET_MAX_ENTRIES) {
+          const oldest = this.getCache.keys().next().value;
+          if (oldest) this.getCache.delete(oldest);
+        }
+        this.getCache.set(endpoint, { at: Date.now(), res: res as ApiResponse<unknown> });
+      }
+      return res;
+    });
+    if (useCache) {
+      this.getInflight.set(endpoint, p as Promise<ApiResponse<unknown>>);
+      p.finally(() => this.getInflight.delete(endpoint));
+    }
+    return p;
   }
 
   async post<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+    if (this.invalidates(endpoint)) this.clearCache();
     return this.request<T>('POST', endpoint, body);
   }
 
   async patch<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+    this.clearCache();
     return this.request<T>('PATCH', endpoint, body);
   }
 
   async put<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+    this.clearCache();
     return this.request<T>('PUT', endpoint, body);
   }
 
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+    this.clearCache();
     return this.request<T>('DELETE', endpoint);
   }
 
@@ -230,6 +285,7 @@ class ApiService {
    * behaviour of request().
    */
   async upload<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
+    this.clearCache();
     const url = `${this.baseURL}${endpoint}`;
     const init: RequestInit = {
       method: 'POST',
