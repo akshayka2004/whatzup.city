@@ -239,7 +239,11 @@ export function OfferCoupon({
                   // key restarts the pop when the badge flips to the claimed tick
                   key={claimed ? 'claimed' : 'discount'}
                   className={cn(
-                    'max-w-[45%] shrink-0 break-words rounded-xl px-3 py-1 text-right text-base font-bold leading-tight',
+                    'max-w-[45%] shrink-0 break-words rounded-xl px-3 py-1 text-right font-bold leading-tight',
+                    // Admin-written price notes can be a sentence; keep them to two lines.
+                    !claimed && (offer.discountLabel?.length ?? 0) > 14
+                      ? 'line-clamp-2 text-sm'
+                      : 'text-base',
                     claimed
                       ? 'bg-success-soft text-success-soft-foreground'
                       : 'bg-highlight-soft text-highlight-soft-foreground',
