@@ -27,8 +27,8 @@ export default function GlobalError({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#F7F5F2',
-          color: '#20242F',
+          background: '#F7F7FB',
+          color: '#1C1B2E',
           fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
           padding: '1.5rem',
           textAlign: 'center',
@@ -38,11 +38,11 @@ export default function GlobalError({
           <h1 style={{ fontSize: '1.5rem', margin: '0 0 .5rem' }}>
             Whtzup.city is having a moment
           </h1>
-          <p style={{ color: '#667085', margin: '0 0 1.25rem', fontSize: '.95rem' }}>
+          <p style={{ color: '#5E5D75', margin: '0 0 1.25rem', fontSize: '.95rem' }}>
             Something went wrong on our side. Please reload — it usually fixes itself.
           </p>
           {error.digest && (
-            <p style={{ color: '#98A2B3', fontSize: '.75rem' }}>Reference: {error.digest}</p>
+            <p style={{ color: '#6B6A82', fontSize: '.75rem' }}>Reference: {error.digest}</p>
           )}
           <button
             type="button"
@@ -53,7 +53,7 @@ export default function GlobalError({
               padding: '0 1.5rem',
               borderRadius: 14,
               border: 0,
-              background: '#B86F50',
+              background: '#4338CA',
               color: '#fff',
               fontWeight: 600,
               fontSize: '.95rem',

@@ -49,14 +49,18 @@ export function AuthShell({
         <section className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between lg:p-12">
           <div
             className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: 'url(/login-hero.png)' }}
+            style={{
+              // AVIF 31 KB / WebP 44 KB instead of the 1.6 MB PNG.
+              backgroundImage:
+                "image-set(url(/login-hero.avif) type('image/avif'), url(/login-hero.webp) type('image/webp'))",
+            }}
             aria-hidden
           />
           <div
             className="absolute inset-0"
             style={{
               background:
-                'linear-gradient(180deg, color-mix(in oklch, var(--card) 96%, transparent) 0%, color-mix(in oklch, var(--card) 80%, transparent) 45%, color-mix(in oklch, var(--card) 35%, transparent) 100%)',
+                'linear-gradient(180deg, color-mix(in oklch, var(--card) 94%, transparent) 0%, color-mix(in oklch, var(--card) 62%, transparent) 42%, color-mix(in oklch, var(--primary) 18%, transparent) 100%)',
             }}
             aria-hidden
           />

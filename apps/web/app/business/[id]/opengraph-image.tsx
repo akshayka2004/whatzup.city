@@ -8,11 +8,11 @@ export const revalidate = 600;
 
 // ImageResponse can't read CSS variables, so the palette is spelled out as hex.
 const C = {
-  bg: '#F7F5F2',
+  bg: '#F7F7FB',
   card: '#FFFFFF',
-  primary: '#B86F50',
-  ink: '#20242F',
-  muted: '#667085',
+  primary: '#4338CA',
+  ink: '#1C1B2E',
+  muted: '#5E5D75',
 };
 
 /** The bundled font only draws Latin glyphs — drop anything else (e.g. Malayalam) instead of printing boxes. */

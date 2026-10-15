@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-/** Lets phones offer "Add to Home Screen" with the app opening full-screen on the cream/terracotta palette. */
+/** Lets phones offer "Add to Home Screen" with the app opening full-screen on the brand palette. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Whtzup.city',
@@ -11,8 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: '/',
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#F7F5F2',
-    theme_color: '#B86F50',
+    background_color: '#F7F7FB',
+    theme_color: '#4338CA',
     categories: ['shopping', 'lifestyle', 'local'],
     icons: [
       { src: '/logo.png', sizes: '1024x1024', type: 'image/png', purpose: 'any' },
