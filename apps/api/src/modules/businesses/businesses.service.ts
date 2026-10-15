@@ -9,6 +9,7 @@ import { BusinessStatus } from '@saas/types';
 import { operatingHoursForDb } from '../../common/utils/operating-hours.validator';
 import { PaginationParamsDto, SortOrder } from '../../common/database/pagination/pagination.dto';
 import { PaginatedResult } from '../../common/database/pagination';
+import { toPublicBusiness } from '../../common/utils/public-business';
 
 @Injectable()
 export class BusinessesService {
@@ -102,12 +103,7 @@ export class BusinessesService {
     const result = PaginatedResult.create(data, total, pageVal, limitVal);
 
     if (isPublic && result?.data) {
-      result.data = result.data.map((biz: any) => {
-        const copy = { ...biz };
-        delete copy.ownerName;
-        delete copy.ownerId;
-        return copy;
-      });
+      result.data = result.data.map((biz: any) => toPublicBusiness(biz));
       // Additive: live-offer count + fulfilment modes for the public cards.
       result.data = await this.searchService.attachOfferSummary(
         result.data as Record<string, any>[],
@@ -128,17 +124,16 @@ export class BusinessesService {
     const cached = await this.redis.get(`business:${id}`);
     if (cached) {
       if (isPublic) {
-        const copy = { ...cached } as any;
-        delete copy.ownerName;
-        delete copy.ownerId;
-        return copy;
+        if ((cached as any).status !== 'APPROVED') throw new NotFoundException('Business not found');
+        return toPublicBusiness(cached as any);
       }
       return cached;
     }
 
     const business = isPublic
       ? await this.businessRepo.model.findFirst({
-          where: { id, deletedAt: null },
+          // Public profiles: approved listings only (pending/rejected/suspended stay private).
+          where: { id, deletedAt: null, status: 'APPROVED' },
           include: {
             category: true,
             brand: { select: { id: true, name: true, slug: true, status: true } },
@@ -159,12 +154,7 @@ export class BusinessesService {
 
     await this.redis.set(`business:${id}`, business, 300);
 
-    if (isPublic) {
-      const copy = { ...business };
-      delete copy.ownerName;
-      delete copy.ownerId;
-      return copy;
-    }
+    if (isPublic) return toPublicBusiness(business);
     return business;
   }
 
@@ -172,7 +162,7 @@ export class BusinessesService {
     tenantId = await this.tenantResolver.resolveTenantId(tenantId);
     const business = isPublic
       ? await this.businessRepo.model.findFirst({
-          where: { slug, deletedAt: null },
+          where: { slug, deletedAt: null, status: 'APPROVED' },
           include: {
             category: true,
             brand: { select: { id: true, name: true, slug: true, status: true } },
@@ -190,12 +180,7 @@ export class BusinessesService {
         });
     if (!business) throw new NotFoundException('Business not found');
 
-    if (isPublic) {
-      const copy = { ...business };
-      delete copy.ownerName;
-      delete copy.ownerId;
-      return copy;
-    }
+    if (isPublic) return toPublicBusiness(business);
     return business;
   }
 
@@ -565,12 +550,7 @@ export class BusinessesService {
       .slice(0, 100);
 
     if (isPublic && data) {
-      const stripped = data.map((biz: any) => {
-        const copy = { ...biz };
-        delete copy.ownerName;
-        delete copy.ownerId;
-        return copy;
-      });
+      const stripped = data.map((biz: any) => toPublicBusiness(biz));
       return this.searchService.attachOfferSummary(stripped);
     }
     return data;

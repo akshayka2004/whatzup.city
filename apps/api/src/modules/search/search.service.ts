@@ -5,6 +5,7 @@ import { Queue } from 'bullmq';
 import { TypesenseService } from '../typesense/typesense.service';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
+import { toPublicBusiness } from '../../common/utils/public-business';
 
 // ── Iteration 2: search synonym groups ──────────────────────
 // Additive query expansion so colloquial/variant spellings resolve to the
@@ -338,12 +339,7 @@ export class SearchService implements OnApplicationBootstrap {
             (b: any) => getOpenStatus(b.operatingHours as any, now)?.isOpen === true,
           )
         : candidates;
-      pool = pool.map((b: any) => {
-        const copy = { ...b };
-        delete copy.ownerName;
-        delete copy.ownerId;
-        return copy;
-      });
+      pool = pool.map((b: any) => (isPublic ? toPublicBusiness(b) : b));
       if (filters?.fulfilment) {
         const withOffers = await this.attachOfferSummary(pool);
         pool = withOffers.filter(
@@ -385,12 +381,7 @@ export class SearchService implements OnApplicationBootstrap {
       this.db.business.count({ where }),
     ]);
 
-    const strippedData = data.map((biz: any) => {
-      const copy = { ...biz };
-      delete copy.ownerName;
-      delete copy.ownerId;
-      return copy;
-    });
+    const strippedData = data.map((biz: any) => (isPublic ? toPublicBusiness(biz) : biz));
 
     const response = {
       data: await this.attachOfferSummary(strippedData),
@@ -418,7 +409,7 @@ export class SearchService implements OnApplicationBootstrap {
       const results = await this.typesenseService.search('businesses', searchParams);
       if (results && results.hits) {
         return {
-          data: results.hits.map((h: any) => h.document),
+          data: results.hits.map((h: any) => toPublicBusiness(h.document)),
           meta: { total: results.found, page },
           source: 'typesense',
         };
