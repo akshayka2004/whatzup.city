@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import type { Metadata } from 'next';
-import { SITE_URL, serverGet, unwrapOne } from '@/lib/server-api';
+import { notFound } from 'next/navigation';
+import { SITE_URL, serverGet, serverIsNotFound, unwrapOne } from '@/lib/server-api';
 import BusinessClient from './business-client';
 
 // Cached + re-rendered at most every 2 minutes; the client refreshes live data itself.
@@ -113,7 +114,10 @@ export async function generateMetadata({
   const { id } = await params;
   const biz = await getBusiness(id);
   if (!biz) {
-    // API unreachable or unknown id: generic title, no robots directive (don't de-index on a blip).
+    // A definite 404 from the API becomes a real 404 (crawlers get the status,
+    // since metadata blocks for them). Anything else is treated as a blip:
+    // generic title, no robots directive, and the client fetches.
+    if (await serverIsNotFound(`/v1/businesses/${encodeURIComponent(id)}`)) notFound();
     return { title: 'Business', alternates: { canonical: `/business/${id}` } };
   }
 

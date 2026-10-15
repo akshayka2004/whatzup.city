@@ -36,6 +36,32 @@ export async function serverGet<T = unknown>(
   }
 }
 
+/**
+ * True only when the API answered 404 for this path: the record really doesn't
+ * exist (or isn't public). Network errors, timeouts and 5xx return false, so a
+ * blip never turns a real page into a 404. Shares the fetch cache with serverGet.
+ */
+export async function serverIsNotFound(
+  path: string,
+  opts: { revalidate?: number; timeoutMs?: number } = {},
+): Promise<boolean> {
+  const { revalidate = 120, timeoutMs = 4000 } = opts;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${API_BASE}/api${path}`, {
+      signal: controller.signal,
+      headers: { accept: 'application/json' },
+      next: { revalidate },
+    });
+    return res.status === 404;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** The API wraps lists inconsistently ({items}, {data}, bare array) — normalise like the client pages do. */
 export function unwrapList<T = any>(body: unknown): T[] {
   const b = body as any;

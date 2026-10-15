@@ -25,7 +25,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const ev = await getEvent(id);
-  if (!ev) return { title: 'Event', robots: { index: false } };
+  // The page 404s without an event; doing it here too gives crawlers the real status.
+  if (!ev) notFound();
   const where = [ev.venue, ev.city].filter(Boolean).join(', ');
   const description = trim(ev.description || `${ev.title}${where ? ` at ${where}` : ''}`);
   const url = `${SITE_URL}/events/${id}`;
