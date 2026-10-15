@@ -4,6 +4,9 @@
  * Shared client-side favorites store (localStorage). Matches the key + event
  * used by the business detail page so the bookmark stays in sync everywhere.
  */
+import { toast } from 'sonner';
+import { hasSessionHint } from './session-hint';
+
 const FAVORITES_KEY = 'saved_businesses';
 const EVENT = 'favoritesUpdated';
 
@@ -68,6 +71,13 @@ export function toggleFavorite(biz: FavBusiness): boolean {
     window.dispatchEvent(new Event(EVENT));
   } catch {
     /* ignore quota / disabled storage */
+  }
+  // Guests' saves live in this browser only. At the third save, say so once.
+  if (saved && next.length === 3 && !hasSessionHint()) {
+    toast('Saved places stay on this device', {
+      description: 'Sign in to keep them on your phone and computer.',
+      action: { label: 'Sign in', onClick: () => window.location.assign('/login?redirect=/favorites') },
+    });
   }
   return saved;
 }

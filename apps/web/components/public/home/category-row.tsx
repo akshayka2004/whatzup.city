@@ -60,7 +60,7 @@ export function CategoryRow({
         <>
           <div
             ref={scroller}
-            className="ui-scroll-x flex gap-1 border-b border-border/70 pb-2 sm:mx-0! sm:px-0!"
+            className="ui-scroll-x flex gap-1 border-b border-border/70 pb-2 sm:mx-0! sm:px-0! xl:flex-wrap xl:gap-y-2"
           >
             <Link
               href="/category"
