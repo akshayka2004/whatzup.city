@@ -1034,6 +1034,30 @@ run, review the CSV, then `--apply`, then reindex search. Don't re-run `db:seed`
 `db:expand-categories` after deleting built-in categories: they are create-if-missing and will
 recreate them.
 
+### 12.15 Audit fixes (October 2026)
+
+- **Public business data** goes through `toPublicBusiness()` (`apps/api/src/common/utils/public-business.ts`),
+  an allow-list used by list, detail, slug, nearby and search. Public detail requires `status: APPROVED`.
+  New columns are private until added to the list.
+- **KYC encryption**: `compliance.pan.number` and `compliance.gst.gstin` are AES-256-GCM encrypted on write
+  (`encryptCompliance`), decrypted for owners/admins by the global `ComplianceDecryptInterceptor`.
+  Legacy plaintext still reads. Backfill: `node scripts/encrypt-compliance-backfill.js [--apply]`.
+- **Rate limiting** is per visitor (`ClientThrottlerGuard`, `cf-connecting-ip` trusted only from a local peer;
+  SSR calls skipped). Throttle overrides must name `long` (there is no `default` throttler).
+- **Geocoding**: approval queues a Nominatim lookup for listings without coordinates (`GeocodingService`,
+  1 req/s, Kerala-bounded, `GEOCODING=off` disables, `GEOCODING_USER_AGENT` optional).
+  Backfill: `node scripts/geocode-backfill.js [--apply] [--limit N]`.
+- **Search** (Postgres path) ranks by `relevance()` (name > category > subcategory/tags > description/offers,
+  then rating) over up to 500 candidates; synonym groups in `search.service.ts`.
+- **Platform offers** have `endsAt` (migration `20261015000000_platform_offer_ends_at`); expired ones drop
+  off the public list; the admin form has "Show until".
+- **Web**: CSS-driven app shell (no `useIsMobile` for layout), `has_session` cookie hint (guests skip
+  `/auth/me` and `/auth/refresh`), 20 s GET cache in `apiService` cleared on any write/sign-out,
+  lazy command palette, hover prefetch in the sidebar, theme follows the device, palette v4
+  "Lagoon Indigo & Mint" (`--highlight` token for offer badges), `CategoryCover` placeholder art, SVG
+  `BrandLogo`, chunk-error auto-reload.
+- **Infra steps** (Cloudflare cache rule, nginx origin lock, chunk archive): `docs/ops-edge-and-origin.md`.
+
 ## 13. Search, storage, realtime
 
 - **Search:** Typesense module indexes businesses; the API indexes on
