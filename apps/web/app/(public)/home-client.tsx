@@ -85,7 +85,12 @@ export function HomeClient({
   const offerList = useMemo(() => listOf(offers.body), [offers.body]);
   const businessList = useMemo(() => listOf(businesses.body), [businesses.body]);
 
-  const featuredBusiness = businessList[0] ?? null;
+  // Lead with a listing that has reviews (then a verified one), not whatever sorts first.
+  const featuredBusiness =
+    businessList.find((b: any) => Number(b?.totalReviews ?? b?.reviewCount ?? 0) > 0) ??
+    businessList.find((b: any) => b?.isVerified) ??
+    businessList[0] ??
+    null;
   const featuredOffer = offerList[0] ?? null;
   const latestAnnouncement = listOf(notice.body)[0] ?? null;
 
