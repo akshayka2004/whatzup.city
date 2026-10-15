@@ -3,6 +3,8 @@
 // Auto-refreshes the access token on 401 then retries once.
 // ============================================================
 
+import { hasSessionHint } from '../session-hint';
+
 export interface ApiResponse<T> {
   data: T;
   error: string | null;
@@ -115,6 +117,8 @@ class ApiService {
    */
   private async tryRefresh(): Promise<boolean> {
     if (this.refreshing) return this.refreshing;
+    // Never signed in on this browser: there is no refresh token to use.
+    if (!hasSessionHint()) return false;
 
     this.refreshing = (async () => {
       try {

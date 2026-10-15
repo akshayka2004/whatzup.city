@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 import { Header } from '@/components/common/header';
 import { AppSidebar } from '@/components/navigation/app-sidebar';
 import { MobileNav } from '@/components/navigation/mobile-nav';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavArea, useNavSpec } from '@/hooks/use-nav';
 import type { NavArea } from '@/lib/nav/config';
 import { cn } from '@/lib/utils';
@@ -29,18 +28,18 @@ export function AppShell({
   /** Full-width content (data-heavy admin pages); default caps at 1280px. */
   wide?: boolean;
 }) {
-  const isMobile = useIsMobile();
   const navArea = useNavArea(area);
   const spec = useNavSpec(navArea);
 
   return (
     <div className="flex h-dvh w-full bg-background">
       {before}
-      {!isMobile && (
-        <div className="flex print:hidden">
-          <AppSidebar spec={spec} />
-        </div>
-      )}
+      {/* Sidebar vs bottom bar is decided by CSS, not useIsMobile(): the server
+          can't know the viewport, and a JS switch painted the desktop sidebar on
+          phones until hydration, then shifted the whole page. */}
+      <div className="hidden print:hidden md:flex">
+        <AppSidebar spec={spec} />
+      </div>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <div className="print:hidden">
@@ -52,7 +51,7 @@ export function AppShell({
             className={cn(
               'mx-auto w-full px-4 pt-6 sm:px-6 lg:px-8 lg:pt-8',
               wide ? 'max-w-[1600px]' : 'max-w-7xl',
-              isMobile ? 'pb-28' : 'pb-10',
+              'pb-28 md:pb-10',
             )}
           >
             {children}
@@ -60,11 +59,9 @@ export function AppShell({
         </main>
       </div>
 
-      {isMobile && (
-        <div className="print:hidden">
-          <MobileNav area={navArea} />
-        </div>
-      )}
+      <div className="print:hidden md:hidden">
+        <MobileNav area={navArea} />
+      </div>
     </div>
   );
 }

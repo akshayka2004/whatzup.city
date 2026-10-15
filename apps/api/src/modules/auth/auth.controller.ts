@@ -63,11 +63,22 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });
+
+    // Readable hint (no secret in it) so the web app can skip /auth/me and
+    // /auth/refresh entirely for visitors who have never signed in.
+    res.cookie('has_session', '1', {
+      httpOnly: false,
+      secure: isSecure,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
   }
 
   private clearCookies(res: Response) {
     res.clearCookie('access_token', { path: '/' });
     res.clearCookie('refresh_token', { path: '/' });
+    res.clearCookie('has_session', { path: '/' });
   }
 
   @Public()

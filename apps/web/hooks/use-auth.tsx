@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { hasSessionHint } from '@/lib/session-hint';
 import { authService, User, UserRole } from '@/lib/services/auth-service';
 import { useRouter } from 'next/navigation';
 
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 1. Instant paint from localStorage cache so UI doesn't flash logged-out
         const cached = await authService.getCurrentUser();
         if (cached) setUser(cached);
+        if (!cached && !hasSessionHint()) return; // signed-out visitor: nothing to check
 
         // 2. Source-of-truth check against API — uses httpOnly cookies.
         //    apiService auto-refreshes on 401, so a valid refresh_token (7d)
