@@ -164,7 +164,7 @@ export function OfferCoupon({
     if (offer.phone) {
       primary = (
         <a href={`tel:${offer.phone}`} className="block">
-          <Button className="ui-press h-11 w-full gap-1.5 rounded-xl">
+          <Button variant="secondary" className="ui-press h-11 w-full gap-1.5 rounded-xl">
             <Phone className="h-4 w-4" /> {t('offer.call')}
           </Button>
         </a>
@@ -203,8 +203,10 @@ export function OfferCoupon({
               key={offer.imageUrl ?? 'pending'}
               src={offer.imageUrl}
               alt=""
-              ratio="16 / 9"
-              sizes="(max-width: 768px) 100vw, 50vw"
+              ratio="4 / 3"
+              fit="contain"
+              quality={70}
+              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, (max-width: 1600px) 33vw, 25vw"
               className="border-b border-border"
               fallback={
                 offer.imagePending && !offer.imageUrl ? (
@@ -237,10 +239,10 @@ export function OfferCoupon({
                   // key restarts the pop when the badge flips to the claimed tick
                   key={claimed ? 'claimed' : 'discount'}
                   className={cn(
-                    'max-w-[45%] shrink-0 break-words rounded-xl px-3 py-1 text-right text-lg font-bold leading-tight',
+                    'max-w-[45%] shrink-0 break-words rounded-xl px-3 py-1 text-right text-base font-bold leading-tight',
                     claimed
                       ? 'bg-success-soft text-success-soft-foreground'
-                      : 'bg-brand-soft text-brand-soft-foreground',
+                      : 'bg-highlight-soft text-highlight-soft-foreground',
                     justClaimed && 'ui-pop',
                   )}
                 >
@@ -305,15 +307,30 @@ export function OfferCoupon({
           style={BOTTOM_STYLE}
         >
           <div aria-hidden className="mx-3 border-t border-dashed border-border" />
-          <div className="flex flex-wrap items-center gap-2 px-4 pb-4 pt-3 sm:px-5">
-            {primary && <div className="w-full">{primary}</div>}
-            <Button
-              onClick={() => onView(offer)}
-              variant="outline"
-              className="ui-press h-11 flex-1 gap-1.5 rounded-xl"
-            >
-              <Eye className="h-4 w-4" /> View details
-            </Button>
+          <div className="flex items-center gap-2 px-4 pb-4 pt-3 sm:px-5">
+            {primary ? (
+              <>
+                <div className="min-w-0 flex-1">{primary}</div>
+                <Button
+                  onClick={() => onView(offer)}
+                  variant="outline"
+                  size="icon"
+                  aria-label="View details"
+                  title="View details"
+                  className="ui-press h-11 w-11 shrink-0 rounded-xl"
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={() => onView(offer)}
+                variant="outline"
+                className="ui-press h-11 flex-1 gap-1.5 rounded-xl"
+              >
+                <Eye className="h-4 w-4" /> View details
+              </Button>
+            )}
             <ReportButton
               kind="offer"
               targetId={offer.id}

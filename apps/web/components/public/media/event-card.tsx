@@ -68,6 +68,14 @@ export function EventCard({
   priority?: boolean;
 }) {
   const live = isHappeningNow(ev, now);
+  // A run of several days (exhibitions, show seasons) reads as "On till 6 Dec",
+  // not a "Happening now" pulse that stays on for weeks.
+  const win = eventWindow(ev);
+  const longRun = !!win && win.end - win.start > 3 * 86_400_000;
+  const liveLabel =
+    longRun && win
+      ? `On till ${new Date(win.end - 1).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })}`
+      : 'Happening now';
   const tiers = Array.isArray(ev.ticketTiers) ? ev.ticketTiers : [];
   const sameDay = !ev.endDate || ev.endDate === ev.startDate;
   const where = [ev.venue, ev.city].filter(Boolean).join(', ');
@@ -78,7 +86,10 @@ export function EventCard({
         <ResponsiveImage
           src={ev.posterImage}
           alt={ev.title}
-          ratio="16 / 9"
+          ratio="4 / 3"
+          fit="contain"
+          quality={70}
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           priority={priority}
           fallback={<CalendarDays className="h-10 w-10 opacity-40" />}
           imgClassName="transition-transform duration-500 ease-out group-hover:scale-105 motion-reduce:group-hover:scale-100"
@@ -87,8 +98,8 @@ export function EventCard({
         {live && (
           <StatusPill
             tone="success"
-            live
-            label="Happening now"
+            live={!longRun}
+            label={liveLabel}
             className="absolute right-3 top-3 bg-card/95 shadow-sm backdrop-blur-sm"
           />
         )}

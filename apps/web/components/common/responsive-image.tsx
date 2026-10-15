@@ -16,6 +16,11 @@ type Props = {
   sizes?: string;
   priority?: boolean;
   quality?: number;
+  /**
+   * `contain` shows the whole image (posters, flyers) over a blurred, enlarged
+   * copy of itself, so nothing is cropped and the box never looks empty.
+   */
+  fit?: 'cover' | 'contain';
 };
 
 /**
@@ -36,6 +41,7 @@ export function ResponsiveImage({
   sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw',
   priority,
   quality,
+  fit = 'cover',
 }: Props) {
   const [stage, setStage] = useState<'optimised' | 'raw' | 'failed'>('optimised');
   const [loaded, setLoaded] = useState(false);
@@ -56,7 +62,8 @@ export function ResponsiveImage({
   }
 
   const fade = cn(
-    'object-cover transition-[opacity,transform] duration-500',
+    fit === 'contain' ? 'object-contain' : 'object-cover',
+    'transition-[opacity,transform] duration-500',
     loaded ? 'opacity-100' : 'opacity-0',
     imgClassName,
   );
@@ -64,6 +71,18 @@ export function ResponsiveImage({
   return (
     <div className={box} style={style}>
       {!loaded && <div className="ui-skeleton absolute inset-0 rounded-none" aria-hidden />}
+      {fit === 'contain' && stage === 'optimised' && (
+        // A 64px copy is plenty under a blur and costs ~1 KB.
+        <Image
+          src={src}
+          alt=""
+          aria-hidden
+          fill
+          sizes="64px"
+          quality={30}
+          className="scale-110 object-cover opacity-50 blur-xl"
+        />
+      )}
       {stage === 'optimised' ? (
         <Image
           src={src}

@@ -54,6 +54,8 @@ export interface OffersClientProps {
   initialPlatformOffers?: unknown | null;
 }
 
+const PAGE_SIZE = 12;
+
 export default function OffersClient({
   initialOffers = null,
   initialPlatformOffers = null,
@@ -174,6 +176,10 @@ export default function OffersClient({
     () => applyOfferView(offers, { city, type: typeFilter, chip, sort }),
     [typeFilter, city, offers, chip, sort],
   );
+  // Render a page at a time: 86 offers at once was ~3,300 DOM nodes and 1.4s of
+  // main-thread work on a mid-range phone. Any filter change starts over.
+  const [shown, setShown] = useState(PAGE_SIZE);
+  useEffect(() => setShown(PAGE_SIZE), [typeFilter, city, chip, sort]);
 
   const filtersActive = chip !== 'all' || typeFilter !== 'all';
   const resetFilters = () => router.replace(pathname, { scroll: false });
@@ -412,8 +418,11 @@ export default function OffersClient({
             <p className="mb-3 text-xs text-muted-foreground" aria-live="polite">
               {filtered.length} {filtered.length === 1 ? 'offer' : 'offers'}
             </p>
-            <StaggerGrid className="grid grid-cols-1 md:grid-cols-2" gap={4}>
-              {filtered.map((offer) => (
+            <StaggerGrid
+              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 min-[1600px]:grid-cols-4"
+              gap={4}
+            >
+              {filtered.slice(0, shown).map((offer) => (
                 <OfferCoupon
                   key={offer.id}
                   offer={offer}
@@ -424,6 +433,17 @@ export default function OffersClient({
                 />
               ))}
             </StaggerGrid>
+            {filtered.length > shown && (
+              <div className="mt-6 flex justify-center">
+                <Button
+                  variant="outline"
+                  className="ui-press h-11 rounded-xl px-6"
+                  onClick={() => setShown((n) => n + PAGE_SIZE)}
+                >
+                  Show more offers ({filtered.length - shown} left)
+                </Button>
+              </div>
+            )}
           </>
         )}
 
