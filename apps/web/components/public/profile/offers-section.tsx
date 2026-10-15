@@ -14,7 +14,6 @@ import {
   UtensilsCrossed,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/common/empty-state';
 import { StatusPill } from '@/components/common/status-pill';
 import { apiService } from '@/lib/services/api-service';
 import { toast } from '@/components/ui/sonner';
@@ -215,12 +214,11 @@ export function OffersSection({
       ) : loading || fromQr === null || resolvingAuth ? (
         <OfferListSkeleton />
       ) : offers.length === 0 ? (
-        <EmptyState
-          compact
-          icon={Ticket}
-          title="No active offers right now"
-          description="New deals from this business will show up here."
-        />
+        // One quiet line instead of a big empty card.
+        <p className="flex items-center gap-2 rounded-xl bg-surface-sunken px-4 py-3 text-sm text-muted-foreground">
+          <Ticket className="h-4 w-4 shrink-0" />
+          No active offers right now. Save this place to spot new deals.
+        </p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {offers.map((o, i) => (

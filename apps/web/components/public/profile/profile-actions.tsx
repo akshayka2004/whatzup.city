@@ -37,12 +37,14 @@ export function DesktopActions({
           </a>
         </Button>
       )}
+      {/* Save and Share are icon buttons so the row never wraps beside a long name. */}
       <Button
         type="button"
         variant="outline"
-        size="lg"
+        size="icon-lg"
         onClick={actions.toggleSave}
         aria-pressed={isSaved}
+        aria-label={isSaved ? 'Saved. Remove from favorites' : 'Save to favorites'}
         title={isSaved ? 'Remove from favorites' : 'Save to favorites'}
         className={cn(
           'ui-press rounded-xl',
@@ -50,17 +52,18 @@ export function DesktopActions({
             'border-primary/40 bg-brand-soft text-brand-soft-foreground hover:bg-primary/15',
         )}
       >
-        <Heart className={cn(isSaved && 'fill-primary text-primary')} />{' '}
-        {isSaved ? 'Saved' : 'Save'}
+        <Heart className={cn(isSaved && 'fill-primary text-primary')} />
       </Button>
       <Button
         type="button"
         variant="outline"
-        size="lg"
+        size="icon-lg"
         onClick={actions.share}
+        aria-label={copied ? 'Link copied' : 'Share'}
+        title={copied ? 'Link copied' : 'Share'}
         className="ui-press rounded-xl"
       >
-        {copied ? <Check className="ui-pop" /> : <Share2 />} {copied ? 'Link copied' : 'Share'}
+        {copied ? <Check className="ui-pop" /> : <Share2 />}
       </Button>
     </div>
   );

@@ -20,6 +20,7 @@ import {
 import { ReportButton } from './report-button';
 import { VerifiedBadge } from './common/verified-badge';
 import { ResponsiveImage } from './common/responsive-image';
+import { CategoryCover } from './common/category-cover';
 import { formatDistance } from './public/search/geo';
 import { isFavorite, toggleFavorite, FAVORITES_EVENT } from '@/lib/favorites';
 import { track } from '@/lib/analytics/track';
@@ -68,11 +69,12 @@ export function BusinessCard({
   const ratingNum = rating != null && rating !== '' ? Number(rating) : null;
   const reviews = Number(business.reviewCount ?? business.totalReviews ?? 0) || 0;
   const logo: string | undefined = business.logo || undefined;
+  const cover: string | undefined =
+    typeof business.coverImage === 'string' && business.coverImage ? business.coverImage : undefined;
   const categoryName: string = business.category?.name || business.categoryName || '';
   const offerCount = Number(business.activeOfferCount ?? business.offerCount ?? 0) || 0;
   const brandName: string = business.brand?.name || '';
   const outlet: string = business.outletLabel || '';
-  const initial = (business.name || 'B').charAt(0).toUpperCase();
   const href = `/business/${business.id}`;
 
   const [saved, setSaved] = useState(false);
@@ -127,19 +129,32 @@ export function BusinessCard({
     >
       {/* Media */}
       <div className="relative">
-        <ResponsiveImage
-          src={logo}
-          alt=""
-          ratio="2 / 1"
-          priority={priority}
-          className="bg-brand-soft"
-          imgClassName="!object-contain p-6 transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-          fallback={
-            <span className="flex size-16 items-center justify-center rounded-2xl bg-card text-2xl font-bold text-brand-soft-foreground shadow-e1 ring-1 ring-primary/10">
-              {initial}
-            </span>
-          }
-        />
+        {cover ? (
+          <ResponsiveImage
+            src={cover}
+            alt=""
+            ratio="2 / 1"
+            priority={priority}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            imgClassName="transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            fallback={<CategoryCover category={categoryName} size="sm" />}
+          />
+        ) : logo ? (
+          <ResponsiveImage
+            src={logo}
+            alt=""
+            ratio="2 / 1"
+            priority={priority}
+            className="bg-brand-soft"
+            imgClassName="!object-contain p-6 transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            fallback={<CategoryCover category={categoryName} size="sm" />}
+          />
+        ) : (
+          // No photo yet: category art instead of a lone initial.
+          <div className="relative overflow-hidden" style={{ aspectRatio: '2 / 1' }}>
+            <CategoryCover category={categoryName || business.category?.slug} />
+          </div>
+        )}
 
         {categoryName && (
           <span className="pointer-events-none absolute left-3 top-3 max-w-[65%] truncate rounded-full bg-card/92 px-2.5 py-1 text-caption font-semibold text-foreground shadow-e1 backdrop-blur-sm">

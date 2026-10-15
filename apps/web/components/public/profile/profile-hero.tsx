@@ -12,6 +12,7 @@ import {
   type CarouselApi,
 } from '@/components/ui/carousel';
 import { ResponsiveImage } from '@/components/common/responsive-image';
+import { CategoryCover } from '@/components/common/category-cover';
 import { StatusPill } from '@/components/common/status-pill';
 import { BrandPublicChip } from '@/components/business/brand-public-section';
 import { cn } from '@/lib/utils';
@@ -40,7 +41,17 @@ function useOpenStatus(hours: unknown) {
   return status;
 }
 
-function Gallery({ slides, name, onBack }: { slides: Slide[]; name: string; onBack: () => void }) {
+function Gallery({
+  slides,
+  name,
+  category,
+  onBack,
+}: {
+  slides: Slide[];
+  name: string;
+  category?: string | null;
+  onBack: () => void;
+}) {
   const [api, setApi] = useState<CarouselApi>();
   const [index, setIndex] = useState(0);
 
@@ -61,10 +72,9 @@ function Gallery({ slides, name, onBack }: { slides: Slide[]; name: string; onBa
   return (
     <div className="relative overflow-hidden rounded-3xl border border-border bg-muted">
       {slides.length === 0 ? (
-        <div className="flex h-36 items-center justify-center bg-gradient-to-br from-primary/15 via-secondary to-card sm:h-48">
-          <span className="text-6xl font-black text-primary/25 sm:text-7xl" aria-hidden>
-            {name.trim().charAt(0).toUpperCase()}
-          </span>
+        // No photos yet: category art, not a giant initial.
+        <div className="h-36 sm:h-48">
+          <CategoryCover category={category} />
         </div>
       ) : (
         <Carousel
@@ -183,7 +193,12 @@ export function ProfileHero({
   return (
     <header>
       <div className="relative">
-        <Gallery slides={slides} name={biz.name || ''} onBack={onBack} />
+        <Gallery
+          slides={slides}
+          name={biz.name || ''}
+          category={biz.category?.name || biz.category?.slug}
+          onBack={onBack}
+        />
 
         {/* Logo straddles the gallery edge */}
         <div className="absolute -bottom-9 left-4 h-[4.5rem] w-[4.5rem] overflow-hidden rounded-2xl border-4 border-background bg-card ui-elev-2 sm:-bottom-12 sm:left-6 sm:h-24 sm:w-24">
