@@ -31,12 +31,25 @@ describe('pricing catalogue', () => {
       'MONTHLY',
     );
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.cart.totals).toEqual({ base: 349 + 298, tax: Math.round((647 * 18) / 100), total: 647 + 116 });
+    if (r.ok)
+      expect(r.cart.totals).toEqual({
+        base: 349 + 298,
+        tax: Math.round((647 * 18) / 100),
+        total: 647 + 116,
+      });
   });
 
   it('rejects: add-on with no yearly price, two bundles, bad qty, unknown code, empty, quarterly', () => {
     expect(priceCart([{ code: 'ADDON_OFFER', quantity: 1 }], 'YEARLY').ok).toBe(false);
-    expect(priceCart([{ code: 'SINGLE', quantity: 1 }, { code: 'MULTI', quantity: 1 }], 'MONTHLY').ok).toBe(false);
+    expect(
+      priceCart(
+        [
+          { code: 'SINGLE', quantity: 1 },
+          { code: 'MULTI', quantity: 1 },
+        ],
+        'MONTHLY',
+      ).ok,
+    ).toBe(false);
     expect(priceCart([{ code: 'ADDON_OV', quantity: 0 }], 'MONTHLY').ok).toBe(false);
     expect(priceCart([{ code: 'NOPE', quantity: 1 }], 'MONTHLY').ok).toBe(false);
     expect(priceCart([], 'MONTHLY').ok).toBe(false);

@@ -74,7 +74,10 @@ export class CreateCategoryDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiProperty({ required: false, description: 'false keeps it listed but off the registration form' })
+  @ApiProperty({
+    required: false,
+    description: 'false keeps it listed but off the registration form',
+  })
   @IsOptional()
   @IsBoolean()
   showInSignup?: boolean;
@@ -138,7 +141,10 @@ export class UpdateCategoryDto {
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiProperty({ required: false, description: 'false keeps it listed but off the registration form' })
+  @ApiProperty({
+    required: false,
+    description: 'false keeps it listed but off the registration form',
+  })
   @IsOptional()
   @IsBoolean()
   showInSignup?: boolean;

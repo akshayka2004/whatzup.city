@@ -212,7 +212,10 @@ export function priceCart(
     }
     const unit = unitPrice(l.code, cycle);
     if (unit == null) {
-      return { ok: false, error: `${item.name} is not available as a ${cycle.toLowerCase()} plan.` };
+      return {
+        ok: false,
+        error: `${item.name} is not available as a ${cycle.toLowerCase()} plan.`,
+      };
     }
     priced.push({ code: l.code, quantity: qty, name: item.name, unit, amount: unit * qty });
   }

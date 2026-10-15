@@ -24,9 +24,16 @@ export class SecurityExceptionFilter implements ExceptionFilter {
         typeof resObj === 'object' && resObj !== null && 'message' in resObj
           ? (resObj as any).message
           : exception.message;
-      if (typeof resObj === 'object' && resObj !== null && typeof (resObj as any).code === 'string') {
+      if (
+        typeof resObj === 'object' &&
+        resObj !== null &&
+        typeof (resObj as any).code === 'string'
+      ) {
         const r = resObj as any;
-        extra = { code: r.code, ...(r.details && typeof r.details === 'object' ? { details: r.details } : {}) };
+        extra = {
+          code: r.code,
+          ...(r.details && typeof r.details === 'object' ? { details: r.details } : {}),
+        };
       }
     }
     // 2. Handle Prisma Database Engine Exceptions

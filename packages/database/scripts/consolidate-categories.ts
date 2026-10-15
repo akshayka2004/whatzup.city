@@ -63,7 +63,10 @@ async function approvedCountsBySlug(): Promise<Map<string, number>> {
 async function main() {
   console.log(APPLY ? '== APPLY ==' : '== DRY RUN (nothing is written to the database) ==');
 
-  const master = await prisma.tenant.findUnique({ where: { slug: 'default' }, select: { id: true } });
+  const master = await prisma.tenant.findUnique({
+    where: { slug: 'default' },
+    select: { id: true },
+  });
   if (!master) throw new Error('Default (master) tenant not found');
 
   const cats = await prisma.$queryRaw<CatRow[]>`
@@ -108,7 +111,9 @@ async function main() {
   console.log(`Master tenant: ${master.id} (${masterLive.length} live categories)`);
   console.log(`Copies in other tenants: ${plan.rows.length}`);
   console.log(`  MAP            ${by('MAP').length}  (referenced; repoint at the master row)`);
-  console.log(`  CREATE_MASTER  ${by('CREATE_MASTER').length}  (slug only exists as copies; master row is created)`);
+  console.log(
+    `  CREATE_MASTER  ${by('CREATE_MASTER').length}  (slug only exists as copies; master row is created)`,
+  );
   console.log(`  RETIRE_UNUSED  ${by('RETIRE_UNUSED').length}  (nobody references it)`);
   console.log(`  BLOCKED        ${by('BLOCKED').length}`);
   console.log(`Businesses on a copy: ${offMasterBiz.length} of ${businesses.length}`);
@@ -126,7 +131,9 @@ async function main() {
     return m && c && m.name !== c.name;
   });
   if (renamed.length) {
-    console.log(`Copies whose name differs from the master (display name will change): ${renamed.length}`);
+    console.log(
+      `Copies whose name differs from the master (display name will change): ${renamed.length}`,
+    );
     for (const r of renamed.slice(0, 15)) {
       const m = categories.find((c) => c.id === r.masterId)!;
       const c = categories.find((c) => c.id === r.categoryId)!;
@@ -136,10 +143,17 @@ async function main() {
 
   const csvPath =
     outArg?.slice('--out='.length) ||
-    path.join(os.tmpdir(), `category-consolidation-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`);
+    path.join(
+      os.tmpdir(),
+      `category-consolidation-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`,
+    );
   const lines = ['category_id,tenant_id,slug,action,master_id,reason'];
   for (const r of plan.rows) {
-    lines.push([r.categoryId, r.tenantId, r.slug, r.action, r.masterId ?? '', r.reason ?? ''].map(csvCell).join(','));
+    lines.push(
+      [r.categoryId, r.tenantId, r.slug, r.action, r.masterId ?? '', r.reason ?? '']
+        .map(csvCell)
+        .join(','),
+    );
   }
   fs.writeFileSync(csvPath, lines.join('\n'));
   console.log(`Mapping written: ${csvPath}`);
@@ -175,7 +189,8 @@ async function main() {
       // 2. copy id -> master id
       const map = new Map<string, string>();
       for (const r of plan.rows) {
-        const target = r.masterId ?? (r.action === 'CREATE_MASTER' ? created.get(r.slug) : undefined);
+        const target =
+          r.masterId ?? (r.action === 'CREATE_MASTER' ? created.get(r.slug) : undefined);
         if (target) map.set(r.categoryId, target);
       }
       const copyIds = [...map.keys()];
@@ -214,7 +229,8 @@ async function main() {
         SELECT COUNT(*)::bigint AS n
         FROM businesses b JOIN business_categories c ON c.id = b.category_id
         WHERE c.tenant_id <> ${master.id}::uuid`;
-      if (Number(off[0].n) !== 0) throw new Error(`Verification failed: ${off[0].n} businesses still on a copy`);
+      if (Number(off[0].n) !== 0)
+        throw new Error(`Verification failed: ${off[0].n} businesses still on a copy`);
 
       const liveIds = new Set(
         (
@@ -227,7 +243,9 @@ async function main() {
       for (const b of bizAfter) {
         for (const s of (b.subcategory_ids as unknown[]) ?? []) {
           if (typeof s === 'string' && !liveIds.has(s)) {
-            throw new Error(`Verification failed: business ${b.id} has unresolved subcategory ${s}`);
+            throw new Error(
+              `Verification failed: business ${b.id} has unresolved subcategory ${s}`,
+            );
           }
         }
       }
@@ -235,7 +253,9 @@ async function main() {
       const after = await approvedCountsBySlugTx(tx);
       for (const [slug, n] of before) {
         if ((after.get(slug) ?? 0) !== n) {
-          throw new Error(`Verification failed: ${slug} approved count ${n} -> ${after.get(slug) ?? 0}`);
+          throw new Error(
+            `Verification failed: ${slug} approved count ${n} -> ${after.get(slug) ?? 0}`,
+          );
         }
       }
       console.log(
@@ -245,7 +265,9 @@ async function main() {
     },
     { maxWait: 30_000, timeout: 300_000 },
   );
-  console.log('Verification passed: 0 businesses on a copy, subcategories resolve, listing counts unchanged.');
+  console.log(
+    'Verification passed: 0 businesses on a copy, subcategories resolve, listing counts unchanged.',
+  );
   console.log('Next: reindex search (category names may have changed) and clear category caches.');
 }
 

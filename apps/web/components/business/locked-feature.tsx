@@ -27,13 +27,12 @@ export function LockedFeature({
       )}
     >
       {/* Decorative bars only: no real data is rendered or requested. */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-6 bottom-0 top-10 flex items-end gap-3 opacity-40 blur-[2px]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-6 bottom-0 top-10 flex items-end gap-3 opacity-40 blur-[2px]"
+      >
         {[35, 55, 42, 70, 52, 85, 60, 92, 74, 66].map((h, i) => (
-          <div
-            key={i}
-            className="flex-1 rounded-t-lg bg-brand-soft"
-            style={{ height: `${h}%` }}
-          />
+          <div key={i} className="flex-1 rounded-t-lg bg-brand-soft" style={{ height: `${h}%` }} />
         ))}
       </div>
       <div className="relative mx-auto flex max-w-md flex-col items-center text-center">

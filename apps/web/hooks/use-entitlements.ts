@@ -48,7 +48,9 @@ export function useEntitlements(explicitBusinessId?: string) {
 
   // The API wraps nothing here, but tolerate a { data } envelope like the other endpoints.
   const ent: PlanEntitlements | null =
-    data && (data as any).data && !(data as any).plan ? ((data as any).data as PlanEntitlements) : data;
+    data && (data as any).data && !(data as any).plan
+      ? ((data as any).data as PlanEntitlements)
+      : data;
 
   return {
     ent,

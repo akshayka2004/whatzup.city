@@ -32,7 +32,14 @@ describe('EntitlementsService.forBusiness', () => {
   it('Free when nothing is live: 1 offer, 0 vouchers, no analytics', async () => {
     const { service } = make([]);
     const e = await service.forBusiness('b1');
-    expect(e).toMatchObject({ plan: 'FREE', source: 'FREE', offers: 1, vouchers: 0, analytics: false, expiresAt: null });
+    expect(e).toMatchObject({
+      plan: 'FREE',
+      source: 'FREE',
+      offers: 1,
+      vouchers: 0,
+      analytics: false,
+      expiresAt: null,
+    });
   });
 
   it.each([
@@ -50,7 +57,13 @@ describe('EntitlementsService.forBusiness', () => {
     const { service } = make([row('ADDON_OFFER', { quantity: 2 }), row('ADDON_OV')]);
     const e = await service.forBusiness('b1');
     // Free 1 offer + 2 + 1, vouchers 0 + 0 + 1
-    expect(e).toMatchObject({ offers: 4, vouchers: 1, analytics: false, plan: 'FREE', source: 'PLAN' });
+    expect(e).toMatchObject({
+      offers: 4,
+      vouchers: 1,
+      analytics: false,
+      plan: 'FREE',
+      source: 'PLAN',
+    });
     expect(e.addons).toHaveLength(2);
   });
 
@@ -63,7 +76,13 @@ describe('EntitlementsService.forBusiness', () => {
   it('grandfathers legacy plans (analytics kept, source LEGACY)', async () => {
     const { service } = make([row('WHTZUP_PLUS', { billingCycle: 'QUARTERLY', kind: 'BASE' })]);
     const e = await service.forBusiness('b1');
-    expect(e).toMatchObject({ plan: 'WHTZUP_PLUS', source: 'LEGACY', offers: 3, vouchers: 3, analytics: true });
+    expect(e).toMatchObject({
+      plan: 'WHTZUP_PLUS',
+      source: 'LEGACY',
+      offers: 3,
+      vouchers: 3,
+      analytics: true,
+    });
   });
 
   it('hotel and launch-offer legacy rows are honoured', async () => {
@@ -81,7 +100,10 @@ describe('EntitlementsService.forBusiness', () => {
 
   it('expiresAt is the soonest live end date', async () => {
     const soon = future(5);
-    const { service } = make([row('SINGLE', { endDate: future(300) }), row('ADDON_OV', { endDate: soon })]);
+    const { service } = make([
+      row('SINGLE', { endDate: future(300) }),
+      row('ADDON_OV', { endDate: soon }),
+    ]);
     const e = await service.forBusiness('b1');
     expect(new Date(e.expiresAt as string).getTime()).toBe(soon.getTime());
   });
@@ -105,13 +127,19 @@ describe('EntitlementsService limits', () => {
     const full = make([], { offers: 1 });
     const err: any = await full.service.assertCanGoLive('b1', 'offer').catch((e) => e);
     expect(err).toBeInstanceOf(ForbiddenException);
-    expect(err.getResponse()).toMatchObject({ code: 'PLAN_LIMIT', details: { resource: 'offer', limit: 1, used: 1 } });
+    expect(err.getResponse()).toMatchObject({
+      code: 'PLAN_LIMIT',
+      details: { resource: 'offer', limit: 1, used: 1 },
+    });
   });
 
   it('Free cannot publish any voucher', async () => {
     const { service } = make([], { vouchers: 0 });
     const err: any = await service.assertCanGoLive('b1', 'voucher').catch((e) => e);
-    expect(err.getResponse()).toMatchObject({ code: 'PLAN_LIMIT', details: { resource: 'voucher', limit: 0 } });
+    expect(err.getResponse()).toMatchObject({
+      code: 'PLAN_LIMIT',
+      details: { resource: 'voucher', limit: 0 },
+    });
   });
 
   it('a bundle with add-ons raises the ceiling', async () => {
