@@ -31,6 +31,9 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
+import { useAuth } from '@/hooks/use-auth';
+import { useNavArea, useNavSpec } from '@/hooks/use-nav';
+import { allItems, type NavArea } from '@/lib/nav/config';
 
 const RECENTS_KEY = 'recent_searches';
 
@@ -58,8 +61,30 @@ const CATEGORIES = [
   { label: 'Education', icon: GraduationCap },
 ];
 
+/** The workspace a signed-in role lives in, so its pages are searchable from anywhere. */
+function homeAreaOf(u: { role?: string; rbacRole?: string } | null): NavArea | null {
+  if (!u) return null;
+  if (u.role === 'super-admin' || u.rbacRole === 'SUPER_ADMIN') return 'super-admin';
+  if (u.role === 'admin' || u.rbacRole === 'MASTER_ADMIN') return 'admin';
+  if (u.role === 'government' || u.rbacRole === 'GOVERNMENT_ADMIN') return 'government';
+  if (u.role === 'platform_staff' || u.rbacRole === 'PLATFORM_STAFF') return 'staff';
+  if (u.role === 'civic') return 'civic';
+  if (u.role === 'business' || u.rbacRole?.startsWith('BUSINESS_')) return 'business';
+  return null;
+}
+
 export function CommandPalette({ autoOpen = false }: { autoOpen?: boolean } = {}) {
   const router = useRouter();
+  const { user } = useAuth();
+  // Pages of the area being viewed, plus the signed-in role's own workspace (so an admin can
+  // jump to "Payments" while browsing the public site).
+  const viewedArea = useNavArea();
+  const homeArea = homeAreaOf(user) ?? viewedArea;
+  const viewedPages = allItems(useNavSpec(viewedArea));
+  const homePages = allItems(useNavSpec(homeArea));
+  const workspacePages = [...homePages, ...viewedPages].filter(
+    (p, i, all) => all.findIndex((x) => x.href === p.href) === i,
+  );
   // autoOpen: mounted by CommandPaletteLoader in response to the first open request.
   const [open, setOpen] = useState(autoOpen);
   const [query, setQuery] = useState('');
@@ -246,6 +271,24 @@ export function CommandPalette({ autoOpen = false }: { autoOpen?: boolean } = {}
             );
           })}
         </CommandGroup>
+
+        {user && workspacePages.length > 0 && (
+          <CommandGroup heading="Your pages">
+            {workspacePages.map((p) => {
+              const Icon = p.icon;
+              return (
+                <CommandItem
+                  key={p.href}
+                  value={`page ${p.label} ${p.href}`}
+                  onSelect={() => go(p.href)}
+                >
+                  <Icon />
+                  <span>{p.label}</span>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        )}
 
         <CommandGroup heading="Go to">
           {NAVIGATE.map((n) => {

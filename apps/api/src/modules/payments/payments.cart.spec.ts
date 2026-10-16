@@ -60,11 +60,11 @@ describe('PaymentsService.purchaseCart', () => {
         { code: 'ADDON_OV', quantity: 2 },
       ]),
     );
-    // 349 + 2*149 = 647 ex-GST; 18% = 116.46 -> 116 -> 763
-    expect(r.payment.amount).toBe(763);
+    // 349 + 2*149 = 647, GST-inclusive; GST inside = 647 - round(647/1.18) = 99
+    expect(r.payment.amount).toBe(647);
     expect(r.payment.invoiceMetadata).toMatchObject({
-      amountBase: 647,
-      amountTax: 116,
+      amountBase: 548,
+      amountTax: 99,
       billingCycle: 'MONTHLY',
     });
     expect(tx.subscription.create).toHaveBeenCalledTimes(2);
@@ -90,7 +90,7 @@ describe('PaymentsService.purchaseCart', () => {
       'biz-1',
       dto([{ code: 'SINGLE_AN', quantity: 1 }], 'YEARLY'),
     );
-    expect(r.payment.amount).toBe(4719); // 3999 + 18%
+    expect(r.payment.amount).toBe(3999); // GST-inclusive
     expect(tx.subscription.create.mock.calls[0][0].data.duration).toBe(365);
   });
 

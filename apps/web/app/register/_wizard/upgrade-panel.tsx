@@ -46,16 +46,18 @@ export function OrderSummary({ w, className }: { w: Wizard; className?: string }
       )}
       {payableTotals && (
         <>
-          <div className="space-y-1.5 border-t border-border pt-3 text-sm">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Subtotal</span>
-              <span className="tabular-nums">{formatINR(payableTotals.base)}</span>
+          {claimLaunch && (
+            <div className="space-y-1.5 border-t border-border pt-3 text-sm">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Subtotal</span>
+                <span className="tabular-nums">{formatINR(payableTotals.base)}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
+                <span>GST ({GST_PERCENT}%)</span>
+                <span className="tabular-nums">{formatINR(payableTotals.tax)}</span>
+              </div>
             </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>GST ({GST_PERCENT}%)</span>
-              <span className="tabular-nums">{formatINR(payableTotals.tax)}</span>
-            </div>
-          </div>
+          )}
           <div className="flex justify-between items-baseline border-t border-border pt-3">
             <span className="text-sm font-bold text-foreground">Amount payable</span>
             <span className="text-2xl font-extrabold text-foreground tabular-nums">
@@ -66,7 +68,13 @@ export function OrderSummary({ w, className }: { w: Wizard; className?: string }
             {claimLaunch
               ? `You pay for the paid months and get the bonus months free: valid ${days} days from activation.`
               : `Valid for ${days} days from activation.`}{' '}
-            Inclusive of {GST_PERCENT}% GST.
+            {claimLaunch ? (
+              <>Inclusive of {GST_PERCENT}% GST.</>
+            ) : (
+              <>
+                Includes {formatINR(payableTotals.tax)} GST ({GST_PERCENT}%).
+              </>
+            )}
           </p>
         </>
       )}
@@ -282,7 +290,7 @@ export function UpgradePanel({ w }: { w: Wizard }) {
                     {bundlePrice != null ? formatINR(bundlePrice) : '—'}
                     <span className="text-xs font-medium text-muted-foreground">{suffix}</span>
                   </p>
-                  <p className="text-xs text-muted-foreground">+ GST</p>
+                  <p className="text-xs text-muted-foreground">incl. GST</p>
                 </div>
               </div>
               <p className="mt-2 text-xs font-semibold text-brand-soft-foreground">
@@ -310,7 +318,7 @@ export function UpgradePanel({ w }: { w: Wizard }) {
                       <p className="text-xs text-muted-foreground">
                         {unavailable
                           ? 'Sold monthly only'
-                          : `${formatINR(price)}${suffix} + GST · ${a.blurb}`}
+                          : `${formatINR(price)}${suffix} incl. GST · ${a.blurb}`}
                       </p>
                     </div>
                     <Stepper

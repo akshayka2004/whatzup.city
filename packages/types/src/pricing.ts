@@ -1,7 +1,7 @@
 // ============================================================
 // Pricing catalogue — ONE definition shared by the API (what a
 // business is entitled to, what a payment must cost) and the web
-// app (plan picker, cart, labels). Prices are ex-GST.
+// app (plan picker, cart, labels). Prices are GST-inclusive: the listed price is what the customer pays.
 //
 //   FREE          listing + 1 live offer, no vouchers, no analytics
 //   ADDON_*       stackable units on top of Free or any bundle
@@ -15,7 +15,7 @@
 export type BillingCycle = 'MONTHLY' | 'YEARLY' | 'QUARTERLY';
 export type PlanKind = 'BASE' | 'ADDON';
 
-/** GST added on top of every listed price. */
+/** GST contained in every listed price (and added on top for the retired legacy plans). */
 export const GST_PERCENT = 18;
 
 export interface Entitlements {
@@ -33,9 +33,9 @@ export interface CatalogueItem extends Entitlements {
   name: string;
   /** Short line shown on the card. */
   blurb: string;
-  /** Per month, ex-GST. */
+  /** Per month, GST included. */
   monthly: number;
-  /** Per year, ex-GST. null = not sold yearly. */
+  /** Per year, GST included. null = not sold yearly. */
   yearly: number | null;
   /** SINGLE bundles are for a standalone business, MULTI per outlet of a brand. */
   outlets?: 'SINGLE' | 'MULTI';
@@ -154,7 +154,7 @@ export function reminderDays(cycle: BillingCycle): number {
   return cycle === 'MONTHLY' ? 3 : 5;
 }
 
-/** Ex-GST price of one unit for a cycle, or null when that code isn't sold on that cycle. */
+/** GST-inclusive price of one unit for a cycle, or null when that code isn't sold on that cycle. */
 export function unitPrice(code: string, cycle: BillingCycle): number | null {
   const item = catalogueItem(code);
   if (!item) return null;
@@ -174,6 +174,17 @@ export function withTax(base: number): Totals {
   const b = Math.max(0, Math.round(base));
   const tax = Math.round((b * GST_PERCENT) / 100);
   return { base: b, tax, total: b + tax };
+}
+
+/**
+ * Listed prices already include GST, so the payable total IS the price. The tax inside it is
+ * split out for invoices the same way the payments service does (base = total / 1.18, rounded;
+ * tax = the remainder), so base + tax always equals what was paid.
+ */
+export function inclusiveTotals(total: number): Totals {
+  const t = Math.max(0, Math.round(total));
+  const base = Math.round(t / (1 + GST_PERCENT / 100));
+  return { base, tax: t - base, total: t };
 }
 
 export interface CartLine {
@@ -222,7 +233,7 @@ export function priceCart(
   if (bundles > 1) return { ok: false, error: 'Choose one bundle.' };
   if (priced.length === 0) return { ok: false, error: 'Your cart is empty.' };
   const base = priced.reduce((s, l) => s + l.amount, 0);
-  return { ok: true, cart: { cycle, lines: priced, totals: withTax(base) } };
+  return { ok: true, cart: { cycle, lines: priced, totals: inclusiveTotals(base) } };
 }
 
 /**

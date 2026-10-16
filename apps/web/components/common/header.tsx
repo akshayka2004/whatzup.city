@@ -113,6 +113,7 @@ export function Header() {
       <button
         type="button"
         onClick={openPalette}
+        data-search-trigger
         aria-label="Search businesses, offers, events and services"
         className="group hidden h-10 w-full max-w-md items-center gap-2.5 rounded-full border border-border bg-background/70 px-4 text-left text-sm text-muted-foreground transition-[border-color,background-color] hover:border-border-strong hover:bg-background md:flex"
       >
@@ -131,6 +132,7 @@ export function Header() {
           variant="ghost"
           size="icon"
           onClick={openPalette}
+          data-search-trigger
           aria-label="Search"
           className="md:hidden"
         >

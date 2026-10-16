@@ -939,7 +939,7 @@ business is entitled to) and the web (picker, cart, labels).
 | `SINGLE` / `SINGLE_AN` | one outlet, 3 offers + 3 vouchers (without / with analytics) | ₹349 / ₹399 | ₹3,499 / ₹3,999 |
 | `MULTI` / `MULTI_AN` | per outlet of a brand, 3 + 3 (without / with analytics) | ₹319 / ₹339 | ₹3,199 / ₹3,399 |
 
-Prices are ex-GST (+18% on top, rounded to the rupee, as before). Open item for the boss: every
+**Prices are GST-inclusive** (changed 2026-10-16): the listed price is what the customer pays; the 18% GST inside it is split out for invoices (base = total ÷ 1.18, rounded; tax = remainder), `inclusiveTotals()` in `pricing.ts`. Legacy plans and the launch offer stay ex-GST (+18%). Open item for the boss: every
 other yearly price is 10× monthly; ₹949 and ₹999 are not (10× would be ₹1,490 / ₹1,990). It is one
 line in `pricing.ts`.
 

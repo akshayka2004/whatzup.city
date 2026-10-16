@@ -107,9 +107,7 @@ export function PlanPicker({
             <span className="text-sm font-medium text-foreground">With analytics</span>
           </label>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Prices are before GST; {GST_PERCENT}% GST is added at checkout.
-        </p>
+        <p className="text-xs text-muted-foreground">All prices include {GST_PERCENT}% GST.</p>
       </div>
 
       {/* Bundles */}

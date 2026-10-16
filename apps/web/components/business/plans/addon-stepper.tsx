@@ -17,7 +17,7 @@ export function AddonStepper({
   onChange,
 }: {
   item: CatalogueItem;
-  /** Ex-GST unit price for the cycle (never null here — unsellable cycles are hidden by the caller). */
+  /** GST-inclusive unit price for the cycle (never null here — unsellable cycles are hidden by the caller). */
   unit: number;
   cycle: PurchasableCycle;
   quantity: number;

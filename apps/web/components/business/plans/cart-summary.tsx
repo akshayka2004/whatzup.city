@@ -80,20 +80,15 @@ export function CartSummary({
       </ul>
 
       <dl className="space-y-1.5 border-t border-border pt-3 text-sm">
-        <div className="flex justify-between text-muted-foreground">
-          <dt>Subtotal</dt>
-          <dd className="tabular-nums">{formatINR(totals.base)}</dd>
-        </div>
-        <div className="flex justify-between text-muted-foreground">
-          <dt>GST ({GST_PERCENT}%)</dt>
-          <dd className="tabular-nums">{formatINR(totals.tax)}</dd>
-        </div>
         <div className="flex items-baseline justify-between pt-1">
           <dt className="font-bold text-foreground">Total</dt>
           <dd className="text-2xl font-extrabold tabular-nums text-foreground">
             {formatINR(totals.total)}
           </dd>
         </div>
+        <p className="text-xs text-muted-foreground">
+          Includes {formatINR(totals.tax)} GST ({GST_PERCENT}%).
+        </p>
       </dl>
 
       {preview && (

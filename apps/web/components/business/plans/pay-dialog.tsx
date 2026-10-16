@@ -160,8 +160,7 @@ export function PayDialog({
                 <div>
                   <div className="text-sm font-bold text-foreground">Amount payable</div>
                   <div className="text-xs text-muted-foreground">
-                    {formatINR(cart.totals.base)} + {formatINR(cart.totals.tax)} GST ({GST_PERCENT}
-                    %)
+                    Includes {formatINR(cart.totals.tax)} GST ({GST_PERCENT}%)
                   </div>
                 </div>
                 <span className="text-2xl font-extrabold tabular-nums text-foreground">

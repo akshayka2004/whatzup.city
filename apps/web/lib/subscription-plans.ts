@@ -173,14 +173,18 @@ export function cycleMonths(cycle?: string | null, durationDays?: number | null)
 
 /**
  * Monthly recurring revenue (ex-GST) of one subscription row: yearly ÷ 12, monthly as is, legacy
- * quarterly ÷ 3. `pricing` already holds the line total (unit × quantity).
+ * quarterly ÷ 3. pricing already holds the line total (unit × quantity). Current catalogue plans
+ * are sold GST-inclusive, so their GST is taken out; retired legacy plans were sold ex-GST.
  */
 export function monthlyRecurring(row: {
   pricing?: string | number | null;
   billingCycle?: string | null;
   duration?: number | null;
+  packageName?: string | null;
 }) {
-  return Number(row.pricing || 0) / cycleMonths(row.billingCycle, row.duration);
+  const line = Number(row.pricing || 0);
+  const exTax = catalogueItem(row.packageName ?? '') ? line / (1 + TAX_PERCENT / 100) : line;
+  return exTax / cycleMonths(row.billingCycle, row.duration);
 }
 
 export type CartLineView = {
