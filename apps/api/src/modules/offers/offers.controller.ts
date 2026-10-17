@@ -30,8 +30,11 @@ export class OffersController {
     @Query('tenantId') tenantId: string = 'default',
     @Query('page') page?: number,
     @Query('city') city?: string,
+    @Query('limit') limit?: number,
   ) {
-    return this.offersService.findActive(tenantId, page, 20, true, city);
+    // The public page filters client-side, so it asks for a big page instead of silently seeing 20.
+    const size = Math.min(Math.max(Number(limit) || 20, 1), 100);
+    return this.offersService.findActive(tenantId, page, size, true, city);
   }
 
   // ── Super-admin: platform-wide offers (all tenants) ──

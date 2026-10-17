@@ -12,6 +12,6 @@ export const metadata: Metadata = {
 };
 
 export default async function EventsPage() {
-  const initialEvents = await serverGet<unknown>('/v1/events');
+  const initialEvents = await serverGet<unknown>('/v1/events?limit=100');
   return <EventsClient initialEvents={initialEvents} />;
 }

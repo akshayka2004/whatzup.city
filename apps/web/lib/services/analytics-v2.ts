@@ -1,3 +1,4 @@
+import type { PurchaseMix, OfferChannelMix } from '@/components/analytics/purchase-mix-panel';
 import { apiService } from '@/lib/services/api-service';
 
 export type Metric = { value: number; previous: number; change: number | null };
@@ -48,6 +49,8 @@ export type BusinessReport = {
   }>;
   sources: { key: string; visitors: number }[];
   devices: { key: string; visitors: number }[];
+  purchases: PurchaseMix;
+  offerChannels: OfferChannelMix;
   heatmap: { dow: number; hour: number; views: number }[];
   offers: {
     id: string;
@@ -102,6 +105,8 @@ export type PlatformReport = {
   topBusinesses: { id: string; name: string; city: string; visitors: number }[];
   topCategories: { name: string; visitors: number }[];
   cities: { city: string; businesses: number }[];
+  purchases: PurchaseMix;
+  offerChannels: OfferChannelMix;
   searches: { query: string; total: number; zeroResults: number }[];
   planMix: { plan: string; revenue: number; count: number }[];
   generatedAt: string;

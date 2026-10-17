@@ -27,8 +27,13 @@ export class EventsController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'List active public events (optionally by city)' })
-  async findPublic(@Query('city') city?: string, @Query('page') page?: number) {
-    return this.eventsService.findPublicActive(city, page);
+  async findPublic(
+    @Query('city') city?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('category') category?: string,
+  ) {
+    return this.eventsService.findPublicActive(city, page, limit, category);
   }
 
   // ── Super-admin analytics (declared before :id to avoid capture) ──

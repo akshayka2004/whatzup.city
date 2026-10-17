@@ -203,7 +203,7 @@ function CategoryContent() {
     open: true,
     rating: true,
     halal: (caps.hasFood && caps.hasHalalData) || filters.halal,
-    fulfilment: (caps.hasFood && caps.hasFulfilmentData) || !!filters.fulfilment,
+    fulfilment: caps.hasFulfilmentData || !!filters.fulfilment,
     city: true,
     sorts: [...SORTS],
   };

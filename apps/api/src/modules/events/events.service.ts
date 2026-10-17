@@ -118,16 +118,20 @@ export class EventsService {
 
   // Public listing: ACTIVE, not expired, optionally filtered by viewer city
   // (empty targetCities = All cities).
-  async findPublicActive(city?: string, page = 1, limit = 20) {
+  async findPublicActive(city?: string, page = 1, limit = 20, category?: string) {
     const pageVal = Math.max(1, Number(page) || 1);
-    const limitVal = Math.min(Number(limit) || 20, 50);
+    const limitVal = Math.min(Number(limit) || 20, 100);
     const now = new Date();
     const where: any = { deletedAt: null, status: 'ACTIVE', endDate: { gte: now } };
+    if (category && EVENT_CATEGORIES.includes(category)) where.category = category;
     if (city) {
+      // An event belongs to its own city (or the cities it targets). Only events with no city at
+      // all (webinars, online) are shown everywhere. Before, "no target cities" matched every
+      // event, so picking a city changed nothing.
       where.OR = [
-        { targetCities: { equals: [] } },
-        { targetCities: { array_contains: city } },
-        { city },
+        { city: { equals: city.trim(), mode: 'insensitive' } },
+        { targetCities: { array_contains: city.trim() } },
+        { AND: [{ city: null }, { targetCities: { equals: [] } }] },
       ];
     }
     const [data, total] = await Promise.all([

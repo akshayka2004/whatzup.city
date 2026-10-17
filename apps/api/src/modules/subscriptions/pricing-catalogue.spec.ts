@@ -1,7 +1,7 @@
 import { CATALOGUE, cycleDays, priceCart, unitPrice, withTax } from '@saas/types';
 
 describe('pricing catalogue', () => {
-  it('matches the boss price sheet (ex-GST)', () => {
+  it('matches the boss price sheet (GST-inclusive)', () => {
     const p = (code: string) => [unitPrice(code, 'MONTHLY'), unitPrice(code, 'YEARLY')];
     expect(p('ADDON_OFFER')).toEqual([99, null]);
     expect(p('ADDON_OV')).toEqual([149, 949]);
@@ -17,7 +17,7 @@ describe('pricing catalogue', () => {
     expect([cycleDays('MONTHLY'), cycleDays('YEARLY')]).toEqual([30, 365]);
   });
 
-  it('adds 18% GST on top, rounded to the rupee', () => {
+  it('legacy withTax still adds 18% GST on top, rounded to the rupee', () => {
     expect(withTax(99)).toEqual({ base: 99, tax: 18, total: 117 });
     expect(withTax(3499)).toEqual({ base: 3499, tax: 630, total: 4129 });
   });
@@ -33,9 +33,10 @@ describe('pricing catalogue', () => {
     expect(r.ok).toBe(true);
     if (r.ok)
       expect(r.cart.totals).toEqual({
-        base: 349 + 298,
-        tax: Math.round((647 * 18) / 100),
-        total: 647 + 116,
+        // Prices include GST: 647 is the total; 99 of it is GST.
+        base: 548,
+        tax: 99,
+        total: 349 + 298,
       });
   });
 

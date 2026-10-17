@@ -941,6 +941,28 @@ enum OfferFulfilment {
   BOTH
 }
 
+// Where an offer can be used. An offer lists one or more.
+enum OfferChannel {
+  INSTORE
+  TAKEAWAY
+  ONLINE
+}
+
+// How a customer paid a bill (not asked for delivery-app orders).
+enum BillPaymentMode {
+  CASH
+  UPI
+  DEBIT_CARD
+  CREDIT_CARD
+}
+
+// How the customer bought.
+enum BillOrderChannel {
+  IN_STORE
+  TAKEAWAY
+  DELIVERY
+}
+
 enum BrandBillSeriesMode {
   SHARED
   PER_OUTLET
@@ -1020,7 +1042,10 @@ model Offer {
   terms              String?     @db.Text
   targetCities       Json        @default("[]") @map("target_cities")
   // Food-type businesses tag an offer as dine-in, takeaway or both (everyone else leaves BOTH).
+  // Legacy single value, kept in step with `channels` for old readers (see offers.service).
   fulfilment         OfferFulfilment @default(BOTH)
+  // Where the offer applies: any of INSTORE / TAKEAWAY / ONLINE (all three = no restriction).
+  channels           OfferChannel[]  @default([INSTORE, TAKEAWAY, ONLINE])
 
   // Core Audit Fields
   createdAt          DateTime    @default(now()) @map("created_at")
@@ -1635,6 +1660,12 @@ model Bill {
   // The invoice number the customer typed from the receipt. Drives duplicate detection (per
   // business, or across a brand's outlets when the brand shares one bill series).
   billNumber      String?    @map("bill_number") @db.VarChar(60)
+  // How the customer bought and paid, asked at upload. Null on bills uploaded before this existed.
+  orderChannel    BillOrderChannel? @map("order_channel")
+  paymentMode     BillPaymentMode?  @map("payment_mode")
+  // SWIGGY | ZOMATO | PLENTI | OTHER (extensible code); the typed name when OTHER.
+  deliveryPartner     String? @map("delivery_partner") @db.VarChar(30)
+  deliveryPartnerName String? @map("delivery_partner_name") @db.VarChar(60)
 
   // Core Audit Fields
   createdAt       DateTime   @default(now()) @map("created_at")
@@ -1660,6 +1691,7 @@ model Bill {
   @@index([deletedAt])
   @@index([businessId, status])
   @@index([businessId, billNumber])
+  @@index([businessId, orderChannel])
   @@map("bills")
 }
 

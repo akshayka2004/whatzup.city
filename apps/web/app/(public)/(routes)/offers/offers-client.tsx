@@ -136,7 +136,7 @@ export default function OffersClient({
     // Business offers and platform-curated offers are shown together. Platform
     // offers are fetched separately because they have no Business relation.
     Promise.allSettled([
-      apiService.get<any>(`/v1/offers${city ? `?city=${encodeURIComponent(city)}` : ''}`),
+      apiService.get<any>(`/v1/offers?limit=100${city ? `&city=${encodeURIComponent(city)}` : ''}`),
       apiService.get<any>('/v1/platform-offers/public'),
     ])
       .then(([offersRes, platformRes]) => {

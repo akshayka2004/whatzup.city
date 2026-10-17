@@ -28,6 +28,7 @@ import { StatusPill } from '@/components/common/status-pill';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/analytics/kpi-card';
 import { BarList } from '@/components/analytics/bar-list';
+import { PurchaseMixPanel } from '@/components/analytics/purchase-mix-panel';
 import { Funnel } from '@/components/analytics/funnel';
 import { Heatmap } from '@/components/analytics/heatmap';
 import { RangePicker, useReportRange } from '@/components/analytics/range-picker';
@@ -407,6 +408,8 @@ function AnalyticsInner() {
               )}
             </SectionCard>
           </div>
+
+          <PurchaseMixPanel mix={report?.purchases} offerChannels={report?.offerChannels} />
 
           <SectionCard
             title="When people look you up"

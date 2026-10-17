@@ -3,19 +3,11 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import {
-  Check,
-  Clock,
-  Loader2,
-  Lock,
-  ShoppingBag,
-  Sparkles,
-  Ticket,
-  UtensilsCrossed,
-} from 'lucide-react';
+import { Check, Clock, Loader2, Lock, Sparkles, Ticket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusPill } from '@/components/common/status-pill';
 import { apiService } from '@/lib/services/api-service';
+import { channelChipLabel, channelsOf } from '@/lib/offer-channels';
 import { toast } from '@/components/ui/sonner';
 import { ModalShell, SectionHeading } from './profile-ui';
 import { OfferListSkeleton } from './profile-skeletons';
@@ -52,14 +44,9 @@ function OfferCard({ offer, index, onClaim }: { offer: any; index: number; onCla
           <StatusPill tone={expiry.tone} label={expiry.urgency} dot={false} className="shrink-0" />
         )}
       </div>
-      {(offer.fulfilment === 'DINE_IN' || offer.fulfilment === 'TAKEAWAY') && (
+      {channelChipLabel(channelsOf(offer)) && (
         <span className="mt-2 inline-flex w-fit items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs font-medium text-muted-foreground">
-          {offer.fulfilment === 'DINE_IN' ? (
-            <UtensilsCrossed className="h-3 w-3" />
-          ) : (
-            <ShoppingBag className="h-3 w-3" />
-          )}
-          {offer.fulfilment === 'DINE_IN' ? 'Dine-in only' : 'Takeaway only'}
+          {channelChipLabel(channelsOf(offer))} only
         </span>
       )}
       {offer.description && (

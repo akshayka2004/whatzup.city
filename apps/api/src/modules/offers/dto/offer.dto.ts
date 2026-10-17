@@ -8,7 +8,9 @@ import {
   IsIn,
   MaxLength,
   ArrayMaxSize,
+  ArrayMinSize,
 } from 'class-validator';
+import { OFFER_CHANNELS } from '@saas/types';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class OfferDto {
@@ -97,4 +99,21 @@ export class OfferDto {
     message: 'Choose dine-in, takeaway or both for where the offer applies.',
   })
   fulfilment?: 'DINE_IN' | 'TAKEAWAY' | 'BOTH';
+
+  @ApiProperty({
+    required: false,
+    enum: OFFER_CHANNELS,
+    isArray: true,
+    description:
+      'Where the offer applies: any of INSTORE, TAKEAWAY, ONLINE. Defaults to all three.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1, { message: 'Choose at least one: instore, takeaway or online.' })
+  @ArrayMaxSize(3)
+  @IsIn(OFFER_CHANNELS as unknown as string[], {
+    each: true,
+    message: 'Choose instore, takeaway or online for where the offer applies.',
+  })
+  channels?: string[];
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent }
 import {
   Copy,
   Eye,
+  Globe,
   Pause,
   Pencil,
   Play,
@@ -13,7 +14,6 @@ import {
   Tag,
   TicketPercent,
   Trash2,
-  UtensilsCrossed,
   X,
 } from 'lucide-react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
@@ -39,13 +39,14 @@ import {
   type PlanErrorInfo,
 } from '@/components/business/upgrade-dialog';
 import { KERALA_CITIES } from '@/lib/constants';
+import { OFFER_CHANNELS, OFFER_CHANNEL_LABEL, type OfferChannel } from '@saas/types';
+import { channelChipLabel, channelsOf } from '@/lib/offer-channels';
 import { cn } from '@/lib/utils';
 
-type Fulfilment = 'DINE_IN' | 'TAKEAWAY' | 'BOTH';
-const FULFILMENT_OPTIONS: { value: Fulfilment; label: string; icon: typeof Store }[] = [
-  { value: 'DINE_IN', label: 'Dine-in', icon: UtensilsCrossed },
-  { value: 'TAKEAWAY', label: 'Takeaway', icon: ShoppingBag },
-  { value: 'BOTH', label: 'Both', icon: Store },
+const CHANNEL_OPTIONS: { value: OfferChannel; icon: typeof Store }[] = [
+  { value: 'INSTORE', icon: Store },
+  { value: 'TAKEAWAY', icon: ShoppingBag },
+  { value: 'ONLINE', icon: Globe },
 ];
 
 interface Offer {
@@ -58,7 +59,7 @@ interface Offer {
   targetCities: string[];
   startsAt?: string;
   expiresAt?: string;
-  fulfilment: Fulfilment;
+  channels: OfferChannel[];
   claimsTotal: number;
   maxRedemptions: number | null;
 }
@@ -168,7 +169,7 @@ type Form = {
   startsAt: string;
   expiresAt: string;
   cities: string[];
-  fulfilment: Fulfilment;
+  channels: OfferChannel[];
 };
 
 const EMPTY: Form = {
@@ -181,14 +182,14 @@ const EMPTY: Form = {
   startsAt: '',
   expiresAt: '',
   cities: [],
-  fulfilment: 'BOTH',
+  channels: [...OFFER_CHANNELS],
 };
 
 const label = 'mb-1.5 block text-sm font-medium';
 
 export default function OffersPage() {
   const { user } = useAuth();
-  const { business, isFood } = useOwnerBusiness();
+  const { business } = useOwnerBusiness();
   const confirm = useConfirm();
   const businessId = user?.businessId || user?.entity?.id;
 
@@ -248,8 +249,7 @@ export default function OffersPage() {
           targetCities: Array.isArray(o.targetCities) ? o.targetCities : [],
           startsAt: o.startDate || o.startsAt || undefined,
           expiresAt: o.endDate || o.expiresAt || undefined,
-          fulfilment:
-            o.fulfilment === 'DINE_IN' || o.fulfilment === 'TAKEAWAY' ? o.fulfilment : 'BOTH',
+          channels: channelsOf(o),
           claimsTotal: Number(o.currentRedemptions ?? 0),
           maxRedemptions: o.maxRedemptions ?? null,
         })),
@@ -335,7 +335,7 @@ export default function OffersPage() {
       startsAt: duplicate ? '' : dateOnly(o.startsAt),
       expiresAt: duplicate ? '' : dateOnly(o.expiresAt),
       cities: [...o.targetCities],
-      fulfilment: o.fulfilment,
+      channels: [...o.channels],
     });
     setEditor(duplicate ? { mode: 'create' } : { mode: 'edit', id: o.id });
   };
@@ -359,7 +359,7 @@ export default function OffersPage() {
       discountAmount: form.discountType === 'AMOUNT' ? amt : null,
       status: form.active ? 'ACTIVE' : 'PAUSED',
       targetCities: form.cities,
-      ...(isFood ? { fulfilment: form.fulfilment } : {}),
+      channels: form.channels,
     };
     setSaving(true);
     let res;
@@ -428,7 +428,7 @@ export default function OffersPage() {
     endDate: form.expiresAt
       ? new Date(`${form.expiresAt}T23:59:59+05:30`).toISOString()
       : new Date(Date.now() + 30 * 86_400_000).toISOString(),
-    fulfilment: isFood ? form.fulfilment : 'BOTH',
+    channels: form.channels,
     business: {
       name: business?.name || 'Your business',
       city: business?.city ?? null,
@@ -516,8 +516,7 @@ export default function OffersPage() {
                 tone: days <= 3 ? 'warning' : 'neutral',
               });
             }
-            if (o.fulfilment !== 'BOTH')
-              chips.push({ label: o.fulfilment === 'DINE_IN' ? 'Dine-in' : 'Takeaway' });
+            if (channelChipLabel(o.channels)) chips.push({ label: channelChipLabel(o.channels)! });
             if (o.targetCities.length)
               chips.push({
                 label:
@@ -679,23 +678,33 @@ export default function OffersPage() {
               </div>
             </div>
 
-            {isFood && (
-              <div>
-                <span className={label}>Available for</span>
-                <ChipRow label="Available for" wrap>
-                  {FULFILMENT_OPTIONS.map(({ value, label: l, icon }) => (
+            <div>
+              <span className={label}>Where it applies</span>
+              <ChipRow label="Where it applies" wrap>
+                {CHANNEL_OPTIONS.map(({ value, icon }) => {
+                  const on = form.channels.includes(value);
+                  return (
                     <FilterChip
                       key={value}
                       icon={icon}
-                      selected={form.fulfilment === value}
-                      onClick={() => set('fulfilment', value)}
+                      selected={on}
+                      onClick={() => {
+                        // At least one channel stays selected.
+                        const next = on
+                          ? form.channels.filter((c) => c !== value)
+                          : OFFER_CHANNELS.filter((c) => c === value || form.channels.includes(c));
+                        if (next.length) set('channels', next);
+                      }}
                     >
-                      {l}
+                      {OFFER_CHANNEL_LABEL[value]}
                     </FilterChip>
-                  ))}
-                </ChipRow>
-              </div>
-            )}
+                  );
+                })}
+              </ChipRow>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Pick every place customers can use this offer.
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>

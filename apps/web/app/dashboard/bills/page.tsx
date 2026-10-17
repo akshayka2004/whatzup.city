@@ -7,6 +7,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
+  PurchaseMethodField,
+  EMPTY_PURCHASE_METHOD,
+  isPurchaseMethodComplete,
+  purchaseMethodPayload,
+  type PurchaseMethod,
+} from '@/components/bills/purchase-method-field';
+import {
   Upload,
   FileText,
   CheckCircle2,
@@ -69,12 +76,14 @@ export default function BillsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [method, setMethod] = useState<PurchaseMethod>(EMPTY_PURCHASE_METHOD);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
     setAmount('');
     setBillDate(new Date().toISOString().slice(0, 10));
     setDescription('');
+    setMethod(EMPTY_PURCHASE_METHOD);
     setSelectedFile(null);
     setUploadError('');
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -121,6 +130,7 @@ export default function BillsPage() {
         amount: parseFloat(amount),
         billDate,
         billImage: fileKey,
+        ...purchaseMethodPayload(method),
         description: description || undefined,
       });
 
@@ -302,6 +312,7 @@ export default function BillsPage() {
                   className="rounded-xl border-border bg-secondary focus:border-primary text-foreground"
                 />
               </div>
+              <PurchaseMethodField value={method} onChange={setMethod} />
               <div>
                 <label className="text-sm font-medium text-foreground block mb-2">
                   Description <span className="text-muted-foreground text-xs">(optional)</span>
@@ -376,7 +387,13 @@ export default function BillsPage() {
                 <Button
                   type="submit"
                   className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold cursor-pointer gap-2"
-                  disabled={!selectedFile || !amount || !billDate || uploading}
+                  disabled={
+                    !selectedFile ||
+                    !amount ||
+                    !billDate ||
+                    !isPurchaseMethodComplete(method) ||
+                    uploading
+                  }
                 >
                   {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
                   {uploading ? 'Submitting…' : 'Submit Bill'}

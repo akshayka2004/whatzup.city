@@ -29,6 +29,7 @@ import { analyticsV2, type PlatformReport } from '@/lib/services/analytics-v2';
 import { cn } from '@/lib/utils';
 import { KpiCard } from './kpi-card';
 import { BarList } from './bar-list';
+import { PurchaseMixPanel } from './purchase-mix-panel';
 import { Funnel } from './funnel';
 import { RangePicker, useReportRange } from './range-picker';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -542,6 +543,8 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
               )}
             </SectionCard>
           </div>
+
+          <PurchaseMixPanel mix={report?.purchases} offerChannels={report?.offerChannels} showCities />
 
           <SectionCard
             title="Recent admin activity"

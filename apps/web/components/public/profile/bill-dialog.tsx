@@ -18,6 +18,13 @@ import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/services/api-service';
 import { optimizeImage } from '@/lib/utils/image-optimizer';
 import { ModalShell } from './profile-ui';
+import {
+  PurchaseMethodField,
+  EMPTY_PURCHASE_METHOD,
+  isPurchaseMethodComplete,
+  purchaseMethodPayload,
+  type PurchaseMethod,
+} from '@/components/bills/purchase-method-field';
 
 const RATING_WORDS = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
 
@@ -53,12 +60,17 @@ export default function BillDialog({
   const [billRatingHover, setBillRatingHover] = useState(0);
   const [billImageName, setBillImageName] = useState('');
   const [billFile, setBillFile] = useState<File | null>(null);
+  const [method, setMethod] = useState<PurchaseMethod>(EMPTY_PURCHASE_METHOD);
   const [billSubmitting, setBillSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const handleBillSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!billNumber || !billDate || !billAmount || billRating === 0) return;
+    if (!isPurchaseMethodComplete(method)) {
+      setError('Tell us how you bought and paid.');
+      return;
+    }
     if (!billFile) {
       setError('Please attach a photo or PDF of your receipt.');
       return;
@@ -113,6 +125,7 @@ export default function BillDialog({
         amount: parseFloat(billAmount),
         billDate,
         billNumber: billNumber.trim().slice(0, 60),
+        ...purchaseMethodPayload(method),
         billImage: billImageRef,
         description: billReview || undefined,
       });
@@ -206,6 +219,8 @@ export default function BillDialog({
             className={fieldInput}
           />
         </div>
+
+        <PurchaseMethodField value={method} onChange={setMethod} />
 
         <div>
           <span className={fieldLabel}>
@@ -314,7 +329,14 @@ export default function BillDialog({
           <Button
             type="submit"
             size="lg"
-            disabled={!billNumber || !billDate || !billAmount || billRating === 0 || billSubmitting}
+            disabled={
+              !billNumber ||
+              !billDate ||
+              !billAmount ||
+              billRating === 0 ||
+              !isPurchaseMethodComplete(method) ||
+              billSubmitting
+            }
             className="flex-1 gap-1.5 rounded-xl font-semibold disabled:opacity-50 sm:flex-none sm:px-6"
           >
             {billSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}

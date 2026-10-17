@@ -4,6 +4,7 @@ import { SearchService } from './search.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
+import { parseChannelFilter } from '@saas/types';
 
 @ApiTags('Search & Discovery')
 @ApiBearerAuth()
@@ -27,7 +28,8 @@ export class SearchController {
     @Query('fulfilment') fulfilment?: string,
     @Query('limit') limit?: string,
   ) {
-    const ful = (fulfilment || '').toUpperCase().replace('-', '_');
+    // Accepts the new channel names and the old dine_in/takeaway values.
+    const channel = parseChannelFilter(fulfilment);
     // Public discovery: search APPROVED businesses across ALL tenants (each
     // business registers its own tenant), not just the caller's tenant.
     return this.searchService.searchBusinesses(
@@ -39,7 +41,7 @@ export class SearchController {
         minRating,
         openNow: open === '1' || open === 'true',
         halal: halal === '1' || halal === 'true',
-        fulfilment: ful === 'DINE_IN' || ful === 'TAKEAWAY' ? ful : undefined,
+        fulfilment: channel || undefined,
       },
       page,
       Math.min(Math.max(Number(limit) || 20, 1), 60),

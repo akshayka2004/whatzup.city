@@ -16,6 +16,7 @@ import {
   type IstRange,
 } from '../../common/utils/ist';
 import { AnalyticsRollupService } from './analytics-rollup.service';
+import { offerChannelMix, purchaseMix } from './purchase-mix';
 import { ACTION_GROUPS, EVENT_GROUPS, eventsFor, groupOf, type EventGroup } from './event-taxonomy';
 
 export type Granularity = 'day' | 'week' | 'month';
@@ -253,12 +254,14 @@ export class AnalyticsV2Service {
       newCustomers: metric(out.newCustomers, outPrev.newCustomers),
     };
 
-    const [series, sources, devices, heatmap, offers] = await Promise.all([
+    const [series, sources, devices, heatmap, offers, purchases, offerChannels] = await Promise.all([
       this.businessSeries(businessId, r, g),
       this.dimension(businessId, r, 'source'),
       this.dimension(businessId, r, 'device'),
       this.heatmap(businessId, r),
       this.offerTable(businessId, r),
+      purchaseMix(this.db, r, { businessId }),
+      offerChannelMix(this.db, { businessId }),
     ]);
 
     return {
@@ -285,6 +288,8 @@ export class AnalyticsV2Service {
       devices,
       heatmap,
       offers,
+      purchases,
+      offerChannels,
       generatedAt: new Date().toISOString(),
     };
   }
@@ -441,6 +446,7 @@ export class AnalyticsV2Service {
         startDate: true,
         endDate: true,
         discountPercent: true,
+        channels: true,
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
@@ -473,6 +479,7 @@ export class AnalyticsV2Service {
         title: o.title,
         status: o.status,
         discountPercent: o.discountPercent,
+        channels: o.channels,
         startDate: o.startDate,
         endDate: o.endDate,
         viewers,
@@ -576,6 +583,8 @@ export class AnalyticsV2Service {
       searches,
       planMix,
       statusMix,
+      purchases,
+      offerChannels,
     ] = await Promise.all([
       this.platformTotals(r, sc),
       this.platformTotals(prev, sc),
@@ -641,6 +650,8 @@ export class AnalyticsV2Service {
         where: { deletedAt: null, ...bw, createdAt: { gte: r.start, lt: r.end } },
         _count: { _all: true },
       }),
+      purchaseMix(this.db, r, { city: sc.city, categoryId: sc.categoryId }),
+      offerChannelMix(this.db, { city: sc.city, categoryId: sc.categoryId }),
     ]);
 
     const [
@@ -727,6 +738,8 @@ export class AnalyticsV2Service {
           count: p._count._all,
         }))
         .sort((a, b) => b.revenue - a.revenue),
+      purchases,
+      offerChannels,
       generatedAt: new Date().toISOString(),
     };
   }

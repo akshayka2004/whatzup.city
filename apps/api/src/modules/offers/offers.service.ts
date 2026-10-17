@@ -10,6 +10,29 @@ import { BusinessCustomerService } from '../customers/business-customer.service'
 import { AnalyticsSummaryService } from '../analytics/analytics-summary.service';
 import { recordOfferClick } from '../../common/utils/offer-click.util';
 import { EntitlementsService } from '../subscriptions/entitlements.service';
+import { channelsToFulfilment, fulfilmentToChannels, OFFER_CHANNELS } from '@saas/types';
+
+/**
+ * Where an offer applies. `channels` is the source of truth; the legacy `fulfilment` column is
+ * kept in step so older readers keep working. Old clients that still send only `fulfilment`
+ * are translated.
+ */
+function applyChannels(
+  payload: Record<string, any>,
+  data: { channels?: string[]; fulfilment?: string },
+) {
+  if (Array.isArray(data.channels)) {
+    const chosen = OFFER_CHANNELS.filter((c) => data.channels!.includes(c));
+    if (chosen.length === 0) {
+      throw new BadRequestException('Choose at least one: instore, takeaway or online.');
+    }
+    payload.channels = chosen;
+    payload.fulfilment = channelsToFulfilment(chosen);
+  } else if (data.fulfilment !== undefined) {
+    payload.fulfilment = data.fulfilment;
+    payload.channels = fulfilmentToChannels(data.fulfilment);
+  }
+}
 
 @Injectable()
 export class OffersService {
@@ -69,7 +92,7 @@ export class OffersService {
     if (data.maxRedemptions !== undefined) payload.maxRedemptions = data.maxRedemptions;
     if (data.terms !== undefined) payload.terms = data.terms;
     payload.targetCities = Array.isArray(data.targetCities) ? data.targetCities : [];
-    if (data.fulfilment !== undefined) payload.fulfilment = data.fulfilment;
+    applyChannels(payload, data);
 
     // Plan limit: only offers that would be live right now count (drafts and past-dated ones don't).
     if (status === 'ACTIVE' && payload.endDate.getTime() >= Date.now()) {
@@ -227,7 +250,7 @@ export class OffersService {
     if (data.terms !== undefined) payload.terms = data.terms;
     if (data.targetCities !== undefined)
       payload.targetCities = Array.isArray(data.targetCities) ? data.targetCities : [];
-    if (data.fulfilment !== undefined) payload.fulfilment = data.fulfilment;
+    applyChannels(payload, data);
 
     // Plan limit: re-checked only when this edit turns a non-live offer live (resume / re-activate /
     // extend an expired one). Editing an offer that is already live never blocks.

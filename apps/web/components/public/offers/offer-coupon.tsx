@@ -4,21 +4,13 @@ import { useI18n } from '@/lib/i18n/provider';
 
 import { useEffect, useState } from 'react';
 import { getOpenStatus } from '@saas/types';
-import {
-  Clock,
-  Eye,
-  MapPin,
-  Phone,
-  ShoppingBag,
-  Sparkles,
-  Tag,
-  UtensilsCrossed,
-} from 'lucide-react';
+import { Clock, Eye, MapPin, Phone, Sparkles, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ReportButton } from '@/components/report-button';
 import { StatusPill } from '@/components/common/status-pill';
 import { ResponsiveImage } from '@/components/common/responsive-image';
 import { cn } from '@/lib/utils';
+import { channelChipLabel } from '@/lib/offer-channels';
 import type { Offer } from './offer-model';
 import { useSecondTick } from './offer-clock';
 
@@ -277,14 +269,9 @@ export function OfferCoupon({
                   Platform exclusive
                 </span>
               )}
-              {(offer.fulfilment === 'DINE_IN' || offer.fulfilment === 'TAKEAWAY') && (
+              {channelChipLabel(offer.channels) && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                  {offer.fulfilment === 'DINE_IN' ? (
-                    <UtensilsCrossed className="h-3 w-3" />
-                  ) : (
-                    <ShoppingBag className="h-3 w-3" />
-                  )}
-                  {offer.fulfilment === 'DINE_IN' ? 'Dine-in only' : 'Takeaway only'}
+                  {channelChipLabel(offer.channels)} only
                 </span>
               )}
               {!offer.isPlatform && !!offer.operatingHours && (

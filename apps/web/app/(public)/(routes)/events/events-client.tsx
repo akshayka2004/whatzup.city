@@ -78,7 +78,7 @@ export function EventsClient({ initialEvents = null }: { initialEvents?: unknown
     let cancelled = false;
     setLoading(true);
     apiService
-      .get<any>(`/v1/events${city ? `?city=${encodeURIComponent(city)}` : ''}`)
+      .get<any>(`/v1/events?limit=100${city ? `&city=${encodeURIComponent(city)}` : ''}`)
       .then((res) => {
         if (cancelled) return;
         setEvents(res.error ? [] : extractList(res.data));

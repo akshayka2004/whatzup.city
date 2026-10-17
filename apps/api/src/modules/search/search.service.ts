@@ -161,7 +161,7 @@ export class SearchService implements OnApplicationBootstrap {
 
   /**
    * Adds the "live offers" summary the public cards show: how many offers are
-   * running right now and which fulfilment modes (DINE_IN / TAKEAWAY / BOTH)
+   * running right now and which channels (INSTORE / TAKEAWAY / ONLINE)
    * they cover. Purely additive and never throws — on any failure the rows are
    * returned untouched.
    */
@@ -179,13 +179,13 @@ export class SearchService implements OnApplicationBootstrap {
           startDate: { lte: now },
           endDate: { gte: now },
         },
-        select: { businessId: true, fulfilment: true },
+        select: { businessId: true, channels: true },
       });
       const byBiz = new Map<string, { count: number; modes: Set<string> }>();
       for (const o of offers as any[]) {
         const s = byBiz.get(o.businessId) ?? { count: 0, modes: new Set<string>() };
         s.count += 1;
-        s.modes.add(String(o.fulfilment));
+        for (const c of o.channels ?? []) s.modes.add(String(c));
         byBiz.set(o.businessId, s);
       }
       return rows.map((r) => {
@@ -264,7 +264,8 @@ export class SearchService implements OnApplicationBootstrap {
       minRating?: number;
       openNow?: boolean;
       halal?: boolean;
-      fulfilment?: 'DINE_IN' | 'TAKEAWAY';
+      /** Only businesses with a live offer valid on this channel. */
+      fulfilment?: 'INSTORE' | 'TAKEAWAY' | 'ONLINE';
     },
     page = 1,
     limit = 20,
@@ -398,9 +399,7 @@ export class SearchService implements OnApplicationBootstrap {
         const withOffers = await this.attachOfferSummary(pool);
         pool = withOffers.filter(
           (b: any) =>
-            Array.isArray(b.offerFulfilments) &&
-            (b.offerFulfilments.includes(filters.fulfilment) ||
-              b.offerFulfilments.includes('BOTH')),
+            Array.isArray(b.offerFulfilments) && b.offerFulfilments.includes(filters.fulfilment),
         );
         const response = {
           data: pool.slice((page - 1) * limit, page * limit),

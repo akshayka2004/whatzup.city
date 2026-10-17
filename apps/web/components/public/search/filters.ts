@@ -1,4 +1,4 @@
-import { getOpenStatus } from '@saas/types';
+import { getOpenStatus, parseChannelFilter } from '@saas/types';
 import { isFoodCategory } from '@/lib/food-category';
 
 /**
@@ -7,7 +7,7 @@ import { isFoodCategory } from '@/lib/food-category';
  */
 
 export type SortKey = 'relevant' | 'rating' | 'reviews' | 'newest' | 'nearest';
-export type Fulfilment = '' | 'DINE_IN' | 'TAKEAWAY';
+export type Fulfilment = '' | 'INSTORE' | 'TAKEAWAY' | 'ONLINE';
 
 export interface Filters {
   /** Only businesses whose listed hours say they are open right now. */
@@ -15,7 +15,7 @@ export interface Filters {
   /** Rating 4.0 and above. */
   rating4: boolean;
   halal: boolean;
-  /** Only businesses with a live offer of this fulfilment (BOTH offers count for either). */
+  /** Only businesses with a live offer that applies on this channel (instore / takeaway / online). */
   fulfilment: Fulfilment;
   sort: SortKey;
   city: string;
@@ -52,12 +52,13 @@ export function parseFilters(sp: ParamsLike): Filters {
     return v === '1' || v === 'true';
   };
   const sort = sp.get('sort') as SortKey | null;
-  const ful = (sp.get('fulfilment') || '').toUpperCase().replace('-', '_');
+  // Old links used dine_in; both spellings resolve to a channel.
+  const ful = parseChannelFilter(sp.get('fulfilment'));
   return {
     open: flag('open'),
     rating4: sp.get('rating') === '4' || flag('rating4'),
     halal: flag('halal'),
-    fulfilment: ful === 'DINE_IN' || ful === 'TAKEAWAY' ? ful : '',
+    fulfilment: ful,
     sort: sort && SORT_KEYS.includes(sort) ? sort : 'relevant',
     city: sp.get('city') || '',
     sub: sp.get('sub') || '',
@@ -151,7 +152,7 @@ export function isOpenNow(b: any, now: Date): boolean {
 function matchesFulfilment(b: any, want: Exclude<Fulfilment, ''>): boolean {
   const modes: unknown = b?.offerFulfilments;
   if (!Array.isArray(modes)) return false;
-  return modes.includes(want) || modes.includes('BOTH');
+  return modes.includes(want);
 }
 
 /** What data the current result set can actually support, so we only offer filters that can work. */

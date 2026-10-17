@@ -4,6 +4,13 @@ import { useI18n } from '@/lib/i18n/provider';
 
 import { useState } from 'react';
 import { BadgeCheck, Clock, SlidersHorizontal, Star, Tag, X } from 'lucide-react';
+import { OFFER_CHANNELS, OFFER_CHANNEL_LABEL, type OfferChannel } from '@saas/types';
+
+const CHANNEL_HINT: Record<OfferChannel, string> = {
+  INSTORE: 'Has a live offer you can use at the shop',
+  TAKEAWAY: 'Has a live offer you can use on takeaway',
+  ONLINE: 'Has a live offer you can use online',
+};
 import {
   Drawer,
   DrawerContent,
@@ -146,28 +153,18 @@ export function FilterBar({
         )}
         {show.fulfilment && (
           <>
-            <button
-              type="button"
-              aria-pressed={filters.fulfilment === 'DINE_IN'}
-              onClick={() =>
-                onChange({ fulfilment: filters.fulfilment === 'DINE_IN' ? '' : 'DINE_IN' })
-              }
-              className={chipClass(filters.fulfilment === 'DINE_IN')}
-            >
-              <Tag className="h-4 w-4" />
-              Dine-in offers
-            </button>
-            <button
-              type="button"
-              aria-pressed={filters.fulfilment === 'TAKEAWAY'}
-              onClick={() =>
-                onChange({ fulfilment: filters.fulfilment === 'TAKEAWAY' ? '' : 'TAKEAWAY' })
-              }
-              className={chipClass(filters.fulfilment === 'TAKEAWAY')}
-            >
-              <Tag className="h-4 w-4" />
-              Takeaway offers
-            </button>
+            {OFFER_CHANNELS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                aria-pressed={filters.fulfilment === c}
+                onClick={() => onChange({ fulfilment: filters.fulfilment === c ? '' : c })}
+                className={chipClass(filters.fulfilment === c)}
+              >
+                <Tag className="h-4 w-4" />
+                {OFFER_CHANNEL_LABEL[c]} offers
+              </button>
+            ))}
           </>
         )}
 
@@ -309,18 +306,15 @@ function FilterSheet({
               )}
               {show.fulfilment && (
                 <>
-                  <ToggleRow
-                    label="Dine-in offers"
-                    hint="Has a live offer you can use at the venue"
-                    checked={filters.fulfilment === 'DINE_IN'}
-                    onCheckedChange={(v) => onChange({ fulfilment: v ? 'DINE_IN' : '' })}
-                  />
-                  <ToggleRow
-                    label="Takeaway offers"
-                    hint="Has a live offer you can use on takeaway"
-                    checked={filters.fulfilment === 'TAKEAWAY'}
-                    onCheckedChange={(v) => onChange({ fulfilment: v ? 'TAKEAWAY' : '' })}
-                  />
+                  {OFFER_CHANNELS.map((c) => (
+                    <ToggleRow
+                      key={c}
+                      label={`${OFFER_CHANNEL_LABEL[c]} offers`}
+                      hint={CHANNEL_HINT[c]}
+                      checked={filters.fulfilment === c}
+                      onCheckedChange={(v) => onChange({ fulfilment: v ? c : '' })}
+                    />
+                  ))}
                 </>
               )}
             </section>
@@ -432,7 +426,7 @@ export function ActiveFilters({
   if (show.fulfilment && filters.fulfilment) {
     items.push({
       key: 'ful',
-      label: filters.fulfilment === 'DINE_IN' ? 'Dine-in offers' : 'Takeaway offers',
+      label: `${OFFER_CHANNEL_LABEL[filters.fulfilment as OfferChannel]} offers`,
       onRemove: () => onChange({ fulfilment: '' }),
     });
   }

@@ -1,3 +1,4 @@
+import { channelsOf } from '@/lib/offer-channels';
 import { categoryLabel, rateLines, type PlatformOfferDetails } from '@/lib/platform-offers';
 
 export interface Offer {
@@ -26,8 +27,8 @@ export interface Offer {
   subType?: string | null;
   /** Raw category enum value, used to pick the right rate-line rules. */
   category?: string;
-  /** Food businesses only: where the offer applies. BOTH shows no chip. */
-  fulfilment?: 'DINE_IN' | 'TAKEAWAY' | 'BOTH';
+  /** Where the offer applies (any of INSTORE / TAKEAWAY / ONLINE). All three shows no chip. */
+  channels?: string[];
   /** Business city, when the payload carries it. */
   city?: string | null;
   /** Business opening hours, when the payload carries them (powers the "Open now" pill). */
@@ -68,7 +69,7 @@ export function mapApiOffer(o: any): Offer {
     expiresAt: o.expiresAt || o.endDate,
     expiresIn: days ?? undefined,
     terms: o.terms || o.conditions || '',
-    fulfilment: o.fulfilment,
+    channels: channelsOf(o),
     city: o.business?.city ?? o.city ?? null,
     operatingHours: o.business?.operatingHours ?? o.operatingHours ?? undefined,
   };
@@ -141,7 +142,7 @@ export function platformHasImages(platformBody: unknown): boolean {
 
 /* ── Filter chips + sort ───────────────────────────────────────────── */
 
-export type OfferChip = 'all' | 'dine' | 'takeaway' | 'ending' | 'platform';
+export type OfferChip = 'all' | 'instore' | 'takeaway' | 'online' | 'ending' | 'platform';
 export type OfferSort = 'featured' | 'ending' | 'discount';
 
 /** "Ending soon" = a running countdown of 3 days or less (matches the old urgent threshold). */
@@ -171,11 +172,14 @@ export function applyOfferView(
   if (view.chip !== 'all') {
     const now = Date.now();
     switch (view.chip) {
-      case 'dine':
-        list = list.filter((o) => !o.isPlatform && o.fulfilment === 'DINE_IN');
+      case 'instore':
+        list = list.filter((o) => !o.isPlatform && !!o.channels?.includes('INSTORE'));
         break;
       case 'takeaway':
-        list = list.filter((o) => !o.isPlatform && o.fulfilment === 'TAKEAWAY');
+        list = list.filter((o) => !o.isPlatform && !!o.channels?.includes('TAKEAWAY'));
+        break;
+      case 'online':
+        list = list.filter((o) => !o.isPlatform && !!o.channels?.includes('ONLINE'));
         break;
       case 'ending':
         list = list.filter((o) => {

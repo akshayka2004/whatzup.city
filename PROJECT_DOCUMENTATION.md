@@ -1058,6 +1058,32 @@ recreate them.
   `BrandLogo`, chunk-error auto-reload.
 - **Infra steps** (Cloudflare cache rule, nginx origin lock, chunk archive): `docs/ops-edge-and-origin.md`.
 
+### 12.15 Offer channels, bill payment details, purchase analytics
+
+- **Offer channels** (`Offer.channels`, enum `OfferChannel` INSTORE | TAKEAWAY | ONLINE, migration
+  `20261017000000_channels_and_bill_payment`): any combination, at least one, for every category
+  (the old food-only Dine-in/Takeaway/Both selector is gone). Migrated: Dine-in→Instore,
+  Takeaway→Takeaway, Both→all three. All three = no restriction = no chip. The legacy
+  `Offer.fulfilment` column is still written in step (`applyChannels` in `offers.service.ts`) and old
+  clients that only send `fulfilment` are translated. Search/category/nearby filter
+  `?fulfilment=` accepts `instore|takeaway|online` (and the old `dine_in`); a business matches when
+  a live offer includes that channel. Web: `lib/offer-channels.ts`, dashboard offer form chips,
+  public offer chips/filter.
+- **Bill upload asks how the customer bought** (required): `Bill.orderChannel` IN_STORE | TAKEAWAY |
+  DELIVERY. In-store/takeaway → `paymentMode` CASH | UPI | DEBIT_CARD | CREDIT_CARD. Delivery →
+  `deliveryPartner` SWIGGY | ZOMATO | PLENTI | OTHER (+ `deliveryPartnerName` when OTHER); payment mode
+  is not asked. Older bills have none of these (shown as "Not recorded"). One shared field component
+  `components/bills/purchase-method-field.tsx` is used by both upload forms; codes/labels live in
+  `packages/types/src/order-channels.ts`.
+- **Analytics** (`analytics/purchase-mix.ts`, business + platform reports, `purchases` and
+  `offerChannels`): verified bills by channel, payment mode, delivery app (typed "other" apps are
+  tracked by name), and live offers per channel. The platform report adds "Who buys, by city"
+  (bills, spend, in-store/takeaway/delivery split) and respects the city/category scope.
+- **Events by city:** the city filter used to match every event (`targetCities = []` meant "all",
+  and every event had it). Now an event matches its own `city` (case-insensitive), a targeted city,
+  or has no city at all (online). Public lists also take `limit` (events and offers up to 100) and
+  events take `category`, so client-side filters no longer run over only the first 20 rows.
+
 ## 13. Search, storage, realtime
 
 - **Search:** Typesense module indexes businesses; the API indexes on

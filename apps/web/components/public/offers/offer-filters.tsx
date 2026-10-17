@@ -1,14 +1,15 @@
 'use client';
 
 import type { ComponentType } from 'react';
-import { Clock, ShoppingBag, Sparkles, Star, UtensilsCrossed } from 'lucide-react';
+import { Clock, Globe, ShoppingBag, Sparkles, Star, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { OfferChip, OfferSort } from './offer-model';
 
 const CHIPS: { id: OfferChip; label: string; icon?: ComponentType<{ className?: string }> }[] = [
   { id: 'all', label: 'All', icon: Sparkles },
-  { id: 'dine', label: 'Dine-in', icon: UtensilsCrossed },
+  { id: 'instore', label: 'Instore', icon: Store },
   { id: 'takeaway', label: 'Takeaway', icon: ShoppingBag },
+  { id: 'online', label: 'Online', icon: Globe },
   { id: 'ending', label: 'Ending soon', icon: Clock },
   { id: 'platform', label: 'Platform offers', icon: Star },
 ];

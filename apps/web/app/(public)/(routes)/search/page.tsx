@@ -231,7 +231,7 @@ function SearchContent() {
     open: true,
     rating: true,
     halal: (caps.hasFood && caps.hasHalalData) || state.halal,
-    fulfilment: (caps.hasFood && caps.hasFulfilmentData) || !!state.fulfilment,
+    fulfilment: caps.hasFulfilmentData || !!state.fulfilment,
     city: true,
     sorts: [...SORTS],
   };

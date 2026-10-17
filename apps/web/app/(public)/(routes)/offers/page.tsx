@@ -12,7 +12,7 @@ export default async function OffersPage() {
   // (all cities) view. serverGet never throws — a null just means "let the
   // browser fetch it", which is exactly how this page worked before.
   const [offers, platformOffers] = await Promise.all([
-    serverGet('/v1/offers', { revalidate: 120 }),
+    serverGet('/v1/offers?limit=100', { revalidate: 120 }),
     serverGet('/v1/platform-offers/public', { revalidate: 120 }),
   ]);
 

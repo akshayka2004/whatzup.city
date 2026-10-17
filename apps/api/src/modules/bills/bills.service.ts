@@ -56,6 +56,14 @@ export class BillsService {
       billImage: dbUrl,
       description: data.description,
       billNumber,
+      orderChannel: data.orderChannel as any,
+      // Delivery orders are paid through the app, so only the app is recorded.
+      paymentMode: data.orderChannel === 'DELIVERY' ? null : (data.paymentMode as any),
+      deliveryPartner: data.orderChannel === 'DELIVERY' ? data.deliveryPartner : null,
+      deliveryPartnerName:
+        data.orderChannel === 'DELIVERY' && data.deliveryPartner === 'OTHER'
+          ? data.deliveryPartnerName?.trim()
+          : null,
       status: 'UPLOADED',
     });
 
