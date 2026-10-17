@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/sonner';
+import { purchaseMethodLabel } from '@/lib/purchase-method';
 import { cn } from '@/lib/utils';
 import { canAccess, hasRole, getRoleLabel } from '@/lib/rbac';
 import { apiService } from '@/lib/services/api-service';
@@ -116,6 +117,7 @@ function mapApiBill(b: any) {
       b.billNumber ||
       b.ocrMetadata?.parsed?.invoiceNumber ||
       b.id.substring(0, 8).toUpperCase(),
+    purchaseMethod: purchaseMethodLabel(bill),
     seriesMatched: !!b.seriesMatched,
     seriesScope: (b.seriesScope || 'SINGLE') as string,
     seriesPrefix: (b.seriesPrefix ||
@@ -299,6 +301,7 @@ function BillPreview({
       <div className="flex flex-wrap gap-1.5">
         <StatusPill tone="neutral" label={`Bill # ${bill.billNumber}`} />
         {bill.billDate && <StatusPill tone="neutral" label={bill.billDate} />}
+        {bill.purchaseMethod && <StatusPill tone="neutral" label={bill.purchaseMethod} />}
         <StatusPill tone={brandInfo ? 'primary' : 'neutral'} label={bill.business || 'Business'} />
         {seriesBadge && (
           <StatusPill
@@ -950,6 +953,7 @@ export default function BillModerationPage() {
                           <span className="block truncate text-caption text-muted-foreground">
                             {isBrandView ? `${bill.business} · ` : ''}#{bill.billNumber}
                             {bill.billDate ? ` · ${bill.billDate}` : ''}
+                            {bill.purchaseMethod ? ` · ${bill.purchaseMethod}` : ''}
                           </span>
                         </span>
                         <span className="flex shrink-0 flex-col items-end gap-1">

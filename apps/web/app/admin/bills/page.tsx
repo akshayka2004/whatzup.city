@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
+import { purchaseMethodLabel } from '@/lib/purchase-method';
 import { formatINR } from '@/components/analytics/format';
 
 type Escalation = {
@@ -25,6 +26,10 @@ type Escalation = {
     id: string;
     amount: string | number;
     billNumber?: string | null;
+    orderChannel?: string | null;
+    paymentMode?: string | null;
+    deliveryPartner?: string | null;
+    deliveryPartnerName?: string | null;
     billDate?: string;
     billImage?: string;
     user?: { id: string; name?: string; email?: string } | null;
@@ -212,6 +217,7 @@ export default function EscalatedBillsPage() {
                 </p>
                 <p className="text-caption text-muted-foreground">
                   {formatINR(Number(r.bill?.amount ?? 0))} · {r.bill?.user?.name ?? 'Customer'}
+                  {purchaseMethodLabel(r.bill) ? ` · ${purchaseMethodLabel(r.bill)}` : ''}
                 </p>
               </div>
               <StatusPill tone={risk(r.fraudScore).tone} label={risk(r.fraudScore).label} />
@@ -284,6 +290,7 @@ export default function EscalatedBillsPage() {
               {[
                 ['Amount', formatINR(Number(active.bill?.amount ?? 0))],
                 ['Bill number', active.bill?.billNumber || '—'],
+                ['Bought via', purchaseMethodLabel(active.bill) || 'Not recorded'],
                 [
                   'Bill date',
                   active.bill?.billDate
