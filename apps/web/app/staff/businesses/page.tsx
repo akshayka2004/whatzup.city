@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Building2, Loader2, Search, MapPin, Phone } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 
 interface Row {
   id: string;
@@ -21,6 +22,13 @@ export default function StaffBusinessesPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  // Filters on the loaded rows (the search box above queries the server)
+  const [fStatus, setFStatus] = useState('');
+  const [fCategory, setFCategory] = useState('');
+  const resetFilters = () => {
+    setFStatus('');
+    setFCategory('');
+  };
 
   const load = useCallback((q: string) => {
     setLoading(true);
@@ -39,6 +47,12 @@ export default function StaffBusinessesPage() {
     return () => clearTimeout(t);
   }, [search, load]);
 
+  const statusCounts = countBy(rows, (b) => b.status);
+  const categoryCounts = countBy(rows, (b) => b.category?.name);
+  const visibleRows = rows.filter(
+    (b) => (!fStatus || b.status === fStatus) && (!fCategory || b.category?.name === fCategory),
+  );
+
   return (
     <StaffLayout>
       <div className="space-y-6">
@@ -48,6 +62,40 @@ export default function StaffBusinessesPage() {
             Read-only lookup — for reference while publishing content.
           </p>
         </div>
+
+        {rows.length > 0 && (
+          <ListFilters
+            noun="businesses"
+            shown={visibleRows.length}
+            total={rows.length}
+            onReset={resetFilters}
+            groups={[
+              {
+                key: 'status',
+                label: 'Status',
+                value: fStatus,
+                onChange: setFStatus,
+                options: Object.keys(statusCounts)
+                  .sort()
+                  .map((k) => ({
+                    value: k,
+                    label: k.charAt(0) + k.slice(1).toLowerCase().replace(/_/g, ' '),
+                    count: statusCounts[k],
+                  })),
+              },
+              {
+                key: 'category',
+                label: 'Category',
+                value: fCategory,
+                onChange: setFCategory,
+                display: 'select',
+                options: Object.keys(categoryCounts)
+                  .sort()
+                  .map((k) => ({ value: k, label: k, count: categoryCounts[k] })),
+              },
+            ]}
+          />
+        )}
 
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -92,7 +140,7 @@ export default function StaffBusinessesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((b) => (
+                  {visibleRows.map((b) => (
                     <tr
                       key={b.id}
                       className="border-b border-border last:border-0 hover:bg-secondary/20"

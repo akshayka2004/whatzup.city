@@ -44,6 +44,7 @@ import {
   type BundleFamily,
   type PurchasableCycle,
 } from '@/components/business/plans/plan-helpers';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 
 type Payment = {
   id: string;
@@ -74,6 +75,17 @@ export default function BusinessSubscriptionsPage() {
 
   // Payment history + invoice details (unchanged endpoints).
   const [payments, setPayments] = useState<Payment[]>([]);
+  // Payment history filters
+  const [fq, setFq] = useState('');
+  const [fMethod, setFMethod] = useState('');
+  const [fPayStatus, setFPayStatus] = useState('');
+  const [fSort, setFSort] = useState('newest');
+  const resetFilters = () => {
+    setFq('');
+    setFMethod('');
+    setFPayStatus('');
+    setFSort('newest');
+  };
   const [billing, setBilling] = useState<any>(null);
   const [histLoading, setHistLoading] = useState(true);
 
@@ -169,6 +181,21 @@ export default function BusinessSubscriptionsPage() {
 
   const loading = bizLoading || (entLoading && !ent);
   const hasCart = lines.length > 0;
+
+  const methodCounts = countBy(payments, (p) => p.method);
+  const payStatusCounts = countBy(payments, (p) => p.status);
+  const visiblePayments = payments
+    .filter(
+      (p) =>
+        (!fMethod || p.method === fMethod) &&
+        (!fPayStatus || p.status === fPayStatus) &&
+        matchesSearch([p.transactionRef, p.method], fq),
+    )
+    .sort((a, b) =>
+      fSort === 'amount'
+        ? Number(b.amount) - Number(a.amount)
+        : String(b.createdAt).localeCompare(String(a.createdAt)),
+    );
 
   return (
     <BusinessLayout>
@@ -309,6 +336,46 @@ export default function BusinessSubscriptionsPage() {
                 </Card>
               ) : (
                 <Card className="ui-fade-up overflow-hidden">
+                  <ListFilters
+                    className="px-4 pt-4"
+                    noun="payments"
+                    shown={visiblePayments.length}
+                    total={payments.length}
+                    onReset={resetFilters}
+                    search={{ value: fq, onChange: setFq, placeholder: 'Search reference…' }}
+                    sort={{
+                      value: fSort,
+                      onChange: setFSort,
+                      options: [
+                        { value: 'newest', label: 'Newest first' },
+                        { value: 'amount', label: 'Highest amount' },
+                      ],
+                    }}
+                    groups={[
+                      {
+                        key: 'status',
+                        label: 'Status',
+                        value: fPayStatus,
+                        onChange: setFPayStatus,
+                        options: Object.keys(payStatusCounts)
+                          .sort()
+                          .map((k) => ({
+                            value: k,
+                            label: k.charAt(0) + k.slice(1).toLowerCase(),
+                            count: payStatusCounts[k],
+                          })),
+                      },
+                      {
+                        key: 'method',
+                        label: 'Method',
+                        value: fMethod,
+                        onChange: setFMethod,
+                        options: Object.keys(methodCounts)
+                          .sort()
+                          .map((k) => ({ value: k, label: k, count: methodCounts[k] })),
+                      },
+                    ]}
+                  />
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-muted/40 text-xs text-muted-foreground">
@@ -322,7 +389,7 @@ export default function BusinessSubscriptionsPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {payments.map((p) => (
+                        {visiblePayments.map((p) => (
                           <tr key={p.id} className="border-t border-border">
                             <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                               {fmtDate(p.createdAt)}

@@ -23,6 +23,7 @@ import {
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
 import { KERALA_CITIES, EVENT_CATEGORIES } from '@/lib/constants';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 
 interface Ev {
   id: string;
@@ -65,6 +66,19 @@ export default function DashboardEventsPage() {
   const businessId = user?.businessId || user?.entity?.id;
 
   const [events, setEvents] = useState<Ev[]>([]);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fWhen, setFWhen] = useState('');
+  const [fCategory, setFCategory] = useState('');
+  const [fCity, setFCity] = useState('');
+  const [fTicket, setFTicket] = useState('');
+  const resetFilters = () => {
+    setFq('');
+    setFWhen('');
+    setFCategory('');
+    setFCity('');
+    setFTicket('');
+  };
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Ev | null>(null);
@@ -225,6 +239,27 @@ export default function DashboardEventsPage() {
     fetchEvents();
   };
 
+  const nowMs = Date.now();
+  const whenOf = (e: Ev) => {
+    const start = Date.parse(e.startDate);
+    const end = e.endDate ? Date.parse(e.endDate) : start;
+    if (Number.isFinite(end) && end < nowMs) return 'PAST';
+    if (Number.isFinite(start) && start <= nowMs) return 'LIVE';
+    return 'UPCOMING';
+  };
+  const whenCounts = countBy(events, whenOf);
+  const categoryCounts = countBy(events, (e) => e.category);
+  const cityCounts = countBy(events, (e) => e.city);
+  const ticketCounts = countBy(events, (e) => (e.ticketType === 'PAID' ? 'PAID' : 'FREE'));
+  const visibleEvents = events.filter(
+    (e) =>
+      (!fWhen || whenOf(e) === fWhen) &&
+      (!fCategory || e.category === fCategory) &&
+      (!fCity || e.city === fCity) &&
+      (!fTicket || (e.ticketType === 'PAID' ? 'PAID' : 'FREE') === fTicket) &&
+      matchesSearch([e.title, e.venue, e.city], fq),
+  );
+
   return (
     <BusinessLayout>
       <div className="space-y-6">
@@ -243,6 +278,65 @@ export default function DashboardEventsPage() {
           </Button>
         </div>
 
+        {!loading && events.length > 0 && (
+          <ListFilters
+            noun="events"
+            shown={visibleEvents.length}
+            total={events.length}
+            onReset={resetFilters}
+            search={{ value: fq, onChange: setFq, placeholder: 'Search title, venue, city…' }}
+            groups={[
+              {
+                key: 'when',
+                label: 'When',
+                value: fWhen,
+                onChange: setFWhen,
+                options: [
+                  { value: 'UPCOMING', label: 'Upcoming', count: whenCounts.UPCOMING ?? 0 },
+                  { value: 'LIVE', label: 'Happening now', count: whenCounts.LIVE ?? 0 },
+                  { value: 'PAST', label: 'Past', count: whenCounts.PAST ?? 0 },
+                ],
+              },
+              {
+                key: 'ticket',
+                label: 'Tickets',
+                value: fTicket,
+                onChange: setFTicket,
+                options: [
+                  { value: 'FREE', label: 'Free', count: ticketCounts.FREE ?? 0 },
+                  { value: 'PAID', label: 'Paid', count: ticketCounts.PAID ?? 0 },
+                ],
+              },
+              {
+                key: 'category',
+                label: 'Category',
+                value: fCategory,
+                onChange: setFCategory,
+                display: 'select',
+                options: Object.keys(categoryCounts)
+                  .sort()
+                  .map((k) => ({
+                    value: k,
+                    label: EVENT_CATEGORIES.find((c) => c.value === k)?.label ?? k,
+                    count: categoryCounts[k],
+                  })),
+              },
+              {
+                key: 'city',
+                label: 'City',
+                value: fCity,
+                onChange: setFCity,
+                display: 'select',
+                options: Object.keys(cityCounts)
+                  .sort()
+                  .map((k) => ({ value: k, label: k, count: cityCounts[k] })),
+              },
+            ]}
+          />
+        )}
+        {!loading && events.length > 0 && visibleEvents.length === 0 && (
+          <p className="text-sm text-muted-foreground">No events match these filters.</p>
+        )}
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -254,7 +348,7 @@ export default function DashboardEventsPage() {
           </Card>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {events.map((ev, i) => (
+            {visibleEvents.map((ev, i) => (
               <Card
                 key={ev.id}
                 className="ui-fade-up p-5 rounded-2xl border-border bg-card"

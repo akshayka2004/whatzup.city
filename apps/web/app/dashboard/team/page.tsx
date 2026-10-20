@@ -31,6 +31,7 @@ import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
 import { canAccess } from '@/lib/rbac';
 import { useAuth } from '@/hooks/use-auth';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 
 const ROLE_CONFIG: Record<
   string,
@@ -79,6 +80,18 @@ export default function TeamManagementPage() {
   const [userRole, setUserRole] = useState<string>('BUSINESS_OWNER');
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [loadingTeam, setLoadingTeam] = useState(true);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fRole, setFRole] = useState('');
+  const [fActive, setFActive] = useState('');
+  const [fSort, setFSort] = useState('name');
+  const resetFilters = () => {
+    setFq('');
+    setFRole('');
+    setFActive('');
+    setFSort('name');
+  };
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<TeamMember | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{
@@ -273,6 +286,22 @@ export default function TeamManagementPage() {
   ).length;
   const staffCount = team.filter((m) => ['STAFF', 'BUSINESS_STAFF'].includes(m.role)).length;
 
+  const roleOf = (m: TeamMember) => (ROLE_CONFIG[m.role] || ROLE_CONFIG.STAFF).label;
+  const roleCounts = countBy(team, roleOf);
+  const activeCounts = countBy(team, (m) => (m.isActive ? 'ACTIVE' : 'INACTIVE'));
+  const visibleTeam = team
+    .filter(
+      (m) =>
+        (!fRole || roleOf(m) === fRole) &&
+        (!fActive || (m.isActive ? 'ACTIVE' : 'INACTIVE') === fActive) &&
+        matchesSearch([m.name, m.email], fq),
+    )
+    .sort((a, b) =>
+      fSort === 'newest'
+        ? String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? ''))
+        : a.name.localeCompare(b.name),
+    );
+
   return (
     <BusinessLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
@@ -325,6 +354,49 @@ export default function TeamManagementPage() {
           <h3 className="text-sm font-semibold text-foreground px-1">
             Team Members ({team.length})
           </h3>
+          {!loadingTeam && team.length > 0 && (
+            <ListFilters
+              noun="members"
+              shown={visibleTeam.length}
+              total={team.length}
+              onReset={resetFilters}
+              search={{ value: fq, onChange: setFq, placeholder: 'Search name or email…' }}
+              sort={{
+                value: fSort,
+                onChange: setFSort,
+                options: [
+                  { value: 'name', label: 'Name A–Z' },
+                  { value: 'newest', label: 'Newest first' },
+                ],
+              }}
+              groups={[
+                {
+                  key: 'role',
+                  label: 'Role',
+                  value: fRole,
+                  onChange: setFRole,
+                  options: Object.keys(roleCounts)
+                    .sort()
+                    .map((k) => ({ value: k, label: k, count: roleCounts[k] })),
+                },
+                {
+                  key: 'active',
+                  label: 'Status',
+                  value: fActive,
+                  onChange: setFActive,
+                  options: [
+                    { value: 'ACTIVE', label: 'Active', count: activeCounts.ACTIVE ?? 0 },
+                    { value: 'INACTIVE', label: 'Inactive', count: activeCounts.INACTIVE ?? 0 },
+                  ],
+                },
+              ]}
+            />
+          )}
+          {!loadingTeam && team.length > 0 && visibleTeam.length === 0 && (
+            <p className="px-1 text-sm text-muted-foreground">
+              No team members match these filters.
+            </p>
+          )}
           {loadingTeam ? (
             <div className="flex items-center justify-center h-20">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -338,7 +410,7 @@ export default function TeamManagementPage() {
               </p>
             </Card>
           ) : null}
-          {team.map((member, i) => {
+          {visibleTeam.map((member, i) => {
             const cfg = ROLE_CONFIG[member.role] || ROLE_CONFIG.STAFF;
             const isOwner = ['OWNER', 'BUSINESS_OWNER', 'BUSINESS_ADMIN'].includes(member.role);
             return (

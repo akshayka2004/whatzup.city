@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 
 const ROLE_OPTIONS = [
   {
@@ -85,6 +86,16 @@ function roleLabel(role: string) {
 
 export default function AdminManagementPage() {
   const [admins, setAdmins] = useState<AdminUser[]>([]);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fRole, setFRole] = useState('');
+  const [fActive, setFActive] = useState('');
+  const resetFilters = () => {
+    setFq('');
+    setFRole('');
+    setFActive('');
+  };
+
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -139,6 +150,15 @@ export default function AdminManagementPage() {
     fetchAdmins();
   };
 
+  const roleCounts = countBy(admins, (a) => a.role);
+  const activeCounts = countBy(admins, (a) => (a.isActive ? 'ACTIVE' : 'INACTIVE'));
+  const visibleAdmins = admins.filter(
+    (a) =>
+      (!fRole || a.role === fRole) &&
+      (!fActive || (a.isActive ? 'ACTIVE' : 'INACTIVE') === fActive) &&
+      matchesSearch([a.name, a.email], fq),
+  );
+
   return (
     <SuperAdminLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
@@ -176,6 +196,39 @@ export default function AdminManagementPage() {
         )}
 
         {/* Admin list */}
+        {!loading && admins.length > 0 && (
+          <ListFilters
+            noun="admins"
+            shown={visibleAdmins.length}
+            total={admins.length}
+            onReset={resetFilters}
+            search={{ value: fq, onChange: setFq, placeholder: 'Search name or email…' }}
+            groups={[
+              {
+                key: 'role',
+                label: 'Role',
+                value: fRole,
+                onChange: setFRole,
+                options: Object.keys(roleCounts)
+                  .sort()
+                  .map((k) => ({ value: k, label: roleLabel(k).label, count: roleCounts[k] })),
+              },
+              {
+                key: 'active',
+                label: 'Status',
+                value: fActive,
+                onChange: setFActive,
+                options: [
+                  { value: 'ACTIVE', label: 'Active', count: activeCounts.ACTIVE ?? 0 },
+                  { value: 'INACTIVE', label: 'Inactive', count: activeCounts.INACTIVE ?? 0 },
+                ],
+              },
+            ]}
+          />
+        )}
+        {!loading && admins.length > 0 && visibleAdmins.length === 0 && (
+          <p className="text-sm text-muted-foreground">No admins match these filters.</p>
+        )}
         {loading ? (
           <div className="flex items-center justify-center h-40">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -190,7 +243,7 @@ export default function AdminManagementPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {admins.map((admin, i) => {
+            {visibleAdmins.map((admin, i) => {
               const { label, color } = roleLabel(admin.role);
               return (
                 <Card

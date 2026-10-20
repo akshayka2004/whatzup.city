@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 
 interface Branch {
   id: string;
@@ -226,6 +227,14 @@ export default function BranchesPage() {
   const { user } = useAuth();
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fStatus, setFStatus] = useState('');
+  const resetFilters = () => {
+    setFq('');
+    setFStatus('');
+  };
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -358,6 +367,13 @@ export default function BranchesPage() {
     }
   };
 
+  const statusCounts = countBy(branches, (b) => b.status);
+  const visibleBranches = branches.filter(
+    (b) =>
+      (!fStatus || b.status === fStatus) &&
+      matchesSearch([b.name, b.address, b.managerName, b.phone], fq),
+  );
+
   return (
     <BusinessLayout>
       <div className="space-y-6">
@@ -391,8 +407,33 @@ export default function BranchesPage() {
           </Card>
         ) : null}
 
+        {!loading && branches.length > 0 && (
+          <ListFilters
+            noun="branches"
+            shown={visibleBranches.length}
+            total={branches.length}
+            onReset={resetFilters}
+            search={{ value: fq, onChange: setFq, placeholder: 'Search branch, address, manager…' }}
+            groups={[
+              {
+                key: 'status',
+                label: 'Status',
+                value: fStatus,
+                onChange: setFStatus,
+                options: [
+                  { value: 'Active', label: 'Active', count: statusCounts.Active ?? 0 },
+                  { value: 'Inactive', label: 'Inactive', count: statusCounts.Inactive ?? 0 },
+                ],
+              },
+            ]}
+          />
+        )}
+        {!loading && branches.length > 0 && visibleBranches.length === 0 && (
+          <p className="text-sm text-muted-foreground">No branches match these filters.</p>
+        )}
+
         <div className="grid gap-4">
-          {branches.map((branch, i) => (
+          {visibleBranches.map((branch, i) => (
             <Card
               key={branch.id}
               className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:shadow-md transition-all group relative overflow-hidden"

@@ -37,6 +37,7 @@ import { CategoryForm } from './_components/category-form';
 import { ImpactDialog } from './_components/impact-dialog';
 import { HistoryDialog } from './_components/history-dialog';
 import type { AdminCategory, CategoryAction } from './_components/types';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 
 type Dialog =
   | { kind: 'form'; category: AdminCategory | null }
@@ -71,6 +72,15 @@ export default function AdminCategoriesPage() {
   const confirm = useConfirm();
 
   const [rows, setRows] = useState<AdminCategory[]>([]);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fStatus, setFStatus] = useState('');
+  const [fTemplate, setFTemplate] = useState('');
+  const resetFilters = () => {
+    setFq('');
+    setFStatus('');
+    setFTemplate('');
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<Dialog | null>(null);
@@ -104,6 +114,20 @@ export default function AdminCategoriesPage() {
     return m;
   }, [rows]);
   const parents = useMemo(() => roots.filter((r) => r.isActive), [roots]);
+
+  const statusOf = (c: AdminCategory) =>
+    !c.isActive ? 'ARCHIVED' : !c.showInSignup ? 'HIDDEN' : 'ACTIVE';
+  const statusCounts = countBy(rows, statusOf);
+  const templateCounts = countBy(rows, (c) => c.template ?? 'GENERIC');
+  const filtersOn = !!(fq || fStatus || fTemplate);
+  const rowMatches = (c: AdminCategory) =>
+    (!fStatus || statusOf(c) === fStatus) &&
+    (!fTemplate || (c.template ?? 'GENERIC') === fTemplate) &&
+    matchesSearch([c.name, c.nameMl, c.slug], fq);
+  // A parent stays visible when it, or any of its subcategories, matches.
+  const visibleRoots = roots.filter(
+    (r) => rowMatches(r) || (childrenOf.get(r.id) ?? []).some(rowMatches),
+  );
 
   const done = (message: string) => {
     setDialog(null);
@@ -336,17 +360,61 @@ export default function AdminCategoriesPage() {
             )}
           </Card>
         ) : (
-          <div className="space-y-2">
-            {roots.map((root, i) => {
-              const kids = childrenOf.get(root.id) ?? [];
-              return (
-                <div key={root.id} className="space-y-2">
-                  {renderRow(root, roots, i, false)}
-                  {kids.map((k, j) => renderRow(k, kids, j, true))}
-                </div>
-              );
-            })}
-          </div>
+          <>
+            <ListFilters
+              noun="categories"
+              shown={rows.filter(rowMatches).length}
+              total={rows.length}
+              onReset={resetFilters}
+              search={{ value: fq, onChange: setFq, placeholder: 'Search name or slug…' }}
+              groups={[
+                {
+                  key: 'status',
+                  label: 'Status',
+                  value: fStatus,
+                  onChange: setFStatus,
+                  options: [
+                    { value: 'ACTIVE', label: 'Active', count: statusCounts.ACTIVE ?? 0 },
+                    { value: 'HIDDEN', label: 'Not on sign-up', count: statusCounts.HIDDEN ?? 0 },
+                    { value: 'ARCHIVED', label: 'Archived', count: statusCounts.ARCHIVED ?? 0 },
+                  ],
+                },
+                {
+                  key: 'template',
+                  label: 'Behaves like',
+                  value: fTemplate,
+                  onChange: setFTemplate,
+                  display: 'select',
+                  options: Object.keys(templateCounts)
+                    .sort()
+                    .map((k) => ({
+                      value: k,
+                      label: CATEGORY_TEMPLATES[k as CategoryTemplateKey]?.label ?? k,
+                      count: templateCounts[k],
+                    })),
+                },
+              ]}
+            />
+            {visibleRoots.length === 0 ? (
+              <Card className="rounded-2xl p-8 text-center text-sm text-muted-foreground">
+                No categories match these filters.
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {visibleRoots.map((root) => {
+                  const allKids = childrenOf.get(root.id) ?? [];
+                  const kids = filtersOn ? allKids.filter(rowMatches) : allKids;
+                  return (
+                    <div key={root.id} className="space-y-2">
+                      {/* Reordering always acts on the full sibling list, even while filtered. */}
+                      {renderRow(root, roots, roots.indexOf(root), false)}
+                      {kids.map((k) => renderRow(k, allKids, allKids.indexOf(k), true))}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
 

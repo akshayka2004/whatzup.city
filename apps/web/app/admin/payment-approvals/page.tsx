@@ -35,6 +35,7 @@ import {
   MapPin,
   Hash,
 } from 'lucide-react';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 
 type Pending = {
   id: string;
@@ -82,6 +83,17 @@ function fmtDate(v?: string | null) {
 
 export default function AdminPaymentApprovalsPage() {
   const [rows, setRows] = useState<Pending[]>([]);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fMethod, setFMethod] = useState('');
+  const [fCity, setFCity] = useState('');
+  const [fSort, setFSort] = useState('oldest');
+  const resetFilters = () => {
+    setFq('');
+    setFMethod('');
+    setFCity('');
+    setFSort('oldest');
+  };
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -129,6 +141,26 @@ export default function AdminPaymentApprovalsPage() {
     setRows((r) => r.filter((x) => x.id !== id));
   };
 
+  const methodCounts = countBy(rows, (p) => p.method);
+  const cityCounts = countBy(rows, (p) => p.business?.city);
+  const visibleRows = rows
+    .filter(
+      (p) =>
+        (!fMethod || p.method === fMethod) &&
+        (!fCity || p.business?.city === fCity) &&
+        matchesSearch(
+          [p.business?.name, p.business?.city, p.transactionRef, p.subscription?.packageName],
+          fq,
+        ),
+    )
+    .sort((a, b) =>
+      fSort === 'amount'
+        ? Number(b.amount) - Number(a.amount)
+        : fSort === 'newest'
+          ? String(b.createdAt).localeCompare(String(a.createdAt))
+          : String(a.createdAt).localeCompare(String(b.createdAt)),
+    );
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -147,6 +179,48 @@ export default function AdminPaymentApprovalsPage() {
 
         {msg && <p className="text-sm font-medium text-primary">{msg}</p>}
 
+        {!loading && rows.length > 0 && (
+          <ListFilters
+            noun="payments"
+            shown={visibleRows.length}
+            total={rows.length}
+            onReset={resetFilters}
+            search={{ value: fq, onChange: setFq, placeholder: 'Search business, reference…' }}
+            sort={{
+              value: fSort,
+              onChange: setFSort,
+              options: [
+                { value: 'oldest', label: 'Oldest first' },
+                { value: 'newest', label: 'Newest first' },
+                { value: 'amount', label: 'Highest amount' },
+              ],
+            }}
+            groups={[
+              {
+                key: 'method',
+                label: 'Method',
+                value: fMethod,
+                onChange: setFMethod,
+                options: Object.keys(methodCounts)
+                  .sort()
+                  .map((k) => ({ value: k, label: k, count: methodCounts[k] })),
+              },
+              {
+                key: 'city',
+                label: 'City',
+                value: fCity,
+                onChange: setFCity,
+                display: 'select',
+                options: Object.keys(cityCounts)
+                  .sort()
+                  .map((k) => ({ value: k, label: k, count: cityCounts[k] })),
+              },
+            ]}
+          />
+        )}
+        {!loading && rows.length > 0 && visibleRows.length === 0 && (
+          <p className="text-sm text-muted-foreground">No payments match these filters.</p>
+        )}
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading renewal payments…
@@ -161,7 +235,7 @@ export default function AdminPaymentApprovalsPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {rows.map((p, i) => {
+            {visibleRows.map((p, i) => {
               const bp = p.business?.billingProfile;
               const base = p.amountBase ?? Number(p.invoiceMetadata?.amountBase ?? 0);
               const tax = p.amountTax ?? Number(p.invoiceMetadata?.amountTax ?? 0);

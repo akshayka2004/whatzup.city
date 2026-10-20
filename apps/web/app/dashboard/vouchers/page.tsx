@@ -23,6 +23,7 @@ import {
 } from '@/components/business/upgrade-dialog';
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 
 type Voucher = {
   id: string;
@@ -104,6 +105,17 @@ export default function VouchersPage() {
   const businessId = user?.businessId || user?.entity?.id;
 
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fState, setFState] = useState('');
+  const [fReward, setFReward] = useState('');
+  const [fSort, setFSort] = useState('threshold');
+  const resetFilters = () => {
+    setFq('');
+    setFState('');
+    setFReward('');
+    setFSort('threshold');
+  };
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -242,6 +254,29 @@ export default function VouchersPage() {
     };
   };
 
+  const stateOf = (v: Voucher) =>
+    v.status !== 'ACTIVE'
+      ? 'PAUSED'
+      : new Date(v.endDate).getTime() < Date.now()
+        ? 'ENDED'
+        : 'LIVE';
+  const stateCounts = countBy(vouchers, stateOf);
+  const rewardCounts = countBy(vouchers, (v) => v.rewardType);
+  const visibleVouchers = vouchers
+    .filter(
+      (v) =>
+        (!fState || stateOf(v) === fState) &&
+        (!fReward || v.rewardType === fReward) &&
+        matchesSearch([v.title, v.description, v.rewardLabel], fq),
+    )
+    .sort((a, b) =>
+      fSort === 'ending'
+        ? String(a.endDate).localeCompare(String(b.endDate))
+        : fSort === 'redeemed'
+          ? (b.redeemedCount ?? 0) - (a.redeemedCount ?? 0)
+          : a.thresholdAmount - b.thresholdAmount,
+    );
+
   return (
     <BusinessLayout>
       <PageHeader
@@ -291,6 +326,52 @@ export default function VouchersPage() {
         />
       </div>
 
+      {!loading && vouchers.length > 0 && (
+        <ListFilters
+          noun="vouchers"
+          shown={visibleVouchers.length}
+          total={vouchers.length}
+          onReset={resetFilters}
+          search={{ value: fq, onChange: setFq, placeholder: 'Search vouchers…' }}
+          sort={{
+            value: fSort,
+            onChange: setFSort,
+            options: [
+              { value: 'threshold', label: 'Lowest spend first' },
+              { value: 'ending', label: 'Ending soonest' },
+              { value: 'redeemed', label: 'Most redeemed' },
+            ],
+          }}
+          groups={[
+            {
+              key: 'state',
+              label: 'Status',
+              value: fState,
+              onChange: setFState,
+              options: [
+                { value: 'LIVE', label: 'Live', count: stateCounts.LIVE ?? 0 },
+                { value: 'PAUSED', label: 'Paused', count: stateCounts.PAUSED ?? 0 },
+                { value: 'ENDED', label: 'Ended', count: stateCounts.ENDED ?? 0 },
+              ],
+            },
+            {
+              key: 'reward',
+              label: 'Reward',
+              value: fReward,
+              onChange: setFReward,
+              options: REWARD_TYPES.map((r) => ({
+                value: r.value,
+                label: r.label,
+                count: rewardCounts[r.value] ?? 0,
+              })),
+            },
+          ]}
+        />
+      )}
+      {!loading && vouchers.length > 0 && visibleVouchers.length === 0 && (
+        <p className="text-sm text-muted-foreground">No vouchers match these filters.</p>
+      )}
+
       {loading ? (
         <PromoGridSkeleton count={2} />
       ) : vouchers.length === 0 ? (
@@ -310,7 +391,7 @@ export default function VouchersPage() {
         />
       ) : (
         <PromoGrid>
-          {vouchers.map((v) => {
+          {visibleVouchers.map((v) => {
             const ended = new Date(v.endDate).getTime() < Date.now();
             const live = v.status === 'ACTIVE' && !ended;
             return (

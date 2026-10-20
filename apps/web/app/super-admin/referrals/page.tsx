@@ -5,6 +5,7 @@ import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { Card } from '@/components/ui/card';
 import { apiService } from '@/lib/services/api-service';
 import { Users, Share2, TrendingUp, Award, Loader2 } from 'lucide-react';
+import { ListFilters, matchesSearch } from '@/components/system/list-filters';
 
 export default function SuperAdminReferralsPage() {
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,14 @@ export default function SuperAdminReferralsPage() {
   }, []);
 
   const leaderboard: any[] = data?.leaderboard ?? [];
+  // Search the leaderboard; ranks stay those of the full list.
+  const [fq, setFq] = useState('');
+  const [fMin, setFMin] = useState('');
+  const visibleLeaderboard = leaderboard.filter(
+    (r) =>
+      (!fMin || Number(r.referralCount) >= Number(fMin)) &&
+      matchesSearch([r.name, r.email, r.referralCode], fq),
+  );
   const totalReferred: number = data?.totalReferredUsers ?? 0;
 
   return (
@@ -79,6 +88,33 @@ export default function SuperAdminReferralsPage() {
           <Award className="h-5 w-5 text-primary" />
           <h2 className="font-bold text-foreground">Top Referrers</h2>
         </div>
+        {!loading && leaderboard.length > 0 && (
+          <div className="border-b border-border px-6 pt-4">
+            <ListFilters
+              noun="referrers"
+              shown={visibleLeaderboard.length}
+              total={leaderboard.length}
+              onReset={() => {
+                setFq('');
+                setFMin('');
+              }}
+              search={{ value: fq, onChange: setFq, placeholder: 'Search name, email, code…' }}
+              groups={[
+                {
+                  key: 'min',
+                  label: 'Referrals',
+                  value: fMin,
+                  onChange: setFMin,
+                  options: [
+                    { value: '2', label: '2+' },
+                    { value: '5', label: '5+' },
+                    { value: '10', label: '10+' },
+                  ],
+                },
+              ]}
+            />
+          </div>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center h-40">
@@ -112,29 +148,32 @@ export default function SuperAdminReferralsPage() {
                 </tr>
               </thead>
               <tbody>
-                {leaderboard.map((row: any, i: number) => (
-                  <tr
-                    key={row.id}
-                    className="ui-fade-up border-b border-border last:border-0 hover:bg-secondary/20 transition-colors"
-                    style={{ animationDelay: `${Math.min(i, 10) * 0.04}s` }}
-                  >
-                    <td className="px-6 py-3 text-muted-foreground font-mono text-xs">
-                      {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
-                    </td>
-                    <td className="px-6 py-3 font-semibold text-foreground">{row.name}</td>
-                    <td className="px-6 py-3 text-muted-foreground">{row.email}</td>
-                    <td className="px-6 py-3">
-                      <span className="px-2 py-0.5 rounded-md bg-brand-soft text-brand-soft-foreground text-xs font-mono font-bold">
-                        {row.referralCode || '—'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-3 text-right">
-                      <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-success-soft text-success-soft-foreground border border-success/20 text-xs font-bold">
-                        {row.referralCount}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {visibleLeaderboard.map((row: any) => {
+                  const i = leaderboard.indexOf(row);
+                  return (
+                    <tr
+                      key={row.id}
+                      className="ui-fade-up border-b border-border last:border-0 hover:bg-secondary/20 transition-colors"
+                      style={{ animationDelay: `${Math.min(i, 10) * 0.04}s` }}
+                    >
+                      <td className="px-6 py-3 text-muted-foreground font-mono text-xs">
+                        {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                      </td>
+                      <td className="px-6 py-3 font-semibold text-foreground">{row.name}</td>
+                      <td className="px-6 py-3 text-muted-foreground">{row.email}</td>
+                      <td className="px-6 py-3">
+                        <span className="px-2 py-0.5 rounded-md bg-brand-soft text-brand-soft-foreground text-xs font-mono font-bold">
+                          {row.referralCode || '—'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3 text-right">
+                        <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-success-soft text-success-soft-foreground border border-success/20 text-xs font-bold">
+                          {row.referralCount}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
