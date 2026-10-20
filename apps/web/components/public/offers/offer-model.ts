@@ -103,7 +103,20 @@ export function mapPlatformOffer(o: any, fromServer = false): Offer {
     details: o.details || {},
     subType: o.subType || null,
     category: o.category,
+    channels: platformChannels(o.category, o.subType),
   };
+}
+
+/**
+ * Channels of a platform offer from its sub category (dine in / offline = instore) or, for the
+ * Dine-in / Takeaway categories, the category itself. Anything else is not channel-specific.
+ */
+function platformChannels(category?: string, subType?: string | null): string[] | undefined {
+  const mode = subType || (category === 'DINE_IN' || category === 'TAKEAWAY' ? category : '');
+  if (mode === 'DINE_IN' || mode === 'OFFLINE') return ['INSTORE'];
+  if (mode === 'TAKEAWAY') return ['TAKEAWAY'];
+  if (mode === 'ONLINE') return ['ONLINE'];
+  return undefined;
 }
 
 /** The API wraps lists inconsistently ({data}, {items}, bare array) — same tolerance the page always had. */
@@ -173,13 +186,13 @@ export function applyOfferView(
     const now = Date.now();
     switch (view.chip) {
       case 'instore':
-        list = list.filter((o) => !o.isPlatform && !!o.channels?.includes('INSTORE'));
+        list = list.filter((o) => !!o.channels?.includes('INSTORE'));
         break;
       case 'takeaway':
-        list = list.filter((o) => !o.isPlatform && !!o.channels?.includes('TAKEAWAY'));
+        list = list.filter((o) => !!o.channels?.includes('TAKEAWAY'));
         break;
       case 'online':
-        list = list.filter((o) => !o.isPlatform && !!o.channels?.includes('ONLINE'));
+        list = list.filter((o) => !!o.channels?.includes('ONLINE'));
         break;
       case 'ending':
         list = list.filter((o) => {

@@ -78,6 +78,7 @@ interface Biz {
   totalBillAmount?: number;
   brand?: { id: string; name: string } | null;
   outletLabel?: string | null;
+  companyName?: string | null;
   isBrandHq?: boolean;
 }
 
@@ -688,6 +689,11 @@ export default function SuperAdminBusinessesPage() {
             businessName={qrBiz.name}
             category={qrBiz.category?.name}
             city={qrBiz.city}
+            brandName={qrBiz.brand?.name}
+            outletLabel={qrBiz.outletLabel}
+            address={qrBiz.address}
+            state={qrBiz.state}
+            companyName={qrBiz.companyName}
           />
         )}
       </Modal>

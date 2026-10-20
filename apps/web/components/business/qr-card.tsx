@@ -12,9 +12,32 @@ interface BusinessQrCardProps {
   businessName: string;
   category?: string;
   city?: string;
+  /** Brand account name; shown as the headline when the shop is an outlet of a brand. */
+  brandName?: string | null;
+  /** Which outlet of the brand this is (e.g. "Kozhikode"). */
+  outletLabel?: string | null;
+  address?: string | null;
+  state?: string | null;
+  /** Registered company name. */
+  companyName?: string | null;
 }
 
-export function BusinessQrCard({ businessId, businessName, category, city }: BusinessQrCardProps) {
+export function BusinessQrCard({
+  businessId,
+  businessName,
+  category,
+  city,
+  brandName,
+  outletLabel,
+  address,
+  state,
+  companyName,
+}: BusinessQrCardProps) {
+  // Brand outlets lead with the brand; the outlet name goes underneath.
+  const headline = brandName?.trim() || businessName;
+  const outlet = brandName?.trim() ? outletLabel?.trim() || businessName : '';
+  const location = [address?.trim(), city?.trim(), state?.trim()].filter(Boolean).join(', ');
+  const company = companyName?.trim();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const [qrReady, setQrReady] = useState(false);
@@ -115,8 +138,23 @@ export function BusinessQrCard({ businessId, businessName, category, city }: Bus
 
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontWeight: 700, fontSize: 20, lineHeight: 1.25, wordBreak: 'break-word' }}>
-            {businessName}
+            {headline}
           </div>
+          {outlet && outlet !== headline && (
+            <div style={{ fontWeight: 600, fontSize: 13, marginTop: 2, wordBreak: 'break-word' }}>
+              {outlet}
+            </div>
+          )}
+          {location && (
+            <div style={{ fontSize: 12, marginTop: 6, lineHeight: 1.4, color: '#4A433A' }}>
+              {location}
+            </div>
+          )}
+          {company && (
+            <div style={{ fontSize: 11, marginTop: 4, color: '#8A8073', wordBreak: 'break-word' }}>
+              {company}
+            </div>
+          )}
           {(category || city) && (
             <div
               style={{

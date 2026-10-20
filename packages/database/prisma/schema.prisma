@@ -1143,6 +1143,13 @@ enum PlatformOfferCategory {
   ELECTRONICS
   STAYCATION
   PAYASAM
+  FESTIVE
+  DINE_IN
+  TAKEAWAY
+  HYPERMARKET
+  JEWELLERY
+  STATIONERY
+  FOOD
 }
 
 enum PlatformOfferStatus {

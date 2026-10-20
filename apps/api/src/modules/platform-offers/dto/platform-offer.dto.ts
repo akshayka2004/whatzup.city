@@ -16,6 +16,13 @@ export enum PlatformOfferCategoryEnum {
   CLOTHING = 'CLOTHING',
   ELECTRONICS = 'ELECTRONICS',
   STAYCATION = 'STAYCATION',
+  FESTIVE = 'FESTIVE',
+  DINE_IN = 'DINE_IN',
+  TAKEAWAY = 'TAKEAWAY',
+  HYPERMARKET = 'HYPERMARKET',
+  JEWELLERY = 'JEWELLERY',
+  STATIONERY = 'STATIONERY',
+  FOOD = 'FOOD',
 }
 
 export enum PlatformOfferStatusEnum {
@@ -23,10 +30,35 @@ export enum PlatformOfferStatusEnum {
   PUBLISHED = 'PUBLISHED',
 }
 
-/** Staycation only. */
+/** Staycation: PROPERTY | DAYOUT. The newer categories use DINE_IN | TAKEAWAY | ONLINE | OFFLINE. */
 export enum StaycationSubTypeEnum {
   PROPERTY = 'PROPERTY',
   DAYOUT = 'DAYOUT',
+  DINE_IN = 'DINE_IN',
+  TAKEAWAY = 'TAKEAWAY',
+  ONLINE = 'ONLINE',
+  OFFLINE = 'OFFLINE',
+}
+
+/** Categories whose sub category is how the offer is used (dine in, takeaway, online, offline). */
+export const MODE_CATEGORIES = [
+  'FESTIVE',
+  'DINE_IN',
+  'TAKEAWAY',
+  'HYPERMARKET',
+  'JEWELLERY',
+  'STATIONERY',
+  'FOOD',
+];
+export const MODE_SUBTYPES = ['DINE_IN', 'TAKEAWAY', 'ONLINE', 'OFFLINE'];
+
+/** The sub type a category may carry: staycation kind, a usage mode, or none. */
+export function validSubType(category: string, subType?: string | null): string | null {
+  if (!subType) return null;
+  if (category === 'STAYCATION')
+    return subType === 'PROPERTY' || subType === 'DAYOUT' ? subType : null;
+  if (MODE_CATEGORIES.includes(category)) return MODE_SUBTYPES.includes(subType) ? subType : null;
+  return null;
 }
 
 export class CreatePlatformOfferDto {

@@ -23,6 +23,31 @@ export const PLATFORM_OFFER_CATEGORIES = [
   { value: 'CLOTHING', label: 'Clothing', blurb: 'Apparel and fashion deals' },
   { value: 'ELECTRONICS', label: 'Electronics', blurb: 'Electronics and appliance deals' },
   { value: 'STAYCATION', label: 'Staycation', blurb: 'Stays and team day-out packages' },
+  { value: 'FESTIVE', label: 'Festive Offers', blurb: 'Festival and seasonal deals' },
+  { value: 'DINE_IN', label: 'Dine-in Offers', blurb: 'Offers for eating at the venue' },
+  { value: 'TAKEAWAY', label: 'Takeaway Offers', blurb: 'Offers on takeaway orders' },
+  { value: 'HYPERMARKET', label: 'Hypermarket Offers', blurb: 'Hypermarket and supermarket deals' },
+  { value: 'JEWELLERY', label: 'Jewellery Offers', blurb: 'Gold, diamond and jewellery deals' },
+  { value: 'STATIONERY', label: 'Stationery Offers', blurb: 'Stationery and school supplies' },
+  { value: 'FOOD', label: 'Food Offers', blurb: 'Food and restaurant deals' },
+] as const;
+
+/** Categories that carry a Dine in / Takeaway / Online / Offline sub category. */
+export const MODE_CATEGORIES: readonly string[] = [
+  'FESTIVE',
+  'DINE_IN',
+  'TAKEAWAY',
+  'HYPERMARKET',
+  'JEWELLERY',
+  'STATIONERY',
+  'FOOD',
+];
+
+export const OFFER_MODE_SUBTYPES = [
+  { value: 'DINE_IN', label: 'Dine in' },
+  { value: 'TAKEAWAY', label: 'Takeaway' },
+  { value: 'ONLINE', label: 'Online' },
+  { value: 'OFFLINE', label: 'Offline' },
 ] as const;
 
 export type PlatformOfferCategory = (typeof PLATFORM_OFFER_CATEGORIES)[number]['value'];
@@ -164,7 +189,11 @@ export function categoryLabel(category?: string | null) {
 
 export function subTypeLabel(subType?: string | null) {
   if (!subType) return null;
-  return STAYCATION_SUBTYPES.find((s) => s.value === subType)?.label ?? subType;
+  return (
+    STAYCATION_SUBTYPES.find((s) => s.value === subType)?.label ??
+    OFFER_MODE_SUBTYPES.find((s) => s.value === subType)?.label ??
+    subType
+  );
 }
 
 /** Human summary of a delivery selection, for the public card. */

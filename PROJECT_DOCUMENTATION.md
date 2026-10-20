@@ -1084,6 +1084,9 @@ recreate them.
   or has no city at all (online). Public lists also take `limit` (events and offers up to 100) and
   events take `category`, so client-side filters no longer run over only the first 20 rows.
 
+- **Platform offer types** (migration `20261020000000_platform_offer_types`): admin platform offers also take Festive, Dine-in, Takeaway, Hypermarket, Jewellery, Stationery and Food (common core fields only). These carry an optional sub category Dine in / Takeaway / Online / Offline (`PlatformOffer.subType`, validated by `validSubType`); Dine in/Offline count as Instore for the public offer chips.
+- **Shop QR card** now prints the brand name (outlet name under it for brand outlets), address/city/state and the registered company name.
+
 ## 13. Search, storage, realtime
 
 - **Search:** Typesense module indexes businesses; the API indexes on

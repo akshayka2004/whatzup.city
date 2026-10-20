@@ -11,6 +11,7 @@ import { StatusPill } from '@/components/common/status-pill';
 import { ResponsiveImage } from '@/components/common/responsive-image';
 import { cn } from '@/lib/utils';
 import { channelChipLabel } from '@/lib/offer-channels';
+import { subTypeLabel } from '@/lib/platform-offers';
 import type { Offer } from './offer-model';
 import { useSecondTick } from './offer-clock';
 
@@ -269,6 +270,12 @@ export function OfferCoupon({
                   Platform exclusive
                 </span>
               )}
+              {offer.isPlatform &&
+                ['DINE_IN', 'TAKEAWAY', 'ONLINE', 'OFFLINE'].includes(offer.subType ?? '') && (
+                  <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    {subTypeLabel(offer.subType)}
+                  </span>
+                )}
               {channelChipLabel(offer.channels) && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs font-medium text-muted-foreground">
                   {channelChipLabel(offer.channels)} only

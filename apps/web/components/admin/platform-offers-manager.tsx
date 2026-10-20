@@ -24,6 +24,8 @@ import { onboardingService } from '@/lib/services/onboarding-service';
 import {
   PLATFORM_OFFER_CATEGORIES,
   STAYCATION_SUBTYPES,
+  OFFER_MODE_SUBTYPES,
+  MODE_CATEGORIES,
   SADYA_PROVIDER_TYPES,
   SADYA_DELIVERY_OPTIONS,
   STAYCATION_PROPERTY_TYPES,
@@ -278,6 +280,7 @@ export function PlatformOffersManager() {
   };
 
   const isStaycation = category === 'STAYCATION';
+  const hasMode = MODE_CATEGORIES.includes(category);
   const isSadyaLike = category === 'SADYA' || category === 'PAYASAM';
   const canSave = !!category && !!title.trim() && !!location.trim() && (!isStaycation || !!subType);
 
@@ -307,7 +310,7 @@ export function PlatformOffersManager() {
 
       const body: any = {
         category,
-        subType: isStaycation ? subType : undefined,
+        subType: isStaycation || hasMode ? subType || undefined : undefined,
         title: title.trim(),
         location: location.trim(),
         price: price.trim() || undefined,
@@ -581,6 +584,33 @@ export function PlatformOffersManager() {
                     >
                       <div className="text-sm font-semibold text-foreground">{s.label}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">{s.blurb}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Dine in / Takeaway / Online / Offline (optional) */}
+            {hasMode && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">
+                  Sub category <span className="font-normal">(optional)</span>
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {OFFER_MODE_SUBTYPES.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      aria-pressed={subType === s.value}
+                      onClick={() => setSubType(subType === s.value ? '' : s.value)}
+                      className={cn(
+                        'min-h-11 p-3 rounded-xl border text-sm font-semibold text-left transition cursor-pointer',
+                        subType === s.value
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border text-muted-foreground hover:border-border',
+                      )}
+                    >
+                      {s.label}
                     </button>
                   ))}
                 </div>

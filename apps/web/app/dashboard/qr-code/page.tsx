@@ -47,6 +47,11 @@ export default function QrCodePage() {
               businessName={biz.name}
               category={biz.category?.name}
               city={biz.city}
+              brandName={biz.brand?.name}
+              outletLabel={biz.outletLabel}
+              address={biz.address}
+              state={biz.state}
+              companyName={biz.companyName}
             />
           </div>
         )}

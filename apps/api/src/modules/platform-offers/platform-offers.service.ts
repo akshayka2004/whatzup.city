@@ -9,6 +9,7 @@ import {
   CreatePlatformOfferDto,
   UpdatePlatformOfferDto,
   PlatformOfferStatusEnum,
+  validSubType,
 } from './dto/platform-offer.dto';
 
 /** "2026-10-31" means shown through the end of that day in India (UTC+05:30). */
@@ -47,7 +48,7 @@ export class PlatformOffersService {
       data: {
         tenantId: resolvedTenant,
         category: dto.category,
-        subType: dto.category === 'STAYCATION' ? (dto.subType ?? null) : null,
+        subType: validSubType(dto.category, dto.subType),
         title: dto.title,
         location: dto.location,
         price: dto.price || null,
@@ -88,8 +89,8 @@ export class PlatformOffersService {
       where: { id },
       data: {
         ...(dto.category !== undefined ? { category: dto.category } : {}),
-        // subType only ever applies to Staycation; clear it if the category moved.
-        subType: category === 'STAYCATION' ? (dto.subType ?? existing.subType) : null,
+        // A sub type belongs to its category; drop it if the category moved to one that doesn't take it.
+        subType: validSubType(category, dto.subType !== undefined ? dto.subType : existing.subType),
         ...(dto.title !== undefined ? { title: dto.title } : {}),
         ...(dto.location !== undefined ? { location: dto.location } : {}),
         ...(dto.price !== undefined ? { price: dto.price || null } : {}),

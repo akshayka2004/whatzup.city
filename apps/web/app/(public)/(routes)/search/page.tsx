@@ -47,6 +47,13 @@ const PLATFORM_OFFER_SYNONYMS: Record<string, string[]> = {
   STAYCATION: ['staycation', 'stay cation', 'day-out', 'day out', 'dayout'],
   CLOTHING: ['clothing', 'clothes', 'apparel', 'fashion'],
   ELECTRONICS: ['electronics', 'electronic', 'gadgets', 'appliances'],
+  FESTIVE: ['festive', 'festival', 'seasonal', 'onam', 'diwali', 'christmas', 'eid', 'vishu'],
+  DINE_IN: ['dine in', 'dine-in', 'dining'],
+  TAKEAWAY: ['takeaway', 'take away', 'take-away'],
+  HYPERMARKET: ['hypermarket', 'hyper market', 'supermarket'],
+  JEWELLERY: ['jewellery', 'jewelry', 'gold', 'diamond'],
+  STATIONERY: ['stationery', 'stationary', 'school supplies'],
+  FOOD: ['food', 'restaurant'],
 };
 
 function matchesPlatformOffer(o: any, term: string): boolean {
