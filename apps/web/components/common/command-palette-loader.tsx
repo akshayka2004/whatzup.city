@@ -17,18 +17,22 @@ export function CommandPaletteLoader() {
 
   useEffect(() => {
     if (load) return;
-    const trigger = (e?: Event) => {
-      if (e instanceof KeyboardEvent) {
-        if (!((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) return;
-        e.preventDefault();
+    const onKey = (e: Event) => {
+      // Password managers and autofill fire synthetic 'keydown' events that are plain Events
+      // (no key). Only a real Ctrl/Cmd+K may load the palette.
+      if (!(e instanceof KeyboardEvent)) return;
+      if (!((e.metaKey || e.ctrlKey) && typeof e.key === 'string' && e.key.toLowerCase() === 'k')) {
+        return;
       }
+      e.preventDefault();
       setLoad(true);
     };
-    document.addEventListener('keydown', trigger);
-    window.addEventListener('open-command-palette', trigger);
+    const onOpen = () => setLoad(true);
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('open-command-palette', onOpen);
     return () => {
-      document.removeEventListener('keydown', trigger);
-      window.removeEventListener('open-command-palette', trigger);
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('open-command-palette', onOpen);
     };
   }, [load]);
 

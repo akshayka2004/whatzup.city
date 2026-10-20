@@ -95,7 +95,12 @@ export function CommandPalette({ autoOpen = false }: { autoOpen?: boolean } = {}
   // ⌘K / Ctrl+K toggle + external open event (header search dispatches this)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      if (
+        e instanceof KeyboardEvent &&
+        (e.metaKey || e.ctrlKey) &&
+        typeof e.key === 'string' &&
+        e.key.toLowerCase() === 'k'
+      ) {
         e.preventDefault();
         setOpen((o) => !o);
       }
