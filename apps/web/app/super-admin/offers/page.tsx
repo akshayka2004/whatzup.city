@@ -17,6 +17,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 
 interface OfferRow {
   id: string;
@@ -37,6 +38,19 @@ export default function SuperAdminOffersPage() {
   const [offers, setOffers] = useState<OfferRow[]>([]);
   const [meta, setMeta] = useState<any>({ total: 0 });
   const [loading, setLoading] = useState(true);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fStatus, setFStatus] = useState('');
+  const [fCity, setFCity] = useState('');
+  const [fType, setFType] = useState('');
+  const [fSort, setFSort] = useState('ending');
+  const resetFilters = () => {
+    setFq('');
+    setFStatus('');
+    setFCity('');
+    setFType('');
+    setFSort('ending');
+  };
   const [confirm, setConfirm] = useState<OfferRow | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
@@ -83,6 +97,25 @@ export default function SuperAdminOffersPage() {
     if (o.discountAmount) return `₹${o.discountAmount} off`;
     return '—';
   };
+
+  const statusCounts = countBy(offers, (o) => o.status);
+  const cityCounts = countBy(offers, (o) => o.business?.city);
+  const visibleOffers = offers
+    .filter(
+      (o) =>
+        (!fStatus || o.status === fStatus) &&
+        (!fCity || o.business?.city === fCity) &&
+        (!fType ||
+          (fType === 'PERCENT' ? (o.discountPercent ?? 0) > 0 : (o.discountAmount ?? 0) > 0)) &&
+        matchesSearch([o.title, o.code, o.business?.name, o.business?.city, o.description], fq),
+    )
+    .sort((a, b) => {
+      if (fSort === 'clicks') return (b.clickCount ?? 0) - (a.clickCount ?? 0);
+      if (fSort === 'discount') {
+        return (b.discountPercent ?? 0) - (a.discountPercent ?? 0);
+      }
+      return String(a.endDate ?? '').localeCompare(String(b.endDate ?? ''));
+    });
 
   return (
     <SuperAdminLayout>
@@ -138,82 +171,147 @@ export default function SuperAdminOffersPage() {
               <p className="text-sm">No running offers on the platform</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-secondary/40">
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
-                      Offer
-                    </th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
-                      Business
-                    </th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
-                      Discount
-                    </th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
-                      Valid Till
-                    </th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
-                      Clicks
-                    </th>
-                    <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {offers.map((o, i) => (
-                    <tr
-                      key={o.id}
-                      className="ui-fade-up border-b border-border last:border-0 hover:bg-secondary/20 transition-colors"
-                      style={{ animationDelay: `${Math.min(i, 10) * 0.04}s` }}
-                    >
-                      <td className="px-5 py-3">
-                        <p className="font-semibold text-foreground">{o.title}</p>
-                        {o.code && <p className="text-xs font-mono text-primary">{o.code}</p>}
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className="inline-flex items-center gap-1.5 text-foreground">
-                          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                          {o.business?.name || '—'}
-                        </span>
-                        {(o.business?.tenant?.name || o.business?.city) && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {[o.business?.city, o.business?.tenant?.name]
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-soft text-success-soft-foreground border border-success/20 text-xs font-bold">
-                          <Percent className="h-3 w-3" /> {discountLabel(o)}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">
-                        <span className="inline-flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5" /> {fmtDate(o.endDate)}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-foreground font-semibold tabular-nums">
-                        {o.clickCount ?? 0}
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <Button
-                          onClick={() => setConfirm(o)}
-                          variant="outline"
-                          size="sm"
-                          className="ui-press rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 gap-1.5 cursor-pointer"
+            <>
+              <div className="border-b border-border px-5 pt-4">
+                <ListFilters
+                  noun="offers"
+                  shown={visibleOffers.length}
+                  total={offers.length}
+                  onReset={resetFilters}
+                  search={{
+                    value: fq,
+                    onChange: setFq,
+                    placeholder: 'Search offer, business, code…',
+                  }}
+                  sort={{
+                    value: fSort,
+                    onChange: setFSort,
+                    options: [
+                      { value: 'ending', label: 'Ending soonest' },
+                      { value: 'clicks', label: 'Most clicks' },
+                      { value: 'discount', label: 'Biggest discount' },
+                    ],
+                  }}
+                  groups={[
+                    {
+                      key: 'status',
+                      label: 'Status',
+                      value: fStatus,
+                      onChange: setFStatus,
+                      options: Object.keys(statusCounts)
+                        .sort()
+                        .map((s) => ({
+                          value: s,
+                          label: s.charAt(0) + s.slice(1).toLowerCase(),
+                          count: statusCounts[s],
+                        })),
+                    },
+                    {
+                      key: 'type',
+                      label: 'Discount',
+                      value: fType,
+                      onChange: setFType,
+                      options: [
+                        { value: 'PERCENT', label: '% off' },
+                        { value: 'AMOUNT', label: '₹ off' },
+                      ],
+                    },
+                    {
+                      key: 'city',
+                      label: 'City',
+                      value: fCity,
+                      onChange: setFCity,
+                      display: 'select',
+                      options: Object.keys(cityCounts)
+                        .sort()
+                        .map((c) => ({ value: c, label: c, count: cityCounts[c] })),
+                    },
+                  ]}
+                />
+              </div>
+              {visibleOffers.length === 0 ? (
+                <p className="p-6 text-center text-sm text-muted-foreground">
+                  No offers match these filters.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-secondary/40">
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                          Offer
+                        </th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                          Business
+                        </th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                          Discount
+                        </th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                          Valid Till
+                        </th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground">
+                          Clicks
+                        </th>
+                        <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleOffers.map((o, i) => (
+                        <tr
+                          key={o.id}
+                          className="ui-fade-up border-b border-border last:border-0 hover:bg-secondary/20 transition-colors"
+                          style={{ animationDelay: `${Math.min(i, 10) * 0.04}s` }}
                         >
-                          <Trash2 className="h-3.5 w-3.5" /> Delete
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          <td className="px-5 py-3">
+                            <p className="font-semibold text-foreground">{o.title}</p>
+                            {o.code && <p className="text-xs font-mono text-primary">{o.code}</p>}
+                          </td>
+                          <td className="px-5 py-3">
+                            <span className="inline-flex items-center gap-1.5 text-foreground">
+                              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                              {o.business?.name || '—'}
+                            </span>
+                            {(o.business?.tenant?.name || o.business?.city) && (
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {[o.business?.city, o.business?.tenant?.name]
+                                  .filter(Boolean)
+                                  .join(' · ')}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-5 py-3">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-soft text-success-soft-foreground border border-success/20 text-xs font-bold">
+                              <Percent className="h-3 w-3" /> {discountLabel(o)}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-muted-foreground whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1">
+                              <Calendar className="h-3.5 w-3.5" /> {fmtDate(o.endDate)}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-foreground font-semibold tabular-nums">
+                            {o.clickCount ?? 0}
+                          </td>
+                          <td className="px-5 py-3 text-right">
+                            <Button
+                              onClick={() => setConfirm(o)}
+                              variant="outline"
+                              size="sm"
+                              className="ui-press rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 gap-1.5 cursor-pointer"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" /> Delete
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )}
         </Card>
       </div>

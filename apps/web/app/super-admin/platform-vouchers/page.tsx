@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { apiService } from '@/lib/services/api-service';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 import { Ticket, Plus, Loader2, Trash2, CheckCircle2, Lock, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +42,17 @@ const REWARD_TYPES = [
 export default function SuperAdminPlatformVouchersPage() {
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [loading, setLoading] = useState(true);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fStatus, setFStatus] = useState('');
+  const [fReward, setFReward] = useState('');
+  const [fSort, setFSort] = useState('points');
+  const resetFilters = () => {
+    setFq('');
+    setFStatus('');
+    setFReward('');
+    setFSort('points');
+  };
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -126,6 +138,21 @@ export default function SuperAdminPlatformVouchersPage() {
       : t.rewardType === 'AMOUNT'
         ? `₹${Number(t.rewardValue || 0).toLocaleString('en-IN')} off`
         : t.rewardLabel || 'Reward';
+
+  const statusCounts = countBy(tiers, (t) => t.status);
+  const rewardCounts = countBy(tiers, (t) => t.rewardType);
+  const visibleTiers = tiers
+    .filter(
+      (t) =>
+        (!fStatus || t.status === fStatus) &&
+        (!fReward || t.rewardType === fReward) &&
+        matchesSearch([t.title, t.description, t.rewardLabel], fq),
+    )
+    .sort((a, b) => {
+      if (fSort === 'ending') return String(a.endDate).localeCompare(String(b.endDate));
+      if (fSort === 'redeemed') return (b.redeemedCount ?? 0) - (a.redeemedCount ?? 0);
+      return Number(a.thresholdPoints) - Number(b.thresholdPoints);
+    });
 
   return (
     <SuperAdminLayout>
@@ -281,73 +308,123 @@ export default function SuperAdminPlatformVouchersPage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {tiers.map((t, i) => (
-              <div
-                key={t.id}
-                className="ui-fade-up rounded-2xl border border-border bg-card p-5"
-                style={{ animationDelay: `${Math.min(i, 10) * 0.05}s` }}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground truncate">{t.title}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Unlocks at{' '}
-                      <span className="font-semibold text-foreground">
-                        {Number(t.thresholdPoints).toLocaleString('en-IN')} pts
+          <>
+            <ListFilters
+              noun="tiers"
+              shown={visibleTiers.length}
+              total={tiers.length}
+              onReset={resetFilters}
+              search={{ value: fq, onChange: setFq, placeholder: 'Search tier…' }}
+              sort={{
+                value: fSort,
+                onChange: setFSort,
+                options: [
+                  { value: 'points', label: 'Lowest points first' },
+                  { value: 'ending', label: 'Ending soonest' },
+                  { value: 'redeemed', label: 'Most redeemed' },
+                ],
+              }}
+              groups={[
+                {
+                  key: 'status',
+                  label: 'Status',
+                  value: fStatus,
+                  onChange: setFStatus,
+                  options: Object.keys(statusCounts)
+                    .sort()
+                    .map((s) => ({
+                      value: s,
+                      label: s.charAt(0) + s.slice(1).toLowerCase(),
+                      count: statusCounts[s],
+                    })),
+                },
+                {
+                  key: 'reward',
+                  label: 'Reward',
+                  value: fReward,
+                  onChange: setFReward,
+                  options: REWARD_TYPES.map((r) => ({
+                    value: r.value,
+                    label: r.label,
+                    count: rewardCounts[r.value] ?? 0,
+                  })),
+                },
+              ]}
+            />
+            {visibleTiers.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                No tiers match these filters.
+              </p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {visibleTiers.map((t, i) => (
+                  <div
+                    key={t.id}
+                    className="ui-fade-up rounded-2xl border border-border bg-card p-5"
+                    style={{ animationDelay: `${Math.min(i, 10) * 0.05}s` }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-foreground truncate">{t.title}</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Unlocks at{' '}
+                          <span className="font-semibold text-foreground">
+                            {Number(t.thresholdPoints).toLocaleString('en-IN')} pts
+                          </span>
+                        </p>
+                      </div>
+                      <span
+                        className={cn(
+                          'shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold',
+                          t.status === 'ACTIVE'
+                            ? 'bg-success-soft text-success-soft-foreground'
+                            : 'bg-muted text-muted-foreground',
+                        )}
+                      >
+                        {t.status}
                       </span>
-                    </p>
+                    </div>
+                    <div className="mt-3 inline-flex rounded-xl bg-brand-soft px-3 py-1 text-sm font-bold text-brand-soft-foreground">
+                      {rewardText(t)}
+                    </div>
+                    <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1">
+                        <Lock className="h-3.5 w-3.5" /> {t.unlockedCount ?? 0} unlocked
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> {t.redeemedCount ?? 0} redeemed
+                      </span>
+                      <span>
+                        ends{' '}
+                        {new Date(t.endDate).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </span>
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toggleStatus(t)}
+                        className="ui-press flex-1 cursor-pointer"
+                      >
+                        {t.status === 'ACTIVE' ? 'Pause' : 'Activate'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => remove(t.id)}
+                        className="ui-press text-destructive hover:bg-destructive/10 cursor-pointer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <span
-                    className={cn(
-                      'shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold',
-                      t.status === 'ACTIVE'
-                        ? 'bg-success-soft text-success-soft-foreground'
-                        : 'bg-muted text-muted-foreground',
-                    )}
-                  >
-                    {t.status}
-                  </span>
-                </div>
-                <div className="mt-3 inline-flex rounded-xl bg-brand-soft px-3 py-1 text-sm font-bold text-brand-soft-foreground">
-                  {rewardText(t)}
-                </div>
-                <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-1">
-                    <Lock className="h-3.5 w-3.5" /> {t.unlockedCount ?? 0} unlocked
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5" /> {t.redeemedCount ?? 0} redeemed
-                  </span>
-                  <span>
-                    ends{' '}
-                    {new Date(t.endDate).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                    })}
-                  </span>
-                </div>
-                <div className="mt-4 flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toggleStatus(t)}
-                    className="ui-press flex-1 cursor-pointer"
-                  >
-                    {t.status === 'ACTIVE' ? 'Pause' : 'Activate'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => remove(t.id)}
-                    className="ui-press text-destructive hover:bg-destructive/10 cursor-pointer"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </SuperAdminLayout>

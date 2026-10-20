@@ -1087,6 +1087,8 @@ recreate them.
 - **Platform offer types** (migration `20261020000000_platform_offer_types`): admin platform offers also take Festive, Dine-in, Takeaway, Hypermarket, Jewellery, Stationery and Food (common core fields only). These carry an optional sub category Dine in / Takeaway / Online / Offline (`PlatformOffer.subType`, validated by `validSubType`); Dine in/Offline count as Instore for the public offer chips.
 - **Shop QR card** now prints the brand name (outlet name under it for brand outlets), address/city/state and the registered company name.
 
+- **List filters** (`components/system/list-filters.tsx`: `ListFilters`, `matchesSearch`, `countBy`): one search + chip/select + sort + result-count row used by the admin lists that had none: platform offers (Published/Unpublished, category, sub category, sort), events, movies, notices, all running offers, discount campaigns (current page only, it is server-paged), platform voucher tiers, pending payments, and the business bill list (status, bought via). Filtering is client-side over the loaded rows.
+
 ## 13. Search, storage, realtime
 
 - **Search:** Typesense module indexes businesses; the API indexes on

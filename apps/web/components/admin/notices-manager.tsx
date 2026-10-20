@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Bell, Eye, Trash2, X, AlertTriangle, Tag, Loader2 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 
 interface Notice {
   id: number | string;
@@ -91,6 +92,15 @@ function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[
 export function NoticesManager() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fStatus, setFStatus] = useState('');
+  const [fTag, setFTag] = useState('');
+  const resetFilters = () => {
+    setFq('');
+    setFStatus('');
+    setFTag('');
+  };
 
   const fetchNotices = useCallback(async () => {
     setLoading(true);
@@ -196,6 +206,16 @@ export function NoticesManager() {
     setIsCreateOpen(true);
   };
 
+  const statusCounts = countBy(notices, (n) => n.status);
+  const tagCounts: Record<string, number> = {};
+  for (const n of notices) for (const t of n.tags) tagCounts[t] = (tagCounts[t] ?? 0) + 1;
+  const visibleNotices = notices.filter(
+    (n) =>
+      (!fStatus || n.status === fStatus) &&
+      (!fTag || n.tags.includes(fTag)) &&
+      matchesSearch([n.title, n.sender, n.body, ...n.tags], fq),
+  );
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -227,8 +247,48 @@ export function NoticesManager() {
         </Card>
       ) : null}
 
+      {notices.length > 0 && (
+        <ListFilters
+          noun="notices"
+          shown={visibleNotices.length}
+          total={notices.length}
+          onReset={resetFilters}
+          search={{ value: fq, onChange: setFq, placeholder: 'Search title, sender, text…' }}
+          groups={[
+            {
+              key: 'status',
+              label: 'Status',
+              value: fStatus,
+              onChange: setFStatus,
+              options: [
+                {
+                  value: 'BROADCASTING',
+                  label: 'Broadcasting',
+                  count: statusCounts.BROADCASTING ?? 0,
+                },
+                { value: 'EXPIRED', label: 'Expired', count: statusCounts.EXPIRED ?? 0 },
+              ],
+            },
+            ...(Object.keys(tagCounts).length
+              ? [
+                  {
+                    key: 'tag',
+                    label: 'Tag',
+                    value: fTag,
+                    onChange: setFTag,
+                    display: 'select' as const,
+                    options: Object.keys(tagCounts)
+                      .sort()
+                      .map((t) => ({ value: t, label: t, count: tagCounts[t] })),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      )}
+
       <div className="space-y-4">
-        {notices.map((note) => (
+        {visibleNotices.map((note) => (
           <Card
             key={note.id}
             className="p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"

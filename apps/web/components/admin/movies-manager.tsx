@@ -5,6 +5,7 @@ import { ResponsiveImage } from '@/components/common/responsive-image';
 import { ModalSurface } from '@/components/system/modal-surface';
 import { useConfirm } from '@/components/common/confirm-dialog';
 import { useState, useEffect, useCallback } from 'react';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,17 @@ const empty = {
 export function MoviesManager() {
   const [movies, setMovies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fStatus, setFStatus] = useState('');
+  const [fLanguage, setFLanguage] = useState('');
+  const [fSort, setFSort] = useState('release');
+  const resetFilters = () => {
+    setFq('');
+    setFStatus('');
+    setFLanguage('');
+    setFSort('release');
+  };
   const [targetCities, setTargetCities] = useState<string[]>([]);
 
   const [open, setOpen] = useState(false);
@@ -181,6 +193,29 @@ export function MoviesManager() {
     load();
   };
 
+  const statusCounts = countBy(movies, (m) => m.status);
+  const languageCounts: Record<string, number> = {};
+  for (const m of movies) {
+    for (const l of Array.isArray(m.languages) ? m.languages : []) {
+      languageCounts[l] = (languageCounts[l] ?? 0) + 1;
+    }
+  }
+  const visibleMovies = movies
+    .filter(
+      (m) =>
+        (!fStatus || m.status === fStatus) &&
+        (!fLanguage || (Array.isArray(m.languages) && m.languages.includes(fLanguage))) &&
+        matchesSearch(
+          [m.title, ...(Array.isArray(m.genres) ? m.genres : []), ...(m.languages ?? [])],
+          fq,
+        ),
+    )
+    .sort((a, b) =>
+      fSort === 'title'
+        ? String(a.title).localeCompare(String(b.title))
+        : String(b.releaseDate ?? '').localeCompare(String(a.releaseDate ?? '')),
+    );
+
   return (
     <>
       <div className="space-y-6">
@@ -209,8 +244,60 @@ export function MoviesManager() {
               <Clapperboard className="h-5 w-5 text-primary" />
               <h2 className="font-bold text-foreground">All Movies ({movies.length})</h2>
             </div>
+            {movies.length > 0 && (
+              <div className="border-b border-border px-6 pt-4">
+                <ListFilters
+                  noun="movies"
+                  shown={visibleMovies.length}
+                  total={movies.length}
+                  onReset={resetFilters}
+                  search={{
+                    value: fq,
+                    onChange: setFq,
+                    placeholder: 'Search title, genre, language…',
+                  }}
+                  sort={{
+                    value: fSort,
+                    onChange: setFSort,
+                    options: [
+                      { value: 'release', label: 'Newest release' },
+                      { value: 'title', label: 'Name A–Z' },
+                    ],
+                  }}
+                  groups={[
+                    {
+                      key: 'status',
+                      label: 'Status',
+                      value: fStatus,
+                      onChange: setFStatus,
+                      options: [
+                        {
+                          value: 'NOW_SHOWING',
+                          label: 'Now showing',
+                          count: statusCounts.NOW_SHOWING ?? 0,
+                        },
+                        { value: 'UPCOMING', label: 'Upcoming', count: statusCounts.UPCOMING ?? 0 },
+                        { value: 'ENDED', label: 'Ended', count: statusCounts.ENDED ?? 0 },
+                      ],
+                    },
+                    {
+                      key: 'language',
+                      label: 'Language',
+                      value: fLanguage,
+                      onChange: setFLanguage,
+                      display: 'select',
+                      options: Object.keys(languageCounts)
+                        .sort()
+                        .map((l) => ({ value: l, label: l, count: languageCounts[l] })),
+                    },
+                  ]}
+                />
+              </div>
+            )}
             {movies.length === 0 ? (
               <p className="text-sm text-muted-foreground p-6">No movies yet. Publish one.</p>
+            ) : visibleMovies.length === 0 ? (
+              <p className="text-sm text-muted-foreground p-6">No movies match these filters.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -234,7 +321,7 @@ export function MoviesManager() {
                     </tr>
                   </thead>
                   <tbody>
-                    {movies.map((m) => (
+                    {visibleMovies.map((m) => (
                       <tr
                         key={m.id}
                         className="border-b border-border last:border-0 hover:bg-secondary/20"

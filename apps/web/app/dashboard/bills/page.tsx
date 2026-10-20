@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
+import { purchaseMethodLabel } from '@/lib/purchase-method';
 
 function mapVerification(v: any) {
   const bill = v.bill || {};
@@ -38,6 +40,8 @@ function mapVerification(v: any) {
     customerName: bill.user?.name || v.user?.name || 'Customer',
     status: (v.status || bill.status || 'PENDING') as string,
     createdAt: v.createdAt || bill.createdAt || '',
+    channel: (bill.orderChannel as string | null) || '',
+    method: purchaseMethodLabel(bill),
   };
 }
 
@@ -45,6 +49,17 @@ export default function BillsPage() {
   const { user } = useAuth();
   const [bills, setBills] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fStatus, setFStatus] = useState('');
+  const [fChannel, setFChannel] = useState('');
+  const [fSort, setFSort] = useState('newest');
+  const resetFilters = () => {
+    setFq('');
+    setFStatus('');
+    setFChannel('');
+    setFSort('newest');
+  };
 
   const businessId = user?.businessId || user?.entity?.id;
 
@@ -151,6 +166,31 @@ export default function BillsPage() {
     }
   };
 
+  const statusCounts = countBy(bills, (b) => b.status);
+  const channelCounts = countBy(bills, (b) => b.channel);
+  const visibleBills = bills
+    .filter(
+      (b) =>
+        (!fStatus || b.status === fStatus) &&
+        (!fChannel || b.channel === fChannel) &&
+        matchesSearch([b.billNumber, b.invoiceRef, b.customerName, b.method], fq),
+    )
+    .sort((a, b) =>
+      fSort === 'amount'
+        ? (b.amount || 0) - (a.amount || 0)
+        : fSort === 'oldest'
+          ? String(a.createdAt).localeCompare(String(b.createdAt))
+          : String(b.createdAt).localeCompare(String(a.createdAt)),
+    );
+  const STATUS_LABEL: Record<string, string> = {
+    PENDING: 'Pending',
+    APPROVED: 'Approved',
+    REJECTED: 'Rejected',
+    RE_UPLOAD_REQUESTED: 'Re-upload',
+    FLAGGED: 'Flagged',
+    ESCALATED: 'Escalated',
+  };
+
   return (
     <BusinessLayout>
       <div className="space-y-8">
@@ -186,81 +226,135 @@ export default function BillsPage() {
             </p>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {bills.map((bill, i) => {
-              const uploadedDate = bill.createdAt
-                ? new Date(bill.createdAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })
-                : '—';
-              return (
-                <Card
-                  key={bill.id}
-                  className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
-                  style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center ${
-                          bill.status === 'APPROVED'
-                            ? 'bg-success-soft text-success-soft-foreground'
-                            : bill.status === 'REJECTED'
-                              ? 'bg-danger-soft text-danger-soft-foreground'
-                              : 'bg-warning-soft text-warning-soft-foreground'
-                        }`}
-                      >
-                        <FileText className="h-5 w-5" />
+          <>
+            <ListFilters
+              noun="bills"
+              shown={visibleBills.length}
+              total={bills.length}
+              onReset={resetFilters}
+              search={{ value: fq, onChange: setFq, placeholder: 'Search bill number, customer…' }}
+              sort={{
+                value: fSort,
+                onChange: setFSort,
+                options: [
+                  { value: 'newest', label: 'Newest first' },
+                  { value: 'oldest', label: 'Oldest first' },
+                  { value: 'amount', label: 'Highest amount' },
+                ],
+              }}
+              groups={[
+                {
+                  key: 'status',
+                  label: 'Status',
+                  value: fStatus,
+                  onChange: setFStatus,
+                  options: Object.keys(statusCounts)
+                    .sort()
+                    .map((st) => ({
+                      value: st,
+                      label: STATUS_LABEL[st] ?? st,
+                      count: statusCounts[st],
+                    })),
+                },
+                {
+                  key: 'channel',
+                  label: 'Bought via',
+                  value: fChannel,
+                  onChange: setFChannel,
+                  options: [
+                    { value: 'IN_STORE', label: 'In-store', count: channelCounts.IN_STORE ?? 0 },
+                    { value: 'TAKEAWAY', label: 'Takeaway', count: channelCounts.TAKEAWAY ?? 0 },
+                    {
+                      value: 'DELIVERY',
+                      label: 'Delivery app',
+                      count: channelCounts.DELIVERY ?? 0,
+                    },
+                  ],
+                },
+              ]}
+            />
+            {visibleBills.length === 0 ? (
+              <Card className="p-8 text-center text-sm text-muted-foreground">
+                No bills match these filters.
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {visibleBills.map((bill, i) => {
+                  const uploadedDate = bill.createdAt
+                    ? new Date(bill.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                    : '—';
+                  return (
+                    <Card
+                      key={bill.id}
+                      className="ui-fade-up p-6 rounded-2xl border-border bg-card/40 backdrop-blur-xl hover:bg-card/50 transition-colors"
+                      style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={`p-3 rounded-xl h-11 w-11 flex items-center justify-center ${
+                              bill.status === 'APPROVED'
+                                ? 'bg-success-soft text-success-soft-foreground'
+                                : bill.status === 'REJECTED'
+                                  ? 'bg-danger-soft text-danger-soft-foreground'
+                                  : 'bg-warning-soft text-warning-soft-foreground'
+                            }`}
+                          >
+                            <FileText className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-foreground text-base break-all">
+                              Bill #
+                              {bill.billNumber && bill.billNumber !== '—'
+                                ? bill.billNumber
+                                : bill.invoiceRef}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                              <User className="h-3 w-3" />
+                              {bill.customerName}
+                              <span className="text-muted-foreground/50">·</span>
+                              {uploadedDate}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6 text-sm border-t sm:border-t-0 pt-4 sm:pt-0 border-border">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Amount</p>
+                            <p className="font-bold text-foreground text-base mt-0.5">
+                              ₹{isNaN(bill.amount) ? '—' : bill.amount.toLocaleString('en-IN')}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {bill.status === 'APPROVED' ? (
+                              <span className="flex items-center gap-1 bg-success-soft text-success-soft-foreground border border-success/20 px-3 py-1 rounded-full text-xs font-semibold">
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Approved
+                              </span>
+                            ) : bill.status === 'REJECTED' ? (
+                              <span className="flex items-center gap-1 bg-danger-soft text-danger-soft-foreground border border-destructive/20 px-3 py-1 rounded-full text-xs font-semibold">
+                                <AlertCircle className="h-3.5 w-3.5" /> Rejected
+                              </span>
+                            ) : bill.status === 'RE_UPLOAD_REQUESTED' ? (
+                              <span className="flex items-center gap-1 bg-info-soft text-info-soft-foreground border border-info/20 px-3 py-1 rounded-full text-xs font-semibold">
+                                <AlertCircle className="h-3.5 w-3.5" /> Re-Upload
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 bg-warning-soft text-warning-soft-foreground border border-warning/20 px-3 py-1 rounded-full text-xs font-semibold">
+                                <AlertCircle className="h-3.5 w-3.5" /> Pending
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground text-base break-all">
-                          Bill #
-                          {bill.billNumber && bill.billNumber !== '—'
-                            ? bill.billNumber
-                            : bill.invoiceRef}
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                          <User className="h-3 w-3" />
-                          {bill.customerName}
-                          <span className="text-muted-foreground/50">·</span>
-                          {uploadedDate}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-6 text-sm border-t sm:border-t-0 pt-4 sm:pt-0 border-border">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Amount</p>
-                        <p className="font-bold text-foreground text-base mt-0.5">
-                          ₹{isNaN(bill.amount) ? '—' : bill.amount.toLocaleString('en-IN')}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {bill.status === 'APPROVED' ? (
-                          <span className="flex items-center gap-1 bg-success-soft text-success-soft-foreground border border-success/20 px-3 py-1 rounded-full text-xs font-semibold">
-                            <CheckCircle2 className="h-3.5 w-3.5" /> Approved
-                          </span>
-                        ) : bill.status === 'REJECTED' ? (
-                          <span className="flex items-center gap-1 bg-danger-soft text-danger-soft-foreground border border-destructive/20 px-3 py-1 rounded-full text-xs font-semibold">
-                            <AlertCircle className="h-3.5 w-3.5" /> Rejected
-                          </span>
-                        ) : bill.status === 'RE_UPLOAD_REQUESTED' ? (
-                          <span className="flex items-center gap-1 bg-info-soft text-info-soft-foreground border border-info/20 px-3 py-1 rounded-full text-xs font-semibold">
-                            <AlertCircle className="h-3.5 w-3.5" /> Re-Upload
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 bg-warning-soft text-warning-soft-foreground border border-warning/20 px-3 py-1 rounded-full text-xs font-semibold">
-                            <AlertCircle className="h-3.5 w-3.5" /> Pending
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
 
         {/* ── UPLOAD BILL MODAL ──────────────────────────── */}

@@ -3,6 +3,7 @@
 import { ModalSurface } from '@/components/system/modal-surface';
 import { useConfirm } from '@/components/common/confirm-dialog';
 import { useState, useEffect, useCallback } from 'react';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +48,21 @@ export function EventsManager() {
   const [regs, setRegs] = useState<any[]>([]);
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  // List filters
+  const [fq, setFq] = useState('');
+  const [fCategory, setFCategory] = useState('');
+  const [fCity, setFCity] = useState('');
+  const [fTicket, setFTicket] = useState('');
+  const [fWhen, setFWhen] = useState('');
+  const [fSort, setFSort] = useState('soonest');
+  const resetFilters = () => {
+    setFq('');
+    setFCategory('');
+    setFCity('');
+    setFTicket('');
+    setFWhen('');
+    setFSort('soonest');
+  };
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -222,6 +238,33 @@ export function EventsManager() {
     load();
   };
 
+  const nowMs = Date.now();
+  const whenOf = (e: any) => {
+    const start = e.startDate ? Date.parse(e.startDate) : NaN;
+    const end = e.endDate ? Date.parse(e.endDate) : start;
+    if (Number.isFinite(end) && end < nowMs) return 'PAST';
+    if (Number.isFinite(start) && start <= nowMs) return 'LIVE';
+    return 'UPCOMING';
+  };
+  const cityCounts = countBy(events, (e) => e.city);
+  const categoryCounts = countBy(events, (e) => e.category);
+  const ticketCounts = countBy(events, (e) => (e.ticketType === 'PAID' ? 'PAID' : 'FREE'));
+  const whenCounts = countBy(events, whenOf);
+  const visibleEvents = events
+    .filter(
+      (e) =>
+        (!fCategory || e.category === fCategory) &&
+        (!fCity || e.city === fCity) &&
+        (!fTicket || (e.ticketType === 'PAID' ? 'PAID' : 'FREE') === fTicket) &&
+        (!fWhen || whenOf(e) === fWhen) &&
+        matchesSearch([e.title, e.venue, e.city, e.business?.name, e.hostLabel], fq),
+    )
+    .sort((a, b) => {
+      if (fSort === 'latest') return String(b.startDate).localeCompare(String(a.startDate));
+      if (fSort === 'title') return String(a.title).localeCompare(String(b.title));
+      return String(a.startDate).localeCompare(String(b.startDate));
+    });
+
   return (
     <>
       <div className="space-y-6">
@@ -251,8 +294,79 @@ export function EventsManager() {
                 <CalendarDays className="h-5 w-5 text-primary" />
                 <h2 className="font-bold text-foreground">All Events ({events.length})</h2>
               </div>
+              {events.length > 0 && (
+                <div className="border-b border-border px-6 pt-4">
+                  <ListFilters
+                    noun="events"
+                    shown={visibleEvents.length}
+                    total={events.length}
+                    onReset={resetFilters}
+                    search={{
+                      value: fq,
+                      onChange: setFq,
+                      placeholder: 'Search title, venue, city…',
+                    }}
+                    sort={{
+                      value: fSort,
+                      onChange: setFSort,
+                      options: [
+                        { value: 'soonest', label: 'Starting soonest' },
+                        { value: 'latest', label: 'Starting latest' },
+                        { value: 'title', label: 'Name A–Z' },
+                      ],
+                    }}
+                    groups={[
+                      {
+                        key: 'when',
+                        label: 'When',
+                        value: fWhen,
+                        onChange: setFWhen,
+                        options: [
+                          { value: 'UPCOMING', label: 'Upcoming', count: whenCounts.UPCOMING ?? 0 },
+                          { value: 'LIVE', label: 'Happening now', count: whenCounts.LIVE ?? 0 },
+                          { value: 'PAST', label: 'Past', count: whenCounts.PAST ?? 0 },
+                        ],
+                      },
+                      {
+                        key: 'ticket',
+                        label: 'Tickets',
+                        value: fTicket,
+                        onChange: setFTicket,
+                        options: [
+                          { value: 'FREE', label: 'Free', count: ticketCounts.FREE ?? 0 },
+                          { value: 'PAID', label: 'Paid', count: ticketCounts.PAID ?? 0 },
+                        ],
+                      },
+                      {
+                        key: 'category',
+                        label: 'Category',
+                        value: fCategory,
+                        onChange: setFCategory,
+                        display: 'select',
+                        options: EVENT_CATEGORIES.map((c) => ({
+                          value: c.value,
+                          label: c.label,
+                          count: categoryCounts[c.value] ?? 0,
+                        })),
+                      },
+                      {
+                        key: 'city',
+                        label: 'City',
+                        value: fCity,
+                        onChange: setFCity,
+                        display: 'select',
+                        options: Object.keys(cityCounts)
+                          .sort()
+                          .map((c) => ({ value: c, label: c, count: cityCounts[c] })),
+                      },
+                    ]}
+                  />
+                </div>
+              )}
               {events.length === 0 ? (
                 <p className="text-sm text-muted-foreground p-6">No events yet. Create one.</p>
+              ) : visibleEvents.length === 0 ? (
+                <p className="text-sm text-muted-foreground p-6">No events match these filters.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -279,7 +393,7 @@ export function EventsManager() {
                       </tr>
                     </thead>
                     <tbody>
-                      {events.map((e) => (
+                      {visibleEvents.map((e) => (
                         <tr
                           key={e.id}
                           className="border-b border-border last:border-0 hover:bg-secondary/20"

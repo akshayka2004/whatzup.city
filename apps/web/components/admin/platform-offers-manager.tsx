@@ -40,6 +40,7 @@ import {
   type RateLine,
 } from '@/lib/platform-offers';
 import { cn } from '@/lib/utils';
+import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 import { Tag, Plus, Loader2, UploadCloud, Eye, EyeOff, Trash2, X, ImageIcon } from 'lucide-react';
 
 /** Freeform repeatable {label, rate} rows — used for Payasam types. */
@@ -205,6 +206,20 @@ export function PlatformOffersManager() {
   const [msg, setMsg] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  // List filters
+  const [q, setQ] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [subTypeFilter, setSubTypeFilter] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const resetFilters = () => {
+    setQ('');
+    setStatusFilter('');
+    setCategoryFilter('');
+    setSubTypeFilter('');
+    setSortBy('newest');
+  };
+
   // Composer state
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -362,6 +377,30 @@ export function PlatformOffersManager() {
     setMsg('Offer deleted.');
   };
 
+  const statusCounts = countBy(rows, (r) => r.status);
+  const categoryCounts = countBy(rows, (r) => r.category);
+  const subTypeCounts = countBy(rows, (r) => r.subType);
+  const visible = rows
+    .filter(
+      (r) =>
+        (!statusFilter || r.status === statusFilter) &&
+        (!categoryFilter || r.category === categoryFilter) &&
+        (!subTypeFilter || r.subType === subTypeFilter) &&
+        matchesSearch([r.title, r.location, r.phone, r.description, categoryLabel(r.category)], q),
+    )
+    .sort((a, b) => {
+      if (sortBy === 'oldest') return a.createdAt.localeCompare(b.createdAt);
+      if (sortBy === 'title') return a.title.localeCompare(b.title);
+      if (sortBy === 'ending') {
+        // Soonest end date first; offers with no end date go last.
+        const ea = a.endsAt ? Date.parse(a.endsAt) : Infinity;
+        const eb = b.endsAt ? Date.parse(b.endsAt) : Infinity;
+        return ea - eb;
+      }
+      if (sortBy === 'clicks') return (b.clickCount ?? 0) - (a.clickCount ?? 0);
+      return b.createdAt.localeCompare(a.createdAt);
+    });
+
   return (
     <>
       <div className="space-y-6">
@@ -395,109 +434,188 @@ export function PlatformOffersManager() {
             </p>
           </Card>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {rows.map((r) => (
-              <Card key={r.id} className="p-4">
-                <div className="flex gap-4">
-                  {r.imageSignedUrl ? (
-                    <ResponsiveImage
-                      src={r.imageSignedUrl}
-                      alt=""
-                      ratio="1"
-                      sizes="80px"
-                      className="h-20 w-20 shrink-0 rounded-xl border border-border"
-                    />
-                  ) : (
-                    <div className="h-20 w-20 shrink-0 rounded-xl border border-dashed border-border flex items-center justify-center">
-                      <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h3 className="font-semibold text-foreground truncate">{r.title}</h3>
-                        <p className="text-xs text-muted-foreground truncate">{r.location}</p>
-                      </div>
-                      <span
-                        className={cn(
-                          'shrink-0 rounded-full px-2 py-0.5 text-xs font-bold border',
-                          r.status === 'PUBLISHED'
-                            ? 'bg-success-soft text-success-soft-foreground border-success/20'
-                            : 'bg-muted text-muted-foreground border-border',
-                        )}
-                      >
-                        {r.status}
-                      </span>
-                    </div>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-                      <span className="rounded-full bg-brand-soft text-brand-soft-foreground px-2 py-0.5 font-medium">
-                        {categoryLabel(r.category)}
-                      </span>
-                      {r.subType && (
-                        <span className="rounded-full bg-muted text-muted-foreground px-2 py-0.5">
-                          {subTypeLabel(r.subType)}
-                        </span>
-                      )}
-                      {r.price && <span className="text-foreground font-semibold">{r.price}</span>}
-                      {isExpired(r.endsAt) ? (
-                        <span className="rounded-full bg-danger-soft px-2 py-0.5 font-medium text-danger-soft-foreground">
-                          Expired {toDateInput(r.endsAt)} · hidden
-                        </span>
-                      ) : r.endsAt ? (
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
-                          Until {toDateInput(r.endsAt)}
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-warning-soft px-2 py-0.5 font-medium text-warning-soft-foreground">
-                          No end date
-                        </span>
-                      )}
-                      {rateLines(r.category, r.subType, r.details).map((rl, i) => (
-                        <span key={i} className="rounded-full bg-muted px-2 py-0.5 text-foreground">
-                          {rl.label}: <span className="font-semibold">{rl.rate}</span>
-                        </span>
-                      ))}
-                      <span className="ml-auto rounded-full bg-secondary px-2 py-0.5 text-muted-foreground">
-                        {r.clickCount ?? 0} clicks
-                      </span>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Button
-                        onClick={() => openEdit(r)}
-                        className="h-8 rounded-lg bg-muted text-foreground text-xs cursor-pointer"
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        onClick={() => toggleStatus(r)}
-                        disabled={busyId === r.id}
-                        className="h-8 rounded-lg text-xs gap-1 cursor-pointer"
-                      >
-                        {busyId === r.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : r.status === 'PUBLISHED' ? (
-                          <>
-                            <EyeOff className="h-3 w-3" /> Unpublish
-                          </>
-                        ) : (
-                          <>
-                            <Eye className="h-3 w-3" /> Publish
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        onClick={() => remove(r)}
-                        disabled={busyId === r.id}
-                        className="h-8 rounded-lg bg-background border border-input text-muted-foreground text-xs gap-1 cursor-pointer"
-                      >
-                        <Trash2 className="h-3 w-3" /> Delete
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+          <>
+            <ListFilters
+              noun="offers"
+              shown={visible.length}
+              total={rows.length}
+              onReset={resetFilters}
+              search={{ value: q, onChange: setQ, placeholder: 'Search title, location, phone…' }}
+              sort={{
+                value: sortBy,
+                onChange: setSortBy,
+                options: [
+                  { value: 'newest', label: 'Newest first' },
+                  { value: 'oldest', label: 'Oldest first' },
+                  { value: 'ending', label: 'Ending soonest' },
+                  { value: 'clicks', label: 'Most clicks' },
+                  { value: 'title', label: 'Name A–Z' },
+                ],
+              }}
+              groups={[
+                {
+                  key: 'status',
+                  label: 'Status',
+                  value: statusFilter,
+                  onChange: setStatusFilter,
+                  options: [
+                    { value: 'PUBLISHED', label: 'Published', count: statusCounts.PUBLISHED ?? 0 },
+                    {
+                      value: 'UNPUBLISHED',
+                      label: 'Unpublished',
+                      count: statusCounts.UNPUBLISHED ?? 0,
+                    },
+                  ],
+                },
+                {
+                  key: 'category',
+                  label: 'Category',
+                  value: categoryFilter,
+                  onChange: setCategoryFilter,
+                  display: 'select',
+                  options: PLATFORM_OFFER_CATEGORIES.map((c) => ({
+                    value: c.value,
+                    label: c.label,
+                    count: categoryCounts[c.value] ?? 0,
+                  })),
+                },
+                {
+                  key: 'subType',
+                  label: 'Sub category',
+                  value: subTypeFilter,
+                  onChange: setSubTypeFilter,
+                  options: [...OFFER_MODE_SUBTYPES].map((m) => ({
+                    value: m.value,
+                    label: m.label,
+                    count: subTypeCounts[m.value] ?? 0,
+                  })),
+                },
+              ]}
+            />
+            {visible.length === 0 ? (
+              <Card className="p-8 text-center">
+                <p className="text-sm font-semibold text-foreground">
+                  No offers match these filters
+                </p>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="mt-2 text-sm font-medium text-primary hover:underline"
+                >
+                  Clear filters
+                </button>
               </Card>
-            ))}
-          </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2">
+                {visible.map((r) => (
+                  <Card key={r.id} className="p-4">
+                    <div className="flex gap-4">
+                      {r.imageSignedUrl ? (
+                        <ResponsiveImage
+                          src={r.imageSignedUrl}
+                          alt=""
+                          ratio="1"
+                          sizes="80px"
+                          className="h-20 w-20 shrink-0 rounded-xl border border-border"
+                        />
+                      ) : (
+                        <div className="h-20 w-20 shrink-0 rounded-xl border border-dashed border-border flex items-center justify-center">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-foreground truncate">{r.title}</h3>
+                            <p className="text-xs text-muted-foreground truncate">{r.location}</p>
+                          </div>
+                          <span
+                            className={cn(
+                              'shrink-0 rounded-full px-2 py-0.5 text-xs font-bold border',
+                              r.status === 'PUBLISHED'
+                                ? 'bg-success-soft text-success-soft-foreground border-success/20'
+                                : 'bg-muted text-muted-foreground border-border',
+                            )}
+                          >
+                            {r.status}
+                          </span>
+                        </div>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                          <span className="rounded-full bg-brand-soft text-brand-soft-foreground px-2 py-0.5 font-medium">
+                            {categoryLabel(r.category)}
+                          </span>
+                          {r.subType && (
+                            <span className="rounded-full bg-muted text-muted-foreground px-2 py-0.5">
+                              {subTypeLabel(r.subType)}
+                            </span>
+                          )}
+                          {r.price && (
+                            <span className="text-foreground font-semibold">{r.price}</span>
+                          )}
+                          {isExpired(r.endsAt) ? (
+                            <span className="rounded-full bg-danger-soft px-2 py-0.5 font-medium text-danger-soft-foreground">
+                              Expired {toDateInput(r.endsAt)} · hidden
+                            </span>
+                          ) : r.endsAt ? (
+                            <span className="rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+                              Until {toDateInput(r.endsAt)}
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-warning-soft px-2 py-0.5 font-medium text-warning-soft-foreground">
+                              No end date
+                            </span>
+                          )}
+                          {rateLines(r.category, r.subType, r.details).map((rl, i) => (
+                            <span
+                              key={i}
+                              className="rounded-full bg-muted px-2 py-0.5 text-foreground"
+                            >
+                              {rl.label}: <span className="font-semibold">{rl.rate}</span>
+                            </span>
+                          ))}
+                          <span className="ml-auto rounded-full bg-secondary px-2 py-0.5 text-muted-foreground">
+                            {r.clickCount ?? 0} clicks
+                          </span>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button
+                            onClick={() => openEdit(r)}
+                            className="h-8 rounded-lg bg-muted text-foreground text-xs cursor-pointer"
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            onClick={() => toggleStatus(r)}
+                            disabled={busyId === r.id}
+                            className="h-8 rounded-lg text-xs gap-1 cursor-pointer"
+                          >
+                            {busyId === r.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : r.status === 'PUBLISHED' ? (
+                              <>
+                                <EyeOff className="h-3 w-3" /> Unpublish
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-3 w-3" /> Publish
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            onClick={() => remove(r)}
+                            disabled={busyId === r.id}
+                            className="h-8 rounded-lg bg-background border border-input text-muted-foreground text-xs gap-1 cursor-pointer"
+                          >
+                            <Trash2 className="h-3 w-3" /> Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
