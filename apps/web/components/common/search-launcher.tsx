@@ -13,6 +13,9 @@ export const SEARCH_TRIGGER_ATTR = 'data-search-trigger';
  * bottom-right, away from where header links (Log in) are, and appears a moment after navigation.
  * It only shows while no header search trigger exists in the document.
  */
+/** Sign-in and sign-up are focused flows: nothing floats over the form there. */
+const AUTH_ROUTE = /^\/(login|register|forgot-password|reset-password)(\/|$)/;
+
 export function SearchLauncher() {
   const [needed, setNeeded] = useState(false);
   // Held back briefly after a page change so a second click on the link that brought you here
@@ -43,7 +46,7 @@ export function SearchLauncher() {
     };
   }, []);
 
-  if (!needed || !settled) return null;
+  if (!needed || !settled || AUTH_ROUTE.test(pathname)) return null;
   return (
     <button
       type="button"
