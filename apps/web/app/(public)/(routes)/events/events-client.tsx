@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { CalendarDays } from 'lucide-react';
@@ -24,10 +26,10 @@ import { useNow } from '@/components/public/media/use-now';
 type When = 'all' | 'today' | 'weekend' | 'upcoming';
 
 const WHEN_OPTIONS: ChipOption<When>[] = [
-  { value: 'all', label: 'All events' },
-  { value: 'today', label: 'Today' },
-  { value: 'weekend', label: 'This weekend' },
-  { value: 'upcoming', label: 'Upcoming' },
+  { value: 'all', label: 'events.when.all' },
+  { value: 'today', label: 'events.when.today' },
+  { value: 'weekend', label: 'events.when.weekend' },
+  { value: 'upcoming', label: 'events.when.upcoming' },
 ];
 
 /** Same list-shape handling the page has always used for GET /v1/events. */
@@ -52,6 +54,7 @@ function matchesWhen(ev: Ev, when: When, now: number): boolean {
 }
 
 export function EventsClient({ initialEvents = null }: { initialEvents?: unknown | null }) {
+  const { t } = useI18n();
   // The server renders the default (all cities) list; it stays valid until the viewer picks a city.
   const seeded = useRef(initialEvents != null);
   const [events, setEvents] = useState<Ev[]>(() =>
@@ -129,29 +132,27 @@ export function EventsClient({ initialEvents = null }: { initialEvents?: unknown
   return (
     <PublicLayout>
       <div>
-        <h1 className="mb-1 text-2xl font-bold tracking-tight sm:text-3xl">Events</h1>
-        <p className="mb-5 text-muted-foreground">
-          Discover events near you — register or grab tickets.
-        </p>
+        <h1 className="mb-1 text-2xl font-bold tracking-tight sm:text-3xl">{t('nav.events')}</h1>
+        <p className="mb-5 text-muted-foreground">{t('events.subtitle')}</p>
 
         <ChipRow
-          options={WHEN_OPTIONS}
+          options={WHEN_OPTIONS.map((o) => ({ ...o, label: t(o.label) }))}
           value={when}
           onChange={setWhen}
-          ariaLabel="When"
+          ariaLabel={t('events.when')}
           className="mb-3"
         />
 
         <div className="mb-6 grid grid-cols-2 gap-3 sm:flex">
           <Select value={city || 'all'} onValueChange={handleCityChange}>
             <SelectTrigger
-              aria-label="City"
+              aria-label={t('events.city')}
               className="w-full rounded-xl data-[size=default]:h-11 sm:w-52"
             >
-              <SelectValue placeholder="Filter by city" />
+              <SelectValue placeholder={t('events.filterCity')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Cities</SelectItem>
+              <SelectItem value="all">{t('common.allCities')}</SelectItem>
               {KERALA_CITIES.map((c) => (
                 <SelectItem key={c} value={c}>
                   {c}
@@ -164,13 +165,13 @@ export function EventsClient({ initialEvents = null }: { initialEvents?: unknown
             onValueChange={(v) => setCategory(v === 'all' ? '' : v)}
           >
             <SelectTrigger
-              aria-label="Category"
+              aria-label={t('events.category')}
               className="w-full rounded-xl data-[size=default]:h-11 sm:w-52"
             >
-              <SelectValue placeholder="Filter by category" />
+              <SelectValue placeholder={t('events.filterCategory')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="all">{t('events.allCategories')}</SelectItem>
               {EVENT_CATEGORIES.map((c) => (
                 <SelectItem key={c.value} value={c.value}>
                   {c.label}
@@ -186,18 +187,18 @@ export function EventsClient({ initialEvents = null }: { initialEvents?: unknown
           filtered && events.length > 0 ? (
             <EmptyState
               icon={CalendarDays}
-              title="No events match these filters"
-              description="Try a different day or category."
-              action={{ label: 'Show all events', onClick: resetFilters }}
+              title={t('events.noMatch')}
+              description={t('events.noMatchHint')}
+              action={{ label: t('events.showAll'), onClick: resetFilters }}
             />
           ) : (
             <EmptyState
               icon={CalendarDays}
-              title="No upcoming events"
-              description="Check back soon."
+              title={t('events.noUpcoming')}
+              description={t('events.checkBack')}
               action={
                 city
-                  ? { label: 'Show all cities', onClick: () => handleCityChange('all') }
+                  ? { label: t('events.showAllCities'), onClick: () => handleCityChange('all') }
                   : undefined
               }
             />

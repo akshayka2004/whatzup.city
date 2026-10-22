@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Navigation, MapPin } from 'lucide-react';
 import { PublicLayout } from '@/components/layouts/public-layout';
@@ -44,6 +46,7 @@ const chip = (active: boolean) =>
   );
 
 function NearbyContent() {
+  const { t } = useI18n();
   const [filters, setFilters] = useState<Filters>({ ...DEFAULT_FILTERS });
   const [mode, setMode] = useState<'city' | 'near'>('city');
   const [geo, setGeo] = useState<GeoState>('idle');
@@ -204,18 +207,18 @@ function NearbyContent() {
                 className={cn(chip(false), 'gap-1.5')}
               >
                 <Navigation className="h-4 w-4" />
-                Near me
+                {t('near.nearMe')}
               </button>
             )}
             <Select value={city || 'all'} onValueChange={onCityChange}>
               <SelectTrigger
-                aria-label="Choose city"
+                aria-label={t('near.chooseCity')}
                 className="w-full rounded-xl border-border data-[size=default]:h-11 sm:w-52"
               >
-                <SelectValue placeholder="Choose city" />
+                <SelectValue placeholder={t('near.chooseCity')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Cities</SelectItem>
+                <SelectItem value="all">{t('common.allCities')}</SelectItem>
                 {KERALA_CITIES.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}
@@ -240,7 +243,7 @@ function NearbyContent() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
               <span className="ui-live-dot" aria-hidden />
-              Using your location
+              {t('near.usingLocation')}
             </p>
             <div className="flex items-center gap-1">
               <button
@@ -249,25 +252,23 @@ function NearbyContent() {
                 disabled={geo === 'asking'}
                 className="inline-flex min-h-11 cursor-pointer items-center px-3 text-sm font-medium text-primary hover:underline disabled:opacity-50"
               >
-                {geo === 'asking' ? 'Updating…' : 'Update'}
+                {geo === 'asking' ? t('near.updating') : t('near.update')}
               </button>
               <button
                 type="button"
                 onClick={() => setMode('city')}
                 className="inline-flex min-h-11 cursor-pointer items-center px-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:underline"
               >
-                Browse by city
+                {t('near.byCity')}
               </button>
             </div>
           </div>
           {geo === 'denied' || geo === 'error' ? (
-            <p className="text-xs text-destructive">
-              We couldn’t refresh your location, so the list below uses your last position.
-            </p>
+            <p className="text-xs text-destructive">{t('near.staleLocation')}</p>
           ) : null}
           <div
             role="radiogroup"
-            aria-label="Search radius"
+            aria-label={t('near.radius')}
             className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:px-0"
           >
             {RADII.map((r) => (
@@ -319,48 +320,50 @@ function NearbyContent() {
       ) : failed ? (
         <EmptyState
           icon={MapPin}
-          title="We couldn't load businesses"
-          description="Check your connection and try again."
-          action={{ label: 'Try again', onClick: () => void active.refresh() }}
+          title={t('near.loadFailed')}
+          description={t('near.checkConnection')}
+          action={{ label: t('action.tryAgain'), onClick: () => void active.refresh() }}
         />
       ) : results.length === 0 ? (
         mode === 'near' ? (
           <EmptyState
             icon={MapPin}
             title={
-              inRange.length > 0 ? 'No matches with these filters' : `Nothing within ${radius} km`
+              inRange.length > 0 ? t('near.noMatches') : t('near.nothingWithin', { km: radius })
             }
-            description={
-              inRange.length > 0
-                ? 'Try removing a filter to see more businesses.'
-                : 'Try a wider radius, or browse by city instead.'
-            }
+            description={inRange.length > 0 ? t('near.removeFilter') : t('near.widerRadius')}
             action={
               inRange.length > 0
-                ? { label: 'Clear filters', onClick: () => setFilters({ ...DEFAULT_FILTERS }) }
+                ? {
+                    label: t('near.clearFilters'),
+                    onClick: () => setFilters({ ...DEFAULT_FILTERS }),
+                  }
                 : nextRadius
                   ? {
-                      label: `Search within ${nextRadius} km`,
+                      label: t('near.searchWithin', { km: nextRadius }),
                       onClick: () => setRadius(nextRadius),
                     }
-                  : { label: 'Browse by city', onClick: () => setMode('city') }
+                  : { label: t('near.byCity'), onClick: () => setMode('city') }
             }
             secondary={
               inRange.length === 0 && nextRadius
-                ? { label: 'Browse by city', onClick: () => setMode('city') }
+                ? { label: t('near.byCity'), onClick: () => setMode('city') }
                 : undefined
             }
           />
         ) : (
           <EmptyState
             icon={MapPin}
-            title="No businesses found"
-            description={`No businesses found${city ? ` in ${city}` : ''}.`}
+            title={t('near.noneFound')}
+            description={city ? t('near.noneFoundIn', { city }) : t('near.noneFoundDot')}
             action={
               list.length > 0
-                ? { label: 'Clear filters', onClick: () => setFilters({ ...DEFAULT_FILTERS }) }
+                ? {
+                    label: t('near.clearFilters'),
+                    onClick: () => setFilters({ ...DEFAULT_FILTERS }),
+                  }
                 : city
-                  ? { label: 'Show all cities', onClick: () => onCityChange('all') }
+                  ? { label: t('events.showAllCities'), onClick: () => onCityChange('all') }
                   : undefined
             }
           />
@@ -385,7 +388,7 @@ function NearbyContent() {
                 disabled={active.loading}
                 onClick={() => setWin({ city, n: Math.min(MAX_LIMIT, limit + PAGE) })}
               >
-                Show more businesses
+                {t('near.showMore')}
               </Button>
             </div>
           )}
