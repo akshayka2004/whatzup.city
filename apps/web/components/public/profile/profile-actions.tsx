@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { Check, Heart, MessageCircle, Navigation, Phone, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -13,20 +15,21 @@ export function DesktopActions({
   actions: ProfileActions;
   className?: string;
 }) {
+  const { t } = useI18n();
   const { callHref, directionsHref, whatsappHref, isSaved, copied } = actions;
   return (
     <div className={cn('flex flex-wrap items-center gap-2', className)}>
       {callHref && (
         <Button asChild size="lg" className="ui-press rounded-xl">
           <a href={callHref} onClick={actions.onCall}>
-            <Phone /> Call
+            <Phone /> {t('action.call')}
           </a>
         </Button>
       )}
       {directionsHref && (
         <Button asChild variant="outline" size="lg" className="ui-press rounded-xl">
           <a href={directionsHref} target="_blank" rel="noreferrer" onClick={actions.onDirections}>
-            <Navigation /> Directions
+            <Navigation /> {t('action.directions')}
           </a>
         </Button>
       )}
@@ -44,8 +47,8 @@ export function DesktopActions({
         size="icon-lg"
         onClick={actions.toggleSave}
         aria-pressed={isSaved}
-        aria-label={isSaved ? 'Saved. Remove from favorites' : 'Save to favorites'}
-        title={isSaved ? 'Remove from favorites' : 'Save to favorites'}
+        aria-label={isSaved ? t('biz.savedRemove') : t('biz.saveToFavorites')}
+        title={isSaved ? t('biz.removeFavorite') : t('biz.saveToFavorites')}
         className={cn(
           'ui-press rounded-xl',
           isSaved &&
@@ -59,8 +62,8 @@ export function DesktopActions({
         variant="outline"
         size="icon-lg"
         onClick={actions.share}
-        aria-label={copied ? 'Link copied' : 'Share'}
-        title={copied ? 'Link copied' : 'Share'}
+        aria-label={copied ? t('biz.linkCopied') : t('action.share')}
+        title={copied ? t('biz.linkCopied') : t('action.share')}
         className="ui-press rounded-xl"
       >
         {copied ? <Check className="ui-pop" /> : <Share2 />}
@@ -77,11 +80,12 @@ const barBtn =
  * (h-16), hence bottom-16; hidden from md up where the header buttons take over.
  */
 export function MobileActionBar({ actions }: { actions: ProfileActions }) {
+  const { t } = useI18n();
   const { callHref, directionsHref, whatsappHref, isSaved, copied } = actions;
   return (
     <div
       role="toolbar"
-      aria-label="Business actions"
+      aria-label={t('biz.actions')}
       className="fixed inset-x-0 bottom-16 z-30 flex gap-1 border-t border-border bg-card/95 px-2 py-1.5 shadow-lg backdrop-blur-md md:hidden"
     >
       {callHref && (
@@ -91,7 +95,7 @@ export function MobileActionBar({ actions }: { actions: ProfileActions }) {
           className={cn(barBtn, 'bg-primary text-primary-foreground hover:bg-primary/90')}
         >
           <Phone className="h-5 w-5" />
-          Call
+          {t('action.call')}
         </a>
       )}
       {directionsHref && (
@@ -106,7 +110,7 @@ export function MobileActionBar({ actions }: { actions: ProfileActions }) {
           )}
         >
           <Navigation className="h-5 w-5" />
-          Directions
+          {t('action.directions')}
         </a>
       )}
       {whatsappHref && (
@@ -128,7 +132,7 @@ export function MobileActionBar({ actions }: { actions: ProfileActions }) {
         className={cn(barBtn, 'cursor-pointer', isSaved && 'text-primary')}
       >
         <Heart className={cn('h-5 w-5', isSaved && 'fill-primary text-primary')} />
-        {isSaved ? 'Saved' : 'Save'}
+        {isSaved ? t('nav.saved') : t('action.save')}
       </button>
       <button type="button" onClick={actions.share} className={cn(barBtn, 'cursor-pointer')}>
         {copied ? (
@@ -136,7 +140,7 @@ export function MobileActionBar({ actions }: { actions: ProfileActions }) {
         ) : (
           <Share2 className="h-5 w-5" />
         )}
-        {copied ? 'Copied' : 'Share'}
+        {copied ? t('biz.copied') : t('action.share')}
       </button>
     </div>
   );

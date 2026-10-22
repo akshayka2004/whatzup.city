@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { ModalSurface } from '@/components/system/modal-surface';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Package, UtensilsCrossed, X } from 'lucide-react';
@@ -30,6 +32,7 @@ export function MenuSection({
   menuPhotos: any[];
   productCount: number;
 }) {
+  const { t } = useI18n();
   const [viewing, setViewing] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -42,7 +45,7 @@ export function MenuSection({
   );
 
   const hasPhotos = menuPhotos.length > 0;
-  const title = hasPhotos ? 'Menu' : 'Products';
+  const title = hasPhotos ? t('biz.tab.menu') : t('biz.tab.products');
 
   const step = useCallback(
     (dir: 1 | -1) =>
@@ -79,7 +82,9 @@ export function MenuSection({
                 onClick={() => setViewing(i)}
                 className="ui-fade-up ui-press group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-muted"
                 style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-                aria-label={p.title ? `View menu photo: ${p.title}` : 'View menu photo'}
+                aria-label={
+                  p.title ? t('biz.viewMenuPhotoNamed', { name: p.title }) : t('biz.viewMenuPhoto')
+                }
               >
                 <ResponsiveImage
                   src={p.publicUrl}
@@ -102,7 +107,9 @@ export function MenuSection({
         {/* ── Product list */}
         {productCount > 0 && (
           <div className={hasPhotos ? 'mt-6' : undefined}>
-            {hasPhotos && <h3 className="mb-3 text-base font-bold text-foreground">Products</h3>}
+            {hasPhotos && (
+              <h3 className="mb-3 text-base font-bold text-foreground">{t('biz.tab.products')}</h3>
+            )}
             {prodQ.loading && products.length === 0 ? (
               <SectionSkeleton rows={3} />
             ) : products.length > 0 ? (
@@ -148,7 +155,9 @@ export function MenuSection({
                     onClick={() => setShowAll((v) => !v)}
                     className="mt-2 min-h-11 w-full cursor-pointer rounded-xl text-sm font-semibold text-primary hover:bg-primary/5"
                   >
-                    {showAll ? 'Show fewer' : `Show all ${products.length} products`}
+                    {showAll
+                      ? t('biz.showFewer')
+                      : t('biz.showAllProducts', { n: products.length })}
                   </button>
                 )}
               </>
@@ -161,7 +170,7 @@ export function MenuSection({
       {viewingPhoto && (
         <ModalSurface
           onClose={() => setViewing(null)}
-          label="Menu photo"
+          label={t('biz.menuPhoto')}
           hideClose
           className="flex max-h-[95dvh] items-center justify-center border-0 bg-transparent p-0 shadow-none sm:max-w-5xl"
         >
@@ -177,7 +186,7 @@ export function MenuSection({
             <>
               <button
                 type="button"
-                aria-label="Previous photo"
+                aria-label={t('biz.prevPhoto')}
                 onClick={(e) => {
                   e.stopPropagation();
                   step(-1);
@@ -188,7 +197,7 @@ export function MenuSection({
               </button>
               <button
                 type="button"
-                aria-label="Next photo"
+                aria-label={t('biz.nextPhoto')}
                 onClick={(e) => {
                   e.stopPropagation();
                   step(1);

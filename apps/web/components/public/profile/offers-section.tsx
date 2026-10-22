@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -30,6 +32,7 @@ function discountLabel(o: any): string {
 }
 
 function OfferCard({ offer, index, onClaim }: { offer: any; index: number; onClaim: () => void }) {
+  const { t } = useI18n();
   const expiry = offerExpiry(offer);
   return (
     <div
@@ -60,7 +63,7 @@ function OfferCard({ offer, index, onClaim }: { offer: any; index: number; onCla
       )}
       <div className="mt-auto pt-4">
         <Button onClick={onClaim} size="lg" className="ui-press w-full rounded-xl">
-          Claim Offer
+          {t('biz.claimOffer')}
         </Button>
       </div>
     </div>
@@ -86,6 +89,7 @@ export function OffersSection({
   /** null until the URL has been read on the client. */
   fromQr: boolean | null;
 }) {
+  const { t } = useI18n();
   const router = useRouter();
 
   // ── Guest teaser for the spin wheel (public, no personal data)
@@ -162,7 +166,7 @@ export function OffersSection({
     }
     if (res.error) {
       // Never invent a code: a failed claim must look failed.
-      toast.error(res.error || 'Could not claim this offer. Please try again.');
+      toast.error(res.error || t('biz.claimFailed'));
       return;
     }
     setClaimedCode(res.data?.code || claimingOffer.code || 'CLAIMED');
@@ -173,10 +177,14 @@ export function OffersSection({
   const resolvingAuth = fromQr === true && !user && authLoading;
 
   return (
-    <section id="offers-section" aria-label="Offers" className="mb-6 scroll-mt-16 lg:col-start-1">
+    <section
+      id="offers-section"
+      aria-label={t('nav.offers')}
+      className="mb-6 scroll-mt-16 lg:col-start-1"
+    >
       <SectionHeading
         icon={Ticket}
-        title="Offers"
+        title={t('nav.offers')}
         hint={!gated && offers.length > 0 ? `${offers.length} active` : undefined}
       />
 
@@ -195,7 +203,7 @@ export function OffersSection({
             size="lg"
             className="ui-press w-full rounded-xl font-semibold sm:w-auto sm:px-10"
           >
-            Sign in
+            {t('nav.signIn')}
           </Button>
         </div>
       ) : loading || fromQr === null || resolvingAuth ? (
@@ -204,7 +212,7 @@ export function OffersSection({
         // One quiet line instead of a big empty card.
         <p className="flex items-center gap-2 rounded-xl bg-surface-sunken px-4 py-3 text-sm text-muted-foreground">
           <Ticket className="h-4 w-4 shrink-0" />
-          No active offers right now. Save this place to spot new deals.
+          {t('biz.noOffers')}
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -223,7 +231,7 @@ export function OffersSection({
             </span>
             <div>
               <p className="font-semibold text-foreground">
-                Spin to win
+                {t('biz.spinToWin')}
                 {wheelPreview.maxPercent ? ` up to ${wheelPreview.maxPercent}% off` : ' a discount'}
               </p>
               <p className="text-caption text-muted-foreground">
@@ -237,7 +245,7 @@ export function OffersSection({
             }
             className="shrink-0"
           >
-            Sign in to spin
+            {t('biz.signInToSpin')}
           </Button>
         </div>
       )}
@@ -254,7 +262,7 @@ export function OffersSection({
         <div className="ui-fade-up mt-6 rounded-2xl border border-border bg-card p-4 sm:p-6">
           <div className="mb-1 flex items-center gap-2">
             <Ticket className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-bold text-foreground sm:text-2xl">Vouchers</h2>
+            <h2 className="text-xl font-bold text-foreground sm:text-2xl">{t('biz.vouchers')}</h2>
           </div>
           <p className="mb-4 text-sm text-muted-foreground">
             Your verified spend here:{' '}
@@ -282,7 +290,7 @@ export function OffersSection({
                       ? `${v.rewardValue}% off`
                       : v.rewardType === 'AMOUNT'
                         ? `₹${Number(v.rewardValue || 0).toLocaleString('en-IN')} off`
-                        : v.rewardLabel || 'Reward'}
+                        : v.rewardLabel || t('biz.reward')}
                   </span>
                 </div>
 
@@ -293,7 +301,7 @@ export function OffersSection({
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={Math.round((v.progress ?? 0) * 100)}
-                  aria-label="Progress towards unlocking"
+                  aria-label={t('biz.unlockProgress')}
                 >
                   <div
                     className="h-full rounded-full bg-primary transition-all"
@@ -307,7 +315,7 @@ export function OffersSection({
                       {v.code}
                     </span>
                     <span className="text-xs font-semibold uppercase text-success-soft-foreground">
-                      {v.status === 'REDEEMED' ? 'Redeemed' : 'Show in-store'}
+                      {v.status === 'REDEEMED' ? t('biz.redeemed') : t('biz.showInStore')}
                     </span>
                   </div>
                 ) : v.qualified ? (
@@ -322,7 +330,7 @@ export function OffersSection({
                     ) : (
                       <Ticket className="h-4 w-4" />
                     )}
-                    Unlock code
+                    {t('biz.unlockCode')}
                   </Button>
                 ) : (
                   <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -339,14 +347,14 @@ export function OffersSection({
       {/* ── CLAIM CONFIRMATION MODAL */}
       {claimingOffer && (
         <ModalShell
-          label="Claim promotional offer"
+          label={t('biz.claimPromo')}
           onClose={() => setClaimingOffer(null)}
           className="text-center sm:max-w-sm"
         >
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-brand-soft-foreground">
             <Ticket className="h-6 w-6" />
           </div>
-          <h3 className="mb-2 text-lg font-bold text-foreground">Claim Promotional Offer</h3>
+          <h3 className="mb-2 text-lg font-bold text-foreground">{t('biz.claimPromoTitle')}</h3>
           <p className="mb-6 text-sm text-muted-foreground">
             Are you sure you want to claim the{' '}
             <span className="font-semibold text-foreground">
@@ -363,7 +371,7 @@ export function OffersSection({
               size="lg"
               className="flex-1 rounded-xl sm:flex-none sm:px-6"
             >
-              Cancel
+              {t('action.cancel')}
             </Button>
             <Button
               onClick={handleConfirmClaim}
@@ -371,7 +379,7 @@ export function OffersSection({
               size="lg"
               className="flex-1 rounded-xl font-semibold disabled:opacity-60 sm:flex-none sm:px-6"
             >
-              {claiming ? 'Claiming…' : 'Confirm Claim'}
+              {claiming ? t('biz.claiming') : t('biz.confirmClaim')}
             </Button>
           </div>
         </ModalShell>
@@ -380,20 +388,18 @@ export function OffersSection({
       {/* ── CLAIM SUCCESS MODAL */}
       {claimedCode && (
         <ModalShell
-          label="Offer claimed"
+          label={t('biz.offerClaimed')}
           onClose={() => setClaimedCode(null)}
           className="text-center sm:max-w-sm"
         >
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success-soft text-success-soft-foreground">
             <Check className="ui-check h-6 w-6" />
           </div>
-          <h3 className="mb-2 text-lg font-bold text-foreground">Offer Claimed!</h3>
-          <p className="mb-4 text-xs text-muted-foreground">
-            Present this code at the business counter to redeem your discount.
-          </p>
+          <h3 className="mb-2 text-lg font-bold text-foreground">{t('biz.offerClaimedTitle')}</h3>
+          <p className="mb-4 text-xs text-muted-foreground">{t('biz.presentCode')}</p>
           <div className="mb-6 rounded-xl border border-border bg-muted/50 p-4">
             <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">
-              Redemption Code
+              {t('biz.redemptionCode')}
             </p>
             <p className="font-mono text-2xl font-extrabold tracking-wider text-success-soft-foreground">
               {claimedCode}
@@ -404,7 +410,7 @@ export function OffersSection({
             size="lg"
             className="ui-press w-full rounded-xl font-semibold"
           >
-            Done
+            {t('biz.done')}
           </Button>
         </ModalShell>
       )}

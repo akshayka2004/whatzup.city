@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import type { ComponentType, ReactNode } from 'react';
 import {
   Clock,
@@ -56,6 +58,7 @@ function Row({
 
 /** Address, phone, social links, opening hours and the website button. */
 export function InfoCard({ biz }: { biz: any }) {
+  const { t } = useI18n();
   const branch = branchOf(biz);
   const address = addressOf(biz);
   const phone = phoneOf(biz);
@@ -66,7 +69,7 @@ export function InfoCard({ biz }: { biz: any }) {
     <div className="space-y-4">
       {(address || phone || socials.length > 0) && (
         <SectionCard className="space-y-1">
-          <h2 className="mb-2 text-base font-bold text-foreground">Contact &amp; location</h2>
+          <h2 className="mb-2 text-base font-bold text-foreground">{t('biz.contactLocation')}</h2>
           {address && (
             <Row icon={MapPin}>
               <a
@@ -123,7 +126,7 @@ export function InfoCard({ biz }: { biz: any }) {
             rel="noreferrer"
             onClick={() => trackBizEvent(biz, 'WEBSITE_CLICK')}
           >
-            <Globe /> Visit Website
+            <Globe /> {t('biz.visitWebsite')}
           </a>
         </Button>
       )}
