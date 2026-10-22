@@ -27,6 +27,13 @@ export class CustomerOnboardingService {
   ) {}
 
   async signup(dto: CustomerSignupDto) {
+    // Customers always join the default tenant, whatever the request says (see AuthService.signup).
+    const defaultTenant = await this.db.tenant.findUnique({
+      where: { slug: 'default' },
+      select: { id: true },
+    });
+    if (!defaultTenant) throw new BadRequestException('No tenant configured. Contact support.');
+    dto.tenantId = defaultTenant.id;
     const emailNormalized = dto.email.toLowerCase().trim();
 
     // Check duplicate

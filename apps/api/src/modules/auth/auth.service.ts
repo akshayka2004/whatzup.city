@@ -37,6 +37,9 @@ import {
   resolveMasterSubcategories,
 } from '../../common/utils/master-category';
 
+/** Roles a visitor may pick on the public sign-up form. */
+const SELF_SIGNUP_ROLES = new Set<UserRoleEnum>([UserRoleEnum.USER, UserRoleEnum.GOVERNMENT_ADMIN]);
+
 export interface JwtPayload {
   sub: string;
   email: string;
@@ -74,13 +77,21 @@ export class AuthService {
 
   async signup(dto: SignupDto) {
     try {
-      // 1. Resolve tenant (auto-select first tenant for single-tenant deployments)
-      if (!dto.tenantId) {
-        const defaultTenant = await this.db.tenant.findFirst({ select: { id: true } });
-        if (!defaultTenant) {
-          throw new BadRequestException('No tenant configured. Contact support.');
-        }
-        dto.tenantId = defaultTenant.id;
+      // 1. Public sign-up always lands in the platform's default tenant. A client-chosen
+      //    tenantId would let anyone join a business's tenant, where tenant-scoped checks
+      //    treat them as an insider.
+      const defaultTenant =
+        (await this.db.tenant.findUnique({ where: { slug: 'default' }, select: { id: true } })) ??
+        (await this.db.tenant.findFirst({ orderBy: { createdAt: 'asc' }, select: { id: true } }));
+      if (!defaultTenant) {
+        throw new BadRequestException('No tenant configured. Contact support.');
+      }
+      dto.tenantId = defaultTenant.id;
+
+      // Self-service roles only. Everything else (admins, staff, business roles) is granted
+      // by an admin or through its own onboarding flow, never by the request body.
+      if (dto.role && !SELF_SIGNUP_ROLES.has(dto.role)) {
+        throw new ForbiddenException('That account type cannot be created by sign-up.');
       }
 
       // 2. Validate password strength

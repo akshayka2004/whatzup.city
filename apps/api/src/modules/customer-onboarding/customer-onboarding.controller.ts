@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { CustomerOnboardingService } from './customer-onboarding.service';
 import {
   CustomerSignupDto,
@@ -14,12 +15,15 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 export class CustomerOnboardingController {
   constructor(private readonly onboardingService: CustomerOnboardingService) {}
 
+  // Same limits as /auth/signup and /auth/verify-email: this is a second public way in.
+  @Throttle({ long: { limit: 5, ttl: 3600000 } })
   @Post('signup')
   @ApiOperation({ summary: 'Register a new customer account (Step 1)' })
   async signup(@Body() dto: CustomerSignupDto) {
     return this.onboardingService.signup(dto);
   }
 
+  @Throttle({ long: { limit: 10, ttl: 900000 } })
   @Post('verify')
   @ApiOperation({ summary: 'Verify email token to activate account (Step 2)' })
   async verify(@Query('token') token: string) {
