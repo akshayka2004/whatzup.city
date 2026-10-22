@@ -33,3 +33,29 @@ export async function assertBusinessAccess(
   if (business.staff.length > 0) return business;
   throw new ForbiddenException('You do not have access to this business');
 }
+
+type OwnedKind = 'offer' | 'product' | 'event';
+
+/**
+ * For routes that take an offer/product/event id: finds the business the record
+ * belongs to and applies assertBusinessAccess. Tenant scoping alone is not
+ * enough, since anyone who lands in a business's tenant would pass it.
+ */
+export async function assertResourceAccess(
+  db: DatabaseService,
+  kind: OwnedKind,
+  id: string,
+  user: AccessUser,
+) {
+  const where = { id, deletedAt: null };
+  const select = { businessId: true };
+  const row =
+    kind === 'offer'
+      ? await db.offer.findFirst({ where, select })
+      : kind === 'product'
+        ? await db.product.findFirst({ where, select })
+        : await db.event.findFirst({ where, select });
+  if (!row?.businessId)
+    throw new NotFoundException(`${kind[0].toUpperCase()}${kind.slice(1)} not found`);
+  return assertBusinessAccess(db, row.businessId, user);
+}

@@ -18,11 +18,20 @@ import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@saas/types';
 import { EventDto } from './dto/event.dto';
+import { DatabaseService } from '../../common/database/database.service';
+import {
+  assertBusinessAccess,
+  assertResourceAccess,
+  type AccessUser,
+} from '../../common/utils/business-access';
 
 @ApiTags('Events')
 @Controller('events')
 export class EventsController {
-  constructor(private readonly eventsService: EventsService) {}
+  constructor(
+    private readonly eventsService: EventsService,
+    private readonly db: DatabaseService,
+  ) {}
 
   @Public()
   @Get()
@@ -88,7 +97,9 @@ export class EventsController {
   async findMine(
     @CurrentUser('tenantId') tenantId: string,
     @Param('businessId') businessId: string,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertBusinessAccess(this.db, businessId, user);
     return this.eventsService.findMine(tenantId, businessId);
   }
 
@@ -117,7 +128,9 @@ export class EventsController {
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
     @Body() dto: EventDto,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertBusinessAccess(this.db, dto.businessId || '', user);
     return this.eventsService.create(tenantId, userId, dto.businessId || '', dto);
   }
 
@@ -129,7 +142,9 @@ export class EventsController {
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
     @Body() dto: EventDto,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertResourceAccess(this.db, 'event', id, user);
     return this.eventsService.update(tenantId, dto.businessId || '', id, userId, dto);
   }
 
@@ -141,7 +156,9 @@ export class EventsController {
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
     @Query('businessId') businessId: string,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertResourceAccess(this.db, 'event', id, user);
     return this.eventsService.remove(tenantId, businessId, id, userId);
   }
 }

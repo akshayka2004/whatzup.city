@@ -7,13 +7,18 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '@saas/types';
+import { DatabaseService } from '../../common/database/database.service';
+import { assertBusinessAccess, type AccessUser } from '../../common/utils/business-access';
 
 @ApiTags('Trials')
 @Controller('trials')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class TrialsController {
-  constructor(private readonly trialsService: TrialsService) {}
+  constructor(
+    private readonly trialsService: TrialsService,
+    private readonly db: DatabaseService,
+  ) {}
 
   /**
    * Business owner: get trial status for their business
@@ -23,7 +28,9 @@ export class TrialsController {
   async getTrialStatus(
     @CurrentUser('tenantId') tenantId: string,
     @Param('businessId') businessId: string,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertBusinessAccess(this.db, businessId, user);
     return this.trialsService.getMyTrial(tenantId, businessId);
   }
 
@@ -36,7 +43,9 @@ export class TrialsController {
   async claimIntroOffer(
     @CurrentUser('tenantId') tenantId: string,
     @Param('businessId') businessId: string,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertBusinessAccess(this.db, businessId, user);
     return this.trialsService.claimIntroOffer(tenantId, businessId);
   }
 

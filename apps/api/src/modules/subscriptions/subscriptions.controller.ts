@@ -15,6 +15,8 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '@saas/types';
+import { DatabaseService } from '../../common/database/database.service';
+import { assertBusinessAccess, type AccessUser } from '../../common/utils/business-access';
 
 @ApiTags('Subscriptions')
 @Controller('subscriptions')
@@ -22,6 +24,7 @@ export class SubscriptionsController {
   constructor(
     private readonly subscriptionsService: SubscriptionsService,
     private readonly entitlements: EntitlementsService,
+    private readonly db: DatabaseService,
   ) {}
 
   @Public()
@@ -137,7 +140,9 @@ export class SubscriptionsController {
   async getActive(
     @CurrentUser('tenantId') tenantId: string,
     @Param('businessId') businessId: string,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertBusinessAccess(this.db, businessId, user);
     return this.subscriptionsService.getActive(tenantId, businessId);
   }
 }

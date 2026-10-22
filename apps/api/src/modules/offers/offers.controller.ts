@@ -18,11 +18,20 @@ import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@saas/types';
 import { OfferDto } from './dto/offer.dto';
+import { DatabaseService } from '../../common/database/database.service';
+import {
+  assertBusinessAccess,
+  assertResourceAccess,
+  type AccessUser,
+} from '../../common/utils/business-access';
 
 @ApiTags('Offers')
 @Controller('offers')
 export class OffersController {
-  constructor(private readonly offersService: OffersService) {}
+  constructor(
+    private readonly offersService: OffersService,
+    private readonly db: DatabaseService,
+  ) {}
 
   @Public()
   @Get()
@@ -89,7 +98,9 @@ export class OffersController {
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
     @Param('businessId') businessId: string,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertBusinessAccess(this.db, businessId, user);
     return this.offersService.findByBusiness(tenantId, businessId, false);
   }
 
@@ -100,7 +111,9 @@ export class OffersController {
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
     @Body() data: OfferDto,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertBusinessAccess(this.db, data.businessId || '', user);
     return this.offersService.create(tenantId, userId, data.businessId || '', data);
   }
 
@@ -112,7 +125,9 @@ export class OffersController {
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
     @Body() data: OfferDto,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertResourceAccess(this.db, 'offer', id, user);
     return this.offersService.update(tenantId, id, userId, data);
   }
 
@@ -134,7 +149,9 @@ export class OffersController {
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertResourceAccess(this.db, 'offer', id, user);
     return this.offersService.softDelete(tenantId, id, userId);
   }
 }

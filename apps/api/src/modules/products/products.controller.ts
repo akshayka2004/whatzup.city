@@ -15,11 +15,20 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ProductDto } from './dto/product.dto';
+import { DatabaseService } from '../../common/database/database.service';
+import {
+  assertBusinessAccess,
+  assertResourceAccess,
+  type AccessUser,
+} from '../../common/utils/business-access';
 
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly db: DatabaseService,
+  ) {}
 
   @Public()
   @Get('business/:businessId')
@@ -44,7 +53,9 @@ export class ProductsController {
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
     @Body() data: ProductDto,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertBusinessAccess(this.db, data.businessId || '', user);
     return this.productsService.create(tenantId, userId, data.businessId || '', data);
   }
 
@@ -56,7 +67,9 @@ export class ProductsController {
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
     @Body() data: ProductDto,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertResourceAccess(this.db, 'product', id, user);
     return this.productsService.update(tenantId, id, userId, data);
   }
 
@@ -67,7 +80,9 @@ export class ProductsController {
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertResourceAccess(this.db, 'product', id, user);
     return this.productsService.softDelete(tenantId, id, userId);
   }
 }
