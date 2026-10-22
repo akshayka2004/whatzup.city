@@ -6,6 +6,28 @@
 process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY ||= 'whtzup-city-stable-server-actions-key-v1';
 
 /** @type {import('next').NextConfig} */
+// Content-Security-Policy. 'unsafe-inline' scripts are required by Next's inline
+// bootstrap without per-request nonces (nonces would make every page dynamic and
+// defeat ISR); everything else is pinned to our origin and the few hosts we use:
+// Supabase Storage (images, signed uploads, PDF previews) and OpenFreeMap tiles.
+const SUPABASE = 'https://*.supabase.co';
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  `connect-src 'self' ${SUPABASE} https://tiles.openfreemap.org`,
+  "worker-src 'self' blob:",
+  `frame-src 'self' ${SUPABASE}`,
+  `media-src 'self' blob: ${SUPABASE}`,
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  'upgrade-insecure-requests',
+].join('; ');
+
 const nextConfig = {
   output: 'standalone',
   compress: true,
@@ -73,6 +95,18 @@ const nextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // Camera for the QR scanner and location for "Nearby"; nothing else.
+          {
+            key: 'Permissions-Policy',
+            value:
+              'camera=(self), geolocation=(self), microphone=(), payment=(), usb=(), interest-cohort=()',
+          },
+          ...(process.env.NODE_ENV === 'production'
+            ? [
+                { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+                { key: 'Content-Security-Policy', value: CSP },
+              ]
+            : []),
         ],
       },
     ];
