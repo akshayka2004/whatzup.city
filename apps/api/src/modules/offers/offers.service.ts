@@ -183,10 +183,20 @@ export class OffersService {
         select: { id: true },
       });
       if (!biz) return [];
-      return this.offerRepo.model.findMany({
-        where: { businessId: biz.id, deletedAt: null },
+      // Public profile: live offers only. Drafts, paused and expired offers are the
+      // owner's business, and so are the audit columns.
+      const now = new Date();
+      const rows = await this.offerRepo.model.findMany({
+        where: {
+          businessId: biz.id,
+          deletedAt: null,
+          status: 'ACTIVE',
+          startDate: { lte: now },
+          endDate: { gte: now },
+        },
         orderBy: { createdAt: 'desc' },
       });
+      return rows.map(({ createdBy: _c, updatedBy: _u, deletedAt: _d, ...rest }: any) => rest);
     }
 
     // Authenticated (dashboard) path
