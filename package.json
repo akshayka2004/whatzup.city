@@ -22,7 +22,8 @@
     "security:tenant-scope": "node scripts/check-tenant-scope.js",
     "security:tenant-scope:strict": "node scripts/check-tenant-scope.js --strict",
     "security:audit": "pnpm audit --audit-level=high",
-    "security:check": "pnpm run security:audit && pnpm run security:tenant-scope"
+    "security:check": "pnpm run security:audit && pnpm run security:tenant-scope",
+    "test:smoke": "node scripts/smoke-crawl.mjs"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "16.3.8",
@@ -33,6 +34,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-react-hooks": "7.1.1",
+    "playwright": "1.56.1",
     "prettier": "^3.8.3",
     "rimraf": "^5.0.5",
     "turbo": "^2.0.0"

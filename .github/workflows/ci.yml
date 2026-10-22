@@ -51,6 +51,25 @@ jobs:
       - name: Run unit tests
         run: pnpm test
 
+      # Every page of the production build, as a visitor and each role, with the
+      # API mocked (no database needed). Fails on any error screen or page error.
+      - name: Build web
+        run: pnpm --filter @saas/web build
+
+      - name: Smoke crawl
+        env:
+          NODE_ENV: production
+          API_URL: http://127.0.0.1:9
+          PORT: 3000
+          HOSTNAME: 127.0.0.1
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
+          cp -r apps/web/public apps/web/.next/standalone/apps/web/public
+          node apps/web/.next/standalone/apps/web/server.js &
+          for i in $(seq 1 30); do curl -sf -o /dev/null http://127.0.0.1:3000/login && break; sleep 1; done
+          pnpm test:smoke --base http://127.0.0.1:3000
+
   build-and-push:
     needs: lint-and-test
     if: github.event_name == 'workflow_dispatch'

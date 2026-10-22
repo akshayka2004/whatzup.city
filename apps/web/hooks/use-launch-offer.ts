@@ -28,8 +28,16 @@ export function useLaunchOffer() {
       return;
     }
     const res = await apiService.get<LaunchOfferStatus>('/v1/subscriptions/launch-offer');
-    // A failed lookup just hides the offer; registration itself is unaffected.
-    setStatus(res.error || !res.data ? null : res.data);
+    // A failed or malformed lookup just hides the offer; registration itself is unaffected.
+    const d = res.data as Partial<LaunchOfferStatus> | null;
+    setStatus(
+      !res.error && d && typeof d.slotsPerCategory === 'number'
+        ? ({
+            ...d,
+            claimed: d.claimed && typeof d.claimed === 'object' ? d.claimed : {},
+          } as LaunchOfferStatus)
+        : null,
+    );
     setLoading(false);
   }, []);
 
@@ -39,7 +47,7 @@ export function useLaunchOffer() {
 
   const enabled = !!status?.enabled;
   const slotsLeft = (categorySlug: string) =>
-    status ? Math.max(0, status.slotsPerCategory - (status.claimed[categorySlug] || 0)) : 0;
+    status ? Math.max(0, status.slotsPerCategory - (status.claimed?.[categorySlug] || 0)) : 0;
 
   return { loading, enabled, status, slotsLeft, refresh };
 }
