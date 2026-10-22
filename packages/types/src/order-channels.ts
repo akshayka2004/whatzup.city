@@ -22,9 +22,7 @@ export function isAllChannels(channels?: readonly string[] | null): boolean {
 }
 
 /** Legacy single `fulfilment` value kept in step with channels for old readers. */
-export function channelsToFulfilment(
-  channels: readonly string[],
-): 'DINE_IN' | 'TAKEAWAY' | 'BOTH' {
+export function channelsToFulfilment(channels: readonly string[]): 'DINE_IN' | 'TAKEAWAY' | 'BOTH' {
   if (channels.length === 1 && channels[0] === 'INSTORE') return 'DINE_IN';
   if (channels.length === 1 && channels[0] === 'TAKEAWAY') return 'TAKEAWAY';
   return 'BOTH';
