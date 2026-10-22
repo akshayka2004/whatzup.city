@@ -7,26 +7,36 @@ import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { UserRole } from '@saas/types';
 
-const ROLE_HIERARCHY: Record<string, number> = {
-  [UserRole.USER]: 1,
+// Roles only outrank each other within their own ladder. The old single
+// hierarchy let self-registered government, civic and specialty accounts
+// (levels 4-5) pass every BUSINESS_OWNER / MODERATOR / STAFF route.
+const BUSINESS_LADDER: Record<string, number> = {
   [UserRole.BUSINESS_STAFF]: 2,
   [UserRole.BUSINESS_MODERATOR]: 3,
   [UserRole.BUSINESS_OWNER]: 4,
-  // Specialty entity roles — same tier as BUSINESS_OWNER
-  [UserRole.INFLUENCER]: 4,
-  [UserRole.PROFESSIONAL]: 4,
-  [UserRole.EVENT_ORGANIZER]: 4,
-  [UserRole.ORGANIZATION_ADMIN]: 4,
-  // Civic registration roles — same tier as entity owners
-  [UserRole.NGO_ADMIN]: 4,
-  [UserRole.COMMUNITY_ADMIN]: 4,
-  [UserRole.NEWS_FORUM_ADMIN]: 4,
-  [UserRole.GOVERNMENT_ADMIN]: 5,
-  [UserRole.MASTER_ADMIN]: 6,
-  [UserRole.SUPER_ADMIN]: 7,
   // Legacy alias kept for backward compatibility
   [UserRole.BUSINESS_ADMIN]: 4,
 };
+const PLATFORM_LADDER: Record<string, number> = {
+  [UserRole.MASTER_ADMIN]: 6,
+  [UserRole.SUPER_ADMIN]: 7,
+};
+
+/** Whether a user with `have` satisfies a route that lists `need`. */
+export function roleSatisfies(have: string, need: string): boolean {
+  if (have === need) return true;
+  // USER means "any signed-in account".
+  if (need === UserRole.USER) return true;
+  const havePlatform = PLATFORM_LADDER[have];
+  if (havePlatform) {
+    const needPlatform = PLATFORM_LADDER[need];
+    // Platform admins pass every non-platform role; between themselves, by rank.
+    return needPlatform ? havePlatform >= needPlatform : true;
+  }
+  const haveBiz = BUSINESS_LADDER[have];
+  const needBiz = BUSINESS_LADDER[need];
+  return !!haveBiz && !!needBiz && haveBiz >= needBiz;
+}
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -47,10 +57,7 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Authentication required');
     }
 
-    const userRoleLevel = ROLE_HIERARCHY[user.role] ?? 0;
-    const hasRole = requiredRoles.some(
-      (role) => user.role === role || userRoleLevel >= (ROLE_HIERARCHY[role] ?? 999),
-    );
+    const hasRole = requiredRoles.some((role) => roleSatisfies(user.role, role));
 
     if (!hasRole) {
       throw new ForbiddenException(
