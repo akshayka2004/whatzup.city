@@ -25,7 +25,7 @@
     "security:check": "pnpm run security:audit && pnpm run security:tenant-scope"
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "16.2.6",
+    "@next/eslint-plugin-next": "16.3.8",
     "@typescript-eslint/eslint-plugin": "^8.59.4",
     "@typescript-eslint/parser": "^8.59.4",
     "dotenv-cli": "^11.0.0",
@@ -40,7 +40,29 @@
   "packageManager": "pnpm@9.1.0",
   "pnpm": {
     "overrides": {
-      "@types/react": "19.2.18"
+      "@types/react": "19.2.18",
+      "proxy-addr": "^2.0.8",
+      "websocket-driver": "^0.7.5",
+      "multer": "^2.2.0",
+      "ws@>=8 <9": "^8.21.0",
+      "socket.io-parser": "^4.2.7",
+      "engine.io": "^6.6.10",
+      "compression": "^1.8.2",
+      "axios": "^1.20.0",
+      "follow-redirects": "^1.16.1",
+      "form-data@>=4 <5": "^4.0.6",
+      "form-data@<3": "^2.5.6",
+      "protobufjs@>=7 <8": "^7.6.1",
+      "@grpc/grpc-js": "^1.14.4",
+      "brace-expansion@<2": "^1.1.16",
+      "lodash": "^4.18.1",
+      "js-yaml@>=4 <5": "^4.3.0",
+      "postcss": "^8.5.12",
+      "nanoid@<4": "^3.3.18",
+      "browserslist": "^4.28.7",
+      "source-map-js": "^1.2.2",
+      "@fastify/busboy": "^3.2.1",
+      "sharp": "^0.35.5"
     }
   }
 }
