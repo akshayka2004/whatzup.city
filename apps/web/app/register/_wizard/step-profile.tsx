@@ -18,6 +18,7 @@ import {
   Layers,
 } from 'lucide-react';
 import type { Wizard } from './use-register-wizard';
+import { FieldError, OptionalSection, WizardActions, useTouched } from './wizard-ui';
 
 export function StepProfile({ w }: { w: Wizard }) {
   const {
@@ -52,25 +53,46 @@ export function StepProfile({ w }: { w: Wizard }) {
     uploadProgress,
     handleStep4Submit,
     isHotel,
+    companyName,
+    categoryLabel,
   } = w;
+  const t = useTouched();
+  const addressMissing = !address.trim();
+
+  const onSubmit = (e: React.FormEvent) => {
+    if (addressMissing) {
+      e.preventDefault();
+      t.attempt();
+      const el = document.getElementById('reg-address');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el?.focus({ preventScroll: true });
+      return;
+    }
+    handleStep4Submit(e);
+  };
   return (
-    <form onSubmit={handleStep4Submit} className="space-y-6 ui-pop">
+    <form onSubmit={onSubmit} noValidate className="space-y-6 ui-pop">
       <div>
         <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
           <Building2 className="h-5 w-5 text-muted-foreground" />
-          Kerala Regional Profile Setup
+          {role === 'BUSINESS' ? 'Where can customers find you?' : 'Profile setup'}
         </h2>
         <p className="text-xs text-muted-foreground mt-1">
-          Provide structural details and official documents for your Kerala-based entity.
+          {role === 'BUSINESS'
+            ? 'Add your address and business details. Anything marked optional can wait until after you sign up.'
+            : 'Provide your location and official documents.'}
         </p>
       </div>
 
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">City / District</label>
+          <label htmlFor="reg-city" className="text-xs font-medium text-muted-foreground">
+            City / district
+          </label>
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <select
+              id="reg-city"
               value={city}
               onChange={(e) => {
                 setCity(e.target.value);
@@ -88,15 +110,26 @@ export function StepProfile({ w }: { w: Wizard }) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-muted-foreground">Full Physical Address</label>
+          <label htmlFor="reg-address" className="text-xs font-medium text-muted-foreground">
+            Full address
+          </label>
           <Input
+            id="reg-address"
             type="text"
+            autoComplete="street-address"
+            enterKeyHint="next"
             placeholder="e.g. 45/998-A, MG Road, Ernakulam"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
-            required
+            onBlur={() => t.touch('address')}
+            aria-invalid={t.show('address') && addressMissing}
+            className={`h-11 bg-background text-sm text-foreground rounded-xl ${
+              t.show('address') && addressMissing ? 'border-destructive/50' : 'border-input'
+            }`}
           />
+          <FieldError>
+            {t.show('address') && addressMissing ? 'Enter the address customers can visit.' : null}
+          </FieldError>
         </div>
 
         {role === 'GOVERNMENT' && (
@@ -116,57 +149,31 @@ export function StepProfile({ w }: { w: Wizard }) {
           </div>
         )}
 
-        {/* File Upload Section for COMPANY */}
+        {/* Registration certificate: optional, can be added from the dashboard */}
         {role === 'BUSINESS' && (
-          <div className="grid md:grid-cols-2 gap-4 pt-3 border-t border-border">
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <FileCheck className="h-4 w-4 text-info-soft-foreground" />
-                1. Registration Certificate (PDF/Image)
-              </label>
-              <div className="p-4 rounded-xl border border-dashed border-input hover:border-border bg-white/[0.01] text-center cursor-pointer relative">
-                <input
-                  type="file"
-                  accept="application/pdf,image/png,image/jpeg,image/webp"
-                  onChange={(e) => setCertFile(e.target.files?.[0] || null)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <UploadCloud className="h-6 w-6 text-muted-foreground mx-auto mb-1.5" />
-                {certFile ? (
-                  <p className="text-xs font-semibold text-muted-foreground truncate">
-                    {certFile.name}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Click to select registration file (Max 10MB)
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                <Layers className="h-4 w-4 text-info-soft-foreground" />
-                2. Company Brand Logo (Image)
-              </label>
-              <div className="p-4 rounded-xl border border-dashed border-input hover:border-border bg-white/[0.01] text-center cursor-pointer relative">
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <UploadCloud className="h-6 w-6 text-muted-foreground mx-auto mb-1.5" />
-                {logoFile ? (
-                  <p className="text-xs font-semibold text-muted-foreground truncate">
-                    {logoFile.name}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Click to select company logo (Max 10MB)
-                  </p>
-                )}
-              </div>
+          <div className="space-y-2 pt-3 border-t border-border">
+            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <FileCheck className="h-4 w-4 text-info-soft-foreground" />
+              Business registration certificate{' '}
+              <span className="text-muted-foreground/70">(optional, PDF or photo)</span>
+            </label>
+            <div className="p-4 rounded-xl border border-dashed border-input hover:border-border bg-white/[0.01] text-center cursor-pointer relative min-h-24">
+              <input
+                type="file"
+                accept="application/pdf,image/png,image/jpeg,image/webp"
+                onChange={(e) => setCertFile(e.target.files?.[0] || null)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+              <UploadCloud className="h-6 w-6 text-muted-foreground mx-auto mb-1.5" />
+              {certFile ? (
+                <p className="text-xs font-semibold text-muted-foreground truncate">
+                  {certFile.name}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Tap to choose a file (max 10MB). Reviewers use it to verify you faster.
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -214,63 +221,93 @@ export function StepProfile({ w }: { w: Wizard }) {
       {/* ── Business-only: description, KYC details, search tags ── */}
       {role === 'BUSINESS' && (
         <div className="space-y-6 pt-2">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">About your business</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="What you offer, what makes you different…"
-              className="w-full p-3 border border-input bg-background text-foreground rounded-xl text-sm focus:ring-1 focus:outline-none"
-            />
-          </div>
+          <OptionalSection
+            title="Description, tags and logo"
+            hint="Help customers find and recognise you. You can add these later from your dashboard."
+          >
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                About your business
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                placeholder="What you offer, what makes you different…"
+                className="w-full p-3 border border-input bg-background text-foreground rounded-xl text-sm focus:ring-1 focus:outline-none"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              Search tags <span className="text-xs">(help customers find you)</span>
-            </label>
-            <div className="flex gap-2">
-              <Input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">
+                Search tags <span className="text-xs">(help customers find you)</span>
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const t = tagInput.trim();
+                      if (t && !tags.includes(t)) setTags([...tags, t]);
+                      setTagInput('');
+                    }
+                  }}
+                  placeholder="e.g. biryani, rooftop — press Enter"
+                  className="h-11 bg-background border-input text-sm rounded-xl"
+                />
+                <Button
+                  type="button"
+                  onClick={() => {
                     const t = tagInput.trim();
                     if (t && !tags.includes(t)) setTags([...tags, t]);
                     setTagInput('');
-                  }
-                }}
-                placeholder="e.g. biryani, rooftop — press Enter"
-                className="h-11 bg-background border-input text-sm rounded-xl"
-              />
-              <Button
-                type="button"
-                onClick={() => {
-                  const t = tagInput.trim();
-                  if (t && !tags.includes(t)) setTags([...tags, t]);
-                  setTagInput('');
-                }}
-                className="h-11 px-4 rounded-xl bg-muted text-foreground cursor-pointer"
-              >
-                Add
-              </Button>
-            </div>
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {tags.map((t) => (
-                  <button
-                    type="button"
-                    key={t}
-                    onClick={() => setTags(tags.filter((x) => x !== t))}
-                    className="px-3 py-1.5 rounded-full text-xs bg-brand-soft border border-primary/20 text-brand-soft-foreground cursor-pointer"
-                  >
-                    {t} ✕
-                  </button>
-                ))}
+                  }}
+                  className="h-11 px-4 rounded-xl bg-muted text-foreground cursor-pointer"
+                >
+                  Add
+                </Button>
               </div>
-            )}
-          </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((t) => (
+                    <button
+                      type="button"
+                      key={t}
+                      onClick={() => setTags(tags.filter((x) => x !== t))}
+                      className="px-3 py-1.5 rounded-full text-xs bg-brand-soft border border-primary/20 text-brand-soft-foreground cursor-pointer"
+                    >
+                      {t} ✕
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <Layers className="h-4 w-4 text-info-soft-foreground" />
+                Logo (PNG or JPG)
+              </label>
+              <div className="p-4 rounded-xl border border-dashed border-input hover:border-border bg-white/[0.01] text-center cursor-pointer relative min-h-24">
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <UploadCloud className="h-6 w-6 text-muted-foreground mx-auto mb-1.5" />
+                {logoFile ? (
+                  <p className="text-xs font-semibold text-muted-foreground truncate">
+                    {logoFile.name}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Tap to choose a logo (max 10MB)</p>
+                )}
+              </div>
+            </div>
+          </OptionalSection>
 
           <div>
             <h3 className="text-sm font-bold text-foreground">Registration details</h3>
@@ -294,7 +331,25 @@ export function StepProfile({ w }: { w: Wizard }) {
         </div>
       )}
 
-      <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-6 border-t border-border">
+      {role === 'BUSINESS' && (
+        <dl className="space-y-1.5 rounded-xl border border-border bg-muted/30 p-4 text-xs">
+          <dt className="font-semibold text-foreground">Before you continue</dt>
+          <dd className="text-muted-foreground">
+            <span className="text-foreground">{companyName || 'Your business'}</span> in{' '}
+            {categoryLabel}, {city || 'Kerala'}
+          </dd>
+          <dd className="text-muted-foreground">
+            Registration certificate:{' '}
+            {certFile ? (
+              <span className="text-foreground">{certFile.name}</span>
+            ) : (
+              'not attached yet. You can add it later, but approval is quicker with it.'
+            )}
+          </dd>
+        </dl>
+      )}
+
+      <WizardActions>
         <Button
           type="button"
           onClick={() => (outletMode ? router.push('/dashboard/outlets') : setCurrentStep(2))}
@@ -326,7 +381,7 @@ export function StepProfile({ w }: { w: Wizard }) {
             </>
           )}
         </Button>
-      </div>
+      </WizardActions>
     </form>
   );
 }

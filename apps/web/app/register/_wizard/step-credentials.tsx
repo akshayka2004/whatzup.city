@@ -17,11 +17,31 @@ import {
   Sparkles,
   ArrowRight,
   ArrowLeft,
-  Layers,
   Heart,
   Store,
+  Clock,
 } from 'lucide-react';
 import type { Wizard } from './use-register-wizard';
+import { CategoryPicker } from './category-picker';
+import { FieldError, FieldHint, PasswordMeter, WizardActions, useTouched } from './wizard-ui';
+
+const ROLE_NOUN: Record<string, string> = {
+  BUSINESS: 'business',
+  CUSTOMER: 'customer',
+  GOVERNMENT: 'government',
+  NGO_COMMUNITY: 'organisation',
+};
+
+const TIME_AND_NEEDS: Record<string, string> = {
+  BUSINESS:
+    'About 3 minutes. Next you add your address, and have your business registration details handy.',
+  CUSTOMER: 'About a minute.',
+  GOVERNMENT: 'About 3 minutes. Keep your department ID proof handy.',
+  NGO_COMMUNITY: 'About 3 minutes. Keep your registration details handy.',
+};
+
+const inputBase = 'h-11 bg-background text-sm text-foreground rounded-xl';
+const border = (bad: boolean) => (bad ? 'border-destructive/50' : 'border-input');
 
 export function StepCredentials({ w }: { w: Wizard }) {
   const {
@@ -66,7 +86,6 @@ export function StepCredentials({ w }: { w: Wizard }) {
     organizationName,
     setOrganizationName,
     loading,
-    success,
     hasMinLength,
     hasUppercase,
     hasLowercase,
@@ -77,164 +96,254 @@ export function StepCredentials({ w }: { w: Wizard }) {
     isEmailValid,
     handleStep2Submit,
   } = w;
+
+  const t = useTouched();
+  const consent = acceptedTerms && acceptedPrivacy;
+  const score = [hasMinLength, hasUppercase, hasLowercase, hasDigit, hasSpecialChar].filter(
+    Boolean,
+  ).length;
+
+  const nameLabel =
+    role === 'BUSINESS'
+      ? 'Owner full name'
+      : role === 'GOVERNMENT'
+        ? 'Department official name'
+        : role === 'NGO_COMMUNITY'
+          ? 'Contact person name'
+          : 'Full name';
+  const orgLabel =
+    civicOrgType === 'NGO'
+      ? 'NGO name'
+      : civicOrgType === 'COMMUNITY'
+        ? 'Community name'
+        : 'Forum / publication name';
+
+  // One message per field, in the order they appear on screen.
+  const missing: string[] = [];
+  if (!hasMinLength) missing.push('8+ characters');
+  if (!hasUppercase) missing.push('an uppercase letter');
+  if (!hasLowercase) missing.push('a lowercase letter');
+  if (!hasDigit) missing.push('a number');
+  if (!hasSpecialChar) missing.push('a symbol like @ or #');
+  const errors: [string, string | null][] = [
+    ['reg-name', name.trim() ? null : `Enter the ${nameLabel.toLowerCase()}.`],
+    [
+      'reg-email',
+      !email
+        ? 'Enter your email address.'
+        : isEmailValid
+          ? null
+          : 'That email does not look right. It should be like name@example.com.',
+    ],
+    [
+      'reg-phone',
+      !phone
+        ? 'Enter your 10-digit mobile number.'
+        : isPhoneValid
+          ? null
+          : `${phone.length} of 10 digits entered.`,
+    ],
+    [
+      'reg-password',
+      !password
+        ? 'Create a password.'
+        : isPasswordValid
+          ? null
+          : `Still needs ${missing.join(', ')}.`,
+    ],
+    [
+      'reg-org',
+      role === 'NGO_COMMUNITY' && !organizationName.trim() ? `Enter the ${orgLabel}.` : null,
+    ],
+    [
+      'reg-brand',
+      role === 'BUSINESS' && accountType === 'BRAND' && !brandNameInput.trim()
+        ? 'Enter the brand name.'
+        : null,
+    ],
+    [
+      'reg-company',
+      role === 'BUSINESS' && !companyName.trim() ? 'Enter your business or trading name.' : null,
+    ],
+    ['reg-consent', consent ? null : 'Please accept to continue.'],
+  ];
+  const err = (id: string) => errors.find(([k]) => k === id)?.[1] ?? null;
+  const shown = (id: string, field: string) => (t.show(field) ? err(id) : null);
+
+  const onSubmit = (e: React.FormEvent) => {
+    const first = errors.find(([, m]) => m);
+    if (first) {
+      e.preventDefault();
+      t.attempt();
+      const el = document.getElementById(first[0]);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      (el as HTMLElement | null)?.focus?.({ preventScroll: true });
+      return;
+    }
+    handleStep2Submit(e);
+  };
+
   return (
-    <form onSubmit={handleStep2Submit} className="space-y-6 ui-pop">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">Setup Credentials</h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          Fill in primary user and registry details. Fields are validated dynamically.
+    <form onSubmit={onSubmit} noValidate className="space-y-6 ui-pop">
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <h2 className="text-xl font-bold text-foreground">
+            Create your {ROLE_NOUN[role] ?? ''} account
+          </h2>
+          <button
+            type="button"
+            onClick={() => setCurrentStep(1)}
+            className="cursor-pointer text-xs font-medium text-primary underline underline-offset-2"
+          >
+            Change
+          </button>
+        </div>
+        <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+          <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          {TIME_AND_NEEDS[role] ?? TIME_AND_NEEDS.CUSTOMER} Your answers are saved as you go.
         </p>
       </div>
 
       <div className="space-y-4">
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">
-              {role === 'BUSINESS'
-                ? 'Owner Full Name'
-                : role === 'GOVERNMENT'
-                  ? 'Department Official Name'
-                  : role === 'NGO_COMMUNITY'
-                    ? 'Contact Person Name'
-                    : 'Full Name'}
+            <label htmlFor="reg-name" className="text-xs font-medium text-muted-foreground">
+              {nameLabel}
             </label>
             <div className="relative">
               <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                id="reg-name"
                 type="text"
+                autoComplete="name"
+                enterKeyHint="next"
                 placeholder="e.g. Adarsh Kumar"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="pl-10 h-11 bg-background border-input text-sm text-foreground rounded-xl"
-                required
+                onBlur={() => t.touch('name')}
+                aria-invalid={!!shown('reg-name', 'name')}
+                aria-describedby="reg-name-err"
+                className={`pl-10 ${inputBase} ${border(!!shown('reg-name', 'name'))}`}
               />
             </div>
+            <FieldError id="reg-name-err">{shown('reg-name', 'name')}</FieldError>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Email Address</label>
+            <label htmlFor="reg-email" className="text-xs font-medium text-muted-foreground">
+              Email address
+            </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                id="reg-email"
                 type="email"
+                inputMode="email"
+                autoComplete="email"
+                autoCapitalize="none"
+                enterKeyHint="next"
                 placeholder="adarsh@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`pl-10 h-11 bg-background text-sm text-foreground rounded-xl ${
-                  email && !isEmailValid ? 'border-destructive/25' : 'border-input'
-                }`}
-                required
+                onChange={(e) => setEmail(e.target.value.trim())}
+                onBlur={() => t.touch('email')}
+                aria-invalid={!!shown('reg-email', 'email')}
+                aria-describedby="reg-email-err"
+                className={`pl-10 ${inputBase} ${border(!!shown('reg-email', 'email'))}`}
               />
             </div>
-            {email && !isEmailValid && (
-              <p className="text-xs text-danger-soft-foreground">
-                Please enter a valid email format
-              </p>
-            )}
+            <FieldError id="reg-email-err">{shown('reg-email', 'email')}</FieldError>
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">
-              Phone Number (10 Digits)
+            <label htmlFor="reg-phone" className="text-xs font-medium text-muted-foreground">
+              Mobile number
             </label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                type="text"
-                placeholder="e.g. 9876543210"
+                id="reg-phone"
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                enterKeyHint="next"
+                placeholder="10-digit number, e.g. 9876543210"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} // Clean up non-digits
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                onBlur={() => t.touch('phone')}
                 maxLength={10}
-                className={`pl-10 h-11 bg-background text-sm text-foreground rounded-xl ${
-                  phone && !isPhoneValid ? 'border-destructive/25' : 'border-input'
-                }`}
-                required
+                aria-invalid={!!shown('reg-phone', 'phone')}
+                aria-describedby="reg-phone-err"
+                className={`pl-10 ${inputBase} ${border(!!shown('reg-phone', 'phone'))}`}
               />
             </div>
-            {phone && !isPhoneValid && (
-              <p className="text-xs text-danger-soft-foreground">
-                Phone must contain exactly 10 digits
-              </p>
-            )}
+            <FieldError id="reg-phone-err">{shown('reg-phone', 'phone')}</FieldError>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Password</label>
+            <label htmlFor="reg-password" className="text-xs font-medium text-muted-foreground">
+              Password
+            </label>
             <div className="relative">
               <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                id="reg-password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••••••"
+                autoComplete="new-password"
+                enterKeyHint="next"
+                placeholder="Create a strong password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`pl-10 pr-10 h-11 bg-background text-sm text-foreground rounded-xl ${
-                  password && !isPasswordValid ? 'border-destructive/25' : 'border-input'
-                }`}
-                required
+                onBlur={() => t.touch('password')}
+                aria-invalid={!!shown('reg-password', 'password')}
+                aria-describedby="reg-password-err"
+                className={`pl-10 pr-11 ${inputBase} ${border(!!shown('reg-password', 'password'))}`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-muted-foreground cursor-pointer"
+                className="absolute right-0.5 top-1/2 flex size-10 -translate-y-1/2 cursor-pointer items-center justify-center text-muted-foreground"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+            {password ? (
+              <>
+                <PasswordMeter score={score} />
+                <p
+                  className={
+                    isPasswordValid
+                      ? 'text-xs text-success-soft-foreground'
+                      : 'text-xs text-muted-foreground'
+                  }
+                >
+                  {isPasswordValid ? 'Looks good.' : `Add ${missing.join(', ')}.`}
+                </p>
+              </>
+            ) : (
+              <FieldHint>8+ characters with upper and lower case, a number and a symbol.</FieldHint>
+            )}
+            <FieldError id="reg-password-err">
+              {!password ? shown('reg-password', 'password') : null}
+            </FieldError>
           </div>
         </div>
-
-        {/* Password Checker Display */}
-        {password && (
-          <div className="p-3 bg-muted/40 border border-border rounded-xl text-xs space-y-1">
-            <p className="font-semibold text-muted-foreground">Password strength checklist:</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-              <p
-                className={hasMinLength ? 'text-success-soft-foreground' : 'text-muted-foreground'}
-              >
-                ✔ Minimum 8 characters
-              </p>
-              <p
-                className={hasUppercase ? 'text-success-soft-foreground' : 'text-muted-foreground'}
-              >
-                ✔ At least one uppercase letter
-              </p>
-              <p
-                className={hasLowercase ? 'text-success-soft-foreground' : 'text-muted-foreground'}
-              >
-                ✔ At least one lowercase letter
-              </p>
-              <p className={hasDigit ? 'text-success-soft-foreground' : 'text-muted-foreground'}>
-                ✔ At least one number digit
-              </p>
-              <p
-                className={
-                  hasSpecialChar ? 'text-success-soft-foreground' : 'text-muted-foreground'
-                }
-              >
-                ✔ At least one special character
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* CIVIC Additional Fields */}
         {role === 'NGO_COMMUNITY' && (
           <div className="space-y-4 pt-3 border-t border-border">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                {civicOrgType === 'NGO'
-                  ? 'NGO Name'
-                  : civicOrgType === 'COMMUNITY'
-                    ? 'Community Name'
-                    : 'Forum / Publication Name'}
+              <label htmlFor="reg-org" className="text-xs font-medium text-muted-foreground">
+                {orgLabel}
               </label>
               <div className="relative">
                 <Heart className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
+                  id="reg-org"
                   type="text"
+                  autoComplete="organization"
                   placeholder={
                     civicOrgType === 'NGO'
                       ? 'e.g. Kerala Welfare Foundation'
@@ -244,10 +353,12 @@ export function StepCredentials({ w }: { w: Wizard }) {
                   }
                   value={organizationName}
                   onChange={(e) => setOrganizationName(e.target.value)}
-                  className="pl-10 h-11 bg-background border-input text-sm text-foreground rounded-xl"
-                  required
+                  onBlur={() => t.touch('org')}
+                  aria-invalid={!!shown('reg-org', 'org')}
+                  className={`pl-10 ${inputBase} ${border(!!shown('reg-org', 'org'))}`}
                 />
               </div>
+              <FieldError>{shown('reg-org', 'org')}</FieldError>
             </div>
           </div>
         )}
@@ -255,7 +366,7 @@ export function StepCredentials({ w }: { w: Wizard }) {
         {/* BUSINESS Additional Fields */}
         {role === 'BUSINESS' && (
           <div className="space-y-4 pt-3 border-t border-border">
-            {/* Single listing, or a brand whose outlets each get their own listing + plan */}
+            {/* Single listing, or a brand whose outlets each get their own listing */}
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground">
                 How is your business set up?
@@ -310,17 +421,21 @@ export function StepCredentials({ w }: { w: Wizard }) {
             {accountType === 'BRAND' && (
               <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4 ui-fade-up">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">
+                  <label htmlFor="reg-brand" className="text-xs font-medium text-muted-foreground">
                     Brand name <span className="text-danger-soft-foreground">*</span>
                   </label>
                   <Input
+                    id="reg-brand"
                     type="text"
                     placeholder="e.g. Sunrise Cafe"
                     value={brandNameInput}
                     onChange={(e) => setBrandNameInput(e.target.value)}
+                    onBlur={() => t.touch('brand')}
                     maxLength={255}
-                    className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
+                    aria-invalid={!!shown('reg-brand', 'brand')}
+                    className={`${inputBase} ${border(!!shown('reg-brand', 'brand'))}`}
                   />
+                  <FieldError>{shown('reg-brand', 'brand')}</FieldError>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">
@@ -333,7 +448,7 @@ export function StepCredentials({ w }: { w: Wizard }) {
                     value={outletLabel}
                     onChange={(e) => setOutletLabel(e.target.value)}
                     maxLength={100}
-                    className="h-11 bg-background border-input text-sm text-foreground rounded-xl"
+                    className={`${inputBase} border-input`}
                   />
                   <p className="text-xs text-muted-foreground">e.g. Kozhikode - Mavoor Road</p>
                 </div>
@@ -347,69 +462,47 @@ export function StepCredentials({ w }: { w: Wizard }) {
             )}
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Company Name</label>
+              <label htmlFor="reg-company" className="text-xs font-medium text-muted-foreground">
+                Business / trading name
+              </label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
+                  id="reg-company"
                   type="text"
+                  autoComplete="organization"
                   placeholder="e.g. Sunrise Cafe Ltd."
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="pl-10 h-11 bg-background border-input text-sm text-foreground rounded-xl"
-                  required
+                  onBlur={() => t.touch('company')}
+                  aria-invalid={!!shown('reg-company', 'company')}
+                  className={`pl-10 ${inputBase} ${border(!!shown('reg-company', 'company'))}`}
                 />
               </div>
+              <FieldError>{shown('reg-company', 'company')}</FieldError>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Category</label>
-                <div className="relative">
-                  <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  <select
-                    value={categorySlug}
-                    onChange={(e) => {
-                      setCategorySlug(e.target.value);
-                      const cat = registrationCategories.find((c) => c.slug === e.target.value);
-                      setSubcategorySlug(cat?.subcategories?.[0]?.slug || '');
-                    }}
-                    className="w-full h-11 pl-10 pr-4 border border-input text-muted-foreground rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer"
-                  >
-                    {registrationCategories.map((cat) => (
-                      <option key={cat.slug} value={cat.slug}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Subcategory</label>
-                <div className="relative">
-                  <Layers className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                  <select
-                    value={subcategorySlug}
-                    onChange={(e) => setSubcategorySlug(e.target.value)}
-                    className="w-full h-11 pl-10 pr-4 border border-input text-muted-foreground rounded-xl text-sm focus:ring-1 focus:outline-none appearance-none cursor-pointer"
-                  >
-                    {(
-                      registrationCategories.find((c) => c.slug === categorySlug)?.subcategories ||
-                      []
-                    ).map((sub) => (
-                      <option key={sub.slug} value={sub.slug}>
-                        {sub.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                What does your business do?
+              </label>
+              <CategoryPicker
+                categories={registrationCategories}
+                categorySlug={categorySlug}
+                subcategorySlug={subcategorySlug}
+                onCategory={(slug) => {
+                  setCategorySlug(slug);
+                  const cat = registrationCategories.find((c) => c.slug === slug);
+                  setSubcategorySlug(cat?.subcategories?.[0]?.slug || '');
+                }}
+                onSubcategory={setSubcategorySlug}
+              />
             </div>
 
             {/* Halal / Non-Halal — Food businesses only */}
             {categorySlug === 'food' && (
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Halal Status</label>
+                <label className="text-xs font-medium text-muted-foreground">Halal status</label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { val: 'HALAL', label: 'Halal' },
@@ -429,9 +522,7 @@ export function StepCredentials({ w }: { w: Wizard }) {
                     </button>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Displayed as a tag on your business profile.
-                </p>
+                <FieldHint>Shown as a tag on your business profile.</FieldHint>
               </div>
             )}
           </div>
@@ -440,33 +531,40 @@ export function StepCredentials({ w }: { w: Wizard }) {
 
       {/* Referral Code */}
       <div className="space-y-1.5 pt-2">
-        <label className="text-xs font-medium text-muted-foreground">
-          Referral Code <span className="text-muted-foreground">(optional)</span>
+        <label htmlFor="reg-referral" className="text-xs font-medium text-muted-foreground">
+          Referral code <span className="text-muted-foreground">(optional)</span>
         </label>
         <div className="relative">
           <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            id="reg-referral"
             type="text"
+            autoCapitalize="characters"
+            autoComplete="off"
             placeholder="Enter referral code if you have one"
             value={referralCode}
             onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
             maxLength={20}
-            className="pl-10 h-11 bg-background border-input text-sm text-foreground rounded-xl font-mono tracking-wider"
+            className={`pl-10 ${inputBase} border-input font-mono tracking-wider`}
           />
         </div>
       </div>
 
-      {/* Legal acceptance */}
-      <div className="space-y-3 pt-3 border-t border-border">
-        <label className="flex items-start gap-3 cursor-pointer group">
+      {/* Legal acceptance: one tick covers both documents */}
+      <div className="space-y-1.5 pt-3 border-t border-border">
+        <label className="flex items-start gap-3 cursor-pointer min-h-11">
           <input
+            id="reg-consent"
             type="checkbox"
-            checked={acceptedTerms}
-            onChange={(e) => setAcceptedTerms(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
-            required
+            checked={consent}
+            onChange={(e) => {
+              setAcceptedTerms(e.target.checked);
+              setAcceptedPrivacy(e.target.checked);
+            }}
+            aria-invalid={t.show('consent') && !consent}
+            className="mt-0.5 h-5 w-5 shrink-0 accent-primary cursor-pointer"
           />
-          <span className="text-xs text-muted-foreground group-hover:text-muted-foreground transition-colors leading-relaxed">
+          <span className="text-xs text-muted-foreground leading-relaxed">
             I agree to the{' '}
             <Link
               href="/terms-of-service"
@@ -476,19 +574,7 @@ export function StepCredentials({ w }: { w: Wizard }) {
             >
               Terms of Service
             </Link>{' '}
-            of Whtzup.city <span className="text-danger-soft-foreground">*</span>
-          </span>
-        </label>
-        <label className="flex items-start gap-3 cursor-pointer group">
-          <input
-            type="checkbox"
-            checked={acceptedPrivacy}
-            onChange={(e) => setAcceptedPrivacy(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-primary cursor-pointer"
-            required
-          />
-          <span className="text-xs text-muted-foreground group-hover:text-muted-foreground transition-colors leading-relaxed">
-            I have read and accept the{' '}
+            and the{' '}
             <Link
               href="/privacy-policy"
               target="_blank"
@@ -497,12 +583,13 @@ export function StepCredentials({ w }: { w: Wizard }) {
             >
               Privacy Policy
             </Link>{' '}
-            <span className="text-danger-soft-foreground">*</span>
+            of Whtzup.city <span className="text-danger-soft-foreground">*</span>
           </span>
         </label>
+        <FieldError>{t.show('consent') ? err('reg-consent') : null}</FieldError>
       </div>
 
-      <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-4 border-t border-border">
+      <WizardActions>
         <Button
           type="button"
           onClick={() => setCurrentStep(1)}
@@ -515,19 +602,21 @@ export function StepCredentials({ w }: { w: Wizard }) {
         <Button
           type="submit"
           disabled={loading}
+          onClick={() => t.touch('consent')}
           className="rounded-xl h-11 px-6 font-semibold flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity w-full sm:w-auto"
         >
           {loading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Registering...
+              <Loader2 className="h-4 w-4 animate-spin" /> Creating account...
             </>
           ) : (
             <>
-              Register Account <ArrowRight className="h-4 w-4" />
+              {role === 'BUSINESS' ? 'Create account and continue' : 'Create account'}{' '}
+              <ArrowRight className="h-4 w-4" />
             </>
           )}
         </Button>
-      </div>
+      </WizardActions>
     </form>
   );
 }

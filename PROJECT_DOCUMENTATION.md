@@ -1285,3 +1285,17 @@ live wheel and their own won tickets at the public `/spin-it` page (`GET
 - `50e40dc` — analytics: platform-wide overview for super-admin dashboard.
 - `18a39e3` — api: order literal `/users` routes before `:id` param.
 - `716228e` — storage-copy script for Supabase region migration.
+
+### 12.17 Registration flow (UX pass, 2026-10-23)
+
+`/register` (`apps/web/app/register`, helpers in `_wizard/`):
+
+- **Role first, one tap.** Tapping a role card moves on (organisations still pick their type, then Continue). `/register?role=business|customer|government|ngo` skips the role screen; `/register/business` redirects there.
+- **Inline validation.** `useTouched` shows each field's message after blur or a submit attempt; submit scrolls to and focuses the first invalid field. Password has a strength bar and a live "still needs..." line. Inputs carry `autocomplete`, `inputmode` and `enterkeyhint`.
+- **One consent tick** covers Terms and Privacy; both `acceptedTerms` and `acceptedPrivacyPolicy` are still sent.
+- **Category picker** (`category-picker.tsx`): search plus tiles and subcategory chips, fed by `/v1/categories` with the hard-coded list as fallback.
+- **Autosave** (`registration-draft.ts`, localStorage `register_draft_v1`, 7 days): fields typed before the account exists, then the profile text after it. Never the password or files. The server draft always wins on resume; the local copy only fills gaps. Cleared on account creation (identity fields) and on submit.
+- **Profile step:** address is the only required field. Certificate is optional; description, tags and logo sit in a collapsed "optional" block. A short recap shows what is attached.
+- **Mobile:** step buttons are a sticky bottom bar (`WizardActions`); errors scroll into view; a duplicate-account error offers "Sign in instead".
+- **After submit** the page shows `SubmittedPanel` (what happens next, dashboard button) instead of a timed redirect.
+- Not built, needs a decision or provider: phone OTP / magic-link sign-in, Google sign-in, an "email already registered" pre-check (it would let anyone test which emails have accounts).

@@ -31,9 +31,9 @@ export function StepAccountType({ w }: { w: Wizard }) {
   return (
     <div className="space-y-6 ui-pop">
       <div className="text-center md:text-left">
-        <h2 className="text-xl font-bold text-foreground">Select Account Class</h2>
+        <h2 className="text-xl font-bold text-foreground">How will you use Whtzup.city?</h2>
         <p className="text-xs text-muted-foreground mt-1">
-          Choose how you plan to use Whtzup.city. Select from standard roles:
+          Tap one to continue. You can change it on the next screen.
         </p>
       </div>
 
@@ -52,7 +52,7 @@ export function StepAccountType({ w }: { w: Wizard }) {
             type: 'BUSINESS',
             title: 'Company / Business',
             description:
-              'Register Kerala-based companies. Upload certificates, manage listings & campaigns.',
+              'List your business, post offers and vouchers, and see how customers respond.',
             icon: Building2,
             color: 'from-info/15 to-info/5 hover:border-info/25',
             iconColor: 'text-info-soft-foreground',
@@ -82,7 +82,11 @@ export function StepAccountType({ w }: { w: Wizard }) {
             <button
               key={item.type}
               type="button"
-              onClick={() => setRole(item.type as RegisterRole)}
+              onClick={() => {
+                setRole(item.type as RegisterRole);
+                // One tap is enough, except for organisations, which still pick their type below.
+                if (item.type !== 'NGO_COMMUNITY') setCurrentStep(2);
+              }}
               className={`p-4 sm:p-5 rounded-2xl border text-left bg-gradient-to-b ${item.color} transition cursor-pointer flex flex-col gap-3 relative ${
                 isSelected ? 'border-white scale-[1.02] shadow-xl' : 'border-border'
               }`}
@@ -145,12 +149,14 @@ export function StepAccountType({ w }: { w: Wizard }) {
           <ArrowLeft className="h-4 w-4" /> Back to Login
         </Link>
 
-        <Button
-          onClick={() => setCurrentStep(2)}
-          className="rounded-xl h-11 px-6 font-semibold hover:opacity-90 transition-opacity w-full sm:w-auto"
-        >
-          Continue <ArrowRight className="h-4 w-4 ml-1.5" />
-        </Button>
+        {role === 'NGO_COMMUNITY' && (
+          <Button
+            onClick={() => setCurrentStep(2)}
+            className="rounded-xl h-11 px-6 font-semibold hover:opacity-90 transition-opacity w-full sm:w-auto"
+          >
+            Continue <ArrowRight className="h-4 w-4 ml-1.5" />
+          </Button>
+        )}
       </div>
     </div>
   );

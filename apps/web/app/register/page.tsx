@@ -14,6 +14,7 @@ const cheapestMonthly = Math.min(
   ...CATALOGUE.filter((c) => c.kind === 'BASE').map((c) => c.monthly),
 );
 import { formatINR } from '@/lib/subscription-plans';
+import { useEffect } from 'react';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useRegisterWizard } from './_wizard/use-register-wizard';
 import { Stepper } from '@/components/system/stepper';
@@ -21,6 +22,7 @@ import { StepAccountType } from './_wizard/step-account-type';
 import { StepCredentials } from './_wizard/step-credentials';
 import { StepProfile } from './_wizard/step-profile';
 import { StepPlanPayment } from './_wizard/step-plan-payment';
+import { SubmittedPanel } from './_wizard/submitted-panel';
 
 export default function UnifiedRegisterPage() {
   const w = useRegisterWizard();
@@ -44,7 +46,15 @@ export default function UnifiedRegisterPage() {
     TOTAL_STEPS,
     error,
     success,
+    submitted,
   } = w;
+
+  // Errors appear above the form; on a phone that can be off screen, so bring them into view.
+  useEffect(() => {
+    if (error)
+      document.getElementById('reg-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [error]);
+  const duplicateAccount = /already|exists|registered|in use|duplicate/i.test(error);
 
   // Hold the UI until the resume check finishes, otherwise an existing business
   // flashes step 1 before being moved to their real step.
@@ -75,7 +85,7 @@ export default function UnifiedRegisterPage() {
   return (
     <div className="min-h-screen w-full font-sans flex flex-col">
       {/* Centered content area */}
-      <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-hidden text-foreground">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative overflow-clip text-foreground">
         {/* Ambient background decoration */}
         <div
           className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full blur-[160px] pointer-events-none"
@@ -117,29 +127,31 @@ export default function UnifiedRegisterPage() {
           </div>
 
           {/* Stepper bar */}
-          <div className="w-full rounded-card border border-border bg-card p-4 shadow-e1">
-            {/* Display only: earlier steps create the account/draft, so jumping back is done by each step's own Back button. */}
-            <Stepper steps={STEP_TITLES} current={currentStep - 1} />
+          {!submitted && (
+            <div className="w-full rounded-card border border-border bg-card p-4 shadow-e1">
+              {/* Display only: earlier steps create the account/draft, so jumping back is done by each step's own Back button. */}
+              <Stepper steps={STEP_TITLES} current={currentStep - 1} />
 
-            {/* Persistent cost context — visible from step 1, not just the payment step */}
-            {PAYMENTS_ENABLED && role === 'BUSINESS' && (
-              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between gap-2 text-xs">
-                <span className="text-muted-foreground">
-                  {isHotel ? 'Hotel listing' : 'Business listing'}
-                </span>
-                {claimLaunch ? (
-                  <span className="font-semibold text-success-soft-foreground">
-                    Launch Offer · {formatINR(launchOffer.status?.price ?? 2500)} ·{' '}
-                    {launchOffer.status?.durationDays ?? 180} days
+              {/* Persistent cost context — visible from step 1, not just the payment step */}
+              {PAYMENTS_ENABLED && role === 'BUSINESS' && (
+                <div className="mt-4 pt-3 border-t border-border flex items-center justify-between gap-2 text-xs">
+                  <span className="text-muted-foreground">
+                    {isHotel ? 'Hotel listing' : 'Business listing'}
                   </span>
-                ) : (
-                  <span className="font-semibold text-foreground">
-                    Free to list · paid plans from {formatINR(cheapestMonthly)}/mo
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+                  {claimLaunch ? (
+                    <span className="font-semibold text-success-soft-foreground">
+                      Launch Offer · {formatINR(launchOffer.status?.price ?? 2500)} ·{' '}
+                      {launchOffer.status?.durationDays ?? 180} days
+                    </span>
+                  ) : (
+                    <span className="font-semibold text-foreground">
+                      Free to list · paid plans from {formatINR(cheapestMonthly)}/mo
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Launch offer — live slot count. Generic on step 1, per-category once a business account is being created. */}
           {PAYMENTS_ENABLED &&
@@ -159,13 +171,27 @@ export default function UnifiedRegisterPage() {
 
           {/* Main Alert Banners */}
           {error && (
-            <div className="p-4 rounded-xl bg-danger-soft border border-destructive/25 text-danger-soft-foreground text-sm font-medium flex items-center gap-3">
+            <div
+              id="reg-error"
+              role="alert"
+              className="p-4 rounded-xl bg-danger-soft border border-destructive/25 text-danger-soft-foreground text-sm font-medium flex items-center gap-3"
+            >
               <AlertCircle className="h-5 w-5 shrink-0" />
-              <span>{error}</span>
+              <span>
+                {error}
+                {duplicateAccount && (
+                  <>
+                    {' '}
+                    <Link href="/login" className="underline underline-offset-2">
+                      Sign in instead
+                    </Link>
+                  </>
+                )}
+              </span>
             </div>
           )}
 
-          {success && (
+          {success && !submitted && (
             <div className="p-4 rounded-xl bg-success-soft border border-success/25 text-success-soft-foreground text-sm font-medium flex items-center gap-3">
               <CheckCircle className="h-5 w-5 shrink-0" />
               <span>{success}</span>
@@ -173,18 +199,20 @@ export default function UnifiedRegisterPage() {
           )}
 
           {/* Form Card */}
-          <Card className="backdrop-blur-xl p-6 md:p-8 rounded-2xl shadow-2xl relative overflow-hidden">
+          <Card className="backdrop-blur-xl p-6 md:p-8 rounded-2xl shadow-2xl relative">
+            {submitted && <SubmittedPanel role={role} />}
+
             {/* STEP 1: Account Type Selection */}
-            {currentStep === 1 && <StepAccountType w={w} />}
+            {!submitted && currentStep === 1 && <StepAccountType w={w} />}
 
             {/* STEP 2: Account Details & Validation */}
-            {currentStep === 2 && <StepCredentials w={w} />}
+            {!submitted && currentStep === 2 && <StepCredentials w={w} />}
 
             {/* STEP 3: Kerala Entity Profile Setup & Document Upload */}
-            {currentStep === 3 && <StepProfile w={w} />}
+            {!submitted && currentStep === 3 && <StepProfile w={w} />}
 
             {/* ── STEP 4 (business only): plan / classification, then payment ── */}
-            {currentStep === 4 && role === 'BUSINESS' && <StepPlanPayment w={w} />}
+            {!submitted && currentStep === 4 && role === 'BUSINESS' && <StepPlanPayment w={w} />}
           </Card>
         </div>
       </div>

@@ -25,6 +25,41 @@ import { RegisterRole, CivicOrgType, CATEGORIES } from './shared';
 import { useMasterCategories } from '@/hooks/use-categories';
 import { useI18n } from '@/lib/i18n/provider';
 import { buildRegistrationCategories } from '@/lib/registration-categories';
+import { clearDraft, loadDraft, saveDraft, type RegistrationDraft } from './registration-draft';
+
+/** ?role= deep links (landing page buttons) skip the role question. */
+const ROLE_PARAM: Record<string, RegisterRole> = {
+  business: 'BUSINESS',
+  customer: 'CUSTOMER',
+  government: 'GOVERNMENT',
+  govt: 'GOVERNMENT',
+  ngo: 'NGO_COMMUNITY',
+  community: 'NGO_COMMUNITY',
+  civic: 'NGO_COMMUNITY',
+};
+
+const isBlank = (v: unknown) =>
+  v == null ||
+  v === '' ||
+  (Array.isArray(v) && v.length === 0) ||
+  (typeof v === 'object' && !Array.isArray(v) && Object.keys(v as object).length === 0);
+
+/** Fill only the gaps in `server` from `local`: what the server already has always wins. */
+function fillGaps(server: any, local: any): any {
+  if (isBlank(server)) return local ?? server;
+  if (
+    typeof server === 'object' &&
+    !Array.isArray(server) &&
+    local &&
+    typeof local === 'object' &&
+    !Array.isArray(local)
+  ) {
+    const out: any = { ...server };
+    for (const k of Object.keys(local)) out[k] = fillGaps(server[k], local[k]);
+    return out;
+  }
+  return server;
+}
 
 /** All registration wizard state and handlers; the page and each step read from it. */
 export function useRegisterWizard() {
@@ -183,6 +218,50 @@ export function useRegisterWizard() {
    * at the right step instead of making them start over.
    */
   const [resuming, setResuming] = useState(true);
+  const [submitted, setSubmitted] = useState(false);
+
+  // ── Local autosave: what was typed survives a refresh, a lost connection or a closed tab ──
+  const localDraft = React.useRef<RegistrationDraft | null>(null);
+  const draftRestored = React.useRef(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    // Finishing an outlet that already exists: the server is the only source of truth there.
+    if (!params.get('outlet')) {
+      const d = loadDraft();
+      localDraft.current = d;
+      if (d) {
+        if (d.role) setRole(d.role as RegisterRole);
+        if (d.name) setName(d.name);
+        if (d.email) setEmail(d.email);
+        if (d.phone) setPhone(d.phone);
+        if (d.companyName) setCompanyName(d.companyName);
+        if (d.categorySlug) setCategorySlug(d.categorySlug);
+        if (d.subcategorySlug) setSubcategorySlug(d.subcategorySlug);
+        if (d.halalStatus) setHalalStatus(d.halalStatus);
+        if (d.referralCode) setReferralCode(d.referralCode);
+        if (d.accountType) setAccountType(d.accountType);
+        if (d.brandNameInput) setBrandNameInput(d.brandNameInput);
+        if (d.outletLabel) setOutletLabel(d.outletLabel);
+        if (d.billSeriesMode) setBillSeriesMode(d.billSeriesMode);
+        if (d.sharedPrefix) setSharedPrefix(d.sharedPrefix);
+        if (d.organizationName) setOrganizationName(d.organizationName);
+        if (d.civicOrgType) setCivicOrgType(d.civicOrgType as CivicOrgType);
+        if (d.acceptedTerms) {
+          setAcceptedTerms(true);
+          setAcceptedPrivacy(true);
+        }
+        if (d.step === 2) setCurrentStep(2);
+      }
+    }
+    // A deep link such as /register?role=business wins over the saved draft.
+    const fromLink = ROLE_PARAM[(params.get('role') || '').toLowerCase()];
+    if (fromLink) {
+      setRole(fromLink);
+      setCurrentStep(2);
+    }
+    draftRestored.current = true;
+  }, []);
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -485,9 +564,8 @@ export function useRegisterWizard() {
           return;
         }
 
-        setSuccess(
-          'Business account created! Complete your profile below to submit for verification.',
-        );
+        clearDraft();
+        setSuccess('Account created. Add your address and details below, then submit for review.');
         setCurrentStep(3);
       } else if (role === 'NGO_COMMUNITY') {
         // Civic signup — NGO / Community / News Forum
@@ -623,6 +701,8 @@ export function useRegisterWizard() {
   /** Mirror the new status into the cached session so the dashboard doesn't flash "draft". */
   const markSubmittedLocally = () => {
     if (typeof window === 'undefined') return;
+    clearDraft();
+    setSubmitted(true);
     const stored = localStorage.getItem('user_session') || localStorage.getItem('user');
     if (!stored) return;
     try {
@@ -656,8 +736,6 @@ export function useRegisterWizard() {
       const submitRes = await onboardingService.submitForVerification(businessId);
       if (submitRes.error) throw new Error(submitRes.error);
       markSubmittedLocally();
-      setSuccess('Application submitted for verification! Redirecting to your dashboard...');
-      setTimeout(() => router.push('/dashboard'), 2000);
     } catch (err: any) {
       setError(err.message || 'Could not complete registration.');
     } finally {
@@ -882,8 +960,6 @@ export function useRegisterWizard() {
           const submitRes = await onboardingService.submitForVerification(businessId);
           if (submitRes.error) throw new Error(submitRes.error);
           markSubmittedLocally();
-          setSuccess('Application submitted for verification! Redirecting to your dashboard...');
-          setTimeout(() => router.push('/dashboard'), 2000);
           setLoading(false);
           return;
         }
@@ -961,10 +1037,8 @@ export function useRegisterWizard() {
           }
         }
 
-        setSuccess('Government department onboarding details successfully registered!');
-        setTimeout(() => {
-          router.push('/government/dashboard');
-        }, 2000);
+        clearDraft();
+        setSubmitted(true);
       }
     } catch (err: any) {
       setError(err?.message || 'Onboarding file submission or registration failed.');
@@ -973,6 +1047,90 @@ export function useRegisterWizard() {
       setUploadProgress(0);
     }
   };
+
+  // Debounced autosave. Once the account exists the server holds the identity fields, so only
+  // the profile text is kept locally (never the password, never files).
+  useEffect(() => {
+    if (!draftRestored.current || resuming || submitted) return;
+    const timer = window.setTimeout(() => {
+      if (businessId) {
+        saveDraft({
+          description,
+          address,
+          city,
+          tags,
+          regDetails: regDetails as Record<string, unknown>,
+        });
+        return;
+      }
+      saveDraft({
+        step: currentStep <= 2 ? currentStep : undefined,
+        role,
+        name,
+        email,
+        phone,
+        companyName,
+        categorySlug,
+        subcategorySlug,
+        halalStatus,
+        referralCode,
+        accountType,
+        brandNameInput,
+        outletLabel,
+        billSeriesMode,
+        sharedPrefix,
+        organizationName,
+        civicOrgType,
+        acceptedTerms: acceptedTerms && acceptedPrivacy,
+      });
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [
+    resuming,
+    submitted,
+    businessId,
+    currentStep,
+    role,
+    name,
+    email,
+    phone,
+    companyName,
+    categorySlug,
+    subcategorySlug,
+    halalStatus,
+    referralCode,
+    accountType,
+    brandNameInput,
+    outletLabel,
+    billSeriesMode,
+    sharedPrefix,
+    organizationName,
+    civicOrgType,
+    acceptedTerms,
+    acceptedPrivacy,
+    description,
+    address,
+    city,
+    tags,
+    regDetails,
+  ]);
+
+  // After the server draft loaded, fill any profile field it left empty from the local copy.
+  useEffect(() => {
+    if (resuming || !businessId || !localDraft.current) return;
+    const d = localDraft.current;
+    localDraft.current = null;
+    if (d.description) setDescription((v) => v || d.description || '');
+    if (d.address && !address) {
+      setAddress(d.address);
+      if (d.city) {
+        setCity(d.city);
+        setDistrict(d.city);
+      }
+    }
+    if (d.tags?.length) setTags((v) => (v.length ? v : d.tags || []));
+    if (d.regDetails) setRegDetails((v) => fillGaps(v, d.regDetails));
+  }, [resuming, businessId]);
 
   return {
     router,
@@ -1090,6 +1248,7 @@ export function useRegisterWizard() {
     setInvoiceEmail,
     resuming,
     setResuming,
+    submitted,
     STEP_TITLES,
     TOTAL_STEPS,
     acceptedTerms,

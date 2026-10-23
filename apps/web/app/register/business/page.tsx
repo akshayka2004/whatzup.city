@@ -7,5 +7,5 @@ import { redirect } from 'next/navigation';
  * ?id=... URLs) working instead of 404ing with "Business not found".
  */
 export default function RegisterBusinessRedirect() {
-  redirect('/register');
+  redirect('/register?role=business');
 }
