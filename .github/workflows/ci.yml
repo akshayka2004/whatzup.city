@@ -97,7 +97,7 @@ jobs:
 
       # Build & Push API Image
       - name: Build and push API
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile.api
@@ -110,7 +110,7 @@ jobs:
 
       # Build & Push Worker Image
       - name: Build and push Worker
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile.worker
@@ -123,7 +123,7 @@ jobs:
 
       # Build & Push Web Client Image
       - name: Build and push Web Client
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile.frontend
@@ -138,7 +138,7 @@ jobs:
 
       # Build & Push Admin Dashboard Image
       - name: Build and push Admin Dashboard
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile.frontend
