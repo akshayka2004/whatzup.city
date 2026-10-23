@@ -10,8 +10,6 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { MailService } from './mail.service';
-import { OtpService } from './otp.service';
-import { SmsService } from './sms.service';
 import { AccessTokenStrategy } from './strategies/access-token.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 
@@ -30,15 +28,7 @@ import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    PasswordService,
-    MailService,
-    OtpService,
-    SmsService,
-    AccessTokenStrategy,
-    RefreshTokenStrategy,
-  ],
+  providers: [AuthService, PasswordService, MailService, AccessTokenStrategy, RefreshTokenStrategy],
   exports: [AuthService, PasswordService, MailService],
 })
 export class AuthModule {}

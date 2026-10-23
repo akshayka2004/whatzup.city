@@ -32,9 +32,6 @@ import { BusinessSignupDto } from './dto/business-signup.dto';
 import { CivicSignupDto } from './dto/civic-signup.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
 import { SetActiveBusinessDto } from './dto/set-active-business.dto';
-import { OtpRequestDto, OtpVerifyDto } from './dto/otp.dto';
-import { OtpService } from './otp.service';
-import { OtpLoginEnabledGuard } from '../../common/guards/otp-login-enabled.guard';
 import { ConfigService } from '@nestjs/config';
 import { clientIp } from '../../common/utils/client-ip';
 
@@ -44,7 +41,6 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
-    private readonly otpService: OtpService,
   ) {}
 
   private setCookies(res: Response, accessToken: string, refreshToken: string) {
@@ -142,41 +138,6 @@ export class AuthController {
     const result = await this.authService.login(dto, ip, userAgent);
     this.setCookies(res, result.accessToken, result.refreshToken);
 
-    return {
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-      expiresIn: result.expiresIn,
-      user: result.user,
-    };
-  }
-
-  @Public()
-  @UseGuards(OtpLoginEnabledGuard)
-  @Throttle({ long: { limit: 5, ttl: 900000 } })
-  @Post('otp/request')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Send a login code to a registered mobile number' })
-  async requestOtp(@Body() dto: OtpRequestDto, @Req() req: Request) {
-    return this.otpService.request(dto.phone, clientIp(req));
-  }
-
-  @Public()
-  @UseGuards(OtpLoginEnabledGuard)
-  @Throttle({ long: { limit: 10, ttl: 900000 } })
-  @Post('otp/verify')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login with a mobile number and the code sent to it' })
-  async verifyOtp(
-    @Body() dto: OtpVerifyDto,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const result = await this.authService.loginWithOtp(
-      dto,
-      clientIp(req),
-      req.headers['user-agent'],
-    );
-    this.setCookies(res, result.accessToken, result.refreshToken);
     return {
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
