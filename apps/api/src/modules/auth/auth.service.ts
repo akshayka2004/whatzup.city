@@ -22,10 +22,8 @@ import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { PasswordService } from './password.service';
 import { MailService } from './mail.service';
-import {
-  PRIVILEGED_ROLES,
-  SecurityAlertService,
-} from '../../common/alerts/security-alert.service';
+import { TwoFactorService } from './two-factor.service';
+import { PRIVILEGED_ROLES, SecurityAlertService } from '../../common/alerts/security-alert.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -33,7 +31,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { BusinessSignupDto } from './dto/business-signup.dto';
 import { CivicSignupDto } from './dto/civic-signup.dto';
-import { UserRoleEnum } from '@prisma/client';
+import { Prisma, UserRoleEnum } from '@prisma/client';
 import { SelectRoleDto } from './dto/select-role.dto';
 import { AvailabilityDto } from './dto/availability.dto';
 import {
@@ -72,6 +70,7 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly mailService: MailService,
     @Optional() private readonly alerts?: SecurityAlertService,
+    @Optional() private readonly twoFactor?: TwoFactorService,
   ) {}
 
   /**
@@ -445,6 +444,46 @@ export class AuthService {
       throw new UnauthorizedException('Please verify your email address before logging in.');
     }
 
+    // Second factor: no tokens until /auth/2fa/login redeems this challenge with a code.
+    if (user.twoFactorEnabledAt && this.twoFactor) {
+      return {
+        twoFactorRequired: true as const,
+        challengeToken: await this.twoFactor.createChallenge(user.id),
+      };
+    }
+
+    return this.completeLogin(user, ipAddress, userAgent);
+  }
+
+  /** Second step of a 2FA login: challenge + TOTP/recovery code → session. */
+  async loginWithTwoFactor(
+    challengeToken: string,
+    code: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    if (!this.twoFactor) throw new UnauthorizedException('Two-factor sign-in is unavailable.');
+    const userId = await this.twoFactor.redeemChallenge(challengeToken, code);
+    const user = await this.db.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      include: {
+        entities: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+    if (!user || !user.isActive) throw new UnauthorizedException('Invalid credentials');
+    return this.completeLogin(user, ipAddress, userAgent);
+  }
+
+  /** Issues tokens and records the sign-in once every factor has been checked. */
+  private async completeLogin(
+    user: Prisma.UserGetPayload<{ include: { entities: true } }>,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
     // ── Parallel: token generation + lastLoginAt update + deviceLogin ──
     const deviceType = userAgent ? this.parseDeviceType(userAgent) : 'Unknown';
     const now = new Date();
@@ -991,6 +1030,7 @@ export class AuthService {
       name: user.name,
       role: user.role,
       permissions: Array.from(permissions),
+      twoFactorEnabled: !!user.twoFactorEnabledAt,
       businessId: staffBusinessId,
       entity: activeEntity
         ? {

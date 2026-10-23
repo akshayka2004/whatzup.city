@@ -125,6 +125,11 @@ model User {
   // escalating window. Reset to 0 on a successful login.
   failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
   lockedUntil         DateTime? @map("locked_until")
+  // TOTP second factor. Secret is AES-GCM encrypted (CryptoService); recovery
+  // codes are stored as SHA-256 hashes and removed as they are used.
+  twoFactorSecret        String?   @map("two_factor_secret") @db.Text
+  twoFactorEnabledAt     DateTime? @map("two_factor_enabled_at")
+  twoFactorRecoveryCodes String[]  @default([]) @map("two_factor_recovery_codes")
   lastFailedLoginAt   DateTime? @map("last_failed_login_at")
   referralCode         String?      @unique @map("referral_code") @db.VarChar(20)
   referredBy           String?      @map("referred_by") @db.Uuid

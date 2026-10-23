@@ -42,6 +42,14 @@ function persistUser(user: User): void {
   localStorage.setItem('user', JSON.stringify(user));
 }
 
+/** Password accepted; the account needs a second factor before it gets a session. */
+export class TwoFactorRequiredError extends Error {
+  constructor(public readonly challengeToken: string) {
+    super('Enter the code from your authenticator app.');
+    this.name = 'TwoFactorRequiredError';
+  }
+}
+
 class AuthService {
   async getCurrentUser(): Promise<User | null> {
     if (typeof window === 'undefined') return null;
@@ -104,7 +112,8 @@ class AuthService {
   }
 
   /**
-   * Sign in — real API only. Throws on failure with API message.
+   * Sign in — real API only. Throws on failure with API message, or
+   * TwoFactorRequiredError when the account needs an authenticator code next.
    */
   async signIn(email: string, password: string): Promise<User | null> {
     const response = await apiService.post<any>('/v1/auth/login', { email, password });
@@ -116,7 +125,23 @@ class AuthService {
       }
       throw new Error(response.error || "We couldn't sign you in. Please try again.");
     }
-    const u = response.data.user;
+    if (response.data.twoFactorRequired) {
+      throw new TwoFactorRequiredError(response.data.challengeToken);
+    }
+    return this.storeLogin(response.data);
+  }
+
+  /** Second sign-in step: the challenge from signIn() plus an authenticator or recovery code. */
+  async completeTwoFactor(challengeToken: string, code: string): Promise<User | null> {
+    const response = await apiService.post<any>('/v1/auth/2fa/login', { challengeToken, code });
+    if (response.error || !response.data) {
+      throw new Error(response.error || "That code didn't work. Try again.");
+    }
+    return this.storeLogin(response.data);
+  }
+
+  private storeLogin(data: any): User {
+    const u = data.user;
     const apiUser: User = {
       id: u.id,
       email: u.email,
@@ -124,11 +149,11 @@ class AuthService {
       role: mapRbacToRole(u.role),
       rbacRole: u.role,
       createdAt: new Date(),
-      // response.data.businessId — set for staff/moderator accounts (no entity)
+      // data.businessId — set for staff/moderator accounts (no entity)
       // u.businessId — set on the user sub-object (mirrors the same)
       // entity fallback — for business owners with entity
       businessId:
-        response.data.businessId ||
+        data.businessId ||
         u.businessId ||
         (u.entity?.type === 'BUSINESS' ? u.entity.id : undefined),
       entity: u.entity || null,

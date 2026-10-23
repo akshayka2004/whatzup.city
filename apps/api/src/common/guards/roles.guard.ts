@@ -6,6 +6,7 @@ import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { UserRole } from '@saas/types';
+import { twoFactorRequiredFor } from '../utils/two-factor-policy';
 
 // Roles only outrank each other within their own ladder. The old single
 // hierarchy let self-registered government, civic and specialty accounts
@@ -63,6 +64,15 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException(
         `Requires one of: ${requiredRoles.join(', ')}. Your role: ${user.role}`,
       );
+    }
+
+    // Role-gated routes are where admin power lives; enrolment is enforced here
+    // (the 2FA setup endpoints themselves only need a signed-in user).
+    if (twoFactorRequiredFor(user.role) && !user.twoFactorEnabled) {
+      throw new ForbiddenException({
+        message: 'Turn on two-factor sign-in to use admin tools.',
+        code: 'TWO_FACTOR_SETUP_REQUIRED',
+      });
     }
 
     return true;

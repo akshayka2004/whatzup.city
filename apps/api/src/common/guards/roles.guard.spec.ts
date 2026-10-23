@@ -1,4 +1,4 @@
-import { roleSatisfies } from './roles.guard';
+import { RolesGuard, roleSatisfies } from './roles.guard';
 
 describe('roleSatisfies', () => {
   it('ranks business roles among themselves', () => {
@@ -28,5 +28,33 @@ describe('roleSatisfies', () => {
     expect(roleSatisfies('INFLUENCER', 'USER')).toBe(true);
     expect(roleSatisfies('GOVERNMENT_ADMIN', 'MASTER_ADMIN')).toBe(false);
     expect(roleSatisfies('PLATFORM_STAFF', 'PLATFORM_STAFF')).toBe(true);
+  });
+});
+
+describe('RolesGuard two-factor enforcement', () => {
+  const guardFor = (user: Record<string, unknown>) => {
+    const reflector = { getAllAndOverride: () => ['SUPER_ADMIN'] } as any;
+    const ctx = {
+      getHandler: () => null,
+      getClass: () => null,
+      switchToHttp: () => ({ getRequest: () => ({ user }) }),
+    } as any;
+    return () => new RolesGuard(reflector).canActivate(ctx);
+  };
+
+  afterEach(() => {
+    delete process.env.ADMIN_2FA_REQUIRED;
+  });
+
+  it('lets admins through when enforcement is off', () => {
+    expect(guardFor({ role: 'SUPER_ADMIN', twoFactorEnabled: false })()).toBe(true);
+  });
+
+  it('blocks admins without 2FA when ADMIN_2FA_REQUIRED=true', () => {
+    process.env.ADMIN_2FA_REQUIRED = 'true';
+    expect(guardFor({ role: 'SUPER_ADMIN', twoFactorEnabled: false })).toThrow(
+      'Turn on two-factor sign-in',
+    );
+    expect(guardFor({ role: 'SUPER_ADMIN', twoFactorEnabled: true })()).toBe(true);
   });
 });

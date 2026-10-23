@@ -185,6 +185,14 @@ class ApiService {
 
       if (!response.ok) {
         const info = await readErrorInfo(response);
+        // Admin routes refuse until the account has two-factor sign-in on.
+        if (
+          info.code === 'TWO_FACTOR_SETUP_REQUIRED' &&
+          typeof window !== 'undefined' &&
+          window.location.pathname !== '/account/security'
+        ) {
+          window.location.assign('/account/security?required=1');
+        }
         return {
           data: null as unknown as T,
           error: info.message,

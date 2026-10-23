@@ -21,6 +21,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { TurnstileGuard } from '../../common/guards/turnstile.guard';
+import { TwoFactorService } from './two-factor.service';
+import { TwoFactorCodeDto, TwoFactorDisableDto, TwoFactorLoginDto } from './dto/two-factor.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -43,6 +45,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly twoFactor: TwoFactorService,
   ) {}
 
   private setCookies(res: Response, accessToken: string, refreshToken: string) {
@@ -141,6 +144,8 @@ export class AuthController {
     const userAgent = req.headers['user-agent'];
 
     const result = await this.authService.login(dto, ip, userAgent);
+    // Password was right but a second factor is needed: no cookies yet.
+    if ('twoFactorRequired' in result) return result;
     this.setCookies(res, result.accessToken, result.refreshToken);
 
     return {
@@ -149,6 +154,79 @@ export class AuthController {
       expiresIn: result.expiresIn,
       user: result.user,
     };
+  }
+
+  @Public()
+  @Throttle({ long: { limit: 10, ttl: 900000 } })
+  @Post('2fa/login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Finish a two-factor login with an authenticator or recovery code' })
+  async twoFactorLogin(
+    @Body() dto: TwoFactorLoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.loginWithTwoFactor(
+      dto.challengeToken,
+      dto.code,
+      clientIp(req),
+      req.headers['user-agent'],
+    );
+    this.setCookies(res, result.accessToken, result.refreshToken);
+    return {
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      expiresIn: result.expiresIn,
+      user: result.user,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('2fa')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Two-factor status for the signed-in user' })
+  twoFactorStatus(@CurrentUser('id') userId: string) {
+    return this.twoFactor.status(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ long: { limit: 10, ttl: 900000 } })
+  @Post('2fa/setup')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Start two-factor setup (returns the authenticator secret)' })
+  twoFactorSetup(@CurrentUser('id') userId: string) {
+    return this.twoFactor.setup(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ long: { limit: 10, ttl: 900000 } })
+  @Post('2fa/enable')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Confirm setup with a code; returns one-time recovery codes' })
+  twoFactorEnable(@CurrentUser('id') userId: string, @Body() dto: TwoFactorCodeDto) {
+    return this.twoFactor.enable(userId, dto.code);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ long: { limit: 5, ttl: 900000 } })
+  @Post('2fa/disable')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Turn two-factor off (password + code)' })
+  twoFactorDisable(@CurrentUser('id') userId: string, @Body() dto: TwoFactorDisableDto) {
+    return this.twoFactor.disable(userId, dto.password, dto.code);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ long: { limit: 5, ttl: 900000 } })
+  @Post('2fa/recovery-codes')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Replace recovery codes (needs an authenticator code)' })
+  twoFactorRecoveryCodes(@CurrentUser('id') userId: string, @Body() dto: TwoFactorCodeDto) {
+    return this.twoFactor.regenerateRecoveryCodes(userId, dto.code);
   }
 
   @Public()
