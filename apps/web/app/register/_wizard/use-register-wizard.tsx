@@ -455,8 +455,8 @@ export function useRegisterWizard() {
   const isPasswordValid =
     hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSpecialChar;
 
-  // Phone Validation Helper (exactly 10 digits)
-  const isPhoneValid = /^\d{10}$/.test(phone);
+  // Phone: exactly 10 digits. Customers may leave it out; everyone else needs it for contact.
+  const isPhoneValid = phone === '' ? role === 'CUSTOMER' : /^\d{10}$/.test(phone);
 
   // Email Validation Helper
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -476,7 +476,11 @@ export function useRegisterWizard() {
       return;
     }
     if (!isPhoneValid) {
-      setError('Phone number must contain exactly 10 digits.');
+      setError(
+        phone === ''
+          ? 'Mobile number is required.'
+          : 'Mobile number must contain exactly 10 digits.',
+      );
       return;
     }
     if (!isPasswordValid) {

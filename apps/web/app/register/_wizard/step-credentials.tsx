@@ -138,7 +138,9 @@ export function StepCredentials({ w }: { w: Wizard }) {
     [
       'reg-phone',
       !phone
-        ? 'Enter your 10-digit mobile number.'
+        ? role === 'CUSTOMER'
+          ? null
+          : 'Enter your 10-digit mobile number.'
         : isPhoneValid
           ? null
           : `${phone.length} of 10 digits entered.`,
@@ -258,7 +260,7 @@ export function StepCredentials({ w }: { w: Wizard }) {
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label htmlFor="reg-phone" className="text-xs font-medium text-muted-foreground">
-              Mobile number
+              Mobile number{role === 'CUSTOMER' && ' (optional)'}
             </label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
