@@ -43,6 +43,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { MediaModule } from './modules/media/media.module';
 import { SearchModule } from './modules/search/search.module';
 import { HealthModule } from './modules/health/health.module';
+import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { OcrModule } from './modules/ocr/ocr.module';
@@ -170,6 +171,7 @@ import { GeoModule } from './common/geo/geo.module';
     MediaModule,
     SearchModule,
     HealthModule,
+    MaintenanceModule,
     VerificationModule,
     DashboardModule,
     OcrModule,
