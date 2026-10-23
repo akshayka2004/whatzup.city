@@ -13,19 +13,32 @@ export const DEFAULT_LOCALE: Locale = 'en';
 export const LOCALE_STORAGE_KEY = 'viewer_locale';
 
 type Dict = Record<string, string>;
-type AreaMessages = { en: Record<string, string>; ml: Record<string, string> };
+type AreaMessages = { en: Record<string, string> };
 
 /**
- * Add a page's messages by creating `messages/<area>.ts` exporting `{ en, ml }`
- * and listing it here. English is the source of truth: a key missing from `ml`
- * silently falls back to English, so a half-translated page never shows raw keys.
+ * Add a page's messages by creating `messages/<area>.ts` exporting `{ en }` plus
+ * `messages/<area>.ml.ts` (merged in ./ml.ts), and listing the English file here.
+ * English is the source of truth: a key missing from Malayalam silently falls back
+ * to English, so a half-translated page never shows raw keys.
  */
 const AREAS: AreaMessages[] = [common as unknown as AreaMessages, publicPages, publicMore];
 
+/** Malayalam starts empty and is filled by loadLocale('ml'), so English visitors never download it. */
 export const MESSAGES: Record<Locale, Dict> = {
   en: Object.assign({}, ...AREAS.map((a) => a.en)),
-  ml: Object.assign({}, ...AREAS.map((a) => a.ml)),
+  ml: {},
 };
+
+let mlLoad: Promise<void> | null = null;
+
+/** Resolves once `locale`'s strings are in MESSAGES (immediately for English). */
+export function loadLocale(locale: Locale): Promise<void> {
+  if (locale !== 'ml') return Promise.resolve();
+  mlLoad ??= import('./ml').then((m) => {
+    Object.assign(MESSAGES.ml, m.ML);
+  });
+  return mlLoad;
+}
 
 export function translate(
   locale: Locale,
