@@ -20,6 +20,7 @@ import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
+import { TurnstileGuard } from '../../common/guards/turnstile.guard';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -84,6 +85,7 @@ export class AuthController {
 
   @Public()
   @Throttle({ long: { limit: 5, ttl: 3600000 } })
+  @UseGuards(TurnstileGuard)
   @Post('signup')
   @ApiOperation({ summary: 'Register a new user account' })
   async signup(@Body() dto: SignupDto, @Res({ passthrough: true }) res: Response) {
@@ -97,6 +99,7 @@ export class AuthController {
 
   @Public()
   @Throttle({ long: { limit: 5, ttl: 3600000 } })
+  @UseGuards(TurnstileGuard)
   @Post('business/signup')
   @ApiOperation({ summary: 'Register a new business tenant and owner account' })
   async businessSignup(
@@ -125,6 +128,7 @@ export class AuthController {
 
   @Public()
   @Throttle({ long: { limit: 5, ttl: 900000 } })
+  @UseGuards(TurnstileGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login with email and password' })
@@ -216,6 +220,7 @@ export class AuthController {
 
   @Public()
   @Throttle({ long: { limit: 3, ttl: 900000 } })
+  @UseGuards(TurnstileGuard)
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset email' })
@@ -242,6 +247,8 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ long: { limit: 5, ttl: 3600000 } })
+  @UseGuards(TurnstileGuard)
   @Post('civic/signup')
   @ApiOperation({ summary: 'Register NGO / Community / News Forum account' })
   async civicSignup(@Body() dto: CivicSignupDto, @Res({ passthrough: true }) res: Response) {

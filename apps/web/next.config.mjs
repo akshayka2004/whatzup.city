@@ -11,15 +11,17 @@ process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY ||= 'whtzup-city-stable-server-ac
 // defeat ISR); everything else is pinned to our origin and the few hosts we use:
 // Supabase Storage (images, signed uploads, PDF previews) and OpenFreeMap tiles.
 const SUPABASE = 'https://*.supabase.co';
+// Cloudflare Turnstile (bot check on sign-up / login), loaded on demand.
+const TURNSTILE = 'https://challenges.cloudflare.com';
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline' ${TURNSTILE}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  `connect-src 'self' ${SUPABASE} https://tiles.openfreemap.org`,
+  `connect-src 'self' ${SUPABASE} https://tiles.openfreemap.org ${TURNSTILE}`,
   "worker-src 'self' blob:",
-  `frame-src 'self' ${SUPABASE}`,
+  `frame-src 'self' ${SUPABASE} ${TURNSTILE}`,
   `media-src 'self' blob: ${SUPABASE}`,
   "object-src 'none'",
   "base-uri 'self'",

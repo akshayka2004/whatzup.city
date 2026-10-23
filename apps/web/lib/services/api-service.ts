@@ -4,6 +4,7 @@
 // ============================================================
 
 import { hasSessionHint } from '../session-hint';
+import { getTurnstileToken, needsTurnstile } from '../turnstile';
 
 export interface ApiResponse<T> {
   data: T;
@@ -153,9 +154,14 @@ class ApiService {
     skipAuthRetry = false,
   ): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (needsTurnstile(method, endpoint)) {
+      const token = await getTurnstileToken();
+      if (token) headers['cf-turnstile-response'] = token;
+    }
     const init: RequestInit = {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       credentials: 'include',
       body: body !== undefined ? JSON.stringify(body) : undefined,
     };
