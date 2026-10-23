@@ -29,9 +29,18 @@ export function isLocalPeer(req: IpRequest): boolean {
   return !ip || LOOPBACK.test(ip);
 }
 
-/** IP named by our own proxies, or undefined when the request carries none. */
+/**
+ * IP named by our own proxies, or undefined when the request carries none.
+ *
+ * TRUSTED_IP_HEADER pins the lookup to a single header that the edge proxy always
+ * overwrites (nginx: `proxy_set_header X-Real-IP $remote_addr` with real_ip from
+ * Cloudflare ranges). Without it, a caller reaching nginx directly can pick any
+ * cf-connecting-ip / X-Forwarded-For value and land in a fresh rate-limit bucket.
+ */
 export function forwardedIp(req: IpRequest): string | undefined {
   const h = req.headers;
+  const pinned = process.env.TRUSTED_IP_HEADER?.trim().toLowerCase();
+  if (pinned) return header(h, pinned)?.split(',')[0]?.trim() || undefined;
   return (
     header(h, 'cf-connecting-ip') ||
     header(h, 'x-real-ip') ||

@@ -11,9 +11,22 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { RedisService } from '../../common/redis/redis.service';
 import { AuthService } from '../auth/auth.service';
+import { clientIp } from '../../common/utils/client-ip';
+
+// Read at handshake time: the decorator is evaluated before ConfigModule loads .env.
+function allowedOrigin(
+  origin: string | undefined,
+  cb: (err: Error | null, allow?: boolean) => void,
+) {
+  const allowed = (process.env.CORS_ORIGINS || 'http://localhost:3000')
+    .split(',')
+    .map((o) => o.trim());
+  // Non-browser clients send no Origin; they still need a valid token below.
+  cb(null, !origin || allowed.includes(origin));
+}
 
 @WebSocketGateway({
-  cors: { origin: '*' },
+  cors: { origin: allowedOrigin, credentials: true },
   namespace: '/realtime',
 })
 export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -34,9 +47,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     try {
       // 1. WebSocket rate limiting by IP (max 20 connections per 10s)
       const ip =
-        (client.handshake.headers['x-forwarded-for'] as string) ||
-        client.handshake.address ||
-        'unknown';
+        clientIp({
+          headers: client.handshake.headers,
+          socket: { remoteAddress: client.handshake.address },
+        }) || 'unknown';
       const rateLimitKey = `ws-rate-limit:${ip}`;
       const currentVal = await this.redisService.incr(rateLimitKey);
       if (currentVal === 1) {

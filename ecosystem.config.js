@@ -10,8 +10,8 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 4001,
-        // HTTP bare-metal deployment — cookies must NOT require HTTPS
-        COOKIE_SECURE: 'false',
+        // Served only over HTTPS (Cloudflare + HSTS), so auth cookies are Secure.
+        COOKIE_SECURE: 'true',
         ENFORCE_EMAIL_VERIFICATION: 'false',
       },
     },
@@ -24,7 +24,7 @@ module.exports = {
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        COOKIE_SECURE: 'false',
+        COOKIE_SECURE: 'true',
       },
     },
     {
@@ -40,7 +40,9 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
-        HOSTNAME: '0.0.0.0',
+        // Loopback only: nginx is the sole public entry point. Binding 0.0.0.0
+        // let callers skip Cloudflare/nginx and spoof forwarding headers.
+        HOSTNAME: '127.0.0.1',
         // Proxy target for /api/* rewrites — bare-metal API on port 4001
         API_URL: 'http://localhost:4001',
       },
@@ -55,6 +57,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 6001,
+        HOST: '127.0.0.1',
         FLOOD_RELIEF_URL: 'https://floodrelief.whtzup.city',
         MARKETPLACE_URL: 'https://platform.whtzup.city',
       },
