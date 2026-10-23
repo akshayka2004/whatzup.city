@@ -42,7 +42,11 @@ const PUBLIC = [
   '/design',
 ];
 const ROLES = {
-  user: { rbac: 'USER', role: 'user', routes: ['/profile', '/favorites', '/notifications'] },
+  user: {
+    rbac: 'USER',
+    role: 'user',
+    routes: ['/profile', '/favorites', '/notifications', '/account/security'],
+  },
   business: {
     rbac: 'BUSINESS_OWNER',
     role: 'business',
@@ -93,6 +97,7 @@ const ROLES = {
       '/super-admin/events',
       '/super-admin/health',
       '/super-admin/tenants',
+      '/account/security',
     ],
   },
   staff: {
