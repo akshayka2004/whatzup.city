@@ -346,7 +346,7 @@ describe('OnboardingVerificationService', () => {
 
       expect(mockDb.business.update).toHaveBeenCalledWith({
         where: { id: 'biz-123' },
-        data: { status: 'REJECTED' },
+        data: { status: 'REJECTED', isVerified: false },
       });
 
       expect(mockDb.uploadedDocument.updateMany).toHaveBeenCalledWith({
