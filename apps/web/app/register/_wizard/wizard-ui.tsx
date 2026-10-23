@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { Children, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /** Inline message under a field; announced to screen readers when it appears. */
 export function FieldError({ id, children }: { id?: string; children?: ReactNode }) {
-  if (!children) return null;
+  if (Children.toArray(children).length === 0) return null;
   return (
     <p id={id} role="alert" className="text-xs text-danger-soft-foreground">
       {children}

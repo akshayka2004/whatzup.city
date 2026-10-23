@@ -30,6 +30,7 @@ import { BusinessSignupDto } from './dto/business-signup.dto';
 import { CivicSignupDto } from './dto/civic-signup.dto';
 import { UserRoleEnum } from '@prisma/client';
 import { SelectRoleDto } from './dto/select-role.dto';
+import { AvailabilityDto } from './dto/availability.dto';
 import {
   masterTenantId,
   resolveMasterCategory,
@@ -499,6 +500,60 @@ export class AuthService {
           : null,
       },
     };
+  }
+
+  /**
+   * Sign-up pre-check: is this email or phone already taken? Applies the same rules the sign-up
+   * calls enforce, so "available" here means that sign-up will not reject it for this reason.
+   *  - email: any live account, any tenant (business and civic sign-up check it globally)
+   *  - phone, BUSINESS: any live user or business with exactly this number
+   *  - phone, CUSTOMER: any live customer in the default tenant
+   *  - phone, OTHER (government, NGO): not checked at sign-up, so never reported taken
+   * Answers a yes/no per field, so it is rate limited per IP.
+   */
+  async checkAvailability(dto: AvailabilityDto, ipAddress = 'unknown') {
+    const ipKey = `availability:ip:${ipAddress}`;
+    const count = await this.redisService.incr(ipKey);
+    if (count === 1) await this.redisService.expire(ipKey, 3600);
+    if (count > 60) {
+      throw new HttpException('Too many checks. Try again later.', HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    const out: { emailTaken?: boolean; phoneTaken?: boolean } = {};
+
+    const email = dto.email?.toLowerCase().trim();
+    if (email) {
+      // tenant-scope-ok: sign-up rejects a duplicate email across all tenants; selects id only
+      const user = await this.db.user.findFirst({
+        where: { email, deletedAt: null },
+        select: { id: true },
+      });
+      out.emailTaken = !!user;
+    }
+
+    const phone = dto.phone?.trim();
+    if (phone) {
+      if (dto.kind === 'BUSINESS') {
+        const [user, biz] = await Promise.all([
+          this.db.user.findFirst({ where: { phone, deletedAt: null }, select: { id: true } }),
+          // tenant-scope-ok: sign-up rejects a duplicate phone across all tenants; selects id only
+          this.db.business.findFirst({ where: { phone, deletedAt: null }, select: { id: true } }),
+        ]);
+        out.phoneTaken = !!(user || biz);
+      } else if (dto.kind === 'CUSTOMER') {
+        const tenant = await this.db.tenant.findFirst({ select: { id: true } });
+        const customer = tenant
+          ? await this.db.customer.findFirst({
+              where: { tenantId: tenant.id, phone, deletedAt: null },
+              select: { id: true },
+            })
+          : null;
+        out.phoneTaken = !!customer;
+      } else {
+        out.phoneTaken = false;
+      }
+    }
+    return out;
   }
 
   async refreshTokens(refreshToken: string, ipAddress?: string, userAgent?: string) {

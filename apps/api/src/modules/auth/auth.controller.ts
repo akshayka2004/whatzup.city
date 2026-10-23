@@ -32,6 +32,7 @@ import { BusinessSignupDto } from './dto/business-signup.dto';
 import { CivicSignupDto } from './dto/civic-signup.dto';
 import { SelectRoleDto } from './dto/select-role.dto';
 import { SetActiveBusinessDto } from './dto/set-active-business.dto';
+import { AvailabilityDto } from './dto/availability.dto';
 import { ConfigService } from '@nestjs/config';
 import { clientIp } from '../../common/utils/client-ip';
 
@@ -144,6 +145,15 @@ export class AuthController {
       expiresIn: result.expiresIn,
       user: result.user,
     };
+  }
+
+  @Public()
+  @Throttle({ long: { limit: 30, ttl: 900000 } })
+  @Post('availability')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Is this email or phone already registered? (sign-up pre-check)' })
+  async availability(@Body() dto: AvailabilityDto, @Req() req: Request) {
+    return this.authService.checkAvailability(dto, clientIp(req));
   }
 
   @Public()

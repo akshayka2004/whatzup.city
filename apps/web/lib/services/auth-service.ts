@@ -137,6 +137,20 @@ class AuthService {
     return apiUser;
   }
 
+  /**
+   * Is this email or phone already registered? Null when the check could not be made, so the
+   * form simply lets the person carry on (sign-up itself still rejects a duplicate).
+   */
+  async checkAvailability(data: {
+    email?: string;
+    phone?: string;
+    kind: 'BUSINESS' | 'CUSTOMER' | 'OTHER';
+  }): Promise<{ emailTaken?: boolean; phoneTaken?: boolean } | null> {
+    const response = await apiService.post<any>('/v1/auth/availability', data);
+    if (response.error || !response.data) return null;
+    return response.data;
+  }
+
   async signUp(email: string, password: string, name: string): Promise<User | null> {
     const response = await apiService.post<any>('/v1/auth/signup', { email, password, name });
     if (response.error || !response.data) {

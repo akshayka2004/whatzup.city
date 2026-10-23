@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { authService } from '@/lib/services/auth-service';
 // mock-db removed — all registration flows through real API
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -98,6 +100,35 @@ export function StepCredentials({ w }: { w: Wizard }) {
   } = w;
 
   const t = useTouched();
+
+  // Already-registered email or phone, found by asking the API when the field is left. Stored as
+  // the value that was found taken, so editing the field clears the message by itself.
+  const [taken, setTaken] = useState<{ email?: string; phone?: string }>({});
+  const emailTaken = !!email && taken.email === email;
+  const phoneTaken = !!phone && taken.phone === phone;
+  const asked = useRef(new Set<string>());
+  const checkTaken = async (field: 'email' | 'phone') => {
+    const value = field === 'email' ? email : phone;
+    if (!value || !(field === 'email' ? isEmailValid : isPhoneValid)) return;
+    const key = field + ':' + value;
+    if (asked.current.has(key)) return;
+    asked.current.add(key);
+    const kind = role === 'BUSINESS' ? 'BUSINESS' : role === 'CUSTOMER' ? 'CUSTOMER' : 'OTHER';
+    const res = await authService.checkAvailability({ [field]: value, kind });
+    if (!res) asked.current.delete(key);
+    if (field === 'email' ? res?.emailTaken : res?.phoneTaken) {
+      setTaken((p) => ({ ...p, [field]: value }));
+    }
+  };
+  // Check once typing pauses; this also covers values restored from a saved draft.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void checkTaken('email');
+      void checkTaken('phone');
+    }, 700);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email, phone]);
   const consent = acceptedTerms && acceptedPrivacy;
   const score = [hasMinLength, hasUppercase, hasLowercase, hasDigit, hasSpecialChar].filter(
     Boolean,
@@ -131,9 +162,11 @@ export function StepCredentials({ w }: { w: Wizard }) {
       'reg-email',
       !email
         ? 'Enter your email address.'
-        : isEmailValid
-          ? null
-          : 'That email does not look right. It should be like name@example.com.',
+        : !isEmailValid
+          ? 'That email does not look right. It should be like name@example.com.'
+          : emailTaken
+            ? 'This email is already registered.'
+            : null,
     ],
     [
       'reg-phone',
@@ -141,9 +174,11 @@ export function StepCredentials({ w }: { w: Wizard }) {
         ? role === 'CUSTOMER'
           ? null
           : 'Enter your 10-digit mobile number.'
-        : isPhoneValid
-          ? null
-          : `${phone.length} of 10 digits entered.`,
+        : !isPhoneValid
+          ? `${phone.length} of 10 digits entered.`
+          : phoneTaken
+            ? 'This mobile number is already registered.'
+            : null,
     ],
     [
       'reg-password',
@@ -247,13 +282,26 @@ export function StepCredentials({ w }: { w: Wizard }) {
                 placeholder="adarsh@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value.trim())}
-                onBlur={() => t.touch('email')}
+                onBlur={() => {
+                  t.touch('email');
+                  void checkTaken('email');
+                }}
                 aria-invalid={!!shown('reg-email', 'email')}
                 aria-describedby="reg-email-err"
                 className={`pl-10 ${inputBase} ${border(!!shown('reg-email', 'email'))}`}
               />
             </div>
-            <FieldError id="reg-email-err">{shown('reg-email', 'email')}</FieldError>
+            <FieldError id="reg-email-err">
+              {shown('reg-email', 'email')}
+              {emailTaken && t.show('email') && (
+                <>
+                  {' '}
+                  <Link href="/login" className="underline underline-offset-2">
+                    Sign in instead
+                  </Link>
+                </>
+              )}
+            </FieldError>
           </div>
         </div>
 
@@ -273,14 +321,27 @@ export function StepCredentials({ w }: { w: Wizard }) {
                 placeholder="10-digit number, e.g. 9876543210"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                onBlur={() => t.touch('phone')}
+                onBlur={() => {
+                  t.touch('phone');
+                  void checkTaken('phone');
+                }}
                 maxLength={10}
                 aria-invalid={!!shown('reg-phone', 'phone')}
                 aria-describedby="reg-phone-err"
                 className={`pl-10 ${inputBase} ${border(!!shown('reg-phone', 'phone'))}`}
               />
             </div>
-            <FieldError id="reg-phone-err">{shown('reg-phone', 'phone')}</FieldError>
+            <FieldError id="reg-phone-err">
+              {shown('reg-phone', 'phone')}
+              {phoneTaken && t.show('phone') && (
+                <>
+                  {' '}
+                  <Link href="/login" className="underline underline-offset-2">
+                    Sign in instead
+                  </Link>
+                </>
+              )}
+            </FieldError>
           </div>
 
           <div className="space-y-1.5">
