@@ -15,6 +15,7 @@ export async function assertBusinessAccess(
   db: DatabaseService,
   businessId: string,
   user: AccessUser,
+  opts: { managersOnly?: boolean } = {},
 ) {
   const business = await db.business.findFirst({
     where: { deletedAt: null, OR: [{ id: businessId }, { entityId: businessId }] },
@@ -23,7 +24,16 @@ export async function assertBusinessAccess(
       tenantId: true,
       ownerId: true,
       brand: { select: { ownerId: true } },
-      staff: { where: { userId: user.id, isActive: true, deletedAt: null }, select: { id: true } },
+      staff: {
+        where: {
+          userId: user.id,
+          isActive: true,
+          deletedAt: null,
+          // Bulk personal data (e.g. the customer export) is for owners and moderators only.
+          ...(opts.managersOnly ? { role: { in: ['OWNER', 'MODERATOR'] as any } } : {}),
+        },
+        select: { id: true },
+      },
     },
   });
   if (!business) throw new NotFoundException('Business not found');

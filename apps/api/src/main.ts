@@ -15,6 +15,8 @@ import { JsonLoggerService } from './common/logger/json-logger.service';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
+    // Keeps req.rawBody for signed webhooks (signatures cover the exact bytes).
+    rawBody: true,
   });
 
   const logger = app.get(JsonLoggerService);

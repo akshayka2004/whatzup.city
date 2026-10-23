@@ -55,7 +55,8 @@ export class BusinessCustomerController {
     @Query('filter') filter?: string,
     @Query('search') search?: string,
   ) {
-    await assertBusinessAccess(this.db, businessId, user);
+    // Names, phones and emails in bulk: owners, brand owners, moderators and platform admins only.
+    await assertBusinessAccess(this.db, businessId, user, { managersOnly: true });
     const csv = await this.svc.exportCsv(businessId, filter, search);
     const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');

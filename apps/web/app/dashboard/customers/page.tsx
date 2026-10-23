@@ -101,6 +101,7 @@ const ago = (d?: string) => {
 
 export default function CustomersPage() {
   const { user } = useAuth();
+  const canExport = (user?.rbacRole || '') !== 'BUSINESS_STAFF';
   const businessId = user?.businessId || user?.entity?.id;
 
   const [customers, setCustomers] = useState<CustomerRecord[]>([]);
@@ -263,9 +264,12 @@ export default function CustomersPage() {
         title="Customers"
         description="Everyone who claimed an offer, redeemed a reward or had a bill verified with you."
         actions={
-          <Button variant="outline" loading={exporting} disabled={!total} onClick={exportCsv}>
-            <Download /> Export CSV
-          </Button>
+          // Bulk customer data is for owners and moderators (the API enforces it too).
+          canExport ? (
+            <Button variant="outline" loading={exporting} disabled={!total} onClick={exportCsv}>
+              <Download /> Export CSV
+            </Button>
+          ) : undefined
         }
       />
 

@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Body, Param, Query, Headers, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Query,
+  Headers,
+  UseGuards,
+  Req,
+  UnauthorizedException,
+  RawBodyRequest,
+} from '@nestjs/common';
 import { PaymentsEnabledGuard } from '../../common/guards/payments-enabled.guard';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
@@ -14,6 +26,8 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '@saas/types';
 import { Public } from '../../common/decorators/public.decorator';
+import type { Request } from 'express';
+import { isValidRazorpaySignature } from '../../common/utils/webhook-signature';
 
 @ApiTags('Payments')
 @UseGuards(PaymentsEnabledGuard)
@@ -149,7 +163,15 @@ export class PaymentsController {
   @Public()
   @Post('webhook')
   @ApiOperation({ summary: 'Razorpay payment webhooks listener endpoint' })
-  async webhook(@Body() body: any, @Headers('x-razorpay-signature') signature: string) {
+  async webhook(
+    @Req() req: RawBodyRequest<Request>,
+    @Body() body: any,
+    @Headers('x-razorpay-signature') signature: string,
+  ) {
+    // Nothing from an unsigned or wrongly signed request is ever processed.
+    if (!isValidRazorpaySignature(req.rawBody, signature, process.env.RAZORPAY_WEBHOOK_SECRET)) {
+      throw new UnauthorizedException('Invalid webhook signature');
+    }
     return this.paymentsService.handleWebhookPlaceholder(body, signature);
   }
 }
