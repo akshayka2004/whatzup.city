@@ -58,8 +58,7 @@ export function BrandSettingsCard() {
             <h3 className="text-base font-semibold text-foreground">Brand account</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Run more than one outlet? Group them under one brand. Every outlet keeps its own
-              address, hours, offers, QR code, plan and bills. You switch between them from one
-              login and share a single invoice profile.
+              address, hours, offers, QR code and bills. You switch between them from one login.
             </p>
           </div>
         </div>

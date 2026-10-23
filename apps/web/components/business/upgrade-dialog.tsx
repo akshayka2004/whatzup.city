@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Lock, Sparkles } from 'lucide-react';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 import {
   Dialog,
   DialogContent,
@@ -67,15 +68,17 @@ export function UpgradeDialog({
             onClick={() => onOpenChange(false)}
             className="ui-press inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-5 text-sm font-semibold text-foreground hover:bg-secondary"
           >
-            Not now
+            {PAYMENTS_ENABLED ? 'Not now' : 'Got it'}
           </button>
-          <Link
-            href={d.upgradeUrl || '/dashboard/subscriptions'}
-            onClick={() => onOpenChange(false)}
-            className="ui-press inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-          >
-            See plans & add-ons
-          </Link>
+          {PAYMENTS_ENABLED && (
+            <Link
+              href={d.upgradeUrl || '/dashboard/subscriptions'}
+              onClick={() => onOpenChange(false)}
+              className="ui-press inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              See plans & add-ons
+            </Link>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

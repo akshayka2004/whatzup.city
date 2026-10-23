@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common';
+import { paymentsEnabled } from '../../common/utils/payments-flag';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { addDaysKey, istDateKey, istDayStart } from '../../common/utils/ist';
@@ -30,6 +31,8 @@ export class PlanEnforcementService implements OnApplicationBootstrap, OnModuleD
   ) {}
 
   onApplicationBootstrap() {
+    // With payments dormant the single plan only limits new offers; nothing live is paused.
+    if (!paymentsEnabled()) return;
     if (process.env.PLAN_AUTOPAUSE !== 'on' || process.env.NODE_ENV === 'test') return;
     this.scheduleNext();
   }

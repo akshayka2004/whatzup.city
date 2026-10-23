@@ -53,6 +53,7 @@ import {
   Upload,
   Image as ImageIcon,
 } from 'lucide-react';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 
 /* ── Social platform config ───────────────────────────────────── */
 const PLATFORM_OPTIONS = [
@@ -344,11 +345,7 @@ export default function BusinessSettingsPage() {
       amenityDetails: amenityDetails || {},
     });
     setSavingHotel(false);
-    setHotelMsg(
-      res.error
-        ? res.error
-        : 'Hotel details saved. Changing star rating or amenities does not affect an already-active listing charge until renewal.',
-    );
+    setHotelMsg(res.error ? res.error : 'Hotel details saved.');
   };
 
   /* ── Save business profile ───────────────────────────────────── */
@@ -1001,9 +998,11 @@ export default function BusinessSettingsPage() {
                       )}
                     >
                       <div className="text-sm font-extrabold text-foreground">{star}★</div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        ₹{STAR_PRICING[star].toLocaleString('en-IN')}
-                      </div>
+                      {PAYMENTS_ENABLED && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          ₹{STAR_PRICING[star].toLocaleString('en-IN')}
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>

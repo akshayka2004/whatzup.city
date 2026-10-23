@@ -12,6 +12,7 @@ import { useEntitlements } from '@/hooks/use-entitlements';
 import { MenuPhotoPrompt } from '@/components/business/menu-photo-prompt';
 import { BrandConversionPrompt } from '@/components/business/brand-conversion-prompt';
 import { daysUntilRenewal, renewalDismissKey } from '@/components/business/subscription-paywall';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 
 type NudgeKey = 'limit' | 'renewal' | 'menu' | 'hours' | 'brand';
 
@@ -95,7 +96,7 @@ export function BusinessNudges({ enabled }: { enabled: boolean }) {
 
     const eligible: Record<NudgeKey, boolean> = {
       limit: overOffers + overVouchers > 0 && !readSession(dismissKey('limit', biz.id)),
-      renewal: renewalDue && !readSession(dismissKey('renewal', biz.id)),
+      renewal: PAYMENTS_ENABLED && renewalDue && !readSession(dismissKey('renewal', biz.id)),
       menu: isFood && !menuDismissed && menuEmpty === true,
       hours: !hasOperatingHours(biz.operatingHours) && !readSession(dismissKey('hours', biz.id)),
       brand: brandPromptDue(biz) && !readSession(dismissKey('brand', biz.id)),

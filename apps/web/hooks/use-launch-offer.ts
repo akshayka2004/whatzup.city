@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { apiService } from '@/lib/services/api-service';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 
 interface LaunchOfferStatus {
   enabled: boolean;
@@ -22,6 +23,10 @@ export function useLaunchOffer() {
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
+    if (!PAYMENTS_ENABLED) {
+      setLoading(false);
+      return;
+    }
     const res = await apiService.get<LaunchOfferStatus>('/v1/subscriptions/launch-offer');
     // A failed lookup just hides the offer; registration itself is unaffected.
     setStatus(res.error || !res.data ? null : res.data);

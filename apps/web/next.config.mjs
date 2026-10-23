@@ -3,8 +3,7 @@
 // open from a prior deploy fails with "Failed to find Server Action". Prefer an
 // env-provided key; fall back to a fixed constant (the app ships no sensitive
 // server actions, so a static key is safe here).
-process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY ||=
-  'whtzup-city-stable-server-actions-key-v1';
+process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY ||= 'whtzup-city-stable-server-actions-key-v1';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -56,9 +55,7 @@ const nextConfig = {
         ? [
             {
               source: '/_next/static/:path*',
-              headers: [
-                { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
-              ],
+              headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
             },
           ]
         : []),
@@ -81,14 +78,25 @@ const nextConfig = {
     ];
   },
 
+  // Payments are dormant: the plan, checkout, invoice and payment-admin screens are not reachable.
+  async redirects() {
+    if (process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === 'true') return [];
+    return [
+      { source: '/dashboard/subscriptions', destination: '/dashboard', permanent: false },
+      { source: '/dashboard/invoice/:id', destination: '/dashboard', permanent: false },
+      { source: '/admin/payments', destination: '/admin', permanent: false },
+      { source: '/admin/payment-approvals', destination: '/admin', permanent: false },
+      { source: '/admin/subscriptions', destination: '/admin', permanent: false },
+      { source: '/super-admin/subscriptions', destination: '/super-admin', permanent: false },
+    ];
+  },
+
   async rewrites() {
     // API_URL env var — set in PM2 ecosystem or shell env.
     // Bare-metal default: http://localhost:4001 (API and web share the VPS)
     const apiUrl =
       process.env.API_URL ||
-      (process.env.NODE_ENV === 'production'
-        ? 'http://localhost:4001'
-        : 'http://localhost:4000');
+      (process.env.NODE_ENV === 'production' ? 'http://localhost:4001' : 'http://localhost:4000');
     return [
       {
         source: '/api/:path*',

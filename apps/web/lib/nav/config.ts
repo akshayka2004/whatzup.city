@@ -43,7 +43,7 @@ import {
   Bell,
   CircleUserRound,
 } from 'lucide-react';
-import { MOVIES_ENABLED } from '@/lib/feature-flags';
+import { MOVIES_ENABLED, PAYMENTS_ENABLED } from '@/lib/feature-flags';
 
 export type NavArea =
   | 'public'
@@ -281,7 +281,9 @@ function businessNav(ctx: NavContext): NavSpec {
             ? []
             : [{ label: 'Branches', href: '/dashboard/branches', icon: GitBranch }]),
           { label: 'Team', href: '/dashboard/team', icon: UserCog },
-          { label: 'Subscription', href: '/dashboard/subscriptions', icon: CreditCard },
+          ...(PAYMENTS_ENABLED
+            ? [{ label: 'Subscription', href: '/dashboard/subscriptions', icon: CreditCard }]
+            : []),
           { label: 'Settings', href: '/dashboard/settings', icon: Settings },
         ],
       },
@@ -386,14 +388,22 @@ function adminNav(): NavSpec {
           { label: 'Categories', href: '/admin/categories', icon: Tags },
         ],
       },
-      {
-        title: 'Money',
-        items: [
-          { label: 'Payments', href: '/admin/payments', icon: CircleDollarSign },
-          { label: 'Payment Approvals', href: '/admin/payment-approvals', icon: BadgeIndianRupee },
-          { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
-        ],
-      },
+      ...(PAYMENTS_ENABLED
+        ? [
+            {
+              title: 'Money',
+              items: [
+                { label: 'Payments', href: '/admin/payments', icon: CircleDollarSign },
+                {
+                  label: 'Payment Approvals',
+                  href: '/admin/payment-approvals',
+                  icon: BadgeIndianRupee,
+                },
+                { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
+              ],
+            },
+          ]
+        : []),
       {
         title: 'Content',
         items: [
@@ -413,7 +423,9 @@ function adminNav(): NavSpec {
       },
     ],
     footer: [{ label: 'My Profile', href: '/admin/profile', icon: CircleUserRound }],
-    mobileTabs: ['/admin', '/admin/approvals', '/admin/payments', '/admin/reports'],
+    mobileTabs: PAYMENTS_ENABLED
+      ? ['/admin', '/admin/approvals', '/admin/payments', '/admin/reports']
+      : ['/admin', '/admin/approvals', '/admin/reports'],
   };
 }
 
@@ -444,11 +456,19 @@ function superAdminNav(): NavSpec {
         ],
       },
       {
-        title: 'Money',
+        title: PAYMENTS_ENABLED ? 'Money' : 'Rewards',
         items: [
-          { label: 'Payments', href: '/admin/payments', icon: CircleDollarSign },
-          { label: 'Payment Approvals', href: '/admin/payment-approvals', icon: BadgeIndianRupee },
-          { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
+          ...(PAYMENTS_ENABLED
+            ? [
+                { label: 'Payments', href: '/admin/payments', icon: CircleDollarSign },
+                {
+                  label: 'Payment Approvals',
+                  href: '/admin/payment-approvals',
+                  icon: BadgeIndianRupee,
+                },
+                { label: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
+              ]
+            : []),
           { label: 'Platform Vouchers', href: '/super-admin/platform-vouchers', icon: Gift },
         ],
       },
@@ -481,7 +501,9 @@ function superAdminNav(): NavSpec {
       },
     ],
     footer: [{ label: 'My Profile', href: '/super-admin/profile', icon: CircleUserRound }],
-    mobileTabs: ['/super-admin', '/admin/approvals', '/super-admin/businesses', '/admin/payments'],
+    mobileTabs: PAYMENTS_ENABLED
+      ? ['/super-admin', '/admin/approvals', '/super-admin/businesses', '/admin/payments']
+      : ['/super-admin', '/admin/approvals', '/super-admin/businesses'],
     mobileLabels: { '/super-admin': 'Overview', '/super-admin/businesses': 'Businesses' },
   };
 }

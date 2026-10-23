@@ -18,6 +18,7 @@ import { STAR_OPTIONS } from '@/lib/hotel-pricing';
 import { AmenityDetailsEditor } from '@/components/business/amenity-details-editor';
 import { PAYMENT_QR_SRC, PAYMENT_UPI_ID, PAYMENT_PAYEE_NAME } from '@/lib/subscription-plans';
 import { cn } from '@/lib/utils';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 import { OrderSummary, UpgradePanel } from './upgrade-panel';
 import type { Wizard } from './use-register-wizard';
 
@@ -74,12 +75,18 @@ export function StepPlanPayment({ w }: { w: Wizard }) {
           <div>
             <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
               <Layers className="h-5 w-5 text-muted-foreground" />
-              Choose how to start
+              {PAYMENTS_ENABLED ? 'Choose how to start' : 'Hotel details'}
             </h2>
-            <p className="text-xs text-muted-foreground mt-1">
-              Every business gets a free listing. No payment is needed to register. Upgrade now or
-              whenever you are ready.
-            </p>
+            {PAYMENTS_ENABLED ? (
+              <p className="text-xs text-muted-foreground mt-1">
+                Every business gets a free listing. No payment is needed to register. Upgrade now or
+                whenever you are ready.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1">
+                One last step. Tell guests what to expect, then submit your listing for review.
+              </p>
+            )}
           </div>
 
           {isHotel && (
@@ -90,8 +97,10 @@ export function StepPlanPayment({ w }: { w: Wizard }) {
                   Hotel classification &amp; services
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Shown on your listing so guests know what to expect. This is profile information
-                  and does not change what you pay.
+                  Shown on your listing so guests know what to expect.
+                  {PAYMENTS_ENABLED
+                    ? ' This is profile information and does not change what you pay.'
+                    : ''}
                 </p>
               </div>
               <div>
@@ -135,45 +144,72 @@ export function StepPlanPayment({ w }: { w: Wizard }) {
           )}
 
           {/* Primary path: Free. No payment, straight to verification. */}
-          <section className="space-y-4 rounded-2xl border-2 border-primary bg-primary/5 p-4 sm:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-lg font-extrabold text-foreground">Continue with Free</h3>
-              <span className="rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-success-soft-foreground">
-                No payment needed
-              </span>
-            </div>
-            <ul className="space-y-1.5">
-              {FREE_FEATURES.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="h-4 w-4 text-success-soft-foreground shrink-0 mt-0.5" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <Button
-              type="button"
-              onClick={handleContinueFree}
-              disabled={loading || !hotelProfileReady}
-              className="rounded-xl h-12 px-6 font-semibold flex items-center justify-center gap-2 cursor-pointer w-full"
-            >
-              {loading && !claimLaunch ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Submitting...
-                </>
-              ) : (
-                <>
-                  Continue with Free <ArrowRight className="h-4 w-4" />
-                </>
+          {!PAYMENTS_ENABLED && (
+            <section className="space-y-3">
+              <Button
+                type="button"
+                onClick={handleContinueFree}
+                disabled={loading || !hotelProfileReady}
+                className="rounded-xl h-12 px-6 font-semibold flex items-center justify-center gap-2 cursor-pointer w-full"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Submitting...
+                  </>
+                ) : (
+                  <>
+                    Submit for review <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+              {!hotelProfileReady && (
+                <p className="text-xs text-muted-foreground">
+                  Choose your hotel star classification above to continue.
+                </p>
               )}
-            </Button>
-            {!hotelProfileReady && (
-              <p className="text-xs text-muted-foreground">
-                Choose your hotel star classification above to continue.
-              </p>
-            )}
-          </section>
+            </section>
+          )}
+          {PAYMENTS_ENABLED && (
+            <section className="space-y-4 rounded-2xl border-2 border-primary bg-primary/5 p-4 sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-lg font-extrabold text-foreground">Continue with Free</h3>
+                <span className="rounded-full bg-success-soft px-3 py-1 text-xs font-semibold text-success-soft-foreground">
+                  No payment needed
+                </span>
+              </div>
+              <ul className="space-y-1.5">
+                {FREE_FEATURES.map((f) => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <CheckCircle className="h-4 w-4 text-success-soft-foreground shrink-0 mt-0.5" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Button
+                type="button"
+                onClick={handleContinueFree}
+                disabled={loading || !hotelProfileReady}
+                className="rounded-xl h-12 px-6 font-semibold flex items-center justify-center gap-2 cursor-pointer w-full"
+              >
+                {loading && !claimLaunch ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Submitting...
+                  </>
+                ) : (
+                  <>
+                    Continue with Free <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+              {!hotelProfileReady && (
+                <p className="text-xs text-muted-foreground">
+                  Choose your hotel star classification above to continue.
+                </p>
+              )}
+            </section>
+          )}
 
-          <UpgradePanel w={w} />
+          {PAYMENTS_ENABLED && <UpgradePanel w={w} />}
 
           <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-6 border-t border-border">
             <Button

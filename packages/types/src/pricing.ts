@@ -44,6 +44,13 @@ export interface CatalogueItem extends Entitlements {
 export const FREE_ENTITLEMENTS: Entitlements = { offers: 1, vouchers: 0, analytics: false };
 export const FREE_CODE = 'FREE';
 
+/**
+ * The one plan every business gets while payments are dormant: 3 live offers, 3 live vouchers,
+ * analytics included. Nothing to buy; the numbers can be raised here later.
+ */
+export const INCLUDED_PLAN_CODE = 'STANDARD';
+export const INCLUDED_PLAN_ENTITLEMENTS: Entitlements = { offers: 3, vouchers: 3, analytics: true };
+
 export const CATALOGUE: CatalogueItem[] = [
   // ── Bundles (one active per business) ──────────────────────
   {

@@ -42,6 +42,7 @@ import { KERALA_CITIES } from '@/lib/constants';
 import { OFFER_CHANNELS, OFFER_CHANNEL_LABEL, type OfferChannel } from '@saas/types';
 import { channelChipLabel, channelsOf } from '@/lib/offer-channels';
 import { cn } from '@/lib/utils';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 
 const CHANNEL_OPTIONS: { value: OfferChannel; icon: typeof Store }[] = [
   { value: 'INSTORE', icon: Store },
@@ -215,12 +216,14 @@ export default function OffersPage() {
   // Same message the API sends, built locally so the guard needs no round trip.
   const limitInfo = (): PlanErrorInfo => ({
     code: 'PLAN_LIMIT',
-    error: `Your plan allows ${ent?.offers ?? 0} live offer${ent?.offers === 1 ? '' : 's'} at a time. Pause one, or add more offers to your plan.`,
+    error: PAYMENTS_ENABLED
+      ? `Your plan allows ${ent?.offers ?? 0} live offer${ent?.offers === 1 ? '' : 's'} at a time. Pause one, or add more offers to your plan.`
+      : `You can have ${ent?.offers ?? 0} live offer${ent?.offers === 1 ? '' : 's'} at a time. Pause or end one to add another.`,
     details: {
       resource: 'offer',
       limit: ent?.offers ?? 0,
       used: ent?.usage.offers ?? 0,
-      upgradeUrl: '/dashboard/subscriptions',
+      ...(PAYMENTS_ENABLED ? { upgradeUrl: '/dashboard/subscriptions' } : {}),
     },
   });
 
@@ -454,7 +457,7 @@ export default function OffersPage() {
                   ? 'bg-surface-sunken text-muted-foreground'
                   : 'bg-warning-soft text-warning-soft-foreground',
               )}
-              title="Offers that are live right now, out of what your plan allows"
+              title="Offers that are live right now, out of the most you can have live"
             >
               {ent.usage.offers} of {ent.offers} live
             </span>

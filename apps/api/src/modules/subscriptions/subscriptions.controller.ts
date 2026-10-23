@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { PaymentsEnabledGuard } from '../../common/guards/payments-enabled.guard';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
 import { EntitlementsService } from './entitlements.service';
@@ -24,6 +25,7 @@ export class SubscriptionsController {
   ) {}
 
   @Public()
+  @UseGuards(PaymentsEnabledGuard)
   @Get('catalogue')
   @ApiOperation({ summary: 'Current plans and add-ons with prices (ex-GST)' })
   catalogue() {
@@ -41,12 +43,14 @@ export class SubscriptionsController {
     return this.entitlements.forUser(businessId, user);
   }
 
+  @UseGuards(PaymentsEnabledGuard)
   @Get('packages')
   @ApiOperation({ summary: 'List all subscription package tiers' })
   async getPackages() {
     return this.subscriptionsService.getPackages();
   }
 
+  @UseGuards(PaymentsEnabledGuard)
   @Post('businesses/:businessId/assign')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -61,12 +65,14 @@ export class SubscriptionsController {
   }
 
   @Public()
+  @UseGuards(PaymentsEnabledGuard)
   @Get('launch-offer')
   @ApiOperation({ summary: 'Launch offer: slots used per category (public)' })
   async launchOfferStatus() {
     return this.subscriptionsService.getLaunchOfferStatus();
   }
 
+  @UseGuards(PaymentsEnabledGuard)
   @Post('businesses/:businessId/claim-launch-offer')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -81,6 +87,7 @@ export class SubscriptionsController {
     return this.subscriptionsService.claimLaunchOffer(userId, tenantId, businessId);
   }
 
+  @UseGuards(PaymentsEnabledGuard)
   @Get('admin/all')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
@@ -90,6 +97,7 @@ export class SubscriptionsController {
     return this.subscriptionsService.listAllForAdmin();
   }
 
+  @UseGuards(PaymentsEnabledGuard)
   @Post('businesses/:businessId/assign-hotel')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -105,6 +113,7 @@ export class SubscriptionsController {
     return this.subscriptionsService.assignHotelPackage(userId, tenantId, businessId, dto);
   }
 
+  @UseGuards(PaymentsEnabledGuard)
   @Post('businesses/:businessId/assign-homechef')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -120,6 +129,7 @@ export class SubscriptionsController {
     return this.subscriptionsService.assignHomeChefPackage(userId, tenantId, businessId, dto);
   }
 
+  @UseGuards(PaymentsEnabledGuard)
   @Get('businesses/:businessId/active')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

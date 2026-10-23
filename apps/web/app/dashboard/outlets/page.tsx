@@ -36,6 +36,7 @@ import {
 } from '@/hooks/use-active-business';
 import { BrandConvertForm } from '@/components/business/brand-conversion-prompt';
 import { OutletStatusPill, outletDisplayName } from '@/components/business/outlet-switcher';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 
 interface OutletSummary {
   verifiedPurchases: number;
@@ -80,7 +81,7 @@ const formatDate = (iso?: string | null, withTime = false) => {
 const needsSetup = (o: BrandOutlet) =>
   o.status === 'DRAFT' ||
   o.status === 'REJECTED' ||
-  (o.status === 'PENDING_VERIFICATION' && !o.subscription);
+  (PAYMENTS_ENABLED && o.status === 'PENDING_VERIFICATION' && !o.subscription);
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -161,8 +162,8 @@ function AddOutletDialog({
         <DialogHeader>
           <DialogTitle>Add an outlet</DialogTitle>
           <DialogDescription>
-            Each outlet has its own listing, offers, QR and plan. New outlets are reviewed by our
-            team before they go live.
+            Each outlet has its own listing, offers and QR. New outlets are reviewed by our team
+            before they go live.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
@@ -435,7 +436,7 @@ function OutletsContent() {
             </div>
             <p className="text-sm text-muted-foreground">
               Create a brand account to manage all your outlets from one login. Each outlet keeps
-              its own address, hours, offers, QR and plan, and they share one invoice profile.
+              its own address, hours, offers and QR.
             </p>
           </div>
           {activeBusiness ? (
@@ -549,20 +550,24 @@ function OutletsContent() {
                 </div>
               </div>
 
-              <p className="text-sm text-muted-foreground">
-                {o.subscription ? (
-                  <>
-                    <span className="font-medium text-foreground">
-                      {sentence(o.subscription.packageName)}
-                    </span>
-                    {' · '}
-                    {sentence(o.subscription.status)}
-                    {o.subscription.endDate ? ` · ends ${formatDate(o.subscription.endDate)}` : ''}
-                  </>
-                ) : (
-                  'No plan yet'
-                )}
-              </p>
+              {PAYMENTS_ENABLED && (
+                <p className="text-sm text-muted-foreground">
+                  {o.subscription ? (
+                    <>
+                      <span className="font-medium text-foreground">
+                        {sentence(o.subscription.packageName)}
+                      </span>
+                      {' · '}
+                      {sentence(o.subscription.status)}
+                      {o.subscription.endDate
+                        ? ` · ends ${formatDate(o.subscription.endDate)}`
+                        : ''}
+                    </>
+                  ) : (
+                    'No plan yet'
+                  )}
+                </p>
+              )}
 
               <div className="grid grid-cols-2 gap-2">
                 <Stat label="Verified purchases" value={stat(s?.verifiedPurchases)} />

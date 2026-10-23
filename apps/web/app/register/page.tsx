@@ -33,6 +33,7 @@ import {
 } from '@/components/business/brand-conversion-prompt';
 import { LaunchOfferBanner } from '@/components/business/launch-offer-banner';
 import { CATALOGUE } from '@saas/types';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 
 const cheapestMonthly = Math.min(
   ...CATALOGUE.filter((c) => c.kind === 'BASE').map((c) => c.monthly),
@@ -152,8 +153,9 @@ export default function UnifiedRegisterPage() {
                   Adding an outlet to {brandCtx.name}
                 </h1>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Finish this outlet&apos;s details and choose its plan. Your brand&apos;s invoice
-                  details are filled in for you.
+                  {PAYMENTS_ENABLED
+                    ? "Finish this outlet's details and choose its plan. Your brand's invoice details are filled in for you."
+                    : "Finish this outlet's details. Your brand's details are filled in for you."}
                 </p>
               </>
             ) : (
@@ -174,7 +176,7 @@ export default function UnifiedRegisterPage() {
             <Stepper steps={STEP_TITLES} current={currentStep - 1} />
 
             {/* Persistent cost context — visible from step 1, not just the payment step */}
-            {role === 'BUSINESS' && (
+            {PAYMENTS_ENABLED && role === 'BUSINESS' && (
               <div className="mt-4 pt-3 border-t border-border flex items-center justify-between gap-2 text-xs">
                 <span className="text-muted-foreground">
                   {isHotel ? 'Hotel listing' : 'Business listing'}
@@ -194,7 +196,8 @@ export default function UnifiedRegisterPage() {
           </div>
 
           {/* Launch offer — live slot count. Generic on step 1, per-category once a business account is being created. */}
-          {launchOffer.enabled &&
+          {PAYMENTS_ENABLED &&
+            launchOffer.enabled &&
             launchOffer.status &&
             !brandLaunchUsed &&
             (currentStep === 1 || role === 'BUSINESS') && (

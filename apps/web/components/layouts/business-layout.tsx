@@ -16,6 +16,7 @@ import { BUSINESS_TOUR_STEPS, BUSINESS_MOBILE_TOUR_STEPS } from '@/lib/tour-step
 import { apiService } from '@/lib/services/api-service';
 import { AlertTriangle, FileClock, XCircle, ArrowRight, Clock, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 
 // The invoice for a just-submitted payment must stay reachable even though the
 // business itself is still PENDING_VERIFICATION at that point.
@@ -106,7 +107,9 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
 
         // Fetch trial status for approved businesses
         try {
-          const trialRes = await apiService.get<any>(`/v1/trials/status/${user.businessId}`);
+          const trialRes = PAYMENTS_ENABLED
+            ? await apiService.get<any>(`/v1/trials/status/${user.businessId}`)
+            : { data: null };
           if (trialRes.data) {
             setTrialStatus(trialRes.data.trialStatus as TrialStatus);
             setTrialDaysRemaining(trialRes.data.daysRemaining ?? 0);
@@ -227,53 +230,55 @@ export function BusinessLayout({ children }: BusinessLayoutProps) {
   const showTour = mounted && !isAdminViewer;
   // Plan prompts are for owners; moderators and staff can't manage billing.
   const canSeePlanPrompts =
+    PAYMENTS_ENABLED &&
     verificationStatus === 'APPROVED' &&
     !isAdminViewer &&
     !['business_moderator', 'business_staff'].includes(user?.role || '') &&
     !['BUSINESS_MODERATOR', 'BUSINESS_STAFF'].includes(user?.rbacRole || '');
 
-  const trialBanner =
-    trialExpired && verificationStatus === 'APPROVED' && canSeePlanPrompts ? (
-      <div className="flex items-center justify-between gap-3 border-b border-border bg-surface-sunken px-4 py-2.5 text-sm text-foreground sm:px-6 lg:px-8">
-        <div className="flex min-w-0 items-center gap-2">
-          <CreditCard className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="min-w-0">
-            <strong className="font-semibold">Your free trial has ended.</strong>{' '}
-            <span className="hidden sm:inline">
-              You are on the Free listing. Your data is safe; pick a plan to add more.
-            </span>
+  const trialBanner = !PAYMENTS_ENABLED ? null : trialExpired &&
+    verificationStatus === 'APPROVED' &&
+    canSeePlanPrompts ? (
+    <div className="flex items-center justify-between gap-3 border-b border-border bg-surface-sunken px-4 py-2.5 text-sm text-foreground sm:px-6 lg:px-8">
+      <div className="flex min-w-0 items-center gap-2">
+        <CreditCard className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <span className="min-w-0">
+          <strong className="font-semibold">Your free trial has ended.</strong>{' '}
+          <span className="hidden sm:inline">
+            You are on the Free listing. Your data is safe; pick a plan to add more.
           </span>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="shrink-0"
-          onClick={() => router.push('/dashboard/subscriptions')}
-        >
-          View plans <ArrowRight />
-        </Button>
+        </span>
       </div>
-    ) : trialStatus === 'ACTIVE' && trialDaysRemaining <= 5 ? (
-      <div className="flex items-center justify-between gap-3 border-b border-warning/25 bg-warning-soft px-4 py-2.5 text-sm text-warning-soft-foreground sm:px-6 lg:px-8">
-        <div className="flex min-w-0 items-center gap-2">
-          <Clock className="size-4 shrink-0" aria-hidden />
-          <span className="min-w-0">
-            <strong className="font-semibold">
-              Trial ends in {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''}.
-            </strong>{' '}
-            <span className="hidden sm:inline">Choose a plan to keep uninterrupted access.</span>
-          </span>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="shrink-0"
-          onClick={() => router.push('/dashboard/subscriptions')}
-        >
-          View plans <ArrowRight />
-        </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        className="shrink-0"
+        onClick={() => router.push('/dashboard/subscriptions')}
+      >
+        View plans <ArrowRight />
+      </Button>
+    </div>
+  ) : trialStatus === 'ACTIVE' && trialDaysRemaining <= 5 ? (
+    <div className="flex items-center justify-between gap-3 border-b border-warning/25 bg-warning-soft px-4 py-2.5 text-sm text-warning-soft-foreground sm:px-6 lg:px-8">
+      <div className="flex min-w-0 items-center gap-2">
+        <Clock className="size-4 shrink-0" aria-hidden />
+        <span className="min-w-0">
+          <strong className="font-semibold">
+            Trial ends in {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''}.
+          </strong>{' '}
+          <span className="hidden sm:inline">Choose a plan to keep uninterrupted access.</span>
+        </span>
       </div>
-    ) : null;
+      <Button
+        size="sm"
+        variant="outline"
+        className="shrink-0"
+        onClick={() => router.push('/dashboard/subscriptions')}
+      >
+        View plans <ArrowRight />
+      </Button>
+    </div>
+  ) : null;
 
   // A trial countdown outranks the renewal reminder; they are never shown together.
   const topBanner = trialBanner ?? (canSeePlanPrompts ? <RenewalReminder /> : null);

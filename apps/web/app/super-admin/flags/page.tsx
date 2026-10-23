@@ -5,7 +5,7 @@ import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
 import { PageHeader } from '@/components/system/page-header';
 import { SectionCard } from '@/components/system/section-card';
 import { StatusPill } from '@/components/common/status-pill';
-import { MOVIES_ENABLED } from '@/lib/feature-flags';
+import { MOVIES_ENABLED, PAYMENTS_ENABLED } from '@/lib/feature-flags';
 import { TAX_PERCENT } from '@/lib/subscription-plans';
 import { SITE_URL } from '@/lib/server-api';
 
@@ -58,18 +58,20 @@ export default function ConfigurationPage() {
               </div>
             </dl>
           </SectionCard>
-          <SectionCard icon={Receipt} title="Billing">
-            <dl className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <dt className="text-caption text-muted-foreground">GST on plans</dt>
-                <dd className="mt-0.5 font-medium">{TAX_PERCENT}%</dd>
-              </div>
-              <div>
-                <dt className="text-caption text-muted-foreground">Payment method</dt>
-                <dd className="mt-0.5 font-medium">UPI QR + proof, admin-verified</dd>
-              </div>
-            </dl>
-          </SectionCard>
+          {PAYMENTS_ENABLED && (
+            <SectionCard icon={Receipt} title="Billing">
+              <dl className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <dt className="text-caption text-muted-foreground">GST on plans</dt>
+                  <dd className="mt-0.5 font-medium">{TAX_PERCENT}%</dd>
+                </div>
+                <div>
+                  <dt className="text-caption text-muted-foreground">Payment method</dt>
+                  <dd className="mt-0.5 font-medium">UPI QR + proof, admin-verified</dd>
+                </div>
+              </dl>
+            </SectionCard>
+          )}
           <SectionCard icon={Settings2} title="Changing these">
             <p className="text-body text-muted-foreground">
               Update the environment variable on the server, then rebuild and restart the web and

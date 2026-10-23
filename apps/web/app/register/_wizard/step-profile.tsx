@@ -31,6 +31,7 @@ import {
 } from '@/components/business/amenity-details-editor';
 import { HOME_CHEF_PLANS, HOME_CHEF_DURATION_DAYS, getHomeChefPlan } from '@/lib/home-chef-pricing';
 import { useLaunchOffer } from '@/hooks/use-launch-offer';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 import { invalidateActiveBusinessCache } from '@/hooks/use-active-business';
 import {
   BillSeriesQuestion,
@@ -107,6 +108,7 @@ export function StepProfile({ w }: { w: Wizard }) {
     loading,
     uploadProgress,
     handleStep4Submit,
+    isHotel,
   } = w;
   return (
     <form onSubmit={handleStep4Submit} className="space-y-6 ui-pop">
@@ -330,7 +332,7 @@ export function StepProfile({ w }: { w: Wizard }) {
           <div>
             <h3 className="text-sm font-bold text-foreground">Registration details</h3>
             <p className="text-xs text-muted-foreground mt-0.5 mb-3">
-              Company, PAN/GST, contacts and category status. Billing contact is required.
+              Company, PAN/GST, contacts and category status.
             </p>
             {brandCtx?.mode === 'SHARED' && (
               <p className="mb-3 rounded-xl bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
@@ -370,7 +372,13 @@ export function StepProfile({ w }: { w: Wizard }) {
             </>
           ) : (
             <>
-              {role === 'BUSINESS' ? 'Continue to Plan & Payment' : 'Submit Application'}
+              {role === 'BUSINESS'
+                ? PAYMENTS_ENABLED || isHotel
+                  ? PAYMENTS_ENABLED
+                    ? 'Continue to Plan & Payment'
+                    : 'Continue'
+                  : 'Submit Application'
+                : 'Submit Application'}
               <ArrowRight className="h-4 w-4" />
             </>
           )}

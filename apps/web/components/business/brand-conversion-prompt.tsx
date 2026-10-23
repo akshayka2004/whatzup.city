@@ -245,7 +245,7 @@ export function BrandConversionPrompt({
           </DialogTitle>
           <DialogDescription>
             Put all your outlets under one brand. Each outlet keeps its own address, hours, offers,
-            QR and plan; you switch between them from one login and share one invoice profile.
+            QR and bill queue; you switch between them from one login.
           </DialogDescription>
         </DialogHeader>
         <BrandConvertForm

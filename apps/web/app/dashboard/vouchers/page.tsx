@@ -24,6 +24,7 @@ import {
 import { apiService } from '@/lib/services/api-service';
 import { cn } from '@/lib/utils';
 import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 
 type Voucher = {
   id: string;
@@ -131,12 +132,14 @@ export default function VouchersPage() {
     code: 'PLAN_LIMIT',
     error: notInPlan
       ? 'Vouchers are not part of the Free listing. Choose a plan or add vouchers to reward customers who spend.'
-      : `Your plan allows ${ent?.vouchers ?? 0} live voucher${ent?.vouchers === 1 ? '' : 's'} at a time. Pause one, or add more vouchers to your plan.`,
+      : PAYMENTS_ENABLED
+        ? `Your plan allows ${ent?.vouchers ?? 0} live voucher${ent?.vouchers === 1 ? '' : 's'} at a time. Pause one, or add more vouchers to your plan.`
+        : `You can have ${ent?.vouchers ?? 0} live voucher${ent?.vouchers === 1 ? '' : 's'} at a time. Pause or end one to add another.`,
     details: {
       resource: 'voucher',
       limit: ent?.vouchers ?? 0,
       used: ent?.usage.vouchers ?? 0,
-      upgradeUrl: '/dashboard/subscriptions',
+      ...(PAYMENTS_ENABLED ? { upgradeUrl: '/dashboard/subscriptions' } : {}),
     },
   });
 
@@ -291,7 +294,7 @@ export default function VouchersPage() {
                   ? 'bg-warning-soft text-warning-soft-foreground'
                   : 'bg-surface-sunken text-muted-foreground',
               )}
-              title="Vouchers that are live right now, out of what your plan allows"
+              title="Vouchers that are live right now, out of the most you can have live"
             >
               {notInPlan ? 'Not in your plan' : `${ent.usage.vouchers} of ${ent.vouchers} live`}
             </span>

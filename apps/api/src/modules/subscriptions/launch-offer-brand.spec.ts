@@ -1,6 +1,9 @@
 import { ConflictException } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
 
+// These specs cover the paid plans, which are dormant unless the flag is on.
+process.env.PAYMENTS_ENABLED = 'true';
+
 // The launch offer gives one slot per BRAND: once one outlet holds it, sibling outlets register on a
 // regular plan. The check runs inside the same transaction that reserves the slot.
 function makeService(siblingHolds: number) {

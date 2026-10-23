@@ -328,7 +328,7 @@ export function StepCredentials({ w }: { w: Wizard }) {
                     {
                       v: 'BRAND',
                       title: 'Brand with multiple outlets',
-                      desc: 'Several outlets under one brand. Each has its own listing, offers and plan.',
+                      desc: 'Several outlets under one brand. Each has its own listing and offers.',
                       Icon: Store,
                     },
                   ] as const

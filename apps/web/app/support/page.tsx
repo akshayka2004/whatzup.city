@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils';
 // ── Types ─────────────────────────────────────────────────────────────
 
 type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
-type TicketCategory = 'billing' | 'account' | 'technical' | 'offer' | 'general';
+type TicketCategory = 'account' | 'technical' | 'offer' | 'general';
 
 interface TicketMessage {
   id: string;
@@ -48,7 +48,6 @@ interface Ticket {
 const STORAGE_KEY = 'support_tickets';
 
 const CATEGORIES: { id: TicketCategory; label: string }[] = [
-  { id: 'billing', label: 'Billing' },
   { id: 'account', label: 'Account' },
   { id: 'technical', label: 'Technical' },
   { id: 'offer', label: 'Offers / Bills' },
@@ -104,7 +103,7 @@ const INITIAL_TICKETS: Ticket[] = [
   {
     id: 'TKT-002',
     title: 'Bill rejected without reason',
-    category: 'billing',
+    category: 'offer',
     status: 'open',
     createdAt: '22 May 2026',
     updatedAt: '22 May 2026',

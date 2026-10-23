@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/select';
 import { KERALA_CITIES } from '@/lib/constants';
 import { formatINR, formatNumber, formatRange, type ValueFormat } from './format';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 
 const TimeSeriesChart = dynamic(
   () => import('./time-series-chart').then((m) => m.TimeSeriesChart),
@@ -212,13 +213,17 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
       icon: ClipboardCheck,
       urgent: (snap?.pendingApprovals ?? 0) > 0,
     },
-    {
-      label: 'Payments to verify',
-      value: snap?.pendingPayments,
-      href: '/admin/payment-approvals',
-      icon: CircleDollarSign,
-      urgent: (snap?.pendingPayments ?? 0) > 0,
-    },
+    ...(PAYMENTS_ENABLED
+      ? [
+          {
+            label: 'Payments to verify',
+            value: snap?.pendingPayments,
+            href: '/admin/payment-approvals',
+            icon: CircleDollarSign,
+            urgent: (snap?.pendingPayments ?? 0) > 0,
+          },
+        ]
+      : []),
     {
       label: 'Open reports',
       value: snap?.openReports,
@@ -226,20 +231,24 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
       icon: ShieldAlert,
       urgent: (snap?.openReports ?? 0) > 0,
     },
-    {
-      label: 'Trials ending in 7 days',
-      value: snap?.trialsEnding7d,
-      href: area === 'super-admin' ? '/super-admin/businesses' : '/admin/subscriptions',
-      icon: Clock,
-      urgent: false,
-    },
-    {
-      label: 'Renewals due in 30 days',
-      value: snap?.renewalsDue30d,
-      href: '/admin/subscriptions',
-      icon: CalendarClock,
-      urgent: false,
-    },
+    ...(PAYMENTS_ENABLED
+      ? [
+          {
+            label: 'Trials ending in 7 days',
+            value: snap?.trialsEnding7d,
+            href: area === 'super-admin' ? '/super-admin/businesses' : '/admin/subscriptions',
+            icon: Clock,
+            urgent: false,
+          },
+          {
+            label: 'Renewals due in 30 days',
+            value: snap?.renewalsDue30d,
+            href: '/admin/subscriptions',
+            icon: CalendarClock,
+            urgent: false,
+          },
+        ]
+      : []),
     {
       label: 'Live businesses',
       value: snap?.activeBusinesses,
@@ -258,7 +267,7 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
         { key: 'visitors', header: 'Unique visitors' },
         { key: 'newUsers', header: 'New customers' },
         { key: 'newBusinesses', header: 'New businesses' },
-        { key: 'revenue', header: 'Revenue ex-GST (INR)' },
+        ...(PAYMENTS_ENABLED ? [{ key: 'revenue', header: 'Revenue ex-GST (INR)' }] : []),
       ],
       report.series.points,
     );
@@ -393,7 +402,7 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
           </div>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-            {KPIS.map((m) => (
+            {KPIS.filter((m) => PAYMENTS_ENABLED || m.key !== 'revenue').map((m) => (
               <KpiCard
                 key={m.key}
                 label={m.label}
@@ -422,44 +431,46 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
             )}
           </SectionCard>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <SectionCard
-              title="Revenue"
-              description="Verified subscription payments in this period"
-            >
-              {report ? (
-                <div className="space-y-5">
-                  <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                    {[
-                      ['New plans', formatINR(k!.revenueNew.value)],
-                      ['Renewals', formatINR(k!.revenueRenewal.value)],
-                      ['GST collected', formatINR(k!.gst.value)],
-                      ['Payments', formatNumber(k!.paidCount.value)],
-                    ].map(([l, v]) => (
-                      <div key={l}>
-                        <dt className="text-caption text-muted-foreground">{l}</dt>
-                        <dd className="mt-0.5 font-semibold tabular-nums">{v}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                  <div>
-                    <p className="mb-2 text-overline text-subtle-foreground">By plan</p>
-                    <BarList
-                      format="inr"
-                      items={report.planMix.map((p) => ({
-                        key: p.plan,
-                        label: p.plan.replace(/_/g, ' '),
-                        hint: `${p.count} paid`,
-                        value: p.revenue,
-                      }))}
-                      emptyLabel="No verified payments in this period"
-                    />
+          <div className={PAYMENTS_ENABLED ? 'grid gap-6 lg:grid-cols-2' : 'grid gap-6'}>
+            {PAYMENTS_ENABLED && (
+              <SectionCard
+                title="Revenue"
+                description="Verified subscription payments in this period"
+              >
+                {report ? (
+                  <div className="space-y-5">
+                    <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                      {[
+                        ['New plans', formatINR(k!.revenueNew.value)],
+                        ['Renewals', formatINR(k!.revenueRenewal.value)],
+                        ['GST collected', formatINR(k!.gst.value)],
+                        ['Payments', formatNumber(k!.paidCount.value)],
+                      ].map(([l, v]) => (
+                        <div key={l}>
+                          <dt className="text-caption text-muted-foreground">{l}</dt>
+                          <dd className="mt-0.5 font-semibold tabular-nums">{v}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <div>
+                      <p className="mb-2 text-overline text-subtle-foreground">By plan</p>
+                      <BarList
+                        format="inr"
+                        items={report.planMix.map((p) => ({
+                          key: p.plan,
+                          label: p.plan.replace(/_/g, ' '),
+                          hint: `${p.count} paid`,
+                          value: p.revenue,
+                        }))}
+                        emptyLabel="No verified payments in this period"
+                      />
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="ui-skeleton h-48" />
-              )}
-            </SectionCard>
+                ) : (
+                  <div className="ui-skeleton h-48" />
+                )}
+              </SectionCard>
+            )}
             <SectionCard
               title="Business onboarding"
               description="Registrations started in this period, by how far they got"
@@ -544,7 +555,11 @@ export function PlatformOverview({ area }: { area: 'admin' | 'super-admin' }) {
             </SectionCard>
           </div>
 
-          <PurchaseMixPanel mix={report?.purchases} offerChannels={report?.offerChannels} showCities />
+          <PurchaseMixPanel
+            mix={report?.purchases}
+            offerChannels={report?.offerChannels}
+            showCities
+          />
 
           <SectionCard
             title="Recent admin activity"

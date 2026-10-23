@@ -31,6 +31,7 @@ import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import { BrandStatusPill, eventMeta, fullDate, seriesLabel, timeAgo } from '../_shared';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 
 interface Outlet {
   id: string;
@@ -404,12 +405,14 @@ export default function SuperAdminBrandDetailPage() {
                             </span>
                           )}
                           {o.category?.name && <span>{o.category.name}</span>}
-                          <span className="inline-flex items-center gap-1">
-                            <CreditCard className="h-3 w-3" />
-                            {sub
-                              ? `${sub.packageName || 'Plan'}${sub.status ? ` (${sub.status})` : ''}${sub.endDate ? ` · ends ${shortDate(sub.endDate)}` : ''}`
-                              : 'No plan'}
-                          </span>
+                          {PAYMENTS_ENABLED && (
+                            <span className="inline-flex items-center gap-1">
+                              <CreditCard className="h-3 w-3" />
+                              {sub
+                                ? `${sub.packageName || 'Plan'}${sub.status ? ` (${sub.status})` : ''}${sub.endDate ? ` · ends ${shortDate(sub.endDate)}` : ''}`
+                                : 'No plan'}
+                            </span>
+                          )}
                           {brand.billSeriesMode === 'PER_OUTLET' && o.billSeriesPrefix && (
                             <span className="inline-flex items-center gap-1">
                               <Hash className="h-3 w-3" />
@@ -417,7 +420,7 @@ export default function SuperAdminBrandDetailPage() {
                             </span>
                           )}
                         </div>
-                        {o.launchOfferClaimedAt && (
+                        {PAYMENTS_ENABLED && o.launchOfferClaimedAt && (
                           <span
                             className="inline-flex items-center gap-1 rounded-full border border-success/20 bg-success-soft px-2 py-0.5 text-xs font-semibold text-success-soft-foreground"
                             title={fullDate(o.launchOfferClaimedAt)}

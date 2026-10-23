@@ -1,6 +1,9 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 
+// These specs cover the paid plans, which are dormant unless the flag is on.
+process.env.PAYMENTS_ENABLED = 'true';
+
 const DAY = 86_400_000;
 
 function make(opts: { business?: any; live?: any[]; payment?: any } = {}) {

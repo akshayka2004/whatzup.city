@@ -21,7 +21,7 @@ const SHEET_COPY: Record<NavArea, string> = {
   public: 'Browse your city and manage your account',
   business: 'Run your business',
   staff: 'Platform data-entry workspace',
-  admin: 'Approvals, payments and moderation',
+  admin: 'Approvals and moderation',
   'super-admin': 'Platform control',
   civic: 'Publish to your community',
   government: 'Official notices',

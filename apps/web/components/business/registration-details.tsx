@@ -12,6 +12,7 @@ import { COMPANY_TYPES, CONTACT_PREFERENCES } from '@/lib/constants';
 import { getCategoryAttributes } from '@/lib/category-attributes';
 import { useMasterCategories } from '@/hooks/use-categories';
 import { cn } from '@/lib/utils';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 import type { OperatingHours } from '@saas/types';
 import { OperatingHoursEditor } from '@/components/business/operating-hours-editor';
 
@@ -364,13 +365,15 @@ export function RegistrationDetailsForm({
       </Section>
 
       {/* Contacts */}
-      <Section title="Billing contact" hint="Required — used for invoices and billing.">
-        <ContactBlock
-          value={v.billingContact}
-          onChange={(c) => merge({ billingContact: c })}
-          required
-        />
-      </Section>
+      {PAYMENTS_ENABLED && (
+        <Section title="Billing contact" hint="Required — used for invoices and billing.">
+          <ContactBlock
+            value={v.billingContact}
+            onChange={(c) => merge({ billingContact: c })}
+            required
+          />
+        </Section>
+      )}
       <Section title="Support contact" hint="Optional — day-to-day point of contact.">
         <ContactBlock value={v.supportContact} onChange={(c) => merge({ supportContact: c })} />
       </Section>

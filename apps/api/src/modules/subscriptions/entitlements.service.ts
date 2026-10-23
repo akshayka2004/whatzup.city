@@ -5,6 +5,8 @@ import {
   entitlementsOf,
   FREE_CODE,
   FREE_ENTITLEMENTS,
+  INCLUDED_PLAN_CODE,
+  INCLUDED_PLAN_ENTITLEMENTS,
   isLegacyPackage,
   type BillingCycle,
   type Entitlements,
@@ -12,6 +14,7 @@ import {
 import { DatabaseService } from '../../common/database/database.service';
 import { assertBusinessAccess, type AccessUser } from '../../common/utils/business-access';
 import { RedisService } from '../../common/redis/redis.service';
+import { paymentsEnabled } from '../../common/utils/payments-flag';
 
 export type EntitlementSource = 'FREE' | 'PLAN' | 'LEGACY';
 
@@ -77,6 +80,17 @@ export class EntitlementsService {
   }
 
   private async compute(businessId: string): Promise<BusinessEntitlements> {
+    // Payments dormant: everyone is on the one included plan, whatever the subscription rows say.
+    if (!paymentsEnabled()) {
+      return {
+        ...INCLUDED_PLAN_ENTITLEMENTS,
+        plan: INCLUDED_PLAN_CODE,
+        cycle: null,
+        source: 'PLAN',
+        expiresAt: null,
+        addons: [],
+      };
+    }
     // tenant-scope-ok: subscriptions are read by business id, which is already a single tenant's row
     const rows = await this.db.subscription.findMany({
       where: {
@@ -203,15 +217,23 @@ export class EntitlementsService {
     if (used < limit) return;
 
     const noun = resource === 'offer' ? 'offer' : 'voucher';
-    const message =
-      limit === 0
+    const dormant = !paymentsEnabled();
+    const message = dormant
+      ? `You can have ${limit} live ${noun}${limit === 1 ? '' : 's'} at a time and ${used === 1 ? 'one is' : `${used} are`} live. Pause or end one to add another.`
+      : limit === 0
         ? `Vouchers are not part of your current plan. Upgrade or add a voucher pack to publish one.`
         : `Your plan allows ${limit} live ${noun}${limit === 1 ? '' : 's'} and you are using ${used}. Pause one or upgrade to add more.`;
     throw new ForbiddenException({
       statusCode: 403,
       message,
       code: 'PLAN_LIMIT',
-      details: { resource, limit, used, plan: ent.plan, upgradeUrl: '/dashboard/subscriptions' },
+      details: {
+        resource,
+        limit,
+        used,
+        plan: ent.plan,
+        ...(dormant ? {} : { upgradeUrl: '/dashboard/subscriptions' }),
+      },
     });
   }
 

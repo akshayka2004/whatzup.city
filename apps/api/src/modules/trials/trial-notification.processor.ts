@@ -2,6 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { NotificationsService } from '../notifications/notifications.service';
+import { paymentsEnabled } from '../../common/utils/payments-flag';
 
 @Processor('trial-queue')
 export class TrialNotificationProcessor extends WorkerHost {
@@ -13,6 +14,8 @@ export class TrialNotificationProcessor extends WorkerHost {
 
   async process(job: Job): Promise<void> {
     if (job.name !== 'send-trial-notification') return;
+    // Reminders queued before payments went dormant would still ask people to subscribe.
+    if (!paymentsEnabled()) return;
 
     const { tenantId, ownerId, title, body } = job.data as {
       tenantId: string;

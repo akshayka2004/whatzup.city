@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { PaymentsEnabledGuard } from '../../common/guards/payments-enabled.guard';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TrialsService } from './trials.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -29,6 +30,7 @@ export class TrialsController {
   /**
    * Business owner: claim 20% introductory offer (once per business)
    */
+  @UseGuards(PaymentsEnabledGuard)
   @Post('claim-intro-offer/:businessId')
   @ApiOperation({ summary: 'Claim the 20% introductory offer for first subscription' })
   async claimIntroOffer(

@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException, NotFoundException } from '@nes
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { DatabaseService } from '../../common/database/database.service';
+import { paymentsEnabled } from '../../common/utils/payments-flag';
 
 const TRIAL_DAYS = 15;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -25,6 +26,8 @@ export class TrialsService {
   // ── Called from VerificationService.approveRequest() ─────────────────
 
   async startTrial(tenantId: string, businessId: string, ownerId: string): Promise<void> {
+    // No trial and no "subscribe" reminders while payments are dormant.
+    if (!paymentsEnabled()) return;
     const db = prismaAny(this.db);
 
     const business = await db.business.findFirst({

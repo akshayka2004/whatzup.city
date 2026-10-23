@@ -1,5 +1,8 @@
 import { PlanEnforcementService } from './plan-enforcement.service';
 
+// These specs cover the paid plans, which are dormant unless the flag is on.
+process.env.PAYMENTS_ENABLED = 'true';
+
 const future = () => new Date(Date.now() + 10 * 86_400_000);
 
 function make(ent: any, offers: string[], vouchers: string[]) {

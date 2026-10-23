@@ -202,8 +202,8 @@ export default function PrivacyPolicyPage() {
             <h3 className="font-semibold text-foreground mt-4 mb-2">With Service Providers</h3>
             <p>
               We engage trusted third-party service providers who process data on our behalf under
-              confidentiality obligations, including cloud infrastructure, database, storage, and
-              payment processors.
+              confidentiality obligations, including cloud infrastructure, database, and storage
+              providers.
             </p>
 
             <h3 className="font-semibold text-foreground mt-4 mb-2">With Business Operators</h3>
@@ -294,7 +294,6 @@ export default function PrivacyPolicyPage() {
                   name: 'Supabase',
                   desc: 'Database and file storage infrastructure (AWS ap-northeast-1)',
                 },
-                { name: 'Razorpay', desc: 'Payment processing for subscription plans' },
                 { name: 'Redis / BullMQ', desc: 'Session caching and background job queuing' },
               ].map((item) => (
                 <div

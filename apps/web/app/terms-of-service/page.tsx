@@ -6,7 +6,7 @@ import { LegalFooter } from '@/components/common/legal-footer';
 export const metadata: Metadata = {
   title: 'Terms of Service — Whtzup.city',
   description:
-    'Read the Terms of Service for Whtzup.city, operated by Lifeart Business Services Private Limited. Governs access to platform services, business registration, subscriptions, and user obligations.',
+    'Read the Terms of Service for Whtzup.city, operated by Lifeart Business Services Private Limited. Governs access to platform services, business registration, and user obligations.',
   alternates: { canonical: 'https://whtzup.city/terms-of-service' },
   openGraph: {
     title: 'Terms of Service — Whtzup.city',
@@ -26,7 +26,7 @@ const SECTIONS = [
   { id: 'government', label: '5. Government Accounts' },
   { id: 'reviews', label: '6. Reviews & Verified Purchases' },
   { id: 'bills', label: '7. Bill Uploads & Verification' },
-  { id: 'subscriptions', label: '8. Subscription Plans' },
+  { id: 'subscriptions', label: '8. Plans and Features' },
   { id: 'prohibited', label: '9. Prohibited Activities' },
   { id: 'third-party', label: '10. Third-Party Services' },
   { id: 'social-login', label: '11. Social Login Services' },
@@ -272,13 +272,13 @@ export default function TermsOfServicePage() {
           </Section>
 
           {/* Section 8 */}
-          <Section id="subscriptions" title="8. Subscription Plans">
+          <Section id="subscriptions" title="8. Plans and Features">
             <p>
-              Business accounts may operate under subscription plans such as Basic, Standard, and
-              Premium. Features and limitations vary by plan. The platform reserves the right to
-              modify pricing, alter plan features, introduce new plans, discontinue plans, or limit
-              specific services. Subscription approvals or modifications may require platform
-              administrator approval.
+              Business accounts include a standard set of features and limits, such as the number of
+              offers and vouchers that may be live at the same time. The platform reserves the right
+              to change these features and limits, introduce new options, or limit specific
+              services. Changes to an account's features may require platform administrator
+              approval.
             </p>
           </Section>
 
@@ -309,10 +309,9 @@ export default function TermsOfServicePage() {
           {/* Section 10 */}
           <Section id="third-party" title="10. Third-Party Services">
             <p>
-              The platform may integrate with third-party providers including Razorpay, cloud
-              services, map providers, social media platforms, analytics services, and notification
-              providers. Payment data is processed by Razorpay in accordance with their privacy
-              policy. We are not responsible for failures or damages caused by third-party services.
+              The platform may integrate with third-party providers including cloud services, map
+              providers, social media platforms, analytics services, and notification providers. We
+              are not responsible for failures or damages caused by third-party services.
             </p>
           </Section>
 

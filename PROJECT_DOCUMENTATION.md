@@ -1089,6 +1089,16 @@ recreate them.
 
 - **List filters** (`components/system/list-filters.tsx`: `ListFilters`, `matchesSearch`, `countBy`): one search + chip/select + sort + result-count row used by the admin lists that had none: platform offers (Published/Unpublished, category, sub category, sort), events, movies, notices, all running offers, discount campaigns (current page only, it is server-paged), platform voucher tiers, pending payments, and the business bill list (status, bought via). Second batch: team, branches, payment history, the owner events list, renewal payment approvals, portal admins, staff business lookup, vouchers, the category tree (keeps parents of matches; reorder still acts on the full list) and the referral leaderboard. Filtering is client-side over the loaded rows. Not covered: outlets, menu photos, and pages that already had filters.
 
+### 12.16 Payments are dormant
+
+From 2026-10-23 nothing is sold or charged. Every business runs on **one included plan: 3 live offers, 3 live vouchers, analytics** (`INCLUDED_PLAN_*` in `packages/types/src/pricing.ts`). The code, routes and rows of the pricing work in §12.13 stay in place behind two flags, the same way Movies are parked:
+
+- **API:** `PAYMENTS_ENABLED` (default off). `PaymentsEnabledGuard` makes payment, plan, launch-offer and intro-offer endpoints 404; `EntitlementsService` returns the included plan whatever the subscription rows say (limit errors say "pause or end one", no upgrade link); no trial is started and queued trial reminders are skipped; the auto-pause job is a no-op (existing extras stay live, only new ones are limited).
+- **Web:** `NEXT_PUBLIC_PAYMENTS_ENABLED` (build time, default off, `lib/feature-flags.ts`). `next.config.mjs` redirects the plan, invoice and payment-admin pages. Navigation, banners, paywall, upgrade dialog, plan card, revenue and payment KPIs, the admin approval payment step, billing contact, hotel star prices, FAQ, terms and privacy wording are all hidden or reworded.
+- **Registration:** business sign-up has no plan or payment step. It submits for review at the end of the profile step; only a hotel keeps a fourth step (its star classification).
+- **Kept on purpose:** customer bill uploads, their payment mode and delivery app, and the purchase-mix analytics. Those describe what customers bought, not what businesses pay us.
+- **Bring it back:** set both flags to true and rebuild. Specs for the paid plans set `PAYMENTS_ENABLED=true` themselves.
+
 ## 13. Search, storage, realtime
 
 - **Search:** Typesense module indexes businesses; the API indexes on

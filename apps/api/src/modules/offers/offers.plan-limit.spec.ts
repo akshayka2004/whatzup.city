@@ -1,6 +1,9 @@
 import { ForbiddenException } from '@nestjs/common';
 import { OffersService } from './offers.service';
 
+// These specs cover the paid plans, which are dormant unless the flag is on.
+process.env.PAYMENTS_ENABLED = 'true';
+
 const future = () => new Date(Date.now() + 10 * 86_400_000);
 const past = () => new Date(Date.now() - 86_400_000);
 

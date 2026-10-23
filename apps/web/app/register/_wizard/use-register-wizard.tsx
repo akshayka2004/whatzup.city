@@ -10,6 +10,7 @@ import type { RegistrationDetails } from '@/components/business/registration-det
 import type { HotelAmenities } from '@/lib/hotel-pricing';
 import type { AmenityItem } from '@/components/business/amenity-details-editor';
 import { useLaunchOffer } from '@/hooks/use-launch-offer';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 import { invalidateActiveBusinessCache } from '@/hooks/use-active-business';
 import type { BillSeriesMode } from '@/components/business/brand-conversion-prompt';
 import {
@@ -274,7 +275,9 @@ export function useRegisterWizard() {
           // another outlet already used the brand's single launch-offer slot.
           const brandId = draft.brandId || draftBrand?.id;
           const [bd, bm] = await Promise.all([
-            apiService.get<any>(`/v1/brands/${brandId}/billing-defaults`),
+            PAYMENTS_ENABLED
+              ? apiService.get<any>(`/v1/brands/${brandId}/billing-defaults`)
+              : Promise.resolve({ error: 'skipped', data: null } as any),
             apiService.get<any>('/v1/brands/mine'),
           ]);
           if (cancelled) return;
@@ -307,7 +310,9 @@ export function useRegisterWizard() {
           try {
             const prog = await onboardingService.getProgress(draft.id);
             const done: string[] = prog.data?.onboardingProgress?.stepsCompleted || [];
-            if (done.includes('STEP_3')) step = 4;
+            // Without payments only a hotel has a fourth step (its classification).
+            if (done.includes('STEP_3') && (PAYMENTS_ENABLED || draft.category?.slug === 'hotel'))
+              step = 4;
           } catch {
             /* keep step 3 */
           }
@@ -327,7 +332,11 @@ export function useRegisterWizard() {
   // Businesses register and pay in one flow, so they get an extra step.
   const STEP_TITLES =
     role === 'BUSINESS'
-      ? ['Account Type', 'Credentials', 'Business Profile', 'Get Started']
+      ? PAYMENTS_ENABLED
+        ? ['Account Type', 'Credentials', 'Business Profile', 'Get Started']
+        : isHotel
+          ? ['Account Type', 'Credentials', 'Business Profile', 'Hotel Details']
+          : ['Account Type', 'Credentials', 'Business Profile']
       : ['Account Type', 'Credentials', 'Profile Setup'];
   const TOTAL_STEPS = STEP_TITLES.length;
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -867,6 +876,17 @@ export function useRegisterWizard() {
           }
         }
 
+        // Payments dormant: only a hotel has one more step (its classification). Everyone else
+        // is submitted for review right here.
+        if (!PAYMENTS_ENABLED && !isHotel) {
+          const submitRes = await onboardingService.submitForVerification(businessId);
+          if (submitRes.error) throw new Error(submitRes.error);
+          markSubmittedLocally();
+          setSuccess('Application submitted for verification! Redirecting to your dashboard...');
+          setTimeout(() => router.push('/dashboard'), 2000);
+          setLoading(false);
+          return;
+        }
         setLoading(false);
         setCurrentStep(4);
         return;

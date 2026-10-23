@@ -22,10 +22,6 @@ const SUPPORT_EMAIL = 'support@lifeartgroup.in';
 
 const FAQ = [
   {
-    q: 'My payment proof is uploaded. When does my plan go live?',
-    a: 'An admin checks the UPI reference against our account, usually within one working day. You get a notification as soon as it is verified, and your plan dates start from that moment.',
-  },
-  {
     q: 'A customer uploaded a bill that looks wrong.',
     a: 'Open Bill Queue, pick the bill and choose Reject with a short reason, or Request re-upload if the photo is unreadable. If you suspect fraud, use Flag — it goes to the platform team.',
   },
@@ -39,7 +35,7 @@ const FAQ = [
   },
   {
     q: 'How do I give my staff access?',
-    a: 'Team → Create account. Moderators can review bills and reviews; analytics and billing stay with the owner.',
+    a: 'Team → Create account. Moderators can review bills and reviews; analytics stay with the owner.',
   },
 ];
 
@@ -100,11 +96,6 @@ export default function BusinessSupportPage() {
           <SectionCard icon={LifeBuoy} title="Shortcuts">
             <div className="grid gap-2">
               {[
-                {
-                  href: '/dashboard/subscriptions',
-                  icon: CreditCard,
-                  label: 'Plan, invoices and payment status',
-                },
                 { href: '/dashboard/moderation', icon: ReceiptText, label: 'Bill queue' },
                 { href: '/dashboard/team', icon: ShieldCheck, label: 'Team access' },
               ].map((l) => (

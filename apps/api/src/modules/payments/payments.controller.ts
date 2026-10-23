@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Param, Query, Headers, UseGuards } from '@nestjs/common';
+import { PaymentsEnabledGuard } from '../../common/guards/payments-enabled.guard';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import {
@@ -15,6 +16,7 @@ import { UserRole } from '@saas/types';
 import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Payments')
+@UseGuards(PaymentsEnabledGuard)
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
@@ -153,6 +155,7 @@ export class PaymentsController {
 }
 
 @ApiTags('Business Payments')
+@UseGuards(PaymentsEnabledGuard)
 @Controller('businesses')
 export class BusinessPaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}

@@ -34,6 +34,7 @@ import { useEntitlements, type PlanEntitlements } from '@/hooks/use-entitlements
 import { apiService } from '@/lib/services/api-service';
 import { analyticsV2, type BusinessReport } from '@/lib/services/analytics-v2';
 import { cn } from '@/lib/utils';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 
 const list = (d: any): any[] =>
   Array.isArray(d) ? d : Array.isArray(d?.data) ? d.data : Array.isArray(d?.items) ? d.items : [];
@@ -263,14 +264,18 @@ export default function BusinessOverviewPage() {
         {canSeeNumbers &&
           (ent ? (
             <section
-              aria-label="Your plan"
+              aria-label={PAYMENTS_ENABLED ? 'Your plan' : 'Live offers and vouchers'}
               className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-card border border-border/70 bg-card px-4 py-3 shadow-e1 sm:px-5"
             >
               <div className="flex min-w-0 items-center gap-2">
-                <span className="text-label text-muted-foreground">Your plan</span>
-                <span className="truncate rounded-full bg-brand-soft px-2.5 py-0.5 text-caption font-semibold text-brand-soft-foreground">
-                  {planName(ent)}
+                <span className="text-label text-muted-foreground">
+                  {PAYMENTS_ENABLED ? 'Your plan' : 'Live now'}
                 </span>
+                {PAYMENTS_ENABLED && (
+                  <span className="truncate rounded-full bg-brand-soft px-2.5 py-0.5 text-caption font-semibold text-brand-soft-foreground">
+                    {planName(ent)}
+                  </span>
+                )}
               </div>
               <dl className="flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums">
                 <div className="flex items-baseline gap-1.5">
@@ -296,12 +301,14 @@ export default function BusinessOverviewPage() {
                   </dd>
                 </div>
               </dl>
-              <Link
-                href="/dashboard/subscriptions"
-                className="ml-auto inline-flex min-h-10 items-center gap-1 text-label text-primary hover:underline"
-              >
-                {isFree ? 'Upgrade' : 'Add more'} <ArrowRight className="size-4" />
-              </Link>
+              {PAYMENTS_ENABLED && (
+                <Link
+                  href="/dashboard/subscriptions"
+                  className="ml-auto inline-flex min-h-10 items-center gap-1 text-label text-primary hover:underline"
+                >
+                  {isFree ? 'Upgrade' : 'Add more'} <ArrowRight className="size-4" />
+                </Link>
+              )}
             </section>
           ) : entLoading ? (
             <div className="ui-skeleton h-14 rounded-card" />
@@ -525,8 +532,8 @@ export default function BusinessOverviewPage() {
           {isModerator && (
             <SectionCard title="Your role" icon={BarChart3}>
               <p className="text-body text-muted-foreground">
-                As a moderator you review bills, reviews and customer reports. Analytics and billing
-                stay with the owner.
+                As a moderator you review bills, reviews and customer reports. Analytics stay with
+                the owner.
               </p>
             </SectionCard>
           )}
