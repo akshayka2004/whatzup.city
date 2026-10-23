@@ -139,12 +139,14 @@ export function OfferCoupon({
   justClaimed,
   onView,
   onClaim,
+  priority = false,
 }: {
   offer: Offer;
   claimed: boolean;
   justClaimed: boolean;
   onView: (offer: Offer) => void;
   onClaim: (offer: Offer) => void;
+  priority?: boolean;
 }) {
   const { t } = useI18n();
   const showBadge = claimed || !!offer.discountLabel;
@@ -199,6 +201,7 @@ export function OfferCoupon({
               ratio="4 / 3"
               fit="contain"
               quality={70}
+              priority={priority}
               sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, (max-width: 1600px) 33vw, 25vw"
               className="border-b border-border"
               fallback={
