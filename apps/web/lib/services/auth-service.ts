@@ -116,7 +116,30 @@ class AuthService {
       }
       throw new Error(response.error || "We couldn't sign you in. Please try again.");
     }
-    const u = response.data.user;
+    return this.userFromLogin(response.data);
+  }
+
+  /** Ask for a login code. The answer is the same whether or not the number is registered. */
+  async requestOtp(phone: string): Promise<{ resendIn: number }> {
+    const response = await apiService.post<any>('/v1/auth/otp/request', { phone });
+    if (response.error || !response.data) {
+      throw new Error(response.error || "We couldn't send the code. Please try again.");
+    }
+    return { resendIn: Number(response.data.resendIn) || 30 };
+  }
+
+  /** Sign in with a mobile number and the code sent to it. Throws with the API message on failure. */
+  async signInWithOtp(phone: string, code: string): Promise<User | null> {
+    const response = await apiService.post<any>('/v1/auth/otp/verify', { phone, code });
+    if (response.error || !response.data) {
+      throw new Error(response.error || "We couldn't sign you in. Please try again.");
+    }
+    return this.userFromLogin(response.data);
+  }
+
+  /** Shape of a successful login response (password or code), stored as the signed-in user. */
+  private userFromLogin(data: any): User {
+    const u = data.user;
     const apiUser: User = {
       id: u.id,
       email: u.email,
@@ -124,11 +147,11 @@ class AuthService {
       role: mapRbacToRole(u.role),
       rbacRole: u.role,
       createdAt: new Date(),
-      // response.data.businessId — set for staff/moderator accounts (no entity)
+      // data.businessId — set for staff/moderator accounts (no entity)
       // u.businessId — set on the user sub-object (mirrors the same)
       // entity fallback — for business owners with entity
       businessId:
-        response.data.businessId ||
+        data.businessId ||
         u.businessId ||
         (u.entity?.type === 'BUSINESS' ? u.entity.id : undefined),
       entity: u.entity || null,

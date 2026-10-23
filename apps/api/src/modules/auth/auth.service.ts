@@ -21,6 +21,8 @@ import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { PasswordService } from './password.service';
 import { MailService } from './mail.service';
+import { OtpService } from './otp.service';
+import { OtpVerifyDto } from './dto/otp.dto';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -62,6 +64,7 @@ export class AuthService {
     private readonly redisService: RedisService,
     private readonly passwordService: PasswordService,
     private readonly mailService: MailService,
+    private readonly otpService: OtpService,
   ) {}
 
   /**
@@ -405,6 +408,39 @@ export class AuthService {
     // Clear rate-limit counters on success
     await Promise.all([this.redisService.del(ipKey), this.redisService.del(userKey)]);
 
+    return this.finishLogin(user, ipAddress, userAgent);
+  }
+
+  /**
+   * Sign in with a phone number and the 6-digit code sent to it. Same result as a password login,
+   * including the lock and email-verification rules.
+   */
+  async loginWithOtp(dto: OtpVerifyDto, ipAddress?: string, userAgent?: string) {
+    const userId = await this.otpService.verify(dto.phone, dto.code, ipAddress);
+    const user = await this.db.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      include: {
+        entities: { where: { deletedAt: null }, orderBy: { createdAt: 'desc' }, take: 1 },
+      },
+    });
+    if (!user || !user.isActive) throw new UnauthorizedException('Invalid credentials');
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const mins = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
+      throw new HttpException(
+        `Account temporarily locked due to repeated failed logins. Try again in ${mins} minute(s).`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    return this.finishLogin(user, ipAddress, userAgent, 'OTP');
+  }
+
+  /** Everything after the credentials are proven: verification rule, tokens, audit, entity lookup. */
+  private async finishLogin(
+    user: any,
+    ipAddress?: string,
+    userAgent?: string,
+    method = 'PASSWORD',
+  ) {
     // Enforce email verification (must compare as string — get<boolean> does NOT coerce)
     const enforceVerification =
       this.configService.get<string>('ENFORCE_EMAIL_VERIFICATION', 'true') !== 'false';
@@ -437,7 +473,7 @@ export class AuthService {
           userId: user.id,
           action: 'LOGIN_SUCCESS',
           resource: 'auth',
-          metadata: { ipAddress, userAgent },
+          metadata: { ipAddress, userAgent, method },
         },
       })
       .catch(() => {});

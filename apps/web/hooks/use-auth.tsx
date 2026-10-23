@@ -16,6 +16,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string, redirectTo?: string) => Promise<boolean>;
+  signInWithOtp: (phone: string, code: string, redirectTo?: string) => Promise<boolean>;
   signUp: (email: string, password: string, name: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   switchRole: (role: string) => void;
@@ -122,11 +123,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return '/';
   };
 
-  const signIn = async (email: string, password: string, redirectTo?: string): Promise<boolean> => {
+  const signIn = async (email: string, password: string, redirectTo?: string): Promise<boolean> =>
+    runSignIn(() => authService.signIn(email, password), redirectTo);
+
+  const signInWithOtp = async (
+    phone: string,
+    code: string,
+    redirectTo?: string,
+  ): Promise<boolean> => runSignIn(() => authService.signInWithOtp(phone, code), redirectTo);
+
+  const runSignIn = async (
+    attempt: () => Promise<User | null>,
+    redirectTo?: string,
+  ): Promise<boolean> => {
     setLoading(true);
     try {
       // Login response now includes entity — no second roundtrip needed for redirect
-      const loggedInUser = await authService.signIn(email, password);
+      const loggedInUser = await attempt();
       if (loggedInUser) {
         setUser(loggedInUser);
         // A QR-scan deep link (?redirect=/business/:id) wins over the usual
@@ -202,7 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, signIn, signUp, signOut, switchRole, refreshUser }}
+      value={{ user, loading, signIn, signInWithOtp, signUp, signOut, switchRole, refreshUser }}
     >
       {children}
     </AuthContext.Provider>
