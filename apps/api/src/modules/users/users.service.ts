@@ -5,10 +5,7 @@ import {
   BadRequestException,
   Optional,
 } from '@nestjs/common';
-import {
-  PRIVILEGED_ROLES,
-  SecurityAlertService,
-} from '../../common/alerts/security-alert.service';
+import { PRIVILEGED_ROLES, SecurityAlertService } from '../../common/alerts/security-alert.service';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { PasswordService } from '../auth/password.service';
@@ -194,11 +191,15 @@ export class UsersService {
     });
     await this.redis.del(`user:${id}`);
     if (payload.role && payload.role !== user.role && PRIVILEGED_ROLES.has(payload.role)) {
-      void this.alerts?.alert('PRIVILEGED_ROLE_GRANTED', `${updated.email} is now ${payload.role}`, {
-        userId: id,
-        previousRole: user.role,
-        grantedBy: adminId,
-      });
+      void this.alerts?.alert(
+        'PRIVILEGED_ROLE_GRANTED',
+        `${updated.email} is now ${payload.role}`,
+        {
+          userId: id,
+          previousRole: user.role,
+          grantedBy: adminId,
+        },
+      );
     }
     return updated;
   }
