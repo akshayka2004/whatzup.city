@@ -1,11 +1,23 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
-import { Response } from 'express';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  Optional,
+} from '@nestjs/common';
+import { Request, Response } from 'express';
 import { Prisma } from '@saas/database';
 import { JsonLoggerService } from '../logger/json-logger.service';
+import { SecurityAlertService } from '../alerts/security-alert.service';
+import { captureError } from '../observability/error-tracking';
 
 @Catch()
 export class SecurityExceptionFilter implements ExceptionFilter {
-  constructor(private readonly logger: JsonLoggerService) {}
+  constructor(
+    private readonly logger: JsonLoggerService,
+    @Optional() private readonly alerts?: SecurityAlertService,
+  ) {}
 
   catch(exception: any, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -164,6 +176,19 @@ export class SecurityExceptionFilter implements ExceptionFilter {
       message = isEngineBug
         ? 'The server hit an unexpected problem while handling this request. Please try again, and contact support if it keeps happening.'
         : errorMessage || 'The server could not complete this request.';
+    }
+
+    if (status >= 500) {
+      const req = ctx.getRequest<Request>();
+      // Route pattern, not the raw URL, so ids/query strings never reach Sentry.
+      const path = (req as any)?.route?.path ?? req?.path;
+      captureError(exception, { source: 'api', method: req?.method, path, extra: { status } });
+      void this.alerts?.countAndAlert(
+        'SERVER_ERROR_SPIKE',
+        Number(process.env.SERVER_ERROR_ALERT_THRESHOLD) || 25,
+        300,
+        (n) => `${n} server errors (5xx) in 5 minutes`,
+      );
     }
 
     // Always log the details internally for developers

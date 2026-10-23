@@ -3,7 +3,12 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Optional,
 } from '@nestjs/common';
+import {
+  PRIVILEGED_ROLES,
+  SecurityAlertService,
+} from '../../common/alerts/security-alert.service';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { PasswordService } from '../auth/password.service';
@@ -14,6 +19,7 @@ export class UsersService {
     private readonly db: DatabaseService,
     private readonly redis: RedisService,
     private readonly passwordService: PasswordService,
+    @Optional() private readonly alerts?: SecurityAlertService,
   ) {}
 
   async findById(id: string, requesterId?: string, requesterRole?: string) {
@@ -146,7 +152,7 @@ export class UsersService {
    * Super-admin edit of any user account: name, email, phone, profession, role,
    * active status, and optional password reset. Email uniqueness is enforced.
    */
-  async adminUpdate(id: string, _adminId: string, data: any) {
+  async adminUpdate(id: string, adminId: string, data: any) {
     const user = await this.db.user.findFirst({ where: { id, deletedAt: null } });
     if (!user) throw new NotFoundException('User not found');
 
@@ -187,6 +193,13 @@ export class UsersService {
       },
     });
     await this.redis.del(`user:${id}`);
+    if (payload.role && payload.role !== user.role && PRIVILEGED_ROLES.has(payload.role)) {
+      void this.alerts?.alert('PRIVILEGED_ROLE_GRANTED', `${updated.email} is now ${payload.role}`, {
+        userId: id,
+        previousRole: user.role,
+        grantedBy: adminId,
+      });
+    }
     return updated;
   }
 
@@ -453,6 +466,11 @@ export class UsersService {
         createdAt: true,
         isActive: true,
       },
+    });
+
+    void this.alerts?.alert('PRIVILEGED_ROLE_GRANTED', `New ${user.role} account ${user.email}`, {
+      userId: user.id,
+      tenantId,
     });
 
     return user;

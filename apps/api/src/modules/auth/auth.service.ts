@@ -12,6 +12,7 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -21,6 +22,10 @@ import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { PasswordService } from './password.service';
 import { MailService } from './mail.service';
+import {
+  PRIVILEGED_ROLES,
+  SecurityAlertService,
+} from '../../common/alerts/security-alert.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -66,6 +71,7 @@ export class AuthService {
     private readonly redisService: RedisService,
     private readonly passwordService: PasswordService,
     private readonly mailService: MailService,
+    @Optional() private readonly alerts?: SecurityAlertService,
   ) {}
 
   /**
@@ -398,6 +404,21 @@ export class AuthService {
           },
         })
         .catch(() => {});
+
+      void this.alerts?.countAndAlert(
+        'LOGIN_FAILURE_SPIKE',
+        Number(process.env.LOGIN_FAILURE_ALERT_THRESHOLD) || 50,
+        3600,
+        (n) => `${n} failed logins in the last hour across all accounts`,
+      );
+      if (lockedUntil && PRIVILEGED_ROLES.has(user.role)) {
+        void this.alerts?.alert(
+          'PRIVILEGED_ACCOUNT_LOCKED',
+          `Admin account locked after ${attempts} failed logins`,
+          { userId: user.id, role: user.role, ipAddress, until: lockedUntil.toISOString() },
+          user.id,
+        );
+      }
 
       // Same message whether the account exists or the password is wrong, so
       // login can't be used to enumerate registered emails.
