@@ -1,36 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { BrandLogo } from '@/components/common/brand-logo';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 // mock-db removed — all registration flows through real API
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
-import { useAuth } from '@/hooks/use-auth';
-import { apiService } from '@/lib/services/api-service';
-import { KERALA_CITIES } from '@/lib/constants';
 import { LegalFooter } from '@/components/common/legal-footer';
-import { onboardingService, universalOnboardingService } from '@/lib/services/onboarding-service';
-import { authService } from '@/lib/services/auth-service';
-import {
-  RegistrationDetailsForm,
-  type RegistrationDetails,
-} from '@/components/business/registration-details';
-import { STAR_OPTIONS, HOTEL_AMENITIES, type HotelAmenities } from '@/lib/hotel-pricing';
-import {
-  AmenityDetailsEditor,
-  type AmenityItem,
-} from '@/components/business/amenity-details-editor';
-import { HOME_CHEF_PLANS, HOME_CHEF_DURATION_DAYS, getHomeChefPlan } from '@/lib/home-chef-pricing';
-import { useLaunchOffer } from '@/hooks/use-launch-offer';
-import { invalidateActiveBusinessCache } from '@/hooks/use-active-business';
-import {
-  BillSeriesQuestion,
-  type BillSeriesMode,
-} from '@/components/business/brand-conversion-prompt';
 import { LaunchOfferBanner } from '@/components/business/launch-offer-banner';
 import { CATALOGUE } from '@saas/types';
 import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
@@ -38,37 +13,8 @@ import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
 const cheapestMonthly = Math.min(
   ...CATALOGUE.filter((c) => c.kind === 'BASE').map((c) => c.monthly),
 );
-import {
-  formatINR,
-  TAX_PERCENT,
-  PAYMENT_QR_SRC,
-  PAYMENT_UPI_ID,
-  PAYMENT_PAYEE_NAME,
-} from '@/lib/subscription-plans';
-import {
-  User as UserIcon,
-  Building2,
-  ShieldAlert,
-  Mail,
-  Phone,
-  Key,
-  Eye,
-  EyeOff,
-  Loader2,
-  Sparkles,
-  UploadCloud,
-  CheckCircle,
-  ArrowRight,
-  ArrowLeft,
-  AlertCircle,
-  FileCheck,
-  MapPin,
-  Layers,
-  Heart,
-  Users,
-  Newspaper,
-  Store,
-} from 'lucide-react';
+import { formatINR } from '@/lib/subscription-plans';
+import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useRegisterWizard } from './_wizard/use-register-wizard';
 import { Stepper } from '@/components/system/stepper';
 import { StepAccountType } from './_wizard/step-account-type';
