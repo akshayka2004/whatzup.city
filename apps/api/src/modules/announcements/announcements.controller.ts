@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  Header,
+} from '@nestjs/common';
+import { PUBLIC_API_CACHE } from '../../common/http/cache-control';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AnnouncementsService } from './announcements.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -20,6 +31,7 @@ export class AnnouncementsController {
   ) {}
 
   @Public()
+  @Header('Cache-Control', PUBLIC_API_CACHE)
   @Get()
   async findPublished(
     @Query('tenantId') tenantId: string = 'default',
@@ -30,6 +42,7 @@ export class AnnouncementsController {
   }
 
   @Public()
+  @Header('Cache-Control', PUBLIC_API_CACHE)
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<any> {
     return this.announcementsService.findById(id);

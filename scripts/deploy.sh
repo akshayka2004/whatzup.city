@@ -52,12 +52,32 @@ cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static
 cp -an "$STATIC_ARCHIVE/." apps/web/.next/standalone/apps/web/.next/static/ 2>/dev/null || true
 cp -r apps/web/public apps/web/.next/standalone/apps/web/public
 
-echo "==> pm2 restart"
-pm2 restart saas-api saas-web saas-worker --update-env
+echo "==> build launch page"
+pnpm --filter @saas/launch-page build
+
+echo "==> pm2 reload"
+# saas-web moved from a single fork process to cluster mode; PM2 can't switch a
+# running app's exec mode in place, so drop the old fork once.
+if pm2 describe saas-web 2>/dev/null | grep -q "fork_mode"; then
+  pm2 delete saas-web
+fi
+# startOrReload applies ecosystem.config.js env (COOKIE_SECURE, HOSTNAME, ...) and
+# reloads cluster apps one worker at a time.
+pm2 startOrReload ecosystem.config.js \
+  --only saas-api,saas-web,saas-worker,saas-launch-page --update-env
+pm2 save
 
 echo "==> health check"
-sleep 5
-curl -fsS http://localhost:4001/api/v1/health >/dev/null && echo "API healthy" || echo "WARNING: API health check failed"
+healthy=0
+for _ in $(seq 1 20); do
+  if curl -fsS http://127.0.0.1:4001/api/v1/health >/dev/null 2>&1 \
+    && curl -fsS -o /dev/null http://127.0.0.1:3000/ 2>/dev/null; then
+    healthy=1
+    break
+  fi
+  sleep 3
+done
+if [ "$healthy" = 1 ]; then echo "API + web healthy"; else echo "WARNING: health check failed"; fi
 
 echo "==> done"
 pm2 logs saas-api saas-web --lines 20 --nostream

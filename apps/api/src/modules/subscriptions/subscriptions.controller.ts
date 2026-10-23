@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Header } from '@nestjs/common';
+import { PUBLIC_API_CACHE } from '../../common/http/cache-control';
 import { PaymentsEnabledGuard } from '../../common/guards/payments-enabled.guard';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
@@ -29,6 +30,7 @@ export class SubscriptionsController {
 
   @Public()
   @UseGuards(PaymentsEnabledGuard)
+  @Header('Cache-Control', PUBLIC_API_CACHE)
   @Get('catalogue')
   @ApiOperation({ summary: 'Current plans and add-ons with prices (ex-GST)' })
   catalogue() {

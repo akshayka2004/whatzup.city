@@ -32,8 +32,12 @@ module.exports = {
       cwd: './apps/web',
       // standalone output requires node server.js, NOT next start.
       // pnpm monorepo emits server at .next/standalone/apps/web/server.js
-      script: 'node',
-      args: '.next/standalone/apps/web/server.js',
+      script: '.next/standalone/apps/web/server.js',
+      // Two stateless workers: `pm2 reload` swaps them one at a time (no downtime)
+      // and one crash no longer takes the site down. The API stays a single fork
+      // process: it holds Socket.IO connections and in-process timers.
+      exec_mode: 'cluster',
+      instances: 2,
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',

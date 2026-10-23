@@ -9,7 +9,9 @@ import {
   Post,
   Query,
   UseGuards,
+  Header,
 } from '@nestjs/common';
+import { PUBLIC_API_CACHE } from '../../common/http/cache-control';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '@saas/types';
 import { CategoriesService } from './categories.service';
@@ -33,6 +35,7 @@ export class CategoriesController {
   // ── public ──────────────────────────────────────────────────────────
 
   @Public()
+  @Header('Cache-Control', PUBLIC_API_CACHE)
   @Get()
   @ApiOperation({ summary: 'Active categories as a tree (master list)' })
   async findAll(@Query('tenantId') tenantId?: string) {
@@ -40,6 +43,7 @@ export class CategoriesController {
   }
 
   @Public()
+  @Header('Cache-Control', PUBLIC_API_CACHE)
   @Get('resolve/:slug')
   @ApiOperation({
     summary: 'Is this slug active, archived, merged (→ target) or gone? For old links.',

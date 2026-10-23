@@ -8,7 +8,9 @@ import {
   Body,
   Query,
   UseGuards,
+  Header,
 } from '@nestjs/common';
+import { PUBLIC_API_CACHE } from '../../common/http/cache-control';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -34,6 +36,7 @@ export class EventsController {
   ) {}
 
   @Public()
+  @Header('Cache-Control', PUBLIC_API_CACHE)
   @Get()
   @ApiOperation({ summary: 'List active public events (optionally by city)' })
   async findPublic(
@@ -104,6 +107,7 @@ export class EventsController {
   }
 
   @Public()
+  @Header('Cache-Control', PUBLIC_API_CACHE)
   @Get(':id')
   @ApiOperation({ summary: 'Get one event' })
   async findOne(@Param('id') id: string) {
