@@ -44,6 +44,8 @@ import {
   CircleUserRound,
 } from 'lucide-react';
 import { MOVIES_ENABLED, PAYMENTS_ENABLED } from '@/lib/feature-flags';
+import { grantAllows, type AccessGrants } from '@saas/types';
+import { areaForPath } from '@/lib/access';
 
 export type NavArea =
   | 'public'
@@ -94,6 +96,8 @@ export type NavContext = {
   /** Brand accounts manage outlets, so the legacy Branches page is hidden. */
   isBrand?: boolean;
   businessName?: string;
+  /** Admin portal accounts: only what these grants allow is listed. Omit for no filtering. */
+  grants?: AccessGrants;
 };
 
 const movies = (item: NavItem): NavItem[] => (MOVIES_ENABLED ? [item] : []);
@@ -442,7 +446,7 @@ function superAdminNav(): NavSpec {
         items: [
           { label: 'Users', href: '/super-admin/registrations', icon: UserPlus },
           { label: 'Manage Users', href: '/super-admin/users', icon: Users },
-          { label: 'Admins', href: '/super-admin/roles', icon: KeyRound },
+          { label: 'Staff & access', href: '/super-admin/roles', icon: KeyRound },
         ],
       },
       {
@@ -508,14 +512,55 @@ function superAdminNav(): NavSpec {
   };
 }
 
+/** Keeps items whose page the account may open; pages with no area (dashboard, profile) stay. */
+function restrict(spec: NavSpec, grants: AccessGrants): NavSpec {
+  const ok = (item: NavItem) => {
+    const a = areaForPath(item.href);
+    return !a || grantAllows(grants, a, 'view');
+  };
+  const groups = spec.groups
+    .map((g) => ({ ...g, items: g.items.filter(ok) }))
+    .filter((g) => g.items.length > 0);
+  const keep = new Set(groups.flatMap((g) => g.items.map((i) => i.href)));
+  return {
+    ...spec,
+    groups,
+    footer: spec.footer.filter(ok),
+    mobileTabs: spec.mobileTabs.filter((href) => keep.has(href)),
+  };
+}
+
+/**
+ * Platform staff keep their /staff pages (filtered), and also get the admin pages they were
+ * granted that /staff has no page for.
+ */
+function staffNavFor(grants: AccessGrants): NavSpec {
+  const staff = restrict(staffNav(), grants);
+  const have = new Set(allItems(staff).map((i) => areaForPath(i.href)));
+  const extra = adminNav()
+    .groups.map((g) => ({
+      ...g,
+      items: g.items.filter((i) => {
+        const a = areaForPath(i.href);
+        return !!a && !have.has(a) && grantAllows(grants, a, 'view');
+      }),
+    }))
+    .filter((g) => g.items.length > 0);
+  const mobileTabs = [...staff.mobileTabs];
+  for (const g of extra) {
+    for (const i of g.items) if (mobileTabs.length < 4) mobileTabs.push(i.href);
+  }
+  return { ...staff, groups: [...staff.groups, ...extra], mobileTabs };
+}
+
 export function getNav(area: NavArea, ctx: NavContext = {}): NavSpec {
   switch (area) {
     case 'business':
       return businessNav(ctx);
     case 'staff':
-      return staffNav();
+      return ctx.grants ? staffNavFor(ctx.grants) : staffNav();
     case 'admin':
-      return adminNav();
+      return ctx.grants ? restrict(adminNav(), ctx.grants) : adminNav();
     case 'super-admin':
       return superAdminNav();
     case 'civic':

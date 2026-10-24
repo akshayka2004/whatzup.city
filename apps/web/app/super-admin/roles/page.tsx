@@ -1,58 +1,74 @@
 'use client';
 
-import { ModalSurface } from '@/components/system/modal-surface';
-import { useState, useEffect } from 'react';
-import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ACCESS_AREAS, ACCESS_PRESETS, type AccessGrants, type AccessLevel } from '@saas/types';
 import {
-  Shield,
-  Plus,
-  X,
-  Loader2,
-  UserCheck,
-  Mail,
-  KeyRound,
-  User,
-  CheckCircle2,
   Calendar,
+  CheckCircle2,
   Clock,
+  Copy,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Shield,
+  X,
 } from 'lucide-react';
-import { apiService } from '@/lib/services/api-service';
-import { cn } from '@/lib/utils';
+import { SuperAdminLayout } from '@/components/layouts/super-admin-layout';
+import { ModalSurface } from '@/components/system/modal-surface';
 import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
+import { useConfirm } from '@/components/common/confirm-dialog';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { apiService } from '@/lib/services/api-service';
+import { PAYMENTS_ENABLED } from '@/lib/feature-flags';
+import { cn } from '@/lib/utils';
 
-const ROLE_OPTIONS = [
-  {
-    value: 'MASTER_ADMIN',
-    label: 'Portal Admin',
-    description: 'Can manage registrations, approvals, reports, and categories',
-  },
-  {
-    value: 'PORTAL_ADMIN',
-    label: 'Portal Admin (Alt)',
-    description: 'Same as Portal Admin — alternate label',
-  },
-  {
-    value: 'PLATFORM_STAFF',
-    label: 'Platform Staff',
-    description:
-      'Data entry only — events, platform offers, announcements, and read-only businesses',
-  },
-];
+type StaffRole = 'PLATFORM_STAFF' | 'MASTER_ADMIN';
 
-interface AdminUser {
+interface StaffRow {
   id: string;
   name: string;
   email: string;
+  phone?: string | null;
   role: string;
   isActive: boolean;
+  mustChangePassword: boolean;
+  grants: AccessGrants;
   createdAt: string;
-  lastLoginAt?: string;
+  lastLoginAt?: string | null;
 }
 
-function formatDate(d?: string) {
+const ROLE_OPTIONS: { value: StaffRole; label: string; description: string }[] = [
+  {
+    value: 'PLATFORM_STAFF',
+    label: 'Staff',
+    description: 'Works from the staff menu. Sees only the areas ticked below.',
+  },
+  {
+    value: 'MASTER_ADMIN',
+    label: 'Portal admin',
+    description: 'Works from the admin portal. Sees only the areas ticked below.',
+  },
+];
+
+const AREAS = ACCESS_AREAS.filter(
+  (a) => PAYMENTS_ENABLED || !('paymentsOnly' in a && a.paymentsOnly),
+);
+const AREA_LABEL = Object.fromEntries(ACCESS_AREAS.map((a) => [a.key, a.label])) as Record<
+  string,
+  string
+>;
+const GROUPS = Array.from(new Set(AREAS.map((a) => a.group)));
+
+const roleBadge = (role: string) =>
+  role === 'SUPER_ADMIN'
+    ? { label: 'Super admin', cls: 'text-brand-soft-foreground bg-brand-soft border-primary/20' }
+    : role === 'MASTER_ADMIN'
+      ? { label: 'Portal admin', cls: 'text-info-soft-foreground bg-info-soft border-info/20' }
+      : { label: 'Staff', cls: 'text-warning-soft-foreground bg-warning-soft border-warning/20' };
+
+function formatDate(d?: string | null) {
   if (!d) return '—';
   try {
     return new Date(d).toLocaleDateString('en-IN', {
@@ -65,143 +81,283 @@ function formatDate(d?: string) {
   }
 }
 
-function roleLabel(role: string) {
-  if (role === 'SUPER_ADMIN')
-    return {
-      label: 'Super Admin',
-      color: 'text-brand-soft-foreground bg-brand-soft border-primary/20',
-    };
-  if (role === 'MASTER_ADMIN')
-    return {
-      label: 'Portal Admin',
-      color: 'text-info-soft-foreground bg-info-soft border-info/20',
-    };
-  if (role === 'PLATFORM_STAFF')
-    return {
-      label: 'Platform Staff',
-      color: 'text-warning-soft-foreground bg-warning-soft border-warning/20',
-    };
-  return { label: role, color: 'text-muted-foreground bg-muted border-border' };
+/** 12 characters with upper and lower case, a number and a symbol; easy to read out loud. */
+function makeTempPassword() {
+  const pick = (chars: string, n: number) =>
+    Array.from(crypto.getRandomValues(new Uint32Array(n)), (v) => chars[v % chars.length]).join('');
+  const all = [
+    pick('ABCDEFGHJKLMNPQRSTUVWXYZ', 3),
+    pick('abcdefghijkmnpqrstuvwxyz', 5),
+    pick('23456789', 2),
+    pick('@#$%&*!', 2),
+  ]
+    .join('')
+    .split('');
+  // Shuffle so the pattern is not predictable.
+  const rnd = crypto.getRandomValues(new Uint32Array(all.length));
+  return all
+    .map((c, i) => [c, rnd[i]] as const)
+    .sort((a, b) => a[1] - b[1])
+    .map(([c]) => c)
+    .join('');
 }
 
-export default function AdminManagementPage() {
-  const [admins, setAdmins] = useState<AdminUser[]>([]);
-  // List filters
+function summarize(grants: AccessGrants) {
+  const entries = Object.entries(grants) as [string, AccessLevel][];
+  const everything =
+    entries.length >= ACCESS_AREAS.length && entries.every(([, l]) => l === 'manage');
+  return { entries, everything };
+}
+
+// ── access matrix ──────────────────────────────────────────────────────────
+
+function AccessMatrix({
+  value,
+  onChange,
+}: {
+  value: AccessGrants;
+  onChange: (next: AccessGrants) => void;
+}) {
+  const set = (key: string, level: AccessLevel | '') => {
+    const next = { ...value } as Record<string, AccessLevel>;
+    if (level) next[key] = level;
+    else delete next[key];
+    onChange(next as AccessGrants);
+  };
+  return (
+    <div className="space-y-4">
+      {GROUPS.map((group) => (
+        <div key={group} className="space-y-1.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {group}
+          </p>
+          <div className="divide-y divide-border rounded-xl border border-border">
+            {AREAS.filter((a) => a.group === group).map((area) => {
+              const current = (value as Record<string, AccessLevel | undefined>)[area.key] ?? '';
+              return (
+                <div
+                  key={area.key}
+                  className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">{area.label}</p>
+                    <p className="text-xs text-muted-foreground">{area.description}</p>
+                  </div>
+                  <div
+                    role="radiogroup"
+                    aria-label={`${area.label} access`}
+                    className="grid shrink-0 grid-cols-3 gap-1 rounded-lg bg-surface-sunken p-1"
+                  >
+                    {(
+                      [
+                        ['', 'None'],
+                        ['view', 'View'],
+                        ['manage', 'Manage'],
+                      ] as const
+                    ).map(([level, label]) => (
+                      <button
+                        key={label}
+                        type="button"
+                        role="radio"
+                        aria-checked={current === level}
+                        onClick={() => set(area.key, level)}
+                        className={cn(
+                          'min-h-9 min-w-16 cursor-pointer rounded-md px-3 text-xs font-medium transition-colors',
+                          current === level
+                            ? level === 'manage'
+                              ? 'bg-primary text-primary-foreground shadow-e1'
+                              : level === 'view'
+                                ? 'bg-card text-foreground shadow-e1'
+                                : 'bg-card text-muted-foreground shadow-e1'
+                            : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── temporary password field ───────────────────────────────────────────────
+
+function PasswordField({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-medium text-foreground">{label}</label>
+      <div className="flex gap-2">
+        <Input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          autoComplete="off"
+          spellCheck={false}
+          className="rounded-xl border-border bg-secondary font-mono"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="shrink-0 cursor-pointer rounded-xl"
+          onClick={() => onChange(makeTempPassword())}
+          aria-label="Generate a password"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="shrink-0 cursor-pointer rounded-xl"
+          disabled={!value}
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(value);
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 1500);
+            } catch {
+              /* clipboard unavailable: the text is visible to copy by hand */
+            }
+          }}
+          aria-label="Copy the password"
+        >
+          {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        </Button>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Share it privately. They must replace it when they first sign in.
+      </p>
+    </div>
+  );
+}
+
+// ── page ───────────────────────────────────────────────────────────────────
+
+export default function StaffAccountsPage() {
+  const confirm = useConfirm();
+  const [rows, setRows] = useState<StaffRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState('');
+  const [pageError, setPageError] = useState('');
+
   const [fq, setFq] = useState('');
   const [fRole, setFRole] = useState('');
   const [fActive, setFActive] = useState('');
-  const resetFilters = () => {
-    setFq('');
-    setFRole('');
-    setFActive('');
-  };
 
-  const [loading, setLoading] = useState(true);
-  const [isOpen, setIsOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'MASTER_ADMIN' | 'PORTAL_ADMIN' | 'PLATFORM_STAFF'>(
-    'MASTER_ADMIN',
+  const [form, setForm] = useState<null | { mode: 'create' } | { mode: 'edit'; row: StaffRow }>(
+    null,
   );
+  const [reset, setReset] = useState<null | StaffRow>(null);
 
-  const fetchAdmins = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    const res = await apiService.get<any>('/v1/users/admin/list');
-    if (res.data && !res.error) {
-      setAdmins(Array.isArray(res.data) ? res.data : (res.data?.data ?? []));
+    const res = await apiService.get<any>('/v1/admin/staff');
+    if (res.error) setPageError(res.error);
+    else {
+      setPageError('');
+      setRows(Array.isArray(res.data) ? res.data : (res.data?.data ?? []));
     }
     setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchAdmins();
   }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim() || !password.trim()) return;
-    setSaving(true);
-    setError('');
-    setSuccess('');
+  useEffect(() => {
+    load();
+  }, [load]);
 
-    const res = await apiService.post<any>('/v1/users/admin/create', {
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      password,
-      role,
-    });
-
-    setSaving(false);
-    if (res.error) {
-      setError(res.error);
-      return;
-    }
-
-    setSuccess(`Admin account created for ${email}`);
-    setName('');
-    setEmail('');
-    setPassword('');
-    setIsOpen(false);
-    fetchAdmins();
-  };
-
-  const roleCounts = countBy(admins, (a) => a.role);
-  const activeCounts = countBy(admins, (a) => (a.isActive ? 'ACTIVE' : 'INACTIVE'));
-  const visibleAdmins = admins.filter(
-    (a) =>
-      (!fRole || a.role === fRole) &&
-      (!fActive || (a.isActive ? 'ACTIVE' : 'INACTIVE') === fActive) &&
-      matchesSearch([a.name, a.email], fq),
+  const roleCounts = countBy(rows, (r) => r.role);
+  const activeCounts = countBy(rows, (r) => (r.isActive ? 'ACTIVE' : 'INACTIVE'));
+  const visible = rows.filter(
+    (r) =>
+      (!fRole || r.role === fRole) &&
+      (!fActive || (r.isActive ? 'ACTIVE' : 'INACTIVE') === fActive) &&
+      matchesSearch([r.name, r.email], fq),
   );
+
+  const toggleActive = async (row: StaffRow) => {
+    const turningOff = row.isActive;
+    const ok = await confirm({
+      title: turningOff ? `Deactivate ${row.name}?` : `Reactivate ${row.name}?`,
+      description: turningOff
+        ? 'They are signed out everywhere and cannot sign in until you reactivate the account.'
+        : 'They can sign in again with their current password.',
+      confirmLabel: turningOff ? 'Deactivate' : 'Reactivate',
+      tone: turningOff ? 'danger' : 'default',
+    });
+    if (!ok) return;
+    const res = await apiService.patch<any>(`/v1/admin/staff/${row.id}`, {
+      isActive: !row.isActive,
+    });
+    if (res.error) setPageError(res.error);
+    else setNotice(`${row.name} ${turningOff ? 'deactivated' : 'reactivated'}.`);
+    load();
+  };
 
   return (
     <SuperAdminLayout>
-      <div className="space-y-6 max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
-            <div className="ui-glow relative flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground shrink-0">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand-soft-foreground">
               <Shield className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Admin Management</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Create and manage Portal Admin accounts for platform operations.
+              <h1 className="text-2xl font-bold text-foreground">Staff accounts</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Create accounts and choose exactly which areas each person can view or manage.
               </p>
             </div>
           </div>
           <Button
             onClick={() => {
-              setIsOpen(true);
-              setError('');
-              setSuccess('');
+              setNotice('');
+              setForm({ mode: 'create' });
             }}
-            className="ui-press rounded-xl bg-primary hover:bg-primary text-white gap-2 font-semibold cursor-pointer shrink-0"
+            className="shrink-0 cursor-pointer gap-2 rounded-xl font-semibold"
           >
-            <Plus className="h-4 w-4" />
-            Add Admin
+            <Plus className="h-4 w-4" /> Add account
           </Button>
         </div>
 
-        {success && (
-          <div className="flex items-center gap-2 text-sm text-success-soft-foreground bg-success-soft border border-success/20 rounded-xl px-4 py-3">
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-            {success}
+        {notice && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-xl border border-success/20 bg-success-soft px-4 py-3 text-sm text-success-soft-foreground"
+          >
+            <CheckCircle2 className="h-4 w-4 shrink-0" /> {notice}
+          </div>
+        )}
+        {pageError && (
+          <div
+            role="alert"
+            className="rounded-xl border border-destructive/20 bg-danger-soft px-4 py-3 text-sm text-danger-soft-foreground"
+          >
+            {pageError}
           </div>
         )}
 
-        {/* Admin list */}
-        {!loading && admins.length > 0 && (
+        {!loading && rows.length > 0 && (
           <ListFilters
-            noun="admins"
-            shown={visibleAdmins.length}
-            total={admins.length}
-            onReset={resetFilters}
+            noun="accounts"
+            shown={visible.length}
+            total={rows.length}
+            onReset={() => {
+              setFq('');
+              setFRole('');
+              setFActive('');
+            }}
             search={{ value: fq, onChange: setFq, placeholder: 'Search name or email…' }}
             groups={[
               {
@@ -211,7 +367,7 @@ export default function AdminManagementPage() {
                 onChange: setFRole,
                 options: Object.keys(roleCounts)
                   .sort()
-                  .map((k) => ({ value: k, label: roleLabel(k).label, count: roleCounts[k] })),
+                  .map((k) => ({ value: k, label: roleBadge(k).label, count: roleCounts[k] })),
               },
               {
                 key: 'active',
@@ -226,200 +382,511 @@ export default function AdminManagementPage() {
             ]}
           />
         )}
-        {!loading && admins.length > 0 && visibleAdmins.length === 0 && (
-          <p className="text-sm text-muted-foreground">No admins match these filters.</p>
-        )}
+
         {loading ? (
-          <div className="flex items-center justify-center h-40">
+          <div className="flex h-40 items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : admins.length === 0 ? (
-          <Card className="p-10 rounded-2xl border-dashed border-border bg-secondary text-center">
-            <Shield className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-40" />
-            <p className="text-foreground font-semibold mb-1">No admin accounts yet</p>
-            <p className="text-xs text-muted-foreground">
-              Create your first Portal Admin account above.
+        ) : rows.length === 0 ? (
+          <Card className="rounded-2xl border-dashed p-10 text-center">
+            <p className="font-semibold text-foreground">No staff accounts yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Add the first account and choose what it can do.
             </p>
           </Card>
+        ) : visible.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No accounts match these filters.</p>
         ) : (
           <div className="space-y-3">
-            {visibleAdmins.map((admin, i) => {
-              const { label, color } = roleLabel(admin.role);
+            {visible.map((row) => {
+              const badge = roleBadge(row.role);
+              const isSuper = row.role === 'SUPER_ADMIN';
+              const { entries, everything } = summarize(row.grants);
               return (
-                <Card
-                  key={admin.id}
-                  className="ui-fade-up p-5 rounded-2xl border-border bg-card/40 backdrop-blur-xl"
-                  style={{ animationDelay: `${Math.min(i, 10) * 0.05}s` }}
-                >
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-primary/20 to-info/20 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-                        {admin.name.charAt(0).toUpperCase()}
+                <Card key={row.id} className="rounded-2xl p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
+                        {row.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-semibold text-foreground">{admin.name}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-semibold text-foreground">{row.name}</p>
                           <span
                             className={cn(
-                              'text-xs font-semibold px-2 py-0.5 rounded-full border',
-                              color,
+                              'rounded-full border px-2 py-0.5 text-xs font-semibold',
+                              badge.cls,
                             )}
                           >
-                            {label}
+                            {badge.label}
                           </span>
-                          {!admin.isActive && (
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full border border-destructive/20 bg-danger-soft text-danger-soft-foreground">
+                          {!row.isActive && (
+                            <span className="rounded-full border border-destructive/20 bg-danger-soft px-2 py-0.5 text-xs font-semibold text-danger-soft-foreground">
                               Inactive
                             </span>
                           )}
+                          {row.mustChangePassword && (
+                            <span className="rounded-full border border-warning/20 bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning-soft-foreground">
+                              Has not set a password yet
+                            </span>
+                          )}
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">{admin.email}</p>
+                        <p className="truncate text-xs text-muted-foreground">{row.email}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 sm:gap-5 text-xs text-muted-foreground shrink-0 w-full sm:w-auto justify-between sm:justify-start border-t border-border/60 sm:border-t-0 pt-3 sm:pt-0 mt-1 sm:mt-0">
-                      <div className="sm:text-right">
+                    <div className="flex shrink-0 gap-5 text-xs text-muted-foreground">
+                      <div>
                         <p className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" /> Created
                         </p>
-                        <p className="text-foreground font-medium">{formatDate(admin.createdAt)}</p>
+                        <p className="font-medium text-foreground">{formatDate(row.createdAt)}</p>
                       </div>
-                      <div className="sm:text-right">
+                      <div>
                         <p className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> Last Login
+                          <Clock className="h-3 w-3" /> Last sign-in
                         </p>
-                        <p className="text-foreground font-medium">
-                          {formatDate(admin.lastLoginAt)}
-                        </p>
+                        <p className="font-medium text-foreground">{formatDate(row.lastLoginAt)}</p>
                       </div>
                     </div>
                   </div>
+
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {isSuper || everything ? (
+                      <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-foreground">
+                        Everything
+                      </span>
+                    ) : entries.length === 0 ? (
+                      <span className="text-xs text-muted-foreground">No access</span>
+                    ) : (
+                      entries.map(([key, level]) => (
+                        <span
+                          key={key}
+                          className="rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
+                        >
+                          {AREA_LABEL[key] ?? key}
+                          <span className="text-muted-foreground">
+                            {' '}
+                            · {level === 'manage' ? 'manage' : 'view'}
+                          </span>
+                        </span>
+                      ))
+                    )}
+                  </div>
+
+                  {!isSuper && (
+                    <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="cursor-pointer rounded-lg"
+                        onClick={() => {
+                          setNotice('');
+                          setForm({ mode: 'edit', row });
+                        }}
+                      >
+                        Edit access
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="cursor-pointer rounded-lg"
+                        onClick={() => {
+                          setNotice('');
+                          setReset(row);
+                        }}
+                      >
+                        Reset password
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="cursor-pointer rounded-lg"
+                        onClick={() => toggleActive(row)}
+                      >
+                        {row.isActive ? 'Deactivate' : 'Reactivate'}
+                      </Button>
+                    </div>
+                  )}
                 </Card>
               );
             })}
           </div>
         )}
+      </div>
 
-        {/* Create Admin Modal */}
-        {isOpen && (
-          <ModalSurface
-            onClose={() => setIsOpen(false)}
-            label="Create Admin Account"
-            className="sm:max-w-md"
-            hideClose
-          >
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                Create Admin Account
-              </h3>
+      {form && (
+        <AccountDialog
+          mode={form.mode}
+          row={form.mode === 'edit' ? form.row : undefined}
+          onClose={() => setForm(null)}
+          onSaved={(msg) => {
+            setForm(null);
+            setNotice(msg);
+            load();
+          }}
+        />
+      )}
+      {reset && (
+        <ResetDialog
+          row={reset}
+          onClose={() => setReset(null)}
+          onSaved={(msg) => {
+            setReset(null);
+            setNotice(msg);
+            load();
+          }}
+        />
+      )}
+    </SuperAdminLayout>
+  );
+}
+
+// ── create / edit ──────────────────────────────────────────────────────────
+
+function AccountDialog({
+  mode,
+  row,
+  onClose,
+  onSaved,
+}: {
+  mode: 'create' | 'edit';
+  row?: StaffRow;
+  onClose: () => void;
+  onSaved: (message: string) => void;
+}) {
+  const [name, setName] = useState(row?.name ?? '');
+  const [email, setEmail] = useState(row?.email ?? '');
+  const [phone, setPhone] = useState(row?.phone ?? '');
+  const [role, setRole] = useState<StaffRole>((row?.role as StaffRole) ?? 'PLATFORM_STAFF');
+  const [grants, setGrants] = useState<AccessGrants>(row?.grants ?? {});
+  const [password, setPassword] = useState(() => (mode === 'create' ? makeTempPassword() : ''));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [created, setCreated] = useState<null | { email: string; password: string }>(null);
+
+  const count = useMemo(() => Object.keys(grants).length, [grants]);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (count === 0) {
+      setError('Choose View or Manage for at least one area.');
+      return;
+    }
+    setSaving(true);
+    const res =
+      mode === 'create'
+        ? await apiService.post<any>('/v1/admin/staff', {
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            phone: phone.trim() || undefined,
+            password,
+            role,
+            grants,
+          })
+        : await apiService.patch<any>(`/v1/admin/staff/${row!.id}`, {
+            name: name.trim(),
+            phone: phone.trim(),
+            role,
+            grants,
+          });
+    setSaving(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    if (mode === 'create') setCreated({ email: email.trim().toLowerCase(), password });
+    else onSaved(`Access updated for ${name.trim()}. It applies the next time they open a page.`);
+  };
+
+  // After creating, show the temporary password once so it can be passed on.
+  if (created) {
+    return (
+      <ModalSurface
+        onClose={() => onSaved(`Account created for ${created.email}.`)}
+        label="Account created"
+      >
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-foreground">Account created</h3>
+          <p className="text-sm text-muted-foreground">
+            Give {created.email} this temporary password. It is shown only now. They must choose
+            their own at first sign-in.
+          </p>
+          <div className="rounded-xl border border-border bg-secondary p-3 font-mono text-sm break-all">
+            {created.password}
+          </div>
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 cursor-pointer rounded-xl"
+              onClick={() => navigator.clipboard?.writeText(created.password)}
+            >
+              <Copy className="mr-2 h-4 w-4" /> Copy
+            </Button>
+            <Button
+              type="button"
+              className="flex-1 cursor-pointer rounded-xl"
+              onClick={() => onSaved(`Account created for ${created.email}.`)}
+            >
+              Done
+            </Button>
+          </div>
+        </div>
+      </ModalSurface>
+    );
+  }
+
+  return (
+    <ModalSurface
+      onClose={onClose}
+      label={mode === 'create' ? 'Add staff account' : 'Edit staff access'}
+      className="sm:max-w-2xl"
+      hideClose
+    >
+      <div className="mb-5 flex items-center justify-between">
+        <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
+          <Shield className="h-5 w-5 text-primary" />
+          {mode === 'create' ? 'Add staff account' : `Edit ${row?.name}`}
+        </h3>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="cursor-pointer text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      {error && (
+        <p
+          role="alert"
+          className="mb-4 rounded-xl border border-destructive/20 bg-danger-soft px-3 py-2 text-xs text-danger-soft-foreground"
+        >
+          {error}
+        </p>
+      )}
+
+      <form onSubmit={submit} className="space-y-5">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-foreground">Full name</label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="rounded-xl border-border bg-secondary"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-foreground">Email</label>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={mode === 'edit'}
+              autoComplete="off"
+              className="rounded-xl border-border bg-secondary"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-foreground">
+              Mobile <span className="text-muted-foreground">(optional)</span>
+            </label>
+            <Input
+              value={phone ?? ''}
+              onChange={(e) => setPhone(e.target.value)}
+              inputMode="tel"
+              className="rounded-xl border-border bg-secondary"
+            />
+          </div>
+          {mode === 'create' && (
+            <PasswordField value={password} onChange={setPassword} label="Temporary password" />
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-foreground">Works from</label>
+          <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Account type">
+            {ROLE_OPTIONS.map((opt) => (
               <button
-                onClick={() => setIsOpen(false)}
-                className="text-muted-foreground hover:text-foreground cursor-pointer"
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={role === opt.value}
+                onClick={() => setRole(opt.value)}
+                className={cn(
+                  'cursor-pointer rounded-xl border p-3 text-left transition-colors',
+                  role === opt.value
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-secondary hover:bg-muted/60',
+                )}
               >
-                <X className="h-5 w-5" />
+                <p className="text-sm font-medium text-foreground">{opt.label}</p>
+                <p className="text-xs text-muted-foreground">{opt.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="text-xs font-medium text-foreground">
+              Access <span className="text-muted-foreground">({count} areas)</span>
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {ACCESS_PRESETS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  title={p.description}
+                  onClick={() => setGrants(p.grants)}
+                  className="min-h-8 cursor-pointer rounded-full border border-border bg-card px-3 text-xs text-foreground hover:bg-muted"
+                >
+                  {p.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setGrants({})}
+                className="min-h-8 cursor-pointer rounded-full px-3 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Clear
               </button>
             </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            <strong className="font-medium text-foreground">View</strong> lets them look.{' '}
+            <strong className="font-medium text-foreground">Manage</strong> lets them look and
+            change things. Presets only pre-tick the boxes; you can still adjust each one.
+          </p>
+          <AccessMatrix value={grants} onChange={setGrants} />
+        </div>
 
-            {error && (
-              <p className="mb-4 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-xl px-3 py-2">
-                {error}
-              </p>
+        <div className="sticky bottom-0 -mx-6 flex gap-3 border-t border-border bg-card px-6 pb-1 pt-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="flex-1 cursor-pointer rounded-xl"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={saving}
+            className="flex-1 cursor-pointer rounded-xl font-semibold"
+          >
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : mode === 'create' ? (
+              'Create account'
+            ) : (
+              'Save changes'
             )}
+          </Button>
+        </div>
+      </form>
+    </ModalSurface>
+  );
+}
 
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
-                  <User className="h-3 w-3" /> Full Name
-                </label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Portal Admin Name"
-                  required
-                  className="rounded-xl border-border bg-secondary"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
-                  <Mail className="h-3 w-3" /> Email Address
-                </label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@whtzup.city"
-                  required
-                  className="rounded-xl border-border bg-secondary"
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
-                  <KeyRound className="h-3 w-3" /> Password
-                </label>
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Min 8 characters"
-                  required
-                  minLength={8}
-                  className="rounded-xl border-border bg-secondary"
-                  autoComplete="new-password"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-foreground block mb-1.5 flex items-center gap-1">
-                  <UserCheck className="h-3 w-3" /> Role
-                </label>
-                <div className="space-y-2">
-                  {ROLE_OPTIONS.map((opt) => (
-                    <label
-                      key={opt.value}
-                      className={cn(
-                        'flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors',
-                        role === opt.value
-                          ? 'border-primary/40 bg-primary/10'
-                          : 'border-border bg-secondary hover:bg-secondary',
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="role"
-                        value={opt.value}
-                        checked={role === opt.value}
-                        onChange={() => setRole(opt.value as any)}
-                        className="mt-0.5 accent-primary"
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{opt.label}</p>
-                        <p className="text-xs text-muted-foreground">{opt.description}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsOpen(false)}
-                  className="flex-1 rounded-xl border-border text-foreground hover:bg-secondary cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  className="ui-press flex-1 rounded-xl bg-primary hover:bg-primary text-white font-semibold cursor-pointer"
-                >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Admin'}
-                </Button>
-              </div>
-            </form>
-          </ModalSurface>
+// ── reset password ─────────────────────────────────────────────────────────
+
+function ResetDialog({
+  row,
+  onClose,
+  onSaved,
+}: {
+  row: StaffRow;
+  onClose: () => void;
+  onSaved: (message: string) => void;
+}) {
+  const [password, setPassword] = useState(makeTempPassword);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+    const res = await apiService.post<any>(`/v1/admin/staff/${row.id}/reset-password`, {
+      password,
+    });
+    setSaving(false);
+    if (res.error) setError(res.error);
+    else setDone(true);
+  };
+
+  if (done) {
+    return (
+      <ModalSurface
+        onClose={() => onSaved(`Password reset for ${row.name}.`)}
+        label="Password reset"
+      >
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-foreground">Password reset</h3>
+          <p className="text-sm text-muted-foreground">
+            Give {row.name} this temporary password. They must choose their own at next sign-in.
+          </p>
+          <div className="break-all rounded-xl border border-border bg-secondary p-3 font-mono text-sm">
+            {password}
+          </div>
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 cursor-pointer rounded-xl"
+              onClick={() => navigator.clipboard?.writeText(password)}
+            >
+              <Copy className="mr-2 h-4 w-4" /> Copy
+            </Button>
+            <Button
+              type="button"
+              className="flex-1 cursor-pointer rounded-xl"
+              onClick={() => onSaved(`Password reset for ${row.name}.`)}
+            >
+              Done
+            </Button>
+          </div>
+        </div>
+      </ModalSurface>
+    );
+  }
+
+  return (
+    <ModalSurface onClose={onClose} label="Reset password">
+      <form onSubmit={submit} className="space-y-4">
+        <h3 className="text-lg font-bold text-foreground">Reset password for {row.name}</h3>
+        <p className="text-sm text-muted-foreground">
+          They are signed out everywhere and must choose a new password at next sign-in.
+        </p>
+        {error && (
+          <p
+            role="alert"
+            className="rounded-xl bg-danger-soft px-3 py-2 text-xs text-danger-soft-foreground"
+          >
+            {error}
+          </p>
         )}
-      </div>
-    </SuperAdminLayout>
+        <PasswordField value={password} onChange={setPassword} label="New temporary password" />
+        <div className="flex gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="flex-1 cursor-pointer rounded-xl"
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={saving} className="flex-1 cursor-pointer rounded-xl">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reset password'}
+          </Button>
+        </div>
+      </form>
+    </ModalSurface>
   );
 }

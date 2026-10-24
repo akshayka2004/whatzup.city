@@ -5,6 +5,7 @@
 
 import { apiService } from './api-service';
 import { invalidateCachedGet } from '../use-cached-get';
+import type { AccessGrants } from '@saas/types';
 
 export type UserRole = 'user' | 'business' | 'admin' | 'super-admin' | 'government';
 
@@ -16,6 +17,10 @@ export interface User {
   /** Explicit RBAC role from rbac.ts UserRole enum */
   rbacRole?: string;
   createdAt: Date;
+  /** What a portal admin or staff account may do, per area (see lib/access.ts). */
+  grants?: AccessGrants;
+  /** A super admin set a temporary password; it must be replaced before anything else. */
+  mustChangePassword?: boolean;
   businessId?: string;
   entity?: {
     id: string;
@@ -84,6 +89,8 @@ class AuthService {
       // businessId: staff members get it from /me directly; owners get it via entity
       businessId: u.businessId || (u.entity?.type === 'BUSINESS' ? u.entity.id : undefined),
       entity: u.entity,
+      grants: u.grants,
+      mustChangePassword: !!u.mustChangePassword,
     };
     persistUser(apiUser);
     return apiUser;
@@ -132,6 +139,8 @@ class AuthService {
         u.businessId ||
         (u.entity?.type === 'BUSINESS' ? u.entity.id : undefined),
       entity: u.entity || null,
+      grants: u.grants,
+      mustChangePassword: !!u.mustChangePassword,
     };
     persistUser(apiUser);
     return apiUser;

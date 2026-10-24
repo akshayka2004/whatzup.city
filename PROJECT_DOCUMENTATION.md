@@ -1299,3 +1299,15 @@ live wheel and their own won tickets at the public `/spin-it` page (`GET
 - **Mobile:** step buttons are a sticky bottom bar (`WizardActions`); errors scroll into view; a duplicate-account error offers "Sign in instead".
 - **After submit** the page shows `SubmittedPanel` (what happens next, dashboard button) instead of a timed redirect.
 - Not built, needs a decision or provider: phone OTP / magic-link sign-in, Google sign-in, an "email already registered" pre-check (it would let anyone test which emails have accounts).
+
+### 12.19 Staff accounts and per-account access
+
+A super admin creates staff and portal-admin accounts at `/super-admin/roles` ("Staff & access") and ticks, per account, **None / View / Manage** for each area.
+
+- **Areas** (`packages/types/src/access.ts`): approvals, registrations, businesses, categories, platform offers, spin wheels, events, movies, notices, bills, payments (hidden while dormant), analytics, reports and moderation, support, audit. The same file holds the presets (Data entry, Approver, Support agent, Moderator, Read-only, Everything; they only pre-tick the boxes), the grant helpers and `ROUTE_AREAS`, the map from API path to area.
+- **Storage:** `users.grants` (JSONB) and `users.must_change_password` (migration `20261024000000_staff_privileges`, additive). No grants stored means "what the role always allowed": `MASTER_ADMIN` everything, `PLATFORM_STAFF` events, movies, platform offers, notices and read-only businesses (`effectiveGrants`). A super admin always has everything.
+- **Enforcement:** `RolesGuard`. For `MASTER_ADMIN` and `PLATFORM_STAFF`, a route that maps to an area is decided by the account's grants (GET/HEAD = view, anything else = manage), whatever roles the route lists. Routes that only a super admin may use, and routes with no area, keep the plain role check, so a grant can never open them. To make a new admin controller grantable, add its path to `ROUTE_AREAS`.
+- **Accounts API (super admin only):** `GET/POST /admin/staff`, `PATCH /admin/staff/:id` (name, phone, role, grants, isActive), `POST /admin/staff/:id/reset-password`. Changes clear the cached user so they apply on the next request; deactivating or resetting a password signs the person out everywhere. Audit actions: `STAFF_CREATED`, `STAFF_UPDATED`, `STAFF_DEACTIVATED`, `STAFF_REACTIVATED`, `STAFF_PASSWORD_RESET`. Super admins cannot be edited here, nor can you deactivate yourself.
+- **First password:** email is not sent by the app, so the super admin types or generates a temporary password and passes it on. `must_change_password` makes `JwtAuthGuard` answer 403 `PASSWORD_CHANGE_REQUIRED` for everything except change-password, `/users/me`, `/auth/me`, refresh and logout; the web app sends the person to `/change-password`.
+- **Web:** `lib/access.ts` maps pages to areas. Navigation (`lib/nav/config.ts`) lists only granted pages. Staff keep `/staff/*` and also open granted `/admin/*` pages inside the staff menu; a page outside their access shows "You don't have access".
+- **Deploy order:** apply the migration before deploying the API; the new code selects the new columns.

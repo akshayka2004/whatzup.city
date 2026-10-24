@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { hasSessionHint } from '@/lib/session-hint';
 import { authService, User, UserRole } from '@/lib/services/auth-service';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 // Only a same-origin /business/:id path (with an optional query/hash) is honored —
 // anything else is treated as untrusted and falls back to resolveRedirect().
@@ -28,6 +28,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
+
+  // A temporary password (set by a super admin) must be replaced before anything else is used.
+  useEffect(() => {
+    if (user?.mustChangePassword && pathname !== '/change-password') {
+      router.replace('/change-password');
+    }
+  }, [user?.mustChangePassword, pathname, router]);
 
   useEffect(() => {
     async function initAuth() {

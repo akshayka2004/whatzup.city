@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useOwnerBusiness } from '@/hooks/use-owner-business';
 import { getNav, type NavArea, type NavSpec } from '@/lib/nav/config';
+import { userGrants } from '@/lib/access';
 
 const isSuperAdminUser = (u: { role?: string; rbacRole?: string } | null) =>
   !!u && (u.role === 'super-admin' || u.rbacRole === 'SUPER_ADMIN');
@@ -41,6 +42,7 @@ export function useNavSpec(area: NavArea): NavSpec {
         isFood,
         isBrand: !!brandId,
         businessName: business?.brand?.name || business?.name,
+        grants: area === 'admin' || area === 'staff' ? userGrants(user) : undefined,
       }),
     [area, user, moderator, isFood, brandId, business?.name, business?.brand?.name],
   );
