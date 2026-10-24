@@ -31,6 +31,7 @@ import { CivicSignupDto } from './dto/civic-signup.dto';
 import { UserRoleEnum } from '@prisma/client';
 import { SelectRoleDto } from './dto/select-role.dto';
 import { AvailabilityDto } from './dto/availability.dto';
+import { effectiveGrants } from '@saas/types';
 import {
   masterTenantId,
   resolveMasterCategory,
@@ -959,6 +960,9 @@ export class AuthService {
       name: user.name,
       role: user.role,
       permissions: Array.from(permissions),
+      // What this account may do in the admin portal (see packages/types/src/access.ts).
+      grants: effectiveGrants(user.role, user.grants),
+      mustChangePassword: !!user.mustChangePassword,
       businessId: staffBusinessId,
       entity: activeEntity
         ? {
@@ -1049,6 +1053,8 @@ export class AuthService {
         name: user.name,
         role: user.role,
         tenantId: user.tenantId,
+        grants: effectiveGrants(user.role, user.grants),
+        mustChangePassword: !!user.mustChangePassword,
       },
     };
   }

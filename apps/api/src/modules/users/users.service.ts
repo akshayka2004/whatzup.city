@@ -391,7 +391,10 @@ export class UsersService {
     if (!matches) throw new BadRequestException('Current password is incorrect');
 
     const newHash = await this.passwordService.hash(data.newPassword);
-    await this.db.user.update({ where: { id: userId }, data: { passwordHash: newHash } });
+    await this.db.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash, mustChangePassword: false },
+    });
     await this.redis.del(`user:${userId}`);
     return { message: 'Password updated successfully' };
   }

@@ -2,7 +2,12 @@
 // JWT Auth Guard — Protects routes requiring authentication
 // ============================================================
 
-import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ExecutionContext,
+  UnauthorizedException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
@@ -27,9 +32,27 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any, info: any) {
+  /** Routes still open to someone who must replace a temporary password first. */
+  private static readonly PASSWORD_CHANGE_OPEN = [
+    /\/users\/me\/change-password$/,
+    /\/users\/me$/,
+    /\/auth\/(me|logout|logout-all|refresh)$/,
+  ];
+
+  handleRequest(err: any, user: any, info: any, context?: ExecutionContext) {
     if (err || !user) {
       throw err || new UnauthorizedException('Invalid or expired token');
+    }
+    if (user.mustChangePassword && context) {
+      const req = context.switchToHttp().getRequest();
+      const path = String(req.originalUrl || req.url || '').split('?')[0];
+      if (!JwtAuthGuard.PASSWORD_CHANGE_OPEN.some((re) => re.test(path))) {
+        throw new ForbiddenException({
+          statusCode: 403,
+          code: 'PASSWORD_CHANGE_REQUIRED',
+          message: 'Choose a new password before continuing.',
+        });
+      }
     }
     return user;
   }

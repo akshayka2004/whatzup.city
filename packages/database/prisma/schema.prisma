@@ -126,6 +126,11 @@ model User {
   failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
   lockedUntil         DateTime? @map("locked_until")
   lastFailedLoginAt   DateTime? @map("last_failed_login_at")
+  // Staff access per area, e.g. { "events": "manage", "businesses": "view" }. Null keeps what the
+  // role has always allowed (see effectiveGrants in @saas/types).
+  grants              Json?
+  // Set when a super admin creates the account or resets its password; cleared on the first change.
+  mustChangePassword  Boolean   @default(false) @map("must_change_password")
   referralCode         String?      @unique @map("referral_code") @db.VarChar(20)
   referredBy           String?      @map("referred_by") @db.Uuid
   acceptedTermsAt      DateTime?    @map("accepted_terms_at")
