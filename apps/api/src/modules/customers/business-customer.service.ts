@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
+import { csvCell } from '../../common/utils/csv';
 
 // Cast helper — bypasses stale Prisma client types after schema migration.
 function prismaAny(db: DatabaseService): any {
@@ -35,11 +36,6 @@ const istDate = (d: Date | string | null | undefined) =>
   d ? new Date(d).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }) : '';
 
 /** RFC 4180 quoting plus a guard against spreadsheet formula injection. */
-function csvCell(v: unknown): string {
-  let s = v == null ? '' : String(v);
-  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
-  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
 @Injectable()
 export class BusinessCustomerService {
   private readonly logger = new Logger(BusinessCustomerService.name);

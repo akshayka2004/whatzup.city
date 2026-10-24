@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { PublicLayout } from '@/components/layouts/public-layout';
@@ -71,6 +73,7 @@ const EXIT_MS = 200;
 
 /** "Removed · Undo" bar. Mounted fresh per removal (keyed), so its 5s drain always starts from full. */
 function UndoBar({ name, onUndo }: { name: string; onUndo: () => void }) {
+  const { t } = useI18n();
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     const id = window.setTimeout(() => setArmed(true), 30);
@@ -90,7 +93,7 @@ function UndoBar({ name, onUndo }: { name: string; onUndo: () => void }) {
         onClick={onUndo}
         className="ui-press min-h-11 cursor-pointer rounded-xl px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
       >
-        Undo
+        {t('fav.undo')}
       </button>
       <span
         aria-hidden
@@ -104,6 +107,7 @@ function UndoBar({ name, onUndo }: { name: string; onUndo: () => void }) {
 }
 
 export default function FavoritesPage() {
+  const { t } = useI18n();
   const [favorites, setFavorites] = useState<SavedBusiness[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [leaving, setLeaving] = useState<Array<string | number>>([]);
@@ -171,10 +175,8 @@ export default function FavoritesPage() {
       <div>
         <div className="mb-6 flex items-end justify-between gap-3">
           <div>
-            <h1 className="mb-1 text-2xl font-bold tracking-tight sm:text-3xl">Saved Businesses</h1>
-            <p className="text-sm text-muted-foreground sm:text-base">
-              Your collection of favorite businesses and services
-            </p>
+            <h1 className="mb-1 text-2xl font-bold tracking-tight sm:text-3xl">{t('fav.title')}</h1>
+            <p className="text-sm text-muted-foreground sm:text-base">{t('fav.subtitle')}</p>
           </div>
           {loaded && favorites.length > 0 && (
             <span
@@ -210,7 +212,7 @@ export default function FavoritesPage() {
                         {fav.isVerified && (
                           <span className="inline-flex items-center gap-0.5 rounded-full border border-success/25 bg-success-soft px-1.5 py-0.5 text-xs font-semibold text-success-soft-foreground">
                             <CheckCircle2 className="h-3 w-3" />
-                            Verified
+                            {t('status.verified')}
                           </span>
                         )}
                       </div>
@@ -237,12 +239,12 @@ export default function FavoritesPage() {
                       href={`/business/${fav.id}`}
                       className="ui-press inline-flex h-11 flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-primary to-accent text-sm font-semibold text-primary-foreground"
                     >
-                      Visit
+                      {t('fav.visit')}
                     </Link>
                     <button
                       type="button"
                       onClick={() => handleRemove(fav)}
-                      aria-label={`Remove ${fav.name} from saved`}
+                      aria-label={t('fav.remove', { name: fav.name })}
                       className="ui-press inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-destructive/25 text-destructive transition-colors hover:bg-destructive/10"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -255,9 +257,9 @@ export default function FavoritesPage() {
         ) : (
           <EmptyState
             icon={Heart}
-            title="No Saved Businesses Yet"
-            description="Browse businesses and tap the heart icon to save them here"
-            action={{ label: 'Browse Businesses', href: '/search' }}
+            title={t('fav.empty')}
+            description={t('fav.emptyHint')}
+            action={{ label: t('biz.browse'), href: '/search' }}
           />
         )}
 

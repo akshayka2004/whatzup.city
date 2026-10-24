@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { MapPin, Star } from 'lucide-react';
@@ -22,6 +24,7 @@ export function RelatedStrip({
   categoryName?: string;
   currentIds: (string | undefined)[];
 }) {
+  const { t } = useI18n();
   const [ready, setReady] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 600);
@@ -47,9 +50,9 @@ export function RelatedStrip({
   if (!loading && items.length === 0) return null;
 
   return (
-    <section aria-label="Related businesses" className="mt-4">
+    <section aria-label={t('biz.related')} className="mt-4">
       <h2 className="mb-4 text-xl font-bold text-foreground sm:text-2xl">
-        More in {categoryName || 'this category'}
+        {t('biz.moreIn', { category: categoryName || t('biz.thisCategory') })}
       </h2>
       {loading && items.length === 0 ? (
         <RelatedSkeleton />

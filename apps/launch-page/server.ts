@@ -1,7 +1,9 @@
 import express from 'express';
 
 const app = express();
-const port = process.env.PORT || 6001;
+const port = Number(process.env.PORT) || 6001;
+// Behind nginx; listen on loopback unless told otherwise.
+const host = process.env.HOST || '127.0.0.1';
 
 // Where each product lives — override locally (e.g. http://localhost:5173 /
 // http://localhost:3000) without touching the page markup.
@@ -147,6 +149,6 @@ app.get('/', (req, res) => {
 </html>`);
 });
 
-app.listen(port, () => {
-  console.log(`Launch page server running on port ${port}`);
+app.listen(port, host, () => {
+  console.log(`Launch page server running on ${host}:${port}`);
 });

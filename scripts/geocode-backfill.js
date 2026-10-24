@@ -8,7 +8,11 @@
  *   DATABASE_URL=... node scripts/geocode-backfill.js --apply    # write coordinates
  *   ... --limit 50                                               # cap the run
  */
-const { PrismaClient } = require('@prisma/client');
+const path = require('path');
+// pnpm keeps @prisma/client inside the database package, not at the repo root.
+const { PrismaClient } = require(
+  require.resolve('@prisma/client', { paths: [path.join(__dirname, '../packages/database')] }),
+);
 
 const apply = process.argv.includes('--apply');
 const limitArg = process.argv.indexOf('--limit');

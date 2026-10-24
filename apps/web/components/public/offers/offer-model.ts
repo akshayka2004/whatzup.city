@@ -79,7 +79,7 @@ export function mapApiOffer(o: any): Offer {
  * Platform-curated offers into the same card shape. They have no discount and
  * no expiry, so the badge carries the price instead and no countdown renders.
  */
-export function mapPlatformOffer(o: any, fromServer = false): Offer {
+export function mapPlatformOffer(o: any): Offer {
   const rates = rateLines(o.category, o.subType, o.details);
   return {
     id: o.id,
@@ -97,8 +97,10 @@ export function mapPlatformOffer(o: any, fromServer = false): Offer {
       : undefined,
     terms: '',
     isPlatform: true,
-    imageUrl: fromServer ? null : o.imageSignedUrl || null,
-    imagePending: fromServer && !!o.imageSignedUrl,
+    // Poster links are signed for a week and reused for half of that, so ones
+    // rendered on the server (and cached) are still valid when the browser loads them.
+    imageUrl: o.imageSignedUrl || null,
+    imagePending: false,
     phone: o.phone || null,
     details: o.details || {},
     subType: o.subType || null,
@@ -133,24 +135,13 @@ export function listFrom(raw: any, keys: string[]): any[] {
  * Business offers + platform offers into one list (platform offers lead — they're
  * the featured, curated ones). Either body may be null (that request failed).
  */
-export function buildOffers(
-  offersBody: unknown,
-  platformBody: unknown,
-  fromServer = false,
-): Offer[] {
+export function buildOffers(offersBody: unknown, platformBody: unknown): Offer[] {
   let mapped: Offer[] = [];
   if (offersBody) mapped = listFrom(offersBody, ['data', 'items']).map(mapApiOffer);
   if (platformBody) {
-    mapped = [
-      ...listFrom(platformBody, ['data']).map((o) => mapPlatformOffer(o, fromServer)),
-      ...mapped,
-    ];
+    mapped = [...listFrom(platformBody, ['data']).map(mapPlatformOffer), ...mapped];
   }
   return mapped;
-}
-
-export function platformHasImages(platformBody: unknown): boolean {
-  return listFrom(platformBody, ['data']).some((o: any) => !!o?.imageSignedUrl);
 }
 
 /* ── Filter chips + sort ───────────────────────────────────────────── */

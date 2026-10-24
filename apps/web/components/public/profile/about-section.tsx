@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { SectionHeading, SectionCard } from './profile-ui';
@@ -20,6 +22,7 @@ export function hasAboutContent(biz: any): boolean {
 }
 
 export function AboutSection({ biz }: { biz: any }) {
+  const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
 
   const tags = useMemo(() => {
@@ -39,10 +42,14 @@ export function AboutSection({ biz }: { biz: any }) {
   if (!hasAboutContent(biz)) return null;
 
   return (
-    <section id="about" aria-label="About" className="mb-6 scroll-mt-16 space-y-4 lg:col-start-1">
+    <section
+      id="about"
+      aria-label={t('biz.tab.about')}
+      className="mb-6 scroll-mt-16 space-y-4 lg:col-start-1"
+    >
       {description && (
         <SectionCard className="ui-fade-up">
-          <SectionHeading title="About" />
+          <SectionHeading title={t('biz.tab.about')} />
           <p
             className={
               'whitespace-pre-line text-sm leading-relaxed text-muted-foreground sm:text-base' +
@@ -58,7 +65,7 @@ export function AboutSection({ biz }: { biz: any }) {
               aria-expanded={expanded}
               className="mt-1 min-h-11 cursor-pointer text-sm font-semibold text-primary hover:underline"
             >
-              {expanded ? 'Show less' : 'Read more'}
+              {expanded ? t('biz.showLess') : t('biz.readMore')}
             </button>
           )}
           {tags.length > 0 && (

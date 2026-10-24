@@ -24,6 +24,8 @@ export class BusinessRepository extends BaseRepository<any> {
     return this.update(tenantId, id, {
       status,
       ...(status === BusinessStatus.APPROVED ? { verifiedAt: new Date(), isVerified: true } : {}),
+      // A rejected listing must not keep a verified badge from an earlier approval.
+      ...(status === BusinessStatus.REJECTED ? { isVerified: false } : {}),
     });
   }
 

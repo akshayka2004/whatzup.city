@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SearchX } from 'lucide-react';
@@ -38,6 +40,7 @@ export default function BusinessClient({
   businessId,
   initialBusiness = null,
 }: BusinessClientProps) {
+  const { t } = useI18n();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
@@ -112,11 +115,15 @@ export default function BusinessClient({
 
   const tabs = useMemo<ProfileTab[]>(
     () => [
-      hasAbout ? { id: 'about', label: 'About' } : { id: 'details', label: 'Info' },
-      { id: 'offers-section', label: 'Offers' },
-      ...(hasMenu ? [{ id: 'menu', label: menuPhotos.length > 0 ? 'Menu' : 'Products' }] : []),
-      { id: 'reviews', label: 'Reviews' },
-      ...(hasOutlets ? [{ id: 'outlets', label: 'Outlets' }] : []),
+      hasAbout
+        ? { id: 'about', label: t('biz.tab.about') }
+        : { id: 'details', label: t('biz.tab.info') },
+      { id: 'offers-section', label: t('nav.offers') },
+      ...(hasMenu
+        ? [{ id: 'menu', label: menuPhotos.length > 0 ? t('biz.tab.menu') : t('biz.tab.products') }]
+        : []),
+      { id: 'reviews', label: t('biz.tab.reviews') },
+      ...(hasOutlets ? [{ id: 'outlets', label: t('biz.tab.outlets') }] : []),
     ],
     [hasAbout, hasMenu, hasOutlets, menuPhotos.length],
   );
@@ -130,10 +137,10 @@ export default function BusinessClient({
           <div className="flex min-h-[50vh] items-center justify-center">
             <EmptyState
               icon={SearchX}
-              title="Business not found"
-              description="This listing may have been removed or the ID is invalid."
-              action={{ label: 'Browse businesses', href: '/search' }}
-              secondary={{ label: 'Go back', onClick: () => router.back() }}
+              title={t('biz.notFound')}
+              description={t('biz.notFoundDesc')}
+              action={{ label: t('biz.browse'), href: '/search' }}
+              secondary={{ label: t('action.back'), onClick: () => router.back() }}
               className="w-full max-w-md"
             />
           </div>
@@ -170,7 +177,7 @@ export default function BusinessClient({
 
           <aside
             id="details"
-            aria-label="Contact and opening hours"
+            aria-label={t('biz.contactAndHours')}
             className="mb-6 scroll-mt-16 lg:sticky lg:top-16 lg:col-start-2 lg:row-span-6 lg:row-start-1 lg:self-start"
           >
             <InfoCard biz={biz} />

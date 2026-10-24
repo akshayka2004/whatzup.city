@@ -184,8 +184,10 @@ export class StorageService implements OnApplicationBootstrap {
   }
 
   /**
-   * Generates or fetches from cache a signed download URL for private files
-   * Expiry: 60 seconds. Caches in Redis for 50 seconds.
+   * Generates or fetches from cache a signed download URL for private files.
+   * Short links (default 60 s) are reused until 10 s before expiry. Long-lived
+   * links are reused for half their life, so any URL we hand out (including in
+   * cached pages) still has at least that half left.
    */
   async createSignedDownloadUrl(
     bucket: string,
@@ -193,7 +195,8 @@ export class StorageService implements OnApplicationBootstrap {
     expiresInSeconds = 60,
   ): Promise<string> {
     this.ensureClient();
-    const cacheKey = `signed-url:${bucket}:${fileKey}`;
+    // Keyed by lifetime too: a short-lived link must never be served where a long one was asked for.
+    const cacheKey = `signed-url:${bucket}:${fileKey}:${expiresInSeconds}`;
     try {
       const cachedUrl = await this.redis.get<string>(cacheKey);
       if (cachedUrl) {
@@ -213,9 +216,10 @@ export class StorageService implements OnApplicationBootstrap {
         throw new Error(error?.message || 'Failed to create signed download URL');
       }
 
-      // Cache for 50 seconds to keep a buffer margin before actual expiry
+      const reuseFor =
+        expiresInSeconds > 3600 ? Math.floor(expiresInSeconds / 2) : expiresInSeconds - 10;
       try {
-        await this.redis.set(cacheKey, data.signedUrl, expiresInSeconds - 10);
+        await this.redis.set(cacheKey, data.signedUrl, Math.max(1, reuseFor));
       } catch (err: any) {
         this.logger.warn(`Failed to write to Redis cache: ${err.message}`);
       }

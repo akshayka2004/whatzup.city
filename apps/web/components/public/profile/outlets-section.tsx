@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { Building2, Clock, MapPin, Navigation, Phone } from 'lucide-react';
 import { OtherOutlets } from '@/components/business/brand-public-section';
 import { Button } from '@/components/ui/button';
@@ -12,17 +14,22 @@ export function hasBranchList(biz: any): boolean {
 }
 
 export function OutletsSection({ biz, businessId }: { biz: any; businessId: string }) {
+  const { t } = useI18n();
   const branches: any[] = hasBranchList(biz) ? biz.branches : [];
 
   return (
     <section
       id="outlets"
-      aria-label="Outlets"
+      aria-label={t('biz.tab.outlets')}
       className="mb-6 scroll-mt-16 space-y-6 lg:col-start-1"
     >
       {branches.length > 0 && (
         <SectionCard>
-          <SectionHeading icon={Building2} title="Branches" hint={`${branches.length} locations`} />
+          <SectionHeading
+            icon={Building2}
+            title={t('biz.branches')}
+            hint={t('biz.locations', { n: branches.length })}
+          />
           <ul className="space-y-3">
             {branches.map((b, i) => {
               const addr = [b.address, b.city, b.state].filter(Boolean).join(', ');

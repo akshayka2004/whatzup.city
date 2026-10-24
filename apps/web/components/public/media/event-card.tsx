@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import {
   Calendar,
   CalendarDays,
@@ -67,6 +69,7 @@ export function EventCard({
   onGo: (ev: Ev, type: 'REGISTER' | 'TICKET') => void;
   priority?: boolean;
 }) {
+  const { t } = useI18n();
   const live = isHappeningNow(ev, now);
   // A run of several days (exhibitions, show seasons) reads as "On till 6 Dec",
   // not a "Happening now" pulse that stays on for weeks.
@@ -74,8 +77,14 @@ export function EventCard({
   const longRun = !!win && win.end - win.start > 3 * 86_400_000;
   const liveLabel =
     longRun && win
-      ? `On till ${new Date(win.end - 1).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' })}`
-      : 'Happening now';
+      ? t('events.onTill', {
+          date: new Date(win.end - 1).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            timeZone: 'Asia/Kolkata',
+          }),
+        })
+      : t('events.happeningNow');
   const tiers = Array.isArray(ev.ticketTiers) ? ev.ticketTiers : [];
   const sameDay = !ev.endDate || ev.endDate === ev.startDate;
   const where = [ev.venue, ev.city].filter(Boolean).join(', ');

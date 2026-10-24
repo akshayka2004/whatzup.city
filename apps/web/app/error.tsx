@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { startTransition, useEffect } from 'react';
 import { RefreshCw, Home, TriangleAlert } from 'lucide-react';
 import { isChunkError, reloadForChunkError } from '@/lib/chunk-error';
+import { reportClientError } from '@/lib/report-error';
 
 /**
  * Catches render/runtime errors in any route segment (instead of Next's bare
@@ -24,6 +25,7 @@ export default function RouteError({
     console.error('[route error]', error);
     // Stale tab after a deploy: pick up the new build instead of showing an error.
     if (chunk) reloadForChunkError();
+    else reportClientError(error);
   }, [error, chunk]);
 
   const retry = () => {

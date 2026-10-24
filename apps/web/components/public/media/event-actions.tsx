@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useEffect, useRef, useState } from 'react';
 import { CalendarPlus, Check, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -104,6 +106,7 @@ export function AddToCalendarButton({
   event: CalendarEvent;
   className?: string;
 }) {
+  const { t } = useI18n();
   const [done, flash] = useFlash();
   if (!parseDate(event.startDate)) return null;
 
@@ -130,14 +133,14 @@ export function AddToCalendarButton({
       type="button"
       onClick={add}
       className={cn(BTN, className)}
-      aria-label={`Add ${event.title} to calendar`}
+      aria-label={t('events.addToCalendarNamed', { title: event.title })}
     >
       {done ? (
         <Check className="h-3.5 w-3.5 text-success-soft-foreground" />
       ) : (
         <CalendarPlus className="h-3.5 w-3.5" />
       )}
-      <span aria-live="polite">{done ? 'Saved' : 'Add to calendar'}</span>
+      <span aria-live="polite">{done ? t('nav.saved') : t('events.addToCalendar')}</span>
     </button>
   );
 }
@@ -157,6 +160,7 @@ export function ShareButton({
   label?: string;
   className?: string;
 }) {
+  const { t } = useI18n();
   const [copied, flash] = useFlash();
 
   const share = async () => {
@@ -182,14 +186,14 @@ export function ShareButton({
       type="button"
       onClick={share}
       className={cn(BTN, className)}
-      aria-label={`Share ${title}`}
+      aria-label={t('events.shareNamed', { title })}
     >
       {copied ? (
         <Check className="h-3.5 w-3.5 text-success-soft-foreground" />
       ) : (
         <Share2 className="h-3.5 w-3.5" />
       )}
-      <span aria-live="polite">{copied ? 'Link copied' : label}</span>
+      <span aria-live="polite">{copied ? t('biz.linkCopied') : label}</span>
     </button>
   );
 }

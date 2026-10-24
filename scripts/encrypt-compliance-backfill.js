@@ -10,7 +10,11 @@
  * Uses the same key and v1 format as apps/api CryptoService. Take a DB backup first.
  */
 const crypto = require('crypto');
-const { PrismaClient } = require('@prisma/client');
+const path = require('path');
+// pnpm keeps @prisma/client inside the database package, not at the repo root.
+const { PrismaClient } = require(
+  require.resolve('@prisma/client', { paths: [path.join(__dirname, '../packages/database')] }),
+);
 
 const apply = process.argv.includes('--apply');
 const raw = process.env.ENCRYPTION_KEY;

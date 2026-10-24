@@ -47,10 +47,16 @@ export function useEntitlements(explicitBusinessId?: string) {
   }, [businessId, refresh]);
 
   // The API wraps nothing here, but tolerate a { data } envelope like the other endpoints.
+  const raw: any = data && (data as any).data && !(data as any).plan ? (data as any).data : data;
+  // Only trust a complete answer; anything else (an error body, an older API) counts as unknown
+  // rather than crashing every screen that reads limits.
   const ent: PlanEntitlements | null =
-    data && (data as any).data && !(data as any).plan
-      ? ((data as any).data as PlanEntitlements)
-      : data;
+    raw && typeof raw.offers === 'number' && raw.usage && typeof raw.usage === 'object'
+      ? {
+          ...raw,
+          overLimit: raw.overLimit ?? { offers: 0, vouchers: 0 },
+        }
+      : null;
 
   return {
     ent,

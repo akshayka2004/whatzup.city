@@ -427,7 +427,7 @@ export class OnboardingVerificationService {
       if (business) {
         await this.db.business.update({
           where: { id: business.id },
-          data: { status: 'REJECTED' },
+          data: { status: 'REJECTED', isVerified: false },
         });
 
         // Mark this business's verification documents rejected

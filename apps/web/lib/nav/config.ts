@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  ShieldCheck,
   Activity,
   BarChart3,
   Building2,
@@ -370,7 +371,7 @@ function staffNav(): NavSpec {
         ],
       },
     ],
-    footer: [],
+    footer: [{ label: 'Sign-in security', href: '/account/security', icon: ShieldCheck }],
     mobileTabs: ['/staff', '/staff/events', '/staff/platform-offers', '/staff/announcements'],
     mobileLabels: { '/staff/platform-offers': 'Offers', '/staff/announcements': 'Notices' },
   };
@@ -426,7 +427,10 @@ function adminNav(): NavSpec {
         ],
       },
     ],
-    footer: [{ label: 'My Profile', href: '/admin/profile', icon: CircleUserRound }],
+    footer: [
+      { label: 'My Profile', href: '/admin/profile', icon: CircleUserRound },
+      { label: 'Sign-in security', href: '/account/security', icon: ShieldCheck },
+    ],
     mobileTabs: PAYMENTS_ENABLED
       ? ['/admin', '/admin/approvals', '/admin/payments', '/admin/reports']
       : ['/admin', '/admin/approvals', '/admin/reports'],
@@ -504,7 +508,10 @@ function superAdminNav(): NavSpec {
         ],
       },
     ],
-    footer: [{ label: 'My Profile', href: '/super-admin/profile', icon: CircleUserRound }],
+    footer: [
+      { label: 'My Profile', href: '/super-admin/profile', icon: CircleUserRound },
+      { label: 'Sign-in security', href: '/account/security', icon: ShieldCheck },
+    ],
     mobileTabs: PAYMENTS_ENABLED
       ? ['/super-admin', '/admin/approvals', '/super-admin/businesses', '/admin/payments']
       : ['/super-admin', '/admin/approvals', '/super-admin/businesses'],

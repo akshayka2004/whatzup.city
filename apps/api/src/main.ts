@@ -11,16 +11,25 @@ import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { JsonLoggerService } from './common/logger/json-logger.service';
+import { initErrorTracking } from './common/observability/error-tracking';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
+    // Keeps req.rawBody for signed webhooks (signatures cover the exact bytes).
+    rawBody: true,
   });
 
   const logger = app.get(JsonLoggerService);
   app.useLogger(logger);
 
   const configService = app.get(ConfigService);
+
+  initErrorTracking({
+    dsn: configService.get<string>('SENTRY_DSN'),
+    release: configService.get<string>('SENTRY_RELEASE'),
+    environment: configService.get<string>('NODE_ENV'),
+  });
 
   // ── Security ────────────────────────────────────────────
   app.use(

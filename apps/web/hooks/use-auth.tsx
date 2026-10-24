@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { hasSessionHint } from '@/lib/session-hint';
-import { authService, User, UserRole } from '@/lib/services/auth-service';
+import { authService, TwoFactorRequiredError, User, UserRole } from '@/lib/services/auth-service';
 import { useRouter, usePathname } from 'next/navigation';
 
 // Only a same-origin /business/:id path (with an optional query/hash) is honored —
@@ -16,6 +16,12 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string, redirectTo?: string) => Promise<boolean>;
+  /** Finish a sign-in that threw TwoFactorRequiredError. */
+  completeTwoFactor: (
+    challengeToken: string,
+    code: string,
+    redirectTo?: string,
+  ) => Promise<boolean>;
   signUp: (email: string, password: string, name: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   switchRole: (role: string) => void;
@@ -130,33 +136,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return '/';
   };
 
+  const finishSignIn = (loggedInUser: User, redirectTo?: string) => {
+    setUser(loggedInUser);
+    // A QR-scan deep link (?redirect=/business/:id) wins over the usual
+    // role-based landing page — but only once validated as same-origin.
+    const target =
+      redirectTo && isSafeBusinessRedirect(redirectTo) ? redirectTo : resolveRedirect(loggedInUser);
+    router.push(target);
+    // Background refresh: loads full permissions without blocking redirect
+    authService
+      .fetchCurrentUser()
+      .then((fresh) => {
+        if (fresh) setUser(fresh);
+      })
+      .catch(() => {});
+  };
+
   const signIn = async (email: string, password: string, redirectTo?: string): Promise<boolean> => {
     setLoading(true);
     try {
       // Login response now includes entity — no second roundtrip needed for redirect
       const loggedInUser = await authService.signIn(email, password);
-      if (loggedInUser) {
-        setUser(loggedInUser);
-        // A QR-scan deep link (?redirect=/business/:id) wins over the usual
-        // role-based landing page — but only once validated as same-origin.
-        const target =
-          redirectTo && isSafeBusinessRedirect(redirectTo)
-            ? redirectTo
-            : resolveRedirect(loggedInUser);
-        router.push(target);
-        // Background refresh: loads full permissions without blocking redirect
-        authService
-          .fetchCurrentUser()
-          .then((fresh) => {
-            if (fresh) setUser(fresh);
-          })
-          .catch(() => {});
-        return true;
-      }
-      return false;
+      if (!loggedInUser) return false;
+      finishSignIn(loggedInUser, redirectTo);
+      return true;
     } catch (error) {
-      console.error('Login failed:', error);
+      // TwoFactorRequiredError is expected: the login page moves to the code step.
+      if (!(error instanceof TwoFactorRequiredError)) console.error('Login failed:', error);
       throw error; // re-throw so login page shows real API error message
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const completeTwoFactor = async (
+    challengeToken: string,
+    code: string,
+    redirectTo?: string,
+  ): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const loggedInUser = await authService.completeTwoFactor(challengeToken, code);
+      if (!loggedInUser) return false;
+      finishSignIn(loggedInUser, redirectTo);
+      return true;
     } finally {
       setLoading(false);
     }
@@ -210,7 +233,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, signIn, signUp, signOut, switchRole, refreshUser }}
+      value={{
+        user,
+        loading,
+        signIn,
+        completeTwoFactor,
+        signUp,
+        signOut,
+        switchRole,
+        refreshUser,
+      }}
     >
       {children}
     </AuthContext.Provider>

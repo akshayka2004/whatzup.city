@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { HOTEL_AMENITIES } from '@/lib/hotel-pricing';
 import { labelsFor } from '@/components/business/amenity-details-editor';
 import { SectionCard } from './profile-ui';
@@ -10,16 +12,17 @@ import { SectionCard } from './profile-ui';
  * on the page needs.
  */
 export default function HotelSection({ biz }: { biz: any }) {
+  const { t } = useI18n();
   const selected = HOTEL_AMENITIES.filter((a) => (biz.hotelAmenities || {})[a.key]?.selected);
   const details = biz.amenityDetails || {};
 
   return (
     <SectionCard className="ui-fade-up">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-bold text-foreground sm:text-2xl">Hotel</h2>
+        <h2 className="text-xl font-bold text-foreground sm:text-2xl">{t('biz.hotel')}</h2>
         {biz.hotelStarRating && (
           <span className="rounded-full border border-primary/20 bg-brand-soft px-3 py-1 text-sm font-semibold text-brand-soft-foreground">
-            {biz.hotelStarRating}★ classification
+            {t('biz.starClass', { n: biz.hotelStarRating })}
           </span>
         )}
       </div>

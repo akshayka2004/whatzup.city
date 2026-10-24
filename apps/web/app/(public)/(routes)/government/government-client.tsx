@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { PublicLayout } from '@/components/layouts/public-layout';
@@ -26,6 +28,7 @@ const NoticeDetailsModal = dynamic(
 );
 
 export function GovernmentClient({ initialNotices = null }: { initialNotices?: unknown | null }) {
+  const { t } = useI18n();
   // The server renders the default (all cities) list; it stays valid until the viewer picks a city.
   const seeded = useRef(initialNotices != null);
   const [notices, setNotices] = useState<Notice[]>(() =>
@@ -90,20 +93,16 @@ export function GovernmentClient({ initialNotices = null }: { initialNotices?: u
   return (
     <PublicLayout>
       <div>
-        <h1 className="mb-1 text-2xl font-bold tracking-tight sm:text-3xl">
-          Government Announcements
-        </h1>
-        <p className="mb-5 text-muted-foreground">
-          Stay informed with official notices and civic updates.
-        </p>
+        <h1 className="mb-1 text-2xl font-bold tracking-tight sm:text-3xl">{t('gov.title')}</h1>
+        <p className="mb-5 text-muted-foreground">{t('gov.subtitle')}</p>
 
         <div className="mb-6">
           <Select value={city || 'all'} onValueChange={handleCityChange}>
             <SelectTrigger className="w-full rounded-xl data-[size=default]:h-11 sm:w-52">
-              <SelectValue placeholder="Filter by city" />
+              <SelectValue placeholder={t('events.filterCity')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Cities</SelectItem>
+              <SelectItem value="all">{t('common.allCities')}</SelectItem>
               {KERALA_CITIES.map((c) => (
                 <SelectItem key={c} value={c}>
                   {c}
@@ -118,11 +117,11 @@ export function GovernmentClient({ initialNotices = null }: { initialNotices?: u
         ) : notices.length === 0 ? (
           <EmptyState
             icon={Bell}
-            title="No announcements"
-            description="Check back later for official updates."
+            title={t('gov.empty')}
+            description={t('gov.emptyHint')}
             action={
               city
-                ? { label: 'Show all cities', onClick: () => handleCityChange('all') }
+                ? { label: t('events.showAllCities'), onClick: () => handleCityChange('all') }
                 : undefined
             }
           />

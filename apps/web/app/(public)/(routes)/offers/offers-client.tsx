@@ -29,9 +29,6 @@ import {
   buildOffers,
   CLAIMED_STORAGE_KEY,
   getClaimedOffers,
-  listFrom,
-  mapPlatformOffer,
-  platformHasImages,
   type Offer,
   type OfferChip,
   type OfferSort,
@@ -69,7 +66,7 @@ export default function OffersClient({
   const seedPending = useRef(seeded);
 
   const [offers, setOffers] = useState<Offer[]>(() =>
-    seeded ? buildOffers(initialOffers, initialPlatformOffers, true) : [],
+    seeded ? buildOffers(initialOffers, initialPlatformOffers) : [],
   );
   const [loading, setLoading] = useState(!seeded);
   const [viewingOffer, setViewingOffer] = useState<Offer | null>(null);
@@ -113,19 +110,6 @@ export default function OffersClient({
         return;
       }
       setLoading(false);
-      // Platform image URLs are signed for ~60s, so server-rendered ones are
-      // withheld. Quietly fetch fresh platform offers (no spinner) to fill them in.
-      if (platformHasImages(initialPlatformOffers)) {
-        let alive = true;
-        apiService.get<any>('/v1/platform-offers/public').then((res) => {
-          if (!alive || res.error || !res.data) return;
-          const fresh = listFrom(res.data, ['data']).map((o) => mapPlatformOffer(o));
-          setOffers((prev) => [...fresh, ...prev.filter((o) => !o.isPlatform)]);
-        });
-        return () => {
-          alive = false;
-        };
-      }
       return;
     }
     seedPending.current = false;
@@ -422,10 +406,12 @@ export default function OffersClient({
               className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 min-[1600px]:grid-cols-4"
               gap={4}
             >
-              {filtered.slice(0, shown).map((offer) => (
+              {filtered.slice(0, shown).map((offer, i) => (
                 <OfferCoupon
                   key={offer.id}
                   offer={offer}
+                  // First row of posters is the largest paint on phones; fetch it eagerly.
+                  priority={i < 2}
                   claimed={isClaimed(offer.id)}
                   justClaimed={justClaimed === offer.id}
                   onView={openOffer}

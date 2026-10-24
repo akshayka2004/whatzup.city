@@ -9,6 +9,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
+import { TwoFactorService } from './two-factor.service';
 import { MailService } from './mail.service';
 import { AccessTokenStrategy } from './strategies/access-token.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
@@ -28,7 +29,14 @@ import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PasswordService, MailService, AccessTokenStrategy, RefreshTokenStrategy],
+  providers: [
+    AuthService,
+    TwoFactorService,
+    PasswordService,
+    MailService,
+    AccessTokenStrategy,
+    RefreshTokenStrategy,
+  ],
   exports: [AuthService, PasswordService, MailService],
 })
 export class AuthModule {}

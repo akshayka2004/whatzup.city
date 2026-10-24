@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { Suspense, useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -53,6 +55,7 @@ const chip = (active: boolean) =>
   );
 
 function CategoryContent() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const rawType = searchParams.get('type') || 'all';
   const categoryTitle =
@@ -245,9 +248,7 @@ function CategoryContent() {
           </div>
           <div className="min-w-0">
             <h1 className="truncate text-2xl font-bold text-foreground sm:text-3xl">{heroName}</h1>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Browse verified businesses in this category
-            </p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{t('cat.subtitle')}</p>
           </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-2" aria-live="polite">
@@ -269,7 +270,7 @@ function CategoryContent() {
       {/* Subcategories when this category has them, otherwise the top-level categories */}
       {subcategories.length > 0 ? (
         <nav
-          aria-label="Subcategories"
+          aria-label={t('cat.subcategories')}
           className="-mx-4 mb-3 flex snap-x gap-2 overflow-x-auto px-4 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
         >
           <button
@@ -295,7 +296,7 @@ function CategoryContent() {
       ) : (
         catList.length > 0 && (
           <nav
-            aria-label="Categories"
+            aria-label={t('cat.categories')}
             className="-mx-4 mb-3 flex snap-x gap-2 overflow-x-auto px-4 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
           >
             <Link
@@ -335,28 +336,31 @@ function CategoryContent() {
           <GridSkeleton variant="business" count={6} />
         ) : failed ? (
           <EmptyState
-            title="We couldn't load this category"
-            description="Check your connection and try again."
-            action={{ label: 'Try again', onClick: () => void res.refresh() }}
+            title={t('cat.loadFailed')}
+            description={t('near.checkConnection')}
+            action={{ label: t('action.tryAgain'), onClick: () => void res.refresh() }}
           />
         ) : results.length === 0 ? (
           <EmptyState
             icon={Building2}
-            title="No businesses found"
-            description={`No businesses found in this category${filters.city ? ` in ${filters.city}` : ''}.`}
+            title={t('near.noneFound')}
+            description={filters.city ? t('cat.noneInCity', { city: filters.city }) : t('cat.none')}
             action={
               list.length > 0
-                ? { label: 'Clear filters', onClick: clearFilters }
+                ? { label: t('near.clearFilters'), onClick: clearFilters }
                 : filters.city
-                  ? { label: 'Show all cities', onClick: () => setFilters({ city: '' }) }
+                  ? { label: t('events.showAllCities'), onClick: () => setFilters({ city: '' }) }
                   : filters.sub
-                    ? { label: `All ${heroName}`, onClick: () => update({ sub: '' }) }
+                    ? {
+                        label: t('cat.allOf', { name: heroName }),
+                        onClick: () => update({ sub: '' }),
+                      }
                     : undefined
             }
             secondary={
               rawType !== 'all'
-                ? { label: 'Browse all businesses', href: '/category' }
-                : { label: 'Search instead', href: '/search' }
+                ? { label: t('cat.browseAll'), href: '/category' }
+                : { label: t('cat.searchInstead'), href: '/search' }
             }
           />
         ) : (
@@ -374,7 +378,7 @@ function CategoryContent() {
                   disabled={res.loading}
                   onClick={widenWindow}
                 >
-                  Show more businesses
+                  {t('near.showMore')}
                 </Button>
               </div>
             )}

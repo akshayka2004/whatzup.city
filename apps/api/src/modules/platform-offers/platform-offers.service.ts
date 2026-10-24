@@ -25,6 +25,8 @@ function endOfDay(value?: string | null): Date | null {
  * need not be registered on the platform, so vendor details are stored on the
  * row itself.
  */
+const POSTER_URL_TTL_SECONDS = 7 * 24 * 3600;
+
 @Injectable()
 export class PlatformOffersService {
   private readonly logger = new Logger(PlatformOffersService.name);
@@ -220,13 +222,19 @@ export class PlatformOffersService {
 
   /**
    * Posters live in a private bucket, so the stored {bucket,path} is turned into
-   * a short-lived signed URL for display.
+   * a signed URL for display.
    */
   private async withSignedImage<T extends { imageUrl: string | null }>(row: T) {
     if (!row.imageUrl) return { ...row, imageSignedUrl: null };
     try {
       const parsed = JSON.parse(row.imageUrl);
-      const signed = await this.storage.createSignedDownloadUrl(parsed.bucket, parsed.path, 3600);
+      // Public posters: a week-long link, reused for 3.5 days, is stable enough for
+      // server-rendered/cached pages and the image optimiser to cache.
+      const signed = await this.storage.createSignedDownloadUrl(
+        parsed.bucket,
+        parsed.path,
+        POSTER_URL_TTL_SECONDS,
+      );
       return { ...row, imageSignedUrl: signed };
     } catch {
       // Older/plain URLs pass through unchanged.

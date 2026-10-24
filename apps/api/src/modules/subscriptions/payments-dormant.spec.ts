@@ -20,11 +20,17 @@ describe('payments dormant', () => {
 
   it('every business gets the single included plan, ignoring subscription rows', async () => {
     delete process.env.PAYMENTS_ENABLED;
-    const db: any = { subscription: { findMany: jest.fn(async () => [{ packageName: 'WHTZUP' }]) } };
+    const db: any = {
+      subscription: { findMany: jest.fn(async () => [{ packageName: 'WHTZUP' }]) },
+    };
     const redis: any = { get: jest.fn(async () => null), set: jest.fn(), del: jest.fn() };
     const svc = new EntitlementsService(db, redis);
     const e = await svc.forBusiness('b1');
-    expect(e).toMatchObject({ plan: INCLUDED_PLAN_CODE, ...INCLUDED_PLAN_ENTITLEMENTS, addons: [] });
+    expect(e).toMatchObject({
+      plan: INCLUDED_PLAN_CODE,
+      ...INCLUDED_PLAN_ENTITLEMENTS,
+      addons: [],
+    });
     expect(e.offers).toBe(3);
     expect(e.vouchers).toBe(3);
     expect(e.analytics).toBe(true);

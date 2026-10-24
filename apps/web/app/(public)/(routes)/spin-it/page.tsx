@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { PublicLayout } from '@/components/layouts/public-layout';
@@ -37,6 +39,7 @@ interface MyTicket {
 }
 
 function WheelCard({ wheel }: { wheel: ActiveWheel }) {
+  const { t } = useI18n();
   return (
     // The wrapper is what the stagger animates and what skips off-screen work;
     // the card inside keeps its own hover/press feedback.
@@ -91,7 +94,7 @@ function WheelCard({ wheel }: { wheel: ActiveWheel }) {
 
         <div className="mt-auto flex min-h-11 items-end gap-1.5 pt-4 text-sm font-semibold text-primary">
           <Sparkles className="h-4 w-4 transition-transform group-hover:rotate-12" />
-          Spin now
+          {t('spin.spinNow')}
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
         </div>
       </Link>
@@ -100,6 +103,7 @@ function WheelCard({ wheel }: { wheel: ActiveWheel }) {
 }
 
 export default function SpinItPage() {
+  const { t } = useI18n();
   const [wheels, setWheels] = useState<ActiveWheel[]>([]);
   const [tickets, setTickets] = useState<MyTicket[]>([]);
   const [tab, setTab] = useState<'wheels' | 'mine'>('wheels');
@@ -161,10 +165,8 @@ export default function SpinItPage() {
                 <Sparkles className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Spin it</h1>
-                <p className="text-muted-foreground text-sm">
-                  Businesses running a lucky wheel right now, and every discount voucher you've won.
-                </p>
+                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t('nav.spinIt')}</h1>
+                <p className="text-muted-foreground text-sm">{t('spin.subtitle')}</p>
               </div>
             </div>
 
@@ -179,17 +181,17 @@ export default function SpinItPage() {
               <div className="min-w-0 text-sm">
                 <p className="font-semibold text-foreground">
                   {loadingTickets
-                    ? 'Checking your vouchers…'
+                    ? t('spin.checking')
                     : summary.total === 1
-                      ? '1 voucher won'
-                      : `${summary.total} vouchers won`}
+                      ? t('spin.oneWon')
+                      : t('spin.nWon', { n: summary.total })}
                 </p>
                 <p className="text-xs text-muted-foreground tabular-nums">
                   {loadingTickets
-                    ? 'Just a moment'
+                    ? t('spin.moment')
                     : summary.total === 0
-                      ? 'Spin a wheel to win your first one'
-                      : `${summary.ready} ready to use · ${summary.redeemed} redeemed`}
+                      ? t('spin.first')
+                      : t('spin.summary', { ready: summary.ready, redeemed: summary.redeemed })}
                 </p>
               </div>
             </div>
@@ -223,9 +225,9 @@ export default function SpinItPage() {
           ) : wheels.length === 0 ? (
             <EmptyState
               icon={Disc3}
-              title="No wheels spinning right now"
-              description="Check back soon — businesses add new discount wheels often."
-              action={{ label: 'Browse businesses', href: '/search' }}
+              title={t('spin.noWheels')}
+              description={t('spin.noWheelsHint')}
+              action={{ label: t('biz.browse'), href: '/search' }}
             />
           ) : (
             <StaggerGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" gap={5}>
@@ -239,9 +241,9 @@ export default function SpinItPage() {
         ) : tickets.length === 0 ? (
           <EmptyState
             icon={Ticket}
-            title="No vouchers yet"
-            description="Spin a wheel on a business profile to win one."
-            action={{ label: 'See active wheels', onClick: () => setTab('wheels') }}
+            title={t('spin.noVouchers')}
+            description={t('spin.noVouchersHint')}
+            action={{ label: t('spin.seeWheels'), onClick: () => setTab('wheels') }}
           />
         ) : (
           <StaggerGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" gap={6}>

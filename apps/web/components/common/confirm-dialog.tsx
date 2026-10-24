@@ -2,17 +2,7 @@
 // design-lint-disable-file: window.confirm is the deliberate fallback when no ConfirmProvider is mounted.
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { cn } from '@/lib/utils';
+import dynamic from 'next/dynamic';
 
 export interface ConfirmOptions {
   title: string;
@@ -27,6 +17,9 @@ type ConfirmFn = (options: ConfirmOptions) => Promise<boolean>;
 
 const ConfirmContext = createContext<ConfirmFn | null>(null);
 
+// The dialog (Radix AlertDialog) loads on the first confirm, not with every page.
+const ConfirmDialogView = dynamic(() => import('./confirm-dialog-view'), { ssr: false });
+
 /**
  * Promise-based replacement for window.confirm():
  *   const confirm = useConfirm();
@@ -35,6 +28,8 @@ const ConfirmContext = createContext<ConfirmFn | null>(null);
  */
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [options, setOptions] = useState<ConfirmOptions | null>(null);
+  // Stays true after the first confirm so the dialog can animate closed.
+  const [mounted, setMounted] = useState(false);
   const resolver = useRef<((ok: boolean) => void) | null>(null);
 
   const confirm = useCallback<ConfirmFn>((opts) => {
@@ -42,6 +37,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       // A second call while one is open cancels the first.
       resolver.current?.(false);
       resolver.current = resolve;
+      setMounted(true);
       setOptions(opts);
     });
   }, []);
@@ -55,31 +51,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   return (
     <ConfirmContext.Provider value={confirm}>
       {children}
-      <AlertDialog open={!!options} onOpenChange={(open) => !open && settle(false)}>
-        <AlertDialogContent className="ui-pop max-w-[calc(100vw-2rem)] sm:max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{options?.title}</AlertDialogTitle>
-            {options?.description && (
-              <AlertDialogDescription>{options.description}</AlertDialogDescription>
-            )}
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-2">
-            <AlertDialogCancel className="min-h-11" onClick={() => settle(false)}>
-              {options?.cancelLabel ?? 'Cancel'}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className={cn(
-                'min-h-11',
-                options?.tone === 'danger' &&
-                  'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-              )}
-              onClick={() => settle(true)}
-            >
-              {options?.confirmLabel ?? 'Confirm'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {mounted && <ConfirmDialogView options={options} onSettle={settle} />}
     </ConfirmContext.Provider>
   );
 }

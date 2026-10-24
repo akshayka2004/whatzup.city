@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, BadgeCheck, Images, MapPin, Star, Store } from 'lucide-react';
 import { getOpenStatus, hasOperatingHours } from '@saas/types';
@@ -52,6 +54,7 @@ function Gallery({
   category?: string | null;
   onBack: () => void;
 }) {
+  const { t } = useI18n();
   const [api, setApi] = useState<CarouselApi>();
   const [index, setIndex] = useState(0);
 
@@ -117,7 +120,7 @@ function Gallery({
       <button
         type="button"
         onClick={onBack}
-        aria-label="Go back"
+        aria-label={t('action.back')}
         className="ui-press absolute left-3 top-3 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-black/45 text-white backdrop-blur hover:bg-black/60"
       >
         <ArrowLeft className="h-5 w-5" />
@@ -132,7 +135,7 @@ function Gallery({
           <div
             className="absolute inset-x-0 bottom-3.5 flex justify-center gap-1.5"
             role="group"
-            aria-label="Choose photo"
+            aria-label={t('biz.choosePhoto')}
           >
             {slides.map((s, i) => (
               <button
@@ -175,6 +178,7 @@ export function ProfileHero({
   onBack: () => void;
   onJump: (id: string) => void;
 }) {
+  const { t } = useI18n();
   const openStatus = useOpenStatus(biz.operatingHours);
 
   const slides = useMemo<Slide[]>(() => {
@@ -227,7 +231,7 @@ export function ProfileHero({
             {biz.isVerified && (
               <span className="inline-flex items-center gap-1 rounded-full border border-success/30 bg-success/15 px-2.5 py-0.5 text-xs font-semibold leading-5 text-success-foreground dark:text-success">
                 <BadgeCheck className="h-3.5 w-3.5" />
-                Verified Merchant
+                {t('biz.verifiedMerchant')}
               </span>
             )}
             {openStatus && (
@@ -241,7 +245,7 @@ export function ProfileHero({
             {biz.halalStatus && (
               <StatusPill
                 tone={biz.halalStatus === 'HALAL' ? 'success' : 'warning'}
-                label={biz.halalStatus === 'HALAL' ? 'Halal' : 'Non-Halal'}
+                label={biz.halalStatus === 'HALAL' ? t('biz.halal') : t('biz.nonHalal')}
               />
             )}
           </div>
@@ -273,7 +277,7 @@ export function ProfileHero({
                   <span className="text-muted-foreground">({reviewCount} reviews)</span>
                 </>
               ) : (
-                <span className="text-muted-foreground">No reviews yet</span>
+                <span className="text-muted-foreground">{t('biz.noReviews')}</span>
               )}
             </button>
             {place && (

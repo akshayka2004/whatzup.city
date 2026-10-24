@@ -7,13 +7,18 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '@saas/types';
 import { CreateAlertDto } from './dto/create-alert.dto';
+import { DatabaseService } from '../../common/database/database.service';
+import { assertVerifiedPublisher } from '../../common/utils/publisher';
 
 @ApiTags('Government Alerts')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('government-alerts')
 export class GovernmentAlertsController {
-  constructor(private readonly alertsService: GovernmentAlertsService) {}
+  constructor(
+    private readonly alertsService: GovernmentAlertsService,
+    private readonly db: DatabaseService,
+  ) {}
 
   @Roles(
     UserRole.MASTER_ADMIN,
@@ -31,7 +36,9 @@ export class GovernmentAlertsController {
     @CurrentUser('tenantId') tenantId: string,
     @CurrentUser('id') adminId: string,
     @Body() body: CreateAlertDto,
+    @CurrentUser('role') role: string,
   ) {
+    await assertVerifiedPublisher(this.db, { id: adminId, role });
     return this.alertsService.create(tenantId, adminId, body);
   }
 

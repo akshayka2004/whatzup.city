@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Header } from '@nestjs/common';
+import { PUBLIC_API_CACHE } from '../../common/http/cache-control';
 import { PaymentsEnabledGuard } from '../../common/guards/payments-enabled.guard';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SubscriptionsService } from './subscriptions.service';
@@ -15,6 +16,8 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UserRole } from '@saas/types';
+import { DatabaseService } from '../../common/database/database.service';
+import { assertBusinessAccess, type AccessUser } from '../../common/utils/business-access';
 
 @ApiTags('Subscriptions')
 @Controller('subscriptions')
@@ -22,10 +25,12 @@ export class SubscriptionsController {
   constructor(
     private readonly subscriptionsService: SubscriptionsService,
     private readonly entitlements: EntitlementsService,
+    private readonly db: DatabaseService,
   ) {}
 
   @Public()
   @UseGuards(PaymentsEnabledGuard)
+  @Header('Cache-Control', PUBLIC_API_CACHE)
   @Get('catalogue')
   @ApiOperation({ summary: 'Current plans and add-ons with prices (ex-GST)' })
   catalogue() {
@@ -137,7 +142,9 @@ export class SubscriptionsController {
   async getActive(
     @CurrentUser('tenantId') tenantId: string,
     @Param('businessId') businessId: string,
+    @CurrentUser() user: AccessUser,
   ) {
+    await assertBusinessAccess(this.db, businessId, user);
     return this.subscriptionsService.getActive(tenantId, businessId);
   }
 }

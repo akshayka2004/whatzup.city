@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { ModalSurface } from '@/components/system/modal-surface';
 import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -54,6 +56,7 @@ export function ReviewsSection({
   authLoading: boolean;
   onReviewPosted: () => void | Promise<unknown>;
 }) {
+  const { t } = useI18n();
   const router = useRouter();
   const [billOpen, setBillOpen] = useState(false);
   const [billSubmitted, setBillSubmitted] = useState(false);
@@ -81,11 +84,15 @@ export function ReviewsSection({
   const visible = showAll ? reviews : reviews.slice(0, PREVIEW);
 
   return (
-    <section id="reviews" aria-label="Reviews" className="mb-6 scroll-mt-16 lg:col-start-1">
+    <section
+      id="reviews"
+      aria-label={t('biz.tab.reviews')}
+      className="mb-6 scroll-mt-16 lg:col-start-1"
+    >
       <SectionCard>
         <SectionHeading
           icon={Star}
-          title="Reviews"
+          title={t('biz.tab.reviews')}
           hint={reviewCount > 0 ? `${reviewCount} total` : undefined}
         />
 
@@ -107,7 +114,7 @@ export function ReviewsSection({
               </div>
             </div>
             {loaded > 0 && (
-              <div className="space-y-1.5" aria-label="Rating breakdown">
+              <div className="space-y-1.5" aria-label={t('biz.ratingBreakdown')}>
                 {[5, 4, 3, 2, 1].map((star) => {
                   const count = histogram[star - 1];
                   const pct = Math.round((count / loaded) * 100);
@@ -144,11 +151,10 @@ export function ReviewsSection({
               <Receipt className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-base font-bold text-foreground sm:text-lg">Submit Your Bill</h3>
-              <p className="mt-0.5 text-sm text-muted-foreground">
-                Shopped here? Upload your receipt and share your experience to earn verified
-                purchase status.
-              </p>
+              <h3 className="text-base font-bold text-foreground sm:text-lg">
+                {t('biz.submitBill')}
+              </h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">{t('biz.submitBillHint')}</p>
             </div>
           </div>
 
@@ -159,7 +165,7 @@ export function ReviewsSection({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-success-soft-foreground">
-                  Bill Submitted Successfully!
+                  {t('biz.billSubmitted')}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Your receipt is under review. You&apos;ll be notified once verified.
@@ -174,7 +180,7 @@ export function ReviewsSection({
                 }}
                 className="min-h-11 shrink-0 rounded-xl text-xs"
               >
-                Submit Another
+                {t('biz.submitAnother')}
               </Button>
             </div>
           ) : (
@@ -187,7 +193,7 @@ export function ReviewsSection({
               className="ui-press mt-3 w-full gap-2 rounded-xl font-semibold sm:w-auto"
             >
               <Upload className="h-4 w-4" />
-              Upload Receipt
+              {t('biz.uploadReceipt')}
             </Button>
           )}
         </div>
@@ -199,15 +205,15 @@ export function ReviewsSection({
           <EmptyState
             compact
             icon={Star}
-            title="No reviews yet"
-            description="Be the first to share your experience!"
-            action={{ label: 'Write a review', onClick: openBill }}
+            title={t('biz.noReviews')}
+            description={t('biz.beFirst')}
+            action={{ label: t('biz.writeReview'), onClick: openBill }}
           />
         ) : (
           <>
             <ul className="space-y-5">
               {visible.map((review: any, i: number) => {
-                const name = review.user?.name || review.customerName || 'Anonymous';
+                const name = review.user?.name || review.customerName || t('biz.anonymous');
                 const verified = !!review.isVerifiedPurchase;
                 return (
                   <li
@@ -243,7 +249,7 @@ export function ReviewsSection({
                         <p className="font-semibold text-foreground">{name}</p>
                         {verified && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-success/30 bg-success/15 px-2.5 py-0.5 text-xs font-bold text-success-foreground dark:text-success">
-                            <CheckCircle2 className="h-3.5 w-3.5" /> Verified Purchase
+                            <CheckCircle2 className="h-3.5 w-3.5" /> {t('biz.verifiedPurchase')}
                           </span>
                         )}
                       </div>
@@ -261,7 +267,7 @@ export function ReviewsSection({
                       {review.ownerReply && (
                         <div className="mt-3 rounded-xl border-l-2 border-primary bg-brand-soft/60 px-3.5 py-2.5">
                           <p className="text-caption font-semibold text-brand-soft-foreground">
-                            Reply from the business
+                            {t('biz.ownerReply')}
                           </p>
                           <p className="mt-0.5 whitespace-pre-line break-words text-sm text-foreground">
                             {review.ownerReply}
@@ -279,7 +285,9 @@ export function ReviewsSection({
                 onClick={() => setShowAll((v) => !v)}
                 className="mt-3 min-h-11 w-full cursor-pointer rounded-xl text-sm font-semibold text-primary hover:bg-primary/5"
               >
-                {showAll ? 'Show fewer reviews' : `Show all ${reviews.length} reviews`}
+                {showAll
+                  ? t('biz.showFewerReviews')
+                  : t('biz.showAllReviews', { n: reviews.length })}
               </button>
             )}
           </>

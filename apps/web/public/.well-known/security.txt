@@ -1,0 +1,4 @@
+Contact: mailto:security@whtzup.city
+Expires: 2027-10-23T00:00:00.000Z
+Preferred-Languages: en, ml
+Canonical: https://platform.whtzup.city/.well-known/security.txt

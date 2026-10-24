@@ -30,4 +30,25 @@ describe('clientIp', () => {
     expect(forwardedIp(r)).toBeUndefined();
     expect(clientIp(r)).toBe('::1');
   });
+
+  describe('with TRUSTED_IP_HEADER', () => {
+    afterEach(() => {
+      delete process.env.TRUSTED_IP_HEADER;
+    });
+
+    it('reads only the pinned header and ignores spoofable ones', () => {
+      process.env.TRUSTED_IP_HEADER = 'X-Real-IP';
+      const r = req('127.0.0.1', {
+        'x-real-ip': '203.0.113.9',
+        'cf-connecting-ip': '198.51.100.66',
+        'x-forwarded-for': '198.51.100.77',
+      });
+      expect(clientIp(r)).toBe('203.0.113.9');
+    });
+
+    it('falls back to the socket address when the pinned header is missing', () => {
+      process.env.TRUSTED_IP_HEADER = 'x-real-ip';
+      expect(clientIp(req('127.0.0.1', { 'cf-connecting-ip': '198.51.100.66' }))).toBe('127.0.0.1');
+    });
+  });
 });

@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, CalendarDays, ExternalLink, MapPin, Store, Ticket } from 'lucide-react';
@@ -24,6 +26,7 @@ export function EventDetailClient({
     business?: { id?: string; name?: string; logo?: string | null } | null;
   };
 }) {
+  const { t } = useI18n();
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => setNow(Date.now()), []);
 
@@ -51,17 +54,17 @@ export function EventDetailClient({
   return (
     <PublicLayout>
       <PageHeader
-        back={{ href: '/events', label: 'All events' }}
-        eyebrow={category ?? 'Event'}
+        back={{ href: '/events', label: t('events.when.all') }}
+        eyebrow={category ?? t('events.event')}
         title={ev.title}
         meta={
           live ? (
-            <StatusPill tone="success" live label="Happening now" />
+            <StatusPill tone="success" live label={t('events.happeningNow')} />
           ) : ended ? (
-            <StatusPill tone="neutral" label="Ended" />
+            <StatusPill tone="neutral" label={t('events.ended')} />
           ) : null
         }
-        description={host ? `Hosted by ${host}` : undefined}
+        description={host ? t('events.hostedBy', { host }) : undefined}
       />
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
@@ -77,7 +80,7 @@ export function EventDetailClient({
             />
           </div>
           {ev.description && (
-            <SectionCard title="About this event">
+            <SectionCard title={t('events.about')}>
               <p className="whitespace-pre-line break-words text-body text-foreground">
                 {ev.description}
               </p>
@@ -112,7 +115,7 @@ export function EventDetailClient({
                       rel="noreferrer"
                       className="text-caption text-primary hover:underline"
                     >
-                      Open in Maps
+                      {t('events.openInMaps')}
                     </a>
                   </div>
                 </div>
@@ -120,12 +123,12 @@ export function EventDetailClient({
               <div className="flex gap-3">
                 <Ticket className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
                 <div>
-                  <dt className="sr-only">Price</dt>
+                  <dt className="sr-only">{t('events.price')}</dt>
                   <dd className="font-medium">
                     {ev.ticketType !== 'PAID'
-                      ? 'Free entry'
+                      ? t('events.freeEntry')
                       : tiers.length
-                        ? 'Tickets'
+                        ? t('events.tickets')
                         : `₹${Number(ev.ticketPrice || 0).toLocaleString('en-IN')}`}
                   </dd>
                   {tiers.length > 0 && (

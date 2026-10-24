@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n/provider';
+
 import { ModalSurface } from '@/components/system/modal-surface';
 import { useEffect, useRef } from 'react';
 import { Bell, Download, FileText, Image as ImageIcon, X } from 'lucide-react';
@@ -19,6 +21,7 @@ export function NoticeDetailsModal({
   onClose: () => void;
   onDownload: (att: { name: string; url?: string }) => void;
 }) {
+  const { t } = useI18n();
   const closeBtn = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -36,7 +39,7 @@ export function NoticeDetailsModal({
         ref={closeBtn}
         type="button"
         onClick={onClose}
-        aria-label="Close"
+        aria-label={t('notice.close')}
         className="ui-press absolute right-2 top-2 z-10 flex h-11 w-11 cursor-pointer items-center justify-center text-muted-foreground hover:text-foreground"
       >
         <X className="h-5 w-5" />
@@ -88,7 +91,7 @@ export function NoticeDetailsModal({
         {notice.attachments.length > 0 && (
           <div className="mb-6">
             <h4 className="mb-3 text-sm font-semibold text-foreground">
-              Attached Documents & Media
+              {t('notice.attachments')}
             </h4>
             <div className="space-y-2">
               {notice.attachments.map((a, idx) => (
@@ -123,7 +126,7 @@ export function NoticeDetailsModal({
 
         <div className="flex justify-end">
           <Button onClick={onClose} className="h-11 cursor-pointer sm:h-9">
-            Close
+            {t('notice.close')}
           </Button>
         </div>
       </div>

@@ -1300,6 +1300,21 @@ live wheel and their own won tickets at the public `/spin-it` page (`GET
 - **After submit** the page shows `SubmittedPanel` (what happens next, dashboard button) instead of a timed redirect.
 - Not built, needs a decision or provider: phone OTP / magic-link sign-in, Google sign-in, an "email already registered" pre-check (it would let anyone test which emails have accounts).
 
+### 12.18 Deep security + performance review (2026-10-23)
+
+Server steps and settings: `docs/ops-edge-and-origin.md` sections 2 and 4–7.
+
+- **Origin lock.** saas-web and the launch page listen on `127.0.0.1`. `TRUSTED_IP_HEADER` (e.g. `x-real-ip`) pins the client IP used for rate limits to the header nginx overwrites (`common/utils/client-ip.ts`). Auth cookies are `Secure` (`COOKIE_SECURE=true`). The Socket.IO gateway accepts only `CORS_ORIGINS`.
+- **Two-factor sign-in** (`modules/auth/two-factor.service.ts`, `common/utils/totp.ts`, RFC 6238, no dependency). `/auth/2fa` status/setup/enable/disable/recovery-codes; with 2FA on, `/auth/login` returns `{ twoFactorRequired, challengeToken }` and `/auth/2fa/login` finishes it. Secret encrypted with `CryptoService`; recovery codes hashed and single-use; codes can't be replayed. `ADMIN_2FA_REQUIRED=true` makes `RolesGuard` refuse SUPER_ADMIN / MASTER_ADMIN / PLATFORM_STAFF until enrolled (`TWO_FACTOR_SETUP_REQUIRED`, the web client redirects to `/account/security`).
+- **Bot check.** `TurnstileGuard` on sign-up (all three), login, forgot-password and customer onboarding sign-up; off until `TURNSTILE_SECRET_KEY` is set. The web `apiService` adds the token for those endpoints (`lib/turnstile.ts`).
+- **Email.** `MailService` now really sends through Resend or SendGrid (they were placeholders). In production, console mode sends nothing and never logs bodies.
+- **Alerts and errors.** `SecurityAlertService` (`SECURITY_ALERT_WEBHOOK_URL`): privileged role granted, admin locked out, 2FA turned off, login-failure and 5xx spikes. Sentry via `SENTRY_DSN`; browser errors arrive through `POST /api/v1/client-errors`.
+- **Retention.** `RetentionService` (03:15 IST): refresh tokens and sessions 30 days after expiry/revocation; analytics events and audit logs only when `ANALYTICS_RETENTION_DAYS` / `AUDIT_RETENTION_DAYS` are set.
+- **Rejected businesses** lose `isVerified`.
+- **Performance.** Public API reads send `s-maxage=60` (Cloudflare can cache them). Platform-offer posters are signed for 7 days and the link is reused for 3.5, so the server render includes them; the first two load with priority. Malayalam strings (`lib/i18n/messages/*.ml.ts`) and the confirm dialog load on demand. saas-web runs as two PM2 cluster workers; deploys reload without downtime.
+- **CI.** `security.yml`: CodeQL, gitleaks, `pnpm audit --prod`. Dependabot weekly. `scripts/check-bundle-budget.mjs` fails the build when key pages exceed their gzipped JS budget. `/.well-known/security.txt` (contact `security@whtzup.city`).
+- **Ops scripts.** `scripts/backup-db.sh` (encrypted pg_dump, R2 copy, verify), `scripts/sql/app-runtime-role.sql` (least-privilege role, not run).
+
 ### 12.19 Staff accounts and per-account access
 
 A super admin creates staff and portal-admin accounts at `/super-admin/roles` ("Staff & access") and ticks, per account, **None / View / Manage** for each area.

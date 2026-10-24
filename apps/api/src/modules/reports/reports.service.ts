@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
+import { csvRow } from '../../common/utils/csv';
 
 @Injectable()
 export class ReportsService {
@@ -122,9 +123,15 @@ export class ReportsService {
 
     for (const item of metrics) {
       const name = bizNameMap.get(item.businessId) || 'Unknown Business';
-      const escapedName = name.replace(/"/g, '""');
       csvRows.push(
-        `"${item.businessId}","${escapedName}",${item._sum.viewCount || 0},${item._sum.clickCount || 0},${item._sum.redemptionCount || 0},${item._sum.reviewCount || 0}`,
+        csvRow([
+          item.businessId,
+          name,
+          item._sum.viewCount || 0,
+          item._sum.clickCount || 0,
+          item._sum.redemptionCount || 0,
+          item._sum.reviewCount || 0,
+        ]),
       );
     }
 
@@ -160,9 +167,16 @@ export class ReportsService {
     const csvRows = ['Flag ID,Target Type,Target ID,Severity,Status,Reason,Created At'];
 
     for (const flag of flags) {
-      const escapedReason = flag.reason.replace(/"/g, '""').replace(/\n/g, ' ');
       csvRows.push(
-        `"${flag.id}","${flag.targetType}","${flag.targetId}","${flag.severity}","${flag.status}","${escapedReason}","${flag.createdAt.toISOString()}"`,
+        csvRow([
+          flag.id,
+          flag.targetType,
+          flag.targetId,
+          flag.severity,
+          flag.status,
+          flag.reason.replace(/\n/g, ' '),
+          flag.createdAt.toISOString(),
+        ]),
       );
     }
 

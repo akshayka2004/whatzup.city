@@ -8,7 +8,9 @@ import {
   Param,
   Query,
   UseGuards,
+  Header,
 } from '@nestjs/common';
+import { PUBLIC_API_CACHE } from '../../common/http/cache-control';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PlatformOffersService } from './platform-offers.service';
 import {
@@ -33,6 +35,7 @@ export class PlatformOffersController {
   // param route (a P2023 invalid-UUID error otherwise).
 
   @Public()
+  @Header('Cache-Control', PUBLIC_API_CACHE)
   @Get('public')
   @ApiOperation({ summary: 'List published platform offers' })
   async listPublic(@Query('tenantId') tenantId?: string, @Query('category') category?: string) {

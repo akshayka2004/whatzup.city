@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { isChunkError, reloadForChunkError } from '@/lib/chunk-error';
+import { reportClientError } from '@/lib/report-error';
 
 /**
  * Last-resort boundary: replaces the whole document, so it can't rely on the
@@ -15,6 +16,7 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     if (isChunkError(error)) reloadForChunkError();
+    else reportClientError(error);
   }, [error]);
 
   // reset() re-renders the same broken tree; a reload fetches the current build.

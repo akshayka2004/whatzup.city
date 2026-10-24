@@ -254,15 +254,17 @@ export class AnalyticsV2Service {
       newCustomers: metric(out.newCustomers, outPrev.newCustomers),
     };
 
-    const [series, sources, devices, heatmap, offers, purchases, offerChannels] = await Promise.all([
-      this.businessSeries(businessId, r, g),
-      this.dimension(businessId, r, 'source'),
-      this.dimension(businessId, r, 'device'),
-      this.heatmap(businessId, r),
-      this.offerTable(businessId, r),
-      purchaseMix(this.db, r, { businessId }),
-      offerChannelMix(this.db, { businessId }),
-    ]);
+    const [series, sources, devices, heatmap, offers, purchases, offerChannels] = await Promise.all(
+      [
+        this.businessSeries(businessId, r, g),
+        this.dimension(businessId, r, 'source'),
+        this.dimension(businessId, r, 'device'),
+        this.heatmap(businessId, r),
+        this.offerTable(businessId, r),
+        purchaseMix(this.db, r, { businessId }),
+        offerChannelMix(this.db, { businessId }),
+      ],
+    );
 
     return {
       range: { from: r.from, to: r.to, days: r.days, granularity: g, timezone: 'Asia/Kolkata' },

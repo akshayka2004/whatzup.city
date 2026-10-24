@@ -12,6 +12,7 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -21,6 +22,8 @@ import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { PasswordService } from './password.service';
 import { MailService } from './mail.service';
+import { TwoFactorService } from './two-factor.service';
+import { PRIVILEGED_ROLES, SecurityAlertService } from '../../common/alerts/security-alert.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -28,7 +31,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { BusinessSignupDto } from './dto/business-signup.dto';
 import { CivicSignupDto } from './dto/civic-signup.dto';
-import { UserRoleEnum } from '@prisma/client';
+import { Prisma, UserRoleEnum } from '@prisma/client';
 import { SelectRoleDto } from './dto/select-role.dto';
 import { AvailabilityDto } from './dto/availability.dto';
 import { effectiveGrants } from '@saas/types';
@@ -37,6 +40,9 @@ import {
   resolveMasterCategory,
   resolveMasterSubcategories,
 } from '../../common/utils/master-category';
+
+/** Roles a visitor may pick on the public sign-up form. */
+const SELF_SIGNUP_ROLES = new Set<UserRoleEnum>([UserRoleEnum.USER, UserRoleEnum.GOVERNMENT_ADMIN]);
 
 export interface JwtPayload {
   sub: string;
@@ -64,6 +70,8 @@ export class AuthService {
     private readonly redisService: RedisService,
     private readonly passwordService: PasswordService,
     private readonly mailService: MailService,
+    @Optional() private readonly alerts?: SecurityAlertService,
+    @Optional() private readonly twoFactor?: TwoFactorService,
   ) {}
 
   /**
@@ -75,13 +83,21 @@ export class AuthService {
 
   async signup(dto: SignupDto) {
     try {
-      // 1. Resolve tenant (auto-select first tenant for single-tenant deployments)
-      if (!dto.tenantId) {
-        const defaultTenant = await this.db.tenant.findFirst({ select: { id: true } });
-        if (!defaultTenant) {
-          throw new BadRequestException('No tenant configured. Contact support.');
-        }
-        dto.tenantId = defaultTenant.id;
+      // 1. Public sign-up always lands in the platform's default tenant. A client-chosen
+      //    tenantId would let anyone join a business's tenant, where tenant-scoped checks
+      //    treat them as an insider.
+      const defaultTenant =
+        (await this.db.tenant.findUnique({ where: { slug: 'default' }, select: { id: true } })) ??
+        (await this.db.tenant.findFirst({ orderBy: { createdAt: 'asc' }, select: { id: true } }));
+      if (!defaultTenant) {
+        throw new BadRequestException('No tenant configured. Contact support.');
+      }
+      dto.tenantId = defaultTenant.id;
+
+      // Self-service roles only. Everything else (admins, staff, business roles) is granted
+      // by an admin or through its own onboarding flow, never by the request body.
+      if (dto.role && !SELF_SIGNUP_ROLES.has(dto.role)) {
+        throw new ForbiddenException('That account type cannot be created by sign-up.');
       }
 
       // 2. Validate password strength
@@ -389,6 +405,21 @@ export class AuthService {
         })
         .catch(() => {});
 
+      void this.alerts?.countAndAlert(
+        'LOGIN_FAILURE_SPIKE',
+        Number(process.env.LOGIN_FAILURE_ALERT_THRESHOLD) || 50,
+        3600,
+        (n) => `${n} failed logins in the last hour across all accounts`,
+      );
+      if (lockedUntil && PRIVILEGED_ROLES.has(user.role)) {
+        void this.alerts?.alert(
+          'PRIVILEGED_ACCOUNT_LOCKED',
+          `Admin account locked after ${attempts} failed logins`,
+          { userId: user.id, role: user.role, ipAddress, until: lockedUntil.toISOString() },
+          user.id,
+        );
+      }
+
       // Same message whether the account exists or the password is wrong, so
       // login can't be used to enumerate registered emails.
       throw new UnauthorizedException('Invalid credentials');
@@ -414,6 +445,46 @@ export class AuthService {
       throw new UnauthorizedException('Please verify your email address before logging in.');
     }
 
+    // Second factor: no tokens until /auth/2fa/login redeems this challenge with a code.
+    if (user.twoFactorEnabledAt && this.twoFactor) {
+      return {
+        twoFactorRequired: true as const,
+        challengeToken: await this.twoFactor.createChallenge(user.id),
+      };
+    }
+
+    return this.completeLogin(user, ipAddress, userAgent);
+  }
+
+  /** Second step of a 2FA login: challenge + TOTP/recovery code → session. */
+  async loginWithTwoFactor(
+    challengeToken: string,
+    code: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    if (!this.twoFactor) throw new UnauthorizedException('Two-factor sign-in is unavailable.');
+    const userId = await this.twoFactor.redeemChallenge(challengeToken, code);
+    const user = await this.db.user.findFirst({
+      where: { id: userId, deletedAt: null },
+      include: {
+        entities: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+    if (!user || !user.isActive) throw new UnauthorizedException('Invalid credentials');
+    return this.completeLogin(user, ipAddress, userAgent);
+  }
+
+  /** Issues tokens and records the sign-in once every factor has been checked. */
+  private async completeLogin(
+    user: Prisma.UserGetPayload<{ include: { entities: true } }>,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
     // ── Parallel: token generation + lastLoginAt update + deviceLogin ──
     const deviceType = userAgent ? this.parseDeviceType(userAgent) : 'Unknown';
     const now = new Date();
@@ -963,6 +1034,7 @@ export class AuthService {
       // What this account may do in the admin portal (see packages/types/src/access.ts).
       grants: effectiveGrants(user.role, user.grants),
       mustChangePassword: !!user.mustChangePassword,
+      twoFactorEnabled: !!user.twoFactorEnabledAt,
       businessId: staffBusinessId,
       entity: activeEntity
         ? {

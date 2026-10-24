@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { DEFAULT_LOCALE, LOCALE_STORAGE_KEY, translate, type Locale } from './index';
+import { DEFAULT_LOCALE, LOCALE_STORAGE_KEY, loadLocale, translate, type Locale } from './index';
 import { LABEL_KEYS } from './labels';
 
 interface I18nValue {
@@ -45,9 +45,27 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // The language whose strings are loaded. Switching to Malayalam keeps English on
+  // screen for the moment it takes to fetch that catalogue.
+  const [active, setActive] = useState<Locale>(DEFAULT_LOCALE);
+
   useEffect(() => {
-    document.documentElement.lang = locale;
+    let alive = true;
+    loadLocale(locale)
+      .then(() => {
+        if (alive) setActive(locale);
+      })
+      .catch(() => {
+        /* offline: stay on the language already shown */
+      });
+    return () => {
+      alive = false;
+    };
   }, [locale]);
+
+  useEffect(() => {
+    document.documentElement.lang = active;
+  }, [active]);
 
   const setLocale = useCallback((l: Locale) => {
     setLocaleState(l);
@@ -62,10 +80,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     () => ({
       locale,
       setLocale,
-      t: (key, vars) => translate(locale, key, vars),
-      tl: (label) => (LABEL_KEYS[label] ? translate(locale, LABEL_KEYS[label]) : label),
+      t: (key, vars) => translate(active, key, vars),
+      tl: (label) => (LABEL_KEYS[label] ? translate(active, LABEL_KEYS[label]) : label),
     }),
-    [locale, setLocale],
+    [locale, active, setLocale],
   );
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
