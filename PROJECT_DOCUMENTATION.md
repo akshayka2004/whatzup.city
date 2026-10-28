@@ -1326,3 +1326,12 @@ A super admin creates staff and portal-admin accounts at `/super-admin/roles` ("
 - **First password:** email is not sent by the app, so the super admin types or generates a temporary password and passes it on. `must_change_password` makes `JwtAuthGuard` answer 403 `PASSWORD_CHANGE_REQUIRED` for everything except change-password, `/users/me`, `/auth/me`, refresh and logout; the web app sends the person to `/change-password`.
 - **Web:** `lib/access.ts` maps pages to areas. Navigation (`lib/nav/config.ts`) lists only granted pages. Staff keep `/staff/*` and also open granted `/admin/*` pages inside the staff menu; a page outside their access shows "You don't have access".
 - **Deploy order:** apply the migration before deploying the API; the new code selects the new columns.
+
+### 12.20 Business QR codes
+
+A business QR encodes `https://platform.whtzup.city/b/<CODE>` (`businessQrUrl` in `lib/qr.ts`; origin from `NEXT_PUBLIC_SITE_URL` via `lib/site-url.ts`, never from the address the owner has open).
+
+- **Code:** `businesses.public_code`, 6 characters from an alphabet without I, L, O, 0, 1 (`common/utils/public-code.ts`). Migration `20261028000000_business_public_code` backfills every existing business. A business without one gets it on first use: `POST /businesses/:id/public-code` (owner, super admin, portal admin; idempotent, fills only an empty code).
+- **Redirect:** `app/b/[code]/route.ts` calls the public `GET /businesses/by-code/:code` and answers `302` to `/business/<id>?src=qr` on the fixed public address, cached 5 minutes at the edge. Only approved, live businesses resolve; otherwise `/qr-unavailable?reason=missing` (or `down` for an API error, never cached).
+- **Old QR codes** (`/business/<id>?src=qr`) keep working. The in-app scanner on `/offers` understands both forms (`resolveBusinessFromScan`).
+- **Error correction** is level Q with a 2-module quiet zone, so small or scuffed prints still scan.

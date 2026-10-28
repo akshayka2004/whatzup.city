@@ -74,7 +74,5 @@ export function unwrapOne<T = any>(body: unknown): T | null {
   return (b?.data ?? b ?? null) as T | null;
 }
 
-/** Public site origin for canonical URLs, sitemap and share cards. */
-export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL || 'https://platform.whtzup.city'
-).replace(/\/$/, '');
+/** Public site origin for canonical URLs, sitemap and share cards (defined in site-url.ts). */
+export { SITE_URL } from './site-url';

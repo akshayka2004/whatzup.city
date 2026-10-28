@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { generatePublicCode, normalizePublicCode } from '../../common/utils/public-code';
 import { BusinessRepository } from '../../common/database/repositories/business.repository';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
@@ -160,6 +161,72 @@ export class BusinessesService {
 
     if (isPublic) return toPublicBusiness(business);
     return business;
+  }
+
+  /**
+   * The business behind a QR code. Public: only an approved, live listing resolves, so a QR for a
+   * pending, rejected or removed business shows the "not listed" page instead of a broken one.
+   */
+  async findIdByPublicCode(rawCode: string): Promise<{ id: string }> {
+    const code = normalizePublicCode(rawCode);
+    if (!code) throw new NotFoundException('Business not found');
+
+    const key = `business-code:${code}`;
+    const cached = await this.redis.get<string>(key);
+    if (cached) return { id: cached };
+
+    // tenant-scope-ok: a QR code is global; selects id only
+    const business = await this.businessRepo.model.findFirst({
+      where: { publicCode: code, deletedAt: null, status: 'APPROVED' },
+      select: { id: true },
+    });
+    if (!business) throw new NotFoundException('Business not found');
+
+    await this.redis.set(key, business.id, 300);
+    return { id: business.id };
+  }
+
+  /**
+   * A business's QR code, created the first time it is needed. The owner may ask for their own;
+   * super and portal admins may ask for any business (to print a replacement).
+   */
+  async ensurePublicCode(
+    tenantId: string,
+    id: string,
+    actor: { id: string; role?: string },
+  ): Promise<{ publicCode: string }> {
+    const isAdmin = actor.role === 'SUPER_ADMIN' || actor.role === 'MASTER_ADMIN';
+    // tenant-scope-ok: platform admins work across tenants; the owner path below is tenant-scoped
+    const business = isAdmin
+      ? await this.businessRepo.model.findFirst({ where: { id, deletedAt: null } })
+      : await this.businessRepo.findOne(tenantId, id);
+    if (!business) throw new NotFoundException('Business not found');
+    if (!isAdmin && business.ownerId !== actor.id) throw new ForbiddenException('Not authorized');
+    if ((business as any).publicCode) return { publicCode: (business as any).publicCode };
+
+    // 31^6 codes, so a clash is rare; retry on the unique index rather than checking first.
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const publicCode = generatePublicCode();
+      try {
+        // Only fills an empty code, so two requests at once cannot replace a code already printed.
+        const res = await this.businessRepo.model.updateMany({
+          where: { id, publicCode: null },
+          data: { publicCode },
+        });
+        if (res.count === 1) {
+          await this.redis.del(`business:${id}`);
+          return { publicCode };
+        }
+        const now = await this.businessRepo.model.findUnique({
+          where: { id },
+          select: { publicCode: true },
+        });
+        if (now?.publicCode) return { publicCode: now.publicCode };
+      } catch (err: any) {
+        if (err?.code !== 'P2002') throw err;
+      }
+    }
+    throw new Error('Could not assign a QR code. Please try again.');
   }
 
   async findBySlug(tenantId: string, slug: string, isPublic = false) {

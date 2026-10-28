@@ -9,14 +9,29 @@ import { Loader2, QrCode } from 'lucide-react';
 
 export default function QrCodePage() {
   const [biz, setBiz] = useState<any>(null);
+  const [publicCode, setPublicCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    apiService.get<any>('/v1/businesses/owner/mine').then((res) => {
+    (async () => {
+      const res = await apiService.get<any>('/v1/businesses/owner/mine');
       const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
-      if (!res.error && list.length) setBiz(list[0]);
+      if (!res.error && list.length) {
+        const b = list[0];
+        setBiz(b);
+        if (b.publicCode) {
+          setPublicCode(b.publicCode);
+        } else {
+          // First time this shop asks for its QR: the server creates the permanent code.
+          const made = await apiService.post<any>(`/v1/businesses/${b.id}/public-code`);
+          const code = made.data?.publicCode ?? made.data?.data?.publicCode;
+          if (!made.error && code) setPublicCode(code);
+          else setFailed(true);
+        }
+      }
       setLoading(false);
-    });
+    })();
   }, []);
 
   return (
@@ -40,10 +55,16 @@ export default function QrCodePage() {
           <Card className="p-10 text-center rounded-2xl ui-fade-up">
             <p className="text-sm text-muted-foreground">No business profile found yet.</p>
           </Card>
+        ) : failed || !publicCode ? (
+          <Card className="p-10 text-center rounded-2xl ui-fade-up">
+            <p className="text-sm text-muted-foreground">
+              We couldn&apos;t prepare your QR code. Refresh the page to try again.
+            </p>
+          </Card>
         ) : (
           <div className="ui-pop">
             <BusinessQrCard
-              businessId={biz.id}
+              publicCode={publicCode}
               businessName={biz.name}
               category={biz.category?.name}
               city={biz.city}

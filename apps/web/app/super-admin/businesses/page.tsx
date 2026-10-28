@@ -141,6 +141,22 @@ export default function SuperAdminBusinessesPage() {
   const [form, setForm] = useState<Biz | null>(null);
   const [saving, setSaving] = useState(false);
   const [qrBiz, setQrBiz] = useState<Biz | null>(null);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  useEffect(() => {
+    setQrCode(null);
+    if (!qrBiz) return;
+    let live = true;
+    (async () => {
+      const known = (qrBiz as any).publicCode as string | undefined;
+      if (known) return live && setQrCode(known);
+      const res = await apiService.post<any>(`/v1/businesses/${qrBiz.id}/public-code`);
+      const code = res.data?.publicCode ?? res.data?.data?.publicCode;
+      if (live && !res.error && code) setQrCode(code);
+    })();
+    return () => {
+      live = false;
+    };
+  }, [qrBiz]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search.trim()), 350);
@@ -683,9 +699,12 @@ export default function SuperAdminBusinessesPage() {
         title={qrBiz ? `${qrBiz.name} — QR code` : 'QR code'}
         description="Preview, print or download a replacement for the business."
       >
-        {qrBiz && (
+        {qrBiz && !qrCode && (
+          <p className="py-8 text-center text-sm text-muted-foreground">Preparing the QR code…</p>
+        )}
+        {qrBiz && qrCode && (
           <BusinessQrCard
-            businessId={qrBiz.id}
+            publicCode={qrCode}
             businessName={qrBiz.name}
             category={qrBiz.category?.name}
             city={qrBiz.city}

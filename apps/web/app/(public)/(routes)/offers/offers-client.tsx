@@ -11,7 +11,7 @@ import { Tag, X, CheckCircle2, Sparkles, Phone, QrCode, SlidersHorizontal } from
 import { PageHeader } from '@/components/system/page-header';
 import { Modal } from '@/components/system/modal';
 import { toast } from '@/components/ui/sonner';
-import { extractBusinessIdFromScan } from '@/lib/qr';
+import { resolveBusinessFromScan } from '@/lib/qr';
 import {
   Select,
   SelectContent,
@@ -209,10 +209,11 @@ export default function OffersClient({
 
   const isClaimed = (id: string) => claimedIds.includes(id);
 
-  const handleQrScan = (decodedText: string) => {
-    const businessId = extractBusinessIdFromScan(decodedText);
+  const handleQrScan = async (decodedText: string) => {
+    // Current QR codes carry a short code; older printed ones carry the business id.
+    const businessId = await resolveBusinessFromScan(decodedText);
     if (!businessId) {
-      setScanError("That code isn't a whtzup.city business QR.");
+      setScanError("That code isn't a whtzup.city business QR, or the business isn't listed.");
       return;
     }
     setScanOpen(false);

@@ -5,10 +5,11 @@ import QRCode from 'qrcode';
 import { toPng } from 'html-to-image';
 import { Button } from '@/components/ui/button';
 import { Download, Printer, Loader2 } from 'lucide-react';
-import { businessQrTarget } from '@/lib/qr';
+import { businessQrUrl } from '@/lib/qr';
 
 interface BusinessQrCardProps {
-  businessId: string;
+  /** The short permanent code the QR encodes (the /b/CODE link). */
+  publicCode: string;
   businessName: string;
   category?: string;
   city?: string;
@@ -23,7 +24,7 @@ interface BusinessQrCardProps {
 }
 
 export function BusinessQrCard({
-  businessId,
+  publicCode,
   businessName,
   category,
   city,
@@ -42,14 +43,16 @@ export function BusinessQrCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const [qrReady, setQrReady] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const targetUrl = businessQrTarget(businessId);
+  const targetUrl = businessQrUrl(publicCode);
 
   useEffect(() => {
     if (!canvasRef.current) return;
     setQrReady(false);
     QRCode.toCanvas(canvasRef.current, targetUrl, {
       width: 260,
-      margin: 1,
+      // Short link means a sparse code; a higher level still reads when printed small or scuffed.
+      errorCorrectionLevel: 'Q',
+      margin: 2,
       color: { dark: '#1F1B16', light: '#FFFFFF' },
     })
       .then(() => setQrReady(true))

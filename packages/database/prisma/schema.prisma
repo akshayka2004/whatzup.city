@@ -531,6 +531,8 @@ model Business {
   ownerId        String         @map("owner_id") @db.Uuid
   categoryId     String         @map("category_id") @db.Uuid
   entityId       String?        @unique @map("entity_id") @db.Uuid
+  // Short permanent code inside the business QR (/b/CODE). Assigned on first use; see generatePublicCode.
+  publicCode     String?        @unique @map("public_code") @db.VarChar(12)
   name           String         @db.VarChar(255)
   slug           String         @db.VarChar(255)
   description    String         @db.Text

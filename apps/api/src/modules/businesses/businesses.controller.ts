@@ -72,6 +72,24 @@ export class BusinessesController {
   }
 
   @Public()
+  @Get('by-code/:code')
+  @ApiOperation({ summary: 'Resolve a business QR code to its id (public)' })
+  async findByCode(@Param('code') code: string) {
+    return this.businessesService.findIdByPublicCode(code);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/public-code')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get (and create if needed) my business QR code' })
+  async ensurePublicCode(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string; tenantId: string; role: string },
+  ) {
+    return this.businessesService.ensurePublicCode(user.tenantId, id, user);
+  }
+
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get business by ID (public)' })
   async findOne(@Query('tenantId') tenantId: string = 'default', @Param('id') id: string) {
