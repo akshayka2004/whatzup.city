@@ -11,3 +11,4 @@ export * from './category-templates';
 export * from './category-consolidation';
 export * from './order-channels';
 export * from './access';
+export * from './event-tickets';

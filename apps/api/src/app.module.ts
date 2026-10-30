@@ -30,6 +30,7 @@ import { PlatformVouchersModule } from './modules/platform-vouchers/platform-vou
 import { DiscountsModule } from './modules/discounts/discounts.module';
 import { BrandsModule } from './modules/brands/brands.module';
 import { EventsModule } from './modules/events/events.module';
+import { EventTicketsModule } from './modules/event-tickets/event-tickets.module';
 import { MoviesModule } from './modules/movies/movies.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { BillsModule } from './modules/bills/bills.module';
@@ -160,6 +161,7 @@ import { GeoModule } from './common/geo/geo.module';
     DiscountsModule,
     BrandsModule,
     EventsModule,
+    EventTicketsModule,
     MoviesModule,
     ReviewsModule,
     BillsModule,

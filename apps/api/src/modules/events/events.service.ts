@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { DatabaseService } from '../../common/database/database.service';
 import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 import { AuditService } from '../audit/audit.service';
+import { EventTicketsService } from '../event-tickets/event-tickets.service';
 
 export const TICKET_TYPES = ['FREE', 'PAID'];
 export const EVENT_CATEGORIES = [
@@ -32,6 +33,7 @@ export class EventsService {
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
     private readonly tenantResolver: TenantResolverService,
+    private readonly tickets: EventTicketsService,
   ) {}
 
   private async resolveBusinessId(tenantId: string, businessOrEntityId: string): Promise<string> {
@@ -204,6 +206,7 @@ export class EventsService {
     if (dto.startDate) payload.startDate = new Date(dto.startDate);
     if (dto.endDate) payload.endDate = new Date(dto.endDate);
     const updated = await this.db.event.update({ where: { id }, data: payload });
+    await this.tickets.onEventChanged(e, updated).catch(() => undefined);
     await this.audit.log({
       tenantId,
       userId,
@@ -219,6 +222,7 @@ export class EventsService {
     const e = await this.db.event.findFirst({ where: { id, businessId: bizId, deletedAt: null } });
     if (!e) throw new NotFoundException('Event not found');
     await this.db.event.update({ where: { id }, data: { deletedAt: new Date() } });
+    await this.tickets.onEventRemoved(id, e.title).catch(() => undefined);
     await this.audit.log({
       tenantId,
       userId,
@@ -301,6 +305,7 @@ export class EventsService {
     if (dto.startDate) payload.startDate = new Date(dto.startDate);
     if (dto.endDate) payload.endDate = new Date(dto.endDate);
     const updated = await this.db.event.update({ where: { id }, data: payload });
+    await this.tickets.onEventChanged(e, updated).catch(() => undefined);
     await this.audit.log({
       tenantId: e.tenantId,
       userId,
@@ -315,6 +320,7 @@ export class EventsService {
     const e = await this.db.event.findFirst({ where: { id, deletedAt: null } });
     if (!e) throw new NotFoundException('Event not found');
     await this.db.event.update({ where: { id }, data: { deletedAt: new Date() } });
+    await this.tickets.onEventRemoved(id, e.title).catch(() => undefined);
     await this.audit.log({
       tenantId: e.tenantId,
       userId,

@@ -161,6 +161,8 @@ model User {
   deviceLogins           DeviceLogin[]
   businesses             Business[]               @relation("BusinessOwner")
   businessStaff          BusinessStaff[]
+  eventTickets           EventTicket[]
+  eventWaitlist          EventWaitlist[]
   offerRedemptions       OfferRedemption[]
   voucherClaims          VoucherClaim[]
   discountSpins          DiscountSpin[]
@@ -2803,6 +2805,26 @@ model Event {
   ticketClicks       Int       @default(0) @map("ticket_clicks")
   status             String    @default("ACTIVE") @db.VarChar(30)
 
+  // ── RSVP and tickets (see modules/event-tickets) ──
+  // NONE = listing only / external link (as before), RSVP = tickets issued on the platform.
+  bookingMode        String    @default("NONE") @map("booking_mode") @db.VarChar(10)
+  // PENDING until a moderator approves a business-hosted RSVP event; platform events start APPROVED.
+  bookingApproval    String    @default("APPROVED") @map("booking_approval") @db.VarChar(10)
+  capacity           Int?
+  // Seats issued and not cancelled. Only changed by one conditional UPDATE, so it cannot oversell.
+  seatsTaken         Int       @default(0) @map("seats_taken")
+  checkedInCount     Int       @default(0) @map("checked_in_count")
+  rsvpOpensAt        DateTime? @map("rsvp_opens_at")
+  rsvpClosesAt       DateTime? @map("rsvp_closes_at")
+  // Seats one account may hold (itself plus guests).
+  maxPerUser         Int       @default(1) @map("max_per_user")
+  cancelCutoffHours  Int       @default(2) @map("cancel_cutoff_hours")
+  venueCapacity      Int?      @map("venue_capacity")
+  minAge             Int?      @map("min_age")
+  bookingNote        String?   @map("booking_note") @db.Text
+  checkInOpensAt     DateTime? @map("check_in_opens_at")
+  checkInClosesAt    DateTime? @map("check_in_closes_at")
+
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
   deletedAt          DateTime? @map("deleted_at")
@@ -2810,6 +2832,10 @@ model Event {
   tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   business Business?    @relation(fields: [businessId], references: [id], onDelete: SetNull)
   clicks   EventClick[]
+  tickets    EventTicket[]
+  crewPasses EventCrewPass[]
+  waitlist   EventWaitlist[]
+  scans      EventScan[]
 
   @@index([tenantId])
   @@index([businessId])
@@ -2817,6 +2843,7 @@ model Event {
   @@index([deletedAt])
   @@index([status, startDate])
   @@index([category])
+  @@index([bookingMode, bookingApproval])
   @@map("events")
 }
 
@@ -2834,6 +2861,116 @@ model EventClick {
   @@index([eventId])
   @@index([tenantId])
   @@map("event_clicks")
+}
+
+// One row per person admitted: the account holder and each named guest get their own ticket and QR.
+model EventTicket {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  eventId        String    @map("event_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  // Seats booked together (one RSVP), so they can be cancelled together.
+  groupId        String    @map("group_id") @db.Uuid
+  holderName     String    @map("holder_name") @db.VarChar(120)
+  isGuest        Boolean   @default(false) @map("is_guest")
+  // Short manual code printed under the QR, unique within the event.
+  code           String    @db.VarChar(10)
+  // ISSUED | CHECKED_IN | CANCELLED
+  status         String    @default("ISSUED") @db.VarChar(12)
+  // Where the RSVP came from: home, search, share, qr, event_qr, invite, waitlist, direct.
+  source         String?   @db.VarChar(20)
+  idempotencyKey String?   @map("idempotency_key") @db.VarChar(64)
+  issuedAt       DateTime  @default(now()) @map("issued_at")
+  cancelledAt    DateTime? @map("cancelled_at")
+  checkedInAt    DateTime? @map("checked_in_at")
+  checkedInPassId String?  @map("checked_in_pass_id") @db.Uuid
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, code])
+  @@unique([eventId, userId, idempotencyKey, holderName])
+  @@index([eventId, status])
+  @@index([userId, eventId])
+  @@index([eventId, checkedInAt])
+  @@map("event_tickets")
+}
+
+// A scan-only login for one event. The code is derived from the pass id and a server secret, so
+// the database holds only its hash.
+model EventCrewPass {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  eventId    String    @map("event_id") @db.Uuid
+  label      String    @db.VarChar(80)
+  codeHash   String    @unique @map("code_hash") @db.VarChar(64)
+  // SCAN = scan and see the count. DESK = also search names and check people in by hand.
+  level      String    @default("SCAN") @db.VarChar(6)
+  validFrom  DateTime  @map("valid_from")
+  validUntil DateTime  @map("valid_until")
+  maxDevices Int       @default(2) @map("max_devices")
+  revokedAt  DateTime? @map("revoked_at")
+  lastUsedAt DateTime? @map("last_used_at")
+  createdBy  String?   @map("created_by") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  event    Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sessions EventCrewSession[]
+  scans    EventScan[]
+
+  @@index([eventId])
+  @@map("event_crew_passes")
+}
+
+// A phone that signed in with a pass. Counted against the pass's device limit.
+model EventCrewSession {
+  id         String    @id @default(uuid()) @db.Uuid
+  passId     String    @map("pass_id") @db.Uuid
+  deviceId   String    @map("device_id") @db.VarChar(64)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  lastSeenAt DateTime  @default(now()) @map("last_seen_at")
+  endedAt    DateTime? @map("ended_at")
+
+  pass EventCrewPass @relation(fields: [passId], references: [id], onDelete: Cascade)
+
+  @@unique([passId, deviceId])
+  @@map("event_crew_sessions")
+}
+
+// Append-only log of every scan attempt. Source of the arrival curve, gate speed and duplicate counts.
+model EventScan {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  eventId   String   @map("event_id") @db.Uuid
+  ticketId  String?  @map("ticket_id") @db.Uuid
+  passId    String?  @map("pass_id") @db.Uuid
+  // VALID | DUPLICATE | INVALID | WRONG_EVENT | CANCELLED | OUTSIDE_WINDOW | MANUAL | UNDO
+  result    String   @db.VarChar(16)
+  scannedAt DateTime @default(now()) @map("scanned_at")
+
+  event Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  pass  EventCrewPass? @relation(fields: [passId], references: [id], onDelete: SetNull)
+
+  @@index([eventId, scannedAt])
+  @@index([passId])
+  @@map("event_scans")
+}
+
+model EventWaitlist {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  eventId    String    @map("event_id") @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  seats      Int       @default(1)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  promotedAt DateTime? @map("promoted_at")
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId, promotedAt, createdAt])
+  @@map("event_waitlist")
 }
 
 // Platform-managed movie listings — no business ownership; published by
