@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, Clock, Loader2, Plus, Ticket, Users, X } from 'lucide-react';
-import { RSVP_SOURCES } from '@saas/types';
+import { useRouter } from 'next/navigation';
+import { CheckCircle2, Clock, Loader2, Plus, Ticket, Users, Wallet, X } from 'lucide-react';
+import { RSVP_SOURCES, rupees } from '@saas/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
@@ -31,11 +32,13 @@ function rsvpSource(): string {
  */
 export function RsvpPanel({ eventId }: { eventId: string }) {
   const { user } = useAuth();
+  const router = useRouter();
   const confirm = useConfirm();
   const [info, setInfo] = useState<BookingInfo | null>(null);
   const [mine, setMine] = useState<MyBooking | null>(null);
   const [guests, setGuests] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [tier, setTier] = useState('');
   // One key per attempt: a double tap or a retry on a bad connection returns the same tickets.
   const attemptKey = useRef('');
   if (!attemptKey.current && typeof crypto !== 'undefined')
@@ -67,7 +70,16 @@ export function RsvpPanel({ eventId }: { eventId: string }) {
 
   if (!info || info.mode !== 'RSVP') return null;
 
-  const held = mine?.tickets.filter((t) => t.status !== 'CANCELLED') ?? [];
+  const held =
+    mine?.tickets.filter((t) => t.status === 'ISSUED' || t.status === 'CHECKED_IN') ?? [];
+  // A seat held while the person pays. Shown instead of the registration form.
+  const owing = mine?.payments?.[0] ?? null;
+  const payInfo = info.payment && info.payment.required ? info.payment : null;
+  const tiers = payInfo?.tiers ?? [];
+  const chosenTier = tiers.find((t) => t.name === tier);
+  const unitPrice = payInfo ? (tiers.length ? (chosenTier?.price ?? null) : payInfo.price) : null;
+  const people = 1 + guests.filter((g) => g.trim()).length;
+  const total = unitPrice != null ? unitPrice * people : null;
   const canAddMore = held.length < info.maxPerUser;
   const guestRoom = Math.max(
     0,
@@ -76,32 +88,46 @@ export function RsvpPanel({ eventId }: { eventId: string }) {
   const beforeDeadline = Date.now() < new Date(info.cancelDeadline).getTime();
   const used = held.some((t) => t.status === 'CHECKED_IN');
 
-  const act = async (run: () => Promise<{ error?: string | null }>, ok: string) => {
+  const act = async <T,>(
+    run: () => Promise<{ error?: string | null; data?: T | null }>,
+    ok: string,
+  ): Promise<{ ok: boolean; data?: T | null }> => {
     setBusy(true);
     const res = await run();
     setBusy(false);
     if (res.error) {
       toast.error(res.error);
       loadInfo();
-      return false;
+      loadMine();
+      return { ok: false };
     }
     toast.success(ok);
     attemptKey.current = crypto.randomUUID();
     setGuests([]);
     await Promise.all([loadInfo(), loadMine()]);
-    return true;
+    return { ok: true, data: res.data };
   };
 
-  const rsvp = () =>
-    act(
+  const rsvp = async () => {
+    if (tiers.length && !chosenTier) {
+      toast.error('Choose a ticket type first.');
+      return;
+    }
+    const out = await act(
       () =>
-        apiService.post(`/v1/events/${eventId}/rsvp`, {
+        apiService.post<{ payment: { id: string } | null }>(`/v1/events/${eventId}/rsvp`, {
           guests: guests.map((g) => g.trim()).filter(Boolean),
           source: rsvpSource(),
           idempotencyKey: attemptKey.current,
+          ...(chosenTier ? { tier: chosenTier.name } : {}),
         }),
-      "You're registered. Your ticket is ready.",
+      payInfo && (total ?? 0) > 0
+        ? 'Seat held. Now pay to confirm it.'
+        : "You're registered. Your ticket is ready.",
     );
+    // A paid seat is only held until the payment is verified: take them straight to paying.
+    if (out.ok && out.data?.payment?.id) router.push(`/tickets/pay/${out.data.payment.id}`);
+  };
 
   const cancel = async () => {
     const ok = await confirm({
@@ -199,8 +225,30 @@ export function RsvpPanel({ eventId }: { eventId: string }) {
           </div>
         )}
 
+        {owing && (
+          <div className="rounded-xl border border-warning/30 bg-warning-soft p-3">
+            <p className="flex items-center gap-1.5 font-semibold text-warning-soft-foreground">
+              <Wallet className="size-4" aria-hidden />{' '}
+              {owing.status === 'SUBMITTED'
+                ? 'Waiting for the host to verify your payment'
+                : `Pay ${rupees(owing.amount)} to confirm your seat`}
+            </p>
+            <p className="mt-1 text-xs text-warning-soft-foreground">
+              {owing.status === 'PENDING'
+                ? `Your seat is held until ${fmtWhen(owing.expiresAt)}.`
+                : 'Your seat stays held until the host decides.'}
+            </p>
+            <Button asChild size="sm" className="mt-2">
+              <Link href={`/tickets/pay/${owing.id}`}>
+                {owing.status === 'PENDING' ? 'Pay now' : 'View payment'}
+              </Link>
+            </Button>
+          </div>
+        )}
+
         {/* Register, or add guests to an existing registration */}
         {info.state === 'OPEN' &&
+          !owing &&
           (!user ? (
             <div className="grid gap-2">
               <Button asChild size="lg">
@@ -216,6 +264,51 @@ export function RsvpPanel({ eventId }: { eventId: string }) {
           ) : (
             (held.length === 0 || (canAddMore && guestRoom > 0)) && (
               <div className="space-y-3">
+                {payInfo && (
+                  <div className="space-y-2">
+                    {tiers.length > 0 ? (
+                      <fieldset className="space-y-2">
+                        <legend className="text-sm font-medium text-foreground">Ticket type</legend>
+                        {tiers.map((t) => (
+                          <label
+                            key={t.name}
+                            className={`flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-xl border px-3 py-2 ${
+                              tier === t.name ? 'border-primary bg-primary/5' : 'border-border'
+                            }`}
+                          >
+                            <span className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                name="ticket-tier"
+                                value={t.name}
+                                checked={tier === t.name}
+                                onChange={() => setTier(t.name)}
+                                className="size-4 accent-primary"
+                              />
+                              <span className="text-sm font-medium text-foreground">{t.name}</span>
+                            </span>
+                            <span className="text-sm font-semibold tabular-nums text-foreground">
+                              {t.price > 0 ? rupees(t.price) : 'Free'}
+                            </span>
+                          </label>
+                        ))}
+                      </fieldset>
+                    ) : (
+                      <p className="text-sm text-foreground">
+                        <span className="font-semibold tabular-nums">
+                          {rupees(payInfo.price ?? 0)}
+                        </span>{' '}
+                        per ticket
+                      </p>
+                    )}
+                    {total != null && total > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {people} {people === 1 ? 'ticket' : 'tickets'} = {rupees(total)}. You pay
+                        the host by UPI on the next screen, and your seat is held while you do.
+                      </p>
+                    )}
+                  </div>
+                )}
                 {guestRoom > 0 && (
                   <div className="space-y-2">
                     {guests.map((g, i) => (
@@ -261,11 +354,13 @@ export function RsvpPanel({ eventId }: { eventId: string }) {
                   loading={busy}
                   disabled={held.length > 0 && guests.every((g) => !g.trim())}
                 >
-                  {held.length > 0
-                    ? 'Add guests'
-                    : guests.filter((g) => g.trim()).length > 0
-                      ? `RSVP for ${1 + guests.filter((g) => g.trim()).length} people`
-                      : 'RSVP'}
+                  {payInfo && total != null && total > 0
+                    ? `Reserve and pay ${rupees(total)}`
+                    : held.length > 0
+                      ? 'Add guests'
+                      : guests.filter((g) => g.trim()).length > 0
+                        ? `RSVP for ${1 + guests.filter((g) => g.trim()).length} people`
+                        : 'RSVP'}
                 </Button>
                 {info.maxPerUser > 1 && held.length === 0 && (
                   <p className="text-xs text-muted-foreground">
@@ -309,17 +404,40 @@ export function RsvpPanel({ eventId }: { eventId: string }) {
               </div>
             ) : (
               <>
+                {tiers.length > 0 && (
+                  <select
+                    value={tier}
+                    onChange={(e) => setTier(e.target.value)}
+                    aria-label="Ticket type"
+                    className="h-11 w-full rounded-control border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="">Choose a ticket type</option>
+                    {tiers.map((t) => (
+                      <option key={t.name} value={t.name}>
+                        {t.name} {t.price > 0 ? `(${rupees(t.price)})` : '(Free)'}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <Button
                   size="lg"
                   variant="outline"
                   className="w-full"
                   loading={busy}
-                  onClick={() =>
-                    act(
-                      () => apiService.post(`/v1/events/${eventId}/waitlist`, { seats: 1 }),
+                  onClick={() => {
+                    if (tiers.length && !chosenTier) {
+                      toast.error('Choose a ticket type first.');
+                      return;
+                    }
+                    return act(
+                      () =>
+                        apiService.post(`/v1/events/${eventId}/waitlist`, {
+                          seats: 1,
+                          ...(chosenTier ? { tier: chosenTier.name } : {}),
+                        }),
                       'You are on the waitlist.',
-                    )
-                  }
+                    );
+                  }}
                 >
                   Join the waitlist
                 </Button>

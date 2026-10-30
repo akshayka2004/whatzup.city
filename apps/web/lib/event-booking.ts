@@ -1,4 +1,4 @@
-import type { BookingState } from '@saas/types';
+import type { BookingState, PaymentStatus } from '@saas/types';
 
 /** What GET /v1/events/:id/booking returns. */
 export interface BookingInfo {
@@ -15,6 +15,28 @@ export interface BookingInfo {
   minAge: number | null;
   note: string | null;
   waitlistOpen: boolean;
+  /** Price information. Where to pay is only sent to someone holding a seat. */
+  payment?:
+    | { required: false }
+    | {
+        required: true;
+        price: number | null;
+        tiers: { name: string; price: number }[];
+        windowHours: number;
+      };
+}
+
+/** A payment as the attendee sees it in lists. */
+export interface PaymentCard {
+  id: string;
+  eventId: string;
+  status: PaymentStatus;
+  amount: number;
+  seats: number;
+  tier: string | null;
+  expiresAt: string;
+  submittedAt: string | null;
+  note: string | null;
 }
 
 export interface TicketLite {
@@ -23,12 +45,14 @@ export interface TicketLite {
   code: string;
   holderName: string;
   isGuest: boolean;
-  status: 'ISSUED' | 'CHECKED_IN' | 'CANCELLED';
+  status: 'ISSUED' | 'CHECKED_IN' | 'CANCELLED' | 'PENDING';
   checkedInAt: string | null;
+  paymentId?: string | null;
 }
 
 export interface MyBooking {
   tickets: TicketLite[];
+  payments?: PaymentCard[];
   waitlist: { seats: number; position: number | null } | null;
 }
 

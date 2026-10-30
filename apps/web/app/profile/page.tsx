@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
+import { ProfileTickets } from '@/components/profile/profile-tickets';
 import { apiService } from '@/lib/services/api-service';
 import { useRouter } from 'next/navigation';
 import { PROFESSIONS } from '@/lib/constants';
@@ -518,6 +519,8 @@ export default function ProfilePage() {
             </div>
           </div>
         </Card>
+
+        <ProfileTickets />
 
         {/* Save banners */}
         {saveMsg && (

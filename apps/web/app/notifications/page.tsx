@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { PublicLayout } from '@/components/layouts/public-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,8 @@ interface UiNotification {
   description: string;
   timestamp: string;
   read: boolean;
+  /** Where tapping it should go, when the notice points at something. */
+  url?: string;
 }
 
 const iconColors: Record<string, string> = {
@@ -56,6 +59,11 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
+/** Only same-site paths: a notice must never be able to send someone to another website. */
+function safeUrl(u: unknown): string | undefined {
+  return typeof u === 'string' && /^\/(?!\/)[^\s]*$/.test(u) ? u : undefined;
+}
+
 function typeBucket(t?: string): string {
   if (!t) return 'info';
   const u = t.toUpperCase();
@@ -66,6 +74,7 @@ function typeBucket(t?: string): string {
 }
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<UiNotification[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -82,6 +91,7 @@ export default function NotificationsPage() {
           description: n.body || n.message || '',
           timestamp: relativeTime(n.createdAt),
           read: n.isRead ?? n.read ?? false,
+          url: safeUrl(n.metadata?.url),
         })),
       );
     } else {
@@ -107,6 +117,15 @@ export default function NotificationsPage() {
   const handleToggleRead = async (id: string) => {
     await apiService.patch(`/v1/notifications/${id}/read`);
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)));
+  };
+
+  const handleOpen = async (n: UiNotification) => {
+    if (!n.url) return handleToggleRead(n.id);
+    if (!n.read) {
+      setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
+      await apiService.patch(`/v1/notifications/${n.id}/read`);
+    }
+    router.push(n.url);
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -151,7 +170,7 @@ export default function NotificationsPage() {
               return (
                 <Card
                   key={notification.id}
-                  onClick={() => handleToggleRead(notification.id)}
+                  onClick={() => handleOpen(notification)}
                   className={`p-4 rounded-2xl hover:shadow-md transition-all cursor-pointer border border-border ui-fade-up ${
                     notification.read ? 'bg-card/20 opacity-70' : 'bg-card/60 font-semibold'
                   }`}

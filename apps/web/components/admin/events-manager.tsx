@@ -24,6 +24,7 @@ import {
   QrCode,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
+import { uploadImage } from '@/lib/storage-upload';
 import { KERALA_CITIES, EVENT_CATEGORIES } from '@/lib/constants';
 
 const PLATFORM_HOST = '__PLATFORM__';
@@ -142,33 +143,12 @@ export function EventsManager() {
   const removeTier = (i: number) => setTiers((t) => t.filter((_, idx) => idx !== i));
 
   const handlePosterUpload = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setErr('Poster must be an image.');
-      return;
-    }
     setPosterUploading(true);
     setErr('');
     try {
-      const signed = await apiService.post<{ uploadUrl: string; fileKey: string; bucket: string }>(
-        '/v1/storage/upload-url',
-        {
-          category: 'event',
-          filename: file.name,
-          mimeType: file.type,
-          entityId: editing?.id || 'new',
-        },
-      );
-      if (signed.error || !signed.data?.uploadUrl)
-        throw new Error(signed.error || 'Upload URL failed');
-      const { uploadUrl, fileKey, bucket } = signed.data;
-      const put = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-      if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
-      const publicUrl = `${new URL(uploadUrl).origin}/storage/v1/object/public/${bucket}/${fileKey}`;
-      set('posterImage', publicUrl);
+      // Heavy phone photos are shrunk first, so a big picture uploads instead of failing.
+      const up = await uploadImage(file, 'event', editing?.id || 'new');
+      set('posterImage', up.publicUrl);
     } catch (e: any) {
       setErr(e?.message || 'Poster upload failed');
     } finally {

@@ -23,6 +23,11 @@ import {
   QrCode,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
+import { uploadImage } from '@/lib/storage-upload';
+import {
+  BusinessEventsAnalytics,
+  BusinessEventsHistory,
+} from '@/components/events/host/business-overview';
 import { useAuth } from '@/hooks/use-auth';
 import { KERALA_CITIES, EVENT_CATEGORIES } from '@/lib/constants';
 import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
@@ -91,6 +96,16 @@ export default function DashboardEventsPage() {
   const [targetCities, setTargetCities] = useState<string[]>([]);
   const [posterUploading, setPosterUploading] = useState(false);
   const [tiers, setTiers] = useState<{ name: string; price: string }[]>([]);
+  // Events (publish and manage), History (events that are over), Analytics (the whole picture).
+  const [view, setView] = useState<'events' | 'history' | 'analytics'>('events');
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get('view');
+    if (v === 'history' || v === 'analytics') setView(v);
+  }, []);
+  const switchView = (v: typeof view) => {
+    setView(v);
+    window.history.replaceState(null, '', v === 'events' ? '/dashboard/events' : `?view=${v}`);
+  };
 
   const fetchEvents = useCallback(async () => {
     if (!businessId) {
@@ -150,33 +165,12 @@ export default function DashboardEventsPage() {
   const removeTier = (i: number) => setTiers((t) => t.filter((_, idx) => idx !== i));
 
   const handlePosterUpload = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setErr('Poster must be an image.');
-      return;
-    }
     setPosterUploading(true);
     setErr('');
     try {
-      const signed = await apiService.post<{ uploadUrl: string; fileKey: string; bucket: string }>(
-        '/v1/storage/upload-url',
-        {
-          category: 'event',
-          filename: file.name,
-          mimeType: file.type,
-          entityId: editing?.id || businessId,
-        },
-      );
-      if (signed.error || !signed.data?.uploadUrl)
-        throw new Error(signed.error || 'Upload URL failed');
-      const { uploadUrl, fileKey, bucket } = signed.data;
-      const put = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-      if (!put.ok) throw new Error(`Storage upload failed (${put.status})`);
-      const publicUrl = `${new URL(uploadUrl).origin}/storage/v1/object/public/${bucket}/${fileKey}`;
-      set('posterImage', publicUrl);
+      // Heavy phone photos are shrunk first, so a big picture uploads instead of failing.
+      const up = await uploadImage(file, 'event', editing?.id || businessId || 'new');
+      set('posterImage', up.publicUrl);
     } catch (e: any) {
       setErr(e?.message || 'Poster upload failed');
     } finally {
@@ -281,152 +275,195 @@ export default function DashboardEventsPage() {
           </Button>
         </div>
 
-        {!loading && events.length > 0 && (
-          <ListFilters
-            noun="events"
-            shown={visibleEvents.length}
-            total={events.length}
-            onReset={resetFilters}
-            search={{ value: fq, onChange: setFq, placeholder: 'Search title, venue, city…' }}
-            groups={[
-              {
-                key: 'when',
-                label: 'When',
-                value: fWhen,
-                onChange: setFWhen,
-                options: [
-                  { value: 'UPCOMING', label: 'Upcoming', count: whenCounts.UPCOMING ?? 0 },
-                  { value: 'LIVE', label: 'Happening now', count: whenCounts.LIVE ?? 0 },
-                  { value: 'PAST', label: 'Past', count: whenCounts.PAST ?? 0 },
-                ],
-              },
-              {
-                key: 'ticket',
-                label: 'Tickets',
-                value: fTicket,
-                onChange: setFTicket,
-                options: [
-                  { value: 'FREE', label: 'Free', count: ticketCounts.FREE ?? 0 },
-                  { value: 'PAID', label: 'Paid', count: ticketCounts.PAID ?? 0 },
-                ],
-              },
-              {
-                key: 'category',
-                label: 'Category',
-                value: fCategory,
-                onChange: setFCategory,
-                display: 'select',
-                options: Object.keys(categoryCounts)
-                  .sort()
-                  .map((k) => ({
-                    value: k,
-                    label: EVENT_CATEGORIES.find((c) => c.value === k)?.label ?? k,
-                    count: categoryCounts[k],
-                  })),
-              },
-              {
-                key: 'city',
-                label: 'City',
-                value: fCity,
-                onChange: setFCity,
-                display: 'select',
-                options: Object.keys(cityCounts)
-                  .sort()
-                  .map((k) => ({ value: k, label: k, count: cityCounts[k] })),
-              },
-            ]}
-          />
-        )}
-        {!loading && events.length > 0 && visibleEvents.length === 0 && (
-          <p className="text-sm text-muted-foreground">No events match these filters.</p>
-        )}
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : events.length === 0 ? (
-          <Card className="p-12 rounded-2xl text-center border-dashed border-border bg-card/40">
-            <CalendarDays className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-50" />
-            <p className="text-sm text-muted-foreground">No events yet. Publish your first one.</p>
-          </Card>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {visibleEvents.map((ev, i) => (
-              <Card
-                key={ev.id}
-                className="ui-fade-up p-5 rounded-2xl border-border bg-card"
-                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-foreground">{ev.title}</h3>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      {ev.category && (
-                        <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-secondary text-muted-foreground">
-                          {EVENT_CATEGORIES.find((c) => c.value === ev.category)?.label ||
-                            ev.category}
-                        </span>
-                      )}
-                      <span
-                        className={`px-1.5 py-0.5 rounded-md text-xs font-medium ${ev.ticketType === 'PAID' ? 'bg-brand-soft text-brand-soft-foreground' : 'bg-success-soft text-success-soft-foreground'}`}
+        <div
+          role="tablist"
+          aria-label="Events sections"
+          className="flex w-full gap-1 rounded-xl bg-muted/60 p-1 sm:w-fit"
+        >
+          {(
+            [
+              ['events', 'Events'],
+              ['history', 'History'],
+              ['analytics', 'Analytics'],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              role="tab"
+              type="button"
+              aria-selected={view === key}
+              onClick={() => switchView(key)}
+              className={`min-h-10 flex-1 cursor-pointer rounded-lg px-4 text-sm font-medium transition-colors sm:flex-none ${
+                view === key
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {view === 'history' && <BusinessEventsHistory businessId={businessId} />}
+        {view === 'analytics' && <BusinessEventsAnalytics businessId={businessId} />}
+
+        {view === 'events' && (
+          <>
+            {!loading && events.length > 0 && (
+              <ListFilters
+                noun="events"
+                shown={visibleEvents.length}
+                total={events.length}
+                onReset={resetFilters}
+                search={{ value: fq, onChange: setFq, placeholder: 'Search title, venue, city…' }}
+                groups={[
+                  {
+                    key: 'when',
+                    label: 'When',
+                    value: fWhen,
+                    onChange: setFWhen,
+                    options: [
+                      { value: 'UPCOMING', label: 'Upcoming', count: whenCounts.UPCOMING ?? 0 },
+                      { value: 'LIVE', label: 'Happening now', count: whenCounts.LIVE ?? 0 },
+                      { value: 'PAST', label: 'Past', count: whenCounts.PAST ?? 0 },
+                    ],
+                  },
+                  {
+                    key: 'ticket',
+                    label: 'Tickets',
+                    value: fTicket,
+                    onChange: setFTicket,
+                    options: [
+                      { value: 'FREE', label: 'Free', count: ticketCounts.FREE ?? 0 },
+                      { value: 'PAID', label: 'Paid', count: ticketCounts.PAID ?? 0 },
+                    ],
+                  },
+                  {
+                    key: 'category',
+                    label: 'Category',
+                    value: fCategory,
+                    onChange: setFCategory,
+                    display: 'select',
+                    options: Object.keys(categoryCounts)
+                      .sort()
+                      .map((k) => ({
+                        value: k,
+                        label: EVENT_CATEGORIES.find((c) => c.value === k)?.label ?? k,
+                        count: categoryCounts[k],
+                      })),
+                  },
+                  {
+                    key: 'city',
+                    label: 'City',
+                    value: fCity,
+                    onChange: setFCity,
+                    display: 'select',
+                    options: Object.keys(cityCounts)
+                      .sort()
+                      .map((k) => ({ value: k, label: k, count: cityCounts[k] })),
+                  },
+                ]}
+              />
+            )}
+            {!loading && events.length > 0 && visibleEvents.length === 0 && (
+              <p className="text-sm text-muted-foreground">No events match these filters.</p>
+            )}
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : events.length === 0 ? (
+              <Card className="p-12 rounded-2xl text-center border-dashed border-border bg-card/40">
+                <CalendarDays className="h-10 w-10 mx-auto text-muted-foreground mb-3 opacity-50" />
+                <p className="text-sm text-muted-foreground">
+                  No events yet. Publish your first one.
+                </p>
+              </Card>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {visibleEvents.map((ev, i) => (
+                  <Card
+                    key={ev.id}
+                    className="ui-fade-up p-5 rounded-2xl border-border bg-card"
+                    style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-foreground">{ev.title}</h3>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          {ev.category && (
+                            <span className="px-1.5 py-0.5 rounded-md text-xs font-medium bg-secondary text-muted-foreground">
+                              {EVENT_CATEGORIES.find((c) => c.value === ev.category)?.label ||
+                                ev.category}
+                            </span>
+                          )}
+                          <span
+                            className={`px-1.5 py-0.5 rounded-md text-xs font-medium ${ev.ticketType === 'PAID' ? 'bg-brand-soft text-brand-soft-foreground' : 'bg-success-soft text-success-soft-foreground'}`}
+                          >
+                            {ev.ticketType !== 'PAID'
+                              ? 'Free'
+                              : Array.isArray(ev.ticketTiers) && ev.ticketTiers.length
+                                ? `${ev.ticketTiers.length} tiers from ₹${Math.min(...ev.ticketTiers.map((t) => Number(t.price) || 0)).toLocaleString('en-IN')}`
+                                : `₹${Number(ev.ticketPrice || 0).toLocaleString('en-IN')}`}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />{' '}
+                          {[ev.venue, ev.city].filter(Boolean).join(', ') || '—'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {ev.startDate?.slice(0, 10)} → {ev.endDate?.slice(0, 10)}
+                        </p>
+                      </div>
+                      <div className="flex gap-1.5 shrink-0">
+                        <Button
+                          onClick={() => openEdit(ev)}
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 rounded-lg border-border cursor-pointer"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          onClick={() => remove(ev)}
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 rounded-lg border-destructive/30 text-destructive cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="cursor-pointer rounded-lg"
                       >
-                        {ev.ticketType !== 'PAID'
-                          ? 'Free'
-                          : Array.isArray(ev.ticketTiers) && ev.ticketTiers.length
-                            ? `${ev.ticketTiers.length} tiers from ₹${Math.min(...ev.ticketTiers.map((t) => Number(t.price) || 0)).toLocaleString('en-IN')}`
-                            : `₹${Number(ev.ticketPrice || 0).toLocaleString('en-IN')}`}
+                        <Link href={`/dashboard/events/${ev.id}`}>
+                          <QrCode className="h-3.5 w-3.5" />
+                          {ev.bookingMode === 'RSVP'
+                            ? 'Tickets and check-in'
+                            : 'Take RSVPs and tickets'}
+                        </Link>
+                      </Button>
+                    </div>
+                    <div className="flex gap-3 mt-3">
+                      <span className="inline-flex items-center gap-1 text-xs text-foreground">
+                        <ExternalLink className="h-3.5 w-3.5 text-primary" />{' '}
+                        {ev.registrationClicks ?? 0} registrations
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-xs text-foreground">
+                        <Ticket className="h-3.5 w-3.5 text-success-soft-foreground" />{' '}
+                        {ev.ticketClicks ?? 0} ticket clicks
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />{' '}
-                      {[ev.venue, ev.city].filter(Boolean).join(', ') || '—'}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {ev.startDate?.slice(0, 10)} → {ev.endDate?.slice(0, 10)}
-                    </p>
-                  </div>
-                  <div className="flex gap-1.5 shrink-0">
-                    <Button
-                      onClick={() => openEdit(ev)}
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 rounded-lg border-border cursor-pointer"
-                    >
-                      <Edit className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      onClick={() => remove(ev)}
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 rounded-lg border-destructive/30 text-destructive cursor-pointer"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="mt-3">
-                  <Button asChild variant="outline" size="sm" className="cursor-pointer rounded-lg">
-                    <Link href={`/dashboard/events/${ev.id}`}>
-                      <QrCode className="h-3.5 w-3.5" />
-                      {ev.bookingMode === 'RSVP'
-                        ? 'Tickets and check-in'
-                        : 'Take RSVPs and tickets'}
-                    </Link>
-                  </Button>
-                </div>
-                <div className="flex gap-3 mt-3">
-                  <span className="inline-flex items-center gap-1 text-xs text-foreground">
-                    <ExternalLink className="h-3.5 w-3.5 text-primary" />{' '}
-                    {ev.registrationClicks ?? 0} registrations
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-xs text-foreground">
-                    <Ticket className="h-3.5 w-3.5 text-success-soft-foreground" />{' '}
-                    {ev.ticketClicks ?? 0} ticket clicks
-                  </span>
-                </div>
-              </Card>
-            ))}
-          </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 

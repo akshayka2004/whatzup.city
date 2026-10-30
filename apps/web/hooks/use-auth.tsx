@@ -10,7 +10,9 @@ import { useRouter, usePathname } from 'next/navigation';
 // Guards against an open redirect via a crafted ?redirect= query param.
 function isSafeBusinessRedirect(path: string): boolean {
   return (
-    /^\/(business|events)\/[^/?#\s]+([?#].*)?$/.test(path) || /^\/tickets(\/[^/?#\s]+)?$/.test(path)
+    /^\/(business|events)\/[^/?#\s]+([?#].*)?$/.test(path) ||
+    /^\/tickets(\/[^/?#\s]+)?$/.test(path) ||
+    /^\/tickets\/pay\/[^/?#\s]+$/.test(path)
   );
 }
 

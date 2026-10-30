@@ -18,9 +18,11 @@ interface TicketDetail {
   code: string;
   holderName: string;
   isGuest: boolean;
-  status: 'ISSUED' | 'CHECKED_IN' | 'CANCELLED';
+  status: 'ISSUED' | 'CHECKED_IN' | 'CANCELLED' | 'PENDING';
   checkedInAt: string | null;
   qr: string | null;
+  paymentId?: string | null;
+  payment?: { id: string; status: string } | null;
   event: {
     id: string;
     title: string;
@@ -113,6 +115,21 @@ export default function TicketPage() {
                     {ticket.event.status !== 'ACTIVE'
                       ? 'This event was cancelled.'
                       : 'This ticket was cancelled.'}
+                  </div>
+                ) : ticket.status === 'PENDING' ? (
+                  <div className="flex size-72 max-w-full flex-col items-center justify-center gap-3 rounded-xl bg-warning-soft p-6 text-center text-sm font-medium text-warning-soft-foreground">
+                    <p>
+                      {ticket.payment?.status === 'SUBMITTED'
+                        ? 'Waiting for the host to verify your payment. The QR appears here once it is approved.'
+                        : 'This seat is held for you. Pay the host to get your QR.'}
+                    </p>
+                    {ticket.paymentId && (
+                      <Button asChild size="sm">
+                        <Link href={`/tickets/pay/${ticket.paymentId}`}>
+                          {ticket.payment?.status === 'SUBMITTED' ? 'View payment' : 'Pay now'}
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className={`relative rounded-xl bg-white p-1 ${used ? 'opacity-30' : ''}`}>

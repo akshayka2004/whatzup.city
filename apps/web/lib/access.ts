@@ -20,7 +20,7 @@ const PATH_AREAS: [RegExp, AccessAreaKey][] = [
   [/^\/admin\/platform-offers/, 'platform_offers'],
   [/^\/admin\/discounts/, 'spin_wheels'],
   [/^\/admin\/notices/, 'notices'],
-  [/^\/admin\/event-approvals/, 'events'],
+  [/^\/admin\/event-(approvals|payments)/, 'events'],
   [/^\/admin\/(reports|moderation|fraud|fraud-escalations)/, 'reports'],
   [/^\/admin\/bills/, 'bills'],
   [/^\/admin\/support/, 'support'],

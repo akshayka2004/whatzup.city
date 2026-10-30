@@ -10,12 +10,14 @@ import { cn } from '@/lib/utils';
 import { AttendeesTab } from './attendees-tab';
 import { CrewTab } from './crew-tab';
 import { OverviewTab } from './overview-tab';
+import { PaymentsTab } from './payments-tab';
 import { SettingsTab } from './settings-tab';
 
 const TABS = [
   { key: 'overview', label: 'Overview' },
   { key: 'settings', label: 'Settings' },
   { key: 'attendees', label: 'Attendees' },
+  { key: 'payments', label: 'Payments' },
   { key: 'crew', label: 'Crew and gate' },
 ] as const;
 type TabKey = (typeof TABS)[number]['key'];
@@ -27,7 +29,13 @@ type TabKey = (typeof TABS)[number]['key'];
 export function EventHostHub({ eventId, backHref }: { eventId: string; backHref: string }) {
   const [summary, setSummary] = useState<HostSummary | null>(null);
   const [error, setError] = useState('');
-  const [tab, setTab] = useState<TabKey>('overview');
+  // A notification can link straight to a tab (?tab=payments).
+  const [wanted] = useState(() =>
+    typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('tab'),
+  );
+  const [tab, setTab] = useState<TabKey>(
+    TABS.some((t) => t.key === wanted) ? (wanted as TabKey) : 'overview',
+  );
 
   const load = useCallback(async () => {
     const res = await apiService.get<HostSummary>(`/v1/events/${eventId}/host`, { fresh: true });
@@ -44,7 +52,7 @@ export function EventHostHub({ eventId, backHref }: { eventId: string; backHref:
 
   // Open on Settings the first time, when RSVP has not been turned on yet.
   useEffect(() => {
-    if (summary && summary.bookingMode !== 'RSVP') setTab('settings');
+    if (summary && summary.bookingMode !== 'RSVP' && !wanted) setTab('settings');
   }, [summary?.bookingMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (error) {
@@ -71,6 +79,9 @@ export function EventHostHub({ eventId, backHref }: { eventId: string; backHref:
     );
 
   const rsvp = summary.bookingMode === 'RSVP';
+  // Payments only matter on events that charge, or that already took payments.
+  const showPayments = summary.isPaidEvent || summary.payEnabled;
+  const tabs = TABS.filter((t) => t.key !== 'payments' || showPayments);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -121,7 +132,7 @@ export function EventHostHub({ eventId, backHref }: { eventId: string; backHref:
         aria-label="Event sections"
         className="flex gap-1 overflow-x-auto rounded-control bg-surface-sunken p-1"
       >
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button
             key={t.key}
             role="tab"
@@ -136,6 +147,14 @@ export function EventHostHub({ eventId, backHref }: { eventId: string; backHref:
             )}
           >
             {t.label}
+            {t.key === 'payments' && summary.paymentsToVerify > 0 && (
+              <span
+                className="ml-2 rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold tabular-nums text-primary-foreground"
+                aria-label={`${summary.paymentsToVerify} to verify`}
+              >
+                {summary.paymentsToVerify}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -147,6 +166,12 @@ export function EventHostHub({ eventId, backHref }: { eventId: string; backHref:
         )}
         {tab === 'attendees' &&
           (rsvp ? <AttendeesTab eventId={eventId} /> : <TurnOn onGo={() => setTab('settings')} />)}
+        {tab === 'payments' &&
+          (rsvp ? (
+            <PaymentsTab eventId={eventId} summary={summary} onChanged={load} />
+          ) : (
+            <TurnOn onGo={() => setTab('settings')} />
+          ))}
         {tab === 'crew' &&
           (rsvp ? <CrewTab eventId={eventId} /> : <TurnOn onGo={() => setTab('settings')} />)}
       </div>
