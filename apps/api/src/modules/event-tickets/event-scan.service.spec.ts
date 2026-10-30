@@ -201,6 +201,17 @@ describe('scanning a ticket', () => {
     expect(w.event.checkedInCount).toBe(0);
   });
 
+  it('never admits a seat that is still waiting for payment', async () => {
+    const w = world();
+    const unpaid = w.add({ status: 'PENDING', code: 'PPPPPP' });
+    const byQr = await w.svc.scanQr(w.ctx, ticketQr(unpaid.id));
+    expect(byQr.result).toBe('INVALID');
+    expect(byQr.message).toMatch(/Payment not verified/);
+    expect((await w.svc.byCode(w.ctx, 'PPPPPP')).result).toBe('INVALID');
+    expect(unpaid.status).toBe('PENDING');
+    expect(w.event.checkedInCount).toBe(0);
+  });
+
   it('refuses outside the check-in window and when the event is cancelled', async () => {
     const early = world({
       event: {

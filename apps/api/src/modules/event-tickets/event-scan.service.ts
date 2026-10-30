@@ -172,6 +172,16 @@ export class EventScanService {
       await this.log(ctx, t.id, 'CANCELLED');
       return { result: 'CANCELLED', message: 'This ticket was cancelled.', ticket: base };
     }
+    // A seat held while the person pays has no valid ticket yet: never admit it.
+    if (t.status === 'PENDING') {
+      await this.log(ctx, t.id, 'INVALID');
+      return {
+        result: 'INVALID',
+        message:
+          'Payment not verified yet. Do not admit. Ask the person to show their verified ticket.',
+        ticket: base,
+      };
+    }
     // Already used: say when and at which gate.
     const gate = t.checkedInPassId
       ? await this.db.eventCrewPass.findUnique({

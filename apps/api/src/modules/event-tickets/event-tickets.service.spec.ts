@@ -100,6 +100,12 @@ function world(over: Record<string, any> = {}) {
     ...tx,
     $transaction: jest.fn(async (fn: any) => fn(tx)),
     user: { findFirst: jest.fn(async ({ where }: any) => users[where.id] ?? null) },
+    eventPayment: {
+      findMany: jest.fn(async () => []),
+      findUnique: jest.fn(async () => null),
+      count: jest.fn(async () => 0),
+      groupBy: jest.fn(async () => []),
+    },
     eventWaitlist: {
       ...tx.eventWaitlist,
       findMany: jest.fn(async ({ where }: any) =>

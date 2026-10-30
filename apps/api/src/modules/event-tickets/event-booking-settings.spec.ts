@@ -47,6 +47,7 @@ function world(over: Record<string, any> = {}, actor = owner) {
       })),
     },
     eventTicket: { count: jest.fn(async () => over.__tickets ?? 0) },
+    eventPayment: { groupBy: jest.fn(async () => []), count: jest.fn(async () => 0) },
     user: { findUnique: jest.fn(async () => ({ id: 'host1', tenantId: 't1' })) },
   };
   const redis: any = {

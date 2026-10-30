@@ -163,6 +163,7 @@ model User {
   businessStaff          BusinessStaff[]
   eventTickets           EventTicket[]
   eventWaitlist          EventWaitlist[]
+  eventPayments          EventPayment[]
   offerRedemptions       OfferRedemption[]
   voucherClaims          VoucherClaim[]
   discountSpins          DiscountSpin[]
@@ -2825,6 +2826,18 @@ model Event {
   checkInOpensAt     DateTime? @map("check_in_opens_at")
   checkInClosesAt    DateTime? @map("check_in_closes_at")
 
+  // ── Paid tickets: attendees pay the host directly by UPI; the host verifies (see event-payments) ──
+  // Set only after the host confirms they accept payments and gives a UPI ID and phone.
+  payEnabled         Boolean   @default(false) @map("pay_enabled")
+  payConfirmedAt     DateTime? @map("pay_confirmed_at")
+  payUpiId           String?   @map("pay_upi_id") @db.VarChar(100)
+  payPhone           String?   @map("pay_phone") @db.VarChar(20)
+  payeeName          String?   @map("payee_name") @db.VarChar(120)
+  // Photo of the host's UPI QR. Asked for only once payments are confirmed.
+  payQrImage         String?   @map("pay_qr_image") @db.Text
+  // Hours an attendee has to send proof before the held seat is released.
+  payWindowHours     Int       @default(24) @map("pay_window_hours")
+
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
   deletedAt          DateTime? @map("deleted_at")
@@ -2836,6 +2849,7 @@ model Event {
   crewPasses EventCrewPass[]
   waitlist   EventWaitlist[]
   scans      EventScan[]
+  payments   EventPayment[]
 
   @@index([tenantId])
   @@index([businessId])
@@ -2884,6 +2898,9 @@ model EventTicket {
   cancelledAt    DateTime? @map("cancelled_at")
   checkedInAt    DateTime? @map("checked_in_at")
   checkedInPassId String?  @map("checked_in_pass_id") @db.Uuid
+  // The payment this ticket waits on (PENDING) or was bought with. Null for free tickets.
+  paymentId      String?   @map("payment_id") @db.Uuid
+  payment        EventPayment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -2964,6 +2981,8 @@ model EventWaitlist {
   seats      Int       @default(1)
   createdAt  DateTime  @default(now()) @map("created_at")
   promotedAt DateTime? @map("promoted_at")
+  // Ticket type chosen when joining a paid, tiered event.
+  tierName   String?   @map("tier_name") @db.VarChar(60)
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -2971,6 +2990,69 @@ model EventWaitlist {
   @@unique([eventId, userId])
   @@index([eventId, promotedAt, createdAt])
   @@map("event_waitlist")
+}
+
+// A UPI payment from an attendee to the event host for one RSVP. The platform never holds the money:
+// the host checks their own bank app and approves or rejects the proof the attendee sends.
+model EventPayment {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  eventId        String    @map("event_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  // Same group as the tickets this payment covers.
+  groupId        String    @map("group_id") @db.Uuid
+  seats          Int
+  tierName       String?   @map("tier_name") @db.VarChar(60)
+  unitPrice      Decimal   @map("unit_price") @db.Decimal(10, 2)
+  amount         Decimal   @db.Decimal(10, 2)
+  // PENDING (waiting for proof) | SUBMITTED (host to verify) | APPROVED | REJECTED | EXPIRED | CANCELLED
+  status         String    @default("PENDING") @db.VarChar(12)
+  // UPI reference number the attendee read from their payment app.
+  utr            String?   @db.VarChar(32)
+  proofImage     String?   @map("proof_image") @db.Text
+  payerNote      String?   @map("payer_note") @db.VarChar(300)
+  submittedAt    DateTime? @map("submitted_at")
+  decidedAt      DateTime? @map("decided_at")
+  decidedBy      String?   @map("decided_by") @db.Uuid
+  decisionNote   String?   @map("decision_note") @db.VarChar(300)
+  resubmitCount  Int       @default(0) @map("resubmit_count")
+  // Held seats are released at this time while the status is PENDING.
+  expiresAt      DateTime  @map("expires_at")
+  hostRemindedAt DateTime? @map("host_reminded_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  event   Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tickets EventTicket[]
+  logs    EventPaymentLog[]
+
+  @@index([eventId, status])
+  @@index([userId, createdAt])
+  @@index([status, expiresAt])
+  @@index([tenantId, createdAt])
+  @@map("event_payments")
+}
+
+// Append-only trail of everything that happens to a payment, shown to the host and both admins.
+model EventPaymentLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  paymentId String   @map("payment_id") @db.Uuid
+  eventId   String   @map("event_id") @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  // ATTENDEE | HOST | ADMIN | SYSTEM
+  actorRole String   @map("actor_role") @db.VarChar(10)
+  // CREATED | PROOF_SUBMITTED | APPROVED | REJECTED | RESUBMIT_REQUESTED | EXPIRED | CANCELLED | REMINDER | REFUND_DUE
+  action    String   @db.VarChar(24)
+  detail    Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  payment EventPayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId, createdAt])
+  @@index([eventId, createdAt])
+  @@map("event_payment_logs")
 }
 
 // Platform-managed movie listings — no business ownership; published by

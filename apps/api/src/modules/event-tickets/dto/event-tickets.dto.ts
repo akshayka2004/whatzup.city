@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsDateString,
   IsIn,
   IsInt,
@@ -37,6 +38,12 @@ export class RsvpDto {
   @IsString()
   @MaxLength(64)
   idempotencyKey?: string;
+
+  @ApiProperty({ required: false, description: 'Ticket type, on events that sell tiers' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  tier?: string;
 }
 
 export class CancelTicketsDto {
@@ -58,6 +65,12 @@ export class WaitlistDto {
   @Min(1)
   @Max(10)
   seats?: number;
+
+  @ApiProperty({ required: false, description: 'Ticket type, on events that sell tiers' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(60)
+  tier?: string;
 }
 
 /** Host settings. null clears an optional value; leaving a field out keeps it. */
@@ -127,6 +140,44 @@ export class BookingSettingsDto {
   @IsOptional()
   @IsDateString()
   checkInClosesAt?: string | null;
+
+  // ── payments (see EventTicketsService.paymentSettings for the rules) ──
+
+  @ApiProperty({ required: false, description: 'Host confirms they take UPI payments' })
+  @IsOptional()
+  @IsBoolean()
+  payEnabled?: boolean;
+
+  @ApiProperty({ required: false, nullable: true, example: 'name@bank' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  payUpiId?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  payPhone?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, description: 'Name on the UPI account' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  payeeName?: string | null;
+
+  @ApiProperty({ required: false, nullable: true, description: 'Link to the uploaded QR photo' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  payQrImage?: string | null;
+
+  @ApiProperty({ required: false, minimum: 1, maximum: 72 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(72)
+  payWindowHours?: number;
 }
 
 export class CreateCrewPassesDto {
@@ -199,6 +250,50 @@ export class DecisionDto {
   @IsString()
   @MaxLength(300)
   reason?: string;
+}
+
+/** Proof the attendee sends after paying. */
+export class SubmitProofDto {
+  @ApiProperty({ description: 'UPI reference (UTR) from the payment app' })
+  @IsString()
+  @MinLength(10)
+  @MaxLength(40)
+  utr!: string;
+
+  @ApiProperty({ required: false, description: 'Where the payment screenshot was uploaded' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  proofBucket?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  proofPath?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  note?: string;
+}
+
+/** The host's answer to a payment they cannot approve. */
+export class RejectPaymentDto {
+  @ApiProperty({ description: 'Shown to the attendee' })
+  @IsString()
+  @MinLength(3)
+  @MaxLength(300)
+  reason!: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'true: attendee may send corrected proof. false: seat is released.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  allowResubmit?: boolean;
 }
 
 export class ScanLoginDto {

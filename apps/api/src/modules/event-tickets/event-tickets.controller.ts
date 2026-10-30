@@ -27,12 +27,14 @@ import {
   CreateCrewPassesDto,
   DecisionDto,
   MessageAttendeesDto,
+  RejectPaymentDto,
   RsvpDto,
   WaitlistDto,
 } from './dto/event-tickets.dto';
 import { EventActor } from './event-access';
 import { EventAnalyticsService } from './event-analytics.service';
 import { EventCrewService } from './event-crew.service';
+import { EventPaymentsService } from './event-payments.service';
 import { EventTicketsService } from './event-tickets.service';
 
 // RSVP, ticket and host routes are limited per account inside the service, not per IP: a whole
@@ -46,7 +48,43 @@ export class EventTicketsController {
     private readonly tickets: EventTicketsService,
     private readonly crew: EventCrewService,
     private readonly analytics: EventAnalyticsService,
+    private readonly payments: EventPaymentsService,
   ) {}
+
+  // ── admin monitoring of payments (literal routes first) ─────────────────
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
+  @Get('admin/payments')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Every event payment on the platform, for monitoring' })
+  adminPayments(
+    @Query('status') status?: string,
+    @Query('eventId') eventId?: string,
+    @Query('search') search?: string,
+    @Query('overdue') overdue?: string,
+    @Query('page') page?: number,
+  ) {
+    return this.payments.adminList({ status, eventId, search, overdue, page });
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
+  @Get('admin/payments/:paymentId')
+  @ApiBearerAuth()
+  adminPayment(@Param('paymentId', ParseUUIDPipe) paymentId: string) {
+    return this.payments.adminDetail(paymentId);
+  }
+
+  // ── a business's events across time ─────────────────────────────────────
+
+  @UseGuards(JwtAuthGuard)
+  @Get('host/overview')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Past events and totals for a business, for its analytics dashboard' })
+  hostOverview(@CurrentUser() user: EventActor, @Query('businessId') businessId: string) {
+    return this.analytics.forBusiness(user, businessId);
+  }
 
   // ── moderation (literal routes first) ───────────────────────────────────
 
@@ -132,7 +170,7 @@ export class EventTicketsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: WaitlistDto,
   ) {
-    return this.tickets.joinWaitlist(userId, id, dto.seats);
+    return this.tickets.joinWaitlist(userId, id, dto.seats, dto.tier);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -185,6 +223,56 @@ export class EventTicketsController {
   @ApiBearerAuth()
   async attendeesCsv(@CurrentUser() user: EventActor, @Param('id', ParseUUIDPipe) id: string) {
     return this.tickets.attendeesCsv(user, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/host/payments')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Payments for one event, to verify' })
+  paymentList(
+    @CurrentUser() user: EventActor,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('page') page?: number,
+  ) {
+    return this.payments.listForEvent(user, id, { status, search, page });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/host/payments/:paymentId')
+  @ApiBearerAuth()
+  paymentDetail(
+    @CurrentUser() user: EventActor,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('paymentId', ParseUUIDPipe) paymentId: string,
+  ) {
+    return this.payments.detail(user, id, paymentId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/host/payments/:paymentId/approve')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  paymentApprove(
+    @CurrentUser() user: EventActor,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('paymentId', ParseUUIDPipe) paymentId: string,
+  ) {
+    return this.payments.approve(user, id, paymentId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/host/payments/:paymentId/reject')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  paymentReject(
+    @CurrentUser() user: EventActor,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('paymentId', ParseUUIDPipe) paymentId: string,
+    @Body() dto: RejectPaymentDto,
+  ) {
+    return this.payments.reject(user, id, paymentId, dto);
   }
 
   @UseGuards(JwtAuthGuard)
