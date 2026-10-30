@@ -64,7 +64,13 @@ export function BusinessQrCard({
     setDownloading(true);
     try {
       // Snapshots the whole styled card (branding, name, QR, footer) — not just the raw QR pattern.
-      const dataUrl = await toPng(cardRef.current, { pixelRatio: 3, backgroundColor: '#FBF8F2' });
+      // `mx-auto` computes to a fixed left margin that the snapshot copies, shifting the card
+      // out of the image frame; zero it on the copy only.
+      const dataUrl = await toPng(cardRef.current, {
+        pixelRatio: 3,
+        backgroundColor: '#FBF8F2',
+        style: { margin: '0' },
+      });
       const link = document.createElement('a');
       const safeName =
         businessName
