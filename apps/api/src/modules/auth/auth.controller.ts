@@ -238,6 +238,8 @@ export class AuthController {
     return this.authService.checkAvailability(dto, clientIp(req));
   }
 
+  // Browsers call this on every expired token, so it is generous, but not unlimited.
+  @Throttle({ long: { limit: 60, ttl: 60000 } })
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
