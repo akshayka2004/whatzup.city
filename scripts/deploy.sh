@@ -15,6 +15,11 @@ unset DATABASE_URL DIRECT_URL
 STATIC_ARCHIVE="${STATIC_ARCHIVE:-$HOME/.whtzup-static-archive}"
 mkdir -p "$STATIC_ARCHIVE"
 
+echo "==> discard generated next-env.d.ts"
+# Next rewrites this tracked file on every build, which makes the next `git pull` abort
+# with "local changes would be overwritten". It is regenerated, so discarding is safe.
+git checkout -- apps/web/next-env.d.ts
+
 echo "==> git pull"
 git pull origin main
 
