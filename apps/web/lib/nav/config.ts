@@ -489,6 +489,7 @@ function superAdminNav(): NavSpec {
           { label: 'Platform Offers', href: '/admin/platform-offers', icon: TicketPercent },
           { label: 'Business Offers', href: '/super-admin/offers', icon: Ticket },
           { label: 'Events', href: '/super-admin/events', icon: CalendarDays },
+          { label: 'Event RSVPs', href: '/admin/event-approvals', icon: CalendarCheck },
           ...movies({ label: 'Movies', href: '/super-admin/movies', icon: Clapperboard }),
           { label: 'Notices', href: '/admin/notices', icon: Megaphone },
         ],
