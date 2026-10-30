@@ -3,6 +3,8 @@
 import { ModalSurface } from '@/components/system/modal-surface';
 import { useConfirm } from '@/components/common/confirm-dialog';
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +21,7 @@ import {
   X,
   ImagePlus,
   Megaphone,
+  QrCode,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { KERALA_CITIES, EVENT_CATEGORIES } from '@/lib/constants';
@@ -66,6 +69,8 @@ export function EventsManager() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  // The tickets page for an event sits next to this list, whichever portal it is in.
+  const hubBase = (usePathname() || '/staff/events').replace(/\/$/, '');
   const [form, setForm] = useState<any>(empty);
   const [tiers, setTiers] = useState<{ name: string; price: string }[]>([]);
   const [saving, setSaving] = useState(false);
@@ -444,6 +449,20 @@ export function EventsManager() {
                           </td>
                           <td className="px-5 py-3 text-right whitespace-nowrap">
                             <div className="inline-flex items-center gap-2">
+                              <Button
+                                asChild
+                                variant="outline"
+                                size="icon"
+                                className="h-9 w-9 rounded-lg border-border cursor-pointer"
+                              >
+                                <Link
+                                  href={`${hubBase}/${e.id}`}
+                                  aria-label={`Tickets and check-in for ${e.title}`}
+                                  title="Tickets and check-in"
+                                >
+                                  <QrCode className="h-3.5 w-3.5" />
+                                </Link>
+                              </Button>
                               <Button
                                 onClick={() => openEdit(e)}
                                 variant="outline"

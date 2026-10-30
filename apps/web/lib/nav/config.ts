@@ -4,6 +4,7 @@ import {
   Activity,
   BarChart3,
   Building2,
+  CalendarCheck,
   CalendarDays,
   CircleDollarSign,
   ClipboardCheck,
@@ -145,6 +146,7 @@ function publicNav(ctx: NavContext): NavSpec {
             tour: 'nav-favorites',
             mobileTour: 'mnav-saved',
           },
+          { label: 'My tickets', href: '/tickets', icon: QrCode },
           { label: 'Notifications', href: '/notifications', icon: Bell },
           { label: 'Report Issue', href: '/report', icon: Flag },
         ],
@@ -414,6 +416,7 @@ function adminNav(): NavSpec {
         items: [
           { label: 'Platform Offers', href: '/admin/platform-offers', icon: TicketPercent },
           { label: 'Spin wheels', href: '/admin/discounts', icon: Ticket },
+          { label: 'Event RSVPs', href: '/admin/event-approvals', icon: CalendarCheck },
           { label: 'Notices', href: '/admin/notices', icon: Megaphone },
         ],
       },

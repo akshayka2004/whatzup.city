@@ -17,6 +17,7 @@ import { fmtDateIST } from '@/components/public/media/format';
 import { EVENT_CATEGORIES } from '@/lib/constants';
 import { apiService } from '@/lib/services/api-service';
 import { track } from '@/lib/analytics/track';
+import { RsvpPanel } from '@/components/events/rsvp-panel';
 
 export function EventDetailClient({
   ev,
@@ -89,6 +90,7 @@ export function EventDetailClient({
         </div>
 
         <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
+          <RsvpPanel eventId={ev.id} />
           <SectionCard>
             <dl className="space-y-4 text-sm">
               <div className="flex gap-3">

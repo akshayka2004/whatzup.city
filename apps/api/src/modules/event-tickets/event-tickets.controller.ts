@@ -180,6 +180,7 @@ export class EventTicketsController {
   @UseGuards(JwtAuthGuard)
   @Get(':id/host/attendees.csv')
   @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="attendees.csv"')
   @Header('Cache-Control', 'no-store')
   @ApiBearerAuth()
   async attendeesCsv(@CurrentUser() user: EventActor, @Param('id', ParseUUIDPipe) id: string) {

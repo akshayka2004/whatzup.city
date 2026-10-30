@@ -3,6 +3,7 @@
 import { ModalSurface } from '@/components/system/modal-surface';
 import { useConfirm } from '@/components/common/confirm-dialog';
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import {
   Users,
   MapPin,
   ImagePlus,
+  QrCode,
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { useAuth } from '@/hooks/use-auth';
@@ -44,6 +46,7 @@ interface Ev {
   registrationClicks?: number;
   ticketClicks?: number;
   status?: string;
+  bookingMode?: 'NONE' | 'RSVP';
 }
 
 const empty = {
@@ -400,6 +403,16 @@ export default function DashboardEventsPage() {
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
+                </div>
+                <div className="mt-3">
+                  <Button asChild variant="outline" size="sm" className="cursor-pointer rounded-lg">
+                    <Link href={`/dashboard/events/${ev.id}`}>
+                      <QrCode className="h-3.5 w-3.5" />
+                      {ev.bookingMode === 'RSVP'
+                        ? 'Tickets and check-in'
+                        : 'Take RSVPs and tickets'}
+                    </Link>
+                  </Button>
                 </div>
                 <div className="flex gap-3 mt-3">
                   <span className="inline-flex items-center gap-1 text-xs text-foreground">

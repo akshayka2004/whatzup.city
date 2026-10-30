@@ -14,7 +14,9 @@ export const SEARCH_TRIGGER_ATTR = 'data-search-trigger';
  * It only shows while no header search trigger exists in the document.
  */
 /** Sign-in and sign-up are focused flows: nothing floats over the form there. */
-const AUTH_ROUTE = /^\/(login|register|forgot-password|reset-password)(\/|$)/;
+// The gate scanner and printable pass sheets are full-screen tools: nothing floats over them.
+const AUTH_ROUTE =
+  /^\/(login|register|forgot-password|reset-password|change-password|scan|crew-sheet)(\/|$)/;
 
 export function SearchLauncher() {
   const [needed, setNeeded] = useState(false);

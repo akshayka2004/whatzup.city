@@ -9,7 +9,9 @@ import { useRouter, usePathname } from 'next/navigation';
 // anything else is treated as untrusted and falls back to resolveRedirect().
 // Guards against an open redirect via a crafted ?redirect= query param.
 function isSafeBusinessRedirect(path: string): boolean {
-  return /^\/business\/[^/?#\s]+([?#].*)?$/.test(path);
+  return (
+    /^\/(business|events)\/[^/?#\s]+([?#].*)?$/.test(path) || /^\/tickets(\/[^/?#\s]+)?$/.test(path)
+  );
 }
 
 interface AuthContextType {
