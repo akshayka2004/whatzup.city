@@ -48,6 +48,7 @@ export class SubscriptionsController {
     return this.entitlements.forUser(businessId, user);
   }
 
+  @Public()
   @UseGuards(PaymentsEnabledGuard)
   @Get('packages')
   @ApiOperation({ summary: 'List all subscription package tiers' })

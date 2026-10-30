@@ -113,7 +113,7 @@ function PassCard({ pass, event }: { pass: CrewPass; event: HostSummary }) {
           </p>
         </div>
       </div>
-      <p className="mt-3 border-t border-border pt-2 text-[11px] text-muted-foreground print:border-black print:text-black">
+      <p className="mt-3 border-t border-border pt-2 text-xs text-muted-foreground print:border-black print:text-black">
         Keep this private. Anyone with the code can scan for this event until it expires.
       </p>
     </li>

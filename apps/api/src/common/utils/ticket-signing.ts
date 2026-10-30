@@ -4,7 +4,7 @@ import { PUBLIC_CODE_ALPHABET } from './public-code';
 /**
  * Signed values for event tickets and crew passes. Everything is derived from one server secret,
  * so a QR cannot be forged and the database never holds a crew code in clear text.
- * TICKET_SIGNING_SECRET should be set in production; it falls back to JWT_SECRET.
+ * Production refuses to start without TICKET_SIGNING_SECRET (env.validation); the fallbacks are for development only.
  */
 function secret(): string {
   return process.env.TICKET_SIGNING_SECRET || process.env.JWT_SECRET || 'dev-secret-change-me';

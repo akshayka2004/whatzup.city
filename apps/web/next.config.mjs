@@ -30,16 +30,23 @@ const CSP = [
   'upgrade-insecure-requests',
 ].join('; ');
 
+// The image optimizer fetches remote pictures on the server, so it may only reach our own
+// storage project, not every *.supabase.co host. Falls back to the wildcard only when the
+// project URL is not available at build time, so images never break.
+function storageHost() {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || '').hostname || null;
+  } catch {
+    return null;
+  }
+}
+
 const nextConfig = {
   output: 'standalone',
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
-
-  typescript: {
-    ignoreBuildErrors: true,
-  },
 
   transpilePackages: ['@saas/ui', '@saas/auth', '@saas/types', '@saas/database'],
 
@@ -52,7 +59,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.supabase.co',
+        hostname: storageHost() || '**.supabase.co',
       },
     ],
   },

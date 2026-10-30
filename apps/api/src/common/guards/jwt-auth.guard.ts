@@ -29,6 +29,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return true;
     }
 
+    // The guard is global (deny by default) and many controllers still name it as well. The
+    // first run authenticates; later runs on the same request must not verify the token again.
+    if (context.getType() !== 'http') return true;
+    if (context.switchToHttp().getRequest()?.user) return true;
+
     return super.canActivate(context);
   }
 

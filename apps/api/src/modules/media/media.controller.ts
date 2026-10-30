@@ -1,9 +1,8 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { MediaService } from './media.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { Public } from '../../common/decorators/public.decorator';
 import { GetUploadUrlDto, CreateMediaDto } from './dto/media.dto';
 
 @ApiTags('Media')
@@ -12,12 +11,6 @@ import { GetUploadUrlDto, CreateMediaDto } from './dto/media.dto';
 @Controller('media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
-
-  @Public()
-  @Put('mock-upload')
-  async mockUpload() {
-    return { success: true, message: 'Mock upload successful' };
-  }
 
   @Post('upload-url')
   async getUploadUrl(

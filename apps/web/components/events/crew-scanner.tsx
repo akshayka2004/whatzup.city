@@ -392,6 +392,7 @@ function Scanner({
   const undoLeft = lastAdmit ? Math.max(0, Math.ceil((lastAdmit.until - now) / 1000)) : 0;
 
   return (
+    // design-lint-ignore: the scanner is a full-screen page of its own, not a modal over another page
     <main className="fixed inset-0 flex flex-col bg-background text-foreground">
       {/* header and counts */}
       <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">

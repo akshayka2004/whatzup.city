@@ -1366,3 +1366,11 @@ Hosts can sell tickets on RSVP events. The attendee pays the host's own UPI acco
 - **Business history and analytics:** Dashboard, Events has tabs Events, History (every finished or cancelled event with booked, came, no-shows, cancelled, money paid) and Analytics (events held, people booked and who came, average fill, verified and awaiting money, people per month, best events, booking sources). `GET /events/host/overview?businessId=`, cached 30 s. Per-event analytics now also show the money split and treat unpaid holds as UNPAID rather than as RSVPs or cancellations.
 - **Heavy pictures:** posters, QR photos and screenshots are shrunk in the browser (`lib/image-compress.ts`, max 1600 px JPEG under 4.5 MB) before upload, so large phone photos no longer fail at the 5 MB storage limit.
 - **Deploy:** run migration `20261031000000_event_payments` (additive: new `events` columns with defaults, `event_waitlist.tier_name`, `event_tickets.payment_id`, new tables `event_payments`, `event_payment_logs`, partial unique index). No new required env. Optional `EVENT_PAYMENT_SWEEP=off`.
+
+### 12.23 Security hardening (2026-10-31 audit)
+
+- **Next.js 16.4.3**: fixes two critical remote-code-execution advisories in 16.3.8 (image optimizer and `use cache`). pnpm overrides raise `multer`, `body-parser`, `qs` and `morgan`. Left open: `zod` 3 in `apps/flood-relief-api` and `deepmerge-ts` inside the Prisma CLI (neither is reachable from the main API).
+- **Image optimizer** only fetches from the project in `NEXT_PUBLIC_SUPABASE_URL` (wildcard `**.supabase.co` only if that variable is missing at build time).
+- **Deny by default**: `JwtAuthGuard` is global (`APP_GUARD`). A route is open only with `@Public()`. The guard skips re-verifying when `req.user` is set, so controllers that still name it cost nothing extra.
+- **Production refuses to start** without `TICKET_SIGNING_SECRET` (32+ chars, different from `JWT_SECRET`).
+- `PUT /media/mock-upload` removed. `typescript.ignoreBuildErrors` removed: type errors now fail the web build.

@@ -117,6 +117,15 @@ export function validateEnv(config: Record<string, any>) {
           'Generate one with: openssl rand -hex 32',
       );
     }
+    // Ticket QR codes are signed with this. Without it the key falls back to JWT_SECRET, so
+    // rotating the login secret would silently void every ticket already issued.
+    const ticketSecret = String((config as Record<string, any>).TICKET_SIGNING_SECRET ?? '');
+    if (ticketSecret.length < 32 || ticketSecret === validatedConfig.JWT_SECRET) {
+      throw new Error(
+        'CRITICAL SECURITY ERROR: TICKET_SIGNING_SECRET is required in production (at least 32 characters, ' +
+          'different from JWT_SECRET). Generate one with: openssl rand -hex 32. Never change it once tickets exist.',
+      );
+    }
     if (
       validatedConfig.JWT_REFRESH_SECRET.toLowerCase().includes('change') ||
       validatedConfig.JWT_REFRESH_SECRET.toLowerCase().includes('secret') ||

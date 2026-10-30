@@ -6,6 +6,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ClientThrottlerGuard } from './common/guards/client-throttler.guard';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { BullModule } from '@nestjs/bullmq';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { validateEnv } from './common/config/env.validation';
@@ -214,6 +215,12 @@ import { GeoModule } from './common/geo/geo.module';
     {
       provide: APP_GUARD,
       useClass: ClientThrottlerGuard,
+    },
+    {
+      // Deny by default: a route is open only when it says @Public(). A controller that forgets
+      // its own guard is no longer reachable by anyone who is not signed in.
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
     {
       provide: APP_FILTER,

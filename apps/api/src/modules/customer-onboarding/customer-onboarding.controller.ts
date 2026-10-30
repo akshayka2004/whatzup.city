@@ -10,6 +10,7 @@ import {
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { TurnstileGuard } from '../../common/guards/turnstile.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 
 @ApiTags('Customer Onboarding')
 @Controller('customer-onboarding')
@@ -18,6 +19,7 @@ export class CustomerOnboardingController {
 
   // Same limits as /auth/signup and /auth/verify-email: this is a second public way in.
   @Throttle({ long: { limit: 5, ttl: 3600000 } })
+  @Public()
   @UseGuards(TurnstileGuard)
   @Post('signup')
   @ApiOperation({ summary: 'Register a new customer account (Step 1)' })
@@ -26,6 +28,7 @@ export class CustomerOnboardingController {
   }
 
   @Throttle({ long: { limit: 10, ttl: 900000 } })
+  @Public()
   @Post('verify')
   @ApiOperation({ summary: 'Verify email token to activate account (Step 2)' })
   async verify(@Query('token') token: string) {
