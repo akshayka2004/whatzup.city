@@ -16,7 +16,7 @@ export function MiniBars({
   bars,
   height = 120,
   emptyText = 'Nothing to show yet.',
-  minBarWidth = 22,
+  minBarWidth = 30,
   label,
 }: {
   bars: Bar[];
@@ -43,14 +43,14 @@ export function MiniBars({
             className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1"
             title={b.title ?? `${b.label}: ${b.value}`}
           >
-            <span className="text-[10px] leading-none tabular-nums text-muted-foreground">
+            <span className="text-xs leading-none tabular-nums text-muted-foreground">
               {b.value || ''}
             </span>
             <div
               className={cn('w-full rounded-t-sm', b.highlight ? 'bg-primary' : 'bg-primary/45')}
               style={{ height: Math.max(b.value ? 3 : 0, (b.value / max) * height) }}
             />
-            <span className="h-4 whitespace-nowrap text-[10px] leading-4 text-muted-foreground">
+            <span className="h-5 whitespace-nowrap text-xs leading-5 text-muted-foreground">
               {i % every === 0 ? b.label : ''}
             </span>
           </div>

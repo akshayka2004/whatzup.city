@@ -60,7 +60,7 @@ export function EventHostHub({ eventId, backHref }: { eventId: string; backHref:
       <div className="space-y-3">
         <Link
           href={backHref}
-          className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+          className="inline-flex min-h-10 items-center gap-1.5 text-sm text-primary hover:underline"
         >
           <ArrowLeft className="size-4" aria-hidden /> Back to events
         </Link>
@@ -88,7 +88,7 @@ export function EventHostHub({ eventId, backHref }: { eventId: string; backHref:
       <div>
         <Link
           href={backHref}
-          className="mb-2 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+          className="mb-1 inline-flex min-h-10 items-center gap-1.5 text-sm text-primary hover:underline"
         >
           <ArrowLeft className="size-4" aria-hidden /> Back to events
         </Link>

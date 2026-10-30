@@ -43,7 +43,7 @@ export function ProfileTickets() {
         </h2>
         <Link
           href="/tickets"
-          className="inline-flex items-center gap-0.5 text-sm font-medium text-primary hover:underline"
+          className="-mr-2 inline-flex min-h-10 items-center gap-0.5 px-2 text-sm font-medium text-primary hover:underline"
         >
           View all <ChevronRight className="size-4" aria-hidden />
         </Link>
@@ -86,7 +86,7 @@ export function ProfileTickets() {
           {next && (
             <Link
               href="/tickets"
-              className="mt-3 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+              className="mt-2 flex min-h-10 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
             >
               <CalendarDays className="size-4 shrink-0" aria-hidden />
               <span className="min-w-0 truncate">
@@ -96,9 +96,12 @@ export function ProfileTickets() {
             </Link>
           )}
           {attended > 0 && (
-            <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+            <p className="flex min-h-10 items-center gap-2 text-sm text-muted-foreground">
               <CheckCircle2 className="size-4 shrink-0 text-success" aria-hidden />
-              <Link href="/tickets" className="hover:text-foreground">
+              <Link
+                href="/tickets"
+                className="inline-flex min-h-10 items-center hover:text-foreground"
+              >
                 See the events you attended in History
               </Link>
             </p>

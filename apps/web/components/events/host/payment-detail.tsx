@@ -130,7 +130,7 @@ export function PaymentDetailModal({
         )
       ) : (
         <div className="space-y-4">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start justify-between gap-3 pr-8">
             <div className="min-w-0">
               <h3 className="text-lg font-bold text-foreground">{rupees(p.amount)}</h3>
               <p className="text-sm text-muted-foreground">

@@ -198,6 +198,7 @@ export default function NotificationsPage() {
                     <Button
                       size="icon"
                       variant="ghost"
+                      aria-label="Dismiss notification"
                       className="rounded-xl flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-muted/40"
                       onClick={(e) => {
                         e.stopPropagation();

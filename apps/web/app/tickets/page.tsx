@@ -233,7 +233,7 @@ function Section({ title, rows, muted = false }: { title: string; rows: Row[]; m
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <Link
                   href={`/events/${r.event.id}`}
-                  className="font-semibold text-foreground hover:underline"
+                  className="inline-block py-2 font-semibold text-foreground hover:underline"
                 >
                   {r.event.title}
                 </Link>

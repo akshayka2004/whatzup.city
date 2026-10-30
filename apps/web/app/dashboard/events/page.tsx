@@ -418,6 +418,7 @@ export default function DashboardEventsPage() {
                       <div className="flex gap-1.5 shrink-0">
                         <Button
                           onClick={() => openEdit(ev)}
+                          aria-label={`Edit ${ev.title}`}
                           variant="outline"
                           size="icon"
                           className="h-10 w-10 rounded-lg border-border cursor-pointer"
@@ -426,6 +427,7 @@ export default function DashboardEventsPage() {
                         </Button>
                         <Button
                           onClick={() => remove(ev)}
+                          aria-label={`Delete ${ev.title}`}
                           variant="outline"
                           size="icon"
                           className="h-10 w-10 rounded-lg border-destructive/30 text-destructive cursor-pointer"

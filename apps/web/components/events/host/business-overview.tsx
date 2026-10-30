@@ -363,7 +363,7 @@ export function BusinessEventsAnalytics({ businessId }: { businessId: string | u
             <ul className="mt-3 space-y-3">
               {best.map((e) => (
                 <li key={e.id}>
-                  <Link href={`/dashboard/events/${e.id}`} className="block">
+                  <Link href={`/dashboard/events/${e.id}`} className="block py-1">
                     <div className="flex items-baseline justify-between gap-3 text-sm">
                       <span className="min-w-0 truncate font-medium text-foreground">
                         {e.title}

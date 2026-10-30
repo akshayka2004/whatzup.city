@@ -241,7 +241,7 @@ export default function PayPage() {
           <Card className="rounded-card p-5">
             <Link
               href={`/events/${pay.event.id}`}
-              className="text-lg font-semibold text-foreground hover:underline"
+              className="inline-block py-1 text-lg font-semibold text-foreground hover:underline"
             >
               {pay.event.title}
             </Link>
@@ -405,7 +405,7 @@ export default function PayPage() {
                       <dd>
                         <a
                           href={`tel:+91${pay.payTo.phone}`}
-                          className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"
+                          className="inline-flex min-h-9 items-center gap-1.5 font-medium text-primary hover:underline"
                         >
                           <Phone className="size-3.5" aria-hidden /> {pay.payTo.phone}
                         </a>
@@ -490,7 +490,7 @@ export default function PayPage() {
                 type="button"
                 onClick={giveUp}
                 disabled={busy}
-                className="cursor-pointer font-medium text-destructive hover:underline disabled:opacity-50"
+                className="-mx-2 inline-flex min-h-11 cursor-pointer items-center px-2 font-medium text-destructive hover:underline disabled:opacity-50"
               >
                 Give up this seat
               </button>
