@@ -26,7 +26,7 @@
     "@prisma/client": "^6.19.3",
     "@saas/database": "workspace:*",
     "@saas/types": "workspace:*",
-    "@sentry/node": "10.75.0",
+    "@sentry/node": "11.9.0",
     "@supabase/supabase-js": "^2.106.1",
     "argon2": "^0.44.0",
     "bcrypt": "^6.0.0",
