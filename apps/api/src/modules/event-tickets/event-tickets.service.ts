@@ -203,7 +203,9 @@ export class EventTicketsService {
     opts: IssueOptions,
   ) {
     // One person's RSVPs for one event run one after another, so limits and retries cannot race.
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`${eventId}:${user.id}`}, 0))`;
+    // Selected as a column of its own: Prisma cannot read the `void` the lock function returns
+    // and fails the whole query with P2010.
+    await tx.$queryRaw`SELECT 1 AS ok FROM (SELECT pg_advisory_xact_lock(hashtextextended(${`${eventId}:${user.id}`}, 0))) AS l`;
 
     const event = await tx.event.findFirst({
       where: { id: eventId, deletedAt: null },
