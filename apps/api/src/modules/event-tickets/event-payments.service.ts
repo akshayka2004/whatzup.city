@@ -222,19 +222,16 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
       type: 'EVENT_PAYMENT',
       metadata: { eventId: p.eventId, paymentId: p.id, url: `/tickets/pay/${p.id}` },
     });
-    const owner = await this.tickets.hostOwner(p.event.businessId);
-    if (owner) {
-      void this.tickets.notify(owner, {
+    void this.tickets.notifyHost(
+      { id: p.eventId, businessId: p.event.businessId },
+      {
         title: `Verify a payment: ${p.event.title}`,
         body: `${p.user.name} sent proof for ${rupees(p.amount.toString())}. Check your UPI app, then approve or reject it.`,
         type: 'EVENT_PAYMENT',
-        metadata: {
-          eventId: p.eventId,
-          paymentId: p.id,
-          url: `/dashboard/events/${p.eventId}?tab=payments`,
-        },
-      });
-    }
+        tab: 'payments',
+        metadata: { paymentId: p.id },
+      },
+    );
     return this.mine(userId, paymentId);
   }
 
@@ -269,15 +266,15 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
     });
     await this.afterSeatsFreed(p.eventId);
     if (hadProof) {
-      const owner = await this.tickets.hostOwner(p.event.businessId);
-      if (owner) {
-        void this.tickets.notify(owner, {
+      void this.tickets.notifyHost(
+        { id: p.eventId, businessId: p.event.businessId },
+        {
           title: `Payment cancelled: ${p.event.title}`,
           body: `${p.user.name} cancelled after sending proof for ${rupees(p.amount.toString())}. If they paid, you may need to refund them directly.`,
           type: 'EVENT_PAYMENT',
-          metadata: { eventId: p.eventId, url: `/dashboard/events/${p.eventId}?tab=payments` },
-        });
-      }
+          tab: 'payments',
+        },
+      );
     }
     return { cancelled: true };
   }
@@ -303,7 +300,9 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
             OR: [
               { utr: { contains: normalizeUtr(search) } },
               { user: { name: { contains: search, mode: 'insensitive' } } },
-              ...(contacts ? [{ user: { email: { contains: search, mode: 'insensitive' as const } } }] : []),
+              ...(contacts
+                ? [{ user: { email: { contains: search, mode: 'insensitive' as const } } }]
+                : []),
             ],
           }
         : {}),
@@ -627,18 +626,15 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
           action: 'REMINDER',
           detail: { waitingHours: PAYMENT_LIMITS.verifyReminderHours },
         });
-        const owner = await this.tickets.hostOwner(p.event.businessId);
-        if (owner) {
-          void this.tickets.notify(owner, {
+        void this.tickets.notifyHost(
+          { id: p.eventId, businessId: p.event.businessId },
+          {
             title: `Payment waiting for you: ${p.event.title}`,
             body: `A payment of ${rupees(p.amount.toString())} has been waiting over ${PAYMENT_LIMITS.verifyReminderHours} hours for you to verify it.`,
             type: 'EVENT_PAYMENT',
-            metadata: {
-              eventId: p.eventId,
-              url: `/dashboard/events/${p.eventId}?tab=payments`,
-            },
-          });
-        }
+            tab: 'payments',
+          },
+        );
       }
     } catch (err: any) {
       this.logger.error(`Payment sweep failed: ${err.message}`);

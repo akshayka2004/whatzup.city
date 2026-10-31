@@ -1,10 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { csvRow } from '../../common/utils/csv';
+import { NotificationAudienceService } from '../notifications/notification-audience.service';
 
 @Injectable()
 export class ReportsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    @Optional() private readonly audience?: NotificationAudienceService,
+  ) {}
 
   async create(
     reporterId: string,
@@ -33,7 +37,7 @@ export class ReportsService {
       fullDescription = `${prefix.join(' | ')}\n\n${data.description}`;
     }
 
-    return this.db.moderationReport.create({
+    const report = await this.db.moderationReport.create({
       data: {
         tenantId,
         reporterId,
@@ -45,6 +49,19 @@ export class ReportsService {
         evidence: data.evidence || [],
       },
     });
+    void this.audience?.tellStaff(
+      'reports',
+      {
+        title: `New report: ${data.type}`,
+        body:
+          fullDescription.length > 140 ? `${fullDescription.slice(0, 137)}...` : fullDescription,
+        type: 'REPORT_NEW',
+        url: '/admin/reports',
+        metadata: { reportId: report.id },
+      },
+      { except: [reporterId] },
+    );
+    return report;
   }
 
   async findAll(page = 1, limit = 20, status?: string): Promise<any> {

@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bell, CheckCircle, AlertCircle, Info, X, Loader2 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
+import { notificationUrl } from '@/lib/notification-link';
 
 interface ApiNotification {
   id: string;
@@ -59,11 +60,6 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
-/** Only same-site paths: a notice must never be able to send someone to another website. */
-function safeUrl(u: unknown): string | undefined {
-  return typeof u === 'string' && /^\/(?!\/)[^\s]*$/.test(u) ? u : undefined;
-}
-
 function typeBucket(t?: string): string {
   if (!t) return 'info';
   const u = t.toUpperCase();
@@ -91,7 +87,7 @@ export default function NotificationsPage() {
           description: n.body || n.message || '',
           timestamp: relativeTime(n.createdAt),
           read: n.isRead ?? n.read ?? false,
-          url: safeUrl(n.metadata?.url),
+          url: notificationUrl(n.metadata),
         })),
       );
     } else {

@@ -13,9 +13,11 @@ import { TwoFactorService } from './two-factor.service';
 import { MailService } from './mail.service';
 import { AccessTokenStrategy } from './strategies/access-token.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
+    NotificationsModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

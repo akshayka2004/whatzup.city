@@ -12,6 +12,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
@@ -36,6 +37,7 @@ import { RedisService } from '../../common/redis/redis.service';
 import { generatePublicCode } from '../../common/utils/public-code';
 import { ticketQr } from '../../common/utils/ticket-signing';
 import { AuditService } from '../audit/audit.service';
+import { NotificationAudienceService } from '../notifications/notification-audience.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { BookingSettingsDto, RsvpDto } from './dto/event-tickets.dto';
 import {
@@ -112,6 +114,7 @@ export class EventTicketsService {
     private readonly redis: RedisService,
     private readonly notifications: NotificationsService,
     private readonly audit: AuditService,
+    @Optional() private readonly audience?: NotificationAudienceService,
   ) {}
 
   // ── what the public event page needs ─────────────────────────────────────
@@ -514,14 +517,58 @@ export class EventTicketsService {
       resourceId: event.id,
       metadata: { amount: owed },
     });
-    const owner = await this.hostOwner(event.businessId);
-    if (owner) {
-      void this.notify(owner, {
-        title: `Ticket cancelled after payment: ${event.title}`,
-        body: `An attendee cancelled paid tickets. About ${rupees(owed)} may need to be refunded by you directly.`,
-        type: 'EVENT_PAYMENT',
-        metadata: { eventId: event.id, url: `/dashboard/events/${event.id}?tab=payments` },
-      });
+    void this.notifyHost(event, {
+      title: `Ticket cancelled after payment: ${event.title}`,
+      body: `An attendee cancelled paid tickets. About ${rupees(owed)} may need to be refunded by you directly.`,
+      type: 'EVENT_PAYMENT',
+      tab: 'payments',
+    });
+  }
+
+  /**
+   * Who runs an event's tickets: a business's owner and moderators (the people who can verify
+   * payments), or, for events the platform hosts, platform staff who manage Events.
+   */
+  async hostRecipients(businessId: string | null) {
+    if (this.audience) {
+      return businessId
+        ? this.audience.businessTeam(businessId, ['OWNER', 'MODERATOR'])
+        : this.audience.platformStaff('events', 'manage');
+    }
+    const owner = await this.hostOwner(businessId);
+    return owner ? [owner] : [];
+  }
+
+  /** The page where a host handles this event: the business dashboard, or the platform hub. */
+  hostUrl(event: { id: string; businessId: string | null }, tab: string) {
+    return event.businessId
+      ? `/dashboard/events/${event.id}?tab=${tab}`
+      : `/super-admin/events/${event.id}?tab=${tab}`;
+  }
+
+  /** Tell everyone who runs the event, with a link to the right page for them. */
+  async notifyHost(
+    event: { id: string; businessId: string | null },
+    n: {
+      title: string;
+      body: string;
+      type: string;
+      tab: string;
+      metadata?: Record<string, unknown>;
+    },
+  ) {
+    try {
+      const recipients = await this.hostRecipients(event.businessId);
+      for (const r of recipients) {
+        void this.notify(r, {
+          title: n.title,
+          body: n.body,
+          type: n.type,
+          metadata: { eventId: event.id, ...n.metadata, url: this.hostUrl(event, n.tab) },
+        });
+      }
+    } catch (err: any) {
+      this.logger.warn(`Host notification failed: ${err.message}`);
     }
   }
 
@@ -888,6 +935,7 @@ export class EventTicketsService {
         canManagePlatformEvents(actor) ||
         process.env.EVENT_RSVP_AUTO_APPROVE === 'true';
       data.bookingApproval = skip ? 'APPROVED' : 'PENDING';
+      if (!skip) this.askModerators(event, 'RSVP approval requested');
     }
 
     const updated = await this.db.event.update({ where: { id: eventId }, data });
@@ -988,24 +1036,26 @@ export class EventTicketsService {
       ...(approve ? {} : { newData: { reason: why } }),
     });
 
-    const ownerId = event.business?.ownerId;
-    if (ownerId) {
-      const owner = await this.db.user.findUnique({
-        where: { id: ownerId },
-        select: { id: true, tenantId: true },
-      });
-      if (owner) {
-        void this.notify(owner, {
-          title: approve ? `RSVP approved: ${event.title}` : `RSVP not approved: ${event.title}`,
-          body: approve
-            ? 'People can now register for your event and receive tickets.'
-            : `Your event cannot take RSVPs yet. Reason: ${why}. Fix it and send it for approval again.`,
-          type: 'EVENT_APPROVAL',
-          metadata: { eventId, url: `/dashboard/events/${eventId}?tab=settings` },
-        });
-      }
-    }
+    void this.notifyHost(event, {
+      title: approve ? `RSVP approved: ${event.title}` : `RSVP not approved: ${event.title}`,
+      body: approve
+        ? 'People can now register for your event and receive tickets.'
+        : `Your event cannot take RSVPs yet. Reason: ${why}. Fix it and send it for approval again.`,
+      type: 'EVENT_APPROVAL',
+      tab: 'settings',
+    });
     return { approved: approve };
+  }
+
+  /** Tell the staff who approve events that one is waiting. */
+  private askModerators(event: { id: string; title: string }, title: string) {
+    void this.audience?.tellStaff('events', {
+      title: `${title}: ${event.title}`,
+      body: 'A host wants to take RSVPs. Open the approvals to review it and approve or say what to fix.',
+      type: 'EVENT_APPROVAL_REQUEST',
+      url: '/admin/event-approvals',
+      metadata: { eventId: event.id },
+    });
   }
 
   /** A host fixed what was wrong and sends the event for approval again. */
@@ -1027,6 +1077,7 @@ export class EventTicketsService {
       },
     });
     await this.redis.del(`event-booking:${eventId}`);
+    this.askModerators(event, 'RSVP sent for approval again');
     this.audit.log({
       tenantId: event.tenantId,
       userId: actor.id,
@@ -1327,14 +1378,16 @@ export class EventTicketsService {
       });
     }
     const owed = paid.reduce((s, p) => s + Number(p.amount), 0);
-    const owner = owed > 0 ? await this.hostOwner(e.businessId) : null;
-    if (owner) {
-      void this.notify(owner, {
-        title: `Refunds may be due: ${title}`,
-        body: `The event was cancelled. ${paid.length} verified payment${paid.length === 1 ? '' : 's'} (${rupees(owed)}) may need to be refunded to attendees directly.`,
-        type: 'EVENT_PAYMENT',
-        metadata: { eventId, url: `/dashboard/events/${eventId}?tab=payments` },
-      });
+    if (owed > 0) {
+      void this.notifyHost(
+        { id: eventId, businessId: e.businessId },
+        {
+          title: `Refunds may be due: ${title}`,
+          body: `The event was cancelled. ${paid.length} verified payment${paid.length === 1 ? '' : 's'} (${rupees(owed)}) may need to be refunded to attendees directly.`,
+          type: 'EVENT_PAYMENT',
+          tab: 'payments',
+        },
+      );
     }
   }
 

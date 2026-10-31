@@ -1,8 +1,9 @@
 import { assertBusinessAccess, type AccessUser } from '../../common/utils/business-access';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { VerifiedPurchaseRepository } from '../../common/database/repositories/verified-purchase.repository';
 import { RedisService } from '../../common/redis/redis.service';
+import { NotificationAudienceService } from '../notifications/notification-audience.service';
 
 @Injectable()
 export class ReviewsService {
@@ -10,6 +11,7 @@ export class ReviewsService {
     private readonly db: DatabaseService,
     private readonly verifiedPurchaseRepo: VerifiedPurchaseRepository,
     private readonly redis: RedisService,
+    @Optional() private readonly audience?: NotificationAudienceService,
   ) {}
 
   /**
@@ -83,6 +85,17 @@ export class ReviewsService {
     });
     // Recompute rating + bust the cached business copy
     await this.refreshBusinessRating(businessId);
+    void this.audience?.tellTeam(
+      businessId,
+      {
+        title: `New ${data.rating}-star review`,
+        body: data.title || data.comment.slice(0, 120),
+        type: 'REVIEW_NEW',
+        url: '/dashboard/reviews',
+        metadata: { reviewId: review.id, businessId },
+      },
+      { except: [userId] },
+    );
     return review;
   }
 
@@ -127,7 +140,7 @@ export class ReviewsService {
   async reply(id: string, user: AccessUser, text: string) {
     const review = await this.db.review.findFirst({
       where: { id, deletedAt: null },
-      select: { id: true, businessId: true },
+      select: { id: true, businessId: true, userId: true, tenantId: true },
     });
     if (!review) throw new NotFoundException('Review not found');
     await assertBusinessAccess(this.db, review.businessId, user);
@@ -135,13 +148,27 @@ export class ReviewsService {
       .replace(/<[^>]*>/g, '')
       .trim()
       .slice(0, 1000);
-    return this.db.review.update({
+    const saved = await this.db.review.update({
       where: { id },
       data: clean
         ? { ownerReply: clean, ownerReplyAt: new Date(), ownerReplyBy: user.id }
         : { ownerReply: null, ownerReplyAt: null, ownerReplyBy: null },
       select: { id: true, ownerReply: true, ownerReplyAt: true },
     });
+    if (clean) {
+      void this.audience?.tellUser(
+        review.userId,
+        {
+          title: 'The business replied to your review',
+          body: clean.length > 140 ? `${clean.slice(0, 137)}...` : clean,
+          type: 'REVIEW_REPLY',
+          url: `/business/${review.businessId}`,
+          metadata: { reviewId: review.id, businessId: review.businessId },
+        },
+        { except: [user.id] },
+      );
+    }
+    return saved;
   }
 
   async markHelpful(id: string) {

@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { BillRepository } from '../../common/database/repositories/bill.repository';
@@ -10,6 +10,7 @@ import { BusinessCustomerService } from '../customers/business-customer.service'
 import { AnalyticsSummaryService } from '../analytics/analytics-summary.service';
 import { DatabaseService } from '../../common/database/database.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationAudienceService } from '../notifications/notification-audience.service';
 import { FraudService } from '../fraud/fraud.service';
 import { BrandScopeService } from '../brands/brand-scope.service';
 import { normalizeBillNumber } from '../../common/utils/bill-number';
@@ -31,6 +32,7 @@ export class BillsService {
     private readonly notifications: NotificationsService,
     private readonly fraudService: FraudService,
     private readonly brandScope: BrandScopeService,
+    @Optional() private readonly audience?: NotificationAudienceService,
   ) {}
 
   async upload(tenantId: string, userId: string, data: UploadBillDto) {
@@ -98,7 +100,21 @@ export class BillsService {
     // 2b. Notify the business owner (in the business's own tenant so it lands
     // in their notification feed) that a bill awaits moderation.
     try {
-      if (biz.ownerId) {
+      if (this.audience) {
+        await this.audience.tellTeam(
+          businessId,
+          {
+            title: duplicateNote ? 'Duplicate Bill Flagged' : 'New Bill Submitted',
+            body:
+              duplicateNote ?? `A customer submitted a bill of ₹${data.amount} for verification.`,
+            type: 'BILL_SUBMITTED',
+            url: '/dashboard/bills',
+            channel: 'BUSINESS',
+            metadata: { billId: bill.id, businessId },
+          },
+          { except: [userId] },
+        );
+      } else if (biz.ownerId) {
         await this.notifications.send({
           tenantId: biz.tenantId,
           userId: biz.ownerId,

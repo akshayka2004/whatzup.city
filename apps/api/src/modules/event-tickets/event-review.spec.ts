@@ -56,12 +56,14 @@ function world(over: Record<string, any> = {}) {
       update: jest.fn(async ({ data }: any) => {
         const next: any = { ...data };
         if (data.bookingResubmitCount?.increment) {
-          next.bookingResubmitCount = event.bookingResubmitCount + data.bookingResubmitCount.increment;
+          next.bookingResubmitCount =
+            event.bookingResubmitCount + data.bookingResubmitCount.increment;
         }
         return Object.assign(event, next);
       }),
     },
     business: {
+      findUnique: jest.fn(async () => ({ ownerId: 'host1' })),
       findFirst: jest.fn(async () => ({
         id: 'b1',
         tenantId: 't1',
@@ -112,6 +114,7 @@ describe('approving and rejecting an event for RSVP', () => {
       bookingRejectReason: 'The venue address is missing',
     });
     expect(w.event.bookingReviewedAt).toBeInstanceOf(Date);
+    for (let i = 0; i < 5; i++) await new Promise((r) => setImmediate(r));
     const sent = w.notifications.send.mock.calls[0][0];
     expect(sent.message ?? sent.body ?? JSON.stringify(sent)).toMatch(/venue address is missing/);
 
@@ -166,5 +169,60 @@ describe('what a host may see about attendees', () => {
     const platform = await world().svc.attendeesCsv(admin, 'ev1');
     expect(platform).toMatch(/"Email","Phone"/);
     expect(platform).toMatch(/asha@example\.com/);
+  });
+});
+
+describe('telling the right people', () => {
+  function withAudience(over: Record<string, any> = {}) {
+    const w = world(over);
+    const audience: any = {
+      tellStaff: jest.fn(async () => undefined),
+      businessTeam: jest.fn(async () => [
+        { id: 'host1', tenantId: 't1' },
+        { id: 'mod1', tenantId: 't1' },
+      ]),
+      platformStaff: jest.fn(async () => [{ id: 'sa', tenantId: 'tp' }]),
+    };
+    const svc = new EventTicketsService(
+      w.db,
+      (w.svc as any).redis,
+      w.notifications,
+      w.audit,
+      audience,
+    );
+    return { ...w, svc, audience };
+  }
+  const flush = async () => {
+    for (let i = 0; i < 5; i++) await new Promise((r) => setImmediate(r));
+  };
+
+  it('asks the approving staff when a host sends an event for approval again', async () => {
+    const w = withAudience({ bookingApproval: 'REJECTED', bookingRejectReason: 'Add a poster' });
+    await w.svc.resubmit(owner, 'ev1');
+    expect(w.audience.tellStaff).toHaveBeenCalledWith(
+      'events',
+      expect.objectContaining({ url: '/admin/event-approvals', type: 'EVENT_APPROVAL_REQUEST' }),
+    );
+  });
+
+  it('tells the whole host team, not only the owner, about the decision', async () => {
+    const w = withAudience();
+    await w.svc.decide('adm1', 'ev1', true);
+    await flush();
+    const to = w.notifications.send.mock.calls.map((c: any[]) => c[0].userId).sort();
+    expect(to).toEqual(['host1', 'mod1']);
+    expect(w.notifications.send.mock.calls[0][0].metadata.url).toBe(
+      '/dashboard/events/ev1?tab=settings',
+    );
+  });
+
+  it('sends platform-hosted events to platform staff, to a page they can open', async () => {
+    const w = withAudience({ businessId: null });
+    await w.svc.decide('adm1', 'ev1', true);
+    await flush();
+    expect(w.audience.platformStaff).toHaveBeenCalledWith('events', 'manage');
+    expect(w.notifications.send.mock.calls[0][0].metadata.url).toBe(
+      '/super-admin/events/ev1?tab=settings',
+    );
   });
 });

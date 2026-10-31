@@ -4,9 +4,11 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationAudienceService } from '../notifications/notification-audience.service';
 import { assertBusinessAccess } from '../../common/utils/business-access';
 
 export type SupportUser = {
@@ -38,6 +40,7 @@ export class SupportService {
   constructor(
     private readonly db: DatabaseService,
     private readonly notifications: NotificationsService,
+    @Optional() private readonly audience?: NotificationAudienceService,
   ) {}
 
   async create(
@@ -58,7 +61,7 @@ export class SupportService {
     if (!tenantId) throw new BadRequestException('Could not determine your account.');
     const category = dto.category && CATEGORIES.has(dto.category) ? dto.category : 'GENERAL';
 
-    return this.db.supportTicket.create({
+    const ticket = await this.db.supportTicket.create({
       data: {
         tenantId,
         businessId: dto.businessId ?? null,
@@ -70,6 +73,18 @@ export class SupportService {
       },
       include: { messages: true },
     });
+    void this.audience?.tellStaff(
+      'support',
+      {
+        title: `New support ticket: ${subject}`,
+        body: body.length > 140 ? `${body.slice(0, 137)}...` : body,
+        type: 'SUPPORT_TICKET',
+        url: '/admin/support',
+        metadata: { ticketId: ticket.id },
+      },
+      { except: [user.id] },
+    );
+    return ticket;
   }
 
   async listMine(user: SupportUser, businessId?: string) {
@@ -171,6 +186,7 @@ export class SupportService {
         closedAt: null,
       },
     });
+    const mine = ticket.businessId ? `/dashboard/support?ticket=${id}` : '/support';
     if (staff) {
       this.notifications
         .send({
@@ -178,11 +194,23 @@ export class SupportService {
           userId: ticket.openedBy,
           title: 'Support replied',
           body: `New reply on “${ticket.subject}”`,
-          type: 'IN_APP',
+          type: 'SUPPORT_REPLY',
           channel: 'BUSINESS',
-          metadata: { ticketId: id, href: `/dashboard/support?ticket=${id}` },
+          metadata: { ticketId: id, url: mine, href: mine },
         })
         .catch((e) => this.logger.warn(`Support notification failed: ${e?.message}`));
+    } else {
+      void this.audience?.tellStaff(
+        'support',
+        {
+          title: `Reply on ticket: ${ticket.subject}`,
+          body: body.length > 140 ? `${body.slice(0, 137)}...` : body,
+          type: 'SUPPORT_TICKET',
+          url: '/admin/support',
+          metadata: { ticketId: id },
+        },
+        { except: [user.id] },
+      );
     }
     return message;
   }
@@ -193,9 +221,26 @@ export class SupportService {
     // Customers may only close or reopen their own ticket; staff can set any status.
     if (!isStaff(user) && !['CLOSED', 'OPEN'].includes(status))
       throw new ForbiddenException('Only support staff can set that status');
-    return this.db.supportTicket.update({
+    const updated = await this.db.supportTicket.update({
       where: { id: ticket.id },
       data: { status, closedAt: status === 'CLOSED' || status === 'RESOLVED' ? new Date() : null },
     });
+    if (isStaff(user) && ticket.status !== status) {
+      const label =
+        status === 'RESOLVED' ? 'resolved' : status === 'CLOSED' ? 'closed' : 'reopened';
+      const mine = ticket.businessId ? `/dashboard/support?ticket=${ticket.id}` : '/support';
+      void this.audience?.tellUser(
+        ticket.openedBy,
+        {
+          title: `Your ticket was ${label}`,
+          body: `“${ticket.subject}” is now ${status.toLowerCase()}.`,
+          type: 'SUPPORT_STATUS',
+          url: mine,
+          metadata: { ticketId: ticket.id },
+        },
+        { except: [user.id] },
+      );
+    }
+    return updated;
   }
 }

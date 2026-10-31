@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { Bell, BellOff, CheckCheck, CircleUserRound, LogIn, LogOut, Search } from 'lucide-react';
 import { BrandLogo } from '@/components/common/brand-logo';
@@ -19,6 +20,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { OutletSwitcher } from '@/components/business/outlet-switcher';
 import { apiService } from '@/lib/services/api-service';
+import { notificationUrl } from '@/lib/notification-link';
 import { LOCALES } from '@/lib/i18n';
 import { useI18n } from '@/lib/i18n/provider';
 import { getRoleLabel } from '@/lib/rbac';
@@ -32,6 +34,7 @@ type Notif = {
   message?: string;
   isRead?: boolean;
   createdAt?: string;
+  metadata?: unknown;
 };
 
 const initials = (name: string) =>
@@ -60,6 +63,7 @@ function profileHref(role?: string) {
 export function Header() {
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
+  const router = useRouter();
   const { locale, setLocale, t } = useI18n();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -70,20 +74,22 @@ export function Header() {
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [unread, setUnread] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
-  const fetched = useRef(false);
-
+  // The count is checked when the person signs in and then once a minute while the tab is on screen,
+  // so a notice that arrives mid-session shows up without a reload.
   useEffect(() => {
     if (!user) return;
-    apiService
-      .get<{ unreadCount: number }>('/v1/notifications/unread-count')
-      .then((r) => r.data && setUnread(r.data.unreadCount))
-      .catch(() => {});
+    const check = () =>
+      apiService
+        .get<{ unreadCount: number }>('/v1/notifications/unread-count', { fresh: true })
+        .then((r) => r.data && setUnread(r.data.unreadCount))
+        .catch(() => {});
+    check();
+    const t = window.setInterval(() => document.visibilityState === 'visible' && check(), 60_000);
+    return () => window.clearInterval(t);
   }, [user]);
 
   const openNotifs = async () => {
     setNotifOpen(true);
-    if (fetched.current) return;
-    fetched.current = true;
     const r = await apiService.get<any>('/v1/notifications?limit=20');
     if (r.data) setNotifs(Array.isArray(r.data) ? r.data : (r.data?.data ?? r.data?.items ?? []));
   };
@@ -205,7 +211,15 @@ export function Header() {
                     <button
                       key={n.id}
                       type="button"
-                      onClick={() => !n.isRead && markOneRead(n.id)}
+                      onClick={() => {
+                        if (!n.isRead) markOneRead(n.id);
+                        // A notice that points at something opens it, whoever the person is.
+                        const to = notificationUrl(n.metadata);
+                        if (to) {
+                          setNotifOpen(false);
+                          router.push(to);
+                        }
+                      }}
                       className={cn(
                         'flex w-full items-start gap-2.5 border-b border-border/60 px-4 py-3 text-left transition-colors last:border-0 hover:bg-secondary/60',
                         n.isRead && 'opacity-60',

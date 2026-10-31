@@ -1383,3 +1383,28 @@ Hosts can sell tickets on RSVP events. The attendee pays the host's own UPI acco
 - **Attendee privacy:** hosts see name, profession (user) and place (customer city) only, in the attendee list, CSV and payment screens. Email and phone come only to the super admin (`canSeeContacts`).
 - **Volunteers:** each crew pass carries place, phone and email beside the name (`PATCH /events/:id/host/crew/:passId`, migration `20261101000000_event_review_and_crew_details`, additive).
 - **Layout:** the dashboard `main` scroller is `relative` and labels that wrap a hidden file input are `relative`, so a visually hidden control can no longer extend the document and create a second scrollbar.
+
+### 12.25 Who gets which notification (2026-11-01)
+
+One service decides the audience: `NotificationAudienceService` (`modules/notifications`). It picks recipients from the same rights that decide who can open the screen, writes each notice in the recipient's own tenant (the feed only shows the tenant the person signs in to), skips the person who did the thing, and never throws.
+
+- **Platform staff by area:** `platformStaff(area)` returns super admins always, and master admins / platform staff whose access grants include the area (`events`, `support`, `reports`, `approvals`).
+- **Business team:** `businessTeam(businessId)` returns the owner and active moderators (the people who can act on bills, reviews and payments).
+
+| Happens | Who is told | Opens |
+|---|---|---|
+| Host turns RSVP on, or sends it again | staff with Events access | /admin/event-approvals |
+| RSVP approved or rejected (with reason) | the host team (owner + moderators); platform staff for platform events | event Settings tab |
+| Attendee sends payment proof, cancels, or proof waits 24h; event cancelled after payments | the host team (platform staff for platform events) | event Payments tab |
+| Ticket, payment and waitlist updates | the attendee | /tickets |
+| New support ticket, or a customer reply | staff with Support access | /admin/support |
+| Staff reply, or ticket resolved / closed | the person who opened it | their support page |
+| New review | the business team | /dashboard/reviews |
+| Business replies to a review | the reviewer | the business page |
+| Customer uploads a bill (or a duplicate is flagged) | the business team | /dashboard/bills |
+| New moderation report | staff with Reports access | /admin/reports |
+| New business or organisation signs up | staff with Approvals access | /admin/approvals |
+
+The bell polls the unread count every minute and a notice opens the page in its `metadata.url` (older notices used `href`; both work, same-site paths only).
+
+Not yet covered: document review results, review moderation, fraud flags, team changes. Email and push are still off (no mail provider, Firebase unset), so everything is in-app.

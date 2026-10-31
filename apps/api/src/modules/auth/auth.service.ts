@@ -23,6 +23,7 @@ import { RedisService } from '../../common/redis/redis.service';
 import { PasswordService } from './password.service';
 import { MailService } from './mail.service';
 import { TwoFactorService } from './two-factor.service';
+import { NotificationAudienceService } from '../notifications/notification-audience.service';
 import { PRIVILEGED_ROLES, SecurityAlertService } from '../../common/alerts/security-alert.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
@@ -72,6 +73,7 @@ export class AuthService {
     private readonly mailService: MailService,
     @Optional() private readonly alerts?: SecurityAlertService,
     @Optional() private readonly twoFactor?: TwoFactorService,
+    @Optional() private readonly audience?: NotificationAudienceService,
   ) {}
 
   /**
@@ -1524,6 +1526,18 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user);
 
+    void this.audience?.tellStaff(
+      'approvals',
+      {
+        title: 'New business registered',
+        body: `${business.name ?? 'A business'} signed up and will need to be verified.`,
+        type: 'BUSINESS_REGISTERED',
+        url: '/admin/approvals',
+        metadata: { businessId: business.id },
+      },
+      { except: [user.id] },
+    );
+
     return {
       ...tokens,
       businessId: business.id,
@@ -2089,6 +2103,18 @@ export class AuthService {
     );
 
     const tokens = await this.generateTokens(user);
+
+    void this.audience?.tellStaff(
+      'approvals',
+      {
+        title: 'New organisation registered',
+        body: `${entity.name ?? 'An organisation'} signed up and is waiting for verification.`,
+        type: 'ORGANISATION_REGISTERED',
+        url: '/admin/approvals',
+        metadata: { entityId: entity.id },
+      },
+      { except: [user.id] },
+    );
 
     return {
       ...tokens,

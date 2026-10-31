@@ -43,6 +43,7 @@ function world(over: Record<string, any> = {}, actor = owner) {
       count: jest.fn(async () => 0),
     },
     business: {
+      findUnique: jest.fn(async () => ({ ownerId: 'host1' })),
       findFirst: jest.fn(async () => ({
         id: 'b1',
         tenantId: 't1',
@@ -76,7 +77,11 @@ describe('host booking settings', () => {
 
   it('turning RSVP on for a business event waits for approval', async () => {
     const w = world();
-    const out = await w.svc.updateBooking(owner, 'ev1', { bookingMode: 'RSVP', capacity: 100, ...SALES });
+    const out = await w.svc.updateBooking(owner, 'ev1', {
+      bookingMode: 'RSVP',
+      capacity: 100,
+      ...SALES,
+    });
     expect(out).toMatchObject({
       bookingMode: 'RSVP',
       bookingApproval: 'PENDING',
@@ -88,18 +93,21 @@ describe('host booking settings', () => {
   it('is approved at once for platform events, platform admins and when auto-approve is on', async () => {
     const platform = world({ businessId: null }, admin);
     expect(
-      (await platform.svc.updateBooking(admin, 'ev1', { bookingMode: 'RSVP', ...SALES })).bookingApproval,
+      (await platform.svc.updateBooking(admin, 'ev1', { bookingMode: 'RSVP', ...SALES }))
+        .bookingApproval,
     ).toBe('APPROVED');
 
     const byAdmin = world({}, admin);
     expect(
-      (await byAdmin.svc.updateBooking(admin, 'ev1', { bookingMode: 'RSVP', ...SALES })).bookingApproval,
+      (await byAdmin.svc.updateBooking(admin, 'ev1', { bookingMode: 'RSVP', ...SALES }))
+        .bookingApproval,
     ).toBe('APPROVED');
 
     process.env.EVENT_RSVP_AUTO_APPROVE = 'true';
     const auto = world();
     expect(
-      (await auto.svc.updateBooking(owner, 'ev1', { bookingMode: 'RSVP', ...SALES })).bookingApproval,
+      (await auto.svc.updateBooking(owner, 'ev1', { bookingMode: 'RSVP', ...SALES }))
+        .bookingApproval,
     ).toBe('APPROVED');
   });
 
@@ -184,7 +192,7 @@ describe('moderation', () => {
     });
     await w.svc.decide('adm1', 'ev1', true);
     expect(w.event.bookingApproval).toBe('APPROVED');
-    await new Promise((r) => setImmediate(r));
+    for (let i = 0; i < 5; i++) await new Promise((r) => setImmediate(r));
     expect(w.notifications.send).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'host1', type: 'EVENT_APPROVAL' }),
     );

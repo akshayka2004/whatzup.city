@@ -4,6 +4,7 @@ import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 import { NotificationProcessor } from './notification.processor';
 import { FcmService } from './fcm.service';
+import { NotificationAudienceService } from './notification-audience.service';
 import { RedisModule } from '../../common/redis/redis.module';
 
 @Module({
@@ -20,7 +21,7 @@ import { RedisModule } from '../../common/redis/redis.module';
     }),
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService, NotificationProcessor, FcmService],
-  exports: [NotificationsService, FcmService],
+  providers: [NotificationsService, NotificationAudienceService, NotificationProcessor, FcmService],
+  exports: [NotificationsService, NotificationAudienceService, FcmService],
 })
 export class NotificationsModule {}
