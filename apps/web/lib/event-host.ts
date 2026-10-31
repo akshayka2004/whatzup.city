@@ -9,6 +9,10 @@ export interface HostSummary {
   status: string;
   bookingMode: 'NONE' | 'RSVP';
   bookingApproval: 'PENDING' | 'APPROVED' | 'REJECTED';
+  /** Why a moderator did not approve RSVP; shown to the host. */
+  bookingRejectReason: string | null;
+  bookingReviewedAt: string | null;
+  bookingResubmitCount: number;
   state: BookingState;
   stateLabel: string;
   capacity: number | null;
@@ -104,7 +108,11 @@ export interface EventAnalytics {
 
 export interface CrewPass {
   id: string;
+  /** The volunteer's name. */
   label: string;
+  place: string | null;
+  phone: string | null;
+  email: string | null;
   level: 'SCAN' | 'DESK';
   code: string;
   codeDisplay: string;
@@ -126,7 +134,11 @@ export interface AttendeeRow {
   source: string | null;
   issuedAt: string;
   checkedInAt: string | null;
-  registrant: { name: string; email: string; phone: string | null };
+  /** Hosts see name, profession and place only. */
+  profession: string | null;
+  place: string | null;
+  /** Contact details come only to the super admin. */
+  registrant: { name: string; email?: string; phone?: string | null };
 }
 
 export const SOURCE_LABEL: Record<string, string> = {
@@ -172,7 +184,14 @@ export interface PaymentRow {
   resubmitCount: number;
   createdAt: string;
   overdue: boolean;
-  payer: { name: string; email: string; phone: string | null };
+  payer: {
+    name: string;
+    profession: string | null;
+    place: string | null;
+    /** Only the super admin and platform monitoring get these. */
+    email?: string;
+    phone?: string | null;
+  };
   event?: { id: string; title: string; startDate: string; host: string };
 }
 

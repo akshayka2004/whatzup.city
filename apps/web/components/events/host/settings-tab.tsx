@@ -64,6 +64,7 @@ export function SettingsTab({
   const [qr, setQr] = useState(summary.payQrImage ?? '');
   const [qrBusy, setQrBusy] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
   // Payment details are frozen while someone is part-way through paying.
   const midPayment = summary.paymentsToVerify + summary.paymentsWaiting > 0;
@@ -83,6 +84,18 @@ export function SettingsTab({
     }
   };
 
+  const resubmit = async () => {
+    setResending(true);
+    const res = await apiService.post<HostSummary>(`/v1/events/${eventId}/booking/resubmit`, {});
+    setResending(false);
+    if (res.error || !res.data) {
+      setError(res.error || 'Could not send it again.');
+      return;
+    }
+    toast.success('Sent for approval again.');
+    onSaved(res.data);
+  };
+
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -92,6 +105,9 @@ export function SettingsTab({
         return setError('Enter a valid UPI ID, like name@bank.');
       if (!IN_MOBILE_PATTERN.test(normalizeMobile(phone)))
         return setError('Enter a 10-digit mobile number attendees can call.');
+    }
+    if (on && (!opens || !closes)) {
+      return setError('Say when ticket sales open and when they close.');
     }
     setSaving(true);
     const res = await apiService.patch<HostSummary>(`/v1/events/${eventId}/booking`, {
@@ -139,11 +155,33 @@ export function SettingsTab({
           RSVP as soon as a moderator approves this event.
         </p>
       )}
-      {summary.bookingApproval === 'REJECTED' && (
-        <p className="flex items-start gap-2 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger-soft-foreground">
-          <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden /> RSVP was not approved for
-          this event. Change the settings and save to send it for review again.
-        </p>
+      {summary.bookingMode === 'RSVP' && summary.bookingApproval === 'REJECTED' && (
+        <div className="space-y-3 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger-soft-foreground">
+          <p className="flex items-start gap-2 font-medium">
+            <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden /> A moderator did not
+            approve tickets for this event.
+          </p>
+          <p className="rounded-lg bg-background/60 px-3 py-2 text-foreground">
+            <span className="block text-xs font-medium text-muted-foreground">Reason given</span>
+            {summary.bookingRejectReason || 'No reason was recorded.'}
+          </p>
+          <p>Fix what they pointed out, save the settings, then send it for approval again.</p>
+          <Button
+            type="button"
+            size="sm"
+            loading={resending}
+            disabled={summary.bookingResubmitCount >= 5}
+            onClick={resubmit}
+          >
+            Send for approval again
+          </Button>
+          {summary.bookingResubmitCount > 0 && (
+            <p className="text-xs">
+              Sent {summary.bookingResubmitCount} time
+              {summary.bookingResubmitCount === 1 ? '' : 's'} before (up to 5).
+            </p>
+          )}
+        </div>
       )}
       {summary.bookingMode === 'RSVP' && summary.bookingApproval === 'APPROVED' && (
         <p className="flex items-center gap-2 rounded-xl bg-success-soft px-4 py-3 text-sm text-success-soft-foreground">
@@ -233,12 +271,12 @@ export function SettingsTab({
           </Card>
 
           <Card className="space-y-4 rounded-card p-5">
-            <h3 className="font-semibold">When people can RSVP</h3>
+            <h3 className="font-semibold">When tickets are on sale</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
                 id="rsvp-opens"
-                label="RSVP opens"
-                hint="Empty means now. Times are India time."
+                label="Ticket sales open"
+                hint="Required. Times are India time."
               >
                 <Input
                   id="rsvp-opens"
@@ -248,7 +286,11 @@ export function SettingsTab({
                   className="h-11"
                 />
               </Field>
-              <Field id="rsvp-closes" label="RSVP closes" hint="Empty means when the event starts.">
+              <Field
+                id="rsvp-closes"
+                label="Ticket sales close"
+                hint="Required. Cannot be after the event ends."
+              >
                 <Input
                   id="rsvp-closes"
                   type="datetime-local"

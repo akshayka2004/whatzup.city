@@ -38,7 +38,14 @@ import { ticketQr } from '../../common/utils/ticket-signing';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { BookingSettingsDto, RsvpDto } from './dto/event-tickets.dto';
-import { EventActor, assertEventHost, canManagePlatformEvents, hit } from './event-access';
+import {
+  EventActor,
+  assertEventHost,
+  attendeeProfiles,
+  canManagePlatformEvents,
+  canSeeContacts,
+  hit,
+} from './event-access';
 import { logPayment } from './event-payment-util';
 
 const BOOKING_CACHE_SECONDS = 5;
@@ -55,6 +62,9 @@ const EVENT_FOR_BOOKING = {
   businessId: true,
   bookingMode: true,
   bookingApproval: true,
+  bookingRejectReason: true,
+  bookingReviewedAt: true,
+  bookingResubmitCount: true,
   capacity: true,
   seatsTaken: true,
   rsvpOpensAt: true,
@@ -776,6 +786,9 @@ export class EventTicketsService {
       status: e.status,
       bookingMode: e.bookingMode,
       bookingApproval: e.bookingApproval,
+      bookingRejectReason: e.bookingRejectReason,
+      bookingReviewedAt: e.bookingReviewedAt,
+      bookingResubmitCount: e.bookingResubmitCount,
       state,
       stateLabel: BOOKING_STATE_LABEL[state],
       capacity: e.capacity,
@@ -836,10 +849,15 @@ export class EventTicketsService {
     const opens = has('rsvpOpensAt') ? this.date(dto.rsvpOpensAt) : event.rsvpOpensAt;
     const closes = has('rsvpClosesAt') ? this.date(dto.rsvpClosesAt) : event.rsvpClosesAt;
     if (opens && closes && opens >= closes) {
-      throw new BadRequestException('RSVP must open before it closes.');
+      throw new BadRequestException('Ticket sales must open before they close.');
     }
     if (closes && closes > event.endDate) {
-      throw new BadRequestException('RSVP cannot stay open past the end of the event.');
+      throw new BadRequestException('Ticket sales cannot stay open past the end of the event.');
+    }
+    // Required when RSVP is switched on or the dates are touched; other saves (payment details) pass.
+    const datesInPlay = event.bookingMode !== 'RSVP' || has('rsvpOpensAt') || has('rsvpClosesAt');
+    if (mode === 'RSVP' && datesInPlay && (!opens || !closes)) {
+      throw new BadRequestException('Say when ticket sales open and when they close.');
     }
     if (has('rsvpOpensAt')) data.rsvpOpensAt = opens;
     if (has('rsvpClosesAt')) data.rsvpClosesAt = closes;
@@ -901,18 +919,29 @@ export class EventTicketsService {
 
   // ── moderation ──────────────────────────────────────────────────────────
 
-  async pendingApprovals(page = 1) {
+  /**
+   * Events that asked for RSVP, for the moderators. Pending by default; ALL, APPROVED and REJECTED
+   * show the history too, and `when` narrows to events that are over or still to come. A moderator
+   * can open any of them (before approval and after the event ends) in the full event hub.
+   */
+  async pendingApprovals(page = 1, q: { status?: string; when?: string } = {}) {
     const take = 30;
     const skip = (Math.max(1, Number(page) || 1) - 1) * take;
-    const where = {
+    const status = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'].includes(q.status ?? '')
+      ? (q.status as string)
+      : 'PENDING';
+    const now = new Date();
+    const where: Prisma.EventWhereInput = {
       deletedAt: null,
       bookingMode: 'RSVP',
-      bookingApproval: 'PENDING',
+      ...(status === 'ALL' ? {} : { bookingApproval: status }),
+      ...(q.when === 'PAST' ? { endDate: { lt: now } } : {}),
+      ...(q.when === 'UPCOMING' ? { endDate: { gte: now } } : {}),
     };
     const [data, total] = await Promise.all([
       this.db.event.findMany({
         where,
-        orderBy: { createdAt: 'asc' },
+        orderBy: status === 'PENDING' ? { createdAt: 'asc' } : { startDate: 'desc' },
         skip,
         take,
         include: {
@@ -934,10 +963,20 @@ export class EventTicketsService {
     if (!event) throw new NotFoundException('Event not found');
     if (event.bookingMode !== 'RSVP')
       throw new BadRequestException('This event is not taking RSVPs.');
+    const why = reason?.trim() ?? '';
+    if (!approve && why.length < 5) {
+      throw new BadRequestException(
+        'Say why this event is not approved (at least a few words). The host sees it and can fix it.',
+      );
+    }
 
     await this.db.event.update({
       where: { id: eventId },
-      data: { bookingApproval: approve ? 'APPROVED' : 'REJECTED' },
+      data: {
+        bookingApproval: approve ? 'APPROVED' : 'REJECTED',
+        bookingRejectReason: approve ? null : why.slice(0, 300),
+        bookingReviewedAt: new Date(),
+      },
     });
     await this.redis.del(`event-booking:${eventId}`);
     this.audit.log({
@@ -946,6 +985,7 @@ export class EventTicketsService {
       action: approve ? 'EVENT_RSVP_APPROVED' : 'EVENT_RSVP_REJECTED',
       resource: 'EVENT',
       resourceId: eventId,
+      ...(approve ? {} : { newData: { reason: why } }),
     });
 
     const ownerId = event.business?.ownerId;
@@ -959,13 +999,43 @@ export class EventTicketsService {
           title: approve ? `RSVP approved: ${event.title}` : `RSVP not approved: ${event.title}`,
           body: approve
             ? 'People can now register for your event and receive tickets.'
-            : `Your event cannot take RSVPs yet.${reason ? ` ${reason}` : ''}`,
+            : `Your event cannot take RSVPs yet. Reason: ${why}. Fix it and send it for approval again.`,
           type: 'EVENT_APPROVAL',
-          metadata: { eventId },
+          metadata: { eventId, url: `/dashboard/events/${eventId}?tab=settings` },
         });
       }
     }
     return { approved: approve };
+  }
+
+  /** A host fixed what was wrong and sends the event for approval again. */
+  async resubmit(actor: EventActor, eventId: string) {
+    const event = await assertEventHost(this.db, eventId, actor);
+    if (event.bookingMode !== 'RSVP' || event.bookingApproval !== 'REJECTED') {
+      throw new BadRequestException('Only an event that was not approved can be sent again.');
+    }
+    if (event.bookingResubmitCount >= 5) {
+      throw new BadRequestException(
+        'This event has been sent for approval 5 times. Contact support to continue.',
+      );
+    }
+    await this.db.event.update({
+      where: { id: eventId },
+      data: {
+        bookingApproval: 'PENDING',
+        bookingResubmitCount: { increment: 1 },
+      },
+    });
+    await this.redis.del(`event-booking:${eventId}`);
+    this.audit.log({
+      tenantId: event.tenantId,
+      userId: actor.id,
+      action: 'EVENT_RSVP_RESUBMITTED',
+      resource: 'EVENT',
+      resourceId: eventId,
+      oldData: { reason: event.bookingRejectReason },
+    });
+    return this.hostSummary(actor, eventId);
   }
 
   // ── host: people ────────────────────────────────────────────────────────
@@ -976,6 +1046,7 @@ export class EventTicketsService {
     q: { status?: string; search?: string; page?: number; limit?: number },
   ) {
     await assertEventHost(this.db, eventId, actor);
+    const contacts = canSeeContacts(actor);
     const page = Math.max(1, Number(q.page) || 1);
     const limit = Math.min(200, Math.max(1, Number(q.limit) || 50));
     const status = ['ISSUED', 'CHECKED_IN', 'CANCELLED', 'PENDING'].includes(q.status ?? '')
@@ -990,7 +1061,9 @@ export class EventTicketsService {
             OR: [
               { holderName: { contains: search, mode: 'insensitive' } },
               { code: { equals: search.toUpperCase() } },
-              { user: { email: { contains: search, mode: 'insensitive' } } },
+              ...(contacts
+                ? [{ user: { email: { contains: search, mode: 'insensitive' as const } } }]
+                : []),
             ],
           }
         : {}),
@@ -1005,6 +1078,10 @@ export class EventTicketsService {
       }),
       this.db.eventTicket.count({ where }),
     ]);
+    const profiles = await attendeeProfiles(
+      this.db,
+      rows.map((t) => t.userId),
+    );
     return {
       data: rows.map((t) => ({
         id: t.id,
@@ -1015,7 +1092,13 @@ export class EventTicketsService {
         source: t.source,
         issuedAt: t.issuedAt,
         checkedInAt: t.checkedInAt,
-        registrant: { name: t.user.name, email: t.user.email, phone: t.user.phone },
+        // A guest is a different person, so the registrant's own profession and place are not theirs.
+        profession: t.isGuest ? null : (profiles.get(t.userId)?.profession ?? null),
+        place: t.isGuest ? null : (profiles.get(t.userId)?.place ?? null),
+        registrant: {
+          name: t.user.name,
+          ...(contacts ? { email: t.user.email, phone: t.user.phone } : {}),
+        },
       })),
       meta: { total, page, limit },
     };
@@ -1044,14 +1127,21 @@ export class EventTicketsService {
       if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
       return `"${s.replace(/"/g, '""')}"`;
     };
+    // Hosts get name, profession and place; contact details are for the super admin only.
+    const contacts = canSeeContacts(actor);
+    const profiles = await attendeeProfiles(
+      this.db,
+      rows.map((t) => t.userId),
+    );
     const head = [
       'Ticket code',
       'Name',
+      'Profession',
+      'Place',
       'Guest',
       'Status',
       'Registered by',
-      'Email',
-      'Phone',
+      ...(contacts ? ['Email', 'Phone'] : []),
       'Source',
       'RSVP time',
       'Check-in time',
@@ -1060,11 +1150,12 @@ export class EventTicketsService {
       [
         t.code,
         t.holderName,
+        t.isGuest ? '' : profiles.get(t.userId)?.profession,
+        t.isGuest ? '' : profiles.get(t.userId)?.place,
         t.isGuest ? 'Yes' : 'No',
         t.status,
         t.user.name,
-        t.user.email,
-        t.user.phone,
+        ...(contacts ? [t.user.email, t.user.phone] : []),
         t.source,
         t.issuedAt,
         t.checkedInAt,

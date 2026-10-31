@@ -22,7 +22,14 @@ import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { StorageService } from '../../common/storage/storage.service';
 import { AuditService } from '../audit/audit.service';
-import { EventActor, assertEventHost, hit } from './event-access';
+import {
+  AttendeeProfile,
+  EventActor,
+  assertEventHost,
+  attendeeProfiles,
+  canSeeContacts,
+  hit,
+} from './event-access';
 import { actorRoleOf, logPayment } from './event-payment-util';
 import { EventTicketsService } from './event-tickets.service';
 import { RejectPaymentDto, SubmitProofDto } from './dto/event-tickets.dto';
@@ -30,6 +37,12 @@ import { RejectPaymentDto, SubmitProofDto } from './dto/event-tickets.dto';
 const OPEN = ['PENDING', 'SUBMITTED'];
 const PROOF_BUCKET = 'verification-documents';
 const SWEEP_EVERY_MS = 2 * 60_000;
+/** What the person looking at a payment may see about the payer. */
+interface PayerView {
+  contacts: boolean;
+  profiles: Map<string, AttendeeProfile>;
+}
+
 const PAGE = 30;
 
 const STATUSES = ['PENDING', 'SUBMITTED', 'APPROVED', 'REJECTED', 'EXPIRED', 'CANCELLED'];
@@ -277,6 +290,7 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
     q: { status?: string; search?: string; page?: number },
   ) {
     await assertEventHost(this.db, eventId, actor);
+    const contacts = canSeeContacts(actor);
     await this.expireDueForEvent(eventId);
     const page = Math.max(1, Number(q.page) || 1);
     const status = STATUSES.includes(q.status ?? '') ? q.status : undefined;
@@ -289,7 +303,7 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
             OR: [
               { utr: { contains: normalizeUtr(search) } },
               { user: { name: { contains: search, mode: 'insensitive' } } },
-              { user: { email: { contains: search, mode: 'insensitive' } } },
+              ...(contacts ? [{ user: { email: { contains: search, mode: 'insensitive' as const } } }] : []),
             ],
           }
         : {}),
@@ -310,8 +324,12 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
         _sum: { amount: true },
       }),
     ]);
+    const profiles = await attendeeProfiles(
+      this.db,
+      rows.map((p) => p.userId),
+    );
     return {
-      data: rows.map((p) => this.row(p)),
+      data: rows.map((p) => this.row(p, { contacts, profiles })),
       meta: { total, page, limit: PAGE },
       summary: this.summarise(groups),
     };
@@ -324,7 +342,10 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
       include: this.detailInclude,
     });
     if (!p) throw new NotFoundException('Payment not found');
-    return this.buildDetail(p);
+    return this.buildDetail(p, {
+      contacts: canSeeContacts(actor),
+      profiles: await attendeeProfiles(this.db, [p.userId]),
+    });
   }
 
   async approve(actor: EventActor, eventId: string, paymentId: string) {
@@ -534,9 +555,13 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
         where: { status: 'SUBMITTED', submittedAt: { lte: overdueSince } },
       }),
     ]);
+    const profiles = await attendeeProfiles(
+      this.db,
+      rows.map((p) => p.userId),
+    );
     return {
       data: rows.map((p) => ({
-        ...this.row(p),
+        ...this.row(p, { contacts: true, profiles }),
         event: {
           id: p.event.id,
           title: p.event.title,
@@ -555,7 +580,10 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
       include: this.detailInclude,
     });
     if (!p) throw new NotFoundException('Payment not found');
-    return this.buildDetail(p);
+    return this.buildDetail(p, {
+      contacts: true,
+      profiles: await attendeeProfiles(this.db, [p.userId]),
+    });
   }
 
   // ── background: expiry and reminders ────────────────────────────────────
@@ -716,7 +744,7 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
   } satisfies Prisma.EventPaymentInclude;
 
   /** Row for a list: no proof image, no timeline. */
-  private row(p: any) {
+  private row(p: any, view: PayerView) {
     const overdue =
       p.status === 'SUBMITTED' &&
       !!p.submittedAt &&
@@ -738,11 +766,16 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
       resubmitCount: p.resubmitCount,
       createdAt: p.createdAt,
       overdue,
-      payer: { name: p.user?.name ?? '', email: p.user?.email ?? '', phone: p.user?.phone ?? null },
+      payer: {
+        name: p.user?.name ?? '',
+        profession: view.profiles.get(p.userId)?.profession ?? null,
+        place: view.profiles.get(p.userId)?.place ?? null,
+        ...(view.contacts ? { email: p.user?.email ?? '', phone: p.user?.phone ?? null } : {}),
+      },
     };
   }
 
-  private async buildDetail(p: any) {
+  private async buildDetail(p: any, view: PayerView) {
     let proofUrl: string | null = null;
     if (p.proofImage) {
       try {
@@ -761,7 +794,7 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
         })
       : [];
     return {
-      ...this.row(p),
+      ...this.row(p, view),
       payerNote: p.payerNote,
       event: p.event,
       proofUrl,

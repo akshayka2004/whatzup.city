@@ -280,6 +280,12 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* A visually hidden control (file pickers) is position:absolute. Without a positioned parent it
+     sits against the whole document, at its page offset, and adds a second page scrollbar that
+     the browser then scrolls to on focus. Keep it inside the label that owns it. */
+  label:has(> input.sr-only) {
+    position: relative;
+  }
   /* Mobile touch feel: kill the default gray tap-flash (we use active:
      states for feedback instead) and skip the ~300ms tap delay browsers
      otherwise reserve for double-tap-to-zoom detection. */

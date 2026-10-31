@@ -1374,3 +1374,12 @@ Hosts can sell tickets on RSVP events. The attendee pays the host's own UPI acco
 - **Deny by default**: `JwtAuthGuard` is global (`APP_GUARD`). A route is open only with `@Public()`. The guard skips re-verifying when `req.user` is set, so controllers that still name it cost nothing extra.
 - **Production refuses to start** without `TICKET_SIGNING_SECRET` (32+ chars, different from `JWT_SECRET`).
 - `PUT /media/mock-upload` removed. `typescript.ignoreBuildErrors` removed: type errors now fail the web build.
+
+### 12.24 Event dates, volunteer details, approval reasons, attendee privacy (2026-11-01)
+
+- **Login limit fix:** `/auth/login` was capped at 5 calls per 15 minutes per IP and counted successful logins too, so testing several accounts from one machine locked everyone out. The route is now a 100/15 min flood cap; guessing is stopped by the failure counters in `AuthService.login` (30 wrong tries per IP per 15 min, 5 per account per 10 min, both cleared by a correct password) and the account lock after 5 failures.
+- **Dates:** an event must state its start, end, and when ticket sales open and close (all four required on create; validated server side in `EventsService.checkDates`: end after start, sales open before close, sales cannot run past the end, new events start in the future). Forms use India time (`toIstInput`/`fromIstInput`); editing no longer shifts times by 5h30. Turning RSVP on also needs both sale dates.
+- **Approval:** rejecting an event for RSVP needs a reason (5+ characters), stored in `events.booking_reject_reason`, sent to the host with a link, and shown on the host Settings tab with **Send for approval again** (`POST /events/:id/booking/resubmit`, up to 5 times). The admin approvals page lists Waiting / Approved / Not approved / All, filters by over or not over, and links to the full hub (`/super-admin/events/:id`).
+- **Attendee privacy:** hosts see name, profession (user) and place (customer city) only, in the attendee list, CSV and payment screens. Email and phone come only to the super admin (`canSeeContacts`).
+- **Volunteers:** each crew pass carries place, phone and email beside the name (`PATCH /events/:id/host/crew/:passId`, migration `20261101000000_event_review_and_crew_details`, additive).
+- **Layout:** the dashboard `main` scroller is `relative` and labels that wrap a hidden file input are `relative`, so a visually hidden control can no longer extend the document and create a second scrollbar.

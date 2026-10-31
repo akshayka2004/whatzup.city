@@ -318,8 +318,9 @@ export class AuthService {
     const emailNormalized = dto.email.toLowerCase().trim();
 
     // ── Brute-force protection (Redis counters) ───────────────────────
-    // IP bucket  : 10 attempts / 15 min
-    // User bucket: 5  attempts / 10 min
+    // Both buckets are cleared by a correct password, so they only ever fill up from wrong
+    // guesses. IP bucket: 30 / 15 min (one office or test machine can hold many accounts).
+    // User bucket: 5 / 10 min.
     const ipKey = `login:ip:${ipAddress || 'unknown'}`;
     const userKey = `login:user:${emailNormalized}`;
 
@@ -331,7 +332,7 @@ export class AuthService {
     if (ipCount === 1) await this.redisService.expire(ipKey, 900); // 15 min
     if (userCount === 1) await this.redisService.expire(userKey, 600); // 10 min
 
-    if (ipCount > 10 || userCount > 5) {
+    if (ipCount > 30 || userCount > 5) {
       throw new HttpException(
         'Too many login attempts. Please try again in 15 minutes.',
         HttpStatus.TOO_MANY_REQUESTS,

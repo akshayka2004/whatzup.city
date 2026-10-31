@@ -2,7 +2,18 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Check, Copy, Loader2, Printer, ScanLine, ShieldOff } from 'lucide-react';
+import {
+  Check,
+  Copy,
+  Loader2,
+  Mail,
+  MapPin,
+  Pencil,
+  Phone,
+  Printer,
+  ScanLine,
+  ShieldOff,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -25,7 +36,24 @@ export function CrewTab({ eventId }: { eventId: string }) {
   const confirm = useConfirm();
   const [passes, setPasses] = useState<CrewPass[] | null>(null);
   const [error, setError] = useState('');
-  const [mode, setMode] = useState<'count' | 'names'>('count');
+  const [mode, setMode] = useState<'count' | 'names' | 'one'>('count');
+  // One volunteer: the details a host keeps on the pass.
+  const [vName, setVName] = useState('');
+  const [vPlace, setVPlace] = useState('');
+  const [vPhone, setVPhone] = useState('');
+  const [vEmail, setVEmail] = useState('');
+  // Editing a pass that already exists.
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draft, setDraft] = useState({
+    label: '',
+    place: '',
+    phone: '',
+    email: '',
+    level: 'SCAN' as 'SCAN' | 'DESK',
+    maxDevices: '2',
+  });
+  const [editError, setEditError] = useState('');
+  const [saving, setSaving] = useState(false);
   const [count, setCount] = useState('3');
   const [prefix, setPrefix] = useState('Gate');
   const [names, setNames] = useState('');
@@ -58,8 +86,21 @@ export function CrewTab({ eventId }: { eventId: string }) {
       .split('\n')
       .map((l) => l.trim())
       .filter(Boolean);
+    if (mode === 'one' && !vName.trim()) {
+      setBusy(false);
+      return toast.error("Enter the volunteer's name.");
+    }
     const res = await apiService.post<CrewPass[]>(`/v1/events/${eventId}/host/crew`, {
-      ...(mode === 'names' ? { labels } : { count: Number(count) || 1, prefix }),
+      ...(mode === 'names'
+        ? { labels }
+        : mode === 'one'
+          ? {
+              labels: [vName.trim()],
+              place: vPlace.trim(),
+              phone: vPhone.trim(),
+              email: vEmail.trim(),
+            }
+          : { count: Number(count) || 1, prefix }),
       level,
       maxDevices: Number(devices) || 2,
     });
@@ -67,6 +108,44 @@ export function CrewTab({ eventId }: { eventId: string }) {
     if (res.error) return toast.error(res.error);
     toast.success(`${res.data.length} pass${res.data.length === 1 ? '' : 'es'} created.`);
     setNames('');
+    setVName('');
+    setVPlace('');
+    setVPhone('');
+    setVEmail('');
+    load();
+  };
+
+  const startEdit = (p: CrewPass) => {
+    setEditId(p.id);
+    setEditError('');
+    setDraft({
+      label: p.label,
+      place: p.place ?? '',
+      phone: p.phone ?? '',
+      email: p.email ?? '',
+      level: p.level,
+      maxDevices: String(p.maxDevices),
+    });
+  };
+
+  const saveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editId) return;
+    if (!draft.label.trim()) return setEditError("Enter the volunteer's name.");
+    setSaving(true);
+    setEditError('');
+    const res = await apiService.patch<CrewPass>(`/v1/events/${eventId}/host/crew/${editId}`, {
+      label: draft.label.trim(),
+      place: draft.place.trim(),
+      phone: draft.phone.trim(),
+      email: draft.email.trim(),
+      level: draft.level,
+      maxDevices: Number(draft.maxDevices) || 2,
+    });
+    setSaving(false);
+    if (res.error) return setEditError(res.error);
+    toast.success('Volunteer updated.');
+    setEditId(null);
     load();
   };
 
@@ -117,7 +196,7 @@ export function CrewTab({ eventId }: { eventId: string }) {
             role="radiogroup"
             aria-label="How to name the passes"
           >
-            {(['count', 'names'] as const).map((m) => (
+            {(['count', 'names', 'one'] as const).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -131,11 +210,70 @@ export function CrewTab({ eventId }: { eventId: string }) {
                     : 'border-input text-muted-foreground',
                 )}
               >
-                {m === 'count' ? 'A number of passes' : 'Name each pass'}
+                {m === 'count'
+                  ? 'A number of passes'
+                  : m === 'names'
+                    ? 'Name each pass'
+                    : 'One volunteer, with details'}
               </button>
             ))}
           </div>
-          {mode === 'count' ? (
+          {mode === 'one' ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label htmlFor="vol-name" className="text-sm font-medium">
+                  Name <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  id="vol-name"
+                  value={vName}
+                  onChange={(e) => setVName(e.target.value)}
+                  maxLength={80}
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="vol-place" className="text-sm font-medium">
+                  Place allocated
+                </label>
+                <Input
+                  id="vol-place"
+                  value={vPlace}
+                  onChange={(e) => setVPlace(e.target.value)}
+                  maxLength={120}
+                  placeholder="Front gate, help desk"
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="vol-phone" className="text-sm font-medium">
+                  Phone
+                </label>
+                <Input
+                  id="vol-phone"
+                  type="tel"
+                  inputMode="numeric"
+                  value={vPhone}
+                  onChange={(e) => setVPhone(e.target.value)}
+                  placeholder="10-digit mobile"
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="vol-email" className="text-sm font-medium">
+                  Email
+                </label>
+                <Input
+                  id="vol-email"
+                  type="email"
+                  value={vEmail}
+                  onChange={(e) => setVEmail(e.target.value)}
+                  maxLength={255}
+                  className="h-11"
+                />
+              </div>
+            </div>
+          ) : mode === 'count' ? (
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label htmlFor="crew-count" className="text-sm font-medium">
@@ -275,10 +413,44 @@ export function CrewTab({ eventId }: { eventId: string }) {
                         <span className="text-xs font-normal text-muted-foreground">desk</span>
                       )}
                     </p>
+                    {(p.place || p.phone || p.email) && (
+                      <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
+                        {p.place && (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="size-3.5" aria-hidden /> {p.place}
+                          </span>
+                        )}
+                        {p.phone && (
+                          <a
+                            href={`tel:+91${p.phone}`}
+                            className="inline-flex items-center gap-1 hover:text-foreground"
+                          >
+                            <Phone className="size-3.5" aria-hidden /> {p.phone}
+                          </a>
+                        )}
+                        {p.email && (
+                          <a
+                            href={`mailto:${p.email}`}
+                            className="inline-flex items-center gap-1 break-all hover:text-foreground"
+                          >
+                            <Mail className="size-3.5" aria-hidden /> {p.email}
+                          </a>
+                        )}
+                      </p>
+                    )}
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {p.checkedIn} checked in · {p.devicesInUse} of {p.maxDevices} phones · valid
                       until {fmtWhen(p.validUntil)}
                     </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => (editId === p.id ? setEditId(null) : startEdit(p))}
+                    >
+                      <Pencil /> {editId === p.id ? 'Close' : 'Edit'}
+                    </Button>
                   </div>
                   {p.status !== 'REVOKED' && p.status !== 'EXPIRED' && (
                     <div className="flex flex-wrap items-center gap-2">
@@ -308,6 +480,107 @@ export function CrewTab({ eventId }: { eventId: string }) {
                     </div>
                   )}
                 </div>
+                {editId === p.id && (
+                  <form
+                    onSubmit={saveEdit}
+                    className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2"
+                  >
+                    <div className="space-y-1.5">
+                      <label htmlFor={`e-name-${p.id}`} className="text-sm font-medium">
+                        Name
+                      </label>
+                      <Input
+                        id={`e-name-${p.id}`}
+                        value={draft.label}
+                        onChange={(e) => setDraft({ ...draft, label: e.target.value })}
+                        maxLength={80}
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor={`e-place-${p.id}`} className="text-sm font-medium">
+                        Place allocated
+                      </label>
+                      <Input
+                        id={`e-place-${p.id}`}
+                        value={draft.place}
+                        onChange={(e) => setDraft({ ...draft, place: e.target.value })}
+                        maxLength={120}
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor={`e-phone-${p.id}`} className="text-sm font-medium">
+                        Phone
+                      </label>
+                      <Input
+                        id={`e-phone-${p.id}`}
+                        type="tel"
+                        inputMode="numeric"
+                        value={draft.phone}
+                        onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
+                        placeholder="10-digit mobile"
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor={`e-email-${p.id}`} className="text-sm font-medium">
+                        Email
+                      </label>
+                      <Input
+                        id={`e-email-${p.id}`}
+                        type="email"
+                        value={draft.email}
+                        onChange={(e) => setDraft({ ...draft, email: e.target.value })}
+                        maxLength={255}
+                        className="h-11"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor={`e-level-${p.id}`} className="text-sm font-medium">
+                        What they can do
+                      </label>
+                      <select
+                        id={`e-level-${p.id}`}
+                        value={draft.level}
+                        onChange={(e) =>
+                          setDraft({ ...draft, level: e.target.value as 'SCAN' | 'DESK' })
+                        }
+                        className="h-11 w-full rounded-control border border-input bg-background px-3 text-sm"
+                      >
+                        <option value="SCAN">Scan only</option>
+                        <option value="DESK">Desk: also find names and check in by hand</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor={`e-dev-${p.id}`} className="text-sm font-medium">
+                        Phones per pass
+                      </label>
+                      <Input
+                        id={`e-dev-${p.id}`}
+                        type="number"
+                        min={1}
+                        max={5}
+                        value={draft.maxDevices}
+                        onChange={(e) => setDraft({ ...draft, maxDevices: e.target.value })}
+                        className="h-11"
+                      />
+                    </div>
+                    {editError && (
+                      <p role="alert" className="text-sm text-destructive sm:col-span-2">
+                        {editError}
+                      </p>
+                    )}
+                    <div className="flex gap-2 sm:col-span-2">
+                      <Button type="submit" loading={saving}>
+                        Save changes
+                      </Button>
+                      <Button type="button" variant="outline" onClick={() => setEditId(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                )}
               </li>
             ))}
           </ul>

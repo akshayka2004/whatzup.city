@@ -129,8 +129,10 @@ export class AuthController {
     return this.authService.getTenantBySlug(slug);
   }
 
+  // This counts every call, good or bad, so it is only a flood cap. Guessing passwords is stopped
+  // by the failure counters and the account lock in AuthService.login, which only count failures.
   @Public()
-  @Throttle({ long: { limit: 5, ttl: 900000 } })
+  @Throttle({ long: { limit: 100, ttl: 900000 } })
   @UseGuards(TurnstileGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -157,7 +159,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ long: { limit: 10, ttl: 900000 } })
+  @Throttle({ long: { limit: 40, ttl: 900000 } })
   @Post('2fa/login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Finish a two-factor login with an authenticator or recovery code' })

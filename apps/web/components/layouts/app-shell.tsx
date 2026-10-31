@@ -46,7 +46,7 @@ export function AppShell({
           <Header />
         </div>
         {banner && <div className="print:hidden">{banner}</div>}
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-auto focus:outline-none">
+        <main id="main-content" tabIndex={-1} className="relative flex-1 overflow-auto focus:outline-none">
           <div
             className={cn(
               'mx-auto w-full px-4 pt-6 sm:px-6 lg:px-8 lg:pt-8',

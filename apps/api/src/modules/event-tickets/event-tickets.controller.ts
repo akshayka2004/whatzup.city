@@ -25,6 +25,7 @@ import {
   BookingSettingsDto,
   CancelTicketsDto,
   CreateCrewPassesDto,
+  UpdateCrewPassDto,
   DecisionDto,
   MessageAttendeesDto,
   RejectPaymentDto,
@@ -92,9 +93,13 @@ export class EventTicketsController {
   @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
   @Get('admin/booking/pending')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Events waiting for RSVP approval' })
-  pending(@Query('page') page?: number) {
-    return this.tickets.pendingApprovals(page);
+  @ApiOperation({ summary: 'Events asking for RSVP approval (status and when narrow the list)' })
+  pending(
+    @Query('page') page?: number,
+    @Query('status') status?: string,
+    @Query('when') when?: string,
+  ) {
+    return this.tickets.pendingApprovals(page, { status, when });
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -199,6 +204,15 @@ export class EventTicketsController {
     @Body() dto: BookingSettingsDto,
   ) {
     return this.tickets.updateBooking(user, id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/booking/resubmit')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Send an event that was not approved for approval again' })
+  resubmit(@CurrentUser() user: EventActor, @Param('id', ParseUUIDPipe) id: string) {
+    return this.tickets.resubmit(user, id);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -310,6 +324,19 @@ export class EventTicketsController {
     @Body() dto: CreateCrewPassesDto,
   ) {
     return this.crew.create(user, id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/host/crew/:passId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Edit a volunteer's name, place, phone, email, level or device limit" })
+  crewUpdate(
+    @CurrentUser() user: EventActor,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('passId', ParseUUIDPipe) passId: string,
+    @Body() dto: UpdateCrewPassDto,
+  ) {
+    return this.crew.update(user, id, passId, dto);
   }
 
   @UseGuards(JwtAuthGuard)

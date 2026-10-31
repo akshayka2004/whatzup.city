@@ -2811,6 +2811,10 @@ model Event {
   bookingMode        String    @default("NONE") @map("booking_mode") @db.VarChar(10)
   // PENDING until a moderator approves a business-hosted RSVP event; platform events start APPROVED.
   bookingApproval    String    @default("APPROVED") @map("booking_approval") @db.VarChar(10)
+  // Why a moderator did not approve RSVP. The host sees it, fixes the event and sends it again.
+  bookingRejectReason  String?   @map("booking_reject_reason") @db.VarChar(300)
+  bookingReviewedAt    DateTime? @map("booking_reviewed_at")
+  bookingResubmitCount Int       @default(0) @map("booking_resubmit_count")
   capacity           Int?
   // Seats issued and not cancelled. Only changed by one conditional UPDATE, so it cannot oversell.
   seatsTaken         Int       @default(0) @map("seats_taken")
@@ -2926,6 +2930,10 @@ model EventCrewPass {
   validFrom  DateTime  @map("valid_from")
   validUntil DateTime  @map("valid_until")
   maxDevices Int       @default(2) @map("max_devices")
+  // Who the pass is for and where they are posted. The host can edit these any time.
+  place      String?   @db.VarChar(120)
+  phone      String?   @db.VarChar(20)
+  email      String?   @db.VarChar(255)
   revokedAt  DateTime? @map("revoked_at")
   lastUsedAt DateTime? @map("last_used_at")
   createdBy  String?   @map("created_by") @db.Uuid

@@ -50,6 +50,53 @@ export class EventsService {
   }
 
   // Shared validation + field extraction for ticket/category on create+update.
+  /**
+   * The four dates an event must state: when it starts and ends, and when ticket sales open and
+   * close. Checks they make sense together and writes the ticket dates into `payload`.
+   * `base` is what is stored today (for edits); `require` makes the ticket dates mandatory.
+   */
+  private checkDates(
+    dto: any,
+    base: {
+      startDate: Date;
+      endDate: Date;
+      rsvpOpensAt?: Date | null;
+      rsvpClosesAt?: Date | null;
+    },
+    payload: any,
+    opts: { require: boolean; mustBeFuture?: boolean },
+  ) {
+    const start = dto.startDate ? new Date(dto.startDate) : base.startDate;
+    const end = dto.endDate ? new Date(dto.endDate) : base.endDate;
+    if (Number.isNaN(+start) || Number.isNaN(+end)) {
+      throw new BadRequestException('Enter a valid start and end date for the event.');
+    }
+    if (end <= start) throw new BadRequestException('The event must end after it starts.');
+    if (opts.mustBeFuture && start.getTime() < Date.now() - 5 * 60_000) {
+      throw new BadRequestException('The event must start in the future.');
+    }
+    const pick = (k: 'rsvpOpensAt' | 'rsvpClosesAt'): Date | null => {
+      if (dto[k] === undefined) return base[k] ?? null;
+      return dto[k] ? new Date(dto[k]) : null;
+    };
+    const opens = pick('rsvpOpensAt');
+    const closes = pick('rsvpClosesAt');
+    if ((opens && Number.isNaN(+opens)) || (closes && Number.isNaN(+closes))) {
+      throw new BadRequestException('Enter valid dates for when ticket sales open and close.');
+    }
+    if (opts.require && (!opens || !closes)) {
+      throw new BadRequestException('Enter when ticket sales open and when they close.');
+    }
+    if (opens && closes && opens >= closes) {
+      throw new BadRequestException('Ticket sales must open before they close.');
+    }
+    if (closes && closes > end) {
+      throw new BadRequestException('Ticket sales cannot stay open past the end of the event.');
+    }
+    if (dto.rsvpOpensAt !== undefined) payload.rsvpOpensAt = opens;
+    if (dto.rsvpClosesAt !== undefined) payload.rsvpClosesAt = closes;
+  }
+
   private extraFields(dto: any, payload: any) {
     if (dto.category !== undefined) {
       if (dto.category && !EVENT_CATEGORIES.includes(dto.category)) {
@@ -107,6 +154,12 @@ export class EventsService {
       status: 'ACTIVE',
     };
     this.extraFields(dto, data);
+    this.checkDates(
+      dto,
+      { startDate: data.startDate, endDate: data.endDate },
+      data,
+      { require: true, mustBeFuture: true },
+    );
     const event = await this.db.event.create({ data });
     await this.audit.log({
       tenantId,
@@ -203,6 +256,7 @@ export class EventsService {
       if (dto[k] !== undefined) payload[k] = dto[k];
     }
     this.extraFields(dto, payload);
+    this.checkDates(dto, e, payload, { require: false });
     if (dto.startDate) payload.startDate = new Date(dto.startDate);
     if (dto.endDate) payload.endDate = new Date(dto.endDate);
     const updated = await this.db.event.update({ where: { id }, data: payload });
@@ -272,6 +326,9 @@ export class EventsService {
       status: 'ACTIVE',
     };
     this.extraFields(dto, data);
+    this.checkDates(dto, { startDate: data.startDate, endDate: data.endDate }, data, {
+      require: true,
+    });
     const event = await this.db.event.create({ data });
     await this.audit.log({
       tenantId,
@@ -302,6 +359,7 @@ export class EventsService {
     }
     if (dto.hostLabel !== undefined) payload.hostLabel = dto.hostLabel || null;
     this.extraFields(dto, payload);
+    this.checkDates(dto, e, payload, { require: false });
     if (dto.startDate) payload.startDate = new Date(dto.startDate);
     if (dto.endDate) payload.endDate = new Date(dto.endDate);
     const updated = await this.db.event.update({ where: { id }, data: payload });

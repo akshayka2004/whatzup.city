@@ -15,7 +15,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { BOOKING_LIMITS, checkInWindow, type CrewLevel } from '@saas/types';
+import {
+  BOOKING_LIMITS,
+  IN_MOBILE_PATTERN,
+  checkInWindow,
+  normalizeMobile,
+  type CrewLevel,
+} from '@saas/types';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import {
@@ -27,7 +33,7 @@ import {
   parseCrewToken,
 } from '../../common/utils/ticket-signing';
 import { AuditService } from '../audit/audit.service';
-import { CreateCrewPassesDto } from './dto/event-tickets.dto';
+import { CreateCrewPassesDto, UpdateCrewPassDto } from './dto/event-tickets.dto';
 import { EventActor, assertEventHost, hit } from './event-access';
 
 export interface CrewContext {
@@ -78,6 +84,7 @@ export class EventCrewService {
     if (validUntil.getTime() < Date.now())
       throw new BadRequestException('That end time has already passed.');
 
+    const contact = this.contact(dto);
     const created = [];
     for (const label of labels) {
       const id = randomUUID();
@@ -93,6 +100,7 @@ export class EventCrewService {
             validFrom,
             validUntil,
             maxDevices: dto.maxDevices ?? 2,
+            ...contact,
             createdBy: actor.id,
           },
         }),
@@ -122,6 +130,68 @@ export class EventCrewService {
     });
     const byPass = new Map(counts.map((c) => [c.checkedInPassId as string, c._count]));
     return passes.map((p) => this.present(p, p.sessions.length, byPass.get(p.id) ?? 0));
+  }
+
+  /** Place, phone and email as the database keeps them: trimmed, checked, empty means none. */
+  private contact(dto: { place?: string; phone?: string; email?: string }) {
+    const out: { place?: string | null; phone?: string | null; email?: string | null } = {};
+    if (dto.place !== undefined) out.place = dto.place.trim() || null;
+    if (dto.phone !== undefined) {
+      const phone = dto.phone.trim() ? normalizeMobile(dto.phone) : '';
+      if (phone && !IN_MOBILE_PATTERN.test(phone)) {
+        throw new BadRequestException('Enter a 10-digit mobile number for the volunteer.');
+      }
+      out.phone = phone || null;
+    }
+    if (dto.email !== undefined) {
+      const email = dto.email.trim().toLowerCase();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new BadRequestException('Enter a valid email address for the volunteer.');
+      }
+      out.email = email || null;
+    }
+    return out;
+  }
+
+  /** Edit a volunteer's name, place, contact details, level or device limit. */
+  async update(actor: EventActor, eventId: string, passId: string, dto: UpdateCrewPassDto) {
+    const event = await assertEventHost(this.db, eventId, actor);
+    const pass = await this.db.eventCrewPass.findFirst({
+      where: { id: passId, eventId },
+      include: { sessions: { select: { id: true } } },
+    });
+    if (!pass) throw new NotFoundException('Pass not found');
+
+    const data: Record<string, unknown> = this.contact(dto);
+    if (dto.label !== undefined) {
+      const label = dto.label.trim();
+      if (!label) throw new BadRequestException('Give the volunteer a name.');
+      data.label = label.slice(0, 80);
+    }
+    if (dto.level !== undefined) data.level = dto.level;
+    if (dto.maxDevices !== undefined) data.maxDevices = dto.maxDevices;
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('Nothing to change.');
+    }
+
+    const updated = await this.db.eventCrewPass.update({ where: { id: passId }, data });
+    // Phones that are signed in keep the old name and level in a short cache; clear it so a
+    // change (for instance desk access) takes effect on the next scan.
+    await Promise.all(pass.sessions.map((s) => this.redis.del(`crew:ctx:${s.id}`)));
+    this.audit.log({
+      tenantId: event.tenantId,
+      userId: actor.id,
+      action: 'EVENT_CREW_PASS_UPDATED',
+      resource: 'EVENT',
+      resourceId: eventId,
+      oldData: { label: pass.label, place: pass.place, level: pass.level },
+      newData: { label: updated.label, place: updated.place, level: updated.level },
+    });
+    const [devices, checkedIn] = await Promise.all([
+      this.db.eventCrewSession.count({ where: { passId, endedAt: null } }),
+      this.db.eventTicket.count({ where: { eventId, checkedInPassId: passId } }),
+    ]);
+    return this.present(updated, devices, checkedIn);
   }
 
   async revoke(actor: EventActor, eventId: string, passId: string) {
@@ -296,6 +366,9 @@ export class EventCrewService {
       validFrom: Date;
       validUntil: Date;
       maxDevices: number;
+      place: string | null;
+      phone: string | null;
+      email: string | null;
       revokedAt: Date | null;
       lastUsedAt: Date | null;
     },
@@ -314,6 +387,9 @@ export class EventCrewService {
     return {
       id: p.id,
       label: p.label,
+      place: p.place,
+      phone: p.phone,
+      email: p.email,
       level: p.level,
       code,
       codeDisplay: formatCrewCode(code),

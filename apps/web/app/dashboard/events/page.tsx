@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { uploadImage } from '@/lib/storage-upload';
+import { fromIstInput, toIstInput } from '@/lib/event-booking';
 import {
   BusinessEventsAnalytics,
   BusinessEventsHistory,
@@ -46,6 +47,8 @@ interface Ev {
   ticketTiers?: { name: string; price: number }[] | null;
   startDate: string;
   endDate: string;
+  rsvpOpensAt?: string | null;
+  rsvpClosesAt?: string | null;
   registrationUrl?: string | null;
   ticketUrl?: string | null;
   registrationClicks?: number;
@@ -65,6 +68,8 @@ const empty = {
   ticketPrice: '',
   startDate: '',
   endDate: '',
+  rsvpOpensAt: '',
+  rsvpClosesAt: '',
   registrationUrl: '',
   ticketUrl: '',
 };
@@ -141,8 +146,10 @@ export default function DashboardEventsPage() {
       category: ev.category || '',
       ticketType: ev.ticketType || 'FREE',
       ticketPrice: ev.ticketPrice != null ? String(ev.ticketPrice) : '',
-      startDate: ev.startDate?.slice(0, 16) || '',
-      endDate: ev.endDate?.slice(0, 16) || '',
+      startDate: toIstInput(ev.startDate),
+      endDate: toIstInput(ev.endDate),
+      rsvpOpensAt: toIstInput(ev.rsvpOpensAt),
+      rsvpClosesAt: toIstInput(ev.rsvpClosesAt),
       registrationUrl: ev.registrationUrl || '',
       ticketUrl: ev.ticketUrl || '',
     });
@@ -180,8 +187,36 @@ export default function DashboardEventsPage() {
 
   const save = async () => {
     if (!businessId) return;
-    if (!form.title || !form.startDate || !form.endDate) {
-      setErr('Title, start and end dates are required.');
+    if (!form.title.trim()) {
+      setErr('Give the event a title.');
+      return;
+    }
+    if (!form.startDate || !form.endDate) {
+      setErr('Say when the event starts and when it ends.');
+      return;
+    }
+    if (!form.rsvpOpensAt || !form.rsvpClosesAt) {
+      setErr('Say when ticket sales open and when they close.');
+      return;
+    }
+    const startMs = Date.parse(fromIstInput(form.startDate) ?? '');
+    const endMs = Date.parse(fromIstInput(form.endDate) ?? '');
+    const opensMs = Date.parse(fromIstInput(form.rsvpOpensAt) ?? '');
+    const closesMs = Date.parse(fromIstInput(form.rsvpClosesAt) ?? '');
+    if (!(endMs > startMs)) {
+      setErr('The event must end after it starts.');
+      return;
+    }
+    if (!editing && startMs < Date.now()) {
+      setErr('The event must start in the future.');
+      return;
+    }
+    if (!(closesMs > opensMs)) {
+      setErr('Ticket sales must open before they close.');
+      return;
+    }
+    if (closesMs > endMs) {
+      setErr('Ticket sales cannot stay open past the end of the event.');
       return;
     }
     const cleanTiers = tiers
@@ -204,8 +239,10 @@ export default function DashboardEventsPage() {
           : undefined,
       ticketTiers: form.ticketType === 'PAID' && cleanTiers.length ? cleanTiers : null,
       targetCities,
-      startDate: new Date(form.startDate).toISOString(),
-      endDate: new Date(form.endDate).toISOString(),
+      startDate: fromIstInput(form.startDate),
+      endDate: fromIstInput(form.endDate),
+      rsvpOpensAt: fromIstInput(form.rsvpOpensAt),
+      rsvpClosesAt: fromIstInput(form.rsvpClosesAt),
     };
     const res = editing
       ? await apiService.patch<any>(`/v1/events/${editing.id}`, payload)
@@ -622,24 +659,65 @@ export default function DashboardEventsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-muted-foreground">Start date &amp; time</label>
+                <label htmlFor="ev-start" className="text-xs text-muted-foreground">
+                  Event starts <span className="text-destructive">*</span>
+                </label>
                 <Input
+                  id="ev-start"
                   type="datetime-local"
+                  required
                   value={form.startDate}
                   onChange={(e) => set('startDate', e.target.value)}
                   className="h-10 bg-background border-input rounded-xl text-foreground"
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">End date &amp; time</label>
+                <label htmlFor="ev-end" className="text-xs text-muted-foreground">
+                  Event ends <span className="text-destructive">*</span>
+                </label>
                 <Input
+                  id="ev-end"
                   type="datetime-local"
+                  required
+                  min={form.startDate || undefined}
                   value={form.endDate}
                   onChange={(e) => set('endDate', e.target.value)}
                   className="h-10 bg-background border-input rounded-xl text-foreground"
                 />
               </div>
+              <div>
+                <label htmlFor="ev-sales-open" className="text-xs text-muted-foreground">
+                  Ticket sales open <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  id="ev-sales-open"
+                  type="datetime-local"
+                  required
+                  value={form.rsvpOpensAt}
+                  onChange={(e) => set('rsvpOpensAt', e.target.value)}
+                  className="h-10 bg-background border-input rounded-xl text-foreground"
+                />
+              </div>
+              <div>
+                <label htmlFor="ev-sales-close" className="text-xs text-muted-foreground">
+                  Ticket sales close <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  id="ev-sales-close"
+                  type="datetime-local"
+                  required
+                  min={form.rsvpOpensAt || undefined}
+                  max={form.endDate || undefined}
+                  value={form.rsvpClosesAt}
+                  onChange={(e) => set('rsvpClosesAt', e.target.value)}
+                  className="h-10 bg-background border-input rounded-xl text-foreground"
+                />
+              </div>
             </div>
+            <p className="-mt-1 text-xs text-muted-foreground">
+              Times are in Indian time. Tickets can only be booked between the two sales times, and
+              sales cannot run past the end of the event.
+            </p>
             <Input
               placeholder="Registration URL (external)"
               value={form.registrationUrl}

@@ -4,6 +4,7 @@ import {
   IsArray,
   IsBoolean,
   IsDateString,
+  IsEmail,
   IsIn,
   IsInt,
   IsOptional,
@@ -228,6 +229,64 @@ export class CreateCrewPassesDto {
   @IsOptional()
   @IsDateString()
   validUntil?: string;
+
+  @ApiProperty({ required: false, description: 'Where the volunteer is posted' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  place?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(255)
+  email?: string;
+}
+
+/** A host edits a volunteer's pass: who they are, where they are posted, how to reach them. */
+export class UpdateCrewPassDto {
+  @ApiProperty({ required: false, description: "The volunteer's name" })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  label?: string;
+
+  @ApiProperty({ required: false, description: 'Place allocated; empty clears it' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  place?: string;
+
+  @ApiProperty({ required: false, description: '10-digit mobile; empty clears it' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
+
+  @ApiProperty({ required: false, description: 'Empty clears it' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  email?: string;
+
+  @ApiProperty({ required: false, enum: ['SCAN', 'DESK'] })
+  @IsOptional()
+  @IsIn(['SCAN', 'DESK'])
+  level?: 'SCAN' | 'DESK';
+
+  @ApiProperty({ required: false, minimum: 1, maximum: 5 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  maxDevices?: number;
 }
 
 export class MessageAttendeesDto {
@@ -245,7 +304,7 @@ export class MessageAttendeesDto {
 }
 
 export class DecisionDto {
-  @ApiProperty({ required: false })
+  @ApiProperty({ required: false, description: 'Required when rejecting' })
   @IsOptional()
   @IsString()
   @MaxLength(300)

@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { apiService } from '@/lib/services/api-service';
 import { uploadImage } from '@/lib/storage-upload';
+import { fromIstInput, toIstInput } from '@/lib/event-booking';
 import { KERALA_CITIES, EVENT_CATEGORIES } from '@/lib/constants';
 
 const PLATFORM_HOST = '__PLATFORM__';
@@ -42,6 +43,8 @@ const empty = {
   ticketPrice: '',
   startDate: '',
   endDate: '',
+  rsvpOpensAt: '',
+  rsvpClosesAt: '',
   registrationUrl: '',
   ticketUrl: '',
 };
@@ -123,8 +126,10 @@ export function EventsManager() {
       category: e.category || '',
       ticketType: e.ticketType || 'FREE',
       ticketPrice: e.ticketPrice != null ? String(e.ticketPrice) : '',
-      startDate: e.startDate?.slice(0, 16) || '',
-      endDate: e.endDate?.slice(0, 16) || '',
+      startDate: toIstInput(e.startDate),
+      endDate: toIstInput(e.endDate),
+      rsvpOpensAt: toIstInput(e.rsvpOpensAt),
+      rsvpClosesAt: toIstInput(e.rsvpClosesAt),
       registrationUrl: e.registrationUrl || '',
       ticketUrl: e.ticketUrl || '',
     });
@@ -157,8 +162,32 @@ export function EventsManager() {
   };
 
   const save = async () => {
-    if (!form.title || !form.startDate || !form.endDate) {
-      setErr('Title, start and end date/time are required.');
+    if (!form.title.trim()) {
+      setErr('Give the event a title.');
+      return;
+    }
+    if (!form.startDate || !form.endDate) {
+      setErr('Say when the event starts and when it ends.');
+      return;
+    }
+    if (!form.rsvpOpensAt || !form.rsvpClosesAt) {
+      setErr('Say when ticket sales open and when they close.');
+      return;
+    }
+    const startMs = Date.parse(fromIstInput(form.startDate) ?? '');
+    const endMs = Date.parse(fromIstInput(form.endDate) ?? '');
+    const opensMs = Date.parse(fromIstInput(form.rsvpOpensAt) ?? '');
+    const closesMs = Date.parse(fromIstInput(form.rsvpClosesAt) ?? '');
+    if (!(endMs > startMs)) {
+      setErr('The event must end after it starts.');
+      return;
+    }
+    if (!(closesMs > opensMs)) {
+      setErr('Ticket sales must open before they close.');
+      return;
+    }
+    if (closesMs > endMs) {
+      setErr('Ticket sales cannot stay open past the end of the event.');
       return;
     }
     if (!editing) {
@@ -192,8 +221,10 @@ export function EventsManager() {
             : undefined
           : undefined,
       ticketTiers: form.ticketType === 'PAID' && cleanTiers.length ? cleanTiers : null,
-      startDate: new Date(form.startDate).toISOString(),
-      endDate: new Date(form.endDate).toISOString(),
+      startDate: fromIstInput(form.startDate),
+      endDate: fromIstInput(form.endDate),
+      rsvpOpensAt: fromIstInput(form.rsvpOpensAt),
+      rsvpClosesAt: fromIstInput(form.rsvpClosesAt),
     };
     const res = editing
       ? await apiService.patch<any>(`/v1/events/admin/${editing.id}`, payload)
@@ -682,26 +713,66 @@ export function EventsManager() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-xs text-muted-foreground">Start date &amp; time</label>
+                <label htmlFor="adm-ev-start" className="text-xs text-muted-foreground">
+                  Event starts <span className="text-destructive">*</span>
+                </label>
                 <Input
+                  id="adm-ev-start"
                   type="datetime-local"
+                  required
                   value={form.startDate}
                   onChange={(e) => set('startDate', e.target.value)}
                   className="h-10 bg-background border-input rounded-xl text-foreground"
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">End date &amp; time</label>
+                <label htmlFor="adm-ev-end" className="text-xs text-muted-foreground">
+                  Event ends <span className="text-destructive">*</span>
+                </label>
                 <Input
+                  id="adm-ev-end"
                   type="datetime-local"
+                  required
+                  min={form.startDate || undefined}
                   value={form.endDate}
                   onChange={(e) => set('endDate', e.target.value)}
                   className="h-10 bg-background border-input rounded-xl text-foreground"
                 />
               </div>
+              <div>
+                <label htmlFor="adm-ev-sales-open" className="text-xs text-muted-foreground">
+                  Ticket sales open <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  id="adm-ev-sales-open"
+                  type="datetime-local"
+                  required
+                  value={form.rsvpOpensAt}
+                  onChange={(e) => set('rsvpOpensAt', e.target.value)}
+                  className="h-10 bg-background border-input rounded-xl text-foreground"
+                />
+              </div>
+              <div>
+                <label htmlFor="adm-ev-sales-close" className="text-xs text-muted-foreground">
+                  Ticket sales close <span className="text-destructive">*</span>
+                </label>
+                <Input
+                  id="adm-ev-sales-close"
+                  type="datetime-local"
+                  required
+                  min={form.rsvpOpensAt || undefined}
+                  max={form.endDate || undefined}
+                  value={form.rsvpClosesAt}
+                  onChange={(e) => set('rsvpClosesAt', e.target.value)}
+                  className="h-10 bg-background border-input rounded-xl text-foreground"
+                />
+              </div>
             </div>
+            <p className="-mt-1 text-xs text-muted-foreground">
+              Times are in Indian time. Sales cannot run past the end of the event.
+            </p>
             <Input
               placeholder="Registration URL (external)"
               value={form.registrationUrl}

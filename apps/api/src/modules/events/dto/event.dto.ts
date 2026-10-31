@@ -108,6 +108,16 @@ export class EventDto {
   @IsDateString()
   endDate?: string;
 
+  @ApiProperty({ required: false, description: 'When ticket sales open' })
+  @IsOptional()
+  @IsDateString()
+  rsvpOpensAt?: string;
+
+  @ApiProperty({ required: false, description: 'When ticket sales close' })
+  @IsOptional()
+  @IsDateString()
+  rsvpClosesAt?: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()

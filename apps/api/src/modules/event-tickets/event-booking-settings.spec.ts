@@ -3,6 +3,11 @@ import { EventTicketsService } from './event-tickets.service';
 const HOUR = 3_600_000;
 const owner = { id: 'host1', role: 'BUSINESS_OWNER' };
 const admin = { id: 'adm1', role: 'SUPER_ADMIN' };
+// Tickets must state when sales open and close; these sit inside the event in world().
+const SALES = {
+  rsvpOpensAt: new Date(Date.now() + HOUR).toISOString(),
+  rsvpClosesAt: new Date(Date.now() + 20 * HOUR).toISOString(),
+};
 
 function world(over: Record<string, any> = {}, actor = owner) {
   const event: any = {
@@ -71,7 +76,7 @@ describe('host booking settings', () => {
 
   it('turning RSVP on for a business event waits for approval', async () => {
     const w = world();
-    const out = await w.svc.updateBooking(owner, 'ev1', { bookingMode: 'RSVP', capacity: 100 });
+    const out = await w.svc.updateBooking(owner, 'ev1', { bookingMode: 'RSVP', capacity: 100, ...SALES });
     expect(out).toMatchObject({
       bookingMode: 'RSVP',
       bookingApproval: 'PENDING',
@@ -83,18 +88,18 @@ describe('host booking settings', () => {
   it('is approved at once for platform events, platform admins and when auto-approve is on', async () => {
     const platform = world({ businessId: null }, admin);
     expect(
-      (await platform.svc.updateBooking(admin, 'ev1', { bookingMode: 'RSVP' })).bookingApproval,
+      (await platform.svc.updateBooking(admin, 'ev1', { bookingMode: 'RSVP', ...SALES })).bookingApproval,
     ).toBe('APPROVED');
 
     const byAdmin = world({}, admin);
     expect(
-      (await byAdmin.svc.updateBooking(admin, 'ev1', { bookingMode: 'RSVP' })).bookingApproval,
+      (await byAdmin.svc.updateBooking(admin, 'ev1', { bookingMode: 'RSVP', ...SALES })).bookingApproval,
     ).toBe('APPROVED');
 
     process.env.EVENT_RSVP_AUTO_APPROVE = 'true';
     const auto = world();
     expect(
-      (await auto.svc.updateBooking(owner, 'ev1', { bookingMode: 'RSVP' })).bookingApproval,
+      (await auto.svc.updateBooking(owner, 'ev1', { bookingMode: 'RSVP', ...SALES })).bookingApproval,
     ).toBe('APPROVED');
   });
 
@@ -117,12 +122,25 @@ describe('host booking settings', () => {
         rsvpOpensAt: new Date(Date.now() + 2 * HOUR).toISOString(),
         rsvpClosesAt: new Date(Date.now() + HOUR).toISOString(),
       }),
-    ).rejects.toThrow(/open before it closes/);
+    ).rejects.toThrow(/open before they close/);
     await expect(
       w.svc.updateBooking(owner, 'ev1', {
         rsvpClosesAt: new Date(Date.now() + 40 * HOUR).toISOString(),
       }),
     ).rejects.toThrow(/past the end/);
+  });
+
+  it('will not turn RSVP on until the host says when ticket sales open and close', async () => {
+    const w = world();
+    await expect(w.svc.updateBooking(owner, 'ev1', { bookingMode: 'RSVP' })).rejects.toThrow(
+      /when ticket sales open and when they close/,
+    );
+    await expect(
+      w.svc.updateBooking(owner, 'ev1', {
+        bookingMode: 'RSVP',
+        rsvpOpensAt: SALES.rsvpOpensAt,
+      }),
+    ).rejects.toThrow(/when ticket sales open and when they close/);
   });
 
   it('will not switch RSVP off while people hold tickets', async () => {

@@ -147,10 +147,14 @@ export function PaymentDetailModal({
               <dd className="font-medium text-foreground">{p.payer.name}</dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">Contact</dt>
-              <dd className="break-all text-foreground">
-                {p.payer.email}
-                {p.payer.phone ? ` · ${p.payer.phone}` : ''}
+              <dt className="text-xs text-muted-foreground">Profession and place</dt>
+              <dd className="break-words text-foreground">
+                {[p.payer.profession, p.payer.place].filter(Boolean).join(' · ') || 'Not shared'}
+                {(p.payer.email || p.payer.phone) && (
+                  <span className="block break-all text-xs text-muted-foreground">
+                    {[p.payer.email, p.payer.phone].filter(Boolean).join(' · ')}
+                  </span>
+                )}
               </dd>
             </div>
             <div>

@@ -101,10 +101,12 @@ export function AttendeesTab({ eventId }: { eventId: string }) {
 
       <Card className="overflow-hidden rounded-card">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[860px] text-sm">
             <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 font-medium">Name</th>
+                <th className="px-3 py-2 font-medium">Profession</th>
+                <th className="px-3 py-2 font-medium">Place</th>
                 <th className="px-3 py-2 font-medium">Code</th>
                 <th className="px-3 py-2 font-medium">Status</th>
                 <th className="px-3 py-2 font-medium">Registered by</th>
@@ -116,7 +118,7 @@ export function AttendeesTab({ eventId }: { eventId: string }) {
             <tbody>
               {loading && rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-10 text-center">
+                  <td colSpan={9} className="py-10 text-center">
                     <Loader2
                       className="mx-auto size-5 animate-spin text-muted-foreground"
                       aria-label="Loading"
@@ -125,7 +127,7 @@ export function AttendeesTab({ eventId }: { eventId: string }) {
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-10 text-center text-muted-foreground">
+                  <td colSpan={9} className="py-10 text-center text-muted-foreground">
                     No one matches.
                   </td>
                 </tr>
@@ -140,6 +142,8 @@ export function AttendeesTab({ eventId }: { eventId: string }) {
                         </span>
                       )}
                     </td>
+                    <td className="px-3 py-2 text-muted-foreground">{r.profession || '–'}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{r.place || '–'}</td>
                     <td className="px-3 py-2 font-mono text-xs">{prettyCode(r.code)}</td>
                     <td className="px-3 py-2">
                       <span
@@ -160,9 +164,11 @@ export function AttendeesTab({ eventId }: { eventId: string }) {
                     </td>
                     <td className="px-3 py-2">
                       <span className="block truncate">{r.registrant.name}</span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {r.registrant.email}
-                      </span>
+                      {(r.registrant.email || r.registrant.phone) && (
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {[r.registrant.email, r.registrant.phone].filter(Boolean).join(' · ')}
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-muted-foreground">
                       {SOURCE_LABEL[r.source ?? 'direct'] ?? r.source}
