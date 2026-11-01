@@ -1,79 +1,10 @@
 'use client';
 
-import { useEffect, useState, type RefObject } from 'react';
+import { useState, type RefObject } from 'react';
 import { Download, Loader2, Share2 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/sonner';
-import { cn } from '@/lib/utils';
-import { PASS_THEMES, type PassTheme } from './boarding-pass';
-
-const KEY = 'pass_theme';
-
-/** The style the person last picked for their passes (a per-device convenience only). */
-export function usePassTheme(): [PassTheme, (t: PassTheme) => void] {
-  const [theme, setTheme] = useState<PassTheme>('indigo');
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(KEY);
-      if (saved && saved in PASS_THEMES) setTheme(saved as PassTheme);
-    } catch {
-      /* private window: keep the default */
-    }
-  }, []);
-  const choose = (t: PassTheme) => {
-    setTheme(t);
-    try {
-      localStorage.setItem(KEY, t);
-    } catch {
-      /* ignore */
-    }
-  };
-  return [theme, choose];
-}
-
-export function ThemePicker({
-  value,
-  onChange,
-}: {
-  value: PassTheme;
-  onChange: (t: PassTheme) => void;
-}) {
-  return (
-    <div
-      role="radiogroup"
-      aria-label="Pass style"
-      className="flex items-center justify-center gap-2"
-    >
-      <span className="text-xs font-medium text-muted-foreground">Style</span>
-      {(Object.keys(PASS_THEMES) as PassTheme[]).map((k) => {
-        const t = PASS_THEMES[k];
-        return (
-          <button
-            key={k}
-            type="button"
-            role="radio"
-            aria-checked={value === k}
-            onClick={() => onChange(k)}
-            className={cn(
-              'inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border px-3 text-sm',
-              value === k
-                ? 'border-primary bg-primary/10 font-semibold text-foreground'
-                : 'border-input text-muted-foreground hover:text-foreground',
-            )}
-          >
-            <span
-              aria-hidden
-              className="size-4 rounded-full border border-black/10"
-              style={{ backgroundImage: `linear-gradient(135deg, ${t.bandFrom}, ${t.bandTo})` }}
-            />
-            {t.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 /** Save the pass as a picture, or share that picture straight from the phone. */
 export function SavePass({

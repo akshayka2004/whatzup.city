@@ -11,46 +11,18 @@ import { fmtClock, prettyCode } from '@/lib/event-booking';
  * is a printed object, so it looks the same in light and dark mode and saves as a picture).
  */
 
-export const PASS_THEMES = {
-  indigo: {
-    label: 'Indigo',
-    bandFrom: '#3730A3',
-    bandTo: '#6D5BF0',
-    accent: '#34D399',
-    paper: '#FFFFFF',
-    stub: '#F3F2FF',
-    ink: '#1C1B2E',
-    muted: '#5E5D75',
-    line: '#D9D7F5',
-    chip: 'rgba(255,255,255,0.18)',
-  },
-  midnight: {
-    label: 'Midnight',
-    bandFrom: '#0B1020',
-    bandTo: '#27306B',
-    accent: '#F5C451',
-    paper: '#12172B',
-    stub: '#0E1224',
-    ink: '#F4F6FF',
-    muted: '#A3A9C9',
-    line: '#2B3358',
-    chip: 'rgba(255,255,255,0.14)',
-  },
-  sunset: {
-    label: 'Sunset',
-    bandFrom: '#EA580C',
-    bandTo: '#BE185D',
-    accent: '#FDE68A',
-    paper: '#FFFBF7',
-    stub: '#FFEFE2',
-    ink: '#2B1220',
-    muted: '#7A5568',
-    line: '#F5CDB4',
-    chip: 'rgba(255,255,255,0.2)',
-  },
+const PASS = {
+  bandFrom: '#3730A3',
+  bandTo: '#6D5BF0',
+  accent: '#34D399',
+  paper: '#FFFFFF',
+  stub: '#F3F2FF',
+  ink: '#1C1B2E',
+  muted: '#5E5D75',
+  line: '#D9D7F5',
+  chip: 'rgba(255,255,255,0.18)',
 } as const;
 
-export type PassTheme = keyof typeof PASS_THEMES;
 export type PassState = 'VALID' | 'USED' | 'PENDING' | 'CANCELLED' | 'SAMPLE';
 
 export interface PassData {
@@ -148,12 +120,11 @@ export const BoardingPass = forwardRef<
   {
     data: PassData;
     state: PassState;
-    theme: PassTheme;
     /** Shown in place of the QR while the seat waits for payment. */
     pendingSlot?: ReactNode;
   }
->(function BoardingPass({ data, state, theme, pendingSlot }, ref) {
-  const t = PASS_THEMES[theme];
+>(function BoardingPass({ data, state, pendingSlot }, ref) {
+  const t = PASS;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const start = MONTH_DAY(data.startDate);
   const where = [data.venue, data.city].filter(Boolean).join(', ');
@@ -379,7 +350,7 @@ function Field({
   value,
   wide,
 }: {
-  t: (typeof PASS_THEMES)[PassTheme];
+  t: typeof PASS;
   label: string;
   value: string;
   wide?: boolean;

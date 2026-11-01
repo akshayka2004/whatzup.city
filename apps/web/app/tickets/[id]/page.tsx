@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/empty-state';
 import { AddToCalendarButton } from '@/components/public/media/event-actions';
 import { BoardingPass, type PassState } from '@/components/tickets/boarding-pass';
-import { SavePass, ThemePicker, usePassTheme } from '@/components/tickets/pass-actions';
+import { SavePass } from '@/components/tickets/pass-actions';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
 
@@ -42,7 +42,6 @@ export default function TicketPage() {
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [theme, setTheme] = usePassTheme();
   const passRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -108,7 +107,6 @@ export default function TicketPage() {
         <div className="mx-auto max-w-sm space-y-4">
           <BoardingPass
             ref={passRef}
-            theme={theme}
             state={state}
             data={{
               title: ticket.event.title,
@@ -146,7 +144,6 @@ export default function TicketPage() {
             }
           />
 
-          <ThemePicker value={theme} onChange={setTheme} />
           {(state === 'VALID' || state === 'USED') && (
             <SavePass target={passRef} fileName={`whtzup-pass-${ticket.code}`} />
           )}
