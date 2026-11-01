@@ -328,7 +328,10 @@ export const BoardingPass = forwardRef<
             </p>
             <p className="mt-0.5 text-xs" style={{ color: t.muted }}>
               {state === 'USED' && data.checkedInAt ? (
-                <span className="inline-flex items-center gap-1 font-semibold text-[#15803D]">
+                <span
+                  className="inline-flex items-center gap-1 font-semibold"
+                  style={{ color: '#15803D' }}
+                >
                   <CheckCircle2 className="size-3.5" aria-hidden /> Checked in at{' '}
                   {fmtClock(data.checkedInAt)}
                 </span>
