@@ -6,6 +6,7 @@ import {
   IsEnum,
   IsUUID,
   IsBoolean,
+  MaxLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRoleEnum } from '@prisma/client';
@@ -56,4 +57,19 @@ export class SignupDto {
   @IsOptional()
   @IsBoolean()
   acceptedPrivacyPolicy?: boolean;
+
+  @ApiProperty({
+    example: '2001-04-23',
+    description: 'Date of birth (YYYY-MM-DD). Required for customers, who must be 13 or older.',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  dateOfBirth?: string;
+
+  @ApiProperty({ description: 'Customer confirms they are 13 or older', required: false })
+  @IsOptional()
+  @IsBoolean()
+  confirmedAge13?: boolean;
 }

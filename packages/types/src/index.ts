@@ -13,3 +13,4 @@ export * from './order-channels';
 export * from './access';
 export * from './event-tickets';
 export * from './event-payments';
+export * from './age';

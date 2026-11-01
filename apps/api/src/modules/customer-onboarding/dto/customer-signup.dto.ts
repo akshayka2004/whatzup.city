@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CustomerSignupDto {
@@ -31,6 +31,15 @@ export class CustomerSignupDto {
   @ApiProperty({ example: 'default' })
   @IsString()
   tenantId!: string;
+
+  @ApiProperty({ example: '2001-04-23', description: 'Date of birth (YYYY-MM-DD)' })
+  @IsString()
+  @MaxLength(10)
+  dateOfBirth!: string;
+
+  @ApiProperty({ description: 'Confirms they are 13 or older' })
+  @IsBoolean()
+  confirmedAge13!: boolean;
 }
 
 export class ProfileCompletionDto {

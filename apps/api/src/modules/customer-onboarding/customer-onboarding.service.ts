@@ -16,6 +16,7 @@ import * as argon2 from 'argon2';
 import { v4 as uuidv4 } from 'uuid';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { dobProblem } from '@saas/types';
 
 @Injectable()
 export class CustomerOnboardingService {
@@ -35,6 +36,12 @@ export class CustomerOnboardingService {
     if (!defaultTenant) throw new BadRequestException('No tenant configured. Contact support.');
     dto.tenantId = defaultTenant.id;
     const emailNormalized = dto.email.toLowerCase().trim();
+
+    const problem = dobProblem(dto.dateOfBirth);
+    if (problem) throw new BadRequestException(problem);
+    if (dto.confirmedAge13 !== true) {
+      throw new BadRequestException('Please confirm that you are 13 years or older.');
+    }
 
     // Check duplicate
     const existing = await this.db.user.findFirst({
@@ -62,6 +69,8 @@ export class CustomerOnboardingService {
         name: `${dto.firstName} ${dto.lastName}`.trim(),
         phone: dto.phone,
         role: 'USER',
+        dateOfBirth: new Date(`${dto.dateOfBirth}T00:00:00.000Z`),
+        ageConfirmedAt: new Date(),
         emailVerified: false,
         isActive: false,
         customerProfile: {

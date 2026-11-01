@@ -1415,3 +1415,10 @@ Not yet covered: document review results, review moderation, fraud flags, team c
 - Three styles (Indigo, Midnight, Sunset) with fixed colours, so the pass looks the same in light and dark mode and saves as a picture. The choice is remembered per device (`pass_theme`).
 - `/tickets/[id]` uses it, with **Save picture** and **Share** (`html-to-image`, 3x, native share sheet on phones).
 - `/tickets/sample` is a public sample with made-up details (QR holds `WHTZUP-SAMPLE-PASS`, stamped SAMPLE) with a "Compare all three" view, for showing the design to others.
+
+### 12.27 Age check at sign-up (2026-11-02)
+
+- Customers (role USER) give a date of birth and tick "I am 13 years old or older" when they register. Under 13 cannot create an account.
+- One rule in `@saas/types` (`age.ts`: `MIN_SIGNUP_AGE`, `ageOn`, `dobProblem`) runs in the form and on the server, in India time, so they cannot disagree. `POST /auth/signup` and `POST /customer-onboarding/signup` both enforce it, so calling the API directly does not get around it.
+- Stored on `users.date_of_birth` (date only) and `users.age_confirmed_at` (migration `20261102000000_user_date_of_birth`, additive). The form does not keep the date in the saved draft. Accounts made before this have no date of birth.
+- Not asked of business, organisation or government sign-ups (adults acting for an organisation).

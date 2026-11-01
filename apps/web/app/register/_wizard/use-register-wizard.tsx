@@ -26,6 +26,7 @@ import { useMasterCategories } from '@/hooks/use-categories';
 import { useI18n } from '@/lib/i18n/provider';
 import { buildRegistrationCategories } from '@/lib/registration-categories';
 import { clearDraft, loadDraft, saveDraft, type RegistrationDraft } from './registration-draft';
+import { dobProblem } from '@saas/types';
 
 /** ?role= deep links (landing page buttons) skip the role question. */
 const ROLE_PARAM: Record<string, RegisterRole> = {
@@ -420,6 +421,9 @@ export function useRegisterWizard() {
   const TOTAL_STEPS = STEP_TITLES.length;
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
+  // Customers say how old they are. Kept out of the saved draft on purpose.
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   // Civic-specific fields
   const [civicOrgType, setCivicOrgType] = useState<CivicOrgType>('NGO');
@@ -486,6 +490,17 @@ export function useRegisterWizard() {
     if (!isPasswordValid) {
       setError('Password does not meet the complexity requirements.');
       return;
+    }
+    if (role === 'CUSTOMER') {
+      const problem = dobProblem(dateOfBirth);
+      if (problem) {
+        setError(problem);
+        return;
+      }
+      if (!ageConfirmed) {
+        setError('Please confirm that you are 13 years or older.');
+        return;
+      }
     }
     if (!acceptedTerms || !acceptedPrivacy) {
       setError('You must accept the Terms of Service and Privacy Policy to register.');
@@ -613,6 +628,7 @@ export function useRegisterWizard() {
           name,
           phone,
           role: role === 'GOVERNMENT' ? 'GOVERNMENT_ADMIN' : 'USER',
+          ...(role === 'CUSTOMER' ? { dateOfBirth, confirmedAge13: ageConfirmed } : {}),
           ...(referralCode.trim() ? { referralCode: referralCode.trim() } : {}),
           acceptedTerms,
           acceptedPrivacyPolicy: acceptedPrivacy,
@@ -1259,6 +1275,10 @@ export function useRegisterWizard() {
     setAcceptedTerms,
     acceptedPrivacy,
     setAcceptedPrivacy,
+    dateOfBirth,
+    setDateOfBirth,
+    ageConfirmed,
+    setAgeConfirmed,
     civicOrgType,
     setCivicOrgType,
     organizationName,

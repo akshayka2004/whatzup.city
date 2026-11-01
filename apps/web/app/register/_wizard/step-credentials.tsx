@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { authService } from '@/lib/services/auth-service';
+import { dobProblem } from '@saas/types';
 // mock-db removed — all registration flows through real API
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -81,6 +82,10 @@ export function StepCredentials({ w }: { w: Wizard }) {
     sharedPrefix,
     setSharedPrefix,
     acceptedTerms,
+    dateOfBirth,
+    setDateOfBirth,
+    ageConfirmed,
+    setAgeConfirmed,
     setAcceptedTerms,
     acceptedPrivacy,
     setAcceptedPrivacy,
@@ -201,6 +206,11 @@ export function StepCredentials({ w }: { w: Wizard }) {
     [
       'reg-company',
       role === 'BUSINESS' && !companyName.trim() ? 'Enter your business or trading name.' : null,
+    ],
+    ['reg-dob', role === 'CUSTOMER' ? dobProblem(dateOfBirth) : null],
+    [
+      'reg-age',
+      role === 'CUSTOMER' && !ageConfirmed ? 'Please confirm that you are 13 or older.' : null,
     ],
     ['reg-consent', consent ? null : 'Please accept to continue.'],
   ];
@@ -393,6 +403,56 @@ export function StepCredentials({ w }: { w: Wizard }) {
             </FieldError>
           </div>
         </div>
+
+        {/* Customers: how old they are. Under 13 cannot create an account. */}
+        {role === 'CUSTOMER' && (
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label htmlFor="reg-dob" className="text-xs font-medium text-muted-foreground">
+                Date of birth
+              </label>
+              <Input
+                id="reg-dob"
+                type="date"
+                autoComplete="bday"
+                min="1900-01-01"
+                max={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })}
+                value={dateOfBirth}
+                onChange={(e) => setDateOfBirth(e.target.value)}
+                onBlur={() => t.touch('dob')}
+                aria-invalid={!!shown('reg-dob', 'dob')}
+                aria-describedby="reg-dob-err"
+                className={`${inputBase} ${border(!!shown('reg-dob', 'dob'))}`}
+              />
+              <FieldHint>
+                Used only to check you are old enough.
+              </FieldHint>
+              <FieldError id="reg-dob-err">{shown('reg-dob', 'dob')}</FieldError>
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium text-muted-foreground">Age</span>
+              <label
+                htmlFor="reg-age"
+                className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground"
+              >
+                <input
+                  id="reg-age"
+                  type="checkbox"
+                  checked={ageConfirmed}
+                  onChange={(e) => {
+                    setAgeConfirmed(e.target.checked);
+                    t.touch('age');
+                  }}
+                  aria-invalid={!!shown('reg-age', 'age')}
+                  aria-describedby="reg-age-err"
+                  className="mt-0.5 size-5 shrink-0 accent-primary"
+                />
+                <span>I am 13 years old or older.</span>
+              </label>
+              <FieldError id="reg-age-err">{shown('reg-age', 'age')}</FieldError>
+            </div>
+          </div>
+        )}
 
         {/* CIVIC Additional Fields */}
         {role === 'NGO_COMMUNITY' && (

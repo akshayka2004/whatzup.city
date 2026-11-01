@@ -35,7 +35,7 @@ import { CivicSignupDto } from './dto/civic-signup.dto';
 import { Prisma, UserRoleEnum } from '@prisma/client';
 import { SelectRoleDto } from './dto/select-role.dto';
 import { AvailabilityDto } from './dto/availability.dto';
-import { effectiveGrants } from '@saas/types';
+import { dobProblem, effectiveGrants } from '@saas/types';
 import {
   masterTenantId,
   resolveMasterCategory,
@@ -120,6 +120,18 @@ export class AuthService {
         throw new BadRequestException('Name is required');
       }
 
+      // 3a. Customers say how old they are. The date is checked here, whatever the form did, so
+      //     calling the API directly cannot get around the minimum age.
+      let dateOfBirth: Date | null = null;
+      if (isCustomer) {
+        const problem = dobProblem(dto.dateOfBirth);
+        if (problem) throw new BadRequestException(problem);
+        if (dto.confirmedAge13 !== true) {
+          throw new BadRequestException('Please confirm that you are 13 years or older.');
+        }
+        dateOfBirth = new Date(`${dto.dateOfBirth}T00:00:00.000Z`);
+      }
+
       // 4. Pre-check uniqueness (cheap reads — better error than P2002)
       const [existingUser, existingPhone] = await Promise.all([
         this.db.user.findFirst({
@@ -181,6 +193,7 @@ export class AuthService {
               isActive: true,
               referralCode: newReferralCode,
               ...(referrerId ? { referredBy: referrerId } : {}),
+              ...(dateOfBirth ? { dateOfBirth, ageConfirmedAt: new Date() } : {}),
               ...(dto.acceptedTerms ? { acceptedTermsAt: new Date(), termsVersion: '1.0' } : {}),
               ...(dto.acceptedPrivacyPolicy
                 ? { acceptedPrivacyAt: new Date(), privacyPolicyVersion: '1.0' }
