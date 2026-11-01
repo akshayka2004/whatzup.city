@@ -24,6 +24,7 @@ import { notificationUrl } from '@/lib/notification-link';
 import { LOCALES } from '@/lib/i18n';
 import { useI18n } from '@/lib/i18n/provider';
 import { getRoleLabel } from '@/lib/rbac';
+import { workspaceHome } from '@/lib/workspace-home';
 import { cn } from '@/lib/utils';
 
 type Notif = {
@@ -110,7 +111,11 @@ export function Header() {
 
   return (
     <header className="flex h-16 items-center justify-between gap-3 border-b border-border/80 bg-card/85 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-card/70 sm:px-6 lg:px-8">
-      <Link href="/" className="flex items-center gap-2 md:hidden" aria-label="Whtzup.city home">
+      <Link
+        href={workspaceHome(user)}
+        className="flex items-center gap-2 md:hidden"
+        aria-label="Whtzup.city home"
+      >
         <BrandLogo alt="" className="h-8 w-auto" />
         <span className="text-base font-bold tracking-tight text-foreground">whtzup.city</span>
       </Link>

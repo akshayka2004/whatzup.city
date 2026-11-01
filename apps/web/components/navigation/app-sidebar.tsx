@@ -8,6 +8,7 @@ import { BrandLogo } from '@/components/common/brand-logo';
 import { useAuth } from '@/hooks/use-auth';
 import { useI18n } from '@/lib/i18n/provider';
 import { cn } from '@/lib/utils';
+import { workspaceHome } from '@/lib/workspace-home';
 import { isItemActive, type NavItem, type NavSpec } from '@/lib/nav/config';
 
 const COLLAPSE_KEY = 'sidebar_collapsed_v1';
@@ -116,7 +117,7 @@ export function AppSidebar({ spec }: { spec: NavSpec }) {
         )}
       >
         <Link
-          href={spec.home}
+          href={user ? workspaceHome(user) : spec.home}
           className="flex min-w-0 items-center gap-2.5"
           title={collapsed ? spec.title : undefined}
         >
