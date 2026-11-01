@@ -1408,3 +1408,10 @@ One service decides the audience: `NotificationAudienceService` (`modules/notifi
 The bell polls the unread count every minute and a notice opens the page in its `metadata.url` (older notices used `href`; both work, same-site paths only).
 
 Not yet covered: document review results, review moderation, fraud flags, team changes. Email and push are still off (no mail provider, Firebase unset), so everything is in-app.
+
+### 12.26 The event pass as a boarding pass (2026-11-01)
+
+- `components/tickets/boarding-pass.tsx` draws a ticket like a flight boarding pass: brand band (logo, name, EVENT PASS chip), date → city "route" with a plane, details grid (attendee, starts, ends, admits, venue), a perforated tear line (half-circle bites cut with a CSS mask) and a stub with the QR, the short code and a decorative barcode strip. States: valid, ADMITTED stamp, CANCELLED stamp, waiting for payment, SAMPLE stamp.
+- Three styles (Indigo, Midnight, Sunset) with fixed colours, so the pass looks the same in light and dark mode and saves as a picture. The choice is remembered per device (`pass_theme`).
+- `/tickets/[id]` uses it, with **Save picture** and **Share** (`html-to-image`, 3x, native share sheet on phones).
+- `/tickets/sample` is a public sample with made-up details (QR holds `WHTZUP-SAMPLE-PASS`, stamped SAMPLE) with a "Compare all three" view, for showing the design to others.
