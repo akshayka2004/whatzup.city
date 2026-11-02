@@ -188,18 +188,18 @@ export function OverviewTab({ eventId, summary }: { eventId: string; summary: Ho
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="rounded-card p-4 lg:col-span-2">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <ScanLine className="size-4 text-primary" aria-hidden /> Gates and crew
+            <ScanLine className="size-4 text-primary" aria-hidden /> Gate helpers
           </h3>
           {data.gates.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No crew passes yet. Create them under Crew.
+              No helper passes yet. Make them on the Gate helpers tab.
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[420px] text-sm">
                 <thead>
                   <tr className="text-left text-xs uppercase text-muted-foreground">
-                    <th className="py-1.5 font-medium">Pass</th>
+                    <th className="py-1.5 font-medium">Helper</th>
                     <th className="py-1.5 text-right font-medium">Checked in</th>
                     <th className="py-1.5 text-right font-medium">First</th>
                     <th className="py-1.5 text-right font-medium">Last</th>
@@ -211,7 +211,9 @@ export function OverviewTab({ eventId, summary }: { eventId: string; summary: Ho
                       <td className="py-2">
                         {g.label}
                         {g.level === 'DESK' && (
-                          <span className="ml-1.5 text-xs text-muted-foreground">desk</span>
+                          <span className="ml-1.5 text-xs text-muted-foreground">
+                            can check in by hand
+                          </span>
                         )}
                       </td>
                       <td className="py-2 text-right font-semibold tabular-nums">{g.checkedIn}</td>

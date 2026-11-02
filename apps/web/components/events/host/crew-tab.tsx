@@ -88,7 +88,7 @@ export function CrewTab({ eventId }: { eventId: string }) {
       .filter(Boolean);
     if (mode === 'one' && !vName.trim()) {
       setBusy(false);
-      return toast.error("Enter the volunteer's name.");
+      return toast.error("Enter the helper's name.");
     }
     const res = await apiService.post<CrewPass[]>(`/v1/events/${eventId}/host/crew`, {
       ...(mode === 'names'
@@ -131,7 +131,7 @@ export function CrewTab({ eventId }: { eventId: string }) {
   const saveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editId) return;
-    if (!draft.label.trim()) return setEditError("Enter the volunteer's name.");
+    if (!draft.label.trim()) return setEditError("Enter the helper's name.");
     setSaving(true);
     setEditError('');
     const res = await apiService.patch<CrewPass>(`/v1/events/${eventId}/host/crew/${editId}`, {
@@ -144,24 +144,24 @@ export function CrewTab({ eventId }: { eventId: string }) {
     });
     setSaving(false);
     if (res.error) return setEditError(res.error);
-    toast.success('Volunteer updated.');
+    toast.success('Helper updated.');
     setEditId(null);
     load();
   };
 
   const revoke = async (p: CrewPass) => {
     const ok = await confirm({
-      title: `Revoke ${p.label}?`,
+      title: `Stop ${p.label}'s pass?`,
       description:
-        'The phone using this pass is signed out within seconds and the code stops working.',
-      confirmLabel: 'Revoke',
+        'Their phone is signed out within seconds and the code stops working. You can make a new pass any time.',
+      confirmLabel: 'Stop pass',
       tone: 'danger',
     });
     if (!ok) return;
     const res = await apiService.post(`/v1/events/${eventId}/host/crew/${p.id}/revoke`, {});
     if (res.error) toast.error(res.error);
     else {
-      toast.success(`${p.label} revoked.`);
+      toast.success(`${p.label}'s pass stopped.`);
       load();
     }
   };
@@ -183,18 +183,25 @@ export function CrewTab({ eventId }: { eventId: string }) {
     <div className="space-y-6">
       <Card className="rounded-card p-5">
         <h3 className="mb-1 flex items-center gap-2 font-semibold">
-          <ScanLine className="size-4 text-primary" aria-hidden /> Crew passes
+          <ScanLine className="size-4 text-primary" aria-hidden /> Gate helpers
         </h3>
         <p className="text-sm text-muted-foreground">
-          A pass lets one helper scan tickets on their own phone for this event only, with no
-          account to create. It stops working when the check-in window ends, or when you revoke it.
-          Create as many as you need.
+          A gate helper is someone who checks tickets at the door. Make one pass for each helper.
+          They scan on their own phone and do not need an account.
+        </p>
+        <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+          <li>Make a pass for each helper below.</li>
+          <li>Send each helper their code or link, or print the sheet.</li>
+          <li>The helper opens the scanner on their phone, types the code and scans tickets.</li>
+        </ol>
+        <p className="mt-3 text-xs text-muted-foreground">
+          A pass only works for this event. It stops when check-in ends, or when you stop it.
         </p>
         <form onSubmit={create} className="mt-4 space-y-4">
           <div
             className="flex flex-wrap gap-2"
             role="radiogroup"
-            aria-label="How to name the passes"
+            aria-label="How to make the passes"
           >
             {(['count', 'names', 'one'] as const).map((m) => (
               <button
@@ -211,10 +218,10 @@ export function CrewTab({ eventId }: { eventId: string }) {
                 )}
               >
                 {m === 'count'
-                  ? 'A number of passes'
+                  ? 'Make several at once'
                   : m === 'names'
-                    ? 'Name each pass'
-                    : 'One volunteer, with details'}
+                    ? 'I have their names'
+                    : 'One person, with details'}
               </button>
             ))}
           </div>
@@ -234,20 +241,20 @@ export function CrewTab({ eventId }: { eventId: string }) {
               </div>
               <div className="space-y-1.5">
                 <label htmlFor="vol-place" className="text-sm font-medium">
-                  Place allocated
+                  Where they will stand
                 </label>
                 <Input
                   id="vol-place"
                   value={vPlace}
                   onChange={(e) => setVPlace(e.target.value)}
                   maxLength={120}
-                  placeholder="Front gate, help desk"
+                  placeholder="For example: Front gate"
                   className="h-11"
                 />
               </div>
               <div className="space-y-1.5">
                 <label htmlFor="vol-phone" className="text-sm font-medium">
-                  Phone
+                  Phone number (optional)
                 </label>
                 <Input
                   id="vol-phone"
@@ -261,7 +268,7 @@ export function CrewTab({ eventId }: { eventId: string }) {
               </div>
               <div className="space-y-1.5">
                 <label htmlFor="vol-email" className="text-sm font-medium">
-                  Email
+                  Email (optional)
                 </label>
                 <Input
                   id="vol-email"
@@ -277,7 +284,7 @@ export function CrewTab({ eventId }: { eventId: string }) {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label htmlFor="crew-count" className="text-sm font-medium">
-                  How many
+                  How many helpers do you need?
                 </label>
                 <Input
                   id="crew-count"
@@ -288,10 +295,11 @@ export function CrewTab({ eventId }: { eventId: string }) {
                   onChange={(e) => setCount(e.target.value)}
                   className="h-11"
                 />
+                <p className="text-xs text-muted-foreground">Any number from 1 to 50.</p>
               </div>
               <div className="space-y-1.5">
                 <label htmlFor="crew-prefix" className="text-sm font-medium">
-                  Name them
+                  What should they be called?
                 </label>
                 <Input
                   id="crew-prefix"
@@ -301,14 +309,14 @@ export function CrewTab({ eventId }: { eventId: string }) {
                   className="h-11"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Gives {prefix || 'Gate'} 1, {prefix || 'Gate'} 2 and so on.
+                  They will be called {prefix || 'Gate'} 1, {prefix || 'Gate'} 2, and so on.
                 </p>
               </div>
             </div>
           ) : (
             <div className="space-y-1.5">
               <label htmlFor="crew-names" className="text-sm font-medium">
-                One name per line
+                Type one name on each line
               </label>
               <textarea
                 id="crew-names"
@@ -323,7 +331,7 @@ export function CrewTab({ eventId }: { eventId: string }) {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label htmlFor="crew-level" className="text-sm font-medium">
-                What they can do
+                What can this helper do?
               </label>
               <select
                 id="crew-level"
@@ -331,13 +339,15 @@ export function CrewTab({ eventId }: { eventId: string }) {
                 onChange={(e) => setLevel(e.target.value as 'SCAN' | 'DESK')}
                 className="h-11 w-full rounded-control border border-input bg-background px-3 text-sm"
               >
-                <option value="SCAN">Scan only</option>
-                <option value="DESK">Desk: also find names and check people in by hand</option>
+                <option value="SCAN">Scan tickets only</option>
+                <option value="DESK">
+                  Scan tickets, search by name and check people in by hand
+                </option>
               </select>
             </div>
             <div className="space-y-1.5">
               <label htmlFor="crew-devices" className="text-sm font-medium">
-                Phones per pass
+                Phones that can use one pass
               </label>
               <Input
                 id="crew-devices"
@@ -348,10 +358,14 @@ export function CrewTab({ eventId }: { eventId: string }) {
                 onChange={(e) => setDevices(e.target.value)}
                 className="h-11"
               />
+              <p className="text-xs text-muted-foreground">
+                How many phones can be signed in with the same code. Most helpers need 1. Use 1 to
+                5.
+              </p>
             </div>
           </div>
           <Button type="submit" loading={busy} disabled={mode === 'names' && !names.trim()}>
-            Create passes
+            Make passes
           </Button>
         </form>
       </Card>
@@ -368,22 +382,24 @@ export function CrewTab({ eventId }: { eventId: string }) {
           aria-label="Loading"
         />
       ) : passes.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">No passes yet.</p>
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          No helpers yet. Make the first pass above.
+        </p>
       ) : (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold">
-              {passes.length} pass{passes.length === 1 ? '' : 'es'}
+              {passes.length} helper pass{passes.length === 1 ? '' : 'es'}
             </h3>
             <div className="flex flex-wrap gap-2">
               <Button asChild variant="outline" size="sm">
                 <Link href="/scan" target="_blank">
-                  <ScanLine /> Open scanner
+                  <ScanLine /> Open scanner to try it
                 </Link>
               </Button>
               <Button asChild variant="outline" size="sm" disabled={live.length === 0}>
                 <Link href={`/crew-sheet/${eventId}`} target="_blank">
-                  <Printer /> Print pass sheet
+                  <Printer /> Print codes for helpers
                 </Link>
               </Button>
             </div>
@@ -404,13 +420,15 @@ export function CrewTab({ eventId }: { eventId: string }) {
                         {p.status === 'ACTIVE'
                           ? 'Active'
                           : p.status === 'UPCOMING'
-                            ? 'Not started'
+                            ? 'Not open yet'
                             : p.status === 'EXPIRED'
-                              ? 'Expired'
-                              : 'Revoked'}
+                              ? 'Ended'
+                              : 'Stopped'}
                       </span>
                       {p.level === 'DESK' && (
-                        <span className="text-xs font-normal text-muted-foreground">desk</span>
+                        <span className="text-xs font-normal text-muted-foreground">
+                          can check in by hand
+                        </span>
                       )}
                     </p>
                     {(p.place || p.phone || p.email) && (
@@ -439,8 +457,8 @@ export function CrewTab({ eventId }: { eventId: string }) {
                       </p>
                     )}
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {p.checkedIn} checked in · {p.devicesInUse} of {p.maxDevices} phones · valid
-                      until {fmtWhen(p.validUntil)}
+                      Checked in: {p.checkedIn} · Phones signed in: {p.devicesInUse} of{' '}
+                      {p.maxDevices} · Works until {fmtWhen(p.validUntil)}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -472,10 +490,10 @@ export function CrewTab({ eventId }: { eventId: string }) {
                         variant="outline"
                         onClick={() => copy(`link-${p.id}`, link(p))}
                       >
-                        {copied === `link-${p.id}` ? <Check /> : <Copy />} Link
+                        {copied === `link-${p.id}` ? <Check /> : <Copy />} Copy link
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => revoke(p)}>
-                        <ShieldOff /> Revoke
+                        <ShieldOff /> Stop pass
                       </Button>
                     </div>
                   )}
@@ -499,7 +517,7 @@ export function CrewTab({ eventId }: { eventId: string }) {
                     </div>
                     <div className="space-y-1.5">
                       <label htmlFor={`e-place-${p.id}`} className="text-sm font-medium">
-                        Place allocated
+                        Where they will stand
                       </label>
                       <Input
                         id={`e-place-${p.id}`}
@@ -511,7 +529,7 @@ export function CrewTab({ eventId }: { eventId: string }) {
                     </div>
                     <div className="space-y-1.5">
                       <label htmlFor={`e-phone-${p.id}`} className="text-sm font-medium">
-                        Phone
+                        Phone number (optional)
                       </label>
                       <Input
                         id={`e-phone-${p.id}`}
@@ -525,7 +543,7 @@ export function CrewTab({ eventId }: { eventId: string }) {
                     </div>
                     <div className="space-y-1.5">
                       <label htmlFor={`e-email-${p.id}`} className="text-sm font-medium">
-                        Email
+                        Email (optional)
                       </label>
                       <Input
                         id={`e-email-${p.id}`}
@@ -538,7 +556,7 @@ export function CrewTab({ eventId }: { eventId: string }) {
                     </div>
                     <div className="space-y-1.5">
                       <label htmlFor={`e-level-${p.id}`} className="text-sm font-medium">
-                        What they can do
+                        What can this helper do?
                       </label>
                       <select
                         id={`e-level-${p.id}`}
@@ -548,13 +566,15 @@ export function CrewTab({ eventId }: { eventId: string }) {
                         }
                         className="h-11 w-full rounded-control border border-input bg-background px-3 text-sm"
                       >
-                        <option value="SCAN">Scan only</option>
-                        <option value="DESK">Desk: also find names and check in by hand</option>
+                        <option value="SCAN">Scan tickets only</option>
+                        <option value="DESK">
+                          Scan tickets, search by name and check people in by hand
+                        </option>
                       </select>
                     </div>
                     <div className="space-y-1.5">
                       <label htmlFor={`e-dev-${p.id}`} className="text-sm font-medium">
-                        Phones per pass
+                        Phones that can use one pass
                       </label>
                       <Input
                         id={`e-dev-${p.id}`}
@@ -565,6 +585,7 @@ export function CrewTab({ eventId }: { eventId: string }) {
                         onChange={(e) => setDraft({ ...draft, maxDevices: e.target.value })}
                         className="h-11"
                       />
+                      <p className="text-xs text-muted-foreground">Use 1 to 5.</p>
                     </div>
                     {editError && (
                       <p role="alert" className="text-sm text-destructive sm:col-span-2">
@@ -585,8 +606,9 @@ export function CrewTab({ eventId }: { eventId: string }) {
             ))}
           </ul>
           <p className="text-xs text-muted-foreground">
-            Give each helper their code or link. They open{' '}
-            <span className="font-mono">{SITE_URL}/scan</span> on their phone and type it in.
+            Send each helper their code or link. On their phone they open{' '}
+            <span className="font-mono">{SITE_URL}/scan</span> and type the code. The link fills the
+            code in for them.
           </p>
         </div>
       )}

@@ -18,7 +18,7 @@ const TABS = [
   { key: 'settings', label: 'Settings' },
   { key: 'attendees', label: 'Attendees' },
   { key: 'payments', label: 'Payments' },
-  { key: 'crew', label: 'Crew and gate' },
+  { key: 'crew', label: 'Gate helpers' },
 ] as const;
 type TabKey = (typeof TABS)[number]['key'];
 

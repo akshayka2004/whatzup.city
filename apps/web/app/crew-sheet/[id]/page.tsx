@@ -48,9 +48,10 @@ export default function CrewSheetPage() {
     <main className="mx-auto max-w-4xl p-4 sm:p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Crew pass sheet</h1>
+          <h1 className="text-xl font-bold text-foreground">Gate helper passes</h1>
           <p className="text-sm text-muted-foreground">
-            {event.title}. Print and cut, or share each code privately. {passes.length} pass
+            {event.title}. Print and cut the cards, or send each code privately. {passes.length}{' '}
+            pass
             {passes.length === 1 ? '' : 'es'}.
           </p>
         </div>
@@ -60,7 +61,7 @@ export default function CrewSheetPage() {
       </div>
       {passes.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">
-          No active passes. Create some on the Crew tab.
+          No active passes. Make some on the Gate helpers tab.
         </p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 print:grid-cols-2 print:gap-3">
@@ -88,7 +89,7 @@ function PassCard({ pass, event }: { pass: CrewPass; event: HostSummary }) {
   return (
     <li className="break-inside-avoid rounded-card border border-border bg-card p-4 print:border-black print:bg-white print:text-black">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground print:text-black">
-        Crew pass · {event.title}
+        Gate helper pass · {event.title}
       </p>
       <p className="mt-1 text-xl font-bold">{pass.label}</p>
       <div className="mt-3 flex items-center gap-4">
@@ -101,20 +102,20 @@ function PassCard({ pass, event }: { pass: CrewPass; event: HostSummary }) {
           <p className="text-xs text-muted-foreground print:text-black">Code</p>
           <p className="font-mono text-2xl font-bold tracking-widest">{pass.codeDisplay}</p>
           <p className="mt-2 text-xs text-muted-foreground print:text-black">
-            Scan this QR with your phone camera, or open{' '}
+            Point your phone camera at this QR, or open{' '}
             <span className="font-mono">{SITE_URL.replace(/^https?:\/\//, '')}/scan</span> and type
             the code.
           </p>
           <p className="mt-2 text-xs text-muted-foreground print:text-black">
             {pass.level === 'DESK'
-              ? 'Desk pass: scan, find names, check in by hand.'
-              : 'Scan-only pass.'}{' '}
-            Valid until {fmtWhen(pass.validUntil)}.
+              ? 'Can scan, search by name and check in by hand.'
+              : 'Can scan tickets.'}{' '}
+            Works until {fmtWhen(pass.validUntil)}.
           </p>
         </div>
       </div>
       <p className="mt-3 border-t border-border pt-2 text-xs text-muted-foreground print:border-black print:text-black">
-        Keep this private. Anyone with the code can scan for this event until it expires.
+        Keep this private. Anyone with the code can scan tickets for this event until it ends.
       </p>
     </li>
   );

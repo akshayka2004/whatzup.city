@@ -257,7 +257,7 @@ export function SettingsTab({
               <Field
                 id="min-age"
                 label="Minimum age"
-                hint="Optional. Shown on the ticket; crew check ID at the gate."
+                hint="Optional. Shown on the ticket; gate helpers check ID at the door."
               >
                 <Input
                   id="min-age"

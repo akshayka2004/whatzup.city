@@ -193,7 +193,7 @@ function SignIn({
         <p className="text-xs font-semibold uppercase tracking-wide text-primary">Whtzup.city</p>
         <h1 className="mt-1 text-2xl font-bold text-foreground">Gate scanner</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Enter the pass code the organiser gave you. It works on this phone for this event only.
+          Type the code the organiser gave you. It works for this event only.
         </p>
       </div>
       <form onSubmit={submit} className="space-y-3">

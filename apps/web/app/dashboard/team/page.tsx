@@ -309,10 +309,11 @@ export default function TeamManagementPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <UserCog className="h-6 w-6 text-primary" />
-              Team Management
+              My team
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Create and manage accounts for your team members.
+              Give your staff their own login to this business. They sign in with the email and
+              password you set.
             </p>
           </div>
           <Button
@@ -320,7 +321,7 @@ export default function TeamManagementPage() {
             className="rounded-xl bg-primary hover:bg-primary text-white gap-2 cursor-pointer"
           >
             <UserPlus className="h-4 w-4" />
-            Create Account
+            Add team member
           </Button>
         </div>
 
@@ -352,7 +353,7 @@ export default function TeamManagementPage() {
         {/* Team list */}
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground px-1">
-            Team Members ({team.length})
+            People on your team ({team.length})
           </h3>
           {!loadingTeam && team.length > 0 && (
             <ListFilters
@@ -386,7 +387,7 @@ export default function TeamManagementPage() {
                   onChange: setFActive,
                   options: [
                     { value: 'ACTIVE', label: 'Active', count: activeCounts.ACTIVE ?? 0 },
-                    { value: 'INACTIVE', label: 'Inactive', count: activeCounts.INACTIVE ?? 0 },
+                    { value: 'INACTIVE', label: 'Paused', count: activeCounts.INACTIVE ?? 0 },
                   ],
                 },
               ]}
@@ -404,9 +405,11 @@ export default function TeamManagementPage() {
           ) : team.length === 0 ? (
             <Card className="p-8 rounded-2xl border-dashed border-border bg-secondary text-center">
               <UserCog className="h-8 w-8 mx-auto text-muted-foreground mb-2 opacity-40" />
-              <p className="text-foreground font-semibold text-sm mb-1">No team members yet</p>
+              <p className="text-foreground font-semibold text-sm mb-1">
+                No one has been added yet
+              </p>
               <p className="text-xs text-muted-foreground">
-                Create an account using the button above.
+                Press "Add team member" to give someone a login.
               </p>
             </Card>
           ) : null}
@@ -453,7 +456,7 @@ export default function TeamManagementPage() {
                               : 'bg-danger-soft text-danger-soft-foreground',
                           )}
                         >
-                          {member.isActive ? 'Active' : 'Disabled'}
+                          {member.isActive ? 'Active' : 'Paused'}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 min-w-0">
@@ -474,7 +477,7 @@ export default function TeamManagementPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          title="Edit member"
+                          title="Edit details"
                           onClick={() => openEdit(member)}
                           className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 cursor-pointer"
                         >
@@ -492,7 +495,7 @@ export default function TeamManagementPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          title={member.isActive ? 'Disable account' : 'Enable account'}
+                          title={member.isActive ? 'Pause login' : 'Turn login back on'}
                           onClick={() => handleToggle(member)}
                           className={cn(
                             'h-10 w-10 p-0 rounded-xl cursor-pointer',
@@ -510,7 +513,7 @@ export default function TeamManagementPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          title="Remove member"
+                          title="Remove from team"
                           onClick={() => setConfirmRemove(member)}
                           className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                         >
@@ -534,14 +537,14 @@ export default function TeamManagementPage() {
         {showCreateModal && (
           <ModalSurface
             onClose={() => setShowCreateModal(false)}
-            label="Create Team Account"
+            label="Add team member"
             className="sm:max-w-md"
             hideClose
           >
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                 <UserPlus className="h-4 w-4 text-primary" />
-                Create Team Account
+                Add team member
               </h3>
               <button
                 onClick={() => setShowCreateModal(false)}
@@ -551,7 +554,8 @@ export default function TeamManagementPage() {
               </button>
             </div>
             <p className="text-xs text-muted-foreground mb-4">
-              Set up login credentials for your team member. Share the credentials after creation.
+              Set the email and password they will use to sign in. After you save, copy the password
+              and send it to them. It is shown only once.
             </p>
             {createError && (
               <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">
@@ -561,7 +565,7 @@ export default function TeamManagementPage() {
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
-                  Full Name
+                  Name
                 </label>
                 <Input
                   value={formName}
@@ -572,7 +576,7 @@ export default function TeamManagementPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
-                  Email Address
+                  Email (they sign in with this)
                 </label>
                 <Input
                   type="email"
@@ -584,7 +588,7 @@ export default function TeamManagementPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
-                  Password
+                  Password (for their first sign-in)
                 </label>
                 <div className="flex gap-2">
                   <Input
@@ -617,7 +621,7 @@ export default function TeamManagementPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
-                  Role
+                  What can they do?
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {(['BUSINESS_MODERATOR', 'BUSINESS_STAFF'] as const).map((role) => {
@@ -642,8 +646,8 @@ export default function TeamManagementPage() {
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">
                           {role === 'BUSINESS_MODERATOR'
-                            ? 'Bill review, customer moderation'
-                            : 'Offers, listings, media upload'}
+                            ? 'Checks bills and handles customers'
+                            : 'Adds offers, listings and photos'}
                         </p>
                       </button>
                     );
@@ -659,7 +663,7 @@ export default function TeamManagementPage() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
-                    <UserPlus className="h-4 w-4" /> Create Account
+                    <UserPlus className="h-4 w-4" /> Add team member
                   </>
                 )}
               </Button>
@@ -695,7 +699,7 @@ export default function TeamManagementPage() {
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
-                  Full Name
+                  Name
                 </label>
                 <Input
                   value={editName}
@@ -705,7 +709,7 @@ export default function TeamManagementPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
-                  Email Address
+                  Email (they sign in with this)
                 </label>
                 <Input
                   type="email"
@@ -727,7 +731,7 @@ export default function TeamManagementPage() {
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase block mb-1.5">
-                  Role
+                  What can they do?
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {(['BUSINESS_MODERATOR', 'BUSINESS_STAFF'] as const).map((role) => {
@@ -752,8 +756,8 @@ export default function TeamManagementPage() {
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">
                           {role === 'BUSINESS_MODERATOR'
-                            ? 'Bill review, customer moderation'
-                            : 'Offers, listings, media upload'}
+                            ? 'Checks bills and handles customers'
+                            : 'Adds offers, listings and photos'}
                         </p>
                       </button>
                     );
@@ -802,8 +806,8 @@ export default function TeamManagementPage() {
             </div>
             <p className="text-xs text-muted-foreground mb-4">
               Setting a new password for{' '}
-              <span className="font-bold text-foreground">{resetMember.name}</span>. Their current
-              sessions will be invalidated.
+              <span className="font-bold text-foreground">{resetMember.name}</span>. They will be
+              signed out everywhere and must use the new password.
             </p>
             {resetError && (
               <p className="mb-3 text-xs text-danger-soft-foreground bg-danger-soft border border-destructive/20 rounded-lg px-3 py-2">
@@ -865,9 +869,9 @@ export default function TeamManagementPage() {
               <h3 className="text-base font-bold text-foreground">Credentials Ready</h3>
             </div>
             <p className="text-xs text-muted-foreground mb-4">
-              Share these credentials with{' '}
+              Send these sign-in details to{' '}
               <span className="font-bold text-foreground">{createdCredentials.name}</span>. Copy
-              them now — the password will not be shown again.
+              them now. The password is not shown again.
             </p>
             <div className="space-y-2 mb-4">
               <div className="bg-secondary border border-border rounded-lg p-3">

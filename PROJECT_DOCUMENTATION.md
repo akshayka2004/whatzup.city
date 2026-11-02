@@ -1414,7 +1414,7 @@ Not yet covered: document review results, review moderation, fraud flags, team c
 - `components/tickets/boarding-pass.tsx` draws a ticket like a flight boarding pass: brand band (logo, name, EVENT PASS chip), date → city "route" with a plane, details grid (attendee, starts, ends, admits, venue), a perforated tear line (half-circle bites cut with a CSS mask) and a stub with the QR, the short code and a decorative barcode strip. States: valid, ADMITTED stamp, CANCELLED stamp, waiting for payment, SAMPLE stamp.
 - One fixed look (the indigo design), so the pass looks the same in light and dark mode and saves as a picture. There is no style picker.
 - `/tickets/[id]` uses it, with **Save picture** and **Share** (`html-to-image`, 3x, native share sheet on phones).
-- `/tickets/sample` is a public sample with made-up details (QR holds `WHTZUP-SAMPLE-PASS`, stamped SAMPLE) with a "Compare all three" view, for showing the design to others.
+- `/tickets/sample` is a public sample with made-up details (QR holds `WHTZUP-SAMPLE-PASS`, stamped SAMPLE) for showing the design to others.
 
 ### 12.27 Age check at sign-up (2026-11-02)
 
@@ -1422,3 +1422,10 @@ Not yet covered: document review results, review moderation, fraud flags, team c
 - One rule in `@saas/types` (`age.ts`: `MIN_SIGNUP_AGE`, `ageOn`, `dobProblem`) runs in the form and on the server, in India time, so they cannot disagree. `POST /auth/signup` and `POST /customer-onboarding/signup` both enforce it, so calling the API directly does not get around it.
 - Stored on `users.date_of_birth` (date only) and `users.age_confirmed_at` (migration `20261102000000_user_date_of_birth`, additive). The form does not keep the date in the saved draft. Accounts made before this have no date of birth.
 - Not asked of business, organisation or government sign-ups (adults acting for an organisation).
+
+### 12.28 Plain wording for gate helpers and the business team (2026-11-02)
+
+- The event host tab "Crew and gate" is now **Gate helpers**: a helper is someone who checks tickets at the door, with one pass per helper. The tab opens with a three-step guide (make a pass, send the code or link, helper types it into the scanner).
+- Number fields say what they mean: "How many helpers do you need?" (1 to 50), "Phones that can use one pass" (1 to 5, most helpers need 1). Pass rows read "Checked in: n · Phones signed in: a of b · Works until …". "Revoke" is now "Stop pass" (status "Stopped"); "Expired" is "Ended"; "Not started" is "Not open yet".
+- The printed sheet, the scanner sign-in and the overview table use the same words. Nothing about how passes work changed.
+- Business **Team** page is now "My team": "Add team member", "Pause login" instead of disable, and roles say what they can do (Moderator: checks bills and handles customers; Staff: adds offers, listings and photos).
