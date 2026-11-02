@@ -1155,6 +1155,29 @@ export class EventTicketsService {
     };
   }
 
+  /** People a volunteer wrote down at the gate. Hosts see name and place; the mobile is the super admin's. */
+  async walkIns(actor: EventActor, eventId: string) {
+    await assertEventHost(this.db, eventId, actor);
+    const contacts = canSeeContacts(actor);
+    const rows = await this.db.eventWalkIn.findMany({
+      where: { eventId },
+      orderBy: { createdAt: 'desc' },
+      take: 2000,
+      include: { pass: { select: { label: true } } },
+    });
+    return {
+      data: rows.map((w) => ({
+        id: w.id,
+        name: w.name,
+        place: w.place,
+        recordedBy: w.pass?.label ?? null,
+        createdAt: w.createdAt,
+        ...(contacts ? { phone: w.phone } : {}),
+      })),
+      meta: { total: rows.length },
+    };
+  }
+
   /** CSV of every ticket. Logged, because it carries contact details. */
   async attendeesCsv(actor: EventActor, eventId: string): Promise<string> {
     const event = await assertEventHost(this.db, eventId, actor);
@@ -1197,6 +1220,12 @@ export class EventTicketsService {
       'RSVP time',
       'Check-in time',
     ];
+    const walkIns = await this.db.eventWalkIn.findMany({
+      where: { eventId },
+      orderBy: { createdAt: 'asc' },
+      take: 20_000,
+      include: { pass: { select: { label: true } } },
+    });
     const lines = rows.map((t) =>
       [
         t.code,
@@ -1214,7 +1243,25 @@ export class EventTicketsService {
         .map(cell)
         .join(','),
     );
-    return [head.map(cell).join(','), ...lines].join('\r\n');
+    // Walk-ins have no ticket: same columns, no code, status WALK_IN, written down by a gate helper.
+    const walkInLines = walkIns.map((w) =>
+      [
+        '',
+        w.name,
+        '',
+        w.place,
+        'No',
+        'WALK_IN',
+        w.pass?.label ?? '',
+        ...(contacts ? ['', w.phone] : []),
+        'gate',
+        w.createdAt,
+        w.createdAt,
+      ]
+        .map(cell)
+        .join(','),
+    );
+    return [head.map(cell).join(','), ...lines, ...walkInLines].join('\r\n');
   }
 
   async message(actor: EventActor, eventId: string, title: string, body: string) {

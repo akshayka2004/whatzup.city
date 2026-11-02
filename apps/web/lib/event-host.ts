@@ -265,3 +265,13 @@ export const PAYMENT_ACTION_LABEL: Record<PaymentAction, string> = {
   REMINDER: 'Reminder sent to the host',
   REFUND_DUE: 'Refund may be due',
 };
+
+/** Someone a gate helper wrote down. The mobile is only sent to the super admin. */
+export interface WalkInRow {
+  id: string;
+  name: string;
+  place: string;
+  recordedBy: string | null;
+  createdAt: string;
+  phone?: string;
+}

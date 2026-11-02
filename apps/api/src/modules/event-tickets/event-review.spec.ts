@@ -76,6 +76,18 @@ function world(over: Record<string, any> = {}) {
       findMany: jest.fn(async () => tickets),
       count: jest.fn(async () => tickets.length),
     },
+    eventWalkIn: {
+      findMany: jest.fn(async () => [
+        {
+          id: 'w-1',
+          name: 'Ravi Kumar',
+          place: 'Thrissur',
+          phone: '9123456780',
+          createdAt: new Date('2026-11-02T10:00:00Z'),
+          pass: { label: 'Gate 1' },
+        },
+      ]),
+    },
     eventPayment: { groupBy: jest.fn(async () => []), count: jest.fn(async () => 0) },
     user: {
       findUnique: jest.fn(async () => ({ id: 'host1', tenantId: 't1' })),
@@ -169,6 +181,26 @@ describe('what a host may see about attendees', () => {
     const platform = await world().svc.attendeesCsv(admin, 'ev1');
     expect(platform).toMatch(/"Email","Phone"/);
     expect(platform).toMatch(/asha@example\.com/);
+  });
+
+  it('lists the people volunteers wrote down: name and place for hosts, the mobile for the super admin', async () => {
+    const host = await world().svc.walkIns(owner, 'ev1');
+    expect(host.data[0]).toMatchObject({
+      name: 'Ravi Kumar',
+      place: 'Thrissur',
+      recordedBy: 'Gate 1',
+    });
+    expect(JSON.stringify(host)).not.toMatch(/9123456780/);
+    const platform = await world().svc.walkIns(admin, 'ev1');
+    expect((platform.data[0] as { phone?: string }).phone).toBe('9123456780');
+  });
+
+  it('adds walk-ins to the CSV as WALK_IN rows, with the mobile only for the super admin', async () => {
+    const host = await world().svc.attendeesCsv(owner, 'ev1');
+    expect(host).toMatch(/"Ravi Kumar","","Thrissur","No","WALK_IN"/);
+    expect(host).not.toMatch(/9123456780/);
+    const platform = await world().svc.attendeesCsv(admin, 'ev1');
+    expect(platform).toMatch(/9123456780/);
   });
 });
 

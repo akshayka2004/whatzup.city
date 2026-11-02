@@ -2857,6 +2857,7 @@ model Event {
   waitlist   EventWaitlist[]
   scans      EventScan[]
   payments   EventPayment[]
+  walkIns    EventWalkIn[]
 
   @@index([tenantId])
   @@index([businessId])
@@ -2945,9 +2946,34 @@ model EventCrewPass {
   event    Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
   sessions EventCrewSession[]
   scans    EventScan[]
+  walkIns  EventWalkIn[]
 
   @@index([eventId])
   @@map("event_crew_passes")
+}
+
+// Someone a volunteer wrote down at the gate: no account, no ticket. Name, mobile and where they
+// are from, with the volunteer's confirmation that the person agreed to it being kept for this event.
+model EventWalkIn {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  eventId     String   @map("event_id") @db.Uuid
+  passId      String?  @map("pass_id") @db.Uuid
+  name        String   @db.VarChar(120)
+  phone       String   @db.VarChar(20)
+  place       String   @db.VarChar(120)
+  // Made by the scanner for each form, so a retry after a dropped connection is not saved twice.
+  clientRef   String   @map("client_ref") @db.VarChar(64)
+  consentedAt DateTime @map("consented_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  event Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  pass  EventCrewPass? @relation(fields: [passId], references: [id], onDelete: SetNull)
+
+  @@unique([eventId, clientRef])
+  @@unique([eventId, phone])
+  @@index([eventId, createdAt])
+  @@map("event_walk_ins")
 }
 
 // A phone that signed in with a pass. Counted against the pass's device limit.

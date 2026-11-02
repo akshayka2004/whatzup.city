@@ -389,3 +389,32 @@ export class ScanTicketDto {
   @IsUUID()
   ticketId!: string;
 }
+
+export class WalkInDto {
+  @ApiProperty({ description: 'Name of the person at the gate' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  name!: string;
+
+  @ApiProperty({ description: '10-digit mobile number' })
+  @IsString()
+  @MaxLength(20)
+  phone!: string;
+
+  @ApiProperty({ description: 'Where they are from (town, area or city)' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  place!: string;
+
+  @ApiProperty({ description: 'Made by the scanner for each form, so a retry is not saved twice' })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(64)
+  clientRef!: string;
+
+  @ApiProperty({ description: 'The volunteer confirms the person agreed to this being kept' })
+  @IsBoolean()
+  consent!: boolean;
+}

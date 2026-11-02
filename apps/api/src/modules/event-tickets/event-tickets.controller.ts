@@ -230,6 +230,16 @@ export class EventTicketsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get(':id/host/walk-ins')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'People the gate volunteers wrote down (name, place; mobile for super admin)',
+  })
+  walkIns(@CurrentUser() user: EventActor, @Param('id', ParseUUIDPipe) id: string) {
+    return this.tickets.walkIns(user, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get(':id/host/attendees.csv')
   @Header('Content-Type', 'text/csv; charset=utf-8')
   @Header('Content-Disposition', 'attachment; filename="attendees.csv"')

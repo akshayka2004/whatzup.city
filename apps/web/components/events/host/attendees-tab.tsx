@@ -9,7 +9,7 @@ import { toast } from '@/components/ui/sonner';
 import { FilterChip } from '@/components/system/filter-chip';
 import { apiService } from '@/lib/services/api-service';
 import { fmtClock, fmtWhen, prettyCode } from '@/lib/event-booking';
-import { SOURCE_LABEL, type AttendeeRow } from '@/lib/event-host';
+import { SOURCE_LABEL, type AttendeeRow, type WalkInRow } from '@/lib/event-host';
 
 const STATUSES = [
   { value: '', label: 'Everyone' },
@@ -213,8 +213,72 @@ export function AttendeesTab({ eventId }: { eventId: string }) {
         </div>
       )}
 
+      <WalkIns eventId={eventId} />
       <MessageBox eventId={eventId} />
     </div>
+  );
+}
+
+/** People the gate helpers wrote down. Hidden until there is at least one. */
+function WalkIns({ eventId }: { eventId: string }) {
+  const [rows, setRows] = useState<WalkInRow[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      const res = await apiService.get<{ data: WalkInRow[] }>(
+        `/v1/events/${eventId}/host/walk-ins`,
+        { fresh: true },
+      );
+      if (alive && !res.error) setRows(res.data.data);
+    };
+    load();
+    const t = window.setInterval(() => document.visibilityState === 'visible' && load(), 20_000);
+    return () => {
+      alive = false;
+      window.clearInterval(t);
+    };
+  }, [eventId]);
+
+  if (rows.length === 0) return null;
+  const showPhone = rows.some((r) => r.phone);
+
+  return (
+    <Card className="overflow-hidden rounded-card">
+      <div className="border-b border-border px-4 py-3">
+        <h3 className="font-semibold">Visitors added at the gate ({rows.length})</h3>
+        <p className="text-xs text-muted-foreground">
+          People without a ticket, written down by your gate helpers. They agreed to this being kept
+          for this event.
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[480px] text-sm">
+          <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 font-medium">Name</th>
+              <th className="px-3 py-2 font-medium">From</th>
+              {showPhone && <th className="px-3 py-2 font-medium">Mobile</th>}
+              <th className="px-3 py-2 font-medium">Added by</th>
+              <th className="px-3 py-2 font-medium">Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} className="border-t border-border">
+                <td className="px-3 py-2 font-medium">{r.name}</td>
+                <td className="px-3 py-2 text-muted-foreground">{r.place}</td>
+                {showPhone && <td className="px-3 py-2 text-muted-foreground">{r.phone ?? '–'}</td>}
+                <td className="px-3 py-2 text-muted-foreground">{r.recordedBy ?? '–'}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                  {fmtClock(r.createdAt)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }
 

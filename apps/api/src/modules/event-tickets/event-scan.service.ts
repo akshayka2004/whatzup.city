@@ -4,12 +4,19 @@
 // database clock at that moment, never the phone's.
 // ============================================================
 
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { BOOKING_LIMITS, checkInWindow, type ScanResult } from '@saas/types';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BOOKING_LIMITS,
+  IN_MOBILE_PATTERN,
+  checkInWindow,
+  normalizeMobile,
+  type ScanResult,
+} from '@saas/types';
 import { DatabaseService } from '../../common/database/database.service';
 import { RedisService } from '../../common/redis/redis.service';
 import { normalizePublicCode } from '../../common/utils/public-code';
 import { parseTicketQr } from '../../common/utils/ticket-signing';
+import { WalkInDto } from './dto/event-tickets.dto';
 import { CrewContext } from './event-crew.service';
 
 export interface ScanOutcome {
@@ -229,6 +236,79 @@ export class EventScanService {
     };
   }
 
+  // ── people without a ticket ─────────────────────────────────────────────
+
+  /**
+   * A volunteer writes down someone at the gate: name, mobile and where they are from. Open to every
+   * pass (it only adds a record; it shows nothing about anyone else). The volunteer must confirm the
+   * person agreed, and that moment is stored. The same mobile is kept once per event.
+   */
+  async walkIn(ctx: CrewContext, dto: WalkInDto) {
+    if (dto.consent !== true) {
+      throw new BadRequestException(
+        'Tick the box to confirm the person agreed to give these details.',
+      );
+    }
+    const name = dto.name.trim().replace(/\s+/g, ' ');
+    const place = dto.place.trim().replace(/\s+/g, ' ');
+    const phone = normalizeMobile(dto.phone);
+    if (name.length < 2) throw new BadRequestException("Enter the person's name.");
+    if (place.length < 2) throw new BadRequestException('Enter where they are from.');
+    if (!IN_MOBILE_PATTERN.test(phone)) {
+      throw new BadRequestException('Enter a 10-digit mobile number.');
+    }
+
+    const event = await this.eventInfo(ctx.eventId);
+    if (!event || event.status !== 'ACTIVE') {
+      throw new BadRequestException('This event has been cancelled.');
+    }
+
+    // A retry of the same form (dropped connection) answers with what was saved the first time.
+    const same = await this.db.eventWalkIn.findFirst({
+      where: { eventId: ctx.eventId, OR: [{ clientRef: dto.clientRef }, { phone }] },
+      select: { id: true, name: true, place: true, clientRef: true, createdAt: true },
+    });
+    if (same) {
+      return same.clientRef === dto.clientRef
+        ? {
+            result: 'RECORDED' as const,
+            message: 'Saved.',
+            walkIn: { id: same.id, name: same.name, place: same.place },
+          }
+        : {
+            result: 'DUPLICATE' as const,
+            message: `This number was already written down for ${same.name}. Use a different number.`,
+          };
+    }
+
+    try {
+      const row = await this.db.eventWalkIn.create({
+        data: {
+          tenantId: ctx.tenantId,
+          eventId: ctx.eventId,
+          passId: ctx.passId,
+          name: name.slice(0, 120),
+          phone,
+          place: place.slice(0, 120),
+          clientRef: dto.clientRef,
+          consentedAt: new Date(),
+        },
+        select: { id: true, name: true, place: true },
+      });
+      await this.redis.del(`crew:stats:${ctx.eventId}`);
+      return { result: 'RECORDED' as const, message: 'Saved.', walkIn: row };
+    } catch (err: any) {
+      // Two phones wrote the same number at once: the database kept one.
+      if (err?.code === 'P2002') {
+        return {
+          result: 'DUPLICATE' as const,
+          message: 'This number was just written down. Use a different number.',
+        };
+      }
+      throw err;
+    }
+  }
+
   // ── looking people up ───────────────────────────────────────────────────
 
   /** Name or code search. Desk passes only; shows no contact details. */
@@ -269,7 +349,7 @@ export class EventScanService {
     let shared = await this.redis.get<any>(key);
     if (!shared) {
       const event = await this.eventInfo(ctx.eventId);
-      const [expected, checkedIn, recent, lastMinute] = await Promise.all([
+      const [expected, checkedIn, recent, lastMinute, walkIns] = await Promise.all([
         this.db.eventTicket.count({ where: { eventId: ctx.eventId, status: { in: ACTIVE } } }),
         this.db.eventTicket.count({ where: { eventId: ctx.eventId, status: 'CHECKED_IN' } }),
         this.db.eventTicket.findMany({
@@ -285,6 +365,7 @@ export class EventScanService {
             checkedInAt: { gt: new Date(Date.now() - 60_000) },
           },
         }),
+        this.db.eventWalkIn.count({ where: { eventId: ctx.eventId } }),
       ]);
       shared = {
         expected,
@@ -293,6 +374,7 @@ export class EventScanService {
         venueCapacity: event?.venueCapacity ?? null,
         overVenueCapacity: event?.venueCapacity != null && checkedIn > event.venueCapacity,
         perMinute: lastMinute,
+        walkIns,
         recent,
       };
       await this.redis.set(key, shared, 3);

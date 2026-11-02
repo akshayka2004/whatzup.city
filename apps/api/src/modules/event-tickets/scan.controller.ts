@@ -17,7 +17,13 @@ import { clientIp } from '../../common/utils/client-ip';
 import { Crew, CrewGuard } from './crew.guard';
 import { EventCrewService, type CrewContext } from './event-crew.service';
 import { EventScanService } from './event-scan.service';
-import { ScanCodeDto, ScanLoginDto, ScanQrDto, ScanTicketDto } from './dto/event-tickets.dto';
+import {
+  ScanCodeDto,
+  ScanLoginDto,
+  ScanQrDto,
+  ScanTicketDto,
+  WalkInDto,
+} from './dto/event-tickets.dto';
 
 /**
  * The gate scanner. Not behind a user login: crew sign in with a pass code and send the token it
@@ -74,6 +80,15 @@ export class ScanController {
   @ApiOperation({ summary: 'Check in a person picked from the list (desk passes)' })
   manual(@Crew() ctx: CrewContext, @Body() dto: ScanTicketDto) {
     return this.scan.manual(ctx, dto.ticketId);
+  }
+
+  @SkipThrottle()
+  @UseGuards(CrewGuard)
+  @Post('walk-in')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Write down a person at the gate: name, mobile and place' })
+  walkIn(@Crew() ctx: CrewContext, @Body() dto: WalkInDto) {
+    return this.scan.walkIn(ctx, dto);
   }
 
   @SkipThrottle()

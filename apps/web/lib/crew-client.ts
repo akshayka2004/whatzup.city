@@ -123,6 +123,7 @@ export interface CrewStats {
   venueCapacity: number | null;
   overVenueCapacity: boolean;
   perMinute: number;
+  walkIns: number;
   mine: number;
   recent: { id: string; holderName: string; checkedInAt: string }[];
 }
@@ -137,7 +138,24 @@ export interface CrewSearchHit {
   checkedInAt: string | null;
 }
 
+export interface WalkInInput {
+  name: string;
+  phone: string;
+  place: string;
+  /** One per form, so a retry after a dropped connection is not saved twice. */
+  clientRef: string;
+  consent: boolean;
+}
+
+export interface WalkInResponse {
+  result: 'RECORDED' | 'DUPLICATE';
+  message: string;
+  walkIn?: { id: string; name: string; place: string };
+}
+
 export const crewApi = (token: string) => ({
+  walkIn: (input: WalkInInput) =>
+    call<WalkInResponse>('/walk-in', { method: 'POST', body: input, token }),
   scan: (qr: string) => call<ScanResponse>('/check-in', { method: 'POST', body: { qr }, token }),
   byCode: (code: string) => call<ScanResponse>('/code', { method: 'POST', body: { code }, token }),
   manual: (ticketId: string) =>

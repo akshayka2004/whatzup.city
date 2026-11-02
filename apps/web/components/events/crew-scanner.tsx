@@ -12,6 +12,7 @@ import {
   Search,
   TriangleAlert,
   Undo2,
+  UserPlus,
   Users,
   WifiOff,
   X,
@@ -30,6 +31,8 @@ import {
   type CrewSession,
   type CrewStats,
   type ScanResponse,
+  type WalkInInput,
+  type WalkInResponse,
 } from '@/lib/crew-client';
 import { fmtClock, prettyCode } from '@/lib/event-booking';
 
@@ -253,7 +256,7 @@ function Scanner({
   const dismissTimer = useRef<number | null>(null);
 
   const [overlay, setOverlay] = useState<Overlay | null>(null);
-  const [panel, setPanel] = useState<null | 'code' | 'search'>(null);
+  const [panel, setPanel] = useState<null | 'code' | 'search' | 'visitor'>(null);
   const [cameraError, setCameraError] = useState('');
   const [stats, setStats] = useState<CrewStats | null>(null);
   const [lastAdmit, setLastAdmit] = useState<{ id: string; until: number; name: string } | null>(
@@ -408,12 +411,13 @@ function Scanner({
       </header>
 
       <section
-        className="grid grid-cols-3 border-b border-border text-center"
+        className="grid grid-cols-4 border-b border-border text-center"
         aria-label="Attendance"
       >
         <Stat label="In" value={stats?.checkedIn} accent />
         <Stat label="Still expected" value={stats?.remaining} />
         <Stat label="Last minute" value={stats?.perMinute} />
+        <Stat label="Visitors added" value={stats?.walkIns} />
       </section>
       {stats?.overVenueCapacity && (
         <p
@@ -485,23 +489,54 @@ function Scanner({
       </div>
 
       {/* actions */}
-      <footer className="flex gap-2 border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <Button variant="outline" size="lg" className="flex-1" onClick={() => setPanel('code')}>
-          <Keyboard /> Type code
+      <footer className="space-y-2 border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <Button size="lg" className="w-full" onClick={() => setPanel('visitor')}>
+          <UserPlus /> Add a visitor
         </Button>
-        {isDesk && (
-          <Button variant="outline" size="lg" className="flex-1" onClick={() => setPanel('search')}>
-            <Search /> Find name
+        <div className="flex gap-2">
+          <Button variant="outline" size="lg" className="flex-1" onClick={() => setPanel('code')}>
+            <Keyboard /> Type code
           </Button>
-        )}
+          {isDesk && (
+            <Button
+              variant="outline"
+              size="lg"
+              className="flex-1"
+              onClick={() => setPanel('search')}
+            >
+              <Search /> Find name
+            </Button>
+          )}
+        </div>
       </footer>
 
       {panel && (
         <Sheet
           onClose={() => setPanel(null)}
-          title={panel === 'code' ? 'Type the ticket code' : 'Find a person'}
+          title={
+            panel === 'code'
+              ? 'Type the ticket code'
+              : panel === 'visitor'
+                ? 'Add a visitor'
+                : 'Find a person'
+          }
         >
-          {panel === 'code' ? (
+          {panel === 'visitor' ? (
+            <VisitorForm
+              save={(input) => api.current.walkIn(input)}
+              onSaved={(r) => {
+                setPanel(null);
+                show({
+                  tone: 'ok',
+                  title: r.walkIn?.name ?? 'Saved',
+                  lines: ['Visitor added'],
+                  auto: true,
+                });
+                refreshStats();
+              }}
+              onLost={onLost}
+            />
+          ) : panel === 'code' ? (
             <CodeEntry
               onSubmit={async (code) => {
                 setPanel(null);
@@ -562,6 +597,137 @@ function Sheet({
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-4">{children}</div>
     </div>
+  );
+}
+
+/** Writes down someone at the gate: name, mobile and where they are from. */
+function VisitorForm({
+  save,
+  onSaved,
+  onLost,
+}: {
+  save: (input: WalkInInput) => Promise<WalkInResponse>;
+  onSaved: (r: WalkInResponse) => void;
+  onLost: () => void;
+}) {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [place, setPlace] = useState('');
+  const [agreed, setAgreed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  // One id for this form: pressing Save again after a bad connection cannot add the person twice.
+  const [clientRef] = useState(() => crypto.randomUUID());
+
+  const digits = phone.replace(/\D/g, '');
+  const ready =
+    name.trim().length >= 2 &&
+    place.trim().length >= 2 &&
+    (digits.length === 10 || (digits.length === 12 && digits.startsWith('91'))) &&
+    agreed;
+
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!ready || busy) return;
+        setBusy(true);
+        setError('');
+        try {
+          const r = await save({
+            name: name.trim(),
+            phone,
+            place: place.trim(),
+            clientRef,
+            consent: agreed,
+          });
+          if (r.result === 'RECORDED') return onSaved(r);
+          setError(r.message);
+        } catch (err) {
+          if (err instanceof CrewError && err.sessionLost) return onLost();
+          setError(
+            err instanceof CrewError && err.code === 'NETWORK'
+              ? 'No connection. Press Save again when it is back.'
+              : err instanceof Error
+                ? err.message
+                : 'Could not save. Try again.',
+          );
+        }
+        setBusy(false);
+      }}
+    >
+      <p className="text-sm text-muted-foreground">
+        For someone at the gate who is not on the list. Ask them these three things.
+      </p>
+      <div className="space-y-1.5">
+        <label htmlFor="visitor-name" className="text-sm font-medium">
+          Name
+        </label>
+        <Input
+          id="visitor-name"
+          autoFocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoComplete="off"
+          maxLength={120}
+          className="h-12"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <label htmlFor="visitor-phone" className="text-sm font-medium">
+          Mobile number
+        </label>
+        <Input
+          id="visitor-phone"
+          type="tel"
+          inputMode="numeric"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          autoComplete="off"
+          placeholder="10 digits"
+          maxLength={16}
+          className="h-12"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <label htmlFor="visitor-place" className="text-sm font-medium">
+          Where are they from?
+        </label>
+        <Input
+          id="visitor-place"
+          value={place}
+          onChange={(e) => setPlace(e.target.value)}
+          autoComplete="off"
+          placeholder="Town or city"
+          maxLength={120}
+          className="h-12"
+        />
+      </div>
+      <label
+        htmlFor="visitor-agreed"
+        className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border border-input bg-background px-3 py-2.5 text-sm"
+      >
+        <input
+          id="visitor-agreed"
+          type="checkbox"
+          checked={agreed}
+          onChange={(e) => setAgreed(e.target.checked)}
+          className="mt-0.5 size-5 shrink-0 accent-primary"
+        />
+        <span>
+          I told them we keep their name, number and place for this event, and they agreed.
+        </span>
+      </label>
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+      <Button type="submit" size="lg" className="w-full" loading={busy} disabled={!ready}>
+        Save visitor
+      </Button>
+    </form>
   );
 }
 

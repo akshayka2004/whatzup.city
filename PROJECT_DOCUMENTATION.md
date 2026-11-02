@@ -1429,3 +1429,11 @@ Not yet covered: document review results, review moderation, fraud flags, team c
 - Number fields say what they mean: "How many helpers do you need?" (1 to 50), "Phones that can use one pass" (1 to 5, most helpers need 1). Pass rows read "Checked in: n · Phones signed in: a of b · Works until …". "Revoke" is now "Stop pass" (status "Stopped"); "Expired" is "Ended"; "Not started" is "Not open yet".
 - The printed sheet, the scanner sign-in and the overview table use the same words. Nothing about how passes work changed.
 - Business **Team** page is now "My team": "Add team member", "Pause login" instead of disable, and roles say what they can do (Moderator: checks bills and handles customers; Staff: adds offers, listings and photos).
+
+### 12.29 Visitors written down at the gate (2026-11-02)
+
+- The gate scanner has an **Add a visitor** button above the existing Type code / Find name buttons. Any gate pass (scan-only or desk) can use it: the volunteer enters name, 10-digit mobile and where the person is from, and ticks that the person was told it is kept for this event and agreed. The scanner header shows **Visitors added**.
+- Stored in `event_walk_ins` (migration `20261103000000_event_walk_ins`, additive): name, mobile, place, the pass that wrote it down, `consented_at`, and a `client_ref` made per form so a retry after a dropped connection does not save twice. One mobile is kept once per event (a second try says who it was already written down for). Route: `POST /scan/walk-in` (crew token, same limits as the other scanner routes).
+- A visitor is not a ticket: they do not change `checked_in_count`, "still expected" or the venue-capacity warning.
+- Who sees what: the host sees name, place, who wrote it down and the time (Attendees tab, "Visitors added at the gate", `GET /events/:id/host/walk-ins`); the **mobile is the super admin's only**, the same rule as attendee contacts. The attendees CSV gets `WALK_IN` rows with the same rule.
+- Not built: adding a visitor to a ticket or to the user list, and offline queueing.
