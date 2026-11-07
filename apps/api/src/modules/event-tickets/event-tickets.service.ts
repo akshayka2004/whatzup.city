@@ -21,6 +21,9 @@ import {
   BOOKING_STATE_LABEL,
   RSVP_SOURCES,
   bookingState,
+  bookingStateForDays,
+  dayPricing,
+  dayState,
   cancelDeadline,
   seatsLeft,
   isPaidEvent,
@@ -48,6 +51,7 @@ import {
   canSeeContacts,
   hit,
 } from './event-access';
+import { syncDaysWithEventDates } from './event-day-util';
 import { logPayment } from './event-payment-util';
 
 const BOOKING_CACHE_SECONDS = 5;
@@ -80,6 +84,8 @@ const EVENT_FOR_BOOKING = {
   ticketTiers: true,
   payEnabled: true,
   payWindowHours: true,
+  dayBooking: true,
+  allDaysPrice: true,
 } as const;
 
 const STATE_MESSAGE: Record<BookingState, string> = {
@@ -103,7 +109,16 @@ function stateError(state: BookingState) {
 }
 
 type Tx = Prisma.TransactionClient;
-type IssueOptions = { guests: string[]; source: string; idempotencyKey?: string; tier?: string };
+type IssueOptions = {
+  guests: string[];
+  source: string;
+  idempotencyKey?: string;
+  tier?: string;
+  /** Day-booked events: the days this booking is for. */
+  dayIds?: string[];
+  /** Day-booked events: book the guests only, not the registrant. */
+  skipSelf?: boolean;
+};
 
 @Injectable()
 export class EventTicketsService {
@@ -131,14 +146,20 @@ export class EventTicketsService {
     });
     if (!e) throw new NotFoundException('Event not found');
 
-    const state = bookingState(e);
+    const dayRows = e.dayBooking
+      ? await this.db.eventDay.findMany({
+          where: { eventId },
+          orderBy: [{ sortOrder: 'asc' }, { startsAt: 'asc' }],
+        })
+      : [];
+    const state = e.dayBooking ? bookingStateForDays(e, dayRows) : bookingState(e);
     const body = {
       eventId: e.id,
       mode: e.bookingMode,
       state,
       stateLabel: BOOKING_STATE_LABEL[state],
-      capacity: e.capacity,
-      seatsLeft: seatsLeft(e),
+      capacity: e.dayBooking ? null : e.capacity,
+      seatsLeft: e.dayBooking ? null : seatsLeft(e),
       opensAt: e.rsvpOpensAt,
       closesAt: e.rsvpClosesAt ?? e.startDate,
       maxPerUser: Math.min(e.maxPerUser, BOOKING_LIMITS.maxPerUserCap),
@@ -146,10 +167,63 @@ export class EventTicketsService {
       minAge: e.minAge,
       note: e.bookingNote,
       waitlistOpen: state === 'FULL',
-      payment: this.publicPayment(e),
+      payment: e.dayBooking ? this.dayPayment(e) : this.publicPayment(e),
+      dayBooking: e.dayBooking,
+      allDaysPrice: e.dayBooking && e.allDaysPrice != null ? Number(e.allDaysPrice) : null,
+      days: dayRows.map((d) => this.publicDay(e, d)),
     };
     await this.redis.set(key, body, BOOKING_CACHE_SECONDS);
     return body;
+  }
+
+  /** One day as the public event page shows it: its own seats, price, hours and state. */
+  private publicDay(
+    e: Parameters<typeof dayPricing>[0] & Parameters<typeof dayState>[0],
+    d: {
+      id: string;
+      dayDate: string;
+      label: string;
+      startsAt: Date;
+      endsAt: Date;
+      capacity: number | null;
+      seatsTaken: number;
+      price: unknown;
+      isOpen: boolean;
+      rsvpOpensAt: Date | null;
+      rsvpClosesAt: Date | null;
+    },
+  ) {
+    const fields = { ...d, price: d.price == null ? null : Number(d.price) };
+    const state = dayState(e, fields);
+    const price = dayPricing(e, [fields as any], [fields as any]).perPerson;
+    return {
+      id: d.id,
+      dayDate: d.dayDate,
+      label: d.label,
+      startsAt: d.startsAt,
+      endsAt: d.endsAt,
+      capacity: d.capacity,
+      seatsLeft: d.capacity == null ? null : Math.max(0, d.capacity - d.seatsTaken),
+      price,
+      isOpen: d.isOpen,
+      opensAt: d.rsvpOpensAt ?? null,
+      closesAt: d.rsvpClosesAt ?? null,
+      state,
+      stateLabel: BOOKING_STATE_LABEL[state],
+      waitlistOpen: state === 'FULL',
+    };
+  }
+
+  /** Day-booked events: payment is required when the event is paid; each day shows its own price. */
+  private dayPayment(e: {
+    payEnabled: boolean;
+    ticketType: string;
+    ticketPrice: unknown;
+    ticketTiers: unknown;
+    payWindowHours: number;
+  }) {
+    if (!e.payEnabled || !isPaidEvent(e)) return { required: false };
+    return { required: true, price: null, tiers: [], windowHours: e.payWindowHours, perDay: true };
   }
 
   /** What an attendee needs to know about price before they RSVP. No payee details here: those are public-cached. */
@@ -184,27 +258,50 @@ export class EventTicketsService {
           status: true,
           checkedInAt: true,
           paymentId: true,
+          dayId: true,
+          day: { select: { label: true, dayDate: true, startsAt: true, endsAt: true } },
         },
       }),
-      this.db.eventWaitlist.findFirst({ where: { eventId, userId, promotedAt: null } }),
+      this.db.eventWaitlist.findMany({
+        where: { eventId, userId, promotedAt: null },
+        orderBy: { createdAt: 'asc' },
+        include: { day: { select: { label: true, dayDate: true } } },
+      }),
       this.db.eventPayment.findMany({
         where: { eventId, userId, status: { in: ['PENDING', 'SUBMITTED'] } },
         orderBy: { createdAt: 'desc' },
         select: this.paymentCard,
       }),
     ]);
-    let position: number | null = null;
-    if (waiting) {
-      position =
+    const places: {
+      seats: number;
+      position: number;
+      dayId: string | null;
+      dayLabel: string | null;
+    }[] = [];
+    for (const w of waiting) {
+      const position =
         1 +
         (await this.db.eventWaitlist.count({
-          where: { eventId, promotedAt: null, createdAt: { lt: waiting.createdAt } },
+          where: {
+            eventId,
+            promotedAt: null,
+            dayId: w.dayId ?? null,
+            createdAt: { lt: w.createdAt },
+          },
         }));
+      places.push({
+        seats: w.seats,
+        position,
+        dayId: w.dayId ?? null,
+        dayLabel: w.day?.label ?? null,
+      });
     }
     return {
       tickets,
       payments: payments.map(this.publicPaymentCard),
-      waitlist: waiting ? { seats: waiting.seats, position } : null,
+      waitlist: places[0] ? { seats: places[0].seats, position: places[0].position } : null,
+      waitlists: places,
     };
   }
 
@@ -232,6 +329,8 @@ export class EventTicketsService {
               source,
               idempotencyKey: dto.idempotencyKey,
               tier: dto.tier,
+              dayIds: dto.dayIds,
+              skipSelf: dto.skipSelf,
             }),
           { timeout: 10_000 },
         );
@@ -295,6 +394,9 @@ export class EventTicketsService {
       select: EVENT_FOR_BOOKING,
     });
     if (!event) throw new NotFoundException('Event not found');
+
+    // Events that sell by day have their own seats, price and window for every day.
+    if (event.dayBooking) return this.issueDays(tx, event, user, opts);
 
     const state = bookingState(event);
     if (state !== 'OPEN') throw stateError(state);
@@ -428,6 +530,231 @@ export class EventTicketsService {
       UPDATE events SET seats_taken = GREATEST(seats_taken - ${seats}, 0) WHERE id = ${eventId}::uuid`;
   }
 
+  /** Day-booked events: takes `seats` on one day only if they fit. The one place a day seat is added. */
+  private async reserveDaySeats(tx: Tx, dayId: string, seats: number): Promise<boolean> {
+    const changed = await tx.$executeRaw`
+      UPDATE event_days SET seats_taken = seats_taken + ${seats}
+      WHERE id = ${dayId}::uuid AND (capacity IS NULL OR seats_taken + ${seats} <= capacity)`;
+    return changed === 1;
+  }
+
+  async releaseDaySeats(tx: Tx, dayId: string, seats: number) {
+    await tx.$executeRaw`
+      UPDATE event_days SET seats_taken = GREATEST(seats_taken - ${seats}, 0) WHERE id = ${dayId}::uuid`;
+  }
+
+  /**
+   * A payment's held tickets were just cancelled (rejected, expired or cancelled by the attendee):
+   * give the seats on each day back. Does nothing for events that are not sold by day.
+   */
+  async releaseDaysForPayment(tx: Tx, paymentId: string) {
+    const gone = await tx.eventTicket.findMany({
+      where: { paymentId, status: 'CANCELLED' },
+      select: { dayId: true },
+    });
+    const perDay = new Map<string, number>();
+    for (const t of gone) if (t.dayId) perDay.set(t.dayId, (perDay.get(t.dayId) ?? 0) + 1);
+    for (const [dayId, n] of perDay) await this.releaseDaySeats(tx, dayId, n);
+  }
+
+  private dayError(state: BookingState, day: { id: string; label: string }) {
+    const message =
+      state === 'FULL'
+        ? `${day.label} is fully booked.`
+        : `${day.label}: ${STATE_MESSAGE[state] || 'booking is not open.'}`;
+    return new ConflictException({
+      statusCode: 409,
+      code: state === 'FULL' ? 'DAY_FULL' : `RSVP_${state}`,
+      message,
+      dayId: day.id,
+    });
+  }
+
+  /**
+   * Issues tickets on an event that sells by day: one ticket per person per day. Every chosen day is
+   * checked and its seats taken in the same transaction, so a booking is all days or none.
+   */
+  private async issueDays(
+    tx: Tx,
+    event: Prisma.EventGetPayload<{ select: typeof EVENT_FOR_BOOKING }>,
+    user: { id: string; name: string },
+    opts: IssueOptions,
+  ) {
+    const days = await tx.eventDay.findMany({
+      where: { eventId: event.id },
+      orderBy: [{ sortOrder: 'asc' }, { startsAt: 'asc' }],
+    });
+    if (days.length === 0) throw new BadRequestException('This event has no days set up yet.');
+
+    const wanted = [...new Set(opts.dayIds ?? [])];
+    if (wanted.length === 0) throw new BadRequestException('Choose the days you are coming.');
+    const chosen = days.filter((d) => wanted.includes(d.id));
+    if (chosen.length !== wanted.length) {
+      throw new BadRequestException('One of those days is not part of this event.');
+    }
+    for (const d of chosen) {
+      const st = dayState(event, { ...d, price: d.price == null ? null : Number(d.price) });
+      if (st !== 'OPEN') throw this.dayError(st, d);
+    }
+
+    const existing = await tx.eventTicket.findMany({
+      where: { eventId: event.id, userId: user.id, status: { in: HELD } },
+      orderBy: { issuedAt: 'asc' },
+    });
+
+    // A retry of the same booking returns the same tickets.
+    const keyBase = opts.idempotencyKey ? opts.idempotencyKey.slice(0, 56) : null;
+    if (keyBase) {
+      const same = existing.filter((t) => t.idempotencyKey?.startsWith(`${keyBase}:d`));
+      if (same.length) return { tickets: same, already: true, event, payment: null };
+    }
+    if (existing.some((t) => t.status === 'PENDING')) {
+      throw new ConflictException({
+        statusCode: 409,
+        code: 'PAYMENT_PENDING',
+        message: 'You have a seat waiting for payment. Finish or cancel that payment first.',
+      });
+    }
+
+    if (opts.skipSelf) {
+      if (opts.guests.length === 0) throw new BadRequestException('Add at least one guest.');
+      if (!existing.some((t) => !t.isGuest)) {
+        throw new BadRequestException(
+          'Book a day for yourself first, then add guests for other days.',
+        );
+      }
+    }
+
+    const primary = (user.name || 'Guest').trim().slice(0, 120);
+    const perUser = Math.min(event.maxPerUser, BOOKING_LIMITS.maxPerUserCap);
+    // Who gets a ticket on each chosen day.
+    const plan = chosen.map((d) => {
+      const selfHeld = existing.some((t) => t.dayId === d.id && !t.isGuest);
+      const names: { name: string; guest: boolean }[] = [
+        ...(opts.skipSelf || selfHeld ? [] : [{ name: primary, guest: false }]),
+        ...opts.guests.map((name) => ({ name, guest: true })),
+      ];
+      const heldHere = existing.filter((t) => t.dayId === d.id).length;
+      if (heldHere + names.length > perUser) {
+        throw new ConflictException({
+          statusCode: 409,
+          code: 'SEAT_LIMIT',
+          message:
+            perUser === 1
+              ? `${d.label}: this event allows one ticket per account for each day.`
+              : `${d.label}: up to ${perUser} tickets per account for each day. You already have ${heldHere}.`,
+        });
+      }
+      return { day: d, names };
+    });
+    if (plan.every((p) => p.names.length === 0)) {
+      throw new ConflictException({
+        statusCode: 409,
+        code: 'ALREADY_REGISTERED',
+        message: 'You are already registered for those days.',
+      });
+    }
+
+    // Seats, day by day. Any day that is full stops the whole booking.
+    for (const p of plan) {
+      if (p.names.length === 0) continue;
+      if (!(await this.reserveDaySeats(tx, p.day.id, p.names.length))) {
+        throw this.dayError('FULL', p.day);
+      }
+    }
+
+    // Price: each day's own price, or the all-days price when everyone comes every day.
+    let amount = 0;
+    let bundle = false;
+    let priceLines: { dayId: string; price: number }[] = [];
+    if (event.payEnabled && isPaidEvent(event)) {
+      const asFields = (d: (typeof days)[number]) => ({
+        ...d,
+        price: d.price == null ? null : Number(d.price),
+      });
+      const price = dayPricing(event, chosen.map(asFields) as any, days.map(asFields) as any);
+      priceLines = price.lines;
+      const counts = plan.map((p) => p.names.length);
+      const uniform = counts[0] > 0 && counts.every((n) => n === counts[0]);
+      if (price.bundle && uniform) {
+        bundle = true;
+        amount = price.perPerson * counts[0];
+      } else {
+        amount = price.lines.reduce((n, l, i) => n + l.price * plan[i].names.length, 0);
+      }
+      amount = Math.round(amount * 100) / 100;
+    }
+    const totalTickets = plan.reduce((n, p) => n + p.names.length, 0);
+
+    const groupId = randomUUID();
+    let payment: Awaited<ReturnType<Tx['eventPayment']['create']>> | null = null;
+    if (amount > 0) {
+      payment = await tx.eventPayment.create({
+        data: {
+          tenantId: event.tenantId,
+          eventId: event.id,
+          userId: user.id,
+          groupId,
+          seats: totalTickets,
+          tierName: null,
+          unitPrice: Math.round((amount / totalTickets) * 100) / 100,
+          amount,
+          expiresAt: new Date(Date.now() + event.payWindowHours * 3_600_000),
+          dayBreakdown: {
+            bundle,
+            days: plan.map((p) => ({
+              dayId: p.day.id,
+              label: p.day.label,
+              people: p.names.length,
+              price: priceLines.find((l) => l.dayId === p.day.id)?.price ?? 0,
+            })),
+          },
+        },
+      });
+      await logPayment(tx, {
+        tenantId: event.tenantId,
+        paymentId: payment.id,
+        eventId: event.id,
+        actorId: user.id,
+        actorRole: 'ATTENDEE',
+        action: 'CREATED',
+        detail: {
+          seats: totalTickets,
+          amount: Number(payment.amount),
+          days: plan.map((p) => p.day.label),
+          bundle,
+          source: opts.source,
+        },
+      });
+    }
+
+    const tickets = [];
+    for (const p of plan) {
+      const index = days.findIndex((d) => d.id === p.day.id);
+      for (const n of p.names) {
+        tickets.push(
+          await tx.eventTicket.create({
+            data: {
+              tenantId: event.tenantId,
+              eventId: event.id,
+              userId: user.id,
+              groupId,
+              dayId: p.day.id,
+              holderName: n.name,
+              isGuest: n.guest,
+              code: generatePublicCode(),
+              source: opts.source,
+              idempotencyKey: keyBase ? `${keyBase}:d${index}` : null,
+              status: payment ? 'PENDING' : 'ISSUED',
+              paymentId: payment?.id ?? null,
+            },
+          }),
+        );
+      }
+    }
+    return { tickets, already: false, event, payment };
+  }
+
   // ── cancelling and the waitlist ─────────────────────────────────────────
 
   async cancel(userId: string, eventId: string, ticketIds?: string[]) {
@@ -436,24 +763,42 @@ export class EventTicketsService {
       select: EVENT_FOR_BOOKING,
     });
     if (!event) throw new NotFoundException('Event not found');
-    if (Date.now() > cancelDeadline(event)) {
-      throw new ConflictException({
+    const tooLate = () =>
+      new ConflictException({
         statusCode: 409,
         code: 'CANCEL_TOO_LATE',
         message: 'The cancellation window for this event has closed.',
       });
-    }
+    // On a day-booked event every ticket has its own deadline, set by the day it admits to.
+    if (!event.dayBooking && Date.now() > cancelDeadline(event)) throw tooLate();
 
     const cancelled = await this.db.$transaction(async (tx) => {
-      const mine = await tx.eventTicket.findMany({
+      const found = await tx.eventTicket.findMany({
         where: {
           eventId,
           userId,
           status: 'ISSUED',
           ...(ticketIds?.length ? { id: { in: ticketIds } } : {}),
         },
-        select: { id: true, paymentId: true },
+        select: { id: true, paymentId: true, dayId: true },
       });
+      let mine = found;
+      if (event.dayBooking) {
+        const days = await tx.eventDay.findMany({
+          where: { eventId },
+          select: { id: true, startsAt: true },
+        });
+        const startOf = new Map(days.map((d) => [d.id, d.startsAt]));
+        mine = found.filter((t) => {
+          const start = t.dayId ? startOf.get(t.dayId) : undefined;
+          return (
+            !!start &&
+            Date.now() <=
+              cancelDeadline({ startDate: start, cancelCutoffHours: event.cancelCutoffHours })
+          );
+        });
+        if (found.length > 0 && mine.length === 0) throw tooLate();
+      }
       if (mine.length === 0) {
         throw new NotFoundException(
           'There is nothing to cancel. Tickets already used cannot be cancelled.',
@@ -463,7 +808,13 @@ export class EventTicketsService {
         where: { id: { in: mine.map((t) => t.id) }, status: 'ISSUED' },
         data: { status: 'CANCELLED', cancelledAt: new Date() },
       });
-      await this.releaseSeats(tx, eventId, res.count);
+      if (event.dayBooking) {
+        const perDay = new Map<string, number>();
+        for (const t of mine) if (t.dayId) perDay.set(t.dayId, (perDay.get(t.dayId) ?? 0) + 1);
+        for (const [dayId, n] of perDay) await this.releaseDaySeats(tx, dayId, n);
+      } else {
+        await this.releaseSeats(tx, eventId, res.count);
+      }
       return { count: res.count, paid: mine.filter((t) => t.paymentId) };
     });
 
@@ -486,17 +837,31 @@ export class EventTicketsService {
   private async refundDue(
     event: { id: string; tenantId: string; title: string; businessId: string | null },
     userId: string,
-    paid: { id: string; paymentId: string | null }[],
+    paid: { id: string; paymentId: string | null; dayId?: string | null }[],
   ) {
-    const byPayment = new Map<string, number>();
+    const byPayment = new Map<string, { id: string; dayId?: string | null }[]>();
     for (const t of paid) {
-      if (t.paymentId) byPayment.set(t.paymentId, (byPayment.get(t.paymentId) ?? 0) + 1);
+      if (t.paymentId) byPayment.set(t.paymentId, [...(byPayment.get(t.paymentId) ?? []), t]);
     }
     let owed = 0;
-    for (const [paymentId, n] of byPayment) {
+    for (const [paymentId, list] of byPayment) {
+      const n = list.length;
       const p = await this.db.eventPayment.findUnique({ where: { id: paymentId } });
       if (!p) continue;
-      const amount = Number(p.unitPrice) * n;
+      // Day-booked payments: each ticket is worth what its day cost, unless the all-days price applied.
+      const breakdown = p.dayBreakdown as {
+        bundle?: boolean;
+        days?: { dayId: string; price: number }[];
+      } | null;
+      const amount =
+        breakdown?.days && !breakdown.bundle
+          ? list.reduce(
+              (sum, t) =>
+                sum +
+                (breakdown.days!.find((d) => d.dayId === t.dayId)?.price ?? Number(p.unitPrice)),
+              0,
+            )
+          : Number(p.unitPrice) * n;
       owed += amount;
       await logPayment(this.db, {
         tenantId: event.tenantId,
@@ -586,14 +951,23 @@ export class EventTicketsService {
     });
   }
 
-  async joinWaitlist(userId: string, eventId: string, seats = 1, tier?: string) {
+  async joinWaitlist(userId: string, eventId: string, seats = 1, tier?: string, dayId?: string) {
     await hit(this.redis, `rl:waitlist:${userId}`, 10, 60);
     const e = await this.db.event.findFirst({
       where: { id: eventId, deletedAt: null },
       select: EVENT_FOR_BOOKING,
     });
     if (!e) throw new NotFoundException('Event not found');
-    const state = bookingState(e);
+    // On a day-booked event people wait for one particular day.
+    let day: Awaited<ReturnType<typeof this.db.eventDay.findFirst>> = null;
+    if (e.dayBooking) {
+      if (!dayId) throw new BadRequestException('Choose the day you want to wait for.');
+      day = await this.db.eventDay.findFirst({ where: { id: dayId, eventId } });
+      if (!day) throw new NotFoundException('That day is not part of this event.');
+    }
+    const state = day
+      ? dayState(e, { ...day, price: day.price == null ? null : Number(day.price) })
+      : bookingState(e);
     if (state !== 'FULL') {
       throw new ConflictException({
         statusCode: 409,
@@ -603,7 +977,7 @@ export class EventTicketsService {
       });
     }
     const held = await this.db.eventTicket.count({
-      where: { eventId, userId, status: { in: HELD } },
+      where: { eventId, userId, status: { in: HELD }, ...(day ? { dayId: day.id } : {}) },
     });
     const perUser = Math.min(e.maxPerUser, BOOKING_LIMITS.maxPerUserCap);
     const want = Math.max(1, Math.min(seats, perUser - held));
@@ -617,22 +991,39 @@ export class EventTicketsService {
     // On a paid, tiered event the person says which ticket they want, so the price is known when
     // a seat opens.
     let tierName: string | null = null;
-    if (e.payEnabled && isPaidEvent(e) && parseTiers(e.ticketTiers).length) {
+    if (!day && e.payEnabled && isPaidEvent(e) && parseTiers(e.ticketTiers).length) {
       const tiers = parseTiers(e.ticketTiers);
       const chosen = tiers.find((t) => t.name.toLowerCase() === (tier ?? '').trim().toLowerCase());
       if (!chosen) throw new BadRequestException('Choose a ticket type.');
       tierName = chosen.name;
     }
-    const entry = await this.db.eventWaitlist.upsert({
-      where: { eventId_userId: { eventId, userId } },
-      create: { tenantId: e.tenantId, eventId, userId, seats: want, tierName },
-      update: { seats: want, promotedAt: null, tierName },
+    const prev = await this.db.eventWaitlist.findFirst({
+      where: { eventId, userId, dayId: day?.id ?? null },
     });
-    return this.myBooking(userId, entry.eventId);
+    if (prev) {
+      await this.db.eventWaitlist.update({
+        where: { id: prev.id },
+        data: { seats: want, promotedAt: null, tierName },
+      });
+    } else {
+      await this.db.eventWaitlist.create({
+        data: {
+          tenantId: e.tenantId,
+          eventId,
+          userId,
+          seats: want,
+          tierName,
+          dayId: day?.id ?? null,
+        },
+      });
+    }
+    return this.myBooking(userId, eventId);
   }
 
-  async leaveWaitlist(userId: string, eventId: string) {
-    await this.db.eventWaitlist.deleteMany({ where: { eventId, userId, promotedAt: null } });
+  async leaveWaitlist(userId: string, eventId: string, dayId?: string) {
+    await this.db.eventWaitlist.deleteMany({
+      where: { eventId, userId, promotedAt: null, ...(dayId ? { dayId } : {}) },
+    });
     return { left: true };
   }
 
@@ -644,6 +1035,7 @@ export class EventTicketsService {
         select: EVENT_FOR_BOOKING,
       });
       if (!event) return;
+      if (event.dayBooking) return this.promoteDayWaitlists(event);
       const state = bookingState(event);
       if (state !== 'OPEN') return;
       const free = seatsLeft(event) ?? Infinity;
@@ -707,6 +1099,81 @@ export class EventTicketsService {
     }
   }
 
+  /** Day-booked events: gives freed seats on each day to the people waiting for that day. */
+  private async promoteDayWaitlists(
+    event: Prisma.EventGetPayload<{ select: typeof EVENT_FOR_BOOKING }>,
+  ) {
+    const days = await this.db.eventDay.findMany({
+      where: { eventId: event.id },
+      orderBy: [{ sortOrder: 'asc' }, { startsAt: 'asc' }],
+    });
+    for (const d of days) {
+      for (let guard = 0; guard < 50; guard++) {
+        const day = await this.db.eventDay.findUnique({ where: { id: d.id } });
+        if (!day) break;
+        const fields = { ...day, price: day.price == null ? null : Number(day.price) };
+        if (dayState(event, fields) !== 'OPEN') break;
+        const free = day.capacity == null ? Infinity : Math.max(0, day.capacity - day.seatsTaken);
+        if (free <= 0) break;
+
+        const next = await this.db.eventWaitlist.findMany({
+          where: { eventId: event.id, dayId: day.id, promotedAt: null },
+          orderBy: { createdAt: 'asc' },
+          take: 20,
+          include: { user: { select: { id: true, name: true, tenantId: true } } },
+        });
+        const fit = next.find((w) => w.seats <= free);
+        if (!fit) break;
+        try {
+          const guests = Array.from(
+            { length: Math.max(0, fit.seats - 1) },
+            (_, i) => `Guest ${i + 1}`,
+          );
+          const issued = await this.db.$transaction(
+            async (tx) => {
+              const r = await this.issue(tx, event.id, fit.user, {
+                guests,
+                source: 'waitlist',
+                dayIds: [day.id],
+              });
+              await tx.eventWaitlist.update({
+                where: { id: fit.id },
+                data: { promotedAt: new Date() },
+              });
+              return r;
+            },
+            { timeout: 10_000 },
+          );
+          await this.redis.del(`event-booking:${event.id}`);
+          void this.notify(
+            fit.user,
+            issued.payment
+              ? {
+                  title: `A seat opened up on ${day.label}: ${event.title}`,
+                  body: `It is held for you. Pay ${rupees(Number(issued.payment.amount))} by UPI and send the reference within ${event.payWindowHours} hours to keep it.`,
+                  type: 'EVENT_PAYMENT',
+                  metadata: {
+                    eventId: event.id,
+                    paymentId: issued.payment.id,
+                    url: `/tickets/pay/${issued.payment.id}`,
+                  },
+                }
+              : {
+                  title: `A seat opened up on ${day.label}: ${event.title}`,
+                  body: 'You are in. Your ticket is under My tickets.',
+                  type: 'EVENT_TICKET',
+                  metadata: { eventId: event.id, url: '/tickets' },
+                },
+          );
+        } catch (err: any) {
+          // Someone on the list cannot be placed (limit, closed). Drop them so the rest can move up.
+          this.logger.warn(`Waitlist entry ${fit.id} skipped: ${err.message}`);
+          await this.db.eventWaitlist.delete({ where: { id: fit.id } }).catch(() => undefined);
+        }
+      }
+    }
+  }
+
   // ── my tickets ──────────────────────────────────────────────────────────
 
   /**
@@ -721,13 +1188,16 @@ export class EventTicketsService {
           status: { in: [...HELD, 'CANCELLED'] },
           event: { deletedAt: null },
         },
-        include: { event: { select: this.eventCard() } },
-        orderBy: { event: { startDate: 'asc' } },
+        include: {
+          event: { select: this.eventCard() },
+          day: { select: { label: true, dayDate: true, startsAt: true, endsAt: true } },
+        },
+        orderBy: [{ event: { startDate: 'asc' } }, { issuedAt: 'asc' }],
         take: 300,
       }),
       this.db.eventWaitlist.findMany({
         where: { userId, promotedAt: null, event: { deletedAt: null } },
-        include: { event: { select: this.eventCard() } },
+        include: { event: { select: this.eventCard() }, day: { select: { label: true } } },
         take: 50,
       }),
       this.db.eventPayment.findMany({
@@ -774,14 +1244,21 @@ export class EventTicketsService {
     }
     return {
       items: [...byEvent.values()],
-      waitlist: waiting.map((w) => ({ event: w.event, seats: w.seats })),
+      waitlist: waiting.map((w) => ({
+        event: w.event,
+        seats: w.seats,
+        dayLabel: w.day?.label ?? null,
+      })),
     };
   }
 
   async getTicket(userId: string, ticketId: string) {
     const t = await this.db.eventTicket.findFirst({
       where: { id: ticketId, userId },
-      include: { event: { select: { ...this.eventCard(), bookingNote: true, minAge: true } } },
+      include: {
+        event: { select: { ...this.eventCard(), bookingNote: true, minAge: true } },
+        day: { select: { label: true, dayDate: true, startsAt: true, endsAt: true } },
+      },
     });
     if (!t) throw new NotFoundException('Ticket not found');
     const payment = t.paymentId
@@ -804,7 +1281,13 @@ export class EventTicketsService {
 
   async hostSummary(actor: EventActor, eventId: string) {
     const e = await assertEventHost(this.db, eventId, actor);
-    const state = bookingState(e);
+    const dayRows = e.dayBooking
+      ? await this.db.eventDay.findMany({
+          where: { eventId },
+          orderBy: [{ sortOrder: 'asc' }, { startsAt: 'asc' }],
+        })
+      : [];
+    const state = e.dayBooking ? bookingStateForDays(e, dayRows) : bookingState(e);
     const awaiting = await this.db.eventPayment.groupBy({
       by: ['status'],
       where: { eventId, status: { in: ['PENDING', 'SUBMITTED'] } },
@@ -839,8 +1322,23 @@ export class EventTicketsService {
       state,
       stateLabel: BOOKING_STATE_LABEL[state],
       capacity: e.capacity,
-      seatsTaken: e.seatsTaken,
+      seatsTaken: e.dayBooking ? dayRows.reduce((n, d) => n + d.seatsTaken, 0) : e.seatsTaken,
       checkedInCount: e.checkedInCount,
+      dayBooking: e.dayBooking,
+      allDaysPrice: e.allDaysPrice == null ? null : Number(e.allDaysPrice),
+      days: dayRows.map((d) => ({
+        id: d.id,
+        dayDate: d.dayDate,
+        label: d.label,
+        startsAt: d.startsAt,
+        endsAt: d.endsAt,
+        capacity: d.capacity,
+        seatsTaken: d.seatsTaken,
+        checkedInCount: d.checkedInCount,
+        price: d.price == null ? null : Number(d.price),
+        isOpen: d.isOpen,
+        state: dayState(e, { ...d, price: d.price == null ? null : Number(d.price) }),
+      })),
       rsvpOpensAt: e.rsvpOpensAt,
       rsvpClosesAt: e.rsvpClosesAt,
       maxPerUser: e.maxPerUser,
@@ -874,6 +1372,9 @@ export class EventTicketsService {
     }
     if (has('bookingMode')) data.bookingMode = mode;
 
+    if (event.dayBooking && has('capacity')) {
+      throw new BadRequestException('Seats are set for each day. Change them in the days list.');
+    }
     if (has('capacity')) {
       if (dto.capacity != null && dto.capacity < event.seatsTaken) {
         throw new BadRequestException(
@@ -1094,7 +1595,7 @@ export class EventTicketsService {
   async attendees(
     actor: EventActor,
     eventId: string,
-    q: { status?: string; search?: string; page?: number; limit?: number },
+    q: { status?: string; search?: string; page?: number; limit?: number; dayId?: string },
   ) {
     await assertEventHost(this.db, eventId, actor);
     const contacts = canSeeContacts(actor);
@@ -1106,6 +1607,7 @@ export class EventTicketsService {
     const search = q.search?.trim();
     const where: Prisma.EventTicketWhereInput = {
       eventId,
+      ...(q.dayId ? { dayId: q.dayId } : {}),
       ...(status ? { status } : {}),
       ...(search
         ? {
@@ -1125,7 +1627,10 @@ export class EventTicketsService {
         orderBy: [{ issuedAt: 'desc' }],
         skip: (page - 1) * limit,
         take: limit,
-        include: { user: { select: { name: true, email: true, phone: true } } },
+        include: {
+          user: { select: { name: true, email: true, phone: true } },
+          day: { select: { id: true, label: true, dayDate: true } },
+        },
       }),
       this.db.eventTicket.count({ where }),
     ]);
@@ -1143,6 +1648,7 @@ export class EventTicketsService {
         source: t.source,
         issuedAt: t.issuedAt,
         checkedInAt: t.checkedInAt,
+        day: t.day ? { id: t.day.id, label: t.day.label, dayDate: t.day.dayDate } : null,
         // A guest is a different person, so the registrant's own profession and place are not theirs.
         profession: t.isGuest ? null : (profiles.get(t.userId)?.profession ?? null),
         place: t.isGuest ? null : (profiles.get(t.userId)?.place ?? null),
@@ -1184,7 +1690,10 @@ export class EventTicketsService {
     const rows = await this.db.eventTicket.findMany({
       where: { eventId },
       orderBy: { issuedAt: 'asc' },
-      include: { user: { select: { name: true, email: true, phone: true } } },
+      include: {
+        user: { select: { name: true, email: true, phone: true } },
+        day: { select: { label: true } },
+      },
       take: 20_000,
     });
     this.audit.log({
@@ -1207,8 +1716,10 @@ export class EventTicketsService {
       this.db,
       rows.map((t) => t.userId),
     );
+    const byDay = event.dayBooking;
     const head = [
       'Ticket code',
+      ...(byDay ? ['Day'] : []),
       'Name',
       'Profession',
       'Place',
@@ -1229,6 +1740,7 @@ export class EventTicketsService {
     const lines = rows.map((t) =>
       [
         t.code,
+        ...(byDay ? [t.day?.label ?? ''] : []),
         t.holderName,
         t.isGuest ? '' : profiles.get(t.userId)?.profession,
         t.isGuest ? '' : profiles.get(t.userId)?.place,
@@ -1247,6 +1759,7 @@ export class EventTicketsService {
     const walkInLines = walkIns.map((w) =>
       [
         '',
+        ...(byDay ? [''] : []),
         w.name,
         '',
         w.place,
@@ -1324,6 +1837,11 @@ export class EventTicketsService {
       changes.push(`New venue: ${after.venue ?? 'to be announced'}.`);
     if (!changes.length) return;
 
+    if (+before.startDate !== +after.startDate || +before.endDate !== +after.endDate) {
+      await syncDaysWithEventDates(this.db, after.id).catch((err) =>
+        this.logger.error(`Day sync failed for ${after.id}: ${err.message}`),
+      );
+    }
     await this.redis.del(`event-booking:${after.id}`);
     const holders = await this.db.eventTicket.findMany({
       where: { eventId: after.id, status: { in: HELD } },
@@ -1625,6 +2143,7 @@ export class EventTicketsService {
       endDate: true,
       status: true,
       cancelCutoffHours: true,
+      dayBooking: true,
     } as const;
   }
 
@@ -1637,6 +2156,23 @@ export class EventTicketsService {
     checkedInAt: t.checkedInAt ?? null,
     eventId: t.eventId,
     paymentId: t.paymentId ?? null,
+    dayId: t.dayId ?? null,
+    // Day-booked tickets: which day it admits to, and when it can last be cancelled.
+    day: t.day
+      ? {
+          id: t.dayId,
+          label: t.day.label,
+          dayDate: t.day.dayDate,
+          startsAt: t.day.startsAt,
+          endsAt: t.day.endsAt,
+          cancelDeadline: new Date(
+            cancelDeadline({
+              startDate: t.day.startsAt,
+              cancelCutoffHours: t.event?.cancelCutoffHours,
+            }),
+          ).toISOString(),
+        }
+      : null,
   });
 
   private cleanNames(input?: string[]): string[] {

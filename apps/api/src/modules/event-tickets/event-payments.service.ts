@@ -254,6 +254,7 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
         data: { status: 'CANCELLED', cancelledAt: new Date() },
       });
       await this.tickets.releaseSeats(tx, p.eventId, t.count);
+      await this.tickets.releaseDaysForPayment(tx, p.id);
       await logPayment(tx, {
         tenantId: p.tenantId,
         paymentId: p.id,
@@ -465,6 +466,7 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
           data: { status: 'CANCELLED', cancelledAt: new Date() },
         });
         await this.tickets.releaseSeats(tx, eventId, t.count);
+        await this.tickets.releaseDaysForPayment(tx, p.id);
       }
       await logPayment(tx, {
         tenantId: p.tenantId,
@@ -672,6 +674,7 @@ export class EventPaymentsService implements OnModuleInit, OnModuleDestroy {
         data: { status: 'CANCELLED', cancelledAt: new Date() },
       });
       await this.tickets.releaseSeats(tx, p.eventId, t.count);
+      await this.tickets.releaseDaysForPayment(tx, p.id);
       await logPayment(tx, {
         tenantId: p.tenantId,
         paymentId: p.id,

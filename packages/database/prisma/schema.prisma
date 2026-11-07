@@ -2845,6 +2845,13 @@ model Event {
   // Hours an attendee has to send proof before the held seat is released.
   payWindowHours     Int       @default(24) @map("pay_window_hours")
 
+  // ── Booking by day (multi-day events): each person books the days they want; see event_days ──
+  // When on, seats are counted per day (events.capacity / seats_taken stay unused) and every ticket
+  // belongs to one day.
+  dayBooking         Boolean   @default(false) @map("day_booking")
+  // Price per person for every day together, cheaper than the sum of the days. Null = no bundle.
+  allDaysPrice       Decimal?  @map("all_days_price") @db.Decimal(10, 2)
+
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
   deletedAt          DateTime? @map("deleted_at")
@@ -2858,6 +2865,7 @@ model Event {
   scans      EventScan[]
   payments   EventPayment[]
   walkIns    EventWalkIn[]
+  days       EventDay[]
 
   @@index([tenantId])
   @@index([businessId])
@@ -2909,10 +2917,14 @@ model EventTicket {
   // The payment this ticket waits on (PENDING) or was bought with. Null for free tickets.
   paymentId      String?   @map("payment_id") @db.Uuid
   payment        EventPayment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  // The day this ticket admits to, on events that sell by day. Null on every other event.
+  dayId          String?   @map("day_id") @db.Uuid
+  day            EventDay? @relation(fields: [dayId], references: [id], onDelete: SetNull)
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([eventId, dayId, status])
   @@unique([eventId, code])
   @@unique([eventId, userId, idempotencyKey, holderName])
   @@index([eventId, status])
@@ -2954,6 +2966,38 @@ model EventCrewPass {
 
 // Someone a volunteer wrote down at the gate: no account, no ticket. Name, mobile and where they
 // are from, with the volunteer's confirmation that the person agreed to it being kept for this event.
+/// One day of a multi-day event that sells by day. Seats, price, hours and the booking window are per day.
+model EventDay {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  eventId        String    @map("event_id") @db.Uuid
+  // Calendar day in India (YYYY-MM-DD). One row per day per event.
+  dayDate        String    @map("day_date") @db.VarChar(10)
+  label          String    @db.VarChar(80)
+  startsAt       DateTime  @map("starts_at")
+  endsAt         DateTime  @map("ends_at")
+  capacity       Int?
+  seatsTaken     Int       @default(0) @map("seats_taken")
+  checkedInCount Int       @default(0) @map("checked_in_count")
+  // Null = free, or the event's own price when it has one.
+  price          Decimal?  @db.Decimal(10, 2)
+  // The host can close one day without touching the others.
+  isOpen         Boolean   @default(true) @map("is_open")
+  rsvpOpensAt    DateTime? @map("rsvp_opens_at")
+  rsvpClosesAt   DateTime? @map("rsvp_closes_at")
+  sortOrder      Int       @default(0) @map("sort_order")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  event    Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tickets  EventTicket[]
+  waitlist EventWaitlist[]
+
+  @@unique([eventId, dayDate])
+  @@index([eventId, sortOrder])
+  @@map("event_days")
+}
+
 model EventWalkIn {
   id          String   @id @default(uuid()) @db.Uuid
   tenantId    String   @map("tenant_id") @db.Uuid
@@ -3020,11 +3064,16 @@ model EventWaitlist {
   promotedAt DateTime? @map("promoted_at")
   // Ticket type chosen when joining a paid, tiered event.
   tierName   String?   @map("tier_name") @db.VarChar(60)
+  // The day waited for, on events that sell by day. Null on every other event.
+  dayId      String?   @map("day_id") @db.Uuid
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day   EventDay? @relation(fields: [dayId], references: [id], onDelete: Cascade)
 
-  @@unique([eventId, userId])
+  // The database index treats a missing day as one value (NULLS NOT DISTINCT), so a person still
+  // has one entry on an ordinary event and one per day on a day-booked one.
+  @@unique([eventId, userId, dayId], map: "event_waitlist_event_user_day_key")
   @@index([eventId, promotedAt, createdAt])
   @@map("event_waitlist")
 }
@@ -3042,6 +3091,8 @@ model EventPayment {
   tierName       String?   @map("tier_name") @db.VarChar(60)
   unitPrice      Decimal   @map("unit_price") @db.Decimal(10, 2)
   amount         Decimal   @db.Decimal(10, 2)
+  // Day-booked events: [{ dayId, label, people, price }] and whether the all-days price applied.
+  dayBreakdown   Json?     @map("day_breakdown")
   // PENDING (waiting for proof) | SUBMITTED (host to verify) | APPROVED | REJECTED | EXPIRED | CANCELLED
   status         String    @default("PENDING") @db.VarChar(12)
   // UPI reference number the attendee read from their payment app.

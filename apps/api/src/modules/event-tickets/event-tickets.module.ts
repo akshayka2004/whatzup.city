@@ -4,6 +4,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { CrewGuard } from './crew.guard';
 import { EventAnalyticsService } from './event-analytics.service';
 import { EventCrewService } from './event-crew.service';
+import { EventDaysService } from './event-days.service';
 import { EventPaymentsService } from './event-payments.service';
 import { EventScanService } from './event-scan.service';
 import { EventTicketsController } from './event-tickets.controller';
@@ -18,6 +19,7 @@ import { TicketsController } from './tickets.controller';
     EventTicketsService,
     EventPaymentsService,
     EventCrewService,
+    EventDaysService,
     EventScanService,
     EventAnalyticsService,
     CrewGuard,

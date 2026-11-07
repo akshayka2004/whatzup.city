@@ -14,7 +14,9 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class RsvpDto {
   @ApiProperty({ required: false, description: 'Names of guests to bring (each gets a ticket)' })
@@ -45,6 +47,25 @@ export class RsvpDto {
   @IsString()
   @MaxLength(60)
   tier?: string;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Days to book, on events that sell by day. Everyone in this booking attends these days.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(31)
+  @IsUUID('all', { each: true })
+  dayIds?: string[];
+
+  @ApiProperty({
+    required: false,
+    description: 'Day booking only: book the guests for these days and not the registrant',
+  })
+  @IsOptional()
+  @IsBoolean()
+  skipSelf?: boolean;
 }
 
 export class CancelTicketsDto {
@@ -72,6 +93,97 @@ export class WaitlistDto {
   @IsString()
   @MaxLength(60)
   tier?: string;
+
+  @ApiProperty({ required: false, description: 'The day to wait for, on events that sell by day' })
+  @IsOptional()
+  @IsUUID('all')
+  dayId?: string;
+}
+
+/** One day of a day-booked event. Send `id` to change an existing day; leave it out to add one. */
+export class DayInputDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsUUID('all')
+  id?: string;
+
+  @ApiProperty({ required: false, maxLength: 80 })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  label?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsDateString()
+  startsAt?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsDateString()
+  endsAt?: string;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Seats for this day; null = no limit',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(1_000_000)
+  capacity?: number | null;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Price per person; null = the event price',
+  })
+  @IsOptional()
+  @Min(0)
+  @Max(100000)
+  price?: number | null;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isOpen?: boolean;
+
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsDateString()
+  rsvpOpensAt?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  @IsOptional()
+  @IsDateString()
+  rsvpClosesAt?: string | null;
+}
+
+export class DaysSettingsDto {
+  @ApiProperty({ required: false, description: 'Turn booking by day on or off' })
+  @IsOptional()
+  @IsBoolean()
+  dayBooking?: boolean;
+
+  @ApiProperty({
+    required: false,
+    nullable: true,
+    description: 'Price per person for every day together',
+  })
+  @IsOptional()
+  @Min(0)
+  @Max(1000000)
+  allDaysPrice?: number | null;
+
+  @ApiProperty({ required: false, type: [DayInputDto] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(31)
+  @ValidateNested({ each: true })
+  @Type(() => DayInputDto)
+  days?: DayInputDto[];
 }
 
 /** Host settings. null clears an optional value; leaving a field out keeps it. */

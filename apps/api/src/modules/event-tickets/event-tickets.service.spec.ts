@@ -117,7 +117,11 @@ function world(over: Record<string, any> = {}) {
       findFirst: jest.fn(
         async ({ where }: any) =>
           waitlist.find(
-            (w) => w.eventId === where.eventId && w.userId === where.userId && !w.promotedAt,
+            (w) =>
+              w.eventId === where.eventId &&
+              w.userId === where.userId &&
+              (w.dayId ?? null) === (where.dayId ?? null) &&
+              !w.promotedAt,
           ) ?? null,
       ),
       count: jest.fn(
@@ -133,8 +137,8 @@ function world(over: Record<string, any> = {}) {
           1,
         );
       }),
-      upsert: jest.fn(async ({ create }: any) => {
-        const w = { id: randomUUID(), createdAt: new Date(), promotedAt: null, ...create };
+      create: jest.fn(async ({ data }: any) => {
+        const w = { id: randomUUID(), createdAt: new Date(), promotedAt: null, ...data };
         waitlist.push(w);
         return w;
       }),

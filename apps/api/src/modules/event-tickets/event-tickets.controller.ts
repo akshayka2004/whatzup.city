@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -25,6 +26,7 @@ import {
   BookingSettingsDto,
   CancelTicketsDto,
   CreateCrewPassesDto,
+  DaysSettingsDto,
   UpdateCrewPassDto,
   DecisionDto,
   MessageAttendeesDto,
@@ -35,6 +37,7 @@ import {
 import { EventActor } from './event-access';
 import { EventAnalyticsService } from './event-analytics.service';
 import { EventCrewService } from './event-crew.service';
+import { EventDaysService } from './event-days.service';
 import { EventPaymentsService } from './event-payments.service';
 import { EventTicketsService } from './event-tickets.service';
 
@@ -50,6 +53,7 @@ export class EventTicketsController {
     private readonly crew: EventCrewService,
     private readonly analytics: EventAnalyticsService,
     private readonly payments: EventPaymentsService,
+    private readonly days: EventDaysService,
   ) {}
 
   // ── admin monitoring of payments (literal routes first) ─────────────────
@@ -175,14 +179,18 @@ export class EventTicketsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: WaitlistDto,
   ) {
-    return this.tickets.joinWaitlist(userId, id, dto.seats, dto.tier);
+    return this.tickets.joinWaitlist(userId, id, dto.seats, dto.tier, dto.dayId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id/waitlist')
   @ApiBearerAuth()
-  leave(@CurrentUser('id') userId: string, @Param('id', ParseUUIDPipe) id: string) {
-    return this.tickets.leaveWaitlist(userId, id);
+  leave(
+    @CurrentUser('id') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('dayId') dayId?: string,
+  ) {
+    return this.tickets.leaveWaitlist(userId, id, dayId || undefined);
   }
 
   // ── host ────────────────────────────────────────────────────────────────
@@ -207,6 +215,26 @@ export class EventTicketsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get(':id/host/days')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Booking by day: the days, their seats and counts' })
+  hostDays(@CurrentUser() user: EventActor, @Param('id', ParseUUIDPipe) id: string) {
+    return this.days.get(user, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/host/days')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Turn booking by day on or off and edit the days' })
+  saveHostDays(
+    @CurrentUser() user: EventActor,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: DaysSettingsDto,
+  ) {
+    return this.days.save(user, id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Post(':id/booking/resubmit')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
@@ -225,8 +253,15 @@ export class EventTicketsController {
     @Query('search') search?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('dayId') dayId?: string,
   ) {
-    return this.tickets.attendees(user, id, { status, search, page, limit });
+    return this.tickets.attendees(user, id, {
+      status,
+      search,
+      page,
+      limit,
+      dayId: dayId || undefined,
+    });
   }
 
   @UseGuards(JwtAuthGuard)

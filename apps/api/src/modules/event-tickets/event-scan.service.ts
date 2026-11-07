@@ -9,6 +9,7 @@ import {
   BOOKING_LIMITS,
   IN_MOBILE_PATTERN,
   checkInWindow,
+  istDay,
   normalizeMobile,
   type ScanResult,
 } from '@saas/types';
@@ -43,6 +44,7 @@ type EventInfo = {
   checkInOpensAt: Date | null;
   checkInClosesAt: Date | null;
   venueCapacity: number | null;
+  dayBooking: boolean;
 };
 
 const ACTIVE = ['ISSUED', 'CHECKED_IN'];
@@ -95,9 +97,29 @@ export class EventScanService {
       await this.log(ctx, ticketId, 'CANCELLED');
       return { result: 'CANCELLED', message: 'This event has been cancelled.' };
     }
-    const win = checkInWindow(event);
+    let win = checkInWindow(event);
+    // On a day-booked event a ticket is only good on its own day, and that day sets the hours.
+    let day: { id: string; label: string; dayDate: string; startsAt: Date; endsAt: Date } | null =
+      null;
+    if (event.dayBooking) {
+      const dt = await this.db.eventTicket.findFirst({
+        where: { id: ticketId, eventId: ctx.eventId },
+        select: {
+          day: { select: { id: true, label: true, dayDate: true, startsAt: true, endsAt: true } },
+        },
+      });
+      day = dt?.day ?? null;
+      if (day) win = checkInWindow({ startDate: day.startsAt, endDate: day.endsAt });
+    }
     const now = Date.now();
     if (now < win.opens || now > win.closes) {
+      if (day && istDay(now) !== day.dayDate) {
+        await this.log(ctx, ticketId, 'WRONG_DAY');
+        return {
+          result: 'WRONG_DAY',
+          message: `This ticket is for ${day.label} (${new Date(day.startsAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'short' })}). It cannot be used today.`,
+        };
+      }
       await this.log(ctx, ticketId, 'OUTSIDE_WINDOW');
       return {
         result: 'OUTSIDE_WINDOW',
@@ -117,6 +139,7 @@ export class EventScanService {
           is_guest: boolean;
           checked_in_at: Date;
           user_id: string;
+          day_id?: string | null;
         }[]
       >`
         UPDATE event_tickets
@@ -124,9 +147,12 @@ export class EventScanService {
             checked_in_at = (now() AT TIME ZONE 'UTC'),
             checked_in_pass_id = ${ctx.passId}::uuid
         WHERE id = ${ticketId}::uuid AND event_id = ${ctx.eventId}::uuid AND status = 'ISSUED'
-        RETURNING id, holder_name, code, is_guest, checked_in_at, user_id`;
+        RETURNING id, holder_name, code, is_guest, checked_in_at, user_id, day_id`;
       if (rows.length === 0) return null;
       await tx.$executeRaw`UPDATE events SET checked_in_count = checked_in_count + 1 WHERE id = ${ctx.eventId}::uuid`;
+      if (rows[0].day_id) {
+        await tx.$executeRaw`UPDATE event_days SET checked_in_count = checked_in_count + 1 WHERE id = ${rows[0].day_id}::uuid`;
+      }
       await tx.eventScan.create({
         data: {
           tenantId: ctx.tenantId,
@@ -207,15 +233,18 @@ export class EventScanService {
   /** Reverses a check-in made by this pass in the last minute (a mis-tap). */
   async undo(ctx: CrewContext, ticketId: string): Promise<{ undone: boolean; message: string }> {
     const undone = await this.db.$transaction(async (tx) => {
-      const rows = await tx.$queryRaw<{ id: string }[]>`
+      const rows = await tx.$queryRaw<{ id: string; day_id?: string | null }[]>`
         UPDATE event_tickets
         SET status = 'ISSUED', checked_in_at = NULL, checked_in_pass_id = NULL
         WHERE id = ${ticketId}::uuid AND event_id = ${ctx.eventId}::uuid
           AND status = 'CHECKED_IN' AND checked_in_pass_id = ${ctx.passId}::uuid
           AND checked_in_at > ((now() AT TIME ZONE 'UTC') - make_interval(secs => ${BOOKING_LIMITS.undoSeconds}::double precision))
-        RETURNING id`;
+        RETURNING id, day_id`;
       if (rows.length === 0) return false;
       await tx.$executeRaw`UPDATE events SET checked_in_count = GREATEST(checked_in_count - 1, 0) WHERE id = ${ctx.eventId}::uuid`;
+      if (rows[0].day_id) {
+        await tx.$executeRaw`UPDATE event_days SET checked_in_count = GREATEST(checked_in_count - 1, 0) WHERE id = ${rows[0].day_id}::uuid`;
+      }
       await tx.eventScan.create({
         data: {
           tenantId: ctx.tenantId,
@@ -328,11 +357,12 @@ export class EventScanService {
       },
       orderBy: { holderName: 'asc' },
       take: 15,
-      include: { user: { select: { name: true } } },
+      include: { user: { select: { name: true } }, day: { select: { label: true } } },
     });
     return {
       data: rows.map((t) => ({
         id: t.id,
+        dayLabel: t.day?.label ?? null,
         holderName: t.holderName,
         code: t.code,
         isGuest: t.isGuest,
@@ -349,11 +379,49 @@ export class EventScanService {
     let shared = await this.redis.get<any>(key);
     if (!shared) {
       const event = await this.eventInfo(ctx.eventId);
+      // Day-booked events: the numbers are for today's day (or the next one), and each day is listed.
+      let today: { id: string; label: string; dayDate: string } | null = null;
+      let days: {
+        id: string;
+        label: string;
+        dayDate: string;
+        expected: number;
+        checkedIn: number;
+      }[] = [];
+      if (event?.dayBooking) {
+        const rows = await this.db.eventDay.findMany({
+          where: { eventId: ctx.eventId },
+          orderBy: [{ sortOrder: 'asc' }, { startsAt: 'asc' }],
+        });
+        const todayStr = istDay(Date.now());
+        const pick =
+          rows.find((d) => d.dayDate === todayStr) ??
+          rows.find((d) => d.dayDate > todayStr) ??
+          rows[rows.length - 1] ??
+          null;
+        today = pick ? { id: pick.id, label: pick.label, dayDate: pick.dayDate } : null;
+        const per = await this.db.eventTicket.groupBy({
+          by: ['dayId', 'status'],
+          where: { eventId: ctx.eventId, dayId: { not: null }, status: { in: ACTIVE } },
+          _count: { _all: true },
+        });
+        days = rows.map((d) => {
+          const mine = per.filter((p) => p.dayId === d.id);
+          const total = mine.reduce((n, p) => n + p._count._all, 0);
+          const done = mine.find((p) => p.status === 'CHECKED_IN')?._count._all ?? 0;
+          return { id: d.id, label: d.label, dayDate: d.dayDate, expected: total, checkedIn: done };
+        });
+      }
+      const dayWhere = today ? { dayId: today.id } : {};
       const [expected, checkedIn, recent, lastMinute, walkIns] = await Promise.all([
-        this.db.eventTicket.count({ where: { eventId: ctx.eventId, status: { in: ACTIVE } } }),
-        this.db.eventTicket.count({ where: { eventId: ctx.eventId, status: 'CHECKED_IN' } }),
+        this.db.eventTicket.count({
+          where: { eventId: ctx.eventId, status: { in: ACTIVE }, ...dayWhere },
+        }),
+        this.db.eventTicket.count({
+          where: { eventId: ctx.eventId, status: 'CHECKED_IN', ...dayWhere },
+        }),
         this.db.eventTicket.findMany({
-          where: { eventId: ctx.eventId, status: 'CHECKED_IN' },
+          where: { eventId: ctx.eventId, status: 'CHECKED_IN', ...dayWhere },
           orderBy: { checkedInAt: 'desc' },
           take: 8,
           select: { id: true, holderName: true, checkedInAt: true },
@@ -362,6 +430,7 @@ export class EventScanService {
           where: {
             eventId: ctx.eventId,
             status: 'CHECKED_IN',
+            ...dayWhere,
             checkedInAt: { gt: new Date(Date.now() - 60_000) },
           },
         }),
@@ -376,6 +445,8 @@ export class EventScanService {
         perMinute: lastMinute,
         walkIns,
         recent,
+        day: today,
+        days,
       };
       await this.redis.set(key, shared, 3);
     }
@@ -419,6 +490,7 @@ export class EventScanService {
         checkInOpensAt: true,
         checkInClosesAt: true,
         venueCapacity: true,
+        dayBooking: true,
       },
     });
     if (e) await this.redis.set(key, e, 10);
