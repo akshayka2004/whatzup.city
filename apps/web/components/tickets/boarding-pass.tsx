@@ -38,6 +38,8 @@ export interface PassData {
   qr: string | null;
   checkedInAt?: string | null;
   note?: string | null;
+  /** Events booked by day: which day this pass admits to. Start and end are then that day's hours. */
+  dayLabel?: string | null;
 }
 
 /** The mark, drawn with fixed colours so it also works on the coloured band and in a saved picture. */
@@ -232,6 +234,7 @@ export const BoardingPass = forwardRef<
 
           <dl className="grid grid-cols-3 gap-x-3 gap-y-3.5">
             <Field t={t} label="Attendee" value={data.holderName} wide />
+            {data.dayLabel && <Field t={t} label="Day" value={data.dayLabel} wide />}
             <Field t={t} label="Starts" value={fmtClock(data.startDate)} />
             <Field t={t} label="Ends" value={fmtClock(data.endDate)} />
             <Field t={t} label="Admits" value={data.isGuest ? 'Guest · 1' : '1 person'} />

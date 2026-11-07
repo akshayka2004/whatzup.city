@@ -18,7 +18,15 @@ const STATUSES = [
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
 
-export function AttendeesTab({ eventId }: { eventId: string }) {
+export function AttendeesTab({
+  eventId,
+  days,
+}: {
+  eventId: string;
+  /** Days of an event booked by day; adds a day filter and column. */
+  days?: { id: string; label: string }[];
+}) {
+  const [dayId, setDayId] = useState('');
   const [rows, setRows] = useState<AttendeeRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -41,6 +49,7 @@ export function AttendeesTab({ eventId }: { eventId: string }) {
     setLoading(true);
     const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (status) qs.set('status', status);
+    if (dayId) qs.set('dayId', dayId);
     if (debounced.trim()) qs.set('search', debounced.trim());
     const res = await apiService.get<{ data: AttendeeRow[]; meta: { total: number } }>(
       `/v1/events/${eventId}/host/attendees?${qs}`,
@@ -53,7 +62,7 @@ export function AttendeesTab({ eventId }: { eventId: string }) {
       setTotal(res.data.meta.total);
     }
     setLoading(false);
-  }, [eventId, page, status, debounced]);
+  }, [eventId, page, status, dayId, debounced]);
 
   useEffect(() => {
     load();
@@ -83,6 +92,24 @@ export function AttendeesTab({ eventId }: { eventId: string }) {
             {s.label}
           </FilterChip>
         ))}
+        {days && days.length > 0 && (
+          <select
+            value={dayId}
+            onChange={(e) => {
+              setDayId(e.target.value);
+              setPage(1);
+            }}
+            aria-label="Filter by day"
+            className="h-11 rounded-control border border-input bg-background px-3 text-sm"
+          >
+            <option value="">All days</option>
+            {days.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.label}
+              </option>
+            ))}
+          </select>
+        )}
         <Button asChild variant="outline" className="ml-auto">
           <a href={`/api/v1/events/${eventId}/host/attendees.csv`}>
             <Download /> Download list
@@ -105,6 +132,7 @@ export function AttendeesTab({ eventId }: { eventId: string }) {
             <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 font-medium">Name</th>
+                {days && days.length > 0 && <th className="px-3 py-2 font-medium">Day</th>}
                 <th className="px-3 py-2 font-medium">Profession</th>
                 <th className="px-3 py-2 font-medium">Place</th>
                 <th className="px-3 py-2 font-medium">Code</th>
@@ -142,6 +170,9 @@ export function AttendeesTab({ eventId }: { eventId: string }) {
                         </span>
                       )}
                     </td>
+                    {days && days.length > 0 && (
+                      <td className="whitespace-nowrap px-3 py-2">{r.day?.label ?? '–'}</td>
+                    )}
                     <td className="px-3 py-2 text-muted-foreground">{r.profession || '–'}</td>
                     <td className="px-3 py-2 text-muted-foreground">{r.place || '–'}</td>
                     <td className="px-3 py-2 font-mono text-xs">{prettyCode(r.code)}</td>

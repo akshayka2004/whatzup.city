@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, Clock, Loader2, Plus, Ticket, Users, Wallet, X } from 'lucide-react';
-import { RSVP_SOURCES, rupees } from '@saas/types';
+import { rupees } from '@saas/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
@@ -12,18 +12,9 @@ import { SectionCard } from '@/components/system/section-card';
 import { useConfirm } from '@/components/common/confirm-dialog';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
-import { inferSource } from '@/lib/analytics/track';
+import { rsvpSource } from '@/lib/rsvp-source';
 import { fmtWhen, prettyCode, type BookingInfo, type MyBooking } from '@/lib/event-booking';
-
-/** Where this visit came from, in the words the host's analytics use. */
-function rsvpSource(): string {
-  if (typeof window === 'undefined') return 'direct';
-  const fromUrl = new URLSearchParams(window.location.search).get('src');
-  if (fromUrl && (RSVP_SOURCES as readonly string[]).includes(fromUrl)) return fromUrl;
-  const seen = inferSource();
-  if (seen === 'external') return 'share';
-  return (RSVP_SOURCES as readonly string[]).includes(seen) ? seen : 'direct';
-}
+import { DayRsvpPanel } from '@/components/events/day-rsvp-panel';
 
 /**
  * RSVP block on the public event page. Shows live seats, and for a signed-in person their tickets,
@@ -69,6 +60,20 @@ export function RsvpPanel({ eventId }: { eventId: string }) {
   }, [loadMine]);
 
   if (!info || info.mode !== 'RSVP') return null;
+  // Events that sell each day on its own have a different booking panel.
+  if (info.dayBooking && info.days?.length) {
+    return (
+      <DayRsvpPanel
+        eventId={eventId}
+        info={info}
+        mine={mine}
+        signedIn={!!user}
+        onChanged={async () => {
+          await Promise.all([loadInfo(), loadMine()]);
+        }}
+      />
+    );
+  }
 
   const held =
     mine?.tickets.filter((t) => t.status === 'ISSUED' || t.status === 'CHECKED_IN') ?? [];

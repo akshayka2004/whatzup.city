@@ -103,6 +103,7 @@ function overlayFor(r: ScanResponse): Overlay {
   const titles: Record<string, string> = {
     INVALID: 'Not a valid ticket',
     WRONG_EVENT: 'Wrong event',
+    WRONG_DAY: 'Ticket is for another day',
     CANCELLED: 'Ticket cancelled',
     OUTSIDE_WINDOW: 'Check-in is not open',
   };
@@ -403,6 +404,7 @@ function Scanner({
           <h1 className="truncate text-sm font-semibold">{session.event.title}</h1>
           <p className="truncate text-xs text-muted-foreground">
             {session.pass.label} · {isDesk ? 'Desk' : 'Scan'} · {stats?.mine ?? 0} by you
+            {stats?.day ? ` · ${stats.day.label}` : ''}
           </p>
         </div>
         <Button variant="ghost" size="sm" onClick={onSignOut} aria-label="Sign out of this pass">
@@ -817,6 +819,7 @@ function NameSearch({
               <p className="truncate font-medium">{h.holderName}</p>
               <p className="truncate text-xs text-muted-foreground">
                 {prettyCode(h.code)}
+                {h.dayLabel ? ` · ${h.dayLabel}` : ''}
                 {h.isGuest ? ` · guest of ${h.registrant}` : ''}
               </p>
             </div>

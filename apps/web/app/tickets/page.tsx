@@ -19,7 +19,13 @@ import { PageHeader } from '@/components/system/page-header';
 import { EmptyState } from '@/components/common/empty-state';
 import { useAuth } from '@/hooks/use-auth';
 import { apiService } from '@/lib/services/api-service';
-import { fmtWhen, prettyCode, type PaymentCard, type TicketLite } from '@/lib/event-booking';
+import {
+  fmtDayRange,
+  fmtWhen,
+  prettyCode,
+  type PaymentCard,
+  type TicketLite,
+} from '@/lib/event-booking';
 import { cn } from '@/lib/utils';
 
 interface EventCard {
@@ -41,7 +47,7 @@ interface Row {
 }
 interface Mine {
   items: Row[];
-  waitlist: { event: EventCard; seats: number }[];
+  waitlist: { event: EventCard; seats: number; dayLabel?: string | null }[];
 }
 
 const OUTCOME: Record<Exclude<Outcome, 'UPCOMING'>, { label: string; tone: string }> = {
@@ -177,7 +183,7 @@ export default function MyTicketsPage() {
                   </h2>
                   <ul className="space-y-2">
                     {waiting.map((w) => (
-                      <li key={w.event.id}>
+                      <li key={`${w.event.id}-${w.dayLabel ?? ''}`}>
                         <Link
                           href={`/events/${w.event.id}`}
                           className="flex items-center gap-3 rounded-card border border-border bg-card p-4 hover:bg-muted/40"
@@ -186,6 +192,7 @@ export default function MyTicketsPage() {
                           <div className="min-w-0">
                             <p className="truncate font-medium text-foreground">{w.event.title}</p>
                             <p className="text-sm text-muted-foreground">
+                              {w.dayLabel ? `${w.dayLabel} · ` : ''}
                               {fmtWhen(w.event.startDate)} · you get a seat if one opens
                             </p>
                           </div>
@@ -300,6 +307,11 @@ function Section({ title, rows, muted = false }: { title: string; rows: Row[]; m
                         <span className="block truncate text-sm font-medium text-foreground">
                           {t.holderName}
                         </span>
+                        {t.day && (
+                          <span className="block truncate text-xs text-foreground">
+                            {t.day.label} · {fmtDayRange(t.day.startsAt, t.day.endsAt)}
+                          </span>
+                        )}
                         <span className="block font-mono text-xs text-muted-foreground">
                           {prettyCode(t.code)}
                         </span>

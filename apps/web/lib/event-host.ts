@@ -41,6 +41,22 @@ export interface HostSummary {
   payWindowHours: number;
   paymentsToVerify: number;
   paymentsWaiting: number;
+  /** True when each day of the event is booked on its own. */
+  dayBooking?: boolean;
+  allDaysPrice?: number | null;
+  days?: {
+    id: string;
+    dayDate: string;
+    label: string;
+    startsAt: string;
+    endsAt: string;
+    capacity: number | null;
+    seatsTaken: number;
+    checkedInCount: number;
+    price: number | null;
+    isOpen: boolean;
+    state: string;
+  }[];
 }
 
 export interface EventAnalytics {
@@ -134,6 +150,8 @@ export interface AttendeeRow {
   source: string | null;
   issuedAt: string;
   checkedInAt: string | null;
+  /** The day this ticket admits to, on events booked by day. */
+  day?: { id: string; label: string; dayDate: string } | null;
   /** Hosts see name, profession and place only. */
   profession: string | null;
   place: string | null;

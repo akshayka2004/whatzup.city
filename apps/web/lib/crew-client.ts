@@ -102,7 +102,14 @@ export const crewLogin = (code: string) =>
   call<CrewSession>('/login', { method: 'POST', body: { code, deviceId: deviceId() } });
 
 export interface ScanResponse {
-  result: 'VALID' | 'DUPLICATE' | 'INVALID' | 'WRONG_EVENT' | 'CANCELLED' | 'OUTSIDE_WINDOW';
+  result:
+    | 'VALID'
+    | 'DUPLICATE'
+    | 'INVALID'
+    | 'WRONG_EVENT'
+    | 'WRONG_DAY'
+    | 'CANCELLED'
+    | 'OUTSIDE_WINDOW';
   message: string;
   manual?: boolean;
   ticket?: {
@@ -126,6 +133,9 @@ export interface CrewStats {
   walkIns: number;
   mine: number;
   recent: { id: string; holderName: string; checkedInAt: string }[];
+  /** Events booked by day: the day these numbers are for, and every day with its own count. */
+  day?: { id: string; label: string; dayDate: string } | null;
+  days?: { id: string; label: string; dayDate: string; expected: number; checkedIn: number }[];
 }
 
 export interface CrewSearchHit {
@@ -134,6 +144,7 @@ export interface CrewSearchHit {
   code: string;
   isGuest: boolean;
   registrant: string;
+  dayLabel?: string | null;
   status: 'ISSUED' | 'CHECKED_IN';
   checkedInAt: string | null;
 }

@@ -116,6 +116,55 @@ export function OverviewTab({ eventId, summary }: { eventId: string; summary: Ho
         </p>
       )}
 
+      {summary.dayBooking && summary.days && summary.days.length > 0 && (
+        <Card className="overflow-hidden rounded-card">
+          <div className="border-b border-border px-4 py-3">
+            <h3 className="font-semibold">By day</h3>
+            <p className="text-xs text-muted-foreground">
+              Each day has its own seats and its own gate count.
+            </p>
+          </div>
+          <ul className="divide-y divide-border">
+            {summary.days.map((d) => {
+              const pct =
+                d.capacity != null && d.capacity > 0
+                  ? Math.min(100, Math.round((d.seatsTaken / d.capacity) * 100))
+                  : null;
+              return (
+                <li key={d.id} className="px-4 py-3">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="font-medium text-foreground">
+                      {d.label}
+                      {!d.isOpen && (
+                        <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+                          Closed
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-sm tabular-nums text-muted-foreground">
+                      {d.seatsTaken}
+                      {d.capacity != null ? ` of ${d.capacity}` : ''} booked · {d.checkedInCount}{' '}
+                      arrived
+                    </p>
+                  </div>
+                  {pct != null && (
+                    <div
+                      className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-sunken"
+                      aria-hidden
+                    >
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Tile
           label="RSVPs"

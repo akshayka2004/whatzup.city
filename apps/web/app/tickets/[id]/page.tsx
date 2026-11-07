@@ -23,6 +23,8 @@ interface TicketDetail {
   qr: string | null;
   paymentId?: string | null;
   payment?: { id: string; status: string } | null;
+  /** Events booked by day: the day this ticket admits to. */
+  day?: { label: string; startsAt: string; endsAt: string } | null;
   event: {
     id: string;
     title: string;
@@ -110,8 +112,9 @@ export default function TicketPage() {
             state={state}
             data={{
               title: ticket.event.title,
-              startDate: ticket.event.startDate,
-              endDate: ticket.event.endDate,
+              startDate: ticket.day?.startsAt ?? ticket.event.startDate,
+              endDate: ticket.day?.endsAt ?? ticket.event.endDate,
+              dayLabel: ticket.day?.label ?? null,
               venue: ticket.event.venue,
               city: ticket.event.city,
               holderName: ticket.holderName,
@@ -148,7 +151,19 @@ export default function TicketPage() {
             <SavePass target={passRef} fileName={`whtzup-pass-${ticket.code}`} />
           )}
           <div className="flex gap-2">
-            <AddToCalendarButton event={{ ...ticket.event, id: ticket.event.id }} />
+            <AddToCalendarButton
+              event={{
+                ...ticket.event,
+                id: ticket.event.id,
+                ...(ticket.day
+                  ? {
+                      title: `${ticket.event.title} (${ticket.day.label})`,
+                      startDate: ticket.day.startsAt,
+                      endDate: ticket.day.endsAt,
+                    }
+                  : {}),
+              }}
+            />
             <Button asChild variant="outline" className="flex-1">
               <Link href={`/events/${ticket.event.id}`}>Event page</Link>
             </Button>

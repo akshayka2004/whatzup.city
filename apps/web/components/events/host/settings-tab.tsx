@@ -11,6 +11,7 @@ import { IN_MOBILE_PATTERN, UPI_ID_PATTERN, normalizeMobile } from '@saas/types'
 import { fromIstInput, toIstInput } from '@/lib/event-booking';
 import { uploadImage } from '@/lib/storage-upload';
 import type { HostSummary } from '@/lib/event-host';
+import { DaysCard } from './days-card';
 
 const num = (v: string): number | null => (v.trim() === '' ? null : Number(v));
 
@@ -112,7 +113,8 @@ export function SettingsTab({
     setSaving(true);
     const res = await apiService.patch<HostSummary>(`/v1/events/${eventId}/booking`, {
       bookingMode: on ? 'RSVP' : 'NONE',
-      capacity: num(capacity),
+      // Day-booked events keep their seats per day (see the days card).
+      ...(summary.dayBooking ? {} : { capacity: num(capacity) }),
       venueCapacity: num(venueCapacity),
       rsvpOpensAt: fromIstInput(opens),
       rsvpClosesAt: fromIstInput(closes),
@@ -213,19 +215,29 @@ export function SettingsTab({
           <Card className="space-y-4 rounded-card p-5">
             <h3 className="font-semibold">Seats</h3>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                id="capacity"
-                label="Seats available"
-                hint={`Leave empty for no limit. ${summary.seatsTaken} taken so far.`}
-              >
-                <Input
+              {summary.dayBooking ? (
+                <div className="space-y-1.5">
+                  <p className="text-sm font-medium text-foreground">Seats available</p>
+                  <p className="text-sm text-muted-foreground">
+                    Set for each day in &quot;Book by day&quot; below. {summary.seatsTaken} tickets
+                    booked so far.
+                  </p>
+                </div>
+              ) : (
+                <Field
                   id="capacity"
-                  inputMode="numeric"
-                  value={capacity}
-                  onChange={(e) => setCapacity(e.target.value.replace(/\D/g, ''))}
-                  className="h-11"
-                />
-              </Field>
+                  label="Seats available"
+                  hint={`Leave empty for no limit. ${summary.seatsTaken} taken so far.`}
+                >
+                  <Input
+                    id="capacity"
+                    inputMode="numeric"
+                    value={capacity}
+                    onChange={(e) => setCapacity(e.target.value.replace(/\D/g, ''))}
+                    className="h-11"
+                  />
+                </Field>
+              )}
               <Field
                 id="venue-capacity"
                 label="Venue limit"
@@ -269,6 +281,10 @@ export function SettingsTab({
               </Field>
             </div>
           </Card>
+
+          {summary.bookingApproval === 'APPROVED' && (
+            <DaysCard eventId={eventId} onChanged={onSaved} />
+          )}
 
           <Card className="space-y-4 rounded-card p-5">
             <h3 className="font-semibold">When tickets are on sale</h3>

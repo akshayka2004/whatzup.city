@@ -165,7 +165,11 @@ export function EventHostHub({ eventId, backHref }: { eventId: string; backHref:
           <SettingsTab eventId={eventId} summary={summary} onSaved={setSummary} />
         )}
         {tab === 'attendees' &&
-          (rsvp ? <AttendeesTab eventId={eventId} /> : <TurnOn onGo={() => setTab('settings')} />)}
+          (rsvp ? (
+            <AttendeesTab eventId={eventId} days={summary.dayBooking ? summary.days : undefined} />
+          ) : (
+            <TurnOn onGo={() => setTab('settings')} />
+          ))}
         {tab === 'payments' &&
           (rsvp ? (
             <PaymentsTab eventId={eventId} summary={summary} onChanged={load} />
