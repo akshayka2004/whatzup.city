@@ -164,3 +164,9 @@ export class ReorderCategoriesDto {
   @IsUUID(undefined, { each: true })
   ids!: string[];
 }
+
+export class SetCategoryVisibilityDto {
+  @ApiProperty({ description: 'true = visible to the public, false = hidden (archived)' })
+  @IsBoolean({ message: 'Say whether the category should be visible.' })
+  isActive!: boolean;
+}

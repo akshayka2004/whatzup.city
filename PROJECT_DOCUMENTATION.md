@@ -983,7 +983,7 @@ will pause extras on businesses already past their plan, so announce it first).
 ### 12.14 Category management (super admin)
 
 A super admin adds, edits, archives, merges and deletes categories from `/admin/categories`
-(`/super-admin/categories` redirects). Master admins see the list and its history read-only.
+(`/super-admin/categories` redirects). Master admins see the list and its history, and — like the super admin — can **show or hide any category with the switch on its row** (`PATCH /categories/:id/visibility {isActive}`, roles MASTER_ADMIN + SUPER_ADMIN; it is an archive/restore with the same rules, caches, search reindex and audit as the edit form). Hiding asks first and says how many listings keep the category; built-in categories cannot be hidden (their switch is locked on); businesses are never rewritten. Everything else (add, edit, reorder, merge, delete) stays super-admin only.
 
 **One master list.** Categories live in the default tenant. Signup, onboarding, brands and
 discovery resolve a slug from it (`common/utils/master-category.ts`); nothing is cloned per tenant

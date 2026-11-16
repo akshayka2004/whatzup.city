@@ -24,6 +24,7 @@ import {
   CreateCategoryDto,
   MergeCategoryDto,
   ReorderCategoriesDto,
+  SetCategoryVisibilityDto,
   UpdateCategoryDto,
 } from './dto/category.dto';
 
@@ -98,6 +99,23 @@ export class CategoriesController {
     @Body() dto: UpdateCategoryDto,
   ) {
     return this.categoriesService.update({ id: userId }, id, dto);
+  }
+
+  // The one change a master admin may make: show or hide a category. Everything else stays with
+  // the super admin.
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Patch(':id/visibility')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Show or hide a category (hidden = archived: businesses keep it, nobody can pick it)',
+  })
+  async setVisibility(
+    @CurrentUser('id') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetCategoryVisibilityDto,
+  ) {
+    return this.categoriesService.setVisibility({ id: userId }, id, dto.isActive);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

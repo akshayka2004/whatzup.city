@@ -86,6 +86,9 @@ describe('CategoriesController roles', () => {
     expect(roles(proto.adminList)).toContain(UserRole.MASTER_ADMIN);
     expect(roles(proto.impact)).toContain(UserRole.MASTER_ADMIN);
   });
+  it('both admin roles may show or hide a category, and nobody else', () => {
+    expect(roles(proto.setVisibility)).toEqual([UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN]);
+  });
 });
 
 describe('CategoriesService.create', () => {
@@ -192,6 +195,87 @@ describe('CategoriesService.update', () => {
         newData: expect.objectContaining({ name: 'Bake Shops' }),
       }),
     );
+  });
+});
+
+describe('CategoriesService.setVisibility', () => {
+  const flush = async () => {
+    for (let i = 0; i < 5; i++) await new Promise((r) => setImmediate(r));
+  };
+
+  it('hides a category: archived in the master list and its legacy clones, audited, caches cleared', async () => {
+    const { service, db, tx, audit, redis } = makeService();
+    db.category.findFirst.mockResolvedValue(cat());
+    const out = await service.setVisibility(ACTOR, 'c-1', false);
+    expect(out).toEqual({ id: 'c-1', isActive: false });
+    expect(tx.category.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'c-1' },
+        data: expect.objectContaining({ isActive: false }),
+      }),
+    );
+    expect(tx.category.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { isActive: false } }),
+    );
+    expect(audit.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'CATEGORY_ARCHIVED',
+        userId: 'admin-1',
+        oldData: { isActive: true },
+        newData: expect.objectContaining({ isActive: false }),
+      }),
+    );
+    // The public lists are cached: they must be dropped or the hidden category would linger.
+    expect(redis.delPattern).toHaveBeenCalled();
+  });
+
+  it('shows it again', async () => {
+    const { service, db, tx, audit } = makeService();
+    db.category.findFirst.mockResolvedValue(cat({ isActive: false }));
+    const out = await service.setVisibility(ACTOR, 'c-1', true);
+    expect(out).toEqual({ id: 'c-1', isActive: true });
+    expect(tx.category.update.mock.calls[0][0].data.isActive).toBe(true);
+    expect(audit.log).toHaveBeenCalledWith(expect.objectContaining({ action: 'CATEGORY_UPDATED' }));
+  });
+
+  it('changes nothing when it is already in that state', async () => {
+    const { service, db, tx, audit } = makeService();
+    db.category.findFirst.mockResolvedValue(cat());
+    await expect(service.setVisibility(ACTOR, 'c-1', true)).resolves.toEqual({
+      id: 'c-1',
+      isActive: true,
+    });
+    expect(tx.category.update).not.toHaveBeenCalled();
+    expect(audit.log).not.toHaveBeenCalled();
+  });
+
+  it('never hides a built-in category', async () => {
+    const { service, db, tx } = makeService();
+    db.category.findFirst.mockResolvedValue(cat({ slug: 'food', isSystem: true }));
+    await expect(service.setVisibility(ACTOR, 'c-1', false)).rejects.toThrow(/built-in/);
+    expect(tx.category.update).not.toHaveBeenCalled();
+  });
+
+  it('404s for a category outside the master list', async () => {
+    const { service, db } = makeService();
+    db.category.findFirst.mockResolvedValue(null);
+    await expect(service.setVisibility(ACTOR, 'nope', false)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+
+  it('keeps businesses on the hidden category and refreshes their search entries', async () => {
+    const { service, db, tx } = makeService();
+    db.category.findFirst.mockResolvedValue(cat());
+    db.category.findMany.mockResolvedValue([{ id: 'c-1' }]); // idsForSlug
+    db.business.findMany.mockResolvedValue([
+      { id: 'b-1', tenantId: 't-1', ownerId: 'o', name: 'B' },
+    ]);
+    await service.setVisibility(ACTOR, 'c-1', false);
+    await flush();
+    // Hiding never rewrites a business: its category stays as it is.
+    expect(tx.business.updateMany).not.toHaveBeenCalled();
+    expect(db.business.findMany).toHaveBeenCalled();
   });
 });
 

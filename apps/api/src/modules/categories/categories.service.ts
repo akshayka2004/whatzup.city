@@ -461,6 +461,16 @@ export class CategoriesService {
     return updated;
   }
 
+  /**
+   * Show or hide one category. Hiding is archiving: businesses keep it, but it leaves sign-up,
+   * browsing and search. Built-in categories cannot be hidden. Same rules, caches, search reindex and
+   * audit row as an edit, so nothing else can differ between the toggle and the edit form.
+   */
+  async setVisibility(actor: Actor, id: string, isActive: boolean) {
+    const updated = await this.update(actor, id, { isActive } as UpdateCategoryDto);
+    return { id: updated.id, isActive: updated.isActive };
+  }
+
   /** Move businesses, subcategory references and children from `id` to `targetId`, then retire `id`. */
   async merge(actor: Actor, id: string, targetId: string) {
     const tenantId = await this.masterTenantId();

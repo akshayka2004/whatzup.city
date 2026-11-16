@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Switch } from '@/components/ui/switch';
 import { toast } from '@/components/ui/sonner';
 import { useAuth } from '@/hooks/use-auth';
 import { useConfirm } from '@/components/common/confirm-dialog';
@@ -69,6 +70,8 @@ export default function AdminCategoriesPage() {
   const { user } = useAuth();
   // Master admins can look; only a super admin may change the list.
   const canWrite = user?.rbacRole === 'SUPER_ADMIN' || user?.role === 'super-admin';
+  // Showing or hiding a category is open to both admin roles; every other change is the super admin's.
+  const canToggle = canWrite || user?.rbacRole === 'MASTER_ADMIN' || user?.role === 'admin';
   const confirm = useConfirm();
 
   const [rows, setRows] = useState<AdminCategory[]>([]);
@@ -170,6 +173,39 @@ export default function AdminCategoriesPage() {
     else done(`${c.name} restored.`);
   };
 
+  /** The visibility switch. Hiding asks first and says what it does; showing is one tap. */
+  const setVisible = async (c: AdminCategory, next: boolean) => {
+    if (!next) {
+      const imp = await apiService.get<any>(`/v1/categories/${c.id}/impact`);
+      const d = imp.error ? null : (imp.data?.data ?? imp.data);
+      const listings = (d?.businesses ?? 0) + (d?.asSubcategory ?? 0);
+      const ok = await confirm({
+        title: `Hide ${c.name}?`,
+        description:
+          (listings > 0
+            ? `${listings} ${listings === 1 ? 'listing keeps' : 'listings keep'} this category. `
+            : '') +
+          'Nobody can choose it on sign-up or find it in browsing and search until you show it again.',
+        confirmLabel: 'Hide',
+        tone: 'danger',
+      });
+      if (!ok) return;
+    }
+    setBusyId(c.id);
+    // Show the new state straight away; the reload below confirms it, and a failure puts it back.
+    setRows((prev) => prev.map((r) => (r.id === c.id ? { ...r, isActive: next } : r)));
+    const res = await apiService.patch<any>(`/v1/categories/${c.id}/visibility`, {
+      isActive: next,
+    });
+    setBusyId(null);
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(next ? `${c.name} is visible.` : `${c.name} is hidden.`);
+    }
+    load();
+  };
+
   const renderRow = (
     c: AdminCategory,
     siblings: AdminCategory[],
@@ -216,6 +252,26 @@ export default function AdminCategoriesPage() {
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
+            {canToggle && (
+              <label
+                className="mr-1 flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-1 text-xs font-medium text-muted-foreground sm:min-h-9"
+                title={
+                  c.isSystem && c.isActive
+                    ? 'Built-in categories always stay visible.'
+                    : c.isActive
+                      ? 'Visible. Switch off to hide it.'
+                      : 'Hidden. Switch on to show it.'
+                }
+              >
+                <Switch
+                  checked={c.isActive}
+                  disabled={busyId === c.id || (c.isSystem && c.isActive)}
+                  onCheckedChange={(v) => setVisible(c, v)}
+                  aria-label={`${c.name}: ${c.isActive ? 'visible' : 'hidden'}`}
+                />
+                <span className="hidden w-12 sm:inline">{c.isActive ? 'Visible' : 'Hidden'}</span>
+              </label>
+            )}
             {canWrite && (
               <>
                 <Button
@@ -336,7 +392,9 @@ export default function AdminCategoriesPage() {
 
         {!canWrite && !loading && (
           <p className="rounded-xl bg-info-soft px-3 py-2 text-sm text-info-soft-foreground">
-            You can view categories and their history. Only a super admin can change them.
+            {canToggle
+              ? 'You can show or hide a category with its switch, and view its history. Only a super admin can add, edit, merge or delete them.'
+              : 'You can view categories and their history. Only a super admin can change them.'}
           </p>
         )}
 
