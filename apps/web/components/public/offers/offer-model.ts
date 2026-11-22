@@ -105,6 +105,8 @@ export function mapPlatformOffer(o: any): Offer {
     details: o.details || {},
     subType: o.subType || null,
     category: o.category,
+    // Structured city (buffets always have one); older offers fall back to the location text.
+    city: o.city || null,
     channels: platformChannels(o.category, o.subType),
   };
 }
@@ -162,12 +164,15 @@ export function applyOfferView(
   view: { city: string; type: string; chip: OfferChip; sort: OfferSort },
 ): Offer[] {
   let list = offers;
-  // Business offers are already server-scoped by city. Platform offers have
-  // no structured city field (`location` is freeform text), so the city
-  // filter is applied client-side by substring match against it.
+  // Business offers are already server-scoped by city. A platform offer matches on its city when
+  // it has one; older ones have only a freeform location, so those match by substring.
   if (view.city) {
     const c = view.city.toLowerCase();
-    list = list.filter((o) => !o.isPlatform || o.business.toLowerCase().includes(c));
+    list = list.filter((o) => {
+      if (!o.isPlatform) return true;
+      if (o.city) return o.city.toLowerCase() === c;
+      return o.business.toLowerCase().includes(c);
+    });
   }
   if (view.type !== 'all') {
     list = list.filter((o) => o.businessType === view.type);

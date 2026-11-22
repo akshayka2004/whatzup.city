@@ -274,7 +274,16 @@ export function OfferCoupon({
                 </span>
               )}
               {offer.isPlatform &&
-                ['DINE_IN', 'TAKEAWAY', 'ONLINE', 'OFFLINE'].includes(offer.subType ?? '') && (
+                [
+                  'DINE_IN',
+                  'TAKEAWAY',
+                  'ONLINE',
+                  'OFFLINE',
+                  'PLUM',
+                  'RICH_PLUM',
+                  'ICE_CAKE',
+                  'OTHER_CAKE',
+                ].includes(offer.subType ?? '') && (
                   <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs font-medium text-muted-foreground">
                     {subTypeLabel(offer.subType)}
                   </span>

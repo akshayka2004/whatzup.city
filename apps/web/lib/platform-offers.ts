@@ -30,6 +30,12 @@ export const PLATFORM_OFFER_CATEGORIES = [
   { value: 'JEWELLERY', label: 'Jewellery Offers', blurb: 'Gold, diamond and jewellery deals' },
   { value: 'STATIONERY', label: 'Stationery Offers', blurb: 'Stationery and school supplies' },
   { value: 'FOOD', label: 'Food Offers', blurb: 'Food and restaurant deals' },
+  {
+    value: 'CHRISTMAS_CAKES',
+    label: 'Christmas Cakes',
+    blurb: 'Plum, rich plum and ice cakes for the season',
+  },
+  { value: 'BUFFET', label: 'Buffets', blurb: 'Hotel buffets in each city, with RSVP' },
 ] as const;
 
 /** Categories that carry a Dine in / Takeaway / Online / Offline sub category. */
@@ -48,6 +54,14 @@ export const OFFER_MODE_SUBTYPES = [
   { value: 'TAKEAWAY', label: 'Takeaway' },
   { value: 'ONLINE', label: 'Online' },
   { value: 'OFFLINE', label: 'Offline' },
+] as const;
+
+/** Christmas cakes: the kind of cake. */
+export const CAKE_SUBTYPES = [
+  { value: 'PLUM', label: 'Plum', blurb: 'Classic plum cake' },
+  { value: 'RICH_PLUM', label: 'Rich Plum', blurb: 'Rich plum cake, soaked fruit' },
+  { value: 'ICE_CAKE', label: 'Ice Cake', blurb: 'Iced and decorated cakes' },
+  { value: 'OTHER_CAKE', label: 'Other', blurb: 'Any other seasonal cake' },
 ] as const;
 
 export type PlatformOfferCategory = (typeof PLATFORM_OFFER_CATEGORIES)[number]['value'];
@@ -166,6 +180,16 @@ export type PlatformOfferDetails = {
 
   // Clothing / Electronics
   brandOrCategory?: string;
+
+  // Christmas cakes: sizes and rates, e.g. {label:'1 kg', rate:'₹900'}
+  cakeRates?: RateLine[];
+
+  // Buffets (the price per person is the offer's `price`)
+  timings?: string;
+  groupDiscount?: string;
+  mapLink?: string;
+  /** false = the hotel is not taking RSVPs through the platform right now. */
+  rsvpOpen?: boolean;
 };
 
 export type PlatformOffer = {
@@ -174,6 +198,8 @@ export type PlatformOffer = {
   subType?: string | null;
   title: string;
   location: string;
+  /** Kerala city. Buffets always have one. */
+  city?: string | null;
   price?: string | null;
   phone?: string | null;
   imageUrl?: string | null;
@@ -191,6 +217,7 @@ export function subTypeLabel(subType?: string | null) {
   if (!subType) return null;
   return (
     STAYCATION_SUBTYPES.find((s) => s.value === subType)?.label ??
+    CAKE_SUBTYPES.find((s) => s.value === subType)?.label ??
     OFFER_MODE_SUBTYPES.find((s) => s.value === subType)?.label ??
     subType
   );
@@ -235,6 +262,12 @@ export function rateLines(
     if (category === 'PAYASAM' && details.payasamTypes?.length) {
       lines.push(...details.payasamTypes.filter((p) => p.label && p.rate));
     }
+    return lines;
+  }
+
+  if (category === 'CHRISTMAS_CAKES') {
+    if (details.cakeRates?.length)
+      lines.push(...details.cakeRates.filter((p) => p.label && p.rate));
     return lines;
   }
 

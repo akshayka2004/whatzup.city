@@ -40,6 +40,7 @@ import { AnnouncementsModule } from './modules/announcements/announcements.modul
 import { ReportsModule } from './modules/reports/reports.module';
 import { SupportModule } from './modules/support/support.module';
 import { SuggestionsModule } from './modules/suggestions/suggestions.module';
+import { MonthlyReportsModule } from './modules/monthly-reports/monthly-reports.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { CategoriesModule } from './modules/categories/categories.module';
@@ -172,6 +173,7 @@ import { GeoModule } from './common/geo/geo.module';
     ReportsModule,
     SupportModule,
     SuggestionsModule,
+    MonthlyReportsModule,
     AnalyticsModule,
     AuditModule,
     CategoriesModule,

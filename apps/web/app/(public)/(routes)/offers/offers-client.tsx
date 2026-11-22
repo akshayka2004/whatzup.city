@@ -523,6 +523,10 @@ export default function OffersClient({
                   }
                   if (d.acStatus) rows.push({ label: 'AC', value: d.acStatus });
                   if (d.amenities) rows.push({ label: 'Amenities', value: d.amenities });
+                  if (d.timings) rows.push({ label: 'Timings', value: d.timings });
+                  if (d.groupDiscount) rows.push({ label: 'Groups', value: d.groupDiscount });
+                  if (viewingOffer.category === 'BUFFET' && viewingOffer.city)
+                    rows.push({ label: 'City', value: viewingOffer.city });
                   if (d.brandOrCategory) rows.push({ label: 'Brand', value: d.brandOrCategory });
                   if (viewingOffer.phone) rows.push({ label: 'Phone', value: viewingOffer.phone });
                   if (!rows.length) return null;
@@ -572,9 +576,17 @@ export default function OffersClient({
                 >
                   Close
                 </Button>
+                {viewingOffer.category === 'BUFFET' && viewingOffer.details?.rsvpOpen !== false && (
+                  <a href={`/buffets?offer=${viewingOffer.id}`} className="flex-1">
+                    <Button className="h-11 w-full gap-1.5">RSVP</Button>
+                  </a>
+                )}
                 {viewingOffer.phone && (
                   <a href={`tel:${viewingOffer.phone}`} className="flex-1">
-                    <Button className="h-11 w-full gap-1.5">
+                    <Button
+                      variant={viewingOffer.category === 'BUFFET' ? 'outline' : 'default'}
+                      className="h-11 w-full gap-1.5"
+                    >
                       <Phone className="h-4 w-4" /> Call vendor
                     </Button>
                   </a>

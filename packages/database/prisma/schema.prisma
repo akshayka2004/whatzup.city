@@ -167,6 +167,7 @@ model User {
   eventTickets           EventTicket[]
   eventWaitlist          EventWaitlist[]
   suggestions            Suggestion[]
+  buffetRsvps            BuffetRsvp[]
   eventPayments          EventPayment[]
   offerRedemptions       OfferRedemption[]
   voucherClaims          VoucherClaim[]
@@ -1102,6 +1103,8 @@ model PlatformOffer {
   category    PlatformOfferCategory
   /// Only Staycation branches: PROPERTY | DAYOUT. Null for other categories.
   subType     String?             @map("sub_type") @db.VarChar(30)
+  /// Kerala city the offer belongs to (Buffets are listed per city). Null = not city specific.
+  city        String?             @db.VarChar(100)
 
   /// Vendor / property / business name — always collected.
   title       String              @db.VarChar(255)
@@ -1135,7 +1138,38 @@ model PlatformOffer {
   @@index([deletedAt])
   @@index([tenantId, deletedAt, status, category])
   @@index([endsAt])
+  @@index([category, city])
   @@map("platform_offers")
+
+  buffetRsvps BuffetRsvp[]
+}
+
+/// A table request for a buffet. The hotel may have no account, so this is a request the
+/// admins (and the hotel, by phone) act on; there is no online payment.
+model BuffetRsvp {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  offerId   String   @map("offer_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String   @db.VarChar(120)
+  phone     String   @db.VarChar(30)
+  /// The day they want to come (date only).
+  visitDate DateTime @map("visit_date") @db.Date
+  guests    Int
+  note      String?  @db.VarChar(500)
+  /// PENDING | CONFIRMED | CANCELLED
+  status    String   @default("PENDING") @db.VarChar(12)
+  adminNote String?  @map("admin_note") @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  offer PlatformOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([offerId, visitDate])
+  @@index([userId])
+  @@index([tenantId, status])
+  @@map("buffet_rsvps")
 }
 
 /// Dedupe log for offer detail-view clicks — one row per (offer, visitor, day)
@@ -1169,6 +1203,8 @@ enum PlatformOfferCategory {
   JEWELLERY
   STATIONERY
   FOOD
+  CHRISTMAS_CAKES
+  BUFFET
 }
 
 enum PlatformOfferStatus {

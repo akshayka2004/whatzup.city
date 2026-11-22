@@ -7,6 +7,9 @@ import {
   MaxLength,
   IsDateString,
   ValidateIf,
+  IsInt,
+  Min,
+  Max,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -23,6 +26,8 @@ export enum PlatformOfferCategoryEnum {
   JEWELLERY = 'JEWELLERY',
   STATIONERY = 'STATIONERY',
   FOOD = 'FOOD',
+  CHRISTMAS_CAKES = 'CHRISTMAS_CAKES',
+  BUFFET = 'BUFFET',
 }
 
 export enum PlatformOfferStatusEnum {
@@ -38,6 +43,10 @@ export enum StaycationSubTypeEnum {
   TAKEAWAY = 'TAKEAWAY',
   ONLINE = 'ONLINE',
   OFFLINE = 'OFFLINE',
+  PLUM = 'PLUM',
+  RICH_PLUM = 'RICH_PLUM',
+  ICE_CAKE = 'ICE_CAKE',
+  OTHER_CAKE = 'OTHER_CAKE',
 }
 
 /** Categories whose sub category is how the offer is used (dine in, takeaway, online, offline). */
@@ -51,12 +60,15 @@ export const MODE_CATEGORIES = [
   'FOOD',
 ];
 export const MODE_SUBTYPES = ['DINE_IN', 'TAKEAWAY', 'ONLINE', 'OFFLINE'];
+/** Christmas cakes: the kind of cake. */
+export const CAKE_SUBTYPES = ['PLUM', 'RICH_PLUM', 'ICE_CAKE', 'OTHER_CAKE'];
 
 /** The sub type a category may carry: staycation kind, a usage mode, or none. */
 export function validSubType(category: string, subType?: string | null): string | null {
   if (!subType) return null;
   if (category === 'STAYCATION')
     return subType === 'PROPERTY' || subType === 'DAYOUT' ? subType : null;
+  if (category === 'CHRISTMAS_CAKES') return CAKE_SUBTYPES.includes(subType) ? subType : null;
   if (MODE_CATEGORIES.includes(category)) return MODE_SUBTYPES.includes(subType) ? subType : null;
   return null;
 }
@@ -82,6 +94,13 @@ export class CreatePlatformOfferDto {
   @IsNotEmpty()
   @MaxLength(255)
   location!: string;
+
+  /** Kerala city this offer belongs to. Required for buffets (they are listed per city). */
+  @ApiProperty({ example: 'Pathanamthitta', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  city?: string | null;
 
   @ApiProperty({ example: '₹850 per head', required: false })
   @IsOptional()
@@ -143,4 +162,47 @@ export class SetPlatformOfferStatusDto {
   @ApiProperty({ enum: PlatformOfferStatusEnum })
   @IsEnum(PlatformOfferStatusEnum)
   status!: PlatformOfferStatusEnum;
+}
+
+export class CreateBuffetRsvpDto {
+  @ApiProperty()
+  @IsString()
+  @MaxLength(120)
+  name!: string;
+
+  @ApiProperty()
+  @IsString()
+  @MaxLength(30)
+  phone!: string;
+
+  @ApiProperty({ example: '2026-12-24' })
+  @IsString()
+  @MaxLength(10)
+  visitDate!: string;
+
+  @ApiProperty({ example: 4 })
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  guests!: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  note?: string;
+}
+
+export class ReviewBuffetRsvpDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(12)
+  status?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  adminNote?: string;
 }

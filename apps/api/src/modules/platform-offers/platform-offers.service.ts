@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { DatabaseService } from '../../common/database/database.service';
 import { TenantResolverService } from '../../common/database/tenant-resolver.service';
 import { StorageService } from '../../common/storage/storage.service';
@@ -18,6 +18,33 @@ function endOfDay(value?: string | null): Date | null {
   const day = value.slice(0, 10);
   const d = new Date(`${day}T23:59:59.999+05:30`);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Buffets are listed per city, and their free-form details are kept tidy before they are saved. */
+export function checkBuffet(category: string, city?: string | null, details?: Record<string, any>) {
+  if (category !== 'BUFFET') return details;
+  if (!city || !city.trim()) throw new BadRequestException('Pick the city this buffet is in.');
+  const d: Record<string, any> = { ...(details ?? {}) };
+  const text = (v: unknown, max: number) =>
+    typeof v === 'string'
+      ? v
+          .replace(/<[^>]*>/g, '')
+          .trim()
+          .slice(0, max)
+      : undefined;
+  const out: Record<string, any> = {
+    timings: text(d.timings, 200),
+    groupDiscount: text(d.groupDiscount, 300),
+    mapLink: text(d.mapLink, 500),
+    pricePerPax: text(d.pricePerPax, 60),
+    rsvpOpen: d.rsvpOpen === false ? false : true,
+  };
+  if (out.mapLink && !/^https?:\/\//i.test(out.mapLink)) {
+    throw new BadRequestException('The location link must start with http:// or https://');
+  }
+  const merged: Record<string, any> = { ...d, ...out };
+  for (const k of Object.keys(out)) if (out[k] === undefined || out[k] === '') delete merged[k];
+  return merged;
 }
 
 /**
@@ -46,10 +73,14 @@ export class PlatformOffersService {
     // image/PDF before it can be served to the public.
     if (dto.imageUrl) await this.verifyPoster(dto.imageUrl);
 
+    const city = dto.city?.trim() || null;
+    const details = checkBuffet(dto.category, city, dto.details);
+
     const offer = await this.db.platformOffer.create({
       data: {
         tenantId: resolvedTenant,
         category: dto.category,
+        city,
         subType: validSubType(dto.category, dto.subType),
         title: dto.title,
         location: dto.location,
@@ -57,7 +88,7 @@ export class PlatformOffersService {
         phone: dto.phone || null,
         imageUrl: dto.imageUrl || null,
         description: dto.description || null,
-        details: dto.details || {},
+        details: details || {},
         status: dto.status ?? PlatformOfferStatusEnum.UNPUBLISHED,
         endsAt: endOfDay(dto.endsAt),
         createdBy: userId,
@@ -86,6 +117,12 @@ export class PlatformOffersService {
     if (dto.imageUrl && dto.imageUrl !== existing.imageUrl) await this.verifyPoster(dto.imageUrl);
 
     const category = dto.category ?? existing.category;
+    const city = dto.city !== undefined ? dto.city?.trim() || null : existing.city;
+    const details = checkBuffet(
+      category,
+      city,
+      dto.details !== undefined ? dto.details : (existing.details as Record<string, any>),
+    );
 
     const updated = await this.db.platformOffer.update({
       where: { id },
@@ -99,7 +136,8 @@ export class PlatformOffersService {
         ...(dto.phone !== undefined ? { phone: dto.phone || null } : {}),
         ...(dto.imageUrl !== undefined ? { imageUrl: dto.imageUrl || null } : {}),
         ...(dto.description !== undefined ? { description: dto.description || null } : {}),
-        ...(dto.details !== undefined ? { details: dto.details } : {}),
+        ...(dto.city !== undefined ? { city } : {}),
+        ...(dto.details !== undefined || category === 'BUFFET' ? { details: details || {} } : {}),
         ...(dto.status !== undefined ? { status: dto.status } : {}),
         ...(dto.endsAt !== undefined ? { endsAt: endOfDay(dto.endsAt) } : {}),
         updatedBy: userId,

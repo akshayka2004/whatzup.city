@@ -12,7 +12,8 @@ function isSafeBusinessRedirect(path: string): boolean {
   return (
     /^\/(business|events)\/[^/?#\s]+([?#].*)?$/.test(path) ||
     /^\/tickets(\/[^/?#\s]+)?$/.test(path) ||
-    /^\/tickets\/pay\/[^/?#\s]+$/.test(path)
+    /^\/tickets\/pay\/[^/?#\s]+$/.test(path) ||
+    /^\/(suggestions|buffets)(\?[^#\s]*)?$/.test(path)
   );
 }
 

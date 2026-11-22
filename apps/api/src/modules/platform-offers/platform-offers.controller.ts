@@ -13,10 +13,13 @@ import {
 import { PUBLIC_API_CACHE } from '../../common/http/cache-control';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PlatformOffersService } from './platform-offers.service';
+import { BuffetRsvpService } from './buffet-rsvp.service';
 import {
   CreatePlatformOfferDto,
   UpdatePlatformOfferDto,
   SetPlatformOfferStatusDto,
+  CreateBuffetRsvpDto,
+  ReviewBuffetRsvpDto,
 } from './dto/platform-offer.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -28,7 +31,10 @@ import { UserRole } from '@saas/types';
 @ApiTags('Platform Offers')
 @Controller('platform-offers')
 export class PlatformOffersController {
-  constructor(private readonly service: PlatformOffersService) {}
+  constructor(
+    private readonly service: PlatformOffersService,
+    private readonly rsvps: BuffetRsvpService,
+  ) {}
 
   // ── Public ───────────────────────────────────────────────────────
   // Literal segments are declared before ':id' so they aren't swallowed by the
@@ -56,7 +62,64 @@ export class PlatformOffersController {
     return { ok: true };
   }
 
+  // ── Buffet RSVPs: any signed-in person (literal segments first) ──────
+
+  @Get('rsvps/mine')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'My buffet RSVPs' })
+  myRsvps(@CurrentUser() user: { id: string; tenantId?: string }) {
+    return this.rsvps.mine(user);
+  }
+
+  @Patch('rsvps/:id/cancel')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cancel my buffet RSVP' })
+  cancelRsvp(@CurrentUser() user: { id: string; tenantId?: string }, @Param('id') id: string) {
+    return this.rsvps.cancelMine(user, id);
+  }
+
+  @Post(':id/rsvp')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'RSVP for a buffet' })
+  rsvp(
+    @CurrentUser() user: { id: string; tenantId?: string },
+    @Param('id') id: string,
+    @Body() dto: CreateBuffetRsvpDto,
+  ) {
+    return this.rsvps.create(user, id, dto);
+  }
+
   // ── Admin ────────────────────────────────────────────────────────
+
+  @Get('admin/rsvps')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Buffet RSVPs for the admins' })
+  adminRsvps(
+    @Query('offerId') offerId?: string,
+    @Query('status') status?: string,
+    @Query('upcoming') upcoming?: string,
+    @Query('page') page?: number,
+  ) {
+    return this.rsvps.adminList({ offerId, status, upcoming, page });
+  }
+
+  @Patch('admin/rsvps/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN, UserRole.PLATFORM_STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Confirm or cancel a buffet RSVP, with a note' })
+  reviewRsvp(
+    @CurrentUser() user: { id: string; tenantId?: string },
+    @Param('id') id: string,
+    @Body() dto: ReviewBuffetRsvpDto,
+  ) {
+    return this.rsvps.review(user, id, dto);
+  }
 
   @Get('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)

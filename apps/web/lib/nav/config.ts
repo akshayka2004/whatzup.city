@@ -1,5 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  UtensilsCrossed,
+  CalendarRange,
   ShieldCheck,
   Activity,
   BarChart3,
@@ -126,6 +128,7 @@ function publicNav(ctx: NavContext): NavSpec {
             mobileTour: 'mnav-search',
           },
           { label: 'Offers', href: '/offers', icon: TicketPercent, tour: 'nav-offers' },
+          { label: 'Buffets', href: '/buffets', icon: UtensilsCrossed },
           { label: 'Spin it', href: '/spin-it', icon: Sparkles },
           {
             label: 'Events',
@@ -243,6 +246,7 @@ function businessNav(ctx: NavContext): NavSpec {
             mobileTour: 'mnav-overview',
           },
           { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+          { label: 'Monthly report', href: '/dashboard/monthly-report', icon: CalendarRange },
         ],
       },
       {
@@ -371,6 +375,7 @@ function staffNav(): NavSpec {
           { label: 'Events', href: '/staff/events', icon: CalendarDays },
           ...movies({ label: 'Movies', href: '/staff/movies', icon: Clapperboard }),
           { label: 'Platform Offers', href: '/staff/platform-offers', icon: TicketPercent },
+          { label: 'Buffet RSVPs', href: '/staff/buffet-rsvps', icon: UtensilsCrossed },
           { label: 'Announcements', href: '/staff/announcements', icon: Megaphone },
           { label: 'Businesses', href: '/staff/businesses', icon: Store },
         ],
@@ -418,6 +423,7 @@ function adminNav(): NavSpec {
         title: 'Content',
         items: [
           { label: 'Platform Offers', href: '/admin/platform-offers', icon: TicketPercent },
+          { label: 'Buffet RSVPs', href: '/admin/buffet-rsvps', icon: UtensilsCrossed },
           { label: 'Spin wheels', href: '/admin/discounts', icon: Ticket },
           { label: 'Event RSVPs', href: '/admin/event-approvals', icon: CalendarCheck },
           { label: 'Event payments', href: '/admin/event-payments', icon: Wallet },
@@ -431,6 +437,7 @@ function adminNav(): NavSpec {
           { label: 'Bill escalations', href: '/admin/bills', icon: ReceiptText },
           { label: 'Support inbox', href: '/admin/support', icon: LifeBuoy },
           { label: 'Suggestions', href: '/admin/suggestions', icon: Lightbulb },
+          { label: 'Monthly report', href: '/admin/monthly-report', icon: BarChart3 },
           { label: 'Audit Logs', href: '/admin/audit', icon: ScrollText },
         ],
       },
@@ -492,6 +499,7 @@ function superAdminNav(): NavSpec {
         title: 'Content',
         items: [
           { label: 'Platform Offers', href: '/admin/platform-offers', icon: TicketPercent },
+          { label: 'Buffet RSVPs', href: '/admin/buffet-rsvps', icon: UtensilsCrossed },
           { label: 'Business Offers', href: '/super-admin/offers', icon: Ticket },
           { label: 'Events', href: '/super-admin/events', icon: CalendarDays },
           { label: 'Event RSVPs', href: '/admin/event-approvals', icon: CalendarCheck },
@@ -507,6 +515,7 @@ function superAdminNav(): NavSpec {
           { label: 'Bill escalations', href: '/admin/bills', icon: ReceiptText },
           { label: 'Support inbox', href: '/admin/support', icon: LifeBuoy },
           { label: 'Suggestions', href: '/admin/suggestions', icon: Lightbulb },
+          { label: 'Monthly report', href: '/admin/monthly-report', icon: BarChart3 },
           { label: 'Audit Logs', href: '/admin/audit', icon: ScrollText },
           { label: 'Referrals', href: '/super-admin/referrals', icon: Share2 },
         ],

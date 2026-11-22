@@ -24,6 +24,7 @@ import { onboardingService } from '@/lib/services/onboarding-service';
 import {
   PLATFORM_OFFER_CATEGORIES,
   STAYCATION_SUBTYPES,
+  CAKE_SUBTYPES,
   OFFER_MODE_SUBTYPES,
   MODE_CATEGORIES,
   SADYA_PROVIDER_TYPES,
@@ -39,6 +40,7 @@ import {
   type PlatformOfferDetails,
   type RateLine,
 } from '@/lib/platform-offers';
+import { KERALA_CITIES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { ListFilters, countBy, matchesSearch } from '@/components/system/list-filters';
 import { Tag, Plus, Loader2, UploadCloud, Eye, EyeOff, Trash2, X, ImageIcon } from 'lucide-react';
@@ -132,6 +134,7 @@ type Row = {
   subType?: string | null;
   title: string;
   location: string;
+  city?: string | null;
   price?: string | null;
   phone?: string | null;
   description?: string | null;
@@ -227,6 +230,7 @@ export function PlatformOffersManager() {
   const [subType, setSubType] = useState<string>('');
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
+  const [city, setCity] = useState('');
   const [price, setPrice] = useState('');
   const [phone, setPhone] = useState('');
   const [description, setDescription] = useState('');
@@ -255,6 +259,7 @@ export function PlatformOffersManager() {
     setSubType('');
     setTitle('');
     setLocation('');
+    setCity('');
     setPrice('');
     setPhone('');
     setDescription('');
@@ -276,6 +281,7 @@ export function PlatformOffersManager() {
     setSubType(r.subType || '');
     setTitle(r.title);
     setLocation(r.location);
+    setCity(r.city || '');
     setPrice(r.price || '');
     setPhone(r.phone || '');
     setDescription(r.description || '');
@@ -297,7 +303,14 @@ export function PlatformOffersManager() {
   const isStaycation = category === 'STAYCATION';
   const hasMode = MODE_CATEGORIES.includes(category);
   const isSadyaLike = category === 'SADYA' || category === 'PAYASAM';
-  const canSave = !!category && !!title.trim() && !!location.trim() && (!isStaycation || !!subType);
+  const isCakes = category === 'CHRISTMAS_CAKES';
+  const isBuffet = category === 'BUFFET';
+  const canSave =
+    !!category &&
+    !!title.trim() &&
+    !!location.trim() &&
+    (!(isStaycation || isCakes) || !!subType) &&
+    (!isBuffet || !!city);
 
   const save = async (publish: boolean) => {
     if (!canSave) return;
@@ -325,9 +338,10 @@ export function PlatformOffersManager() {
 
       const body: any = {
         category,
-        subType: isStaycation || hasMode ? subType || undefined : undefined,
+        subType: isStaycation || isCakes || hasMode ? subType || undefined : undefined,
         title: title.trim(),
         location: location.trim(),
+        city: city || null,
         price: price.trim() || undefined,
         phone: phone.trim() || undefined,
         description: description.trim() || undefined,
@@ -527,7 +541,12 @@ export function PlatformOffersManager() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <h3 className="font-semibold text-foreground truncate">{r.title}</h3>
-                            <p className="text-xs text-muted-foreground truncate">{r.location}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {r.location}
+                              {r.city && !r.location.toLowerCase().includes(r.city.toLowerCase())
+                                ? ` · ${r.city}`
+                                : ''}
+                            </p>
                           </div>
                           <span
                             className={cn(
@@ -708,6 +727,31 @@ export function PlatformOffersManager() {
               </div>
             )}
 
+            {/* Christmas cake kind */}
+            {isCakes && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">Kind of cake *</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {CAKE_SUBTYPES.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      aria-pressed={subType === s.value}
+                      onClick={() => setSubType(s.value)}
+                      className={cn(
+                        'min-h-11 p-3 rounded-xl border text-sm font-semibold text-left transition cursor-pointer',
+                        subType === s.value
+                          ? 'border-primary bg-primary/10 text-foreground'
+                          : 'border-border text-muted-foreground hover:border-border',
+                      )}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Dine in / Takeaway / Online / Offline (optional) */}
             {hasMode && (
               <div>
@@ -735,7 +779,7 @@ export function PlatformOffersManager() {
               </div>
             )}
 
-            {category && (!isStaycation || subType) && (
+            {category && (!(isStaycation || isCakes) || subType) && (
               <>
                 {/* Common core */}
                 <div className="grid sm:grid-cols-2 gap-3">
@@ -753,8 +797,38 @@ export function PlatformOffersManager() {
                       className="h-11 rounded-xl"
                     />
                   </Field>
+                  <Field
+                    label={isBuffet ? 'City *' : 'City'}
+                    hint={
+                      isBuffet
+                        ? 'Buffets are listed under this city.'
+                        : 'Optional. Shows the offer to people who pick this city.'
+                    }
+                  >
+                    <select
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                    >
+                      <option value="">{isBuffet ? 'Pick a city' : 'Any city'}</option>
+                      {[...KERALA_CITIES].sort().map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
                   {!isSadyaLike && !isStaycation && (
-                    <Field label="Price" hint="Free text — e.g. ₹850 per head, or ₹5,000 onwards">
+                    <Field
+                      label={isBuffet ? 'Price per person' : 'Price'}
+                      hint={
+                        isBuffet
+                          ? 'e.g. ₹899 per person. Add taxes in the notes if they are extra.'
+                          : isCakes
+                            ? 'e.g. From ₹650 per kg. Sizes can be listed below.'
+                            : 'Free text — e.g. ₹850 per head, or ₹5,000 onwards'
+                      }
+                    >
                       <Input
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
@@ -1160,6 +1234,63 @@ export function PlatformOffersManager() {
                         className="w-full p-3 border border-input bg-background text-foreground rounded-xl text-sm focus:ring-1 focus:outline-none"
                       />
                     </Field>
+                  </div>
+                )}
+
+                {/* ── Christmas cakes ───────────────────────────── */}
+                {isCakes && (
+                  <div className="space-y-4 rounded-xl border border-border p-4">
+                    <Field label="Sizes and rates" hint="e.g. 1 kg — ₹900. Optional.">
+                      <RateLineEditor
+                        lines={details.cakeRates || []}
+                        onChange={(lines) => setD({ cakeRates: lines })}
+                        labelPlaceholder="Size, e.g. 1 kg"
+                      />
+                    </Field>
+                    <p className="text-xs text-muted-foreground">
+                      &quot;Show until&quot; above is the last day to order.
+                    </p>
+                  </div>
+                )}
+
+                {/* ── Buffet ────────────────────────────────────── */}
+                {isBuffet && (
+                  <div className="space-y-4 rounded-xl border border-border p-4">
+                    <Field label="Timings" hint="e.g. Lunch 12:30 to 3:30 pm, Dinner 7 to 10:30 pm">
+                      <Input
+                        value={details.timings || ''}
+                        maxLength={200}
+                        onChange={(e) => setD({ timings: e.target.value })}
+                        className="h-11 rounded-xl"
+                      />
+                    </Field>
+                    <Field label="Group discount" hint="Leave empty if there is none.">
+                      <Input
+                        value={details.groupDiscount || ''}
+                        maxLength={300}
+                        onChange={(e) => setD({ groupDiscount: e.target.value })}
+                        placeholder="e.g. 10% off for 10 or more guests"
+                        className="h-11 rounded-xl"
+                      />
+                    </Field>
+                    <Field label="Location link" hint="A Google Maps link, starting with https://">
+                      <Input
+                        value={details.mapLink || ''}
+                        maxLength={500}
+                        onChange={(e) => setD({ mapLink: e.target.value })}
+                        placeholder="https://maps.app.goo.gl/…"
+                        className="h-11 rounded-xl"
+                      />
+                    </Field>
+                    <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={details.rsvpOpen !== false}
+                        onChange={(e) => setD({ rsvpOpen: e.target.checked })}
+                        className="h-5 w-5"
+                      />
+                      <span>Take RSVPs on the platform</span>
+                    </label>
                   </div>
                 )}
 

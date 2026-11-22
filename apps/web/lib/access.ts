@@ -17,7 +17,7 @@ const PATH_AREAS: [RegExp, AccessAreaKey][] = [
   [/^\/admin\/approvals/, 'approvals'],
   [/^\/admin\/registrations/, 'registrations'],
   [/^\/admin\/categories/, 'categories'],
-  [/^\/admin\/platform-offers/, 'platform_offers'],
+  [/^\/admin\/(platform-offers|buffet-rsvps)/, 'platform_offers'],
   [/^\/admin\/discounts/, 'spin_wheels'],
   [/^\/admin\/notices/, 'notices'],
   [/^\/admin\/event-(approvals|payments)/, 'events'],
@@ -28,7 +28,7 @@ const PATH_AREAS: [RegExp, AccessAreaKey][] = [
   [/^\/admin\/(payments|payment-approvals|subscriptions)/, 'payments'],
   [/^\/staff\/events/, 'events'],
   [/^\/staff\/movies/, 'movies'],
-  [/^\/staff\/platform-offers/, 'platform_offers'],
+  [/^\/staff\/(platform-offers|buffet-rsvps)/, 'platform_offers'],
   [/^\/staff\/announcements/, 'notices'],
   [/^\/staff\/businesses/, 'businesses'],
 ];
