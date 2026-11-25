@@ -8,19 +8,25 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { UserRole } from '@saas/types';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { VouchersService, type Actor } from './vouchers.service';
 import { RewardInsightsService } from './reward-insights.service';
+import { RewardsAdminService } from './rewards-admin.service';
 import {
   CreateVoucherDto,
   UpdateVoucherDto,
   RedeemVoucherDto,
   LookupVoucherDto,
   AudiencePreviewDto,
+  AdminRewardStatusDto,
 } from './dto/voucher.dto';
 
 @ApiTags('Vouchers')
@@ -31,7 +37,33 @@ export class VouchersController {
   constructor(
     private readonly vouchers: VouchersService,
     private readonly insights: RewardInsightsService,
+    private readonly adminSvc: RewardsAdminService,
   ) {}
+
+  // ── PLATFORM ADMIN (literal routes first) ──────────────────────────────
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Get('admin/overview')
+  @ApiOperation({ summary: 'Every business reward, what it owes, and the watch list (admins)' })
+  adminOverview(
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('page') page?: number,
+  ) {
+    return this.adminSvc.overview({ status, search, page });
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.MASTER_ADMIN, UserRole.SUPER_ADMIN)
+  @Patch('admin/:id/status')
+  @ApiOperation({ summary: 'Pause or resume a business reward (admins)' })
+  adminSetStatus(
+    @CurrentUser() user: Actor & { tenantId?: string },
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AdminRewardStatusDto,
+  ) {
+    return this.adminSvc.setStatus(user, id, dto.status);
+  }
 
   // ── OWNER / MANAGER ────────────────────────────────────────────────────
   @Post()

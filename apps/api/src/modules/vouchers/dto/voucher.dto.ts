@@ -76,3 +76,7 @@ export class AudiencePreviewDto {
   @IsString() @IsNotEmpty() businessId!: string;
   @IsObject() audience!: Record<string, unknown>;
 }
+
+export class AdminRewardStatusDto {
+  @IsIn(['ACTIVE', 'PAUSED']) status!: string;
+}

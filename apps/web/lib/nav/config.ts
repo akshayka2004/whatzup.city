@@ -432,6 +432,7 @@ function adminNav(): NavSpec {
         items: [
           { label: 'Platform Offers', href: '/admin/platform-offers', icon: TicketPercent },
           { label: 'Buffet RSVPs', href: '/admin/buffet-rsvps', icon: UtensilsCrossed },
+          { label: 'Business rewards', href: '/admin/rewards', icon: Gift },
           { label: 'Spin wheels', href: '/admin/discounts', icon: Ticket },
           { label: 'Event RSVPs', href: '/admin/event-approvals', icon: CalendarCheck },
           { label: 'Event payments', href: '/admin/event-payments', icon: Wallet },
@@ -508,6 +509,7 @@ function superAdminNav(): NavSpec {
         items: [
           { label: 'Platform Offers', href: '/admin/platform-offers', icon: TicketPercent },
           { label: 'Buffet RSVPs', href: '/admin/buffet-rsvps', icon: UtensilsCrossed },
+          { label: 'Business rewards', href: '/admin/rewards', icon: Gift },
           { label: 'Business Offers', href: '/super-admin/offers', icon: Ticket },
           { label: 'Events', href: '/super-admin/events', icon: CalendarDays },
           { label: 'Event RSVPs', href: '/admin/event-approvals', icon: CalendarCheck },
