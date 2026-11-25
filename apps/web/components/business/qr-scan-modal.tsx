@@ -9,9 +9,17 @@ interface QrScanModalProps {
   open: boolean;
   onClose: () => void;
   onScan: (decodedText: string) => void;
+  title?: string;
+  description?: string;
 }
 
-export function QrScanModal({ open, onClose, onScan }: QrScanModalProps) {
+export function QrScanModal({
+  open,
+  onClose,
+  onScan,
+  title = 'Scan business QR',
+  description = 'Point your camera at a business’s QR code.',
+}: QrScanModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
@@ -51,8 +59,8 @@ export function QrScanModal({ open, onClose, onScan }: QrScanModalProps) {
     <Modal
       open={open}
       onOpenChange={(o) => !o && onClose()}
-      title="Scan business QR"
-      description="Point your camera at a business’s QR code."
+      title={title}
+      description={description}
       size="sm"
     >
       {error ? (

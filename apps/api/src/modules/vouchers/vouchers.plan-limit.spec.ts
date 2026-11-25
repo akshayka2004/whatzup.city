@@ -17,41 +17,62 @@ function make(opts: { atLimit?: boolean; existing?: any } = {}) {
     business: {
       findFirst: jest.fn(async () => ({ id: 'biz-1', tenantId: 't', ownerId: 'u', name: 'B' })),
     },
+    voucherClaim: { count: jest.fn(async () => 0) },
     voucher: {
       create: jest.fn(async ({ data }: any) => ({ id: 'v-new', ...data })),
       update: jest.fn(async ({ data }: any) => ({ id: 'v1', ...data })),
       findFirst: jest.fn(async () => opts.existing ?? null),
     },
   };
-  return { service: new VouchersService(db, entitlements), db, entitlements };
+  const progress: any = {};
+  const audience: any = {};
+  return { service: new VouchersService(db, entitlements, progress, audience), db, entitlements };
 }
 
 describe('VouchersService plan limits', () => {
-  const dto = { title: 'V', thresholdAmount: 500, endDate: future().toISOString() };
+  const U = { id: 'u' };
+  const dto = {
+    title: 'Free dessert',
+    thresholdAmount: 500,
+    rewardValue: 50,
+    endDate: future().toISOString(),
+  };
 
   it('creating a live voucher is checked', async () => {
     const { service, entitlements, db } = make();
-    await service.create('u', 'biz-1', dto);
+    await service.create(U, 'biz-1', dto);
     expect(entitlements.assertCanGoLive).toHaveBeenCalledWith('biz-1', 'voucher');
     expect(db.voucher.create).toHaveBeenCalled();
   });
 
   it('Free (limit 0) cannot create a live voucher', async () => {
     const { service, db } = make({ atLimit: true });
-    await expect(service.create('u', 'biz-1', dto)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(service.create(U, 'biz-1', dto)).rejects.toBeInstanceOf(ForbiddenException);
     expect(db.voucher.create).not.toHaveBeenCalled();
   });
 
   it('a PAUSED voucher can be saved without a check', async () => {
     const { service, entitlements } = make({ atLimit: true });
-    await service.create('u', 'biz-1', { ...dto, status: 'PAUSED' });
+    await service.create(U, 'biz-1', { ...dto, status: 'PAUSED' });
     expect(entitlements.assertCanGoLive).not.toHaveBeenCalled();
   });
 
   it('re-activating is checked, and blocked at the limit', async () => {
-    const existing = { id: 'v1', businessId: 'biz-1', status: 'PAUSED', endDate: future() };
+    const existing = {
+      id: 'v1',
+      businessId: 'biz-1',
+      status: 'PAUSED',
+      startDate: new Date(Date.now() - 86_400_000),
+      endDate: future(),
+      thresholdAmount: 500,
+      rewardType: 'AMOUNT',
+      rewardValue: 50,
+      repeatable: false,
+      currentClaims: 0,
+      audience: {},
+    };
     const { service, db } = make({ atLimit: true, existing });
-    await expect(service.update('u', 'v1', { status: 'ACTIVE' })).rejects.toBeInstanceOf(
+    await expect(service.update(U, 'v1', { status: 'ACTIVE' })).rejects.toBeInstanceOf(
       ForbiddenException,
     );
     expect(db.voucher.update).not.toHaveBeenCalled();

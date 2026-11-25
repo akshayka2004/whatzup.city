@@ -1381,8 +1381,21 @@ model Voucher {
   endDate         DateTime    @map("end_date")
   maxRedemptions     Int?     @map("max_redemptions")
   currentRedemptions Int      @default(0) @map("current_redemptions")
+  /// Codes handed out so far. The cap is checked against this when a customer claims, so a cap of 10 means 10 codes.
+  currentClaims      Int      @default(0) @map("current_claims")
   terms           String?     @db.Text
   targetCities    Json        @default("[]") @map("target_cities")
+  /// Which verified spend counts: SINCE_START (from the start date, the default for new rewards),
+  /// MONTHLY (this calendar month, India time), ROLLING_30 (last 30 days), LIFETIME (everything; old vouchers).
+  spendWindow     String      @default("SINCE_START") @map("spend_window") @db.VarChar(16)
+  /// true = "every ₹threshold": each full threshold of spend in the window can be claimed once.
+  repeatable      Boolean     @default(false)
+  /// Most claims one customer can make in a window. Null on a one-time reward.
+  perCustomerLimit Int?       @map("per_customer_limit")
+  /// Who the reward is for. {} = everyone. Shape in apps/api/src/modules/vouchers/reward-rules.ts.
+  audience        Json        @default("{}")
+  /// Days a claimed code stays valid after it is claimed (never less than until the end date).
+  claimValidDays  Int         @default(30) @map("claim_valid_days")
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
@@ -1416,6 +1429,13 @@ model VoucherClaim {
   unlockedAt    DateTime  @default(now()) @map("unlocked_at")
   redeemedAt    DateTime? @map("redeemed_at")
   redeemedBy    String?   @map("redeemed_by") @db.Uuid
+  /// Which claim of this customer this is, so two people tapping Claim at once cannot both win the
+  /// same one: "legacy" for old rows, "<window start>:<n>" otherwise.
+  cycleKey      String    @default("legacy") @map("cycle_key") @db.VarChar(60)
+  /// Last moment the code can be used.
+  expiresAt     DateTime? @map("expires_at")
+  /// Bill amount the staff member typed when redeeming (optional).
+  redeemAmount  Decimal?  @map("redeem_amount") @db.Decimal(12, 2)
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
@@ -1426,11 +1446,12 @@ model VoucherClaim {
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  // One claim per customer per voucher.
-  @@unique([voucherId, userId])
+  // A customer can claim a repeatable reward more than once, but never the same cycle twice.
+  @@unique([voucherId, userId, cycleKey])
   @@unique([tenantId, code])
   @@index([businessId, status])
   @@index([userId])
+  @@index([voucherId, userId])
   @@map("voucher_claims")
 }
 
@@ -1728,6 +1749,11 @@ model Bill {
   // SWIGGY | ZOMATO | PLENTI | OTHER (extensible code); the typed name when OTHER.
   deliveryPartner     String? @map("delivery_partner") @db.VarChar(30)
   deliveryPartnerName String? @map("delivery_partner_name") @db.VarChar(60)
+  /// PHOTO (customer uploaded, owner approved) | COUNTER (staff typed it, customer confirmed on their phone).
+  source          String     @default("PHOTO") @db.VarChar(12)
+  /// Set when the owner voids a counter bill within the allowed days.
+  voidedAt        DateTime?  @map("voided_at")
+  voidedBy        String?    @map("voided_by") @db.Uuid
 
   // Core Audit Fields
   createdAt       DateTime   @default(now()) @map("created_at")
@@ -3315,3 +3341,51 @@ model DailyBusinessStat {
   @@index([date])
   @@map("daily_business_stats")
 }
+
+/// One thing that happened on the way to a reward: NEAR (80% there), READY, CLAIMED, REDEEMED, EXPIRED.
+/// Written once per (customer, reward, kind, cycle), so it dedupes the notifications and feeds the
+/// business funnel. Plain ids, no foreign keys: this is a log.
+model RewardEvent {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  voucherId  String   @map("voucher_id") @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
+  kind       String   @db.VarChar(12)
+  cycleKey   String   @default("") @map("cycle_key") @db.VarChar(60)
+  amount     Decimal? @db.Decimal(12, 2)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, voucherId, kind, cycleKey])
+  @@index([businessId, kind, createdAt])
+  @@index([voucherId, kind])
+  @@map("reward_events")
+}
+
+/// A bill typed at the counter by staff and confirmed by the customer on their own phone, with no photo
+/// and no approval queue. The customer opens "Quick pay" (a 6-digit code, 10 minutes), staff enter the
+/// code and the amount, the customer confirms.
+model CounterBill {
+  id          String    @id @default(uuid()) @db.Uuid
+  /// The customer's tenant (the Bill is created there, like an uploaded bill).
+  tenantId    String    @map("tenant_id") @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  code        String    @db.VarChar(8)
+  /// OPEN (customer waiting) | AWAITING (staff entered the amount) | CONFIRMED | DECLINED | EXPIRED
+  status      String    @default("OPEN") @db.VarChar(10)
+  businessId  String?   @map("business_id") @db.Uuid
+  staffId     String?   @map("staff_id") @db.Uuid
+  amount      Decimal?  @db.Decimal(12, 2)
+  billNumber  String?   @map("bill_number") @db.VarChar(60)
+  billId      String?   @map("bill_id") @db.Uuid
+  expiresAt   DateTime  @map("expires_at")
+  enteredAt   DateTime? @map("entered_at")
+  decidedAt   DateTime? @map("decided_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([code, status])
+  @@index([userId, status])
+  @@index([businessId, createdAt])
+  @@map("counter_bills")
+}
+

@@ -1,7 +1,8 @@
-import { Injectable, Logger, ConflictException } from '@nestjs/common';
+import { Injectable, Logger, ConflictException, Optional } from '@nestjs/common';
 import { VerifiedPurchaseRepository } from '../../common/database/repositories/verified-purchase.repository';
 import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../../common/database/database.service';
+import { RewardProgressService } from '../rewards/reward-progress.service';
 
 @Injectable()
 export class VerifiedPurchasesService {
@@ -11,6 +12,7 @@ export class VerifiedPurchasesService {
     private readonly verifiedPurchaseRepo: VerifiedPurchaseRepository,
     private readonly auditService: AuditService,
     private readonly db: DatabaseService,
+    @Optional() private readonly rewards?: RewardProgressService,
   ) {}
 
   async createVerifiedPurchase(
@@ -55,6 +57,9 @@ export class VerifiedPurchasesService {
     this.logger.log(
       `Verified purchase created for user ${userId} at business ${businessId} via bill ${billId}`,
     );
+
+    // Tell the customer how close they are to a reward (or that they earned one). Never blocks the bill.
+    void this.rewards?.onSpend(userId, businessId).catch(() => undefined);
 
     return verifiedPurchase;
   }

@@ -123,14 +123,11 @@ export function OffersSection({
 
   const unlockVoucher = async (id: string) => {
     setUnlockingId(id);
-    const res = await apiService.post<any>(`/v1/vouchers/${id}/unlock`, {});
+    const res = await apiService.post<any>(`/v1/vouchers/${id}/claim`, {});
     setUnlockingId(null);
     if (!res.error && res.data?.code) {
-      setVouchers((list) =>
-        list.map((v) =>
-          v.id === id ? { ...v, unlocked: true, code: res.data.code, status: res.data.status } : v,
-        ),
-      );
+      // Re-read, so a repeatable reward shows the next level and every code the customer holds.
+      loadVouchers();
     }
   };
 
@@ -269,7 +266,10 @@ export function OffersSection({
             <span className="font-semibold text-foreground">
               ₹{voucherSpend.toLocaleString('en-IN')}
             </span>
-            . Cross a threshold to unlock the code, then show it in-store.
+            . Reach a level, claim the reward, then show the code at the counter.{' '}
+            <a href="/rewards" className="font-medium text-primary underline">
+              See all my rewards
+            </a>
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {vouchers.map((v: any, i: number) => (
@@ -282,7 +282,16 @@ export function OffersSection({
                   <div className="min-w-0">
                     <h3 className="truncate font-semibold text-foreground">{v.title}</h3>
                     <p className="text-xs text-muted-foreground">
-                      Unlocks at ₹{v.thresholdAmount.toLocaleString('en-IN')} spend
+                      {v.repeatable ? 'Every' : 'At'} ₹{v.thresholdAmount.toLocaleString('en-IN')}{' '}
+                      spend
+                      {v.spendWindow === 'MONTHLY'
+                        ? ' this month'
+                        : v.spendWindow === 'ROLLING_30'
+                          ? ' in 30 days'
+                          : v.spendWindow === 'SINCE_START'
+                            ? ' from when it started'
+                            : ''}
+                      {v.targeted ? ' · picked for you' : ''}
                     </p>
                   </div>
                   <span className="shrink-0 rounded-lg bg-brand-soft px-2 py-1 text-sm font-bold text-brand-soft-foreground">
@@ -309,16 +318,24 @@ export function OffersSection({
                   />
                 </div>
 
-                {v.unlocked ? (
-                  <div className="mt-3 flex items-center justify-between rounded-lg border border-success/25 bg-success/12 px-3 py-2">
+                {(v.codes ?? []).slice(0, 3).map((c: any) => (
+                  <div
+                    key={c.code}
+                    className="mt-3 flex items-center justify-between rounded-lg border border-success/25 bg-success/12 px-3 py-2"
+                  >
                     <span className="font-mono text-sm font-bold tracking-wider text-success-soft-foreground">
-                      {v.code}
+                      {c.code}
                     </span>
                     <span className="text-xs font-semibold uppercase text-success-soft-foreground">
-                      {v.status === 'REDEEMED' ? t('biz.redeemed') : t('biz.showInStore')}
+                      {c.status === 'REDEEMED'
+                        ? t('biz.redeemed')
+                        : new Date(c.expiresAt).getTime() < Date.now()
+                          ? 'Expired'
+                          : t('biz.showInStore')}
                     </span>
                   </div>
-                ) : v.qualified ? (
+                ))}
+                {v.qualified ? (
                   <Button
                     onClick={() => unlockVoucher(v.id)}
                     disabled={unlockingId === v.id}
@@ -330,12 +347,20 @@ export function OffersSection({
                     ) : (
                       <Ticket className="h-4 w-4" />
                     )}
-                    {t('biz.unlockCode')}
+                    {v.claimable > 1 ? `Claim reward (${v.claimable} ready)` : 'Claim reward'}
                   </Button>
+                ) : v.done ? (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {v.repeatable
+                      ? 'You have claimed this the most times it allows.'
+                      : 'You have claimed this reward.'}
+                  </p>
                 ) : (
                   <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Lock className="h-3.5 w-3.5" />
-                    Spend ₹{v.remainingToUnlock.toLocaleString('en-IN')} more to unlock
+                    <Lock className="h-3.5 w-3.5" />₹
+                    {Number(v.spendInWindow ?? 0).toLocaleString('en-IN')} of ₹
+                    {v.thresholdAmount.toLocaleString('en-IN')} · spend ₹
+                    {v.remainingToUnlock.toLocaleString('en-IN')} more
                   </p>
                 )}
               </div>

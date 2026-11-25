@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Gift, Pause, Play, Plus, Ticket, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { BarChart3, Gift, Pause, Play, Plus, Repeat, Ticket, Trash2 } from 'lucide-react';
 import { BusinessLayout } from '@/components/layouts/business-layout';
 import { PageHeader } from '@/components/system/page-header';
 import { SectionCard } from '@/components/system/section-card';
@@ -11,6 +12,8 @@ import { EmptyState } from '@/components/common/empty-state';
 import { useConfirm } from '@/components/common/confirm-dialog';
 import { PromoCard, PromoGrid, PromoGridSkeleton } from '@/components/promotions/promo-card';
 import { RedeemPanel } from '@/components/promotions/redeem-panel';
+import { RedeemBox } from '@/components/rewards/redeem-box';
+import { AudienceBuilder, type Audience } from '@/components/rewards/audience-builder';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ui/sonner';
@@ -40,6 +43,10 @@ type Voucher = {
   currentRedemptions: number;
   unlockedCount?: number;
   redeemedCount?: number;
+  spendWindow?: string;
+  repeatable?: boolean;
+  perCustomerLimit?: number | null;
+  targeted?: boolean;
 };
 
 type PlatformRedemption = {
@@ -52,6 +59,29 @@ type PlatformRedemption = {
   rewardLabel: string | null;
   redeemedAt: string;
 };
+
+const WINDOWS = [
+  {
+    value: 'SINCE_START',
+    label: 'Since the reward starts',
+    hint: 'Only new spending counts. Best for a fresh offer.',
+  },
+  {
+    value: 'MONTHLY',
+    label: 'This calendar month',
+    hint: 'Starts again on the 1st of every month.',
+  },
+  { value: 'ROLLING_30', label: 'Last 30 days', hint: 'A moving 30-day window.' },
+  { value: 'LIFETIME', label: 'All time', hint: 'Counts everything a customer ever spent here.' },
+] as const;
+const windowText = (w?: string) =>
+  w === 'MONTHLY'
+    ? 'this month'
+    : w === 'ROLLING_30'
+      ? 'in 30 days'
+      : w === 'LIFETIME'
+        ? 'all time'
+        : 'since start';
 
 const REWARD_TYPES = [
   { value: 'AMOUNT', label: '₹ off' },
@@ -88,6 +118,11 @@ type Form = {
   endDate: string;
   maxRedemptions: string;
   description: string;
+  spendWindow: string;
+  repeatable: boolean;
+  perCustomerLimit: string;
+  claimValidDays: string;
+  audience: Audience;
 };
 const EMPTY: Form = {
   title: '',
@@ -98,6 +133,11 @@ const EMPTY: Form = {
   endDate: '',
   maxRedemptions: '',
   description: '',
+  spendWindow: 'SINCE_START',
+  repeatable: false,
+  perCustomerLimit: '',
+  claimValidDays: '30',
+  audience: {},
 };
 
 export default function VouchersPage() {
@@ -208,6 +248,12 @@ export default function VouchersPage() {
       rewardLabel: form.rewardLabel.trim() || undefined,
       endDate: new Date(form.endDate).toISOString(),
       maxRedemptions: form.maxRedemptions ? Number(form.maxRedemptions) : undefined,
+      spendWindow: form.spendWindow,
+      repeatable: form.repeatable,
+      perCustomerLimit:
+        form.repeatable && form.perCustomerLimit ? Number(form.perCustomerLimit) : undefined,
+      claimValidDays: Number(form.claimValidDays) || 30,
+      audience: form.audience,
     });
     setSaving(false);
     if (res.error) {
@@ -225,7 +271,8 @@ export default function VouchersPage() {
   const remove = async (v: Voucher) => {
     const ok = await confirm({
       title: `Delete “${v.title}”?`,
-      description: 'Customers who unlocked it lose the code.',
+      description:
+        'If customers hold unused codes you will be asked to pause it instead. Delete only when no one is waiting to use it.',
       confirmLabel: 'Delete',
       tone: 'danger',
     });
@@ -283,8 +330,8 @@ export default function VouchersPage() {
   return (
     <BusinessLayout>
       <PageHeader
-        title="Vouchers"
-        description="Reward customers whose verified spend crosses a threshold. The code unlocks for them only then — they show it in-store."
+        title="Rewards"
+        description="Set what customers earn for spending with you. They see their progress, claim the reward when they reach it, and show the code at the counter."
         meta={
           ent && (
             <span
@@ -301,22 +348,21 @@ export default function VouchersPage() {
           )
         }
         actions={
-          <Button onClick={openCreate}>
-            <Plus /> New voucher
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href="/dashboard/insights">
+                <BarChart3 /> Insights
+              </Link>
+            </Button>
+            <Button onClick={openCreate}>
+              <Plus /> New reward
+            </Button>
+          </div>
         }
       />
 
       <div className="mb-6 grid gap-4 lg:grid-cols-2">
-        <RedeemPanel
-          title="Redeem your voucher"
-          placeholder="VCH-A1B2C3"
-          onRedeem={async (c) => {
-            const r = await redeem('/v1/vouchers/redeem', { businessId })(c);
-            if (!r.error) load();
-            return r;
-          }}
-        />
+        {businessId && <RedeemBox businessId={businessId} onRedeemed={load} />}
         <RedeemPanel
           title="Redeem a platform voucher"
           description="Earned from a customer’s Whtzup.city points; any business can accept it."
@@ -404,7 +450,7 @@ export default function VouchersPage() {
                 value={rewardText(v)}
                 valueCaption={v.rewardType === 'FREEBIE' ? undefined : 'off'}
                 title={v.title}
-                subtitle={`Unlocks at ₹${Number(v.thresholdAmount).toLocaleString('en-IN')} verified spend`}
+                subtitle={`${v.repeatable ? 'Every' : 'At'} ₹${Number(v.thresholdAmount).toLocaleString('en-IN')} verified spend, counted ${windowText(v.spendWindow)}`}
                 status={
                   ended
                     ? { tone: 'neutral', label: 'Ended' }
@@ -414,6 +460,8 @@ export default function VouchersPage() {
                 }
                 chips={[
                   { label: `Ends ${fmtDay(v.endDate)}` },
+                  ...(v.repeatable ? [{ label: 'Repeats', tone: 'neutral' as const }] : []),
+                  ...(v.targeted ? [{ label: 'Targeted', tone: 'neutral' as const }] : []),
                   ...(v.maxRedemptions
                     ? [
                         {
@@ -501,8 +549,8 @@ export default function VouchersPage() {
       <Modal
         open={open}
         onOpenChange={setOpen}
-        title="New voucher"
-        description="Customers see the reward once their verified spend crosses the threshold."
+        title="New reward"
+        description="Customers see their progress and can claim the reward once their verified spend reaches the level."
         size="lg"
         footer={
           <>
@@ -510,7 +558,7 @@ export default function VouchersPage() {
               Cancel
             </Button>
             <Button loading={saving} onClick={submit}>
-              Publish voucher
+              Publish reward
             </Button>
           </>
         }
@@ -623,6 +671,82 @@ export default function VouchersPage() {
               onChange={(e) => set('description', e.target.value)}
               placeholder="Dine-in only, one per customer"
             />
+          </div>
+          <div className="sm:col-span-2">
+            <span className={label}>How is spend counted?</span>
+            <ChipRow label="Spend window" wrap>
+              {WINDOWS.map((w) => (
+                <FilterChip
+                  key={w.value}
+                  selected={form.spendWindow === w.value}
+                  onClick={() => set('spendWindow', w.value)}
+                >
+                  {w.label}
+                </FilterChip>
+              ))}
+            </ChipRow>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {WINDOWS.find((w) => w.value === form.spendWindow)?.hint}
+            </p>
+          </div>
+          <label className="flex min-h-11 cursor-pointer items-start gap-3 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={form.repeatable}
+              onChange={(e) => set('repeatable', e.target.checked)}
+              className="mt-1 size-5"
+            />
+            <span className="text-sm">
+              <span className="font-medium">
+                <Repeat className="mr-1 inline size-4" aria-hidden />
+                Repeat every time they reach the level
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                Spend ₹{Number(form.threshold || 1000).toLocaleString('en-IN')} again and earn it
+                again. A customer who spends ₹
+                {(Number(form.threshold || 1000) * 2.3).toLocaleString('en-IN')} can claim twice.
+              </span>
+            </span>
+          </label>
+          {form.repeatable && (
+            <div>
+              <label htmlFor="v-limit" className={label}>
+                Most times one customer can claim
+              </label>
+              <Input
+                id="v-limit"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={50}
+                value={form.perCustomerLimit}
+                onChange={(e) => set('perCustomerLimit', e.target.value)}
+                placeholder="10"
+              />
+            </div>
+          )}
+          <div>
+            <label htmlFor="v-valid" className={label}>
+              Code stays valid for (days)
+            </label>
+            <Input
+              id="v-valid"
+              type="number"
+              inputMode="numeric"
+              min={3}
+              max={90}
+              value={form.claimValidDays}
+              onChange={(e) => set('claimValidDays', e.target.value)}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            {businessId && (
+              <AudienceBuilder
+                businessId={businessId}
+                value={form.audience}
+                onChange={(a) => set('audience', a)}
+              />
+            )}
           </div>
           <button type="submit" hidden />
         </form>

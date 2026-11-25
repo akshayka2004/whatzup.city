@@ -1,5 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  TrendingUp,
+  ScanLine,
   UtensilsCrossed,
   CalendarRange,
   ShieldCheck,
@@ -129,6 +131,7 @@ function publicNav(ctx: NavContext): NavSpec {
           },
           { label: 'Offers', href: '/offers', icon: TicketPercent, tour: 'nav-offers' },
           { label: 'Buffets', href: '/buffets', icon: UtensilsCrossed },
+          { label: 'Rewards', href: '/rewards', icon: Gift },
           { label: 'Spin it', href: '/spin-it', icon: Sparkles },
           {
             label: 'Events',
@@ -152,6 +155,7 @@ function publicNav(ctx: NavContext): NavSpec {
             mobileTour: 'mnav-saved',
           },
           { label: 'My tickets', href: '/tickets', icon: QrCode },
+          { label: 'Quick pay', href: '/quick-pay', icon: ScanLine },
           { label: 'Notifications', href: '/notifications', icon: Bell },
           { label: 'Suggestion box', href: '/suggestions', icon: Lightbulb },
           { label: 'Report Issue', href: '/report', icon: Flag },
@@ -215,6 +219,8 @@ function businessNav(ctx: NavContext): NavSpec {
               tour: 'nav-offers',
               mobileTour: 'mnav-offers',
             },
+            { label: 'Redeem rewards', href: '/dashboard/vouchers', icon: Gift },
+            { label: 'Counter bill', href: '/dashboard/counter', icon: ScanLine },
           ],
         },
       ],
@@ -246,7 +252,9 @@ function businessNav(ctx: NavContext): NavSpec {
             mobileTour: 'mnav-overview',
           },
           { label: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+          { label: 'Insights', href: '/dashboard/insights', icon: TrendingUp },
           { label: 'Monthly report', href: '/dashboard/monthly-report', icon: CalendarRange },
+          { label: 'Counter bill', href: '/dashboard/counter', icon: ScanLine },
         ],
       },
       {
@@ -259,7 +267,7 @@ function businessNav(ctx: NavContext): NavSpec {
             tour: 'nav-offers',
             mobileTour: 'mnav-offers',
           },
-          { label: 'Vouchers', href: '/dashboard/vouchers', icon: Gift, tour: 'nav-vouchers' },
+          { label: 'Rewards', href: '/dashboard/vouchers', icon: Gift, tour: 'nav-vouchers' },
           {
             label: 'Spin wheel',
             href: '/dashboard/discounts',

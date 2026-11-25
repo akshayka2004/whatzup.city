@@ -234,7 +234,7 @@ function Buffets() {
               {mine.map((r) => (
                 <Card
                   key={r.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4"
+                  className="flex-row flex-wrap items-center justify-between gap-3 rounded-2xl p-4"
                 >
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground">{r.buffet.title}</p>

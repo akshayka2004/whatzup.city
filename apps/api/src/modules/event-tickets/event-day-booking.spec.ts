@@ -547,6 +547,27 @@ describe('cancelling and waiting for a day', () => {
 });
 
 describe('the gate on a day-booked event', () => {
+  // The gate checks the scan against the day's 10:00 to 20:00 window, so pin the clock to midday India
+  // time; otherwise this fails whenever the suite runs at night.
+  beforeAll(() => {
+    jest.useFakeTimers({
+      now: Date.parse(`${istDay(Date.now())}T12:00:00+05:30`),
+      doNotFake: [
+        'nextTick',
+        'setImmediate',
+        'clearImmediate',
+        'setInterval',
+        'clearInterval',
+        'setTimeout',
+        'clearTimeout',
+        'queueMicrotask',
+        'performance',
+        'hrtime',
+      ],
+    });
+  });
+  afterAll(() => jest.useRealTimers());
+
   function gate(dayOffsetDays: number) {
     const todayStr = istDay(Date.now());
     const ticketDay = istDay(Date.now() + dayOffsetDays * DAY);

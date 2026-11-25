@@ -127,11 +127,13 @@ export class PlatformVouchersService {
       throw new BadRequestException('This voucher has already been redeemed');
     }
     const tier = claim.platformVoucher;
-    if (tier.maxRedemptions != null && tier.currentRedemptions >= tier.maxRedemptions) {
-      throw new BadRequestException('Voucher redemption limit reached');
+    // A code stays good for two weeks after the reward ends, so a customer who claimed on the last day can still use it.
+    if (tier.endDate.getTime() + 14 * 86_400_000 < Date.now()) {
+      throw new BadRequestException('This voucher has expired');
     }
-    const updated = await this.db.platformVoucherClaim.update({
-      where: { id: claim.id },
+    // One conditional update: of two staff pressing at once, exactly one sees count 1.
+    const won = await this.db.platformVoucherClaim.updateMany({
+      where: { id: claim.id, status: 'UNLOCKED' },
       data: {
         status: 'REDEEMED',
         redeemedAt: new Date(),
@@ -139,6 +141,8 @@ export class PlatformVouchersService {
         redeemedByBusinessId: staffBusinessId ?? null,
       },
     });
+    if (won.count !== 1) throw new BadRequestException('This voucher has already been redeemed');
+    const updated = { ...claim, status: 'REDEEMED', redeemedAt: new Date() };
     await this.db.platformVoucher.update({
       where: { id: tier.id },
       data: { currentRedemptions: { increment: 1 } },
@@ -216,8 +220,14 @@ export class PlatformVouchersService {
         `Earn ${(Number(tier.thresholdPoints) - points).toLocaleString('en-IN')} more points to unlock this voucher`,
       );
     }
-    if (tier.maxRedemptions != null && tier.currentRedemptions >= tier.maxRedemptions) {
-      throw new BadRequestException('This voucher is fully claimed');
+    // The limit is on codes handed out, not on codes used.
+    if (tier.maxRedemptions != null) {
+      const handedOut = await this.db.platformVoucherClaim.count({
+        where: { platformVoucherId: tierId, deletedAt: null },
+      });
+      if (handedOut >= tier.maxRedemptions) {
+        throw new BadRequestException('This voucher is fully claimed');
+      }
     }
 
     const code = await this.generateUniqueCode(tier.tenantId);
